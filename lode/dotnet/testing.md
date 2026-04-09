@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-04-09T12:47:52Z*
+*Updated: 2026-04-09T13:07:38Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -39,17 +39,32 @@ Test `.csproj` files only need `<IsTestProject>true</IsTestProject>` — everyth
 
 ## Running Tests
 
+### Via scripts (preferred)
+
 ```bash
-# Via dotnet test (MTP)
-dotnet test --solution X.slnx --configuration Release -- --filter-trait "Category=CI"
+# CI tests (default — filters to Category=CI)
+scripts/test.sh
 
-# Via direct execution (MTP native)
-dotnet exec path/to/Tests.dll -trait "Category=CI"
+# Specific test class
+scripts/test.sh GreeterTests
 
-# The -- separator passes arguments to MTP; everything before goes to dotnet test
+# All tests including Docker and Manual
+scripts/test.sh --all
+
+# Custom trait filter
+scripts/test.sh --trait "Category=Docker"
+
+# JSON output for automation
+scripts/test.sh --json
 ```
 
-Note: `--filter` (VSTest syntax) does not work with MTP. Use `-- --filter-trait` instead.
+### Via dotnet test (raw)
+
+```bash
+dotnet test --solution X.slnx -- --filter-trait "Category=CI"
+```
+
+The `--` separator passes arguments to MTP. `--filter` (VSTest syntax) does not work — use `-- --filter-trait` instead.
 
 ## Test Categories
 

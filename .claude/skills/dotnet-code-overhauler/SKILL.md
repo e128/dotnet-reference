@@ -37,9 +37,9 @@ Test projects identified by name containing `Test`/`Tests`, referencing xUnit/NU
 
 ## When NOT to Use
 
-- **Solution with >500 .cs files** — run a scoped overhaul on one project directory at a time
+- **Solution with >500 .cs files** — run a scoped overhaul on one project directory at a time; the agent findings tables will be unmanageably large otherwise
 - **Hotfix or time-sensitive change** — this skill is for planned maintenance windows, not emergency patches
-- **Single-issue fix** — if you know exactly what needs fixing, run a targeted analysis using the pattern files in `steps/` instead of running the full loop
+- **Single-issue fix** — if you know exactly what needs fixing, run a targeted analysis using the pattern files in `steps/` (e.g., `step7-patterns.md` for security) instead of running the full loop
 
 ## The Overhaul Loop
 
@@ -47,18 +47,20 @@ Each step -> findings table -> user picks what to fix -> **Fix Cycle** -> next s
 **No git commits or pushes until Step 10.**
 
 ```
-R. Resume Check (always first — read progress journal)
-0. Precondition: Detect test convention
-1. CI Test Baseline
-2. Solution Infrastructure + Strict Analysis (mandatory)
-3. Modernize Language Usage        -> plan -> execute
-4. Cross-Cutting Design Review     -> plan -> execute
-5. Performance Review (specialist) -> plan -> execute
-6. Concurrency Review (specialist) -> plan -> execute
-7. Security Review                 -> plan -> execute
-8. Cleanup & Organization          -> execute
-9. Verify CI Tests
-10. Final Review (user commits/pushes when satisfied)
+┌──────────────────────────────────────────────────────────┐
+│  R. Resume Check (always first — read progress journal)  │
+│  0. Precondition: Detect test convention                 │
+│  1. CI Test Baseline                                     │
+│  2. Solution Infrastructure + Strict Analysis (mandatory)│
+│  3. Modernize Language Usage        -> plan -> execute   │
+│  4. Cross-Cutting Design Review     -> plan -> execute   │
+│  5. Performance Review (specialist) -> plan -> execute   │
+│  6. Concurrency Review (specialist) -> plan -> execute   │
+│  7. Security Review                 -> plan -> execute   │
+│  8. Cleanup & Organization          -> execute           │
+│  9. Verify CI Tests                                      │
+│ 10. Final Review (user commits/pushes when satisfied)    │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -106,11 +108,12 @@ Steps 0-10 use `dotnet` CLI commands, `Explore` agents, and `.claude/tmp/` state
 - **`build-validator` agent** -> if present, use for build+test; otherwise use `${CLAUDE_SKILL_DIR}/scripts/build.sh` and `test.sh`
 - **`sme-researcher` agent** -> if present, use for uncertainty; otherwise use `Explore` agent
 - **`tdd-loop-optimizer` agent** -> if present, use for batch fix cycles; otherwise apply fixes sequentially
+- **`mcp__ide__getDiagnostics`** -> if available, run on modified `.cs` files after build for deeper diagnostics; otherwise rely on build output only
 - **dev-planning** -> if `/dev-planning` skill exists and >=8 findings, create a plan; otherwise execute directly from `approved-step{N}.md`
 
 ### Project-specific (optional)
 - **`${CLAUDE_SKILL_DIR}/conventions.md`** -> if present, read for coding standards, analyzer inventory, severity overrides, auto-approved fixes, and test relaxations. If absent, use sensible .NET defaults.
-- **`${CLAUDE_SKILL_DIR}/lessons/*.md`** -> if present, read for project-specific false positives and compiler edge cases.
+- **`${CLAUDE_SKILL_DIR}/lessons/*.md`** -> if present, read for project-specific false positives and compiler edge cases. Each file covers one project/repo.
 
 ---
 
@@ -225,10 +228,14 @@ After user approves findings: create a plan (if dev-planning available and >=8 f
 
 This skill must get better with every use. After completing any overhaul cycle:
 
-1. **Capture modernization patterns** — If a new C#/.NET language feature or API replacement proved effective, add it to the modernization checklist in this SKILL.md.
-2. **Record analyzer evolution** — If new Roslyn analyzer rules required code changes, document the rule ID and fix pattern.
-3. **Log false-positive findings** — If the overhaul flagged code that was actually correct, add it as a known exception.
-4. **Update specialist triggers** — If the concurrency or security specialist agents caught issues that the main overhaul missed, refine their trigger criteria.
+1. **Capture modernization patterns** — If a new C#/.NET language feature or API replacement proved effective (e.g., collection expressions, primary constructors, `SearchValues<T>`), add it to the modernization checklist in this SKILL.md.
+2. **Record analyzer evolution** — If new Roslyn/Meziantou/xUnit analyzer rules required code changes, document the rule ID and fix pattern in this SKILL.md's common pitfalls section.
+3. **Log false-positive findings** — If the overhaul flagged code that was actually correct (e.g., intentional allocation, deliberate synchronous call), add it to this SKILL.md as a known exception.
+4. **Update specialist triggers** — If the concurrency or security specialist agents caught issues that the main overhaul missed, refine their trigger criteria in this SKILL.md so they're invoked earlier next time.
+
+Format for modernization pattern notes: `- [dotnet-code-overhauler YYYY-MM-DD] Added: <pattern/API> — before: <old approach> -> after: <new approach>`
+
+The goal: each overhaul cycle should start with a more accurate checklist and produce fewer false positives than the last.
 
 ### Project-Specific Lessons
 

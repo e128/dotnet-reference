@@ -31,7 +31,7 @@ Includes a complete Claude Code development harness with bash scripts, contextua
 | ripgrep (rg) | 14+     | `brew install ripgrep`       | `sudo apt install ripgrep`       | `winget install BurntSushi.ripgrep.MSVC` |
 | fd           | 9+      | `brew install fd`            | `sudo apt install fd-find`       | `winget install sharkdp.fd`      |
 | jq           | 1.7+    | `brew install jq`            | `sudo apt install jq`            | `winget install jqlang.jq`       |
-| Docker       | 24+     | Docker Desktop               | `sudo apt install docker.io`     | Docker Desktop                   |
+| Docker       | 24+     | Docker Desktop or `colima`   | `sudo apt install docker.io`     | Docker Desktop                   |
 
 [dotnet-install]: https://learn.microsoft.com/en-us/dotnet/core/install/linux
 
@@ -52,16 +52,15 @@ Includes a complete Claude Code development harness with bash scripts, contextua
 # Build
 scripts/build.sh
 
-# Test (CI category only)
-scripts/test.sh --all
+# Test (CI category only — default)
+scripts/test.sh
 
 # Full CI pipeline (format + build + test)
 scripts/ci.sh
 
 # Docker
-docker build -t e128-reference-web .
-docker compose up -d
-curl http://localhost:8080/health
+scripts/docker.sh build
+scripts/docker.sh test
 ```
 
 ## Project Structure
@@ -97,6 +96,7 @@ curl http://localhost:8080/health
 │   ├── format.sh             # dotnet format wrapper
 │   ├── check.sh              # Composed format+build+test
 │   ├── ci.sh                 # Full CI pipeline
+│   ├── docker.sh             # Docker build/run/test/stop/clean
 │   ├── help.sh               # Script catalog
 │   └── internal/             # Scripts for skills/agents only
 ├── src/
@@ -118,6 +118,7 @@ Run `scripts/help.sh` for the full list. Key scripts:
 | `format.sh`        | Format check/apply (`--check`, `--changed`)          |
 | `check.sh`         | Composed: format + build + test (`--all`)            |
 | `ci.sh`            | Full CI pipeline (`--skip-*` flags)                  |
+| `docker.sh`        | Docker build/run/test/stop/clean (`--no-cache`)      |
 | `status.sh`        | Git status (`--json`, `--classify`)                  |
 | `diff.sh`          | Diff summary (`--json`, `--files`)                   |
 | `branch.sh`        | Branch info vs base (`--json`, `--human`)            |
@@ -154,14 +155,17 @@ This repo uses a **deny-by-default** analyzer strategy:
 Tests use **xUnit v3** with the **Microsoft Testing Platform** (MTP) runner:
 
 ```bash
-# Run all CI tests
-scripts/test.sh --all
+# Run CI tests (default category)
+scripts/test.sh
 
 # Run specific test class
 scripts/test.sh GreeterTests
 
+# Run all tests including Docker and Manual
+scripts/test.sh --all
+
 # JSON output (for scripts/agents)
-scripts/test.sh --all --json
+scripts/test.sh --json
 ```
 
 Test categories:
@@ -172,17 +176,16 @@ Test categories:
 ## Docker
 
 ```bash
-# Build the image
-docker build -t e128-reference-web .
+# Build, run, and test (scripts/docker.sh)
+scripts/docker.sh build
+scripts/docker.sh run
+scripts/docker.sh test
+scripts/docker.sh stop
 
-# Run with docker-compose
+# Or use docker-compose directly
 docker compose up -d
-
-# Health check
 curl http://localhost:8080/health
 # → {"status":"healthy"}
-
-# Stop
 docker compose down
 ```
 
