@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-04-09T12:47:41Z*
+*Updated: 2026-04-09T13:49:15Z*
 
 ## Root Files
 
@@ -23,3 +23,4 @@
 ## infrastructure/
 
 - [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md) — Claude Code harness maintenance notes
+- [code-generation-quality.md](infrastructure/code-generation-quality.md) — Mechanisms that drive better AI code generation, ranked by impact
