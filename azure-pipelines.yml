@@ -14,6 +14,8 @@ pool:
 variables:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
 
 steps:
   - task: UseDotNet@2
@@ -22,14 +24,18 @@ steps:
       packageType: 'sdk'
       version: '10.0.x'
 
+  - task: Cache@2
+    displayName: 'Cache NuGet packages'
+    inputs:
+      key: 'nuget | "$(Agent.OS)" | Directory.Packages.props'
+      restoreKeys: 'nuget | "$(Agent.OS)"'
+      path: $(NUGET_PACKAGES)
+
   - script: dotnet format E128.Reference.slnx --verify-no-changes
     displayName: 'Format Check'
 
   - script: dotnet build E128.Reference.slnx --configuration Release -clp:ErrorsOnly
     displayName: 'Build'
 
-  - script: |
-      for dll in $(find artifacts/bin -name '*Tests.dll' -path '*/release/*' ! -path '*/ref/*'); do
-        dotnet exec "$dll" --filter-trait "Category=CI"
-      done
+  - script: dotnet test --solution E128.Reference.slnx --configuration Release --no-build -- --filter-trait "Category=CI"
     displayName: 'Test (CI category)'
