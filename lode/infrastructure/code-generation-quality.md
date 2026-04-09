@@ -1,5 +1,5 @@
 # Code Generation Quality with Claude Code
-*Updated: 2026-04-09T13:49:15Z*
+*Updated: 2026-04-09T13:57:44Z*
 
 Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
@@ -62,6 +62,12 @@ Make the right thing automatic and the wrong thing fail loudly:
 5. Domain knowledge is pre-loaded (lode + rules)
 
 The repo is a **compiler-enforced style guide** — Claude iterates against errors, not instructions.
+
+## None of This Is Enough
+
+Even with all 10 mechanisms in place, every pass will find something new. Re-running the `dotnet-overhaul` skill catches drift from new code and updated analyzers. Periodic code reviews surface design issues that no analyzer can detect. Running a second review with a different model finds blind spots the first model normalized over. Updating analyzer packages introduces new rules that flag previously-clean code.
+
+This is not a failure state — it's the intended workflow. The goal is not zero findings. The goal is a **narrowing cone of quality**: each pass raises the floor, tightens the constraints, and leaves fewer places for defects to hide. The first overhaul run on a legacy codebase may produce 50+ findings. The second run finds 10. The periodic maintenance run finds 2. The cone narrows but never closes — and that's fine.
 
 ## Related
 
