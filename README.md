@@ -235,4 +235,4 @@ The skill auto-detects the test framework, solution format, and analyzer configu
 
 ## License
 
-Private repository. All rights reserved.
+[MIT](./LICENSE)
