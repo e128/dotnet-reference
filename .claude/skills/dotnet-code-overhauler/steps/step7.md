@@ -53,6 +53,19 @@ For each Dockerfile/compose file:
   Safe form: `FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:<digest>`
   Note: Step 3 checks digest freshness; this step checks whether pins EXIST at all.
 - docker-compose service images with floating or undigested tags.
+
+For each docker-compose.yml, also check runtime security hardening:
+- Missing `read_only: true` — filesystem should be immutable at runtime
+- Missing `security_opt: no-new-privileges:true` — prevents privilege escalation via setuid/setgid
+- Missing `cap_drop: ALL` — all Linux capabilities should be dropped
+- Missing resource limits (`mem_limit`, `cpus`, `pids_limit`) — prevents resource exhaustion
+- Missing `tmpfs` mounts for `/tmp` when `read_only: true` — app may need writable temp
+- Exposed ports not matching app config (e.g., EXPOSE vs ASPNETCORE_URLS mismatch)
+
+For each Dockerfile, also check:
+- Missing `USER` instruction (non-root) — .NET images provide `$APP_UID`
+- Package manager not removed after use (apk/apt left in runtime image)
+- HEALTHCHECK using tools not in the base image (curl in Alpine, wget in Debian-slim)
 ```
 
 ---

@@ -21,10 +21,27 @@ artifacts/
 # Documentation
 lode/
 plans/
+prompts/
 *.md
+!README.md
 
 # Test projects (not needed in production image)
 tests/
+benchmarks/
 
 # Scripts
 scripts/
+
+# CI/CD
+.github/
+azure-pipelines.yml
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+
+# OS artifacts
+.DS_Store
+Thumbs.db

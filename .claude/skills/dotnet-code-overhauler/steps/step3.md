@@ -115,11 +115,13 @@ Search for `DateTime.Now` where `DateTime.UtcNow` or `TimeProvider` is more corr
 Search for `""` empty string literals → `string.Empty`.
 ```
 
-**Agent 4 — using/disposal & nullability:**
+**Agent 4 — using/disposal, nullability & xUnit v3 migration:**
 ```
 Search for `IDisposable`/`IAsyncDisposable` objects created without `using` statements.
 Search for `#nullable disable` or missing nullable annotations on public APIs.
 Search for the null-forgiving operator (!) usage that masks real nullable issues.
+Search for `IAsyncLifetime` implementations returning `Task` instead of `ValueTask`
+  (xUnit v3 changed InitializeAsync/DisposeAsync to return ValueTask).
 ```
 
 ### Language Findings Table

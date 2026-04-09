@@ -59,7 +59,7 @@ and apply the change to the Renovate config file.
 
 **Assemble from journal files** — do not rely on memory:
 1. Read `.claude/tmp/overhauler/progress.md` for per-step summaries and DONE/SKIPPED status
-2. Read `.claude/tmp/overhauler/baseline.md` for test and benchmark baseline values
+2. Read `.claude/tmp/overhauler/baseline.md` for test baseline values
 3. Read `.claude/tmp/overhauler/findings-stepN.md` for each step's findings counts
 4. Read each `plans/overhaul-step{N}-*/tasks.md` for fixed/deferred/skipped counts
 
@@ -88,12 +88,6 @@ and apply the change to the Renovate config file.
 - Baseline: X tests passing
 - Final: Y tests passing (Z new tests added)
 - Regressions: none
-
-### Benchmark Verification
-- Benchmark project: [path or "none"]
-- Baseline Mean / Alloc: [values or "no baseline"]
-- Final Mean / Alloc: [values or "no baseline"]
-- Regressions: none (or details of resolved regressions)
 
 ### Deferred Findings
 [List each deferred finding with ID, description, and reason for deferral]

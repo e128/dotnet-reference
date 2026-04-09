@@ -32,11 +32,58 @@ Glob for `Directory.Packages.props` at the solution root.
 5. Convert any `<PackageReference Update="...">` to central management pattern
 6. If the project uses lock files (`packages.lock.json`): `dotnet restore --force-evaluate`
 
-**If already exists:** Report and skip to 2c.
+**If already exists:** Verify these hardening properties are set (add if missing):
+- `CentralPackageTransitivePinningEnabled=true` — prevents transitive version drift
+- `CentralPackageVersionOverrideEnabled=false` — prevents per-project version overrides
+
+Then skip to 2c.
 
 ---
 
-## 2c. Enforce Strict Code Analysis
+## 2c. Verify MTP Test Infrastructure
+
+Check that the Microsoft Testing Platform is correctly configured for .NET 10:
+
+**global.json** — must contain:
+```json
+{ "test": { "runner": "Microsoft.Testing.Platform" } }
+```
+Without this, `dotnet test` fails on .NET 10 SDK with a VSTest compatibility error.
+
+**Directory.Build.targets** — must contain (conditioned on `IsTestProject`):
+```xml
+<PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+  <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+  <OutputType>Exe</OutputType>
+</PropertyGroup>
+```
+This must be in `.targets` (not `.props`) because `IsTestProject` is set in the `.csproj` and isn't available during `.props` evaluation.
+
+**Test .csproj files** — should only need `<IsTestProject>true</IsTestProject>`. If they also have `<OutputType>Exe</OutputType>` or MTP properties, remove the redundancy (inherited from targets).
+
+If `Directory.Build.targets` does not exist, create it with the above content.
+
+---
+
+## 2d. Audit NuGet Security
+
+Check `nuget.config` at the solution root:
+
+**Required** (add if missing):
+- `<clear />` in `<packageSources>` — removes implicit default sources
+- Explicit `nuget.org` source with `protocolVersion="3"`
+- `<packageSourceMapping>` — restricts which packages come from which source
+
+**Recommended** (flag if missing):
+- `<trustedSigners>` with certificate fingerprints for nuget.org
+- If private feeds exist, they should also have source mapping entries
+
+If `nuget.config` does not exist, create one with `<clear />` + explicit nuget.org + source mapping.
+
+---
+
+## 2e. Enforce Strict Code Analysis
 
 Check `Directory.Build.props` for these properties (add any missing):
 
@@ -82,7 +129,7 @@ conventions are expected — do not remove them.
 
 ---
 
-## 2d. Ensure .gitignore Coverage
+## 2f. Ensure .gitignore Coverage
 
 Check that a `.gitignore` exists at the repository root with entries for:
 
@@ -101,9 +148,9 @@ Do not execute without user approval.
 
 ---
 
-## 2e. Verify and Continue
+## 2g. Verify and Continue
 
-Run the single consolidated verification pass for all changes made in 2b-2d:
+Run the single consolidated verification pass for all changes made in 2b-2f:
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/check.sh <solution> --json
 ```

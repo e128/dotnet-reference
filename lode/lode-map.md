@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-04-09T01:40:35Z*
+*Updated: 2026-04-09T12:47:41Z*
 
 ## Root Files
 
@@ -13,6 +13,12 @@
 
 - [solid.md](coding-standards/solid.md) — SOLID principles applied to C#
 - [smalltalk-patterns.md](coding-standards/smalltalk-patterns.md) — Smalltalk Best Practice Patterns for C#
+
+## dotnet/
+
+- [project-structure.md](dotnet/project-structure.md) — .NET 10 solution format, CPM, build props/targets, global.json
+- [testing.md](dotnet/testing.md) — MTP, xUnit v3, test configuration, categories, conventions
+- [analyzers.md](dotnet/analyzers.md) — Deny-by-default strategy, analyzer packages, suppression policy
 
 ## infrastructure/
 

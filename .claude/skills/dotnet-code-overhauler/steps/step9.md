@@ -1,4 +1,4 @@
-# Step 9: Verify CI Tests + Benchmark Comparison
+# Step 9: Verify CI Tests
 
 **Read baseline from disk** (never from memory):
 ```bash
@@ -25,14 +25,3 @@ If `mcp__ide__getDiagnostics` is available, run it on all `.cs` files modified d
 - HIGH = build errors + null-ref
 - MEDIUM = analyzer violations + format
 - LOW = style + naming
-
-## Benchmark Comparison (If Baseline Exists)
-
-Re-run benchmarks in Release mode, then compare:
-
-```
-Compare baseline [path from baseline.md] vs current [Step 9 path].
-Report regressions using thresholds: >5% Mean, >10% P95, >20% allocation.
-```
-
-If regressions: trace to responsible step, revert/revise the specific fix, re-run, repeat until clean.

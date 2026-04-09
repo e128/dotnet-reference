@@ -49,7 +49,7 @@ Each step -> findings table -> user picks what to fix -> **Fix Cycle** -> next s
 ```
 R. Resume Check (always first — read progress journal)
 0. Precondition: Detect test convention
-1. CI Test Baseline + Benchmark Baseline (if exists)
+1. CI Test Baseline
 2. Solution Infrastructure + Strict Analysis (mandatory)
 3. Modernize Language Usage        -> plan -> execute
 4. Cross-Cutting Design Review     -> plan -> execute
@@ -57,7 +57,7 @@ R. Resume Check (always first — read progress journal)
 6. Concurrency Review (specialist) -> plan -> execute
 7. Security Review                 -> plan -> execute
 8. Cleanup & Organization          -> execute
-9. Verify CI Tests + Benchmark Comparison
+9. Verify CI Tests
 10. Final Review (user commits/pushes when satisfied)
 ```
 
@@ -73,7 +73,7 @@ cat .claude/tmp/overhauler/progress.md 2>/dev/null
 
 If `progress.md` exists:
 - Read it to see which steps are `DONE`, `SKIPPED`, or `IN-PROGRESS`
-- Read `.claude/tmp/overhauler/baseline.md` to recover test/benchmark baseline
+- Read `.claude/tmp/overhauler/baseline.md` to recover test baseline
 - Skip any step already marked `DONE` or `SKIPPED`
 - Resume from the first step not yet `DONE`
 - For steps with a `DONE` status, include their one-line summary in the Step 10 Overhaul Summary
@@ -118,10 +118,16 @@ Steps 0-10 use `dotnet` CLI commands, `Explore` agents, and `.claude/tmp/` state
 
 Detect the test framework (xUnit/NUnit/MSTest) and category convention by grepping test projects for `Trait`, `Category`, `TestCategory` attributes. Also check `.runsettings`, `Directory.Build.props`, and CI workflow files for existing `--filter` arguments.
 
+**Detect test runner** — check `global.json` for `"test": { "runner": "Microsoft.Testing.Platform" }`:
+- **MTP detected:** Use `dotnet test --solution <slnx> -- --filter-trait "Category=CI"` syntax. The `--` separator passes args to MTP; `--filter` (VSTest syntax) does NOT work.
+- **VSTest (no MTP config):** Use `dotnet test --filter "Category=CI"` syntax.
+- **.NET 10 SDK without MTP config:** Flag as a Step 2 finding — MTP is required on .NET 10.
+
 **Record the detected convention** in `.claude/tmp/overhauler/test-convention.md`:
 ```markdown
 # Test Convention
 Framework: [xUnit|NUnit|MSTest|mixed]
+Runner: [MTP|VSTest]
 Category attribute: [exact attribute found]
 Filter command: [the exact test invocation to use]
 Test count: [number of tests matching]
@@ -131,26 +137,18 @@ Test count: [number of tests matching]
 
 ---
 
-## Step 1: CI Test Baseline + Benchmark Baseline
+## Step 1: CI Test Baseline
 
 **CI tests:** Use the exact filter command recorded in `.claude/tmp/overhauler/test-convention.md`.
 Do not hardcode a filter — always read the convention file from Step 0.
 Record: total, passed, failed, skipped, pre-existing failures.
 Stop if failures — user decides whether to proceed with a broken baseline.
 
-**Benchmark baseline:** Glob `**/*Benchmark*.csproj, **/*Bench*.csproj, **/*Perf*.csproj`.
-If found, run in Release mode and save the results path for Step 9 comparison:
-```bash
-dotnet run -c Release --project <benchmark-project> -- --exporters json
-```
-If none found, note "No benchmark project found — skipping performance baseline" and continue.
-
 **Persist baseline to disk immediately after recording:**
 Write `.claude/tmp/overhauler/baseline.md`:
 ```markdown
 # Overhaul Baseline
 CI Tests: X passed, Y failed, Z skipped
-Benchmark: [/path/to/BenchmarkDotNet.Artifacts/results/*.json]  (or NONE)
 ```
 Step 9 reads this file for comparison — never rely on memory across steps.
 
@@ -185,7 +183,7 @@ TFM & package updates (Agent 0), Dockerfile review (Agent 0b), 4 parallel langua
 
 ## Step 5: Performance Review -> read steps/step5.md
 
-Explore agent with grep patterns from `steps/step5-patterns.md`. Uses benchmark baseline from Step 1 for comparison.
+Explore agent with grep patterns from `steps/step5-patterns.md`.
 **Findings ID prefix:** `P`
 
 ---
@@ -211,7 +209,7 @@ suppressions, verify build. Executes immediately — no approval gate.
 
 ---
 
-## Step 9: Verify CI Tests + Benchmark Comparison -> read steps/step9.md
+## Step 9: Verify CI Tests -> read steps/step9.md
 
 ---
 
