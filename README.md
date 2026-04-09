@@ -1,4 +1,8 @@
-# E128.Reference
+# E128.Reference — .NET 10 Reference Repository
+
+[![CI](https://github.com/e128/dotnet-reference/actions/workflows/ci.yml/badge.svg)](https://github.com/e128/dotnet-reference/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 
 ## Summary
 
@@ -6,19 +10,36 @@ A .NET 10 reference repository demonstrating modern conventions for web, CLI, an
 Features strict deny-by-default code analysis with third-party Roslyn analyzers, xUnit v3 on the Microsoft Testing Platform, and Central Package Management with transitive pinning.
 Includes a complete Claude Code development harness with bash scripts, contextual rules, skills, and agents.
 
+## Quick Start
+
+```bash
+# Build
+scripts/build.sh
+
+# Test (CI category only — default)
+scripts/test.sh
+
+# Full CI pipeline (format + build + test)
+scripts/ci.sh
+
+# Docker
+scripts/docker.sh build
+scripts/docker.sh test
+```
+
 ## What's Included
 
-| Component              | Description                                                          |
-| ---------------------- | -------------------------------------------------------------------- |
-| **E128.Reference.Web** | Minimal API web app with Kestrel, health endpoint                    |
-| **E128.Reference.Cli** | System.CommandLine CLI with `--name` option                          |
-| **E128.Reference.Core**| Shared library (Greeter service)                                     |
+| Component               | Description                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| **E128.Reference.Web**  | Minimal API web app with Kestrel, health endpoint                   |
+| **E128.Reference.Cli**  | System.CommandLine CLI with `--name` option                         |
+| **E128.Reference.Core** | Shared library (Greeter service)                                    |
 | **E128.Reference.Tests**| xUnit v3 + MTP with CI, Docker, and Manual test categories          |
-| **Docker**             | Multi-stage Dockerfile + docker-compose.yml                          |
-| **Bash scripts**       | Build, test, format, CI, lode management (`scripts/help.sh`)        |
-| **Claude Code harness**| CLAUDE.md, rules, hooks, skills, agents (see `.claude/`)            |
-| **CI/CD**              | GitHub Actions + Azure DevOps pipeline YAML                          |
-| **Lode**               | Structured documentation (practices, coding standards, terminology)  |
+| **Docker**              | Hardened Alpine multi-stage Dockerfile + docker-compose.yml          |
+| **Bash scripts**        | Build, test, format, CI, Docker, lode management ([catalog](scripts/README.md)) |
+| **Claude Code harness** | CLAUDE.md, rules, hooks, skills, agents (see `.claude/`)            |
+| **CI/CD**               | GitHub Actions + Azure DevOps pipeline YAML                         |
+| **Lode**                | Structured documentation (practices, coding standards, terminology) |
 
 ## Prerequisites
 
@@ -46,23 +67,6 @@ Includes a complete Claude Code development harness with bash scripts, contextua
 
 > **Note (Ubuntu):** The `fd` package is named `fd-find`. The binary is `fdfind`. Create an alias: `ln -s $(which fdfind) ~/.local/bin/fd`.
 
-## Quick Start
-
-```bash
-# Build
-scripts/build.sh
-
-# Test (CI category only — default)
-scripts/test.sh
-
-# Full CI pipeline (format + build + test)
-scripts/ci.sh
-
-# Docker
-scripts/docker.sh build
-scripts/docker.sh test
-```
-
 ## Project Structure
 
 ```
@@ -89,16 +93,7 @@ scripts/docker.sh test
 ├── lode/                     # Project knowledge documentation
 ├── nuget.config              # Single source + source mapping
 ├── plans/                    # Structured planning documents
-├── scripts/                  # Bash development scripts
-│   ├── lib.sh                # Shared functions (sourced by all scripts)
-│   ├── build.sh              # dotnet build wrapper
-│   ├── test.sh               # xUnit v3 MTP runner wrapper
-│   ├── format.sh             # dotnet format wrapper
-│   ├── check.sh              # Composed format+build+test
-│   ├── ci.sh                 # Full CI pipeline
-│   ├── docker.sh             # Docker build/run/test/stop/clean
-│   ├── help.sh               # Script catalog
-│   └── internal/             # Scripts for skills/agents only
+├── scripts/                  # Bash development scripts ([catalog](scripts/README.md))
 ├── src/
 │   ├── E128.Reference.Core/  # Shared library
 │   ├── E128.Reference.Web/   # ASP.NET Core minimal API
@@ -106,27 +101,6 @@ scripts/docker.sh test
 └── tests/
     └── E128.Reference.Tests/ # xUnit v3 + MTP
 ```
-
-## Script Catalog
-
-Run `scripts/help.sh` for the full list. Key scripts:
-
-| Script             | Purpose                                              |
-| ------------------ | ---------------------------------------------------- |
-| `build.sh`         | Build solution or project (`--json`, `--project`)    |
-| `test.sh`          | Run tests (`--all`, `--json`, class name targeting)  |
-| `format.sh`        | Format check/apply (`--check`, `--changed`)          |
-| `check.sh`         | Composed: format + build + test (`--all`)            |
-| `ci.sh`            | Full CI pipeline (`--skip-*` flags)                  |
-| `docker.sh`        | Docker build/run/test/stop/clean (`--no-cache`)      |
-| `status.sh`        | Git status (`--json`, `--classify`)                  |
-| `diff.sh`          | Diff summary (`--json`, `--files`)                   |
-| `branch.sh`        | Branch info vs base (`--json`, `--human`)            |
-| `assert.sh`        | Pre-commit gates (`--clean-working-tree`, etc.)      |
-| `ts.sh`            | ISO 8601 timestamp (optionally updates file)         |
-| `help.sh`          | List all scripts with descriptions                   |
-| `task.sh`          | Plan task management (check/next/progress)           |
-| `plan-context.sh`  | Active plans and roadmap query                       |
 
 ## Analyzer Configuration
 
@@ -197,9 +171,9 @@ Both **GitHub Actions** (`.github/workflows/ci.yml`) and **Azure DevOps** (`azur
 2. Release build
 3. CI-category tests only
 
-## Using dotnet-overhaul on Another Repo
+## dotnet-overhaul Skill
 
-The `dotnet-overhaul` skill is portable — copy it into any .NET repo and run it with Claude Code.
+The [`dotnet-overhaul`](.claude/skills/dotnet-overhaul/) skill is a portable, opinionated .NET code overhaul loop that can be copied into any .NET repo and run with Claude Code. It systematically modernizes language usage, enforces strict code analysis, reviews performance/concurrency/security, and verifies all tests pass.
 
 **Opinionated.** The skill enforces specific conventions (deny-by-default analyzers, immutability, MTP test runner, strict code analysis). Review and edit `conventions.md` after copying to match your project's preferences.
 
@@ -212,7 +186,7 @@ The `dotnet-overhaul` skill is portable — copy it into any .NET repo and run i
 cp -r /path/to/dotnet-reference/.claude/skills/dotnet-overhaul .claude/skills/
 ```
 
-The skill includes its own scripts (`build.sh`, `test.sh`, `check.sh`), pattern files, and conventions template. No other files from this repo are required.
+The skill includes its own scripts, pattern files, and conventions template. No other files from this repo are required.
 
 ### Run
 
@@ -236,6 +210,10 @@ After copying, optionally edit these files in `.claude/skills/dotnet-overhaul/`:
 | `lessons/*.md`      | Known false positives and compiler edge cases discovered during overhaul runs |
 
 The skill auto-detects the test framework, solution format, and analyzer configuration. External agents (`build-validator`, `sme-researcher`, `tdd-loop-optimizer`) are optional enhancements — the skill works without them.
+
+## Contributing
+
+Issues and pull requests are welcome. For large changes, open an issue first to discuss the approach.
 
 ## License
 
