@@ -2,16 +2,26 @@
 name: dotnet-overhaul
 version: "0.9"
 description: >
-  Systematic .NET code overhaul loop. Establishes a test baseline, modernizes language usage,
+  Opinionated .NET code overhaul loop. Establishes a test baseline, modernizes language usage,
   fixes cross-cutting design issues, runs performance, concurrency, and security reviews, and
   verifies all CI tests pass. Presents severity-rated findings for user-directed action at each step.
+  Review conventions.md before first use — preferences are configurable.
+  Use iteratively for initial large overhauls, then periodically to catch drift.
   Triggers on: code overhaul, modernize codebase, .NET modernization, overhaul loop, code review pass,
   fix all warnings, language modernization, primary constructors, collection expressions, overhaul solution.
 argument-hint: "[solution-file or directory]"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write, Agent
 ---
 
-# .NET Code Overhauler
+# .NET Overhaul
+
+> **Opinionated.** This skill enforces specific conventions (deny-by-default analyzers, immutability,
+> MTP test runner, strict code analysis). Review and edit `conventions.md` to match your project's
+> preferences before the first run.
+>
+> **Iterative.** For large codebases, run the overhaul in phases — approve a subset of findings
+> per run, commit, then run again. For maintained codebases, run periodically to catch drift
+> from new code, updated analyzers, or TFM upgrades.
 
 Systematic overhaul loop combining language modernization, design review, and specialist analysis.
 Every step produces findings for user approval before any code is changed.

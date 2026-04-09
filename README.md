@@ -201,6 +201,10 @@ Both **GitHub Actions** (`.github/workflows/ci.yml`) and **Azure DevOps** (`azur
 
 The `dotnet-overhaul` skill is portable — copy it into any .NET repo and run it with Claude Code.
 
+**Opinionated.** The skill enforces specific conventions (deny-by-default analyzers, immutability, MTP test runner, strict code analysis). Review and edit `conventions.md` after copying to match your project's preferences.
+
+**Iterative.** For initial large overhauls, run the skill multiple times — approve a subset of findings per run, commit, then run again. Once the codebase is clean, run periodically to catch drift from new code, updated analyzers, or TFM upgrades.
+
 ### Install
 
 ```bash
