@@ -13,6 +13,31 @@ Delete or modify this file to match your project's conventions.
 - Never use `!` (null-forgiving operator) to silence CS8600-CS8604 — these require human judgment
 - Never suppress analyzer rules without explicit approval (`#pragma warning disable`, `[SuppressMessage]`)
 
+## Immutability
+
+Favor immutable code by default. Convert mutable types when the mutation is not required:
+
+| Mutable pattern                        | Immutable replacement                                   |
+| -------------------------------------- | ------------------------------------------------------- |
+| `class` with only data properties      | `record` or `readonly record struct`                    |
+| `{ get; set; }`                        | `{ get; init; }` or `{ get; }`                          |
+| `struct`                               | `readonly struct`                                       |
+| `List<T>` field/property (public)      | `IReadOnlyList<T>` or `ImmutableArray<T>`               |
+| `Dictionary<TK,TV>` (lookup-only)      | `FrozenDictionary<TK,TV>` or `IReadOnlyDictionary<TK,TV>` |
+| `HashSet<T>` (lookup-only)             | `FrozenSet<T>` or `IReadOnlySet<T>`                     |
+| `T[]` return from public method        | `ReadOnlySpan<T>`, `IReadOnlyList<T>`, or `ImmutableArray<T>` |
+| Method parameter `List<T>`             | `IReadOnlyList<T>` or `IEnumerable<T>`                  |
+
+**Packages to add when needed:**
+- `System.Collections.Immutable` — `ImmutableArray<T>`, `ImmutableList<T>`, `ImmutableDictionary<TK,TV>`
+- `FrozenSet<T>` / `FrozenDictionary<TK,TV>` — in-box for .NET 8+ (no additional package)
+
+**Do not convert:**
+- Private mutable state behind an immutable public API
+- Builder patterns, object pools, or caches that require mutation
+- Entity Framework models (EF requires mutable properties)
+- ViewModels/DTOs that frameworks mutate via reflection
+
 ## Analyzer Packages
 
 If your project uses analyzers, list them here so the overhauler can interpret their output:

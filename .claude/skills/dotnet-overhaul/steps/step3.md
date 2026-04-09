@@ -88,16 +88,46 @@ For each Dockerfile:
 
 ## Language Usage
 
-Launch 4 `Explore` agents in parallel:
+Launch 5 `Explore` agents in parallel:
 
-**Agent 1 — Primary constructors & expression bodies:**
+**Agent 1 — Immutability conversions:**
+```
+Search for mutable types and collections that should be immutable:
+
+Classes:
+- Classes with only get/set auto-properties and no behavior → convert to `record`
+- Classes with only get/init properties → convert to `record` or `readonly struct`
+- Structs without `readonly` modifier → add `readonly` if all fields are readonly
+- Properties with `set` that could be `init` → convert to `init`-only
+
+Collections (return types, fields, parameters):
+- `List<T>` fields/properties exposed publicly → `IReadOnlyList<T>` or `ImmutableArray<T>`
+- `Dictionary<TK,TV>` fields used as lookup-only → `FrozenDictionary<TK,TV>` or `IReadOnlyDictionary<TK,TV>`
+- `HashSet<T>` fields used as lookup-only → `FrozenSet<T>` or `IReadOnlySet<T>`
+- `T[]` returns from public methods → `IReadOnlyList<T>`, `ReadOnlySpan<T>`, or `ImmutableArray<T>`
+- Method parameters accepting `List<T>` when `IReadOnlyList<T>` or `IEnumerable<T>` suffices
+- `new List<T>()` immediately assigned to a readonly/immutable target → collection expression `[]`
+  or `.ToImmutableArray()` / `.ToFrozenSet()`
+
+Packages to suggest adding (if conversions warrant):
+- `System.Collections.Immutable` — `ImmutableArray<T>`, `ImmutableList<T>`, `ImmutableDictionary<TK,TV>`
+- `System.Collections.Frozen` (in-box .NET 8+) — `FrozenSet<T>`, `FrozenDictionary<TK,TV>`
+
+Do NOT flag:
+- Private mutable state behind an immutable public API (encapsulation is fine)
+- Builder patterns or object pools that require mutability
+- Entity Framework DbContext models (EF requires mutable properties)
+- ViewModels/DTOs that frameworks mutate via reflection
+```
+
+**Agent 2 — Primary constructors & expression bodies:**
 ```
 Search for classes with simple constructors that assign parameters to fields.
 Search for single-line method bodies that could use expression-bodied syntax.
-Search for `record` candidates (immutable data types with value equality).
+Search for `record` candidates not caught by Agent 1 (data types with value equality).
 ```
 
-**Agent 2 — Collection expressions & pattern matching:**
+**Agent 3 — Collection expressions & pattern matching:**
 ```
 Search for `new List<T> { ... }`, `new[] { ... }`, `Array.Empty<T>()` → collection expressions [].
 Search for `x == null` / `x != null` → `is null` / `is not null`.
@@ -105,7 +135,7 @@ Search for nested if/else chains → switch expressions or pattern matching.
 Search for `as` + null check → `is` pattern.
 ```
 
-**Agent 3 — Modern API replacements:**
+**Agent 4 — Modern API replacements:**
 ```
 Search for `String.IsNullOrEmpty` / `IsNullOrWhiteSpace` where `is [not] null or []` fits.
 Search for `.Count() == 0` / `.Count() > 0` / `.Any()` on types with `.Count` or `.Length`.
@@ -115,7 +145,7 @@ Search for `DateTime.Now` where `DateTime.UtcNow` or `TimeProvider` is more corr
 Search for `""` empty string literals → `string.Empty`.
 ```
 
-**Agent 4 — using/disposal, nullability & xUnit v3 migration:**
+**Agent 5 — using/disposal, nullability & xUnit v3 migration:**
 ```
 Search for `IDisposable`/`IAsyncDisposable` objects created without `using` statements.
 Search for `#nullable disable` or missing nullable annotations on public APIs.
@@ -130,13 +160,19 @@ Search for `IAsyncLifetime` implementations returning `Task` instead of `ValueTa
 
 | ID | Finding | Severity | Category |
 |----|---------|----------|----------|
-| M1 | `OrderService` constructor → primary constructor candidate | LOW | Primary constructor |
-| M2 | `new List<string> { ... }` at ValidationHelper.cs:42 → collection expression | LOW | Collection expression |
-| M3 | `x == null` checks in 5 files → `is null` | LOW | Pattern matching |
-| M4 | `IDisposable` not disposed in FileProcessor.cs:88 | HIGH | Resource leak |
+| M1 | `OrderService` class → `record` (immutable data, value equality) | MEDIUM | Immutability |
+| M2 | `List<string>` property on `Config` → `IReadOnlyList<string>` | MEDIUM | Immutability |
+| M3 | `Dictionary<string,T>` lookup field → `FrozenDictionary<string,T>` | MEDIUM | Immutability |
+| M4 | `set` property on immutable type → `init` | LOW | Immutability |
+| M5 | `new List<string> { ... }` at ValidationHelper.cs:42 → collection expression | LOW | Collection expression |
+| M6 | `IDisposable` not disposed in FileProcessor.cs:88 | HIGH | Resource leak |
 
 **Severity:**
 - HIGH: Resource leaks, correctness issues (wrong DateTime kind), nullable holes
-- MEDIUM: Patterns that also prevent bugs (null check modernization)
+- MEDIUM: Immutability conversions (prevent mutation bugs, improve thread safety), null check modernization
 - LOW: Pure style modernization (primary constructors, expression bodies, collection expressions)
 - INFO: Acknowledged intentional patterns
+
+**Package additions:** If immutability conversions require `System.Collections.Immutable` and it's not
+already referenced, add it to `Directory.Packages.props` and the relevant `.csproj`. `FrozenSet<T>` and
+`FrozenDictionary<TK,TV>` are in-box for .NET 8+ (no additional package needed).
