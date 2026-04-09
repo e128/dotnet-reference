@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Session initialization hook — provides context at session start.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+echo "## Auto Session Context"
+echo ""
+echo "**Branch**: $(git -C "$ROOT" branch --show-current 2>/dev/null || echo detached)"
+
+# Working tree status
+STATUS=$(git -C "$ROOT" status --porcelain 2>/dev/null | head -5)
+if [[ -z "$STATUS" ]]; then
+    echo "**Working tree**: clean"
+else
+    COUNT=$(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+    echo "**Working tree**: $COUNT file(s) modified"
+fi
+
+echo ""
+echo "**Recent commits**:"
+git -C "$ROOT" log --oneline -5 2>/dev/null | while IFS= read -r line; do
+    echo "- $line"
+done
+
+# Active plans
+if [[ -d "$ROOT/plans" ]]; then
+    PLANS=$(find "$ROOT/plans" -maxdepth 2 -name '*-tasks.md' 2>/dev/null)
+    if [[ -n "$PLANS" ]]; then
+        echo ""
+        echo "**Active plans**:"
+        echo "$PLANS" | while IFS= read -r f; do
+            plan="$(basename "$(dirname "$f")")"
+            total=$(grep -c '^\- \[' "$f" 2>/dev/null || echo 0)
+            done_count=$(grep -c '^\- \[x\]' "$f" 2>/dev/null || echo 0)
+            echo "- $plan ($done_count/$total tasks)"
+        done
+    fi
+fi

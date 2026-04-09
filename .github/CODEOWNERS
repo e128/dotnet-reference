@@ -1,0 +1,25 @@
+# CODEOWNERS
+# All paths relative to repo root. Last matching rule wins.
+
+# Default: all files owned by @e128
+* @e128
+
+# CI/CD
+.github/ @e128
+
+# Source code
+src/ @e128
+tests/ @e128
+
+# Infrastructure / scripting
+scripts/ @e128
+Directory.Build.props @e128
+Directory.Build.targets @e128
+Directory.Packages.props @e128
+global.json @e128
+nuget.config @e128
+
+# Project documentation
+lode/ @e128
+CLAUDE.md @e128
+README.md @e128

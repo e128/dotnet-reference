@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Pre-tool-use guard: block dangerous operations.
+set -euo pipefail
+
+TOOL_NAME="${1:-}"
+TOOL_INPUT="${2:-}"
+
+# Block settings.json self-modification
+if [[ "$TOOL_NAME" == "Write" || "$TOOL_NAME" == "Edit" ]]; then
+    if echo "$TOOL_INPUT" | grep -q 'settings\.json'; then
+        echo "BLOCK: Cannot modify .claude/settings.json without explicit user approval."
+        echo "Present the exact JSON to be added and wait for 'approved'."
+        exit 1
+    fi
+fi
+
+exit 0

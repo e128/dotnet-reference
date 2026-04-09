@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      analyzers:
+        patterns:
+          - "AsyncFixer"
+          - "Meziantou.*"
+          - "Microsoft.VisualStudio.Threading.Analyzers"
+          - "Roslynator.*"
+          - "SharpSource"
+          - "SonarAnalyzer.*"
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+      system-libs:
+        patterns:
+          - "System.*"
+        exclude-patterns:
+          - "System.CommandLine"
+      testing:
+        patterns:
+          - "BenchmarkDotNet"
+          - "Microsoft.AspNetCore.Mvc.Testing"
+          - "Microsoft.CodeAnalysis.CSharp.Analyzer.Testing"
+          - "Microsoft.CodeAnalysis.CSharp.CodeFix.Testing"
+          - "Microsoft.Testing.*"
+          - "NSubstitute"
+          - "xunit.*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"

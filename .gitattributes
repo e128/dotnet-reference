@@ -1,0 +1,29 @@
+# Normalize all text files to LF
+* text=auto eol=lf
+
+# Binary files — must NOT have text conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+
+# Force LF line endings for shell scripts (even on Windows)
+*.sh text eol=lf
+.claude/hooks/* text eol=lf
+
+# Mergiraf structured merging
+*.cs merge=mergiraf
+*.json merge=mergiraf
+*.yaml merge=mergiraf
+*.yml merge=mergiraf

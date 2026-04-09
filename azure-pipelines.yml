@@ -1,0 +1,35 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-24.04'
+
+variables:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+steps:
+  - task: UseDotNet@2
+    displayName: 'Install .NET 10'
+    inputs:
+      packageType: 'sdk'
+      version: '10.0.x'
+
+  - script: dotnet format E128.Reference.slnx --verify-no-changes
+    displayName: 'Format Check'
+
+  - script: dotnet build E128.Reference.slnx --configuration Release -clp:ErrorsOnly
+    displayName: 'Build'
+
+  - script: |
+      for dll in $(find artifacts/bin -name '*Tests.dll' -path '*/release/*' ! -path '*/ref/*'); do
+        dotnet exec "$dll" --filter-trait "Category=CI"
+      done
+    displayName: 'Test (CI category)'

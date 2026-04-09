@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Stop failure hook — save progress context on unexpected stops.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+mkdir -p "$ROOT/.claude/tmp"
+
+# Save a brief context snapshot
+cat > "$ROOT/.claude/tmp/stop-context.md" << EOF
+## Stop Context
+*Saved: ${TIMESTAMP}*
+
+**Branch**: $(git -C "$ROOT" branch --show-current 2>/dev/null || echo detached)
+**Status**: $(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ') files modified
+EOF

@@ -1,0 +1,1 @@
+Review the last 48 hours of sessions. Find the highest uses of tokens and suggest ways to reduce token use by creating or editing new scripts.

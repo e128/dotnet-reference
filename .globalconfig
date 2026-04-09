@@ -1,0 +1,157 @@
+is_global = true
+
+# Global Analyzer Configuration
+# Severity rules for all Roslyn analyzers. Editor/style/formatting settings
+# remain in .editorconfig. Test-specific overrides are in tests/.globalconfig.
+global_level = 100
+
+# ── Roslynator Global Settings ────────────────
+
+roslynator_analyzers.enabled_by_default = true
+roslynator_refactorings.enabled = true
+roslynator_compiler_diagnostic_fixes.enabled = true
+
+# ── Blanket Defaults ──────────────────────────
+# All analyzer diagnostics are errors by default.
+# Only rules that deviate from error are listed below as overrides.
+
+dotnet_analyzer_diagnostic.severity = error
+dotnet_analyzer_diagnostic.category-roslynator.severity = error
+dotnet_analyzer_diagnostic.category-xUnit.severity = error
+
+dotnet_diagnostic.CS0246.severity = error
+
+# CA2007: Scope to DLL projects only — library code must use ConfigureAwait(false); app code must not
+# Microsoft docs explicitly endorse suppressing CA2007 for application projects.
+dotnet_diagnostic.CA2007.severity = error
+dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
+
+# ── Disabled (none) ───────────────────────────
+# Rules permanently disabled — not applicable to this project.
+# Grouped by analyzer, alpha-sorted within each group.
+
+
+# --- CA (.NET Analyzers) ---
+dotnet_diagnostic.ca1303.severity = none       # Do not pass literals as localized parameters
+dotnet_diagnostic.ca1416.severity = none       # Validate platform compatibility
+dotnet_diagnostic.ca2252.severity = none       # This API requires opting into preview features
+
+# --- Compiler Warnings ---
+dotnet_diagnostic.cs1591.severity = none        # Missing XML comment for publicly visible type or member
+
+# --- IDE Analyzers ---
+dotnet_diagnostic.ide0005.severity = error      # Remove unnecessary using directive (explicit; also covered by blanket)
+dotnet_diagnostic.ide0011.severity = error      # Add braces
+dotnet_diagnostic.ide0022.severity = none       # Use expression body for methods
+dotnet_diagnostic.ide0057.severity = none       # Use range operator
+dotnet_diagnostic.ide0061.severity = none       # Use expression body for local functions
+dotnet_diagnostic.ide0066.severity = none       # Use switch expression
+dotnet_diagnostic.ide0210.severity = none       # Convert to top-level statements (destructive in dotnet format)
+
+# --- Meziantou (MA) ---
+dotnet_diagnostic.ma0003.severity = none       # Add parameter name to improve readability
+dotnet_diagnostic.ma0007.severity = none       # Add comma after last enum value
+dotnet_diagnostic.ma0009.severity = none       # Add null check after as
+dotnet_diagnostic.ma0018.severity = none       # Do not declare static members on generic types (deprecated)
+dotnet_diagnostic.ma0036.severity = none       # Make class static (use CA1822 instead)
+dotnet_diagnostic.ma0038.severity = none       # Make method static (deprecated, use CA1822)
+dotnet_diagnostic.ma0041.severity = none       # Make property static (deprecated, use CA1822)
+dotnet_diagnostic.ma0053.severity = none       # Make class sealed (overlaps with MA0115/CA1852)
+dotnet_diagnostic.ma0110.severity = none       # Use Regex source generator
+dotnet_diagnostic.ma0141.severity = none       # Use pattern matching for null check (overlaps IDE0041)
+dotnet_diagnostic.ma0142.severity = none       # Use pattern matching for null check (overlaps IDE0041)
+dotnet_diagnostic.ma0148.severity = none       # Use pattern matching for discrete value
+dotnet_diagnostic.ma0149.severity = none       # Use pattern matching for discrete value
+dotnet_diagnostic.ma0155.severity = none       # Do not use async void methods (overlaps VSTHRD100)
+dotnet_diagnostic.ma0004.severity = none       # Use ConfigureAwait(false) — redundant with CA2007; CA2007 is scoped to DLL projects
+dotnet_diagnostic.ma0174.severity = none       # Record should use explicit 'class' keyword
+dotnet_diagnostic.ma0175.severity = none       # Record should not use explicit 'class' keyword
+dotnet_diagnostic.ma0177.severity = none       # Use single-line XML comment syntax
+dotnet_diagnostic.ma0181.severity = none       # Do not use cast
+
+# --- SharpSource (SS) ---
+dotnet_diagnostic.ss039.severity = none        # Enum default must be "Unknown"/"None"
+dotnet_diagnostic.ss066.severity = suggestion  # Disposable field not disposed — false positives on ?.Dispose()
+
+# --- VS Threading (VSTHRD) ---
+dotnet_diagnostic.vsthrd001.severity = none    # Avoid legacy thread switching APIs
+dotnet_diagnostic.vsthrd111.severity = none    # Add ConfigureAwait — VS extension model (JoinableTaskFactory), not relevant here
+
+# ── Suggestions (permanent) ───────────────────
+# Rules intentionally at suggestion — advisory, not blocking.
+
+dotnet_diagnostic.ide0058.severity = suggestion  # Expression value is never used
+dotnet_diagnostic.ma0026.severity = suggestion   # Fix TODO comment
+dotnet_diagnostic.ma0032.severity = suggestion   # Specify a cancellation token
+dotnet_diagnostic.ma0079.severity = suggestion   # Forward CancellationToken using .WithCancellation()
+dotnet_diagnostic.ma0101.severity = suggestion   # String contains implicit end of line character
+dotnet_diagnostic.ma0109.severity = suggestion   # Consider adding overload with Span<T> or Memory<T>
+dotnet_diagnostic.ma0127.severity = suggestion   # Use String.Equals instead of is pattern
+dotnet_diagnostic.ma0136.severity = suggestion   # Raw string contains implicit end of line character
+dotnet_diagnostic.s1135.severity = suggestion    # Track uses of TODO tags
+dotnet_diagnostic.s3267.severity = suggestion    # Loop should be simplified by calling Select()
+
+# ── Guardrails ───────────────────────────────
+# Rules enforced at error to prevent regression.
+
+# --- Compiler Warnings ---
+dotnet_diagnostic.syslib1045.severity = error    # Use GeneratedRegexAttribute
+
+# --- IDE Analyzers ---
+dotnet_diagnostic.ide0028.severity = error       # Use collection initializer
+dotnet_diagnostic.ide0032.severity = error       # Use auto property
+dotnet_diagnostic.ide0046.severity = error       # Use conditional expression (ternary)
+dotnet_diagnostic.ide0048.severity = none        # Add parentheses for clarity (suppressed — oscillates with IDE0046)
+dotnet_diagnostic.ide0049.severity = error       # Name can be simplified
+dotnet_diagnostic.ide0072.severity = error       # Populate switch expression
+dotnet_diagnostic.ide0078.severity = error       # Use pattern matching (is null/is not null)
+dotnet_diagnostic.ide0130.severity = error       # Namespace does not match folder structure
+# IDE0160: Namespace style enforced via .editorconfig (file_scoped:error)
+
+# --- Meziantou (MA) ---
+dotnet_diagnostic.ma0071.severity = error        # Avoid using redundant else
+dotnet_diagnostic.ma0154.severity = error        # Use pattern matching
+dotnet_diagnostic.ma0159.severity = error        # Use Order instead of OrderBy
+dotnet_diagnostic.ma0184.severity = error        # Do not use interpolated string without parameters
+dotnet_diagnostic.ma0185.severity = error        # Simplify string.Create when culture invariant
+
+# --- Roslynator (RCS) ---
+dotnet_diagnostic.rcs1021.severity = error       # Convert lambda block body to expression body
+dotnet_diagnostic.rcs1037.severity = error       # Remove trailing whitespace
+dotnet_diagnostic.rcs1068.severity = error       # Simplify logical negation
+dotnet_diagnostic.rcs1079.severity = error       # Throwing of new NotImplementedException — catches leftover stubs
+dotnet_diagnostic.rcs1080.severity = error       # Use Count/Length instead of Any()
+dotnet_diagnostic.rcs1084.severity = suggestion  # Use coalesce expression — kept at suggestion (auto-fix breaks nullable-to-DBNull patterns)
+dotnet_diagnostic.rcs1118.severity = error       # Mark local variable as const
+dotnet_diagnostic.rcs1123.severity = none        # Add parentheses according to operator precedence (suppressed — oscillates with IDE0046)
+dotnet_diagnostic.rcs1124.severity = error       # Inline local variable
+dotnet_diagnostic.rcs1140.severity = error       # Add exception element to documentation comment
+dotnet_diagnostic.rcs1141.severity = suggestion  # Add 'param' element to documentation comment
+dotnet_diagnostic.rcs1142.severity = error       # Add 'typeparam' element to documentation comment
+dotnet_diagnostic.rcs1146.severity = suggestion  # Add 'summary' element to documentation comment
+dotnet_diagnostic.rcs1151.severity = error       # Remove redundant cast
+dotnet_diagnostic.rcs1174.severity = error       # Remove redundant async/await
+dotnet_diagnostic.rcs1163.severity = suggestion  # Unused parameter — kept at suggestion (test helper lambdas have intentionally unused params)
+dotnet_diagnostic.rcs1181.severity = suggestion  # Convert comment to documentation comment
+dotnet_diagnostic.rcs1189.severity = error       # Use foreach instead of for
+dotnet_diagnostic.rcs1192.severity = error       # Unnecessary verbatim string literal
+dotnet_diagnostic.rcs1196.severity = error       # Call extension method as instance method
+dotnet_diagnostic.rcs1198.severity = error       # Avoid unnecessary boxing of value type
+dotnet_diagnostic.rcs1201.severity = error       # Use method chaining
+dotnet_diagnostic.rcs1211.severity = error       # Remove redundant else clause
+dotnet_diagnostic.rcs1212.severity = error       # Remove redundant assignment
+dotnet_diagnostic.rcs1214.severity = error       # Unnecessary interpolated string
+dotnet_diagnostic.rcs1217.severity = error       # Convert interpolated string to concatenation
+dotnet_diagnostic.rcs1223.severity = suggestion  # Mark publicly visible type with DebuggerDisplay attribute — useful for domain types, noisy for infrastructure
+dotnet_diagnostic.rcs1228.severity = error       # Unused element in documentation comment
+dotnet_diagnostic.rcs1231.severity = none        # Make parameter ref read-only — disabled; conflicts with CancellationToken 'in' guidance
+dotnet_diagnostic.rcs1238.severity = suggestion  # Avoid nested ternary operators
+dotnet_diagnostic.rcs1249.severity = error       # Unnecessary null-forgiving operator
+dotnet_diagnostic.rcs1261.severity = error       # Resource can be disposed asynchronously
+dotnet_diagnostic.rcs1262.severity = error       # Unnecessary raw string literal
+dotnet_diagnostic.rcs1267.severity = suggestion  # Use string interpolation instead of string.Concat
+
+# --- SonarAnalyzer (S) ---
+dotnet_diagnostic.s1121.severity = error         # Assignments should not be made from within sub-expressions
+dotnet_diagnostic.s2761.severity = error         # Simplify logical negation
+dotnet_diagnostic.s3358.severity = suggestion    # Ternary operators should not be nested — kept at suggestion (matches RCS1238)

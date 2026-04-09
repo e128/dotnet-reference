@@ -1,0 +1,30 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+artifacts/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Claude Code
+.claude/
+
+# Documentation
+lode/
+plans/
+*.md
+
+# Test projects (not needed in production image)
+tests/
+
+# Scripts
+scripts/

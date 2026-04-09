@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Block raw commands that should use wrapper scripts instead.
+set -euo pipefail
+
+INPUT="${1:-}"
+
+# Block raw dotnet test (should use scripts/test.sh)
+if echo "$INPUT" | grep -qE '^dotnet test\b'; then
+    echo "BLOCK: Use scripts/test.sh instead of raw 'dotnet test'."
+    echo "The xUnit v3 MTP runner requires specific flags that dotnet test doesn't support."
+    exit 1
+fi
+
+# Block raw python3
+if echo "$INPUT" | grep -qE '^python3\b'; then
+    echo "BLOCK: Do not use python3 directly. Use jq for JSON, WebFetch for URLs."
+    exit 1
+fi
+
+exit 0

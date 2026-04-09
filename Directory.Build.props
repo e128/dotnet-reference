@@ -1,0 +1,163 @@
+<Project>
+
+    <!-- ============================================== -->
+    <!-- Central Package Management                     -->
+    <!--                                                -->
+    <!-- Versions pinned in Directory.Packages.props.   -->
+    <!-- NuGet audit scans all deps (direct+transitive) -->
+    <!-- at all severity levels.                        -->
+    <!-- ============================================== -->
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+        <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
+        <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
+        <RestoreEnablePackagePruning>true</RestoreEnablePackagePruning>
+        <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+        <NuGetAudit>enable</NuGetAudit>
+        <NuGetAuditMode>all</NuGetAuditMode>
+        <NuGetAuditLevel>low</NuGetAuditLevel>
+        <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1900</WarningsNotAsErrors>
+    </PropertyGroup>
+
+    <!-- ============================================== -->
+    <!-- Language & Framework                           -->
+    <!-- ============================================== -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    </PropertyGroup>
+
+    <!-- ============================================== -->
+    <!-- Code Analysis                                  -->
+    <!--                                                -->
+    <!-- Base mode is Recommended; Security, Reliability -->
+    <!-- and Performance are elevated to All to enable  -->
+    <!-- rules disabled by default in those categories. -->
+    <!-- Per-category modes override the base — see     -->
+    <!-- docs: AnalysisMode vs AnalysisMode<Category>.  -->
+    <!-- Rule severities are set in .editorconfig.      -->
+    <!-- ============================================== -->
+    <PropertyGroup>
+        <AnalysisLevel>latest-all</AnalysisLevel>
+        <AnalysisMode>Recommended</AnalysisMode>
+        <AnalysisModeSecurity>All</AnalysisModeSecurity>
+        <AnalysisModeReliability>All</AnalysisModeReliability>
+        <AnalysisModePerformance>All</AnalysisModePerformance>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    </PropertyGroup>
+
+    <!-- Roslyn Analyzers (alphabetical) -->
+    <ItemGroup>
+        <PackageReference Include="AsyncFixer" PrivateAssets="all" />
+        <PackageReference Include="Meziantou.Analyzer" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" />
+        <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" />
+        <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" PrivateAssets="all" />
+        <PackageReference Include="Roslynator.Formatting.Analyzers" PrivateAssets="all" />
+        <PackageReference Include="SharpSource" PrivateAssets="all" />
+        <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" />
+    </ItemGroup>
+
+    <!-- ============================================== -->
+    <!-- Build Output                                   -->
+    <!--                                                -->
+    <!-- Standard .NET artifacts layout. SDK owns all   -->
+    <!-- output paths — do not set OutDir or            -->
+    <!-- BaseIntermediateOutputPath manually.            -->
+    <!--                                                -->
+    <!-- Layout:                                        -->
+    <!--   artifacts/bin/{Project}/debug/                -->
+    <!--   artifacts/obj/{Project}/debug/                -->
+    <!--   artifacts/publish/{Project}/release/          -->
+    <!-- ============================================== -->
+    <PropertyGroup>
+        <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <!-- ============================================== -->
+    <!-- Build Performance                              -->
+    <!-- ============================================== -->
+    <PropertyGroup>
+        <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+        <BuildInParallel>true</BuildInParallel>
+        <UseSharedCompilation>true</UseSharedCompilation>
+        <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
+        <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+    </PropertyGroup>
+
+    <!-- ============================================== -->
+    <!-- Source Generators                              -->
+    <!-- ============================================== -->
+    <PropertyGroup>
+        <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+    </PropertyGroup>
+
+    <!-- ============================================== -->
+    <!-- Runtime Optimizations                          -->
+    <!--                                                -->
+    <!-- ILC: fold identical method bodies globally.    -->
+    <!-- NativeAOT defaults (trim, size, invariant      -->
+    <!-- globalization) applied via PublishAot          -->
+    <!-- condition; each AOT project only needs to      -->
+    <!-- declare PublishAot=true.                       -->
+    <!-- ============================================== -->
+    <PropertyGroup>
+        <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(PublishAot)' == 'true'">
+        <OptimizationPreference>Size</OptimizationPreference>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <TrimMode>link</TrimMode>
+        <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+    </PropertyGroup>
+
+    <!-- ============================================== -->
+    <!-- CI: Deterministic Builds                       -->
+    <!--                                                -->
+    <!-- Enabled only in CI to ensure reproducible      -->
+    <!-- output. Do not enable locally — it breaks      -->
+    <!-- debugger source file resolution.               -->
+    <!-- ============================================== -->
+    <PropertyGroup Condition="'$(CI)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <!-- ============================================== -->
+    <!-- Configuration: Release                         -->
+    <!--                                                -->
+    <!-- Reference assemblies improve incremental build -->
+    <!-- times when API surface is unchanged. R2R and   -->
+    <!-- tiered compilation reduce startup latency.     -->
+    <!-- ============================================== -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <Optimize>true</Optimize>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+        <TieredCompilation>true</TieredCompilation>
+        <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+        <ReadyToRun>true</ReadyToRun>
+        <EnablePreviewFeatures>false</EnablePreviewFeatures>
+        <InvariantGlobalization>true</InvariantGlobalization>
+    </PropertyGroup>
+
+    <!-- ============================================== -->
+    <!-- Configuration: Debug                           -->
+    <!--                                                -->
+    <!-- Reference assemblies enabled so downstream     -->
+    <!-- projects skip rebuild when only implementation -->
+    <!-- (not public API) changes.                      -->
+    <!-- ============================================== -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <EnablePreviewFeatures>true</EnablePreviewFeatures>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    </PropertyGroup>
+
+</Project>
