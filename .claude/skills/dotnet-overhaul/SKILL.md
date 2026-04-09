@@ -1,5 +1,5 @@
 ---
-name: dotnet-code-overhauler
+name: dotnet-overhaul
 version: "0.9"
 description: >
   Systematic .NET code overhaul loop. Establishes a test baseline, modernizes language usage,
@@ -22,7 +22,7 @@ Every step produces findings for user approval before any code is changed.
 ## Usage
 
 ```
-/dotnet-code-overhauler [scope]
+/dotnet-overhaul [scope]
 ```
 
 Scope is a solution file (`.sln`/`.slnx`) or directory. Resolution order:
@@ -233,7 +233,7 @@ This skill must get better with every use. After completing any overhaul cycle:
 3. **Log false-positive findings** — If the overhaul flagged code that was actually correct (e.g., intentional allocation, deliberate synchronous call), add it to this SKILL.md as a known exception.
 4. **Update specialist triggers** — If the concurrency or security specialist agents caught issues that the main overhaul missed, refine their trigger criteria in this SKILL.md so they're invoked earlier next time.
 
-Format for modernization pattern notes: `- [dotnet-code-overhauler YYYY-MM-DD] Added: <pattern/API> — before: <old approach> -> after: <new approach>`
+Format for modernization pattern notes: `- [dotnet-overhaul YYYY-MM-DD] Added: <pattern/API> — before: <old approach> -> after: <new approach>`
 
 The goal: each overhaul cycle should start with a more accurate checklist and produce fewer false positives than the last.
 

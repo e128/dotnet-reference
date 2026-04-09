@@ -9,9 +9,8 @@ Two parallel parts: code security (Explore agent with patterns) + supply chain (
 Launch an `Explore` agent (haiku) with patterns from `step7-patterns.md`:
 
 ```
-Read .claude/skills/dotnet-code-overhauler/steps/step7-patterns.md for grep patterns and checklist.
-Read lode/coding-standards.md (if it exists) for project coding conventions.
-Read lode/coding-standards-async.md (if it exists) for async patterns.
+Read ${CLAUDE_SKILL_DIR}/steps/step7-patterns.md for grep patterns and checklist.
+Read ${CLAUDE_SKILL_DIR}/conventions.md (if it exists) for project coding conventions.
 
 Audit the code in [scope] for security vulnerabilities.
 Run the anti-pattern grep patterns and analysis checklist against all .cs files in scope.

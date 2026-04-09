@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Portable composed verify for dotnet-code-overhauler.
+# Portable composed verify for dotnet-overhaul.
 # Format-gate -> build -> test in one pass. Solution-agnostic.
 # Dependencies: dotnet, jq (for --json mode)
 #

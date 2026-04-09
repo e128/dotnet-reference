@@ -82,7 +82,7 @@ Do NOT apply the fix without user confirmation — present it and wait.
 ## Notes
 
 - For CI batch failures (many tests), use `/fix-ci` instead
-- For flaky async tests, refer to concurrency patterns in `.claude/skills/dotnet-code-overhauler/steps/step6-patterns.md`
+- For flaky async tests, refer to concurrency patterns in `.claude/skills/dotnet-overhaul/steps/step6-patterns.md`
 - Always check sibling tests — the "fix the class not the instance" rule applies here too
 - If the test was previously passing (use `scripts/diff.sh --json` to review recent commits), check recent
   commits to find the regression-introducing change

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Portable build runner for dotnet-code-overhauler.
+# Portable build runner for dotnet-overhaul.
 # Dependencies: dotnet, jq (for --json mode)
 #
 # Usage:

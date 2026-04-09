@@ -3,8 +3,8 @@
 Launch an `Explore` agent (haiku) with the patterns from `step6-patterns.md`:
 
 ```
-Read .claude/skills/dotnet-code-overhauler/steps/step6-patterns.md for grep patterns and checklist.
-Read lode/coding-standards-async.md (if it exists) for project async/threading conventions.
+Read ${CLAUDE_SKILL_DIR}/steps/step6-patterns.md for grep patterns and checklist.
+Read ${CLAUDE_SKILL_DIR}/conventions.md (if it exists) for project async/threading conventions.
 
 Review [scope] for thread safety issues:
 1. Run the anti-pattern grep patterns against all .cs files in scope

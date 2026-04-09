@@ -1,6 +1,6 @@
 # Security Review — Grep Patterns & Checklist
 
-Reference file for Step 7 of dotnet-code-overhauler. Contains anti-pattern grep patterns
+Reference file for Step 7 of dotnet-overhaul. Contains anti-pattern grep patterns
 and analysis checklist previously embedded in the `dotnet-security-specialist` agent.
 
 ## Anti-Pattern Grep Patterns

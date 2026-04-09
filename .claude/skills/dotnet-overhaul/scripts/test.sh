@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Portable test runner for dotnet-code-overhauler.
+# Portable test runner for dotnet-overhaul.
 # Reads the detected test convention from state, or accepts an explicit filter.
 # Dependencies: dotnet, jq (for --json mode)
 #

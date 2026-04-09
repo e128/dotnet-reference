@@ -197,6 +197,42 @@ Both **GitHub Actions** (`.github/workflows/ci.yml`) and **Azure DevOps** (`azur
 2. Release build
 3. CI-category tests only
 
+## Using dotnet-overhaul on Another Repo
+
+The `dotnet-overhaul` skill is portable — copy it into any .NET repo and run it with Claude Code.
+
+### Install
+
+```bash
+# From inside your target repo
+cp -r /path/to/dotnet-reference/.claude/skills/dotnet-overhaul .claude/skills/
+```
+
+The skill includes its own scripts (`build.sh`, `test.sh`, `check.sh`), pattern files, and conventions template. No other files from this repo are required.
+
+### Run
+
+Create a branch first — the skill makes many changes across the codebase:
+
+```bash
+git checkout -b refactor/dotnet-overhaul
+
+# Then in Claude Code
+/dotnet-overhaul
+/dotnet-overhaul src/MyProject
+```
+
+### Customize
+
+After copying, optionally edit these files in `.claude/skills/dotnet-overhaul/`:
+
+| File                | Purpose                                                  |
+| ------------------- | -------------------------------------------------------- |
+| `conventions.md`    | Project-specific coding standards, analyzer overrides, auto-approved fixes, test relaxations |
+| `lessons/*.md`      | Known false positives and compiler edge cases discovered during overhaul runs |
+
+The skill auto-detects the test framework, solution format, and analyzer configuration. External agents (`build-validator`, `sme-researcher`, `tdd-loop-optimizer`) are optional enhancements — the skill works without them.
+
 ## License
 
 Private repository. All rights reserved.

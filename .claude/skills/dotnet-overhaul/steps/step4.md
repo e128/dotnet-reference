@@ -38,7 +38,7 @@ LSP: Overrides that throw NotSupportedException/NotImplementedException or narro
 ISP: Interfaces with >7 methods or implementers with no-op methods.
 DIP: `new` instantiation of service types, high-level classes depending on concrete low-level classes.
 Balance with YAGNI — don't flag single-implementation interfaces or simple utility classes.
-See lode/coding-standards.md (if it exists) for full SOLID reference.
+See `${CLAUDE_SKILL_DIR}/conventions.md` or `lode/coding-standards/` (if either exists) for project SOLID reference.
 ```
 
 **Findings ID prefix: `CC`**

@@ -3,10 +3,8 @@
 Launch an `Explore` agent (haiku) with the patterns from `step5-patterns.md`:
 
 ```
-Read .claude/skills/dotnet-code-overhauler/steps/step5-patterns.md for grep patterns and checklist.
-Read lode/dotnet/performance.md (if it exists) for project-specific performance conventions and baselines.
-Read lode/coding-standards-async.md (if it exists) for async patterns.
-Read ${CLAUDE_SKILL_DIR}/conventions.md and ${CLAUDE_SKILL_DIR}/lessons/*.md for project-specific false positives.
+Read ${CLAUDE_SKILL_DIR}/steps/step5-patterns.md for grep patterns and checklist.
+Read ${CLAUDE_SKILL_DIR}/conventions.md and ${CLAUDE_SKILL_DIR}/lessons/*.md for project-specific false positives and async conventions.
 
 Analyze [scope] for performance issues:
 1. Run the anti-pattern grep patterns against all .cs files in scope
