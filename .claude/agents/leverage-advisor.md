@@ -122,94 +122,13 @@ in a single parallel turn per plan.
 
 ### Plan template
 
-**`{slug}-plan.md`**
-```markdown
-# Plan: {human title}
-*Created: {ISO 8601 UTC}*
-*Updated: {same}*
+Create three files in `plans/{slug}/` using timestamps from `scripts/ts.sh`:
 
-## Overview
+- **`{slug}-plan.md`**: Overview of finding and why it's highest-leverage. Include analysis axis (Addition/Omission/Subtraction), full score breakdown (Novelty/Compound/Impact/Automation out of 3 each), success criteria, and phased implementation: Baseline (confirm finding, document state) → Implement → Verify (`scripts/check.sh --no-format` if code changed).
+- **`{slug}-context.md`**: Finding description with axis, evidence (file paths, pattern counts), full score breakdown, why this beats the runner-up, and runners-up table (candidate, score, reason).
+- **`{slug}-tasks.md`**: Phased task checklist matching the plan phases.
 
-{1-paragraph description of the finding and why it's the highest-leverage candidate}
-
-## Analysis Axis
-
-{Addition | Omission | Subtraction} — Score: {N}/12
-(Novelty {n}/3, Compound {n}/3, User Impact {n}/3, Automation {n}/3)
-
-## Success Criteria
-
-- [ ] {measurable outcome 1}
-- [ ] {measurable outcome 2}
-- [ ] System is observably better in the target dimension after completion
-
-## Phase 0 — Baseline
-
-- [ ] Confirm finding is still accurate (code may have changed since analysis)
-- [ ] Document current state
-
-## Phase 1 — Implement
-
-- [ ] {primary implementation or removal step}
-- [ ] {secondary step}
-
-## Phase 2 — Verify
-
-- [ ] {confirmation that the system improved}
-- [ ] Run `scripts/check.sh --no-format` if any code changed
-```
-
-**`{slug}-context.md`**
-```markdown
-# Context: {human title}
-*Created: {ISO 8601 UTC}*
-*Updated: {same}*
-
-## Finding
-
-{Axis: Addition | Omission | Subtraction}
-
-{detailed description of what was found and why it matters}
-
-## Evidence
-
-{specific file paths, pattern counts, or references that support this finding}
-
-## Score
-
-{N}/12 — Novelty {n}/3, Compound {n}/3, User Impact {n}/3, Automation {n}/3
-
-**Why this beats the runner-up ({runner-up name}, score {n}/12):** {reason}
-
-## Runners-Up
-
-| Candidate | Score | Why not chosen |
-| --------- | ----- | -------------- |
-| {name}    | {n}/12 | {reason}      |
-```
-
-**`{slug}-tasks.md`**
-```markdown
-# Tasks: {human title}
-*Created: {ISO 8601 UTC}*
-*Updated: {same}*
-
-## Phase 0 — Baseline
-- [ ] Confirm finding is current
-- [ ] Document current state
-
-## Phase 1 — Implement
-- [ ] {primary step}
-
-## Phase 2 — Verify
-- [ ] Confirm improvement
-- [ ] Run check if code changed
-```
-
-After all plan files are written:
-```bash
-scripts/internal/stage.sh --include-new
-```
+After writing: `scripts/internal/stage.sh --include-new`
 
 ---
 

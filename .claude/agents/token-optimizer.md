@@ -110,104 +110,13 @@ For each finding with score >= 5, create a plan in `plans/{slug}/`.
 
 ### Files to create (write all three in one parallel turn per plan)
 
-**`{slug}-plan.md`**
-```markdown
-# Plan: {human title}
-*Created: {ISO 8601 UTC timestamp}*
-*Updated: {same}*
+Create three files in `plans/{slug}/` using timestamps from `scripts/ts.sh`:
 
-## Overview
+- **`{slug}-plan.md`**: Overview of the token waste and fix. Success criteria: script exists, `token-efficiency.md` updated with routing rule, keyword shortcut added if user-facing, violation count dropped. Phases: Baseline (capture count, check existing scripts) → Implement (write/edit script) → Wire In (update token-efficiency.md, keyword-shortcuts.md) → Verify (confirm count dropped, `scripts/check.sh --no-format`).
+- **`{slug}-context.md`**: Problem (exact wasteful command sequences), evidence (frequency, token cost, score), violation source (quote the token-efficiency.md rule or note "gap"), existing scripts checked, implementation notes.
+- **`{slug}-tasks.md`**: Phased task checklist matching the plan phases.
 
-{1-paragraph description of the token waste and the fix}
-
-## Success Criteria
-
-- [ ] Script `scripts/{name}.sh` exists and works
-- [ ] `token-efficiency.md` updated with new routing rule (if applicable)
-- [ ] `.claude/rules/keyword-shortcuts.md` updated with new shortcut (if applicable)
-- [ ] One session after ship: violation-scan shows the pattern gone
-
-## Phase 0 — Baseline
-
-Establish the current state. No code changes.
-
-- [ ] Run `scripts/session-health.sh bash-commands --category --days 2 --json` — capture baseline count for this pattern
-- [ ] Read any existing related scripts to avoid duplication
-
-## Phase 1 — Implement
-
-- [ ] Write `scripts/{name}.sh`
-- [ ] Validate script works
-
-## Phase 2 — Wire In
-
-- [ ] Add routing rule to `token-efficiency.md` under "Use X instead of Y" pattern
-- [ ] Add shortcut to `.claude/rules/keyword-shortcuts.md` if user-facing
-
-## Phase 3 — Verify
-
-- [ ] Confirm pattern count dropped
-- [ ] Run `scripts/check.sh --no-format` to confirm no regressions
-```
-
-**`{slug}-context.md`**
-```markdown
-# Context: {human title}
-*Created: {ISO 8601 UTC timestamp}*
-*Updated: {same}*
-
-## Problem
-
-{specific pattern being fixed — include the exact command sequences that were wasteful}
-
-## Evidence
-
-- Frequency: {N} times in last 48h
-- Token cost estimate: {N} extra tool calls per occurrence
-- Score: {score}/9
-
-## Violation Source
-
-{quote the exact token-efficiency.md rule being broken, or "gap — no rule exists yet"}
-
-## Existing Scripts Checked
-
-{list of related scripts reviewed and why they don't cover this}
-
-## Implementation Notes
-
-{specific design decisions for the new/edited script — flags, output format, etc.}
-```
-
-**`{slug}-tasks.md`**
-```markdown
-# Tasks: {human title}
-*Created: {ISO 8601 UTC timestamp}*
-*Updated: {same}*
-
-## Phase 0 — Baseline
-- [ ] Capture baseline violation count
-- [ ] Read related scripts
-
-## Phase 1 — Implement
-- [ ] Write script
-- [ ] Validate
-
-## Phase 2 — Wire In
-- [ ] Update token-efficiency.md
-- [ ] Update keyword-shortcuts.md
-
-## Phase 3 — Verify
-- [ ] Confirm violation count dropped
-- [ ] Confirm no regressions
-```
-
-### After writing all plan files
-
-Stage each plan immediately:
-```bash
-scripts/internal/stage.sh --include-new
-```
+After writing: `scripts/internal/stage.sh --include-new`
 
 ---
 

@@ -126,37 +126,11 @@ scoring >= 3, add a detail section above the catalog table with:
 
 Print a findings summary to the conversation:
 
-```
-══════════════════════════════════════════════════
-  ANALYZER REVIEW MINER — FINDINGS
-══════════════════════════════════════════════════
-Window: Last 3 days  |  Commits: N  |  Files reviewed: N
-Code review reports: {found / not found}
+Summary table: window, commits, files reviewed, code review reports found/not found, new candidates (recommended vs. cataloged), already-covered count, stale-skipped updates.
 
-New candidates discovered: N
-  ✦ Score >= 3 (RECOMMEND): N
-  · Score 1-2 (cataloged):  N
+Then for each recommended candidate (score >= 3): score, pattern name, what it flags, evidence (occurrences + files), coverage gap, Roslyn approach sketch (1 sentence).
 
-Already covered by existing analyzers: N
-Skipped entries with stale evidence updated: N
-
-─────────────────────────────────────────────────
-RECOMMENDED CANDIDATES (score >= 3):
-─────────────────────────────────────────────────
-{For each >= 3 candidate:}
-  [{score}/5] {pattern name}
-    Pattern: {what it flags}
-    Evidence: {N occurrences, {files}}
-    Gap: {why no existing analyzer covers it}
-    Sketch: {Roslyn approach, 1 sentence}
-
-─────────────────────────────────────────────────
-CATALOGED ONLY (score 1-2):
-─────────────────────────────────────────────────
-{list with score and one-line description}
-
-══════════════════════════════════════════════════
-```
+Then cataloged-only candidates (score 1-2): score and one-line description each.
 
 If **no candidates score >= 3**: output the summary and stop. No plan is created.
 
@@ -173,108 +147,13 @@ Create a plan for all candidates scoring >= 3.
 - Single candidate: `analyzer-{kebab-name}` (e.g., `analyzer-init-property`)
 - Multiple candidates: `analyzer-batch-{YYYY-MM}` (e.g., `analyzer-batch-2026-04`)
 
-### Create three files in parallel
+### Create three files in `plans/{name}/` (all in one parallel turn)
 
-Write `plans/{name}/{name}-plan.md`, `{name}-context.md`, and `{name}-tasks.md` in one parallel message.
+- **`{name}-plan.md`**: Overview (implement N Roslyn rules from code review mining), candidate list with scores, success criteria (rule fires on bad pattern, 0 false positives, promoted to `error` in `.globalconfig`, candidates.md updated to `implemented`, all violations fixed). Out of scope: rules scoring < 3, modifying existing rules.
+- **`{name}-context.md`**: Discovery source and date, evidence window, code review reports cross-referenced, full candidate detail sections from Phase 5, implementation notes (custom analyzer vs. configuring existing third-party rule, one `.cs` file + one test class per rule, promotion checklist: warning → verify → error → 0 violations). Link to `lode/analyzers/candidates.md`.
+- **`{name}-tasks.md`**: Phase 0 (baseline `scripts/check.sh --all`), then one phase per candidate following TDD: RED (failing tests for bad+correct patterns) → GREEN (implement, register, set to warning) → VERIFY (scan violations, fix, promote to error, update candidates.md). Final phase: full CI + lode update + `/yeet`.
 
-#### `{name}-plan.md`
-
-```markdown
-# Plan: {human-readable title}
-*Created: {scripts/ts.sh output}*
-*Updated: {same}*
-
-## Overview
-
-Implement {N} new Roslyn analyzer rule(s) discovered via code review mining.
-Each rule enforces a pattern that was manually corrected during code review
-but is not yet caught at compile time.
-
-## Candidates
-
-{For each candidate: name, score, one-sentence description}
-
-## Success Criteria
-
-- [ ] Each new rule fires on the bad pattern from the evidence examples
-- [ ] Each new rule does NOT fire on any existing source (0 false positives at promotion)
-- [ ] Rules promoted to `error` severity in `.globalconfig` or `.editorconfig`
-- [ ] `lode/analyzers/candidates.md` updated to `implemented`
-- [ ] All pre-existing violations fixed at the time of rule promotion
-
-## Out of Scope
-
-- Rules scoring < 3 (cataloged for future evidence)
-- Modifying existing analyzer rules
-```
-
-#### `{name}-context.md`
-
-```markdown
-# Context: {title}
-*Created: {timestamp}*
-
-## Discovery
-
-Found by `analyzer-review-miner` on {date}. Evidence window: last 3 days of git history.
-Code review reports cross-referenced: {yes/no - list report paths}.
-
-## Candidates Detail
-
-{Paste each >=3 candidate's detail section from Phase 5}
-
-## Implementation Notes
-
-- Determine whether to implement as a custom Roslyn analyzer or configure an existing
-  third-party analyzer (Meziantou, Roslynator, StyleCop, etc.)
-- Custom analyzers: create a new project or add to an existing analyzer project
-- Each analyzer: one `.cs` file, one test class
-- Promotion checklist: warning -> build verification -> error -> 0 violations at error
-
-## Related Lode
-
-- [Analyzer Candidates](../../lode/analyzers/candidates.md)
-```
-
-#### `{name}-tasks.md`
-
-Generate one phase per candidate, plus a shared promotion phase:
-
-```markdown
-# Tasks: {title}
-*Created: {timestamp}*
-
-## Phase 0 — Baseline
-- [ ] RED Confirm 0 build errors and record baseline pass count (`scripts/check.sh --all`)
-
-## Phase N — Implement {rule ID}: {pattern name}
-*(repeat for each candidate)*
-- [ ] RED Write failing test: bad pattern -> diagnostic fires (`Assert.Fail` stub)
-- [ ] RED Write failing test: correct pattern -> no diagnostic
-- [ ] GREEN Implement analyzer
-- [ ] GREEN Register in project
-- [ ] GREEN Verify tests pass and build clean (`scripts/check.sh`)
-- [ ] GREEN Set severity to `warning` in `.globalconfig` or `.editorconfig`
-- [ ] VERIFY Scan source for violations (`scripts/build.sh --warnings`)
-- [ ] VERIFY Fix all violations found (or suppress with justification)
-- [ ] VERIFY Promote to `error` — 0 violations required
-- [ ] UPDATE `lode/analyzers/candidates.md` -> status=implemented
-
-## Phase {N+1} — Ship
-- [ ] Run full CI suite (`scripts/ci.sh`)
-- [ ] Update lode with new analyzer rule entries
-- [ ] Commit and push (`/yeet`)
-```
-
-### After writing plan files
-
-Output:
-```
-Plan created: plans/{name}/
-  {name}-plan.md
-  {name}-context.md
-  {name}-tasks.md
-```
+After writing: `scripts/internal/stage.sh --include-new`
 
 ---
 

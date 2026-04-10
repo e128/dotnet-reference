@@ -13,3 +13,9 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `get timestamp` / `iso timestamp`                          | `scripts/ts.sh`               |
 | `run ci` / `full ci`                                       | `scripts/ci.sh`               |
 | `preflight` / `ready to commit`                            | `/yeet --dry-run`             |
+| `coverage areas` / `coverage heuristic`                    | `scripts/coverage-areas.sh`   |
+| `docker build` / `docker test` / `docker run`             | `scripts/docker.sh`           |
+| `check actions` / `outdated actions`                       | `scripts/gh-actions-update.sh`|
+| `lint yaml` / `check yaml`                                 | `scripts/lint-yaml.sh`        |
+| `lode summary` / `lode section`                            | `scripts/lode-summary.sh`     |
+| `check updates` / `outdated packages`                      | `scripts/update.sh`           |

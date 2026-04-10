@@ -83,27 +83,9 @@ Before doing anything else, check for an in-progress run:
 cat .claude/tmp/overhauler/progress.md 2>/dev/null
 ```
 
-If `progress.md` exists:
-- Read it to see which steps are `DONE`, `SKIPPED`, or `IN-PROGRESS`
-- Read `.claude/tmp/overhauler/baseline.md` to recover test baseline
-- Skip any step already marked `DONE` or `SKIPPED`
-- Resume from the first step not yet `DONE`
-- For steps with a `DONE` status, include their one-line summary in the Step 10 Overhaul Summary
+If `progress.md` exists: read it, recover baseline from `.claude/tmp/overhauler/baseline.md`, skip `DONE`/`SKIPPED` steps, resume from first incomplete step, include completed step summaries in Step 10. If absent: `mkdir -p .claude/tmp/overhauler` and initialize `progress.md` (solution path, start date).
 
-If `progress.md` does not exist, start fresh:
-
-```bash
-mkdir -p .claude/tmp/overhauler
-```
-
-Initialize `progress.md`:
-```markdown
-# Overhaul Progress
-Solution: [path]
-Started: YYYY-MM-DD
-```
-
-**Checkpoint after each step:** Append `- Step N ([name]): DONE — [one-line summary]` (or `SKIPPED — [reason]`) to `progress.md`.
+**Checkpoint after each step:** Append `- Step N ([name]): DONE — [one-line summary]` to `progress.md`.
 
 **Uncertainty rule:** When unsure about a pattern or library behavior, use an `Explore` agent to research the question before reporting a finding.
 

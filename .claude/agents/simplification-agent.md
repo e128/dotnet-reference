@@ -206,60 +206,15 @@ If no prior baseline exists, skip the delta comparison.
 
 Produce this report:
 
-```
-## Scaffolding Audit Report
-*{N} files audited (S skills + A agents) | {ISO 8601 UTC date}*
-
-### Density Scorecard (all files, sorted by density)
-
-| File                                         | Type  | Density | Top Heuristic | Meaningful Lines |
-|----------------------------------------------|-------|---------|---------------|-----------------|
-| .claude/skills/planning/SKILL.md             | skill |  24%    | H1            | 180             |
-| .claude/agents/weekly-learner.md             | agent |  19%    | H3            | 290             |
-| ...                                          |       |         |               |                 |
-
-### Top Simplification Candidates
-
-**1. {path}** — Density: {N}%
-
-- **H1 (PROCEDURAL_ENUM):** "{quoted snippet}" → Replace with outcome spec: "{suggested rewrite}"
-- **H3 (INTERMEDIATE_VERIFY):** "{quoted snippet}" → Remove gate; model proceeds directly to next step.
-
-...
-
-### Delta from Baseline (--compare mode only)
-
-| File | Previous | Current | Δ    | Verdict    |
-|------|----------|---------|------|------------|
-| ...  |     18%  |    24%  |  +6% | REGRESSION |
-| ...  |     22%  |    14%  |  −8% | IMPROVED   |
-
-### Low-Scaffolding Reference Files
-Files scoring below 5% — use as style references when rewriting:
-- {path}: {density}%
-```
-
-- List **all** files in the density scorecard (no truncation)
-- Provide specific recommendations for the **top 10** candidates
-- Include quoted snippets to make recommendations actionable
+Report sections: (1) Density Scorecard — all files, sorted by density, columns: File, Type, Density, Top Heuristic, Meaningful Lines. (2) Top 10 Simplification Candidates — for each: density, specific H1/H3 findings with quoted snippets and suggested rewrites. (3) Delta from Baseline (--compare only) — file, previous, current, delta, verdict (REGRESSION/IMPROVED). (4) Low-Scaffolding Reference Files — files below 5% density as style references.
 
 ## Phase 5.5: Create Plans (if plans/ exists)
 
 Skip this phase if `plans/` does not exist or the agent was invoked with `--save-baseline` or `--compare`.
 
-For each file in the **top 10 candidates** where density **>= 15%** AND the file has at least one H1 or H3 finding:
+For each top-10 candidate with density **>= 15%** and at least one H1 or H3 finding (skip if plan already exists in `plans/`):
 
-- Check `plans/` — skip if a plan already exists for this file
-- Create a plan delegating the simplification work to the appropriate agent
-
-**Slug format:** `simplify-{kebab-filename}` — derive from the SKILL.md or agent filename
-
-Create a plan using the standard template structure (plan, context, tasks) with the simplification findings as input. Each task should target one file's scaffolding reduction. Use `skill-self-updater` for targeted edits or `skill-loop-optimizer` for turn-count issues.
-
-After writing all plan files:
-```bash
-scripts/internal/stage.sh --include-new
-```
+Create a plan in `plans/simplify-{kebab-filename}/` (three files: plan, context, tasks). Each plan targets one file's scaffolding reduction, delegating to `skill-self-updater` (targeted edits) or `skill-loop-optimizer` (turn-count). After writing: `scripts/internal/stage.sh --include-new`.
 
 ---
 
@@ -267,28 +222,9 @@ scripts/internal/stage.sh --include-new
 
 If `--save-baseline` was in `$ARGUMENTS`, write:
 
-**`.claude/tmp/simplification-agent/baseline.json`:**
-```json
-{
-  "schema_version": 1,
-  "generated": "2026-04-01T00:00:00Z",
-  "heuristic_ids": ["H1", "H2", "H3", "H4", "H5", "H6"],
-  "catalog": [
-    {
-      "file": ".claude/skills/planning/SKILL.md",
-      "type": "skill",
-      "density": 24.1,
-      "meaningful_lines": 180,
-      "flags": { "H1": 12, "H2": 0, "H3": 8, "H4": 5, "H5": 8, "H6": 11 }
-    }
-  ]
-}
-```
+Write `.claude/tmp/simplification-agent/baseline.json` with: `schema_version: 1`, `generated` (current UTC), `heuristic_ids` (H1-H6), and `catalog` array (one entry per file: file path, type, density, meaningful_lines, flags object with counts per heuristic).
 
-Use the actual current UTC timestamp in `generated`. Replace `schema_version` if heuristic IDs change in the future.
-
-**`.claude/tmp/simplification-agent/last-run.md`:**
-Human-readable summary: date, catalog size, average density across all files, top 5 candidates.
+Write `.claude/tmp/simplification-agent/last-run.md`: date, catalog size, average density, top 5 candidates.
 
 ## Budget Exhaustion Protocol
 

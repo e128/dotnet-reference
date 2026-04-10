@@ -52,31 +52,7 @@ Then read `plans/{plan-name}/{plan-name}-tasks.md` and extract metrics blocks to
 
 ### Output Format
 
-Write to `.claude/tmp/plan-retro-{plan-name}.md`:
-
-```markdown
-## Plan Retrospective: {plan-name}
-*Completed: {UTC timestamp}*
-
-### Execution Metrics
-| Phase                          | Duration | Errors | Notes |
-|--------------------------------|----------|--------|-------|
-| Phase 1 — {description}       | {dur}    | {N}    |       |
-
-### What Went Well
-- {patterns that worked — fast phases, clean merges, effective tooling}
-
-### What Went Wrong
-- {tooling errors, redundant steps, friction points, failed attempts}
-
-### Improvements Applied
-- {mechanical fixes applied via skill-self-updater or confirmation-reducer}
-
-### Improvements Deferred
-- {items needing human judgment — structural changes, new skills needed}
-```
-
-After writing, output the retrospective content directly to the conversation.
+Write to `.claude/tmp/plan-retro-{plan-name}.md` with sections: Execution Metrics (phase table with duration/errors/notes), What Went Well, What Went Wrong, Improvements Applied, Improvements Deferred. Output to conversation after writing.
 
 ## Auto-Approvals (Analysis Phase)
 
@@ -149,38 +125,17 @@ For each category where a hook or rule was recently added (check memory for "Imp
 - **Partial**: category dropped but still >5/3d
 - **Ineffective**: category unchanged or worsened despite the fix
 
-This closes the feedback loop: weekly learner recommends a fix → fix ships → next run confirms it worked.
-
 ### 2.5 Sub-agent success rate
 
-Parse session tool-counts for Agent tool invocations. Cross-reference with agent completion results:
-
-```bash
-scripts/session-health.sh bash-commands --category --days 7 --json
-```
-
-Look for agents that:
-- **Timed out**: ran all maxTurns without completing (indicates prompt bloat or scope creep)
-- **Produced no output**: completed but returned empty or generic results
-- **Were retried**: same agent spawned 2+ times in the same session (first attempt failed)
-
-If an agent has a >30% failure/retry rate across 3+ sessions, recommend running `skill-loop-optimizer` on it.
+Parse Agent tool invocations from tool-counts. Flag agents that timed out (ran all maxTurns), produced no output, or were retried (spawned 2+ times same session). If >30% failure/retry rate across 3+ sessions, recommend `skill-loop-optimizer`.
 
 ### 2.6 Context compaction frequency
 
-Count `/compact` invocations per session from the tool-counts data. Sessions that compact 2+ times suggest token bloat from verbose tool calls or oversized file reads.
-
-Correlate with which skills/agents were active in those sessions. If a specific skill consistently triggers compaction, recommend `skill-loop-optimizer` to reduce its turn count and token footprint.
+Count `/compact` invocations per session. Sessions compacting 2+ times suggest token bloat. Correlate with active skills/agents — if a specific skill triggers compaction, recommend `skill-loop-optimizer`.
 
 ### 2.7 Error pattern analysis
 
-Using the last 3 days of session data (scoped to this repo):
-
-```bash
-scripts/session-health.sh errors --days 3 --json
-```
-
-Categorize every `is_error` block by root cause (read-before-edit violations, parse errors, build failures, edit mismatches, denied tool calls, and other). For each category with **5+ occurrences**, identify the recurring trigger pattern and propose a specific avoidance strategy — these become recommendations in Phase 3 with category **Config Update** or **Agent Enhancement**. Note trend vs. prior 3-day window if memory has a baseline.
+Using `scripts/session-health.sh errors --days 3 --json`, categorize `is_error` blocks by root cause (read-before-edit, parse errors, build failures, edit mismatches, denied tools, other). For categories with 5+ occurrences, propose avoidance strategies as **Config Update** or **Agent Enhancement** recommendations. Note trend vs. baseline if available.
 
 ## Phase 3: Generate Recommendations
 
@@ -225,99 +180,15 @@ Create a plan in `plans/{slug}/` following the three-file convention.
 
 `weekly-{kebab-short-description}` — e.g. `weekly-git-log-script`
 
-### Plan files to create per recommendation (write all three in one parallel turn per plan)
+### Plan files (write all three in one parallel turn per plan)
 
-**`{slug}-plan.md`**
-```markdown
-# Plan: {human title}
-*Created: {ISO 8601 UTC timestamp}*
-*Updated: {same}*
+Create three files in `plans/{slug}/` using timestamps from `scripts/ts.sh`:
 
-## Overview
+- **`{slug}-plan.md`**: Overview (pattern + fix grounded in session evidence), success criteria (measurable, including "pattern gone from next weekly-learner run"), phases: Baseline (check existing implementations, confirm frequency) → Implement → Wire In (update keyword-shortcuts.md / token-efficiency.md / agent triggers) → Verify (`scripts/check.sh --no-format` if code changed).
+- **`{slug}-context.md`**: Problem (exact commands/sequences), evidence (frequency, category, effort, impact, score), source period, implementation notes.
+- **`{slug}-tasks.md`**: Phased task checklist matching the plan phases.
 
-{1-paragraph description of the pattern and the fix, grounded in session evidence}
-
-## Success Criteria
-
-- [ ] {measurable outcome 1}
-- [ ] {measurable outcome 2}
-- [ ] {measurable outcome 3 — usually: "pattern gone from next weekly-learner run"}
-
-## Phase 0 — Baseline
-
-- [ ] Read existing related skills/agents/scripts to avoid duplication
-- [ ] Confirm current invocation count: {cite the frequency evidence}
-
-## Phase 1 — Implement
-
-- [ ] {primary implementation step}
-- [ ] {secondary step}
-
-## Phase 2 — Wire In
-
-- [ ] Update `.claude/rules/keyword-shortcuts.md` or `token-efficiency.md` if routing changes
-- [ ] Update any agent trigger phrases if an agent was modified
-
-## Phase 3 — Verify
-
-- [ ] Confirm pattern frequency drops in next session scan
-- [ ] Run `scripts/check.sh --no-format` if code was changed
-```
-
-**`{slug}-context.md`**
-```markdown
-# Context: {human title}
-*Created: {ISO 8601 UTC timestamp}*
-*Updated: {same}*
-
-## Problem
-
-{specific pattern — include exact commands or sequences observed}
-
-## Evidence
-
-- Frequency: {N} times in the analysis window
-- Category: {category}
-- Effort: {effort estimate} | Impact: {impact estimate}
-- Score: {(frequency × impact) / effort}
-
-## Source
-
-Weekly learner digest, period: {start} to {end}
-
-## Implementation Notes
-
-{design decisions — flags, output format, integration points}
-```
-
-**`{slug}-tasks.md`**
-```markdown
-# Tasks: {human title}
-*Created: {ISO 8601 UTC timestamp}*
-*Updated: {same}*
-
-## Phase 0 — Baseline
-- [ ] Read related files
-- [ ] Confirm evidence
-
-## Phase 1 — Implement
-- [ ] {primary step}
-
-## Phase 2 — Wire In
-- [ ] Update routing/shortcuts
-
-## Phase 3 — Verify
-- [ ] Confirm improvement
-```
-
-### After writing plan files
-
-Stage all new plans immediately:
-```bash
-scripts/internal/stage.sh --include-new
-```
-
-Do NOT commit plan files standalone — they ride with the next phase's code commit.
+After writing: `scripts/internal/stage.sh --include-new`. Do NOT commit plans standalone.
 
 ### Recommendations that do NOT get plans
 
@@ -340,76 +211,15 @@ Write the full report to `plans/weekly-digest-{date}.md` (if `lode/` exists) or 
 {full report below}
 ```
 
-Report format:
+Report sections: Top Patterns Found (pattern, frequency, category), Recommendations (prioritized — each with pattern, evidence, fix, effort, impact, plan link if created), Plans Created This Run (table), Applied Inline This Run, Previously Tracked (status updates), Dead Weight Candidates.
 
-```
-## Weekly Learning Report
-*Period: {start date} to {end date}*
-
-### Top Patterns Found
-1. {pattern} — {frequency}x, {category}
-2. {pattern} — {frequency}x, {category}
-...
-
-### Recommendations (prioritized)
-
-#### 1. {recommendation title} [{category}]
-**Pattern**: {what keeps happening}
-**Evidence**: {frequency, examples}
-**Fix**: {concrete implementation}
-**Effort**: {trivial/easy/medium/hard} | **Impact**: {estimate}
-**Plan**: `plans/weekly-{slug}/` ← (omit this line if no plan was created)
-
-...
-
-### Plans Created This Run
-| Plan                        | Category          | Effort  |
-| --------------------------- | ----------------- | ------- |
-| weekly-{slug}               | {category}        | {effort} |
-
-### Applied Inline This Run
-- {trivial/dead-weight items applied directly — no plan needed}
-
-### Previously Tracked
-- {pattern from last run}: {status — implemented/dismissed/still occurring}
-
-### Dead Weight Candidates
-- {skill/agent/config that appears unused}
-```
-
-After writing, output the report content directly to the conversation. Do NOT re-read the file — you already know the contents.
+Output to conversation after writing. Do NOT re-read the file.
 
 ## Phase 6: Update Memory
 
-Write findings to `.claude/tmp/weekly-learner/memory.md`:
+Write findings to `.claude/tmp/weekly-learner/memory.md` with sections: Active Patterns (pattern, first seen, frequency, recommendation), Implemented Recommendations (date, recommendation, result), Dismissed Patterns (pattern, date, reason), Claude Code Version (last version, last checked, features evaluated), Baseline Metrics (avg sessions/day, top skills, top edited files). Keep under 200 lines — remove patterns older than 30 days that haven't recurred.
 
-```markdown
-# Weekly Learner Memory
-Updated: {UTC timestamp}
-
-## Active Patterns (still occurring)
-- {pattern}: first seen {date}, frequency {N}/week, recommendation: {action}
-
-## Implemented Recommendations
-- {date}: {recommendation} → {result}
-
-## Dismissed Patterns
-- {pattern}: dismissed {date}, reason: {why}
-
-## Claude Code Version
-- last_claude_version: {version from `claude --version`}
-- last_checked: {UTC timestamp}
-- features_evaluated: {list of new features found and whether they were actionable}
-
-## Baseline Metrics
-- Avg sessions/day: {N}
-- Top skills: {list with counts}
-- Top edited files: {list}
-```
-
-Keep memory under 200 lines. Remove patterns older than 30 days that haven't recurred.
-
-**Checkpoint:** Write `.claude/tmp/weekly-learner/state.md` with all phases complete (single write, end of run).
+**Checkpoint:** Write `.claude/tmp/weekly-learner/state.md` with all phases complete.
 
 ## Phase 7: Knowledge Consolidation
 

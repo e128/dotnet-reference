@@ -9,6 +9,7 @@
 A .NET 10 reference repository demonstrating modern conventions for web, CLI, and Docker applications.
 Features strict deny-by-default code analysis with third-party Roslyn analyzers, xUnit v3 on the Microsoft Testing Platform, and Central Package Management with transitive pinning.
 Includes a complete Claude Code development harness with bash scripts, contextual rules, skills, and agents.
+Uses the [Lode Coding Toolkit][lode-toolkit] for structured, AI-owned project documentation.
 
 ## Quick Start
 
@@ -39,7 +40,7 @@ scripts/docker.sh test
 | **Bash scripts**        | Build, test, format, CI, Docker, lode management ([catalog](scripts/README.md)) |
 | **Claude Code harness** | CLAUDE.md, rules, hooks, skills, agents (see `.claude/`)            |
 | **CI/CD**               | GitHub Actions + Azure DevOps pipeline YAML                         |
-| **Lode**                | Structured documentation (practices, coding standards, terminology) |
+| **Lode**                | Structured documentation via [Lode Coding Toolkit][lode-toolkit]    |
 
 ## Prerequisites
 
@@ -55,6 +56,7 @@ scripts/docker.sh test
 | Docker       | 24+     | Docker Desktop or `colima`   | `sudo apt install docker.io`     | Docker Desktop                   |
 
 [dotnet-install]: https://learn.microsoft.com/en-us/dotnet/core/install/linux
+[lode-toolkit]: https://fjzeit.github.io/lode
 
 ### Optional
 
