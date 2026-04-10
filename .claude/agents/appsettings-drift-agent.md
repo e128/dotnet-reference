@@ -8,6 +8,7 @@ description: >
   automatically after any phase that touches services, options, or configuration.
   Triggers on: appsettings check, config drift, appsettings gate, check appsettings,
   config audit, post-phase config check.
+model: sonnet
 tools: Bash, Glob, Grep, Read
 maxTurns: 12
 effort: low

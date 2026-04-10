@@ -8,6 +8,7 @@ description: >
   after adding new auto-approval rules to CLAUDE.md.
   Triggers on: too many prompts, yes fatigue, confirmation gates, reduce prompts,
   auto-approve audit, remove gates, skill prompts too much.
+model: sonnet
 tools: Read, Glob, Grep, Edit, Write, Bash
 maxTurns: 15
 effort: low

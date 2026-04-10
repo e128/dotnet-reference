@@ -10,6 +10,7 @@ description: >
   improve skill, skill self-update, update the skill, skill update, patch skill,
   optimize skill, skill too slow, reduce skill turns, fix skill loops, make skill faster,
   collapse phases, skill efficiency fix.
+model: sonnet
 tools: Read, Edit, Glob, Grep
 maxTurns: 15
 memory: project

@@ -8,6 +8,7 @@ description: >
   improvements. Makes targeted edits directly rather than producing a report.
   Triggers on: optimize skill, skill too slow, reduce skill turns, fix skill loops,
   skill is prompting too much, make skill faster, collapse phases, skill efficiency fix.
+model: sonnet
 tools: Glob, Grep, Read, Edit, Write
 maxTurns: 20
 memory: project

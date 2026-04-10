@@ -11,6 +11,7 @@ description: >
   mine code reviews for analyzers, analyzer opportunities, what analyzers should I write,
   prevent bad code with analyzers, analyzers from code review, find analyzer candidates,
   code review analyzer suggestions, analyzer suggestions.
+model: sonnet
 tools: Bash, Glob, Grep, Read, Write, Agent
 maxTurns: 35
 effort: high

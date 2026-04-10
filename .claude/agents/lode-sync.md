@@ -7,6 +7,7 @@ description: >
   manual review. Use after code changes to keep docs in sync.
   Triggers on: update lode, sync docs, documentation sync, lode update,
   stale docs, update documentation, docs out of date.
+model: sonnet
 tools: Read, Edit, Grep, Glob, Bash
 maxTurns: 20
 effort: low

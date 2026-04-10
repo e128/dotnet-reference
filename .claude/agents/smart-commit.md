@@ -8,6 +8,7 @@ description: >
   to ask per-file staging questions. Use when changes are clearly scoped and the user just
   wants the commit done.
   Triggers on: just commit, fast commit, commit everything, commit without asking, auto-commit.
+model: sonnet
 tools: Bash, Read, Glob, Grep
 maxTurns: 10
 effort: low

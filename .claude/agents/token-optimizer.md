@@ -10,6 +10,7 @@ description: >
   Triggers on: token optimizer, reduce tokens, token audit, session token audit,
   token review, 48h token review, token waste, token efficiency audit,
   analyze this session, session token use, current session tokens.
+model: sonnet
 tools: Bash, Glob, Grep, Read, Write, Agent, Edit
 maxTurns: 30
 effort: high

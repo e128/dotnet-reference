@@ -245,10 +245,3 @@ This skill must get better with every use. After writing or fixing any Bash scri
 2. **Update version-specific guidance** — If a Bash feature requires a specific version (e.g., associative arrays require Bash 4+), note the version requirement.
 3. **Record project-specific patterns** — If a pattern emerged specific to this project's scripts, add it here.
 4. **Fix stale instructions immediately** — If any instruction in this skill contradicted what actually worked, correct it before the session ends.
-
-## Sources
-
-- https://www.gnu.org/software/bash/manual/
-- https://www.shellcheck.net/
-- https://google.github.io/styleguide/shellguide.html
-- https://mywiki.wooledge.org/BashGuide

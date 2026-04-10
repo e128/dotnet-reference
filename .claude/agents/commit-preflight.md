@@ -6,6 +6,7 @@ description: >
   Faster alternative to full /yeet --dry-run
   for docs, config, and small code changes. Returns pass/fail in under 30 seconds.
   Triggers on: quick check, light preflight, format check, pre-commit quick.
+model: haiku
 tools: Bash, Read, Glob, Grep, Agent
 maxTurns: 8
 effort: low

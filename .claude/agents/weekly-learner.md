@@ -15,6 +15,7 @@ description: >
   quarterly review, full session audit, what should become a skill, skills from sessions,
   comprehensive session review, what should be an agent.
   Not for: single-session debugging, real-time workflow monitoring, or manual code review.
+model: sonnet
 tools: Bash, Glob, Grep, Read, Write, Agent
 maxTurns: 25
 effort: high

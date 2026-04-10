@@ -7,6 +7,7 @@ description: >
   domain-specific lode file. Prompts once if the target file is ambiguous.
   Triggers on: save this to the lode, capture this insight, capture to lode,
   remember this for next time, save this knowledge, capture that knowledge.
+model: sonnet
 tools: Read, Glob, Grep, Edit, Write, Bash
 maxTurns: 8
 effort: low

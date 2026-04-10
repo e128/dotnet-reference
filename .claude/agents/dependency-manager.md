@@ -11,6 +11,7 @@ description: >
   update NuGet, version bump, add package, new dependency, nuget audit, license check,
   dependency review, can we use this package, package review, package compliance,
   safe to add, install package, check NuGet, evaluate package, new NuGet package.
+model: sonnet
 tools: Bash, Glob, Grep, Read, Edit, Write
 maxTurns: 15
 effort: high

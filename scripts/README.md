@@ -40,8 +40,6 @@ All scripts use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live
 | ------------------- | ----------------------------------------------- |
 | `lode-ts.sh`        | Update timestamps on lode files                 |
 | `lode-summary.sh`   | Find and display lode content by section        |
-| `plan-context.sh`   | List active plans, roadmap items, or details    |
-| `plan-path.sh`      | Resolve a plan's canonical path by partial name |
 | `task.sh`           | Task management: check/next/progress            |
 
 ## Coverage & Analysis
@@ -62,3 +60,6 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/stage.sh`    | Stage modified + new files, excluding secrets|
 | `internal/plan-close.sh`| Verify tasks complete, then remove plan dir |
 | `internal/plan-gate.sh`| Phase gate prerequisite verification         |
+| `internal/plan-context.sh`| List active plans, roadmap items, or details |
+| `internal/plan-path.sh`| Resolve a plan's canonical path by partial name|
+| `internal/lode.sh`   | Legacy Claude CLI wrapper (SystemPrompt.txt) |

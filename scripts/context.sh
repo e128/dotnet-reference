@@ -18,7 +18,7 @@ done
 if [[ "$JSON" == true ]]; then
     STATUS=$("$SCRIPTS/status.sh" --json)
     DIFF=$("$SCRIPTS/diff.sh" --json)
-    PLANS=$("$SCRIPTS/plan-context.sh" --active-only 2>/dev/null || echo '[]')
+    PLANS=$("$SCRIPTS/internal/plan-context.sh" --active-only 2>/dev/null || echo '[]')
     printf '{"status":%s,"diff":%s,"plans":%s}\n' "$STATUS" "$DIFF" "$PLANS"
 else
     printf "${BOLD}=== Status ===${RESET}\n"
@@ -31,6 +31,6 @@ else
         echo
 
         printf "${BOLD}=== Plans ===${RESET}\n"
-        "$SCRIPTS/plan-context.sh" 2>/dev/null || dim "No active plans"
+        "$SCRIPTS/internal/plan-context.sh" 2>/dev/null || dim "No active plans"
     fi
 fi

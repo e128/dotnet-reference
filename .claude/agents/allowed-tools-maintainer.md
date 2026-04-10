@@ -9,6 +9,7 @@ description: >
   prompts are observed during skill execution.
   Triggers on: settings sync, allowed tools gap, tool approval friction, settings audit,
   add to allow-list, skills need permissions, sync tool permissions, settings.json gaps.
+model: sonnet
 tools: Bash, Glob, Grep, Read, Write, Edit
 maxTurns: 12
 effort: low
