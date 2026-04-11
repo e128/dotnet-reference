@@ -13,7 +13,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -21,7 +21,7 @@
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <PackageId>E128.Analyzers</PackageId>
     <Authors>Brent Miller</Authors>
-    <Description>Roslyn analyzers enforcing E128 conventions: file system path types, string.Empty, TimeProvider, IHttpClientFactory, and sealed-by-default.</Description>
+    <Description>Roslyn analyzers enforcing E128 conventions: file system path types, string.Empty, TimeProvider, IHttpClientFactory, sealed-by-default, Encoding.UTF8, async void, and sync-over-async.</Description>
     <PackageTags>roslyn;analyzer;csharp;code-analysis</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
