@@ -1,0 +1,89 @@
+{
+  // Renovate config for dotnet-reference — migrated from Dependabot 2026-04-11
+  // Groups mirror the existing Dependabot groups in dependabot.yml
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "schedule": [
+    "every weekend"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    // NuGet groups — map 1:1 from Dependabot groups
+    {
+      "description": "Roslyn analyzers — low-risk, auto-merge patch+minor",
+      "groupName": "analyzers",
+      "matchManagers": ["nuget"],
+      "matchPackagePatterns": [
+        "^AsyncFixer$",
+        "^Meziantou\\.",
+        "^Microsoft\\.VisualStudio\\.Threading\\.Analyzers$",
+        "^Roslynator\\.",
+        "^SharpSource$",
+        "^SonarAnalyzer\\."
+      ],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    {
+      "description": "Microsoft.Extensions.* — auto-merge patch+minor",
+      "groupName": "microsoft-extensions",
+      "matchManagers": ["nuget"],
+      "matchPackagePatterns": [
+        "^Microsoft\\.Extensions\\."
+      ],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    {
+      "description": "System.* packages (excluding System.CommandLine)",
+      "groupName": "system-libs",
+      "matchManagers": ["nuget"],
+      "matchPackagePatterns": [
+        "^System\\."
+      ],
+      "excludePackageNames": [
+        "System.CommandLine"
+      ],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    {
+      "description": "Testing infrastructure — auto-merge patch+minor",
+      "groupName": "testing",
+      "matchManagers": ["nuget"],
+      "matchPackageNames": [
+        "Microsoft.AspNetCore.Mvc.Testing",
+        "Microsoft.CodeAnalysis.CSharp.Analyzer.Testing",
+        "Microsoft.CodeAnalysis.CSharp.CodeFix.Testing",
+        "NSubstitute"
+      ],
+      "matchPackagePatterns": [
+        "^BenchmarkDotNet",
+        "^Microsoft\\.Testing\\.",
+        "^TngTech\\.ArchUnitNET",
+        "^xunit\\."
+      ],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    // GitHub Actions — group all, auto-merge patch+minor
+    {
+      "description": "GitHub Actions — grouped, auto-merge patch+minor",
+      "groupName": "actions",
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    // Major version bumps for any package — require manual review
+    {
+      "description": "Major version bumps require manual review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    }
+  ]
+}
