@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-11T14:10:32Z*
+*Updated: 2026-04-11T22:00:00Z*
 
 ## Strategy: Deny by Default
 
@@ -74,7 +74,15 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 | E128004 | Reliability | Use IHttpClientFactory instead of new HttpClient()             |
 | E128005 | Design      | Seal classes that have no subclasses                           |
 
-E128002 also ships a code fix provider (`EmptyStringLiteralCodeFixProvider`).
+### Code Fix Providers
+
+| Rule    | Code Fix                           | Behavior                                                                      |
+| ------- | ---------------------------------- | ----------------------------------------------------------------------------- |
+| E128001 | FileSystemPathCodeFixProvider      | Name-pattern only (empty/no body): offers FileInfo or DirectoryInfo. Use-site diagnostics have no fix (body depends on string). Also handles Option/Argument generic type args. |
+| E128002 | EmptyStringLiteralCodeFixProvider  | Replaces `""` with `string.Empty`.                                            |
+| E128005 | SealedByDefaultCodeFixProvider     | Adds `sealed` modifier, inserting after access/new/unsafe modifiers.          |
+
+E128003 (DateTime) and E128004 (HttpClient) have no code fixes — they require DI-level refactoring.
 
 ## Common Test Overrides
 

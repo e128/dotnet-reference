@@ -20,3 +20,4 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `lode summary` / `lode section`                            | `scripts/lode-summary.sh`     |
 | `check updates` / `outdated packages`                      | `scripts/update.sh`           |
 | `poll until` / `wait for build` / `loop until`            | `scripts/loop.sh`             |
+| `scan violations` / `check anti-patterns` / `violation scan` | `scripts/violation-scan.sh` |

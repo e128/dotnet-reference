@@ -12,7 +12,21 @@ namespace E128.Analyzers.FileSystem;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 {
-    private const string DiagnosticId = "E128001";
+    internal const string DiagnosticId = "E128001";
+
+    internal const string SuggestedTypeKey = "SuggestedType";
+    internal const string SuggestedFileInfo = "FileInfo";
+    internal const string SuggestedDirectoryInfo = "DirectoryInfo";
+    internal const string SuggestedAmbiguous = "Ambiguous";
+
+    private static readonly ImmutableDictionary<string, string?> FileInfoProperties =
+        ImmutableDictionary<string, string?>.Empty.Add(SuggestedTypeKey, SuggestedFileInfo);
+
+    private static readonly ImmutableDictionary<string, string?> DirectoryInfoProperties =
+        ImmutableDictionary<string, string?>.Empty.Add(SuggestedTypeKey, SuggestedDirectoryInfo);
+
+    private static readonly ImmutableDictionary<string, string?> AmbiguousProperties =
+        ImmutableDictionary<string, string?>.Empty.Add(SuggestedTypeKey, SuggestedAmbiguous);
 
     // messageFormat placeholders: {0}=paramName, {1}=description, {2}=suggestedType.
     // For the ambiguous (name-only) case, {2} is "FileInfo' or 'DirectoryInfo" — the surrounding
@@ -119,6 +133,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule,
                 param.Identifier.GetLocation(),
+                AmbiguousProperties,
                 name, "file system path", "FileInfo' or 'DirectoryInfo"));
             return;
         }
@@ -137,6 +152,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             var (description, suggestedType) = useSite.Value;
             context.ReportDiagnostic(Diagnostic.Create(Rule,
                 param.Identifier.GetLocation(),
+                PropertiesForDescription(description),
                 name, description, suggestedType));
         }
     }
@@ -387,6 +403,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         var (description, suggestion) = GetCliSuggestion(strippedName, typeName);
         context.ReportDiagnostic(Diagnostic.Create(rule,
             stringTypeArg.GetLocation(),
+            PropertiesForDescription(description),
             rawName, description, suggestion));
     }
 
@@ -449,6 +466,11 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             ? nested
             : null;
     }
+
+    private static ImmutableDictionary<string, string?> PropertiesForDescription(string description) =>
+        string.Equals(description, "file path", StringComparison.Ordinal) ? FileInfoProperties
+        : string.Equals(description, "directory path", StringComparison.Ordinal) ? DirectoryInfoProperties
+        : AmbiguousProperties;
 
     // Returns true if the name (dashes stripped) suggests a file system path.
     // Extends PathNamePatterns with CLI-specific terms: "input", "output", and "file"
