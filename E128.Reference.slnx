@@ -14,10 +14,12 @@
     <Folder Name="/src/">
         <Project Path="src/E128.Reference.Core/E128.Reference.Core.csproj" />
         <Project Path="src/E128.Reference.Web/E128.Reference.Web.csproj" />
+        <Project Path="src/E128.Analyzers/E128.Analyzers.csproj" />
         <Project Path="src/E128.Reference.Cli/E128.Reference.Cli.csproj" />
     </Folder>
     <Folder Name="/tests/">
         <Project Path="tests/Architecture.Tests/Architecture.Tests.csproj" />
+        <Project Path="tests/E128.Analyzers.Tests/E128.Analyzers.Tests.csproj" />
         <Project Path="tests/E128.Reference.Tests/E128.Reference.Tests.csproj" />
     </Folder>
 </Solution>

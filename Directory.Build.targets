@@ -14,4 +14,17 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
+  <!-- ============================================== -->
+  <!-- E128.Analyzers: Solution-Local Roslyn Analyzer -->
+  <!--                                                -->
+  <!-- Applies E128 rules to all projects except the  -->
+  <!-- analyzer itself. Severity is governed by        -->
+  <!-- .globalconfig (blanket error by default).       -->
+  <!-- ============================================== -->
+  <ItemGroup Condition="'$(IsRoslynComponent)' != 'true' and Exists('$(MSBuildThisFileDirectory)src/E128.Analyzers/E128.Analyzers.csproj')">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src/E128.Analyzers/E128.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
 </Project>

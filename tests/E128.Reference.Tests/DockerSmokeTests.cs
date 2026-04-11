@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
@@ -12,20 +13,23 @@ public sealed class DockerSmokeTests : IAsyncLifetime
     private const string ImageName = "e128-reference-web-test";
     private const string ContainerName = "e128-reference-web-smoke";
     private const int HostPort = 58080;
+
+    private static readonly string RepoRoot = FindRepoRoot();
+
     private readonly HttpClient _client = new() { BaseAddress = new Uri($"http://localhost:{HostPort}") };
 
     public async ValueTask InitializeAsync()
     {
-        await RunProcessAsync("docker", $"build -t {ImageName} .");
-        await RunProcessAsync("docker", $"run -d --name {ContainerName} -p {HostPort}:8080 {ImageName}");
+        await RunDockerAsync($"build --tag {ImageName} .");
+        await RunDockerAsync($"run -d --name {ContainerName} -p {HostPort}:8080 {ImageName}");
         await WaitForHealthy();
     }
 
     public async ValueTask DisposeAsync()
     {
         _client.Dispose();
-        await RunProcessAsync("docker", $"rm -f {ContainerName}");
-        await RunProcessAsync("docker", $"rmi -f {ImageName}");
+        await RunDockerAsync($"rm -f {ContainerName}", throwOnError: false);
+        await RunDockerAsync($"rmi -f {ImageName}", throwOnError: false);
     }
 
     [Fact]
@@ -70,25 +74,64 @@ public sealed class DockerSmokeTests : IAsyncLifetime
             {
                 // Container not ready yet
             }
+            catch (TaskCanceledException) when (cts.Token.IsCancellationRequested)
+            {
+                break;
+            }
 
-            await Task.Delay(500, cts.Token);
+            try
+            {
+                await Task.Delay(500, cts.Token);
+            }
+            catch (TaskCanceledException) when (cts.Token.IsCancellationRequested)
+            {
+                break;
+            }
         }
 
         throw new TimeoutException("Container did not become healthy within 30 seconds");
     }
 
-    private static async Task RunProcessAsync(string fileName, string arguments)
+    /// <summary>
+    /// Runs a docker command with the repo root as the working directory.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"></exception>
+    private static async Task RunDockerAsync(string arguments, bool throwOnError = true)
     {
         using var process = new System.Diagnostics.Process();
         process.StartInfo = new System.Diagnostics.ProcessStartInfo
         {
-            FileName = fileName,
+            FileName = "docker",
             Arguments = arguments,
+            WorkingDirectory = RepoRoot,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
         };
         process.Start();
+        var stderr = await process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
+
+        if (throwOnError && process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"'docker {arguments}' failed (exit {process.ExitCode.ToString(System.Globalization.CultureInfo.InvariantCulture)}): {stderr}");
+        }
+    }
+
+    /// <summary>
+    /// Walks up from the test output directory to find the repo root (contains Dockerfile).
+    /// </summary>
+    /// <exception cref="InvalidOperationException"></exception>
+    private static string FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Dockerfile")))
+        {
+            dir = dir.Parent;
+        }
+
+        return dir?.FullName
+            ?? throw new InvalidOperationException("Could not find repo root containing Dockerfile");
     }
 }

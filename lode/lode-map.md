@@ -27,3 +27,4 @@
 - [claude-code-upstream.md](infrastructure/claude-code-upstream.md) — Claude Code upstream reference: versions, agent/skill frontmatter fields
 - [code-generation-quality.md](infrastructure/code-generation-quality.md) — Mechanisms that drive better AI code generation, ranked by impact
 - [claude-revision-log.md](infrastructure/claude-revision-log.md) — Revision log: dated entries from `/claude-revision` runs
+- [docker.md](infrastructure/docker.md) — Docker build commands, buildx `-t`/`--load` issue, smoke test patterns

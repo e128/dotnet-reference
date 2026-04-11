@@ -25,9 +25,10 @@ prompts/
 *.md
 !README.md
 
-# Test projects (not needed in production image)
+# Test projects and analyzers (not needed in production image)
 tests/
 benchmarks/
+src/E128.Analyzers/
 
 # Scripts
 scripts/
