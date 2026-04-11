@@ -25,6 +25,7 @@
     <PackageTags>roslyn;analyzer;csharp;code-analysis</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/e128/dotnet-reference</PackageProjectUrl>
     <RepositoryUrl>https://github.com/e128/dotnet-reference</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
