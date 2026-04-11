@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-04-10T12:45:31Z*
+*Updated: 2026-04-10T18:59:19Z*
 
 ## Root Files
 
@@ -18,6 +18,7 @@
 
 - [project-structure.md](dotnet/project-structure.md) — .NET 10 solution format, CPM, build props/targets, global.json
 - [testing.md](dotnet/testing.md) — MTP, xUnit v3, test configuration, categories, conventions
+- [architecture-testing.md](dotnet/architecture-testing.md) — ArchUnitNET structural invariant tests (layers, naming, sealed)
 - [analyzers.md](dotnet/analyzers.md) — Deny-by-default strategy, analyzer packages, suppression policy
 
 ## infrastructure/

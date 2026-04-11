@@ -17,6 +17,7 @@
         <Project Path="src/E128.Reference.Cli/E128.Reference.Cli.csproj" />
     </Folder>
     <Folder Name="/tests/">
+        <Project Path="tests/Architecture.Tests/Architecture.Tests.csproj" />
         <Project Path="tests/E128.Reference.Tests/E128.Reference.Tests.csproj" />
     </Folder>
 </Solution>

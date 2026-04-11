@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-04-09T13:07:38Z*
+*Updated: 2026-04-10T18:59:49Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -107,4 +107,5 @@ Use `[Trait("Category", "...")]` to organize tests:
 ## Related
 
 - [Project Structure](project-structure.md)
+- [Architecture Testing](architecture-testing.md)
 - [Analyzers](analyzers.md)
