@@ -1,89 +1,107 @@
 {
-  // Renovate config for dotnet-reference — migrated from Dependabot 2026-04-11
-  // Groups mirror the existing Dependabot groups in dependabot.yml
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
   ],
-  "schedule": [
-    "every weekend"
+  schedule: [
+    'every weekend',
   ],
-  "labels": [
-    "dependencies"
+  labels: [
+    'dependencies',
   ],
-  "prConcurrentLimit": 5,
-  "packageRules": [
-    // NuGet groups — map 1:1 from Dependabot groups
+  prConcurrentLimit: 5,
+  packageRules: [
     {
-      "description": "Roslyn analyzers — low-risk, auto-merge patch+minor",
-      "groupName": "analyzers",
-      "matchManagers": ["nuget"],
-      "matchPackagePatterns": [
-        "^AsyncFixer$",
-        "^Meziantou\\.",
-        "^Microsoft\\.VisualStudio\\.Threading\\.Analyzers$",
-        "^Roslynator\\.",
-        "^SharpSource$",
-        "^SonarAnalyzer\\."
+      description: 'Roslyn analyzers — low-risk, auto-merge patch+minor',
+      groupName: 'analyzers',
+      matchManagers: [
+        'nuget',
       ],
-      "automerge": true,
-      "matchUpdateTypes": ["patch", "minor"]
+      automerge: true,
+      matchUpdateTypes: [
+        'patch',
+        'minor',
+      ],
+      matchPackageNames: [
+        '/^AsyncFixer$/',
+        '/^Meziantou\\./',
+        '/^Microsoft\\.VisualStudio\\.Threading\\.Analyzers$/',
+        '/^Roslynator\\./',
+        '/^SharpSource$/',
+        '/^SonarAnalyzer\\./',
+      ],
     },
     {
-      "description": "Microsoft.Extensions.* — auto-merge patch+minor",
-      "groupName": "microsoft-extensions",
-      "matchManagers": ["nuget"],
-      "matchPackagePatterns": [
-        "^Microsoft\\.Extensions\\."
+      description: 'Microsoft.Extensions.* — auto-merge patch+minor',
+      groupName: 'microsoft-extensions',
+      matchManagers: [
+        'nuget',
       ],
-      "automerge": true,
-      "matchUpdateTypes": ["patch", "minor"]
+      automerge: true,
+      matchUpdateTypes: [
+        'patch',
+        'minor',
+      ],
+      matchPackageNames: [
+        '/^Microsoft\\.Extensions\\./',
+      ],
     },
     {
-      "description": "System.* packages (excluding System.CommandLine)",
-      "groupName": "system-libs",
-      "matchManagers": ["nuget"],
-      "matchPackagePatterns": [
-        "^System\\."
+      description: 'System.* packages (excluding System.CommandLine)',
+      groupName: 'system-libs',
+      matchManagers: [
+        'nuget',
       ],
-      "excludePackageNames": [
-        "System.CommandLine"
+      automerge: true,
+      matchUpdateTypes: [
+        'patch',
+        'minor',
       ],
-      "automerge": true,
-      "matchUpdateTypes": ["patch", "minor"]
+      matchPackageNames: [
+        '/^System\\./',
+        '!System.CommandLine',
+      ],
     },
     {
-      "description": "Testing infrastructure — auto-merge patch+minor",
-      "groupName": "testing",
-      "matchManagers": ["nuget"],
-      "matchPackageNames": [
-        "Microsoft.AspNetCore.Mvc.Testing",
-        "Microsoft.CodeAnalysis.CSharp.Analyzer.Testing",
-        "Microsoft.CodeAnalysis.CSharp.CodeFix.Testing",
-        "NSubstitute"
+      description: 'Testing infrastructure — auto-merge patch+minor',
+      groupName: 'testing',
+      matchManagers: [
+        'nuget',
       ],
-      "matchPackagePatterns": [
-        "^BenchmarkDotNet",
-        "^Microsoft\\.Testing\\.",
-        "^TngTech\\.ArchUnitNET",
-        "^xunit\\."
+      matchPackageNames: [
+        'Microsoft.AspNetCore.Mvc.Testing',
+        'Microsoft.CodeAnalysis.CSharp.Analyzer.Testing',
+        'Microsoft.CodeAnalysis.CSharp.CodeFix.Testing',
+        'NSubstitute',
+        '/^BenchmarkDotNet/',
+        '/^Microsoft\\.Testing\\./',
+        '/^TngTech\\.ArchUnitNET/',
+        '/^xunit\\./',
       ],
-      "automerge": true,
-      "matchUpdateTypes": ["patch", "minor"]
+      automerge: true,
+      matchUpdateTypes: [
+        'patch',
+        'minor',
+      ],
     },
-    // GitHub Actions — group all, auto-merge patch+minor
     {
-      "description": "GitHub Actions — grouped, auto-merge patch+minor",
-      "groupName": "actions",
-      "matchManagers": ["github-actions"],
-      "automerge": true,
-      "matchUpdateTypes": ["patch", "minor"]
+      description: 'GitHub Actions — grouped, auto-merge patch+minor',
+      groupName: 'actions',
+      matchManagers: [
+        'github-actions',
+      ],
+      automerge: true,
+      matchUpdateTypes: [
+        'patch',
+        'minor',
+      ],
     },
-    // Major version bumps for any package — require manual review
     {
-      "description": "Major version bumps require manual review",
-      "matchUpdateTypes": ["major"],
-      "automerge": false
-    }
-  ]
+      description: 'Major version bumps require manual review',
+      matchUpdateTypes: [
+        'major',
+      ],
+      automerge: false,
+    },
+  ],
 }
