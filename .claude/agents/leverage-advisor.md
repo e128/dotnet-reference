@@ -5,6 +5,7 @@ description: >
   Strategic leverage analysis for the codebase. Runs three complementary
   analyses in one pass: (1) highest-leverage addition, (2) highest-value omission,
   (3) top 3 subtractions. Creates a plan for each finding — up to 5 plans total.
+  When a Phase 1 winner is a script, builds it end-to-end (formerly tool-learner).
   Fully autonomous — writes all plans before returning. No user prompts during
   analysis or plan creation. Use for quarterly or monthly strategic reviews.
   Triggers on: leverage advisor, what should I add, what was missed, what to remove,
@@ -13,7 +14,7 @@ description: >
   tool gap finder, find the best tool, tool learner, new tool suggestion, what cli tool,
   tool opportunity, tool gap, what tool should I add, highest leverage tool.
 model: sonnet
-tools: Bash, Glob, Grep, Read, Write
+tools: Bash, Glob, Grep, Read, Write, Edit
 maxTurns: 50
 effort: high
 memory: project
@@ -65,10 +66,26 @@ Scan for gaps by reviewing:
 - Active plans — what keeps getting planned but never shipped?
 - Roadmap — is there something conspicuously absent?
 - Recent session patterns (from `scripts/diff.sh` commits) — what keeps being done manually?
+- Bash invocation history — `scripts/session-health.sh --json` for repeated raw commands not yet mapped to scripts
 
 Score the top 5 candidates. Pick the winner (highest score; break ties on Compound).
 
 Slug prefix: `leverage-next-{short}`
+
+### Script Auto-Build (absorbed from tool-learner)
+
+If the Phase 1 winner is a new `scripts/*.sh` script, build it immediately after plan creation:
+
+1. **Write** `scripts/<name>.sh` — full implementation, description comment on line 2 (used by `help.sh`)
+2. **Source** `scripts/lib.sh` for shared functions
+3. **Validate** syntax: `bash -n scripts/<name>.sh` — fix errors before proceeding
+4. **Make executable:** `chmod +x scripts/<name>.sh`
+5. **Verify** it appears in help: `scripts/help.sh | grep <name>`
+6. **Add** a rule to `.claude/rules/token-efficiency.md`
+7. **Add** a row to `.claude/rules/keyword-shortcuts.md`
+8. **Smoke-test** with a safe invocation (dry-run, `--help`, or no-arg default)
+
+If the winner is NOT a script (e.g., a new agent, lode doc, or architectural change), create the plan only.
 
 ---
 
@@ -188,3 +205,4 @@ This ensures the user knows what was completed even if maxTurns is reached mid-a
 - **No actual deletions** — subtractions get plans, not immediate execution
 - **No duplicate plans** — check `plans/` in Phase 0; skip findings already covered
 - **Score every candidate** — reasoning must be grounded in the rubric, not gut feel
+- **Script winners get built** — Phase 1 scripts are built immediately, not just planned

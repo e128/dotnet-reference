@@ -96,8 +96,8 @@ Analyze the gathered data for:
 
 ### 2.2 Friction points
 - Sessions where many "yes" / approval responses occur (over-prompting)
-  - If approval friction is detected, recommend running `allowed-tools-maintainer` agent
-    to sync the settings.json allow-list against actual skill/agent commands
+  - If approval friction is detected, recommend running `/error-audit` which includes
+    a settings.json gap analysis when permission errors are in the top patterns
 - Long gaps between meaningful tool calls (indicates decision paralysis or context loss)
 - Build failures that repeat the same error pattern
 - Files edited repeatedly in short succession (churn)
