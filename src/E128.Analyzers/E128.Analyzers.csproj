@@ -8,7 +8,25 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!-- RS2007: the Roslyn 4.14.0 meta-analyzer rejects valid unshipped.md content -->
     <!-- RS1038: intentional — code fix provider requires Workspaces reference in same assembly -->
-    <NoWarn>$(NoWarn);RS2007;RS1038</NoWarn>
+    <NoWarn>$(NoWarn);RS2007;RS1038;NU5128</NoWarn>
+  </PropertyGroup>
+
+  <!-- NuGet Packaging -->
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <PackageId>E128.Analyzers</PackageId>
+    <Authors>Brent Miller</Authors>
+    <Description>Roslyn analyzers enforcing E128 conventions: file system path types, string.Empty, TimeProvider, IHttpClientFactory, and sealed-by-default.</Description>
+    <PackageTags>roslyn;analyzer;csharp;code-analysis</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/e128/dotnet-reference</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +37,19 @@
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+  <!-- Place analyzer DLL in the NuGet convention path -->
+  <ItemGroup>
+    <None Include="$(OutputPath)\$(AssemblyName).dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+  </ItemGroup>
+
+  <!-- Package README -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>

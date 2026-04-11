@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-04-10T18:59:19Z*
+*Updated: 2026-04-11T13:55:17Z*
 
 ## Root Files
 
@@ -28,3 +28,4 @@
 - [code-generation-quality.md](infrastructure/code-generation-quality.md) — Mechanisms that drive better AI code generation, ranked by impact
 - [claude-revision-log.md](infrastructure/claude-revision-log.md) — Revision log: dated entries from `/claude-revision` runs
 - [docker.md](infrastructure/docker.md) — Docker build commands, buildx `-t`/`--load` issue, smoke test patterns
+- [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md) — OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging

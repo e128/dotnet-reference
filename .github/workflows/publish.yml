@@ -1,0 +1,83 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/E128.Analyzers/**'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Pack + Push E128.Analyzers
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Check if version already published
+        id: check
+        run: |
+          VERSION=$(grep -oP '(?<=<Version>)[^<]+' src/E128.Analyzers/E128.Analyzers.csproj)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://api.nuget.org/v3-flatcontainer/e128.analyzers/${VERSION}/e128.analyzers.${VERSION}.nupkg")
+          if [ "$STATUS" = "200" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Version $VERSION already published — skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Version $VERSION not found on nuget.org — will publish"
+          fi
+
+      - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        if: steps.check.outputs.exists == 'false'
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        if: steps.check.outputs.exists == 'false'
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Pack
+        if: steps.check.outputs.exists == 'false'
+        run: >
+          dotnet pack src/E128.Analyzers/E128.Analyzers.csproj
+          -c Release
+          -o ./nupkgs
+
+      - name: NuGet login (OIDC)
+        if: steps.check.outputs.exists == 'false'
+        uses: NuGet/login@1205360f03b164d67df2e761ec59b5a1976d089d # v1.1.0
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push
+        if: steps.check.outputs.exists == 'false'
+        run: >
+          dotnet nuget push ./nupkgs/*.nupkg
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
+            echo "### Skipped — ${{ steps.check.outputs.version }} already on nuget.org" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Published E128.Analyzers ${{ steps.check.outputs.version }} to nuget.org" >> "$GITHUB_STEP_SUMMARY"
+          fi
