@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-04-10T18:59:49Z*
+*Updated: 2026-04-11T14:10:55Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -82,6 +82,16 @@ Use `[Trait("Category", "...")]` to organize tests:
 
 ## Test Project Structure
 
+Three test projects, all sharing `<IsTestProject>true</IsTestProject>` (inherits MTP config from `Directory.Build.targets`):
+
+| Project                  | Purpose                                  | Notable Packages (beyond `xunit.v3.mtp-v2`)                                    |
+| ------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------- |
+| `E128.Reference.Tests`   | Core + Web integration tests             | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Extensions.Diagnostics.Testing`  |
+| `Architecture.Tests`     | ArchUnitNET structural invariant tests   | `TngTech.ArchUnitNET.xUnitV3`                                                  |
+| `E128.Analyzers.Tests`   | Roslyn analyzer + code fix verification  | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `*.CodeFix.Testing`           |
+
+Minimal `.csproj` template (all versions from CPM):
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -89,13 +99,14 @@ Use `[Trait("Category", "...")]` to organize tests:
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3.mtp-v2" />
-    <!-- Add other test packages as needed -->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Project\Project.csproj" />
   </ItemGroup>
 </Project>
 ```
+
+`Microsoft.Testing.Extensions.HangDump` and `Microsoft.Testing.Extensions.TrxReport` are added to projects that need hang diagnostics and TRX CI reporting.
 
 ## Conventions
 

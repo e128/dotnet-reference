@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-09T12:47:56Z*
+*Updated: 2026-04-11T14:10:32Z*
 
 ## Strategy: Deny by Default
 
@@ -62,18 +62,38 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 - Editorconfig severity downgrades require justification
 - Test project relaxations go in `tests/.globalconfig`, not inline suppressions
 
+## Custom Analyzers: E128.Analyzers
+
+`src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"` — applied to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
+
+| Rule    | Category    | Title                                                          |
+| ------- | ----------- | -------------------------------------------------------------- |
+| E128001 | Design      | Use FileInfo or DirectoryInfo instead of string for paths      |
+| E128002 | Style       | Use string.Empty instead of ""                                 |
+| E128003 | Reliability | Use TimeProvider instead of DateTime/DateTimeOffset direct use |
+| E128004 | Reliability | Use IHttpClientFactory instead of new HttpClient()             |
+| E128005 | Design      | Seal classes that have no subclasses                           |
+
+E128002 also ships a code fix provider (`EmptyStringLiteralCodeFixProvider`).
+
 ## Common Test Overrides
 
 Rules suppressed in test projects (via `tests/.globalconfig` at `global_level=101`):
 
-| Rule       | Reason                                          |
-| ---------- | ----------------------------------------------- |
-| CA1515     | xUnit requires public types for discovery       |
-| CA1707     | Underscores in test method names                |
-| CA1062     | xUnit fixture injection is always non-null      |
-| CA2007     | ConfigureAwait not needed in test methods       |
-| VSTHRD200  | Test methods don't need Async suffix            |
-| MA0040     | Ambient CancellationToken too noisy in tests    |
+| Rule      | Reason                                                       |
+| --------- | ------------------------------------------------------------ |
+| CA1515    | xUnit requires public types for discovery                    |
+| CA1707    | Underscores in test method names                             |
+| CA1062    | xUnit fixture injection is always non-null                   |
+| CA2007    | ConfigureAwait not needed in test methods                    |
+| CA2234    | String URLs acceptable in test data                          |
+| MA0040    | Ambient CancellationToken too noisy in tests                 |
+| SS003     | Integer division intentional in test assertions              |
+| SS037     | Tests use fake HttpMessageHandlers                           |
+| SS059     | Sync using for MemoryStream acceptable in tests              |
+| VSTHRD200 | Test methods don't need Async suffix                         |
+| xunit1051 | xUnit v3 ambient CancellationToken too noisy                 |
+| MA0006    | Relaxed to suggestion — test LINQ predicates use string `==` |
 
 ## CA2007 (ConfigureAwait) Scoping
 

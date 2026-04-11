@@ -1,5 +1,5 @@
 # .NET 10 Project Structure
-*Updated: 2026-04-09T12:47:48Z*
+*Updated: 2026-04-11T14:10:21Z*
 
 ## Solution Format
 
@@ -18,9 +18,14 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 ├── .editorconfig              # Code style (formatting, naming, IDE rules)
 ├── .globalconfig              # Analyzer diagnostic severities
 ├── src/
-│   ├── {Project}/             # Source projects
+│   ├── E128.Analyzers/        # Solution-local Roslyn analyzer
+│   ├── E128.Reference.Cli/    # CLI application
+│   ├── E128.Reference.Core/   # Core library
+│   └── E128.Reference.Web/    # Web application
 ├── tests/
-│   ├── {Project}.Tests/       # Test projects
+│   ├── Architecture.Tests/    # ArchUnitNET structural tests
+│   ├── E128.Analyzers.Tests/  # Roslyn analyzer unit tests
+│   ├── E128.Reference.Tests/  # Core + Web integration tests
 │   └── .globalconfig          # Test-specific severity overrides (global_level=101)
 ```
 
@@ -37,13 +42,13 @@ Key properties in `Directory.Build.props`:
 
 **Props** (evaluated before project files): TFM, language version, nullable, analyzers, code analysis settings, artifact paths, build performance flags, configuration-specific settings.
 
-**Targets** (evaluated after project files): Conditional logic that depends on properties set in `.csproj` — primarily `<IsTestProject>true</IsTestProject>` detection for setting `OutputType=Exe` and MTP runner properties.
+**Targets** (evaluated after project files): Conditional logic that depends on properties set in `.csproj` — primarily `<IsTestProject>true</IsTestProject>` detection for setting `OutputType=Exe` and MTP runner properties. Also contains the E128.Analyzers `ProjectReference` — all projects except the analyzer itself (`IsRoslynComponent != true`) automatically reference it as an `OutputItemType="Analyzer"` with `ReferenceOutputAssembly="false"`. The condition also gates on the `.csproj` existing, so the solution builds cleanly if the analyzer project is removed.
 
 ## global.json
 
 ```json
 {
-  "sdk": { "version": "10.0.201", "rollForward": "latestMajor" },
+  "sdk": { "version": "10.0.201", "rollForward": "latestMajor", "allowPrerelease": false },
   "test": { "runner": "Microsoft.Testing.Platform" }
 }
 ```

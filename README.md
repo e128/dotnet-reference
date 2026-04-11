@@ -7,7 +7,8 @@
 ## Summary
 
 A .NET 10 reference repository demonstrating modern conventions for web, CLI, and Docker applications.
-Features strict deny-by-default code analysis with third-party Roslyn analyzers, xUnit v3 on the Microsoft Testing Platform, and Central Package Management with transitive pinning.
+Features strict deny-by-default code analysis with third-party Roslyn analyzers, custom E128.Analyzers (NuGet-packable), ArchUnitNET architecture tests, xUnit v3 on the Microsoft Testing Platform, and Central Package Management with transitive pinning.
+Automated dependency updates via Renovate and NuGet trusted publishing via GitHub Actions OIDC.
 Includes a complete Claude Code development harness with bash scripts, contextual rules, skills, and agents.
 Uses the [Lode Coding Toolkit][lode-toolkit] for structured, AI-owned project documentation.
 
@@ -30,17 +31,21 @@ scripts/docker.sh test
 
 ## What's Included
 
-| Component               | Description                                                         |
-| ----------------------- | ------------------------------------------------------------------- |
-| **E128.Reference.Web**  | Minimal API web app with Kestrel, health endpoint                   |
-| **E128.Reference.Cli**  | System.CommandLine CLI with `--name` option                         |
-| **E128.Reference.Core** | Shared library (Greeter service)                                    |
-| **E128.Reference.Tests**| xUnit v3 + MTP with CI, Docker, and Manual test categories          |
-| **Docker**              | Hardened Alpine multi-stage Dockerfile + docker-compose.yml          |
-| **Bash scripts**        | Build, test, format, CI, Docker, lode management ([catalog](scripts/README.md)) |
-| **Claude Code harness** | CLAUDE.md, rules, hooks, skills, agents (see `.claude/`)            |
-| **CI/CD**               | GitHub Actions + Azure DevOps pipeline YAML                         |
-| **Lode**                | Structured documentation via [Lode Coding Toolkit][lode-toolkit]    |
+| Component                | Description                                                         |
+| ------------------------ | ------------------------------------------------------------------- |
+| **E128.Reference.Web**   | Minimal API web app with Kestrel, health endpoint                   |
+| **E128.Reference.Cli**   | System.CommandLine CLI with `--name` option                         |
+| **E128.Reference.Core**  | Shared library (Greeter service, models, repositories, services)    |
+| **E128.Analyzers**       | Custom Roslyn analyzers (E128001–E128005) with code fix, NuGet-packable |
+| **E128.Reference.Tests** | xUnit v3 + MTP with CI, Docker, and Manual test categories          |
+| **Architecture.Tests**   | ArchUnitNET structural invariant tests (layers, naming, sealed)     |
+| **E128.Analyzers.Tests** | Analyzer and code fix unit tests (47 tests)                         |
+| **Docker**               | Hardened Alpine multi-stage Dockerfile + docker-compose.yml         |
+| **Bash scripts**         | Build, test, format, CI, Docker, lode management ([catalog](scripts/README.md)) |
+| **Claude Code harness**  | CLAUDE.md, rules, hooks, skills, agents (see `.claude/`)            |
+| **CI/CD**                | GitHub Actions CI + NuGet trusted publishing + Azure DevOps YAML    |
+| **Renovate**             | Automated dependency updates with grouped PRs and security bypass   |
+| **Lode**                 | Structured documentation via [Lode Coding Toolkit][lode-toolkit]    |
 
 ## Prerequisites
 
@@ -83,6 +88,7 @@ scripts/docker.sh test
 ├── .editorconfig             # Code style (120 char, 4-space, file-scoped ns)
 ├── .globalconfig             # Analyzer severities (deny-by-default)
 ├── .github/workflows/ci.yml  # GitHub Actions CI
+├── .github/workflows/publish.yml # NuGet trusted publishing
 ├── azure-pipelines.yml       # Azure DevOps CI
 ├── CLAUDE.md                 # Always-loaded AI instructions
 ├── Directory.Build.props     # Shared build properties
@@ -95,12 +101,16 @@ scripts/docker.sh test
 ├── lode/                     # Project knowledge documentation
 ├── nuget.config              # Single source + source mapping
 ├── plans/                    # Structured planning documents
+├── renovate.json             # Renovate dependency update config
 ├── scripts/                  # Bash development scripts ([catalog](scripts/README.md))
 ├── src/
+│   ├── E128.Analyzers/       # Custom Roslyn analyzers (NuGet package)
 │   ├── E128.Reference.Core/  # Shared library
 │   ├── E128.Reference.Web/   # ASP.NET Core minimal API
 │   └── E128.Reference.Cli/   # System.CommandLine CLI
 └── tests/
+    ├── Architecture.Tests/   # ArchUnitNET structural invariants
+    ├── E128.Analyzers.Tests/ # Analyzer unit tests
     └── E128.Reference.Tests/ # xUnit v3 + MTP
 ```
 
@@ -167,11 +177,13 @@ docker compose down
 
 ## CI/CD
 
-Both **GitHub Actions** (`.github/workflows/ci.yml`) and **Azure DevOps** (`azure-pipelines.yml`) pipelines are included. Both run:
+**GitHub Actions** (`.github/workflows/ci.yml`) and **Azure DevOps** (`azure-pipelines.yml`) run:
 
 1. Format check (`dotnet format --verify-no-changes`)
 2. Release build
 3. CI-category tests only
+
+**NuGet publishing** (`.github/workflows/publish.yml`) — triggers on push to `main` when `src/E128.Analyzers/` changes. Uses OIDC trusted publishing (no API keys). Skips if the version already exists on nuget.org.
 
 ## dotnet-overhaul Skill
 

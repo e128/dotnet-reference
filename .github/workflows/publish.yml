@@ -29,7 +29,7 @@ jobs:
       - name: Check if version already published
         id: check
         run: |
-          VERSION=$(grep -oP '(?<=<Version>)[^<]+' src/E128.Analyzers/E128.Analyzers.csproj)
+          VERSION=$(sed -n 's/.*<Version>\([^<]*\)<.*/\1/p' src/E128.Analyzers/E128.Analyzers.csproj)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             "https://api.nuget.org/v3-flatcontainer/e128.analyzers/${VERSION}/e128.analyzers.${VERSION}.nupkg")
@@ -62,7 +62,7 @@ jobs:
 
       - name: NuGet login (OIDC)
         if: steps.check.outputs.exists == 'false'
-        uses: NuGet/login@1205360f03b164d67df2e761ec59b5a1976d089d # v1.1.0
+        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1.1.0
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}

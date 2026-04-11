@@ -1,10 +1,12 @@
 # Practices
-*Updated: 2026-04-09T00:52:00Z*
+*Updated: 2026-04-11T14:12:15Z*
 
 ## Design Principles
 
 - **Immutability by default.** Prefer `record`, `readonly struct`, `init`-only properties, immutable collections (`IReadOnlyList<T>`, `FrozenSet<T>`). Mutable state requires explicit justification.
 - **SOLID principles.** Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion. Balance with YAGNI.
+- **Sealed by default.** All non-abstract classes must be sealed. Enforced by custom analyzer E128005 and ArchUnitNET architecture tests (`SealedClassTests`).
+- **Design trade-off priority.** When trade-offs arise: Immutability > Memory efficiency (`Span<T>`, `Memory<T>`) > CPU efficiency > Parallelism.
 - **Rob Pike's 5 Rules.** See [Rob Pike's Rules](rob-pikes-rules.md).
 
 ## Code Style Choices
@@ -15,6 +17,7 @@
 - 4-space indentation
 - Allman brace style (opening brace on new line)
 - `using` directives outside namespace, sorted with System first
+- Implicit usings disabled — every `.cs` file has explicit `using` directives
 
 ## AI Assistant Preferences
 
@@ -24,13 +27,17 @@
 - Numbered menus for choices, never open-ended questions
 - All decisions via `AskUserQuestion` tool, not inline text
 
+## Development Methodology
+
+- **TDD (Red-Green-Refactor)** for new features and significant changes. RED phase stubs use `Assert.Fail(message)`.
+- **Architecture testing** with ArchUnitNET enforces layer dependencies, naming conventions, sealed-by-default, and service patterns. See [Architecture Testing](dotnet/architecture-testing.md).
+
 ## Verification Workflow
 
 After any code change:
 1. `scripts/format.sh --changed` — apply format
 2. `scripts/check.sh --no-format` — build + test
-3. If changing services/DI: check for appsettings drift
-4. If renaming: `rg "OldName" lode/` to find stale lode references
+3. If renaming: `rg "OldName" lode/` to find stale lode references
 
 ## Cross-Platform File Paths
 

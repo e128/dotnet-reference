@@ -1,6 +1,6 @@
 # NuGet Trusted Publishing
 
-*Updated: 2026-04-10T00:00:00Z*
+*Updated: 2026-04-11T14:12:11Z*
 
 OIDC-based package publishing from GitHub Actions to nuget.org. Eliminates long-lived API keys.
 
@@ -36,15 +36,17 @@ name: Publish
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: ['src/E128.Analyzers/**']
 
 permissions:
   contents: read
 
 jobs:
   publish:
+    name: Pack + Push E128.Analyzers
     runs-on: ubuntu-24.04
-    environment: release          # optional, must match policy
+    environment: release          # must match nuget.org policy
     permissions:
       contents: read
       id-token: write             # REQUIRED for OIDC
@@ -52,20 +54,32 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Check if version already published
+        id: check
+        run: |
+          VERSION=$(sed -n 's/.*<Version>\([^<]*\)<.*/\1/p' src/E128.Analyzers/E128.Analyzers.csproj)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://api.nuget.org/v3-flatcontainer/e128.analyzers/${VERSION}/...")
+          # Sets outputs: version, exists (true/false)
+
       - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        if: steps.check.outputs.exists == 'false'
         with:
           dotnet-version: '10.0.x'
 
       - name: Pack
+        if: steps.check.outputs.exists == 'false'
         run: dotnet pack src/E128.Analyzers/E128.Analyzers.csproj -c Release -o ./nupkgs
 
-      - name: NuGet login (OIDC -> temp API key)
-        uses: NuGet/login@v1      # pin to hash when stable
+      - name: NuGet login (OIDC)
+        if: steps.check.outputs.exists == 'false'
+        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1.1.0
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}
 
       - name: Push
+        if: steps.check.outputs.exists == 'false'
         run: >
           dotnet nuget push ./nupkgs/*.nupkg
           --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
@@ -88,19 +102,23 @@ Key properties that differ from a normal library package:
 
 ```xml
 <PropertyGroup>
+  <Version>1.0.0</Version>
   <IsPackable>true</IsPackable>
   <IncludeBuildOutput>false</IncludeBuildOutput>
   <DevelopmentDependency>true</DevelopmentDependency>
   <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
   <NoPackageAnalysis>true</NoPackageAnalysis>
-  <NoWarn>$(NoWarn);NU5128</NoWarn>
 
   <!-- Package metadata -->
   <PackageId>E128.Analyzers</PackageId>
-  <Description>Roslyn analyzers for E128 conventions</Description>
-  <PackageTags>roslyn;analyzer;csharp</PackageTags>
+  <Authors>Brent Miller</Authors>
+  <Description>Roslyn analyzers enforcing E128 conventions: file system path types,
+    string.Empty, TimeProvider, IHttpClientFactory, and sealed-by-default.</Description>
+  <PackageTags>roslyn;analyzer;csharp;code-analysis</PackageTags>
   <PackageLicenseExpression>MIT</PackageLicenseExpression>
   <PackageReadmeFile>README.md</PackageReadmeFile>
+  <RepositoryUrl>https://github.com/e128/dotnet-reference</RepositoryUrl>
+  <RepositoryType>git</RepositoryType>
 </PropertyGroup>
 
 <ItemGroup>
@@ -114,11 +132,12 @@ Key properties that differ from a normal library package:
 
 | Property                          | Why                                                        |
 | --------------------------------- | ---------------------------------------------------------- |
-| `IncludeBuildOutput=false`        | Prevents DLL in `lib/` (would be treated as library ref)   |
-| `DevelopmentDependency=true`      | Marks as dev-only; consumers get analyzer, not dependency   |
-| `SuppressDependenciesWhenPacking` | Keeps analyzer deps out of the nupkg dependency list       |
-| `PackagePath="analyzers/dotnet/cs"` | NuGet convention path the compiler scans for analyzers   |
-| `PrivateAssets="all"` on refs     | Analyzer's own PackageReferences stay private              |
+| `Version`                           | Pinned in csproj (`1.0.0`); workflow reads via `sed`       |
+| `IncludeBuildOutput=false`          | Prevents DLL in `lib/` (would be treated as library ref)   |
+| `DevelopmentDependency=true`        | Marks as dev-only; consumers get analyzer, not dependency   |
+| `SuppressDependenciesWhenPacking`   | Keeps analyzer deps out of the nupkg dependency list       |
+| `PackagePath="analyzers/dotnet/cs"` | NuGet convention path the compiler scans for analyzers     |
+| `PrivateAssets="all"` on refs       | Analyzer's own PackageReferences stay private              |
 
 ## Gotchas
 
@@ -130,6 +149,7 @@ Key properties that differ from a normal library package:
 
 ### Operational
 
+- **Workflow is idempotent.** Version check queries nuget.org before packing; skips everything if the version already exists. Bump `<Version>` in csproj to publish a new release.
 - **API key expires in 1 hour.** Request immediately before `dotnet nuget push`, not at workflow start.
 - **One token = one API key.** Each OIDC token exchange yields exactly one key.
 - **Remove old API keys after migration.** Stored secrets can interfere with trusted publishing.
@@ -154,4 +174,4 @@ Key properties that differ from a normal library package:
 - [Reusable workflow discussion](https://github.com/orgs/community/discussions/179952) (2025)
 - [Aaron Stannard: Roslyn analyzer NuGet packaging](https://aaronstannard.com/roslyn-nuget/) (2024)
 - [Meziantou: analyzer with NuGet deps](https://www.meziantou.net/packaging-a-roslyn-analyzer-with-nuget-dependencies.htm)
-- [NuGet/login action.yml](https://github.com/NuGet/login) (v1.1.0, SHA `1205360f`)
+- [NuGet/login action.yml](https://github.com/NuGet/login) (v1.1.0, SHA `d22cc5f5`)

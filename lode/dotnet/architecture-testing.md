@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-04-10T00:00:00Z*
+*Updated: 2026-04-11T14:10:40Z*
 
 ## Overview
 
@@ -8,6 +8,8 @@
 ## Package
 
 - `TngTech.ArchUnitNET.xUnitV3` — xUnit v3 integration (includes core + assertions). Version pinned in `Directory.Packages.props`.
+
+The test project references Core, Web, and Cli so test code can resolve types from any assembly, even though only Core is loaded into the architecture model today.
 
 ## How It Works
 
@@ -60,9 +62,9 @@ Enforces dependency direction: Models → (nothing), Repositories → Models onl
 
 ### Service Patterns (`ServicePatternTests`)
 
-- Service classes must implement their corresponding interface
+- Service classes (in `Services` namespace) must implement `IGreetingService`
 - Service classes must have "Service" suffix
-- Repository classes must implement their corresponding interface
+- Repository classes (in `Repositories` namespace) must implement `IGreetingRepository`
 
 ## Adding New Rules
 
@@ -74,13 +76,13 @@ Enforces dependency direction: Models → (nothing), Repositories → Models onl
 
 ## Key Namespaces
 
-| Using                                          | Purpose                          |
-| ---------------------------------------------- | -------------------------------- |
-| `ArchUnitNET.Fluent`                           | `IArchRule` and fluent builders  |
-| `ArchUnitNET.xUnitV3`                          | `.Check()` extension for xUnit   |
-| `static ArchUnitNET.Fluent.ArchRuleDefinition` | `Types()`, `Classes()`, etc.     |
-| `ArchUnitNET.Loader`                           | `ArchLoader` for IL loading      |
-| `ArchUnitNET.Domain`                           | `Architecture` model type        |
+| Using                                          | Purpose                                |
+| ---------------------------------------------- | -------------------------------------- |
+| `ArchUnitNET.Fluent`                           | `IArchRule` and fluent builders        |
+| `ArchUnitNET.xUnitV3`                          | `.Check()` extension for xUnit         |
+| `static ArchUnitNET.Fluent.ArchRuleDefinition` | `Types()`, `Classes()`, `Interfaces()` |
+| `ArchUnitNET.Loader`                           | `ArchLoader` for IL loading            |
+| `ArchUnitNET.Domain`                           | `Architecture` model type              |
 
 ## Related
 

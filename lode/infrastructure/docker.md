@@ -1,5 +1,5 @@
 # Docker
-*Updated: 2026-04-10T19:00:00Z*
+*Updated: 2026-04-11T14:10:21Z*
 
 ## Build Commands
 
@@ -27,9 +27,9 @@ Subcommands: `build`, `run`, `test`, `stop`, `clean`. Uses `DOCKER_BUILDKIT=0` t
 
 ### `DockerSmokeTests.cs`
 
-xUnit tests using `IAsyncLifetime` to build/start container in `InitializeAsync` and tear down in `DisposeAsync`. Uses `HttpClient` to hit `/` and `/health` endpoints.
+xUnit v3 tests using `IAsyncLifetime` (`ValueTask` overloads) to build/start container in `InitializeAsync` and tear down in `DisposeAsync`. Uses `FindRepoRoot()` to locate the Dockerfile directory and sets `WorkingDirectory` on the process. `RunDockerAsync` checks exit codes and throws `InvalidOperationException` on failure (suppressible via `throwOnError: false`). Uses `HttpClient` to hit `/` and `/health` endpoints.
 
-**Known issue**: calls `docker buildx build -t` without `--load`. Works on default `docker` driver but fails on `docker-container` driver (e.g., some CI runners). Fix: add `--load` or switch to `docker build`.
+Uses `docker build --tag` (not buildx), so the `--load` issue does not apply.
 
 Hardcoded port `58080` — could conflict in parallel CI. Tests tagged `[Trait("Category", "Docker")]` for selective execution.
 
@@ -40,6 +40,10 @@ Three-stage Alpine-based build (`Dockerfile` at repo root):
 1. **restore** — `sdk:10.0-alpine`, copies build infra + csproj files, runs `dotnet restore`
 2. **build** — copies source, runs `dotnet publish --configuration Release`
 3. **runtime** — `aspnet:10.0-alpine`, hardened (apk removed), non-root user, health check via `wget`
+
+## `.dockerignore`
+
+Excludes build output, Git metadata, IDE files, `.claude/`, docs (`lode/`, `plans/`, `prompts/`, `*.md` except `README.md`), test and benchmark projects, `src/E128.Analyzers/`, scripts, CI config, secrets, and OS artifacts. Only `src/E128.Reference.Core/` and `src/E128.Reference.Web/` reach the build context.
 
 ## Smoke Test Patterns
 
