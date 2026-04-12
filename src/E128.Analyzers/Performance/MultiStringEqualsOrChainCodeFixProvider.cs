@@ -255,7 +255,9 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
         }
 
         sb.Append(" };");
-        return SyntaxFactory.ParseMemberDeclaration(sb.ToString())!;
+        var parsed = SyntaxFactory.ParseMemberDeclaration(sb.ToString());
+        return parsed ?? SyntaxFactory.FieldDeclaration(
+            SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var")));
     }
 
     private static bool HasConflictingField(TypeDeclarationSyntax typeDecl, string fieldName)

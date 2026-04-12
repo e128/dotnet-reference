@@ -20,8 +20,7 @@ public sealed class ConstructorNewDiRegisteredCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConstructorNewDiRegisteredAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider() => null;
 
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {

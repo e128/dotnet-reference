@@ -19,6 +19,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | Rule    | Title                                                                                               | Code Fix |
 | ------- | --------------------------------------------------------------------------------------------------- | -------- |
 | E128001 | Use `FileInfo`/`DirectoryInfo` instead of `string` paths                                            | Yes      |
+| E128003 | Use `TimeProvider` instead of `DateTime.Now` / `DateTimeOffset.Now`                                 | Yes      |
+| E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`                                              | Yes      |
 | E128005 | Seal classes that have no subclasses                                                                | Yes      |
 | E128007 | Avoid `async void` methods (non-event-handler)                                                      | Yes      |
 | E128008 | Avoid sync-over-async (`.Result` / `.GetAwaiter().GetResult()`)                                     | Yes      |
@@ -43,8 +45,6 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 | Rule    | Title                                                                                    | Code Fix |
 | ------- | ---------------------------------------------------------------------------------------- | -------- |
-| E128003 | Use `TimeProvider` instead of `DateTime.Now` / `DateTimeOffset.Now`                      | Yes      |
-| E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`                                   | Yes      |
 | E128011 | `[GeneratedRegex]` missing `matchTimeoutMilliseconds`                                    | Yes      |
 | E128012 | `RegexOptions.Compiled` is redundant in `[GeneratedRegex]`                               | Yes      |
 | E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers                                   | Yes      |

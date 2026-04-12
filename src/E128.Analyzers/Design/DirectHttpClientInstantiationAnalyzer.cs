@@ -16,7 +16,7 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
         id: DiagnosticId,
         title: "Use IHttpClientFactory instead of new HttpClient()",
         messageFormat: "Use IHttpClientFactory.CreateClient() instead of new HttpClient() — register via DI",
-        category: "Reliability",
+        category: "Design",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 

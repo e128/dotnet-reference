@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-04-11T14:11:44Z*
+*Updated: 2026-04-12T18:19:36Z*
 
 ## Root Files
 
@@ -20,6 +20,7 @@
 - [testing.md](dotnet/testing.md) — MTP, xUnit v3, test configuration, categories, conventions
 - [architecture-testing.md](dotnet/architecture-testing.md) — ArchUnitNET structural invariant tests (layers, naming, sealed)
 - [analyzers.md](dotnet/analyzers.md) — Deny-by-default strategy, analyzer packages, suppression policy
+- [release-tracking.md](dotnet/release-tracking.md) — AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
 
 ## infrastructure/
 

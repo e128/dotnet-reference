@@ -153,8 +153,9 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
             return document.WithSyntaxRoot(newRoot);
         }
 
+        var leadingTrivia = updatedStatement.GetLeadingTrivia();
         var newStatements = block.Statements.Insert(index,
-            resultDecl.WithLeadingTrivia(updatedStatement.GetLeadingTrivia()));
+            resultDecl.WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(SyntaxFactory.LineFeed));
         var newBlock = block.WithStatements(newStatements);
         newRoot = newRoot.ReplaceNode(block, newBlock);
 

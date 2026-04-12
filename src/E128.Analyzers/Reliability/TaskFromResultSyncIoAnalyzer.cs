@@ -70,10 +70,7 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
             ["CopyTo"] = "System.IO.Stream",
             ["Flush"] = "System.IO.Stream",
 
-            // System.Net.Http.HttpClient
-            ["GetStringAsync"] = "System.Net.Http.HttpClient",
-            ["GetByteArrayAsync"] = "System.Net.Http.HttpClient",
-            ["GetStreamAsync"] = "System.Net.Http.HttpClient",
+            // System.Net.Http.HttpClient — sync overload only
             ["Send"] = "System.Net.Http.HttpClient",
         }.ToImmutableDictionary(StringComparer.Ordinal);
 

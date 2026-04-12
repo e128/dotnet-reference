@@ -120,11 +120,19 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : CodeFixProvider
 
         var receiver = memberAccess.Expression.ToString();
 
-        var directRegistration = SyntaxFactory.ParseStatement(
-            $"{receiver}.Add{lifetime}<{concreteTypeName}>();");
+        var directText = $"{receiver}.Add{lifetime}<{concreteTypeName}>();";
+        var directRegistration = SyntaxFactory.ParseStatement(directText);
+        if (directRegistration.ContainsDiagnostics)
+        {
+            return document;
+        }
 
-        var forwardingRegistration = SyntaxFactory.ParseStatement(
-            $"{receiver}.Add{lifetime}<{interfaceName}>(sp => sp.GetRequiredService<{concreteTypeName}>());");
+        var forwardingText = $"{receiver}.Add{lifetime}<{interfaceName}>(sp => sp.GetRequiredService<{concreteTypeName}>());";
+        var forwardingRegistration = SyntaxFactory.ParseStatement(forwardingText);
+        if (forwardingRegistration.ContainsDiagnostics)
+        {
+            return document;
+        }
 
         var containingStatement = originalInvocation.FirstAncestorOrSelf<ExpressionStatementSyntax>();
         if (containingStatement is null)

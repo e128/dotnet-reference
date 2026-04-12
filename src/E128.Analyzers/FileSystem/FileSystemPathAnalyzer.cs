@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -160,10 +159,14 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
     private static HashSet<string> CollectPathDerivedLocals(BlockSyntax body, string paramName)
     {
         var result = new HashSet<string>(StringComparer.Ordinal);
-        var statements = body.DescendantNodes().OfType<LocalDeclarationStatementSyntax>().ToList();
 
-        foreach (var statement in statements)
+        foreach (var descendant in body.DescendantNodes())
         {
+            if (descendant is not LocalDeclarationStatementSyntax statement)
+            {
+                continue;
+            }
+
             foreach (var variable in statement.Declaration.Variables)
             {
                 var rhs = variable.Initializer?.Value;
@@ -182,8 +185,13 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         }
 
         var toAdd = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var statement in statements)
+        foreach (var descendant in body.DescendantNodes())
         {
+            if (descendant is not LocalDeclarationStatementSyntax statement)
+            {
+                continue;
+            }
+
             foreach (var variable in statement.Declaration.Variables)
             {
                 var localName = variable.Identifier.ValueText;
@@ -194,7 +202,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
                 if (variable.Initializer?.Value is InvocationExpressionSyntax init
                     && IsPathMethodCall(init)
-                    && result.Any(known => HasFirstArgumentNamed(init.ArgumentList, known)))
+                    && HasAnyFirstArgumentNamed(init.ArgumentList, result))
                 {
                     toAdd.Add(localName);
                 }
@@ -203,6 +211,17 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
         result.UnionWith(toAdd);
         return result;
+    }
+
+    private static bool HasAnyFirstArgumentNamed(ArgumentListSyntax argumentList, HashSet<string> names)
+    {
+        if (!argumentList.Arguments.Any())
+        {
+            return false;
+        }
+
+        var firstArgExpr = argumentList.Arguments[0].Expression;
+        return firstArgExpr is IdentifierNameSyntax id && names.Contains(id.Identifier.ValueText);
     }
 
     private static bool IsPathMethodCall(InvocationExpressionSyntax invocation) =>
@@ -389,7 +408,8 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
         var typeName = genericType.Identifier.ValueText;
 
-        if (!TryGetCliStringTypeArg(genericType, out var stringTypeArg))
+        var stringTypeArg = GetCliStringTypeArg(genericType);
+        if (stringTypeArg is null)
         {
             return;
         }
@@ -407,24 +427,10 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             rawName, description, suggestion));
     }
 
-    private static bool TryGetCliStringTypeArg(
-        GenericNameSyntax genericType,
-        out PredefinedTypeSyntax stringTypeArg)
+    private static PredefinedTypeSyntax? GetCliStringTypeArg(GenericNameSyntax genericType)
     {
-        stringTypeArg = default!;
         var typeArgs = genericType.TypeArgumentList.Arguments;
-        if (typeArgs.Count != 1)
-        {
-            return false;
-        }
-
-        if (typeArgs[0] is not PredefinedTypeSyntax { Keyword.ValueText: "string" } arg)
-        {
-            return false;
-        }
-
-        stringTypeArg = arg;
-        return true;
+        return typeArgs.Count != 1 ? null : typeArgs[0] is PredefinedTypeSyntax { Keyword.ValueText: "string" } arg ? arg : null;
     }
 
     private static bool TryGetPathCliName(
