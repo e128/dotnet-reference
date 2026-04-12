@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.4.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.5.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -16,16 +16,17 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 ### Design
 
-| Rule    | Title                                                                  | Code Fix |
-| ------- | ---------------------------------------------------------------------- | -------- |
-| E128001 | Use `FileInfo`/`DirectoryInfo` instead of `string` paths               | Yes      |
-| E128005 | Seal classes that have no subclasses                                   | Yes      |
-| E128007 | Avoid `async void` methods (non-event-handler)                         | Yes      |
-| E128008 | Avoid sync-over-async (`.Result` / `.GetAwaiter().GetResult()`)        | Yes      |
-| E128017 | Use primary constructor parameter directly                             | Yes      |
-| E128019 | Do not pass `CancellationToken` by `in` reference                      | Yes      |
-| E128021 | Do not use `in` modifier with ref struct parameters (default: Error)   | Yes      |
-| E128022 | Remove `ConfigureAwait(false)` in apps without `SynchronizationContext` | Yes      |
+| Rule    | Title                                                                    | Code Fix |
+| ------- | ------------------------------------------------------------------------ | -------- |
+| E128001 | Use `FileInfo`/`DirectoryInfo` instead of `string` paths                 | Yes      |
+| E128005 | Seal classes that have no subclasses                                     | Yes      |
+| E128007 | Avoid `async void` methods (non-event-handler)                           | Yes      |
+| E128008 | Avoid sync-over-async (`.Result` / `.GetAwaiter().GetResult()`)          | Yes      |
+| E128017 | Use primary constructor parameter directly                               | Yes      |
+| E128019 | Do not pass `CancellationToken` by `in` reference                        | Yes      |
+| E128021 | Do not use `in` modifier with ref struct parameters (default: Error)     | Yes      |
+| E128022 | Remove `ConfigureAwait(false)` in apps without `SynchronizationContext`   | Yes      |
+| E128030 | Do not compare `FileSystemInfo` types by reference (default: Info)        | Yes      |
 
 ### Reliability
 
@@ -40,6 +41,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128016 | `DateTime.Parse`/`ParseExact` missing `DateTimeStyles` parameter    | Yes      |
 | E128020 | Do not use `in` modifier with mutable structs                       | Yes      |
 | E128023 | Avoid hardcoded `/tmp` path                                         | Yes      |
+| E128028 | `Task.FromResult` wraps sync I/O that has an async alternative      | Yes      |
 
 ### Performance
 
@@ -50,6 +52,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128015 | Use string interpolation instead of `string.Format`                   | Yes      |
 | E128018 | Use `ToArray()` instead of `ToList()` for read-only `foreach`         | Yes      |
 | E128026 | Redundant `HashSet` allocation in `FrozenSet` creation                | Yes      |
+| E128027 | Use `FrozenSet`/`FrozenDictionary` for static readonly collections    | Yes      |
+| E128029 | Replace multi-string OR-chain with `HashSet.Contains`                 | Yes      |
 
 ### Style
 
@@ -304,6 +308,62 @@ var set = new HashSet<string>(items).ToFrozenSet();
 
 // After
 var set = items.ToFrozenSet();
+```
+
+### E128027 &mdash; Static readonly frozen collections
+
+Flags `static readonly HashSet<T>` and `static readonly Dictionary<TKey, TValue>` fields initialized at declaration. Frozen collections trade construction time for optimized read access &mdash; ideal for process-lifetime fields. Requires .NET 8+.
+
+```csharp
+// Before (warns)
+private static readonly HashSet<string> AllowedMethods = new(StringComparer.Ordinal) { "GET", "POST" };
+
+// After
+private static readonly FrozenSet<string> AllowedMethods = new HashSet<string>(StringComparer.Ordinal) { "GET", "POST" }.ToFrozenSet();
+```
+
+### E128028 &mdash; Task.FromResult wrapping sync I/O
+
+Flags methods that return `Task.FromResult` or `ValueTask.FromResult` while also calling synchronous I/O methods that have async equivalents (e.g., `File.ReadAllText` instead of `File.ReadAllTextAsync`). Does not flag early-return guards, null-object implementations, or methods that already use `await`.
+
+```csharp
+// Before (warns)
+public Task<string> ReadConfig(string path)
+{
+    var content = File.ReadAllText(path);
+    return Task.FromResult(content);
+}
+
+// After
+public async Task<string> ReadConfig(string path)
+{
+    return await File.ReadAllTextAsync(path);
+}
+```
+
+### E128029 &mdash; Multi-string OR-chain
+
+Flags 3+ `||`-chained string equality tests on the same operand. Replace with `HashSet<string>.Contains()` for cleaner code and O(1) lookup.
+
+```csharp
+// Before (warns)
+if (method == "GET" || method == "POST" || method == "PUT") { }
+
+// After
+private static readonly FrozenSet<string> AllowedMethods = ...;
+if (AllowedMethods.Contains(method)) { }
+```
+
+### E128030 &mdash; FileSystemInfo reference equality
+
+Flags `==`, `!=`, and `.Equals()` comparisons on `FileInfo` and `DirectoryInfo`. These types do not override `Equals` or `operator==`, so comparisons use reference equality from `System.Object` &mdash; two objects pointing to the same path are never equal. Compare `.FullName` instead. Default severity: **Info**.
+
+```csharp
+// Before (warns)
+if (fileA == fileB) { }
+
+// After
+if (string.Equals(fileA.FullName, fileB.FullName, StringComparison.Ordinal)) { }
 ```
 
 ### E128011 &mdash; GeneratedRegex timeout

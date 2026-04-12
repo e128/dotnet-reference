@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
+using E128.Analyzers.Performance;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
-using E128.Analyzers.Performance;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
