@@ -11,3 +11,5 @@ E128011 | Reliability | Warning | [GeneratedRegex] attribute is missing matchTim
 E128012 | Reliability | Warning | RegexOptions.Compiled is redundant in [GeneratedRegex]
 E128013 | Reliability | Warning | [GeneratedRegex] pattern has overlapping quantifiers
 E128014 | Reliability | Warning | [GeneratedRegex] pattern has nested quantifiers
+E128015 | Performance | Warning | Use string interpolation instead of string.Format
+E128018 | Performance | Warning | Use ToArray() instead of ToList() for read-only foreach iteration
