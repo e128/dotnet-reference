@@ -120,12 +120,9 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : CodeFixProvid
 
         var lastArg = args.Last();
         var lastArgType = semanticModel.GetTypeInfo(lastArg.Expression, cancellationToken).Type;
-        if (lastArgType is not null
-            && string.Equals(lastArgType.ToDisplayString(), "System.Threading.CancellationToken", StringComparison.Ordinal))
-        {
-            return args.Count - 1;
-        }
-
-        return args.Count;
+        return lastArgType is not null
+            && string.Equals(lastArgType.ToDisplayString(), "System.Threading.CancellationToken", StringComparison.Ordinal)
+            ? args.Count - 1
+            : args.Count;
     }
 }

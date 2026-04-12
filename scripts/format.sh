@@ -17,7 +17,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 SOLUTION="$(find_solution)"
-ARGS=(dotnet format "$SOLUTION" --no-restore)
+ARGS=(dotnet format "$SOLUTION")
 
 if [[ "$CHECK" == true ]]; then
     ARGS+=(--verify-no-changes)

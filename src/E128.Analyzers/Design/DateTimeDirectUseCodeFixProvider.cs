@@ -62,28 +62,22 @@ public sealed class DateTimeDirectUseCodeFixProvider : CodeFixProvider
             SyntaxFactory.IdentifierName("TimeProvider"),
             SyntaxFactory.IdentifierName("System"));
 
-        if (string.Equals(typeName, "DateTime", StringComparison.Ordinal))
-        {
-            return memberName switch
+        return string.Equals(typeName, "DateTime", StringComparison.Ordinal)
+            ? memberName switch
             {
                 "UtcNow" => BuildChain(timeProviderSystem, "GetUtcNow", "UtcDateTime"),
                 "Now" => BuildChain(timeProviderSystem, "GetLocalNow", "DateTime"),
                 "Today" => BuildChain(timeProviderSystem, "GetLocalNow", "Date"),
                 _ => null,
-            };
-        }
-
-        if (string.Equals(typeName, "DateTimeOffset", StringComparison.Ordinal))
-        {
-            return memberName switch
+            }
+            : string.Equals(typeName, "DateTimeOffset", StringComparison.Ordinal)
+            ? memberName switch
             {
                 "UtcNow" => BuildMethodCall(timeProviderSystem, "GetUtcNow"),
                 "Now" => BuildMethodCall(timeProviderSystem, "GetLocalNow"),
                 _ => null,
-            };
-        }
-
-        return null;
+            }
+            : (ExpressionSyntax?)null;
     }
 
     private static MemberAccessExpressionSyntax BuildChain(

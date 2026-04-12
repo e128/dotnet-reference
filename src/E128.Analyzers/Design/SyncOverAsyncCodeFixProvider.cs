@@ -166,7 +166,7 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
             var taskOfT = SyntaxFactory.GenericName(
                 SyntaxFactory.Identifier("Task"),
                 SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SingletonSeparatedList<TypeSyntax>(returnType.WithoutTrivia())));
+                    SyntaxFactory.SingletonSeparatedList(returnType.WithoutTrivia())));
 
             return method.WithReturnType(taskOfT.WithTriviaFrom(returnType));
         }
