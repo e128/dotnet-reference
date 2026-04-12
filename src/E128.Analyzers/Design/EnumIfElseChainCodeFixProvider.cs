@@ -146,11 +146,8 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
 
     private static ExpressionSyntax? ExtractCaseLabel(ExpressionSyntax condition)
     {
-        if (condition is not BinaryExpressionSyntax binary)
-        {
-            return null;
-        }
-
-        return binary.Right is MemberAccessExpressionSyntax ? binary.Right : binary.Left is MemberAccessExpressionSyntax ? binary.Left : null;
+        return condition is not BinaryExpressionSyntax binary
+            ? null
+            : binary.Right is MemberAccessExpressionSyntax ? binary.Right : binary.Left is MemberAccessExpressionSyntax ? binary.Left : null;
     }
 }

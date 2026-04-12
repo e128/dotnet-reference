@@ -41,11 +41,13 @@ B) scripts/branch.sh --json        (branch info, ahead/behind counts)
 
 ### 1. Format + build + test
 
-**A) Format (always):**
+**A) Format (MANDATORY — never skip):**
 ```bash
 scripts/format.sh
 ```
-Runs on the entire solution regardless of working tree state. This catches violations introduced by prior commits that local format missed (e.g., analyzer-backed style rules that require restore).
+This step is **unconditional**. Run it on every yeet, regardless of classification (`docs-only`, `code`, `mixed`), flags (`--skip-tests`, `--dry-run`), or working tree state. No exception. If you reach step 1 without running `scripts/format.sh`, you have a bug.
+
+Runs on the entire solution. This catches violations introduced by prior commits that local format missed (e.g., analyzer-backed style rules that require restore).
 
 If format produces changes and the working tree was previously clean, those changes become the commit.
 
@@ -104,6 +106,7 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
 - **Single commit per push** — squash local commits when `ahead > 1`
 - **Do NOT auto-commit or push again** after completing these steps — one-time action
 - **`--dry-run` stops after step 1** — quality check only, no side effects
+- **Format is unconditional** — `scripts/format.sh` runs on EVERY yeet. No flag, classification, or condition skips it. This is the #1 rule.
 - **Re-read gate** — after format runs (step 1A), all `.cs` file contents are stale. Do NOT Edit any `.cs` file after step 1 without re-reading first.
 
 ## Troubleshooting
