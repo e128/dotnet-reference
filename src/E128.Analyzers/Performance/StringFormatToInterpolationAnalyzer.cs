@@ -95,12 +95,7 @@ public sealed class StringFormatToInterpolationAnalyzer : DiagnosticAnalyzer
     internal static int GetFormatStringArgumentIndex(IMethodSymbol method)
     {
         var parameters = method.Parameters;
-        if (parameters.Length < 2)
-        {
-            return -1;
-        }
-
-        return IsFormatProviderParameter(parameters[0].Type) ? 1 : 0;
+        return parameters.Length < 2 ? -1 : IsFormatProviderParameter(parameters[0].Type) ? 1 : 0;
     }
 
     private static bool IsFormatProviderParameter(ITypeSymbol type)

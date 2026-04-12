@@ -173,12 +173,9 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
             .FirstOrDefault(f => f.Declaration.Variables
                 .Any(v => string.Equals(v.Identifier.ValueText, variable.Identifier.ValueText, StringComparison.Ordinal)));
 
-        if (currentField is null)
-        {
-            return root;
-        }
-
-        return currentField.Declaration.Variables.Count == 1
+        return currentField is null
+            ? root
+            : currentField.Declaration.Variables.Count == 1
             ? root.RemoveNode(currentField, SyntaxRemoveOptions.KeepNoTrivia)!
             : root.RemoveNode(
                 currentField.Declaration.Variables.First(v =>

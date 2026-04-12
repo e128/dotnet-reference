@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.3.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.3.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -22,6 +22,7 @@ All rules default to **Warning** severity. Every rule includes a code fix unless
 | E128005 | Seal classes that have no subclasses                     | Yes      |
 | E128007 | Avoid `async void` methods (non-event-handler)           | Yes      |
 | E128008 | Avoid sync-over-async (`.Result` / `.GetAwaiter().GetResult()`) | Yes |
+| E128017 | Use primary constructor parameter directly                   | Yes      |
 
 ### Reliability
 
@@ -31,8 +32,9 @@ All rules default to **Warning** severity. Every rule includes a code fix unless
 | E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`              | Yes      |
 | E128011 | `[GeneratedRegex]` missing `matchTimeoutMilliseconds`               | Yes      |
 | E128012 | `RegexOptions.Compiled` is redundant in `[GeneratedRegex]`          | Yes      |
-| E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers              | No       |
-| E128014 | `[GeneratedRegex]` pattern has nested quantifiers                   | No       |
+| E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers              | Yes      |
+| E128014 | `[GeneratedRegex]` pattern has nested quantifiers                   | Yes      |
+| E128016 | `DateTime.Parse`/`ParseExact` missing `DateTimeStyles` parameter    | Yes      |
 
 ### Performance
 
@@ -40,6 +42,8 @@ All rules default to **Warning** severity. Every rule includes a code fix unless
 | ------- | -------------------------------------------------------- | -------- |
 | E128009 | Use `MinBy`/`MaxBy` instead of `OrderBy().First()`      | Yes      |
 | E128010 | Pass `HttpCompletionOption.ResponseHeadersRead` to `HttpClient` calls | Yes |
+| E128015 | Use string interpolation instead of `string.Format`          | Yes      |
+| E128018 | Use `ToArray()` instead of `ToList()` for read-only `foreach` | Yes     |
 
 ### Style
 
@@ -136,6 +140,61 @@ var response = await client.GetAsync("/large-file");
 
 // After
 var response = await client.GetAsync("/large-file", HttpCompletionOption.ResponseHeadersRead);
+```
+
+### E128015 &mdash; String interpolation over string.Format
+
+Flags `string.Format(...)` calls that can be replaced with string interpolation (`$"..."`). Interpolation is faster (avoids boxing and parsing) and more readable.
+
+```csharp
+// Before (warns)
+var msg = string.Format("Hello, {0}!", name);
+
+// After
+var msg = $"Hello, {name}!";
+```
+
+### E128016 &mdash; DateTime.Parse roundtrip
+
+Flags `DateTime.Parse` and `DateTime.ParseExact` calls missing a `DateTimeStyles` parameter. Without `DateTimeStyles.RoundtripKind`, parsing an ISO 8601 UTC string silently converts it to local time.
+
+```csharp
+// Before (warns)
+var dt = DateTime.Parse(isoString);
+
+// After
+var dt = DateTime.Parse(isoString, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+```
+
+### E128017 &mdash; Primary constructor backing field
+
+Flags fields that are identity assignments from primary constructor parameters. Use the parameter directly in method bodies instead of creating a redundant backing field.
+
+```csharp
+// Before (warns)
+public class Service(ILogger logger)
+{
+    private readonly ILogger _logger = logger;
+    public void Run() => _logger.LogInformation("running");
+}
+
+// After
+public class Service(ILogger logger)
+{
+    public void Run() => logger.LogInformation("running");
+}
+```
+
+### E128018 &mdash; ToList in foreach
+
+Flags `ToList()` calls used only as the source of a `foreach` loop. `ToArray()` allocates less memory for read-only iteration.
+
+```csharp
+// Before (warns)
+foreach (var item in items.ToList()) { }
+
+// After
+foreach (var item in items.ToArray()) { }
 ```
 
 ### E128011 &mdash; GeneratedRegex timeout

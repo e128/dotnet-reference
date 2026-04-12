@@ -131,12 +131,8 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : CodeFixProvider
 
         var ch = pattern[index];
 
-        if (ch == '.' && index + 1 < pattern.Length && pattern[index + 1] is '*' or '+')
-        {
-            return true;
-        }
-
-        return ch == '(' && ContainsDotQuantifierInGroup(pattern, index);
+        return ch == '.' && index + 1 < pattern.Length && pattern[index + 1] is '*' or '+'
+|| ch == '(' && ContainsDotQuantifierInGroup(pattern, index);
     }
 
     private static bool HasOverlappingElementBackward(string pattern, int backslashIndex)
