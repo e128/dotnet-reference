@@ -33,9 +33,6 @@ A) scripts/status.sh --json        (working-tree status)
 B) scripts/branch.sh --json        (branch info, ahead/behind counts)
 ```
 
-**Early exits:**
-- If no changes in working tree → "Nothing to yeet — working tree is clean." **Stop.**
-
 **Derive from status JSON:**
 - Classification: all `.md`/`.json`/`.yml`/`.yaml`/`.txt` = `docs-only`; any `.cs`/`.csproj` = `code`; else `mixed`
 - If `docs-only` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "Docs/config-only change — skipping build+test"
@@ -44,12 +41,15 @@ B) scripts/branch.sh --json        (branch info, ahead/behind counts)
 
 ### 1. Format + build + test
 
-**A) Format (conditional):**
-Only if `cs_changed > 0`:
+**A) Format (always):**
 ```bash
-scripts/format.sh --changed
+scripts/format.sh
 ```
-Skip with "Format skipped — no .cs files changed" if zero.
+Runs on the entire solution regardless of working tree state. This catches violations introduced by prior commits that local format missed (e.g., analyzer-backed style rules that require restore).
+
+If format produces changes and the working tree was previously clean, those changes become the commit.
+
+After format, re-check working tree state. If still no changes (format found nothing, and `has_changes` was false) → "Nothing to yeet — working tree is clean." **Stop.**
 
 **B) Build + test (conditional):**
 Skip if `--skip-tests` (explicit or auto-detected docs-only).

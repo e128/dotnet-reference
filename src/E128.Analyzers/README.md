@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.2.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.3.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -28,7 +28,7 @@ All rules default to **Warning** severity. Every rule includes a code fix unless
 | Rule    | Title                                                    | Code Fix |
 | ------- | -------------------------------------------------------- | -------- |
 | E128003 | Use `TimeProvider` instead of `DateTime.Now` / `DateTimeOffset.Now` | Yes      |
-| E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`              | No       |
+| E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`              | Yes      |
 | E128011 | `[GeneratedRegex]` missing `matchTimeoutMilliseconds`               | Yes      |
 | E128012 | `RegexOptions.Compiled` is redundant in `[GeneratedRegex]`          | Yes      |
 | E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers              | No       |

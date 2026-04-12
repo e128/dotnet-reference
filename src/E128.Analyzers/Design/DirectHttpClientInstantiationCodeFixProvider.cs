@@ -148,12 +148,9 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : CodeFixProvid
             .OfType<ConstructorDeclarationSyntax>()
             .FirstOrDefault(c => c.Modifiers.Any(SyntaxKind.PublicKeyword));
 
-        if (existingCtor is not null)
-        {
-            return AddToExistingConstructor(classDecl, existingCtor, fieldDecl, fieldName, parameterName);
-        }
-
-        return AddNewConstructor(classDecl, fieldDecl, fieldName, parameterName);
+        return existingCtor is not null
+            ? AddToExistingConstructor(classDecl, existingCtor, fieldDecl, fieldName, parameterName)
+            : AddNewConstructor(classDecl, fieldDecl, fieldName, parameterName);
     }
 
     private static ClassDeclarationSyntax AddToExistingConstructor(

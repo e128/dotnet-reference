@@ -48,6 +48,7 @@ All scripts use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live
 | ------------------- | ----------------------------------------------- |
 | `coverage-areas.sh` | Test coverage heuristic by namespace/project    |
 | `session-health.sh` | Error trend check against a saved baseline      |
+| `violation-scan.sh` | Scan for .NET anti-patterns and rule violations  |
 
 ## Internal Scripts
 
