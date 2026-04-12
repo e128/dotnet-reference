@@ -15,3 +15,11 @@ E128015 | Performance | Warning | Use string interpolation instead of string.For
 E128016 | Reliability | Warning | DateTime.Parse/ParseExact missing DateTimeStyles parameter
 E128017 | Design | Warning | Use primary constructor parameter directly
 E128018 | Performance | Warning | Use ToArray() instead of ToList() for read-only foreach iteration
+E128019 | Design | Warning | Do not pass CancellationToken by 'in' reference
+E128020 | Reliability | Warning | Do not use 'in' modifier with mutable structs
+E128021 | Design | Error | Do not use 'in' modifier with ref struct parameters
+E128022 | Design | Warning | Remove ConfigureAwait(false) in app hosts
+E128023 | Reliability | Warning | Avoid hardcoded /tmp path — use Path.GetTempPath()
+E128024 | Style | Warning | Non-XML-doc comment above method declaration
+E128025 | Style | Warning | Guid.NewGuid() used in temp file path — use GetRandomFileName
+E128026 | Performance | Warning | Redundant HashSet allocation in FrozenSet creation

@@ -5,29 +5,32 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.3.5" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.4.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
 
 ## Rules
 
-All rules default to **Warning** severity. Every rule includes a code fix unless noted.
+All rules default to **Warning** severity unless noted. Every rule includes a code fix unless noted.
 
 ### Design
 
-| Rule    | Title                                                    | Code Fix |
-| ------- | -------------------------------------------------------- | -------- |
-| E128001 | Use `FileInfo`/`DirectoryInfo` instead of `string` paths | Yes      |
-| E128005 | Seal classes that have no subclasses                     | Yes      |
-| E128007 | Avoid `async void` methods (non-event-handler)           | Yes      |
-| E128008 | Avoid sync-over-async (`.Result` / `.GetAwaiter().GetResult()`) | Yes |
-| E128017 | Use primary constructor parameter directly                   | Yes      |
+| Rule    | Title                                                                  | Code Fix |
+| ------- | ---------------------------------------------------------------------- | -------- |
+| E128001 | Use `FileInfo`/`DirectoryInfo` instead of `string` paths               | Yes      |
+| E128005 | Seal classes that have no subclasses                                   | Yes      |
+| E128007 | Avoid `async void` methods (non-event-handler)                         | Yes      |
+| E128008 | Avoid sync-over-async (`.Result` / `.GetAwaiter().GetResult()`)        | Yes      |
+| E128017 | Use primary constructor parameter directly                             | Yes      |
+| E128019 | Do not pass `CancellationToken` by `in` reference                      | Yes      |
+| E128021 | Do not use `in` modifier with ref struct parameters (default: Error)   | Yes      |
+| E128022 | Remove `ConfigureAwait(false)` in apps without `SynchronizationContext` | Yes      |
 
 ### Reliability
 
-| Rule    | Title                                                    | Code Fix |
-| ------- | -------------------------------------------------------- | -------- |
+| Rule    | Title                                                               | Code Fix |
+| ------- | ------------------------------------------------------------------- | -------- |
 | E128003 | Use `TimeProvider` instead of `DateTime.Now` / `DateTimeOffset.Now` | Yes      |
 | E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`              | Yes      |
 | E128011 | `[GeneratedRegex]` missing `matchTimeoutMilliseconds`               | Yes      |
@@ -35,22 +38,27 @@ All rules default to **Warning** severity. Every rule includes a code fix unless
 | E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers              | Yes      |
 | E128014 | `[GeneratedRegex]` pattern has nested quantifiers                   | Yes      |
 | E128016 | `DateTime.Parse`/`ParseExact` missing `DateTimeStyles` parameter    | Yes      |
+| E128020 | Do not use `in` modifier with mutable structs                       | Yes      |
+| E128023 | Avoid hardcoded `/tmp` path                                         | Yes      |
 
 ### Performance
 
-| Rule    | Title                                                    | Code Fix |
-| ------- | -------------------------------------------------------- | -------- |
-| E128009 | Use `MinBy`/`MaxBy` instead of `OrderBy().First()`      | Yes      |
-| E128010 | Pass `HttpCompletionOption.ResponseHeadersRead` to `HttpClient` calls | Yes |
-| E128015 | Use string interpolation instead of `string.Format`          | Yes      |
-| E128018 | Use `ToArray()` instead of `ToList()` for read-only `foreach` | Yes     |
+| Rule    | Title                                                                 | Code Fix |
+| ------- | --------------------------------------------------------------------- | -------- |
+| E128009 | Use `MinBy`/`MaxBy` instead of `OrderBy().First()`                    | Yes      |
+| E128010 | Pass `HttpCompletionOption.ResponseHeadersRead` to `HttpClient` calls | Yes      |
+| E128015 | Use string interpolation instead of `string.Format`                   | Yes      |
+| E128018 | Use `ToArray()` instead of `ToList()` for read-only `foreach`         | Yes      |
+| E128026 | Redundant `HashSet` allocation in `FrozenSet` creation                | Yes      |
 
 ### Style
 
-| Rule    | Title                                                    | Code Fix |
-| ------- | -------------------------------------------------------- | -------- |
-| E128002 | Use `string.Empty` instead of `""`                       | Yes      |
-| E128006 | Use `Encoding.UTF8` instead of `Encoding.Default`        | Yes      |
+| Rule    | Title                                                                     | Code Fix |
+| ------- | ------------------------------------------------------------------------- | -------- |
+| E128002 | Use `string.Empty` instead of `""`                                        | Yes      |
+| E128006 | Use `Encoding.UTF8` instead of `Encoding.Default`                         | Yes      |
+| E128024 | Non-XML-doc comment above method declaration                              | Yes      |
+| E128025 | Use `Path.GetRandomFileName()` instead of `Guid.NewGuid()` in temp paths  | Yes      |
 
 ## What each rule catches
 
@@ -195,6 +203,107 @@ foreach (var item in items.ToList()) { }
 
 // After
 foreach (var item in items.ToArray()) { }
+```
+
+### E128019 &mdash; CancellationToken by `in` reference
+
+Flags `in CancellationToken` parameters. The `in` modifier makes `CancellationToken` a by-ref parameter, which breaks reflection-based frameworks (e.g., Microsoft.Extensions.AI). `CancellationToken` is a small struct &mdash; pass it by value.
+
+```csharp
+// Before (warns)
+async Task RunAsync(in CancellationToken ct) { }
+
+// After
+async Task RunAsync(CancellationToken ct) { }
+```
+
+### E128020 &mdash; `in` modifier with mutable structs
+
+Flags `in` on mutable (non-readonly) struct parameters. The compiler creates a hidden defensive copy on every member access, silently changing behavior.
+
+```csharp
+// Before (warns)
+void Process(in Batch<Activity> batch) { }
+
+// After
+void Process(Batch<Activity> batch) { }
+```
+
+### E128021 &mdash; `in` modifier with ref structs
+
+Flags `in` on ref struct parameters (`Span<T>`, `ReadOnlySpan<T>`, etc.). Ref structs are already passed by reference &mdash; `in` is redundant and a compile error on extension method `this` parameters. Default severity: **Error**.
+
+```csharp
+// Before (error)
+void Read(in ReadOnlySpan<byte> buffer) { }
+
+// After
+void Read(ReadOnlySpan<byte> buffer) { }
+```
+
+### E128022 &mdash; ConfigureAwait(false)
+
+Flags `.ConfigureAwait(false)` in executable application code (console apps, ASP.NET Core, Worker Service). These hosts have no `SynchronizationContext`, so the call is unnecessary noise. Skips Blazor WASM projects.
+
+```csharp
+// Before (warns)
+var data = await client.GetAsync("/api").ConfigureAwait(false);
+
+// After
+var data = await client.GetAsync("/api");
+```
+
+### E128023 &mdash; Hardcoded /tmp path
+
+Flags string literals equal to `"/tmp"` or starting with `"/tmp/"` (and Windows equivalents). Use `Path.GetTempPath()` for cross-platform compatibility.
+
+```csharp
+// Before (warns)
+var path = "/tmp/my-file.txt";
+
+// After
+var path = Path.Combine(Path.GetTempPath(), "my-file.txt");
+```
+
+### E128024 &mdash; Non-XML-doc comment above method
+
+Flags `//` comments immediately preceding method or local function declarations. Use `/// <summary>` XML doc comments for documentation, or remove the comment entirely.
+
+```csharp
+// Before (warns)
+// Does the thing
+void DoThing() { }
+
+// After (option 1: XML doc)
+/// <summary>Does the thing.</summary>
+void DoThing() { }
+
+// After (option 2: remove)
+void DoThing() { }
+```
+
+### E128025 &mdash; Guid.NewGuid() in temp paths
+
+Flags `Guid.NewGuid()` inside string interpolation within `Path.Combine` or `Path.GetTempPath` calls. Use `Path.GetRandomFileName()` instead.
+
+```csharp
+// Before (warns)
+var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.tmp");
+
+// After
+var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+```
+
+### E128026 &mdash; Redundant HashSet in FrozenSet
+
+Flags `new HashSet<T>(...).ToFrozenSet()` &mdash; the intermediate `HashSet` allocation is unnecessary. Pass the collection directly to `ToFrozenSet()`.
+
+```csharp
+// Before (warns)
+var set = new HashSet<string>(items).ToFrozenSet();
+
+// After
+var set = items.ToFrozenSet();
 ```
 
 ### E128011 &mdash; GeneratedRegex timeout
