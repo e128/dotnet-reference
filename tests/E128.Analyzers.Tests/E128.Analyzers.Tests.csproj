@@ -2,6 +2,8 @@
 
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
+        <!-- E128043 (null-forgiving operator) — test infrastructure legitimately uses ! for brevity -->
+        <NoWarn>$(NoWarn);E128043</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,6 +1,4 @@
-using System;
 using System.CommandLine;
-using System.Threading.Tasks;
 using E128.Reference.Core;
 
 var nameOption = new Option<string>("--name") { Description = "The name to greet" };
@@ -11,12 +9,11 @@ var rootCommand = new RootCommand("E128 Reference CLI — hello world with Syste
     nameOption,
 };
 
-rootCommand.SetAction((parseResult, _) =>
+rootCommand.SetAction(async (parseResult, _) =>
 {
     var name = parseResult.GetValue(nameOption);
     var greeter = new Greeter();
-    Console.WriteLine(greeter.Greet(name));
-    return Task.CompletedTask;
+    await parseResult.InvocationConfiguration.Output.WriteLineAsync(greeter.Greet(name));
 });
 
 return await rootCommand.Parse(args).InvokeAsync();

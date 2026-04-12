@@ -27,3 +27,26 @@ E128027 | Performance | Warning | Use FrozenSet/FrozenDictionary for static read
 E128028 | Reliability | Warning | Task.FromResult wraps sync I/O that has an async alternative
 E128029 | Performance | Warning | Replace multi-string OR-chain with HashSet.Contains
 E128030 | Design      | Info    | Do not compare FileSystemInfo types by reference
+E128031 | Reliability | Warning | AddSingleton factory returns IDisposable
+E128032 | Design      | Warning | Concrete-only DI registration with available interface
+E128033 | Reliability | Warning | Options class bound via .Bind() has init-only property
+E128034 | Reliability | Warning | Constructor news a DI-registered type
+E128035 | Reliability | Warning | Concrete-type DI dependency without direct registration
+E128036 | Design      | Warning | Task.Run wrapping async lambda — unnecessary thread pool hop
+E128037 | Reliability | Warning | Unbounded Task.WhenAll over async Select
+E128038 | Reliability | Warning | Task.WhenAll async lambda missing CancellationToken propagation
+E128039 | Reliability | Warning | Catch filter must exclude OperationCanceledException
+E128040 | Reliability | Warning | Concurrency limit must be positive
+E128041 | Reliability | Warning | JsonDocument.RootElement must not escape the document's using scope
+E128042 | Design      | Warning | Convert.ToInt32/ToInt64 wrapping ExecuteScalar without null guard
+E128043 | Style       | Warning | Do not use the null-forgiving operator
+E128044 | Design      | Warning | Type implements IAsyncDisposable but not IDisposable
+E128045 | Design      | Warning | Avoid direct System.Console usage
+E128046 | Design      | Warning | Class has excessive user-defined inheritance depth
+E128047 | Style       | Warning | #pragma warning disable without justification comment
+E128048 | Design      | Warning | Use switch instead of if/else-if chain on enum values
+E128049 | Design      | Warning | Avoid [DynamicallyAccessedMembers] attribute
+E128050 | Design      | Error   | Use TimeSpan for duration values
+E128051 | Reliability | Warning | HttpClient missing OperationCanceledException catch
+E128052 | Design      | Info    | Mutable collection on public API
+E128053 | Design      | Warning | Collection-of-string path parameter

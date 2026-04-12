@@ -8,7 +8,7 @@ using Xunit;
 
 namespace E128.Reference.Tests;
 
-public sealed class DockerSmokeTests : IAsyncLifetime
+public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
 {
     private const string ImageName = "e128-reference-web-test";
     private const string ContainerName = "e128-reference-web-smoke";
@@ -23,6 +23,11 @@ public sealed class DockerSmokeTests : IAsyncLifetime
         await RunDockerAsync($"build --tag {ImageName} .");
         await RunDockerAsync($"run -d --name {ContainerName} -p {HostPort}:8080 {ImageName}");
         await WaitForHealthy();
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
     }
 
     public async ValueTask DisposeAsync()

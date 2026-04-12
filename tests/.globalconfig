@@ -42,3 +42,6 @@ dotnet_diagnostic.SS059.severity = none
 
 # MA0006: Use string.Equals instead of == (test LINQ predicates frequently compare strings with ==)
 dotnet_diagnostic.MA0006.severity = suggestion
+
+# E128043: Null-forgiving operator (tests legitimately pass null to non-nullable params for guard clause testing)
+dotnet_diagnostic.E128043.severity = none
