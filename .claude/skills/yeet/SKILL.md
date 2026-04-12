@@ -39,7 +39,8 @@ B) scripts/branch.sh --json        (branch info, ahead/behind counts)
 **Derive from status JSON:**
 - Classification: all `.md`/`.json`/`.yml`/`.yaml`/`.txt` = `docs-only`; any `.cs`/`.csproj` = `code`; else `mixed`
 - If `docs-only` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "Docs/config-only change — skipping build+test"
-- Cache: `cs_changed`, `ahead`, `has_changes`
+- Cache: `cs_changed`, `ahead`, `has_changes`, `analyzers_or_scripts_changed`
+- Set `analyzers_or_scripts_changed = true` if any changed file path starts with `src/E128.Analyzers/` or `scripts/`
 
 ### 1. Format + build + test
 
@@ -56,6 +57,17 @@ Skip if `--skip-tests` (explicit or auto-detected docs-only).
 scripts/check.sh --no-format --all
 ```
 If exit code is non-zero → **stop and report failures.**
+
+**C) README freshness (conditional):**
+Only if any staged or unstaged changes touch `src/E128.Analyzers/` OR `scripts/`:
+```
+/readme-check --skip-threshold
+```
+This audits all READMEs against current repo state and auto-fixes drift (e.g., stale rule tables, missing scripts, wrong version in install snippet). The Analyzers README is packed into the NuGet package — stale content ships to nuget.org if not caught here.
+
+If readme-check produces edits, they become part of this commit. No separate commit.
+
+Skip with "README check skipped — no analyzer or script changes" if neither path is touched.
 
 **If `--dry-run`**: report quality gate results and **stop here.** Do not continue to step 2.
 
