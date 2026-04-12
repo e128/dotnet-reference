@@ -23,3 +23,7 @@ E128023 | Reliability | Warning | Avoid hardcoded /tmp path — use Path.GetTemp
 E128024 | Style | Warning | Non-XML-doc comment above method declaration
 E128025 | Style | Warning | Guid.NewGuid() used in temp file path — use GetRandomFileName
 E128026 | Performance | Warning | Redundant HashSet allocation in FrozenSet creation
+E128027 | Performance | Warning | Use FrozenSet/FrozenDictionary for static readonly collections
+E128028 | Reliability | Warning | Task.FromResult wraps sync I/O that has an async alternative
+E128029 | Performance | Warning | Replace multi-string OR-chain with HashSet.Contains
+E128030 | Design      | Info    | Do not compare FileSystemInfo types by reference
