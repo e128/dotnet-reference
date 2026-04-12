@@ -36,7 +36,7 @@ public sealed class DockerSmokeTests : IAsyncLifetime
     [Trait("Category", "Docker")]
     public async Task Root_ReturnsGreeting()
     {
-        var response = await _client.GetAsync("/");
+        var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -48,7 +48,7 @@ public sealed class DockerSmokeTests : IAsyncLifetime
     [Trait("Category", "Docker")]
     public async Task Health_ReturnsHealthy()
     {
-        var response = await _client.GetAsync("/health");
+        var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -64,7 +64,7 @@ public sealed class DockerSmokeTests : IAsyncLifetime
         {
             try
             {
-                var response = await _client.GetAsync("/health", cts.Token);
+                var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead, cts.Token);
                 if (response.IsSuccessStatusCode)
                 {
                     return;

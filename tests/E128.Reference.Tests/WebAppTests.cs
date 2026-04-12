@@ -14,7 +14,7 @@ public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClass
     [Trait("Category", "CI")]
     public async Task Root_ReturnsOk_WithGreeting()
     {
-        var response = await _client.GetAsync("/");
+        var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -26,7 +26,7 @@ public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClass
     [Trait("Category", "CI")]
     public async Task Health_ReturnsOk()
     {
-        var response = await _client.GetAsync("/health");
+        var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
