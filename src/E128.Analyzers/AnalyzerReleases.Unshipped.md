@@ -12,4 +12,6 @@ E128012 | Reliability | Warning | RegexOptions.Compiled is redundant in [Generat
 E128013 | Reliability | Warning | [GeneratedRegex] pattern has overlapping quantifiers
 E128014 | Reliability | Warning | [GeneratedRegex] pattern has nested quantifiers
 E128015 | Performance | Warning | Use string interpolation instead of string.Format
+E128016 | Reliability | Warning | DateTime.Parse/ParseExact missing DateTimeStyles parameter
+E128017 | Design | Warning | Use primary constructor parameter directly
 E128018 | Performance | Warning | Use ToArray() instead of ToList() for read-only foreach iteration
