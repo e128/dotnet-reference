@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.8.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.9.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -40,6 +40,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128050 | Use `TimeSpan` for time-duration values to avoid unit ambiguity (default: Error)                    | Yes      |
 | E128052 | Use immutable collection interface instead of mutable concrete type (default: Info)                  | Yes      |
 | E128053 | Use collection of `FileInfo`/`DirectoryInfo` instead of collection of `string` for file system paths | Yes      |
+| E128058 | Return `List<T>` via `.AsReadOnly()` when exposing as `IReadOnlyList<T>`                              | Yes      |
+| E128059 | Interface method parameter is unused in implementation                                                | Yes      |
 
 ### Reliability
 
@@ -63,6 +65,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128040 | Concurrency limit must be positive                                                       | Yes      |
 | E128041 | `JsonDocument.RootElement` must not escape the document's `using` scope                   | Yes      |
 | E128051 | Broad catch in async `HttpClient` method missing `OperationCanceledException` handler    | No       |
+| E128056 | `FileInfo.Exists` TOCTOU race condition                                                  | Yes      |
+| E128057 | Unprotected cleanup in finally block                                                     | Yes      |
 
 ### Performance
 
@@ -86,6 +90,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128025 | Use `Path.GetRandomFileName()` instead of `Guid.NewGuid()` in temp paths  | Yes      |
 | E128043 | Do not use the null-forgiving operator                                    | Yes      |
 | E128047 | `#pragma warning disable` without justification comment                   | Yes      |
+| E128055 | Unbalanced `#pragma warning disable` without matching restore             | Yes      |
 
 ### Testing
 
@@ -546,6 +551,81 @@ public class TestFixture : IDisposable
     private readonly string _tempDir = Path.Combine(Path.GetTempPath(), "test");
     public void Dispose() => Directory.Delete(_tempDir, recursive: true);
 }
+```
+
+### E128055 &mdash; Unbalanced pragma warning disable
+
+Flags `#pragma warning disable` directives that are never matched by a corresponding `#pragma warning restore` in the same file. An unbalanced disable suppresses diagnostics for the rest of the file, silently hiding real issues.
+
+```csharp
+// Before (warns — no restore)
+#pragma warning disable CS8600
+
+// After
+#pragma warning disable CS8600
+string? value = GetValue();
+#pragma warning restore CS8600
+```
+
+### E128056 &mdash; FileInfo.Exists TOCTOU race condition
+
+Flags file-read calls (e.g., `File.ReadAllText`, `File.OpenRead`) that immediately follow a `FileInfo.Exists` check without a `try/catch` guard. Another process may delete the file between the check and the read, causing an unhandled `IOException`.
+
+```csharp
+// Before (warns)
+if (file.Exists)
+    content = File.ReadAllText(file.FullName);  // race window
+
+// After
+try
+{
+    content = File.ReadAllText(file.FullName);
+}
+catch (FileNotFoundException) { }
+```
+
+### E128057 &mdash; Unprotected cleanup in finally block
+
+Flags cleanup calls (`File.Delete`, `Directory.Delete`, `Dispose`, etc.) in `finally` blocks that are not wrapped in their own `try/catch`. An exception thrown during cleanup will replace the original exception, making the root cause invisible.
+
+```csharp
+// Before (warns)
+finally
+{
+    File.Delete(tempPath);  // exception here swallows the original
+}
+
+// After
+finally
+{
+    try { File.Delete(tempPath); } catch (IOException) { }
+}
+```
+
+### E128058 &mdash; Return List&lt;T&gt; via .AsReadOnly()
+
+Flags methods that return a `List<T>` field directly when the declared return type is `IReadOnlyList<T>`. Callers can cast back to `List<T>` and mutate the internal list. Use `.AsReadOnly()` to return a true read-only wrapper.
+
+```csharp
+// Before (warns)
+public IReadOnlyList<string> Items => _items;
+
+// After
+public IReadOnlyList<string> Items => _items.AsReadOnly();
+```
+
+### E128059 &mdash; Unused interface method parameter
+
+Flags interface method implementations where a parameter declared in the interface contract is never referenced in the implementation body. The interface promises callers that the parameter affects behavior; ignoring it silently violates that contract.
+
+```csharp
+// Before (warns)
+public string Format(string input, IFormatProvider? provider) =>
+    input.ToUpperInvariant();  // provider is ignored
+
+// After — rename unused parameter to _ to signal intent
+public string Format(string input, IFormatProvider? _) =>
+    input.ToUpperInvariant();
 ```
 
 ## Configuration

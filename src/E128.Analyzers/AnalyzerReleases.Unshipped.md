@@ -1,5 +1,10 @@
 ### New Rules
 
-Rule ID | Category | Severity | Notes
---------|----------|----------|-------
+Rule ID  | Category    | Severity | Notes
+---------|-------------|----------|-------
+E128055  | Style       | Warning  | Unbalanced pragma warning disable — disable without matching restore
+E128056  | Reliability | Warning  | FileInfo.Exists TOCTOU race — check then read without try/catch
+E128057  | Reliability | Warning  | Unprotected cleanup in finally block — File/Directory.Delete without try/catch
+E128058  | Design      | Warning  | List<T> returned as IReadOnlyList<T> without .AsReadOnly()
+E128059  | Design      | Warning  | Interface method parameter unused in implementation
 

@@ -13,7 +13,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>1.8.0</Version>
+    <Version>1.9.0</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -21,7 +21,7 @@
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <PackageId>E128.Analyzers</PackageId>
     <Authors>Brent Miller</Authors>
-    <Description>Roslyn analyzers enforcing opinionated .NET conventions at compile time. 54 rules with code fixes covering design (sealed-by-default, async void, sync-over-async, ConfigureAwait, in-modifier safety, primary constructor fields, FileSystemInfo equality, TimeProvider, IHttpClientFactory, TimeSpan for durations, mutable collection exposure, DI registration, Task.Run async lambda, excessive inheritance, enum switch), reliability (DateTime.Parse roundtrip, GeneratedRegex timeout/backtracking, hardcoded /tmp paths, Task.FromResult sync I/O, Task.WhenAll unbounded/cancellation, JsonDocument lifetime, concurrency limits, catch filter OCE, options bind init, HttpClient missing OCE catch), performance (MinBy/MaxBy, HttpCompletionOption, string interpolation, ToArray in foreach, FrozenSet allocation, multi-string OR-chain, static readonly frozen collections), style (string.Empty, Encoding.UTF8, XML doc comments, temp path conventions, null-forgiving operator, suppression audit), and testing (temp directory cleanup).</Description>
+    <Description>Roslyn analyzers enforcing opinionated .NET conventions at compile time. 59 rules with code fixes covering design (sealed-by-default, async void, sync-over-async, ConfigureAwait, in-modifier safety, primary constructor fields, FileSystemInfo equality, TimeProvider, IHttpClientFactory, TimeSpan for durations, mutable collection exposure, DI registration, Task.Run async lambda, excessive inheritance, enum switch, List&lt;T&gt; as IReadOnlyList&lt;T&gt;, unused interface params), reliability (DateTime.Parse roundtrip, GeneratedRegex timeout/backtracking, hardcoded /tmp paths, Task.FromResult sync I/O, Task.WhenAll unbounded/cancellation, JsonDocument lifetime, concurrency limits, catch filter OCE, options bind init, HttpClient missing OCE catch, FileInfo.Exists TOCTOU, unprotected finally cleanup), performance (MinBy/MaxBy, HttpCompletionOption, string interpolation, ToArray in foreach, FrozenSet allocation, multi-string OR-chain, static readonly frozen collections), style (string.Empty, Encoding.UTF8, XML doc comments, temp path conventions, null-forgiving operator, suppression audit, pragma balance), and testing (temp directory cleanup).</Description>
     <PackageTags>roslyn;analyzer;csharp;code-analysis</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
