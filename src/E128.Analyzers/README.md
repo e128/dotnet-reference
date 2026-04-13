@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.6.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.8.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -86,6 +86,12 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128025 | Use `Path.GetRandomFileName()` instead of `Guid.NewGuid()` in temp paths  | Yes      |
 | E128043 | Do not use the null-forgiving operator                                    | Yes      |
 | E128047 | `#pragma warning disable` without justification comment                   | Yes      |
+
+### Testing
+
+| Rule    | Title                                                                     | Code Fix |
+| ------- | ------------------------------------------------------------------------- | -------- |
+| E128054 | Class creates temp directory without cleanup interface                     | Yes      |
 
 ## What each rule catches
 
@@ -522,6 +528,25 @@ Flags empty string literals (`""`). `string.Empty` is clearer and avoids allocat
 ### E128006 &mdash; Encoding.UTF8
 
 Flags `Encoding.Default` and `Encoding.ASCII`. `Encoding.Default` is platform-specific; `Encoding.ASCII` silently drops non-ASCII characters. Use `Encoding.UTF8`.
+
+### E128054 &mdash; Temp directory cleanup
+
+Flags classes that call `Path.GetTempPath()` in a field initializer, property initializer, or constructor without implementing `IDisposable`, `IAsyncDisposable`, or xUnit's `IAsyncLifetime`. Temp directories allocated at class level leak without a cleanup interface.
+
+```csharp
+// Before (warns)
+public class TestFixture
+{
+    private readonly string _tempDir = Path.Combine(Path.GetTempPath(), "test");
+}
+
+// After
+public class TestFixture : IDisposable
+{
+    private readonly string _tempDir = Path.Combine(Path.GetTempPath(), "test");
+    public void Dispose() => Directory.Delete(_tempDir, recursive: true);
+}
+```
 
 ## Configuration
 

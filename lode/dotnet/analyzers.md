@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-11T22:00:00Z*
+*Updated: 2026-04-13T00:17:09Z*
 
 ## Strategy: Deny by Default
 
@@ -66,23 +66,17 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 
 `src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"` — applied to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
-| Rule    | Category    | Title                                                          |
-| ------- | ----------- | -------------------------------------------------------------- |
-| E128001 | Design      | Use FileInfo or DirectoryInfo instead of string for paths      |
-| E128002 | Style       | Use string.Empty instead of ""                                 |
-| E128003 | Reliability | Use TimeProvider instead of DateTime/DateTimeOffset direct use |
-| E128004 | Reliability | Use IHttpClientFactory instead of new HttpClient()             |
-| E128005 | Design      | Seal classes that have no subclasses                           |
+54 rules across 6 categories: Design, Reliability, Performance, Style, Testing, and FileSystem. All rules have code fixes. See `src/E128.Analyzers/README.md` for the complete rule table and usage examples.
 
-### Code Fix Providers
+Key rules by category (not exhaustive):
 
-| Rule    | Code Fix                           | Behavior                                                                      |
-| ------- | ---------------------------------- | ----------------------------------------------------------------------------- |
-| E128001 | FileSystemPathCodeFixProvider      | Name-pattern only (empty/no body): offers FileInfo or DirectoryInfo. Use-site diagnostics have no fix (body depends on string). Also handles Option/Argument generic type args. |
-| E128002 | EmptyStringLiteralCodeFixProvider  | Replaces `""` with `string.Empty`.                                            |
-| E128005 | SealedByDefaultCodeFixProvider     | Adds `sealed` modifier, inserting after access/new/unsafe modifiers.          |
-
-E128003 (DateTime) and E128004 (HttpClient) have no code fixes — they require DI-level refactoring.
+| Category    | Examples                                                                            |
+| ----------- | ----------------------------------------------------------------------------------- |
+| Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI    |
+| Reliability  | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime       |
+| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation                  |
+| Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator              |
+| Testing     | Temp directory cleanup interface                                                     |
 
 ## Common Test Overrides
 
