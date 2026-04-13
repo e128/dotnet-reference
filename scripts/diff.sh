@@ -3,14 +3,15 @@
 # Usage: diff.sh [--json] [--full] [--files]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-JSON=false; FULL=false; FILES_ONLY=false
+JSON=false; FULL=false; FILES_ONLY=false; STAGED_ONLY=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --json)  JSON=true ;;
-        --full)  FULL=true ;;
-        --files) FILES_ONLY=true ;;
-        *)       err "Unknown flag: $1"; exit 1 ;;
+        --json)    JSON=true ;;
+        --full)    FULL=true ;;
+        --files)   FILES_ONLY=true ;;
+        --staged)  STAGED_ONLY=true ;;
+        *)         err "Unknown flag: $1"; exit 1 ;;
     esac
     shift
 done
@@ -19,6 +20,17 @@ ROOT="$(find_repo_root)"
 
 if [[ "$FILES_ONLY" == true ]]; then
     git -C "$ROOT" diff --name-only HEAD 2>/dev/null | sort -u
+    exit 0
+fi
+
+if [[ "$STAGED_ONLY" == true ]]; then
+    if [[ "$JSON" == true ]]; then
+        STAGED_FILES=$(git -C "$ROOT" diff --cached --name-only 2>/dev/null | wc -l | tr -d ' ')
+        STAGED_STAT=$(git -C "$ROOT" diff --cached --stat 2>/dev/null | tail -1)
+        printf '{"staged_files":%d,"stat":"%s"}\n' "$STAGED_FILES" "$STAGED_STAT"
+    else
+        git -C "$ROOT" diff --cached --stat 2>/dev/null
+    fi
     exit 0
 fi
 

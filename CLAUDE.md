@@ -104,13 +104,13 @@ Always use `.claude/tmp/` instead of `/tmp`.
 
 | Task                     | Script                              |
 | ------------------------ | ----------------------------------- |
-| Build                    | `scripts/build.sh [--json]`         |
-| Test                     | `scripts/test.sh [--all] [--json]`  |
+| Build                    | `scripts/build.sh [--verbose]`      |
+| Test                     | `scripts/test.sh [--all] [--verbose]` |
 | Format check             | `scripts/format.sh --check`         |
 | Full CI                  | `scripts/ci.sh`                     |
 | Composed check           | `scripts/check.sh [--all]`          |
 | Git status               | `scripts/status.sh [--json]`        |
-| Diff summary             | `scripts/diff.sh [--json]`          |
+| Diff summary             | `scripts/diff.sh [--json] [--staged]` |
 | Branch info              | `scripts/branch.sh [--json]`        |
 | Fail-fast gate           | `scripts/assert.sh --build-pass`    |
 | Timestamp                | `scripts/ts.sh [FILE]`              |

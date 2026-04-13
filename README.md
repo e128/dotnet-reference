@@ -151,8 +151,8 @@ scripts/test.sh GreeterTests
 # Run all tests including Docker and Manual
 scripts/test.sh --all
 
-# JSON output (for scripts/agents)
-scripts/test.sh --json
+# Verbose output (human-readable)
+scripts/test.sh --verbose
 ```
 
 Test categories:

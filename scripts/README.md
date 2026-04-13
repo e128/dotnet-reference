@@ -6,8 +6,8 @@ All scripts use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live
 
 | Script       | Purpose                                              | Key flags                    |
 | ------------ | ---------------------------------------------------- | ---------------------------- |
-| `build.sh`   | Build the solution or a specific project             | `--json`, `--project`        |
-| `test.sh`    | Run tests (defaults to CI category)                  | `--all`, `--json`, `--trait` |
+| `build.sh`   | Build the solution or a specific project             | `--verbose`, `--project`     |
+| `test.sh`    | Run tests (defaults to CI category)                  | `--all`, `--verbose`, `--trait` |
 | `format.sh`  | Run dotnet format                                    | `--check`, `--changed`       |
 | `check.sh`   | Composed: format + build + test                      | `--all`, `--no-format`       |
 | `ci.sh`      | Full CI pipeline                                     | `--skip-format`, `--skip-test` |
@@ -18,7 +18,7 @@ All scripts use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live
 | Script       | Purpose                                              | Key flags                    |
 | ------------ | ---------------------------------------------------- | ---------------------------- |
 | `status.sh`  | Git status with structured output                    | `--json`                     |
-| `diff.sh`    | Diff summary                                         | `--json`, `--files`          |
+| `diff.sh`    | Diff summary                                         | `--json`, `--files`, `--staged` |
 | `branch.sh`  | Branch info vs base                                  | `--json`, `--human`          |
 | `assert.sh`  | Fail-fast pre-commit gates                           | `--build-pass`, `--clean-working-tree` |
 
@@ -47,7 +47,7 @@ All scripts use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live
 | Script              | Purpose                                         |
 | ------------------- | ----------------------------------------------- |
 | `coverage-areas.sh` | Test coverage heuristic by namespace/project    |
-| `session-health.sh` | Error trend check against a saved baseline      |
+| `session-health.sh` | Session analytics: error trends, tool counts, bash commands |
 | `violation-scan.sh` | Scan for .NET anti-patterns and rule violations  |
 
 ## Internal Scripts

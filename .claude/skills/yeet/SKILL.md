@@ -82,12 +82,12 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
     - `ahead > 1`: `git reset --soft $(git merge-base main HEAD)` then re-stage and commit as one
     - 1 or 0: proceed normally
 - **Craft commit message** — always generate a fresh message from the actual diff, never reuse a prior commit message:
-    - Run `scripts/diff.sh --json` and inspect staged stats and affected projects
+    - Run `scripts/diff.sh --staged --json` to inspect staged stats
     - Synthesize a **conventional commit** summary: `type(scope): imperative summary` covering the full changeset
     - If the branch had multiple distinct concerns, name both in the subject or use a multi-line body
     - Subject line must be <=72 chars; use a body for detail when > 1 major concern
     - Never truncate the subject — if the auto-generated one ends in `...`, it is wrong
-- **Commit** — `scripts/internal/commit.sh "message"`
+- **Commit** — `scripts/internal/commit.sh --skip-precommit "message"` (precommit already ran above)
 - **Push** — `git push` (with `-u origin <branch>` if no upstream set)
 - **Create PR** — if the current branch is not `main`, create a pull request:
   ```bash

@@ -33,15 +33,24 @@ One-shot autonomous commit. No per-step gates, no "does this look right?", no pe
    - Match the last 5 commits' style (casing, verb tense, prefix conventions)
    - Add body paragraph only if changes are complex or span multiple concerns
 
-3. Commit via `internal/commit.sh` (handles PII scan, format, staging, trailer, plan closure check):
+3. Stage and scan:
    ```bash
-   scripts/internal/commit.sh "Your commit message here"
+   scripts/internal/stage.sh --include-new
+   scripts/internal/precommit.sh
    ```
-   - Add `--skip-ci` only when caller explicitly says "skip CI" or "no CI"
-   - Add `--skip-precommit` if the caller already ran preflight
-   - The script handles secret exclusion, Co-Authored-By trailer, and CI (runs by default; `--skip-ci` to suppress)
+   If precommit fails → stop and report the PII finding.
 
-4. Report: `{hash} {subject}` — do not push.
+4. Review staged changes:
+   ```bash
+   scripts/diff.sh --staged
+   ```
+
+5. Commit via `internal/commit.sh` with `--skip-precommit` (already ran in step 3):
+   ```bash
+   scripts/internal/commit.sh --skip-precommit "Your commit message here"
+   ```
+
+6. Report: `{hash} {subject}` — do not push.
 
 ## Rules
 

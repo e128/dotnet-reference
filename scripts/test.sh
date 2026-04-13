@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Run tests via dotnet test + Microsoft Testing Platform.
-# Usage: test.sh [--all] [--json] [--trait KEY=VALUE] [CLASS_NAME...]
+# Usage: test.sh [--all] [--verbose] [--trait KEY=VALUE] [CLASS_NAME...]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-JSON=false; ALL=false; DRY_RUN=false
+VERBOSE=false; ALL=false; DRY_RUN=false
 TRAIT="Category=CI"
 CLASSES=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --json)    JSON=true ;;
+        --json)    : ;;  # legacy alias — terse is now the default
+        --verbose) VERBOSE=true ;;
         --all)     ALL=true ;;
         --dry-run) DRY_RUN=true ;;
         --trait)   TRAIT="$2"; shift ;;
@@ -66,17 +67,16 @@ skipped=$(echo "$output" | sed -n 's/.*skipped: *\([0-9]*\).*/\1/p' | tail -1)
 
 total=${total:-0}; failed=${failed:-0}; succeeded=${succeeded:-0}; skipped=${skipped:-0}
 
-if [[ "$JSON" == true ]]; then
-    json_object status="$([ "$failed" -eq 0 ] && echo ok || echo fail)" \
-        total="$total" passed="$succeeded" failed="$failed" skipped="$skipped"
-else
+if [[ "$VERBOSE" == true ]]; then
     if [[ $EXIT_CODE -ne 0 || "$failed" -gt 0 ]]; then
         err "Tests failed: $failed failed, $succeeded passed, $skipped skipped"
-        # Show failure details
         echo "$output" | grep -E 'FAIL|error|Assert' | head -10
     else
         ok "Tests passed: $succeeded passed, $skipped skipped"
     fi
+else
+    json_object status="$([ "$failed" -eq 0 ] && echo ok || echo fail)" \
+        total="$total" passed="$succeeded" failed="$failed" skipped="$skipped"
 fi
 
 exit $EXIT_CODE

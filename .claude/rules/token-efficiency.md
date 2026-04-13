@@ -5,10 +5,10 @@
 - Don't echo back large blocks of code or file contents unless asked.
 - Batch related edits into single operations.
 - If a task needs 1 tool call, don't use 3.
-- **Use `scripts/build.sh --json` instead of raw `dotnet build`.**
-- **Use `scripts/test.sh` instead of raw `dotnet test`.**
+- **Use `scripts/build.sh` instead of raw `dotnet build`.** Output is terse JSON by default; use `--verbose` for full MSBuild log.
+- **Use `scripts/test.sh` instead of raw `dotnet test`.** Output is terse JSON by default; use `--verbose` for full output.
 - **Use `scripts/status.sh --json` instead of raw `git status`.**
-- **Use `scripts/diff.sh --json` instead of multiple `git diff` / `git log` calls.**
+- **Use `scripts/diff.sh --json` instead of multiple `git diff` / `git log` calls.** Use `--staged` for staged-only view instead of raw `git diff --cached`.
 - **Use `scripts/check.sh` instead of running format + build + test separately.**
 - **Use `scripts/ci.sh` for full CI runs.** Combines format + build + test.
 - **Use `scripts/context.sh` at session start.** Combines status + diff + plans.
