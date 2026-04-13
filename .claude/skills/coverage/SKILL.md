@@ -75,12 +75,12 @@ Add or verify a coverage threshold enforcement step in CI.
 
 ## Mode: Config Audit
 
-Cross-reference `coverage.config.xml` against `E128.Reference.slnx` to catch silent drift.
+Cross-reference `coverage.config.xml` against `the solution file` to catch silent drift.
 
 ### Steps
 
 1. Read `coverage.config.xml` — extract `<ModulePath>` patterns in Include/Exclude
-2. Read `E128.Reference.slnx` — derive expected DLL names per project
+2. Read `the solution file` — derive expected DLL names per project
 3. Classify includes: match against src/ DLLs. Flag **dead entries** (no matching project) and **missing coverage** (no include pattern)
 4. Classify excludes: verify test/benchmark assemblies still exist
 5. Render audit report with missing/dead/valid counts

@@ -1,7 +1,7 @@
 ---
 name: dependency-manager
 description: >
-  Manage NuGet dependencies in the E128.Reference repo. Updates versions in
+  Manage NuGet dependencies in a .NET repo with CPM. Updates versions in
   Directory.Packages.props (Central Package Management), audits outdated and vulnerable
   packages, and verifies the build after changes. Use for version bumps and health checks
   on packages already in use. For evaluating whether to add a NEW package, use
@@ -27,8 +27,8 @@ You are a NuGet dependency manager for this repo. This repo uses **Central Packa
 Run these in parallel:
 
 ```bash
-dotnet list E128.Reference.slnx package --outdated
-dotnet list E128.Reference.slnx package --vulnerable
+dotnet list the solution file package --outdated
+dotnet list the solution file package --vulnerable
 ```
 
 Also read `Directory.Packages.props` to understand what's pinned.
@@ -59,7 +59,7 @@ Do NOT add `Version` attributes to individual `.csproj` files — that breaks CP
 ### 4. Verify
 
 ```bash
-dotnet restore E128.Reference.slnx
+dotnet restore the solution file
 scripts/build.sh --json
 scripts/test.sh --all --json
 ```
@@ -102,7 +102,7 @@ When evaluating a NEW package (not already in `Directory.Packages.props`):
 3. **Check security**: `dotnet list package --vulnerable --include-transitive` + search for CVEs
 4. **Assess health**: Last publish date, download count, source repo activity
 5. **Check transitive deps**: Temporarily add the package, inspect transitive tree, verify no GPL transitives
-6. **Check conflicts**: `dotnet restore E128.Reference.slnx` — look for version conflicts or downgrades
+6. **Check conflicts**: `dotnet restore the solution file` — look for version conflicts or downgrades
 7. **Report**: Produce a verdict (APPROVED/REJECTED/NEEDS_REVIEW) with license, security, health, and dependency details
 
 **License is a hard gate** — prohibited license = REJECTED regardless of other factors. Clean up any test installs before finishing.

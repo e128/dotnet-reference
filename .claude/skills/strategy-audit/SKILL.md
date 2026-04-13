@@ -1,15 +1,15 @@
 ---
-name: martinizing
+name: strategy-audit
 description: >
   Strategic alignment audit for codebases. Applies Roger Martin's strategy framework directly
   to code — analyzing what the code reveals about its strategic choices, investment levels, and
   capability reinforcement. Produces a prioritized findings report and feeds actionable
   refactorings into dev-planning. Use for code review through a strategy lens, feature gap
   analysis, investment mismatch detection, or surfacing undocumented strategic choices.
-  Triggers on: martinize, martinizing, strategic audit, roger martin, code as strategy,
-  strategy review, investment mismatch, capability analysis, strategic alignment,
-  where should I invest, code investment audit, feature gap analysis, over-engineered,
-  dead code strategy, what's table stakes.
+  Triggers on: strategy audit, strategic audit, martinize, martinizing, roger martin,
+  code as strategy, strategy review, investment mismatch, capability analysis,
+  strategic alignment, where should I invest, code investment audit, feature gap analysis,
+  over-engineered, dead code strategy, what's table stakes.
 argument-hint: "<repo-path>"
 allowed-tools: Read, Glob, Grep, Bash, Agent
 ---
@@ -25,15 +25,15 @@ format, see [references/scoring-rubric.md](references/scoring-rubric.md).
 
 **What this skill does differently from `apply all skills`:**
 - `apply all skills` checks code against each skill's technical recommendations
-- `/martinizing` reads the **code as strategy** — what do investment levels, architecture, and capability chains reveal about the project's actual strategic choices?
+- `/strategy-audit` reads the **code as strategy** — what do investment levels, architecture, and capability chains reveal about the project's actual strategic choices?
 
 ## Usage
 
 ```
-/martinizing                    # Audit current working directory
-/martinizing ./src              # Audit specific path
-/martinizing /path/to/repo      # Audit any repo
-/martinizing --resume           # Resume from last checkpoint in .claude/tmp/martinizing/state.md
+/strategy-audit                    # Audit current working directory
+/strategy-audit ./src              # Audit specific path
+/strategy-audit /path/to/repo      # Audit any repo
+/strategy-audit --resume           # Resume from last checkpoint in .claude/tmp/strategy-audit/state.md
 ```
 
 One optional argument: the code path to audit. Defaults to current working directory.
@@ -52,29 +52,29 @@ One optional argument: the code path to audit. Defaults to current working direc
 Before doing anything else, check for an in-progress run:
 
 ```bash
-cat .claude/tmp/martinizing/state.md 2>/dev/null
+cat .claude/tmp/strategy-audit/state.md 2>/dev/null
 ```
 
 If `state.md` exists, read it to determine which phases are `DONE`, skip them, and load
 referenced intermediate files:
-- If Phase 2 is `DONE`, load strategic profile from `.claude/tmp/martinizing/strategic-profile.md`
-- If Phase 3 is `DONE`, load merged findings from `.claude/tmp/martinizing/findings.md`
+- If Phase 2 is `DONE`, load strategic profile from `.claude/tmp/strategy-audit/strategic-profile.md`
+- If Phase 3 is `DONE`, load merged findings from `.claude/tmp/strategy-audit/findings.md`
 
-If `state.md` does not exist, start fresh: `mkdir -p .claude/tmp/martinizing`
+If `state.md` does not exist, start fresh: `mkdir -p .claude/tmp/strategy-audit`
 
 Set the report output path:
 ```bash
-REPORT_PATH="plans/martinizing-$(date -u +%Y-%m-%d).md"
+REPORT_PATH="plans/strategy-audit-$(date -u +%Y-%m-%d).md"
 ```
 
 **Append after each phase completes:**
 - Phase 1: `- Phase 1 (Discover): DONE — {N files, key language/framework}`
-- Phase 2: `- Phase 2 (Strategy): DONE — {N differentiators -> strategic-profile.md}`; write strategic profile to `.claude/tmp/martinizing/strategic-profile.md`
+- Phase 2: `- Phase 2 (Strategy): DONE — {N differentiators -> strategic-profile.md}`; write strategic profile to `.claude/tmp/strategy-audit/strategic-profile.md`
 - Phase 2a: `- Phase 2a (Classify): DONE — {N strategic, M imperative}`
-- Phase 3: `- Phase 3 (Audit): DONE — {N findings across N agents -> findings.md}`; write merged agent findings to `.claude/tmp/martinizing/findings.md`
+- Phase 3: `- Phase 3 (Audit): DONE — {N findings across N agents -> findings.md}`; write merged agent findings to `.claude/tmp/strategy-audit/findings.md`
 - Phase 4: `- Phase 4 (Synthesize): DONE — report written to $REPORT_PATH`
 
-**Cleanup:** Delete `.claude/tmp/martinizing/` when Phase 5 completes.
+**Cleanup:** Delete `.claude/tmp/strategy-audit/` when Phase 5 completes.
 
 ---
 
@@ -156,7 +156,7 @@ Write the full report to `$REPORT_PATH`.
 ### Phase 5: Generate Implementation Plan
 
 Invoke the **dev-planning** skill with a feature name derived from the primary finding category
-(e.g., `martinizing-investment-alignment` or `martinizing-chain-repair`). Provide as the
+(e.g., `strategy-audit-investment-alignment` or `strategy-audit-chain-repair`). Provide as the
 feature description a concise summary of the strategic profile and ranked findings from Phase 4
 so dev-planning can research the codebase with full context.
 

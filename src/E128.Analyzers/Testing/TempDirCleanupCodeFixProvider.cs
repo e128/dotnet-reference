@@ -106,12 +106,12 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
                     SyntaxKind.SimpleMemberAccessExpression,
                     SyntaxFactory.IdentifierName("Directory"),
                     SyntaxFactory.IdentifierName("Delete")),
-                SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(new[]
-                {
+                SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(
+                [
                     SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_path")),
                     SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(
                         SyntaxKind.TrueLiteralExpression)),
-                }))));
+                ]))));
 
         var returnStatement = SyntaxFactory.ReturnStatement(
             SyntaxFactory.MemberAccessExpression(

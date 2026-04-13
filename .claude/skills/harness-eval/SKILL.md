@@ -1,11 +1,11 @@
 ---
-name: agentic-harness
+name: harness-eval
 description: Evaluate or design an agent harness against the 12 production primitives distilled from the Claude Code architecture leak. Two modes: evaluate an existing codebase for gaps, or design a new harness from scratch. Biases toward lean, solo-maintainable, single-agent architecture. Use when assessing agent reliability, security, or durability.
 argument-hint: "[eval <path-to-harness>] | [design <agent-description>]"
 allowed-tools: Read, Glob, Grep, Edit, Write
 ---
 
-# Agentic Harness
+# Harness Eval
 
 Evaluate or design an agent harness against **12 production primitives** derived from the Claude Code architecture. Agents are 80% plumbing. This skill surfaces the plumbing gaps.
 
@@ -14,8 +14,8 @@ Source material: [Nate B Jones — Your Agent Has 12 Blind Spots](https://natesn
 ## Usage
 
 ```
-/agentic-harness eval <path>          # Evaluate existing harness at <path>
-/agentic-harness design <description> # Design a new harness for <description>
+/harness-eval eval <path>          # Evaluate existing harness at <path>
+/harness-eval design <description> # Design a new harness for <description>
 ```
 
 If no mode or argument is given, ask the user which mode they want and what target/description to use.
@@ -58,7 +58,7 @@ See [references/primitives.md](references/primitives.md) for the full detailed d
 
 ## Modes
 
-### Design Mode — `/agentic-harness design <description>`
+### Design Mode — `/harness-eval design <description>`
 
 Use when building a new agent harness from scratch.
 
@@ -106,7 +106,7 @@ Primitives: [list] — [one-line reason per item]
 
 ---
 
-### Eval Mode — `/agentic-harness eval <path>`
+### Eval Mode — `/harness-eval eval <path>`
 
 Use when evaluating an existing agent harness.
 
@@ -137,7 +137,7 @@ Use when evaluating an existing agent harness.
 4. **Present report.** Format:
 
 ```
-## Agentic Harness Evaluation: [path]
+## Harness Eval Evaluation: [path]
 
 **Primitives present:** N/12
 **Critical gaps (HIGH risk):** N

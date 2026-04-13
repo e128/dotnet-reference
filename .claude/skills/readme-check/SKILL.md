@@ -2,9 +2,8 @@
 name: readme-check
 description: >
   Audits all README.md files in the repo for staleness after significant code
-  changes and auto-fixes drifted tables. Covers root README, scripts/README,
-  and src/E128.Analyzers/README. Skips automatically when fewer than 50 C#
-  files changed in recent history.
+  changes and auto-fixes drifted tables. Discovers READMEs dynamically. Skips
+  automatically when fewer than 50 C# files changed in recent history.
   Triggers on: check readme, readme stale, is readme up to date, readme check,
   readme accuracy, readme outdated, update readme.
 allowed-tools: Read, Glob, Grep, Bash, Edit
@@ -16,13 +15,15 @@ flags:
 
 Audits all README.md files for staleness after significant code changes. Only triggers a review when the change volume warrants it.
 
-## README inventory
+## README discovery
+
+Discover all READMEs dynamically in Step 2. Common locations:
 
 | File                          | Audience     | Key content to verify                     |
 | ----------------------------- | ------------ | ----------------------------------------- |
 | `README.md`                   | Contributors | Project table, script table, .NET version |
 | `scripts/README.md`           | Contributors | Script tables match `scripts/help.sh`     |
-| `src/E128.Analyzers/README.md`| NuGet users  | Rule table, code fix flags, version       |
+| `src/*/README.md`             | Package users| Rule tables, version, install snippets    |
 
 ## Step 1: Check threshold
 
@@ -47,7 +48,7 @@ Verify the inventory above is still complete. If a new README exists, flag it.
 
 ### Root README.md
 1. Read `README.md`
-2. Cross-reference project tables against `E128.Reference.slnx` and `src/` directory
+2. Cross-reference project tables against the solution file and `src/` directory
 3. Cross-reference script table against `scripts/help.sh` output
 4. Check .NET version against `Directory.Build.props` or `global.json`
 5. Verify lode links resolve to existing files
@@ -58,13 +59,13 @@ Verify the inventory above is still complete. If a new README exists, flag it.
 3. Check that flags documented match actual script `--help` or argument parsing
 4. Verify `internal/` script table matches `ls scripts/internal/*.sh`
 
-### src/E128.Analyzers/README.md
-1. Read `src/E128.Analyzers/README.md`
-2. Grep all `DiagnosticId` constants from `src/E128.Analyzers/**/*Analyzer.cs` — every rule must appear in the rule table
+### src/*/README.md (packable projects)
+For each README found under `src/` in a packable project (`<IsPackable>true</IsPackable>`):
+1. Read the README
+2. If the project contains analyzers, grep all `DiagnosticId` constants from `*Analyzer.cs` — every rule must appear in the rule table
 3. Grep all `*CodeFixProvider.cs` files — the "Code Fix" column must be Yes for rules that have one, No otherwise
-4. Check `<Version>` in `E128.Analyzers.csproj` matches the installation snippet
-5. Verify rule categories match the `category:` field in each analyzer's `DiagnosticDescriptor`
-6. Verify rule titles match the `title:` field in each analyzer's `DiagnosticDescriptor`
+4. Check `<Version>` in the `.csproj` matches any installation snippet in the README
+5. Verify rule categories and titles match the `DiagnosticDescriptor` fields
 
 ## Step 4: Report
 

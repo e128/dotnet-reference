@@ -107,7 +107,7 @@ Spawn build-validator to confirm:
 
 ```
 Agent: build-validator
-Prompt: "Build E128.Reference.slnx and verify the errors are resolved. Run CI tests."
+Prompt: "Build the solution and verify the errors are resolved. Run CI tests."
 ```
 
 ## Step 5: Report

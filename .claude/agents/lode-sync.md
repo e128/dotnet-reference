@@ -31,7 +31,7 @@ Use this mapping to determine which lode files are affected by code changes:
 | `Directory.Build.props` | `lode/coding-standards/*.md` |
 | `src/**/*.csproj` | `lode/summary.md` |
 | `Directory.Packages.props` | `lode/summary.md` |
-| `E128.Reference.slnx` | `lode/summary.md` |
+| `*.slnx` | `lode/summary.md` |
 
 ## Workflow
 
@@ -77,7 +77,7 @@ You MUST NOT automatically:
 
 ### 6. Flag dependency changes for new documentation
 
-If dependency-related files changed (`*.csproj`, `Directory.Packages.props`, or `E128.Reference.slnx`), flag as `NEW_CODE` — a `lode/dependency-graph.md` may need to be created. Do not auto-generate unless the file already exists.
+If dependency-related files changed (`*.csproj`, `Directory.Packages.props`, or `*.slnx`), flag as `NEW_CODE` — a `lode/dependency-graph.md` may need to be created. Do not auto-generate unless the file already exists.
 
 ## Timestamp Format
 

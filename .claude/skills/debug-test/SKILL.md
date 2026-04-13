@@ -1,5 +1,5 @@
 ---
-name: debug-failing-test
+name: debug-test
 description: >
   End-to-end investigation of a single failing unit test. Accepts a test name or
   pasted xUnit output, runs the test in isolation, reads the test and source files,
