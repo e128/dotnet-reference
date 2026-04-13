@@ -1,10 +1,21 @@
 # Claude Revision Log
-*Updated: 2026-04-11T14:12:16Z*
+*Updated: 2026-04-12T23:45:00Z*
 
 Persistent memory for `/claude-revision`. Each run appends one entry.
 Read at Phase 0 to recover last-known state and deferred items.
 
 ## Runs
+
+### 2026-04-12 (Run 3)
+- Agents: 16 | Skills: 17 | Memory files: 1
+- Web guidance: v2.1.101 (up from v2.1.98); sub-agent MCP inheritance fix, worktree Read/Edit fix, SDK renamed to "Claude Agent SDK", /ultraplan + /team-onboarding added
+- HIGH: 1 | MEDIUM: 1 | LOW: 0
+- Actions taken:
+  - S1: Extracted solution-audit Phase 1 parse steps to references/parse-steps.md, compressed Phase 4 report template (314->227 lines)
+  - A1: Trimmed weekly-learner: compressed triggers, Phase 2.4, Phase 7 (263->242 lines)
+  - L1: Updated claude-code-upstream.md version baseline to v2.1.101
+- Deferred: none
+- Notes: Consolidation commit (3063fc0) since Run 2 merged 3 agents (lode-capture→lode-sync, skill-loop-optimizer→skill-self-updater, token-optimizer→weekly-learner) and deleted 3 (appsettings-drift, commit-preflight, confirmation-reducer). Clean state — all agents have explicit model/maxTurns/tools/memory.
 
 ### 2026-04-10 (Run 2)
 - Agents: 23 | Skills: 15 | Memory files: 0

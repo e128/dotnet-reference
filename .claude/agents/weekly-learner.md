@@ -11,11 +11,8 @@ description: >
   For quarterly/comprehensive reviews, invoke with --days 90.
   Triggers on: weekly learning, session analysis, pattern analysis, what am I repeating,
   workflow audit, efficiency audit, learn from sessions, plan retro, plan retrospective,
-  deep session analysis, analyze all sessions, learn from me, session audit,
-  quarterly review, full session audit, what should become a skill, skills from sessions,
-  comprehensive session review, what should be an agent, token optimizer, reduce tokens,
-  token audit, session token audit, token review, token waste, token efficiency audit,
-  analyze this session, session token use, current session tokens.
+  session audit, quarterly review, what should become a skill, what should be an agent,
+  token optimizer, reduce tokens, token audit, token efficiency audit, analyze this session.
   Not for: single-session debugging, real-time workflow monitoring, or manual code review.
 model: sonnet
 tools: Bash, Glob, Grep, Read, Write, Agent
@@ -129,16 +126,7 @@ Analyze the gathered data for:
 
 ### 2.4 Hook effectiveness tracking
 
-Compare current violation/error counts against a saved baseline (if one exists):
-
-```bash
-scripts/session-health.sh errors --days 3 --json
-```
-
-For each category where a hook or rule was recently added (check memory for "Implemented Recommendations"), compare the before/after counts. Report:
-- **Working**: category dropped >=50% since the fix shipped
-- **Partial**: category dropped but still >5/3d
-- **Ineffective**: category unchanged or worsened despite the fix
+Run `scripts/session-health.sh errors --days 3 --json` and compare counts against baseline in memory for categories where a hook/rule was recently added. Report: **Working** (dropped >=50%), **Partial** (dropped but >5/3d), **Ineffective** (unchanged/worsened).
 
 ### 2.5 Sub-agent success rate
 
@@ -238,16 +226,7 @@ Write findings to `.claude/tmp/weekly-learner/memory.md` with sections: Active P
 
 ## Phase 7: Knowledge Consolidation
 
-If `lode/` exists, spawn the `knowledge-consolidator` agent to flush accumulated session memory into the repo's durable knowledge systems (CLAUDE.md, `.claude/rules/`, `lode/`). This ensures insights from the analysis window don't remain trapped in ephemeral memory files.
-
-```
-Agent: knowledge-consolidator
-Prompt: Consolidate learnings from the last 7 days of session memory into the repo's
-durable knowledge. Focus on insights that are not yet captured in CLAUDE.md, .claude/rules/,
-or lode/ files. Skip anything already present. Report what was added.
-```
-
-This phase runs after the report is written — it does not block the digest output.
+If `lode/` exists, spawn `knowledge-consolidator` to flush session memory into durable knowledge (CLAUDE.md, `.claude/rules/`, `lode/`). Prompt: consolidate last 7 days, skip duplicates, report additions. Runs after the report — does not block digest output.
 
 ## Critical Rules
 

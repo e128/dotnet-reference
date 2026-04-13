@@ -63,68 +63,11 @@ fd -e slnx -e sln --max-depth 1
 
 Prefer `.slnx` over `.sln`. If neither found, error and stop.
 
-### 1.2 Read global.json
+### 1.2–1.9 Parse all config sources
 
-Extract SDK version and test runner:
-```
-sdk_version: "10.0.201"
-target_framework: "net10.0"  (inferred from SDK major)
-test_runner: "mtp" | null
-```
-
-If `global.json` missing: infer TFM from `Directory.Build.props`.
-
-### 1.3 Read the solution file
-
-Extract all `<Project>` entries and `<Folder>` groupings. Build:
-```
-folder_map = {
-  "/src/": ["ProjectA", "ProjectB.Web", ...],
-  "/tests/": ["ProjectA.Tests", ...],
-}
-```
-
-### 1.4 Read all .csproj files
-
-For each project in the solution, extract:
-- `AssemblyName` (explicit or inherited from project folder name)
-- `RootNamespace` (explicit or inherited)
-- `TargetFramework` / `TargetFrameworks` (explicit or inherited)
-- `OutputType` (Exe, Library, or default)
-- `Sdk` attribute (e.g., `Microsoft.NET.Sdk.Web`)
-- `PublishAot` flag
-- `<ProjectReference>` list (resolved to project names)
-- `<InternalsVisibleTo>` declarations
-- `<PackageReference>` list (names + whether `Version=` is present)
-- `<IsPackable>` flag
-
-### 1.5 Read Directory.Build.props
-
-Extract defaults: TFM, OutputType, analyzer packages, analysis settings,
-NuGet audit properties, build performance settings.
-
-### 1.6 Read Directory.Packages.props
-
-Extract all `<PackageVersion>` entries. Note transitive pin boundary if marked.
-
-### 1.7 Read nuget.config
-
-Extract: `<clear />` presence, source URLs, HTTPS status, protocol version,
-`<packageSourceMapping>` presence, `<trustedSigners>` presence.
-
-### 1.8 Read config files
-
-- `.globalconfig` (root)
-- `tests/.globalconfig` (if exists)
-- `.editorconfig` (root, first 100 lines of `[*.cs]` section)
-
-### 1.9 Scan for suppressions
-
-```
-Grep: pattern="#pragma warning disable", path=src/, glob=*.cs, output_mode=content
-```
-
-Exclude `*.g.cs` and `obj/` paths.
+Read `references/parse-steps.md` for detailed extraction steps covering: global.json,
+solution file, all .csproj files, Directory.Build.props, Directory.Packages.props,
+nuget.config, .globalconfig/.editorconfig, and suppression scan.
 
 ### 1.10 Scan for orphans
 
@@ -268,39 +211,9 @@ Pass: project table, Directory.Build.props content, .globalconfig content,
 
 ## Phase 4: Report
 
-```
-══════════════════════════════════════════════════════
-  SOLUTION AUDIT REPORT
-══════════════════════════════════════════════════════
-Solution: {name} | Projects: {N} | Packages: {N} (central)
-SDK: {version} | TFM: {tfm}
-Findings: N CRITICAL, N HIGH, N MEDIUM, N LOW
+Print a structured report with: header (solution name, project/package counts, SDK, TFM, finding totals), findings grouped by severity (CRITICAL → HIGH → MEDIUM → LOW) with `[D#] target: description` format, dependency graph (Mermaid block), and verdict.
 
-──────────────────────────────────────────────────────
-  CRITICAL (N)
-──────────────────────────────────────────────────────
-[D1] project: description
-...
-
-──────────────────────────────────────────────────────
-  HIGH (N)
-──────────────────────────────────────────────────────
-...
-
-──────────────────────────────────────────────────────
-  DEPENDENCY GRAPH
-──────────────────────────────────────────────────────
-(Mermaid block)
-
-══════════════════════════════════════════════════════
-  VERDICT: PASS | WARN | FAIL
-══════════════════════════════════════════════════════
-```
-
-**Verdict:**
-- **PASS** — no CRITICAL or HIGH findings
-- **WARN** — HIGH findings but no CRITICAL
-- **FAIL** — CRITICAL findings present
+**Verdict:** **PASS** (no CRITICAL/HIGH) | **WARN** (HIGH but no CRITICAL) | **FAIL** (CRITICAL present)
 
 ---
 

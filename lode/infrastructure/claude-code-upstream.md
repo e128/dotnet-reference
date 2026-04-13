@@ -1,19 +1,22 @@
 # Claude Code Upstream Reference
-*Updated: 2026-04-11T14:12:16Z*
+*Updated: 2026-04-12T23:45:00Z*
 
 Baseline snapshot of official Claude Code guidance. Used for periodic config health checks.
 
-## Current Version: 2.1.98
+## Current Version: 2.1.101
 
-Key recent changes (2.1.91-2.1.98):
+Key recent changes (2.1.91-2.1.101):
 
-| Version | Notable Changes                                                                 |
-| ------- | ------------------------------------------------------------------------------- |
-| 2.1.98  | Subprocess sandboxing, bash tool hardening, git worktree isolation for agents   |
-| 2.1.97  | `/agents` shows running indicators, `/reload-plugins` picks up new skills live  |
-| 2.1.96  | Default effort shifted to `high`; skill `name` used for stable invocation names |
-| 2.1.92  | `forceRemoteSettingsRefresh`; removed `/tag` and `/vim` commands                |
-| 2.1.91  | MCP 500K result size; `disableSkillShellExecution` setting; edit tool efficiency |
+| Version  | Notable Changes                                                                  |
+| -------- | -------------------------------------------------------------------------------- |
+| 2.1.101  | Sub-agents inherit MCP tools; worktree agents can Read/Edit own files            |
+| 2.1.101  | SDK renamed to "Claude Agent SDK"; `/ultraplan`, `/team-onboarding` added        |
+| 2.1.101  | OS CA cert store trusted by default; `API_TIMEOUT_MS` respected                  |
+| 2.1.98   | Subprocess sandboxing, bash tool hardening, git worktree isolation for agents    |
+| 2.1.97   | `/agents` shows running indicators, `/reload-plugins` picks up new skills live   |
+| 2.1.96   | Default effort shifted to `high`; skill `name` used for stable invocation names  |
+| 2.1.92   | `forceRemoteSettingsRefresh`; removed `/tag` and `/vim` commands                 |
+| 2.1.91   | MCP 500K result size; `disableSkillShellExecution` setting; edit tool efficiency  |
 
 ## Subagent Frontmatter Fields
 
@@ -76,8 +79,8 @@ String substitutions: `$ARGUMENTS`, `$ARGUMENTS[N]`, `$N`, `${CLAUDE_SESSION_ID}
 
 ## Sources
 
-- https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md (2026-04-10)
-- https://code.claude.com/docs/en/sub-agents (2026-04-10)
-- https://code.claude.com/docs/en/skills (2026-04-10)
-- https://github.com/anthropics/skills (2026-04-10)
-- https://github.com/anthropics/skills/commits/main/ (2026-04-10)
+- https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md (2026-04-12)
+- https://code.claude.com/docs/en/sub-agents (2026-04-12)
+- https://code.claude.com/docs/en/skills (2026-04-12)
+- https://github.com/anthropics/skills (2026-04-12)
+- https://github.com/anthropics/skills/commits/main/ (2026-04-12)
