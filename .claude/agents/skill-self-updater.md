@@ -83,9 +83,21 @@ Classify the requested change:
 | **Modify step** | Change an existing step's instructions | Edit only that section |
 | **Add lesson** | Record a new pattern or anti-pattern | Append to an existing Lessons section or create one |
 | **Remove prompt gate** | Eliminate a "wait for user" instruction | Find the exact line, remove or conditionalize |
-| **Optimize loops** | Reduce turn counts, collapse phases, batch edits | Map decision tree, identify collapsible phases, remove illegal gates |
+| **Optimize loops** | Reduce turn counts, collapse phases, batch edits | Map decision tree, apply loop optimization checklist below |
 | **Update trigger** | Add new trigger phrases to description | Edit YAML front-matter `description:` |
 | **Trim scope** | Remove a phase or reduce thoroughness | Identify the section, remove with surrounding context |
+
+### Loop Optimization Checklist
+
+When type is **Optimize loops**, apply these patterns:
+
+1. **Remove illegal prompt gates** — gates that block on always-safe operations (reading files, writing `.claude/tmp/`, running grep/ls/wc/git-diff)
+2. **Collapse consecutive read phases** — "Phase 1: Read A" + "Phase 2: Read B" → single phase
+3. **Batch edits before build** — multiple edit-then-build phases → all edits, then one build
+4. **Demote report-only stops** — stops saying "shall I continue?" on non-ambiguous next steps → remove
+5. **Move file reads to on-demand** — upfront reads of all files → read only after filter criteria applied
+
+**Preserve:** phase-end "present findings" boundaries and TDD RED/GREEN structure.
 
 ### Step 3: Locate the edit point
 

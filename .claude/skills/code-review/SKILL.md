@@ -15,8 +15,6 @@ Comprehensive code review using all available agents. Discovers changed .NET fil
 
 ## Usage
 
-This is a WORKFLOW skill — invoked via natural language through keyword shortcuts, not as a slash command. Claude reads this file and follows it.
-
 ```
 # User says any of these (see keyword-shortcuts.md):
 code review days 1

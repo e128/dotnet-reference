@@ -11,7 +11,7 @@ description: >
   Triggers on: consolidate knowledge, sync memory to lode, extract learnings,
   knowledge sync, memory to repo, what did I learn, capture learnings,
   weekly knowledge sync, knowledge consolidation, sync learnings.
-  Not for: single-insight capture (use lode-capture-agent), session debugging,
+  Not for: single-insight capture (use lode-sync capture mode), session debugging,
   or plan-specific retrospectives (use weekly-learner --plan-retro).
 model: sonnet
 tools: Read, Glob, Grep, Edit, Write, Bash

@@ -60,8 +60,8 @@ For each skill/agent, assign a status:
 | Description references removed feature or deprecated path | STALE |
 
 Protected agents (never retire regardless of usage):
-- build-validator, commit-preflight
-- lode-sync, lode-capture-agent
+- build-validator, smart-commit
+- lode-sync, knowledge-consolidator
 - weekly-learner, smart-commit
 
 ## Phase 3: Retirement Proposal
@@ -96,7 +96,7 @@ For each item classified as LOW_USE or DUPLICATE, create a plan in `plans/`.
 
 Check `plans/` first — skip any item already covered by an existing plan.
 
-**Slug format:** `prune-{retire|merge}-{kebab-name}` — e.g. `prune-retire-skill-loop-optimizer`, `prune-merge-commit-preflight`
+**Slug format:** `prune-{retire|merge}-{kebab-name}` — e.g. `prune-retire-dead-agent`, `prune-merge-overlapping-skill`
 
 Write all three plan files in a single parallel turn per item.
 

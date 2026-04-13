@@ -80,7 +80,7 @@ REPORT_PATH="plans/strategy-audit-$(date -u +%Y-%m-%d).md"
 
 ### Phase 1: Discover the Codebase
 
-Run these bash commands directly — no agent needed for discovery:
+Run these bash commands in parallel — no dependencies between them, no agent needed:
 
 ```bash
 # File counts by language

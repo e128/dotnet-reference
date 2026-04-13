@@ -13,7 +13,9 @@ description: >
   workflow audit, efficiency audit, learn from sessions, plan retro, plan retrospective,
   deep session analysis, analyze all sessions, learn from me, session audit,
   quarterly review, full session audit, what should become a skill, skills from sessions,
-  comprehensive session review, what should be an agent.
+  comprehensive session review, what should be an agent, token optimizer, reduce tokens,
+  token audit, session token audit, token review, token waste, token efficiency audit,
+  analyze this session, session token use, current session tokens.
   Not for: single-session debugging, real-time workflow monitoring, or manual code review.
 model: sonnet
 tools: Bash, Glob, Grep, Read, Write, Agent
@@ -85,6 +87,18 @@ Issue all of the following in the same turn — they are independent reads:
 
 **Claude Code version** — Run `claude --version` and compare against `last_claude_version` in memory. **If the version is unchanged, skip the changelog entirely.** Only when the version differs, run `claude changelog 2>/dev/null | head -80`. If the version changed, scan the changelog for new or changed capabilities that would affect tool types, hook events, agent/skill frontmatter, CLI flags, or permission/settings behavior. Cross-reference against current friction points (Phase 2.2), dead skills/agents, configuration rules, and settings.json patterns. Flag findings as **Version Upgrade Opportunity** in Phase 3 recommendations.
 
+## Token Analysis Mode (`--current` or token-related triggers)
+
+When triggered by token-related phrases ("token optimizer", "reduce tokens", "analyze this session"):
+
+1. Use `--sessions 1` for all `session-health.sh` calls (current session only)
+2. Cross-reference tool counts against `.claude/rules/token-efficiency.md`
+3. Score each finding on Frequency (0-3) + Token Cost (0-3) + Feasibility (0-3). Only findings scoring >= 5 become plans.
+4. Skip Phase 4.5 plan creation — return a findings table with recommendations
+5. Also suggest improvements to skills, agents, and scripts — not just new scripts
+
+This is a lightweight pass (~10 turns). For full retrospective analysis, use the default weekly mode.
+
 ## Phase 2: Pattern Analysis
 
 Analyze the gathered data for:
@@ -128,11 +142,11 @@ For each category where a hook or rule was recently added (check memory for "Imp
 
 ### 2.5 Sub-agent success rate
 
-Parse Agent tool invocations from tool-counts. Flag agents that timed out (ran all maxTurns), produced no output, or were retried (spawned 2+ times same session). If >30% failure/retry rate across 3+ sessions, recommend `skill-loop-optimizer`.
+Parse Agent tool invocations from tool-counts. Flag agents that timed out (ran all maxTurns), produced no output, or were retried (spawned 2+ times same session). If >30% failure/retry rate across 3+ sessions, recommend `skill-self-updater`.
 
 ### 2.6 Context compaction frequency
 
-Count `/compact` invocations per session. Sessions compacting 2+ times suggest token bloat. Correlate with active skills/agents — if a specific skill triggers compaction, recommend `skill-loop-optimizer`.
+Count `/compact` invocations per session. Sessions compacting 2+ times suggest token bloat. Correlate with active skills/agents — if a specific skill triggers compaction, recommend `skill-self-updater`.
 
 ### 2.7 Error pattern analysis
 

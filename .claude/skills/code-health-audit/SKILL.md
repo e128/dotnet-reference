@@ -48,7 +48,7 @@ If no mode specified, default to `all`.
 - Balance with YAGNI — don't flag single-implementation interfaces or simple utility classes
 - Don't flag DI guard patterns (`?? throw`) as SRP violations
 - Classes under 100 lines with cohesive methods rarely violate SRP — skip them
-- See [SOLID Design Principles](lode/coding-standards.md#solid-design-principles) for the full reference
+- See [SOLID Design Principles](lode/coding-standards/solid.md) for the full reference
 
 ---
 

@@ -33,7 +33,7 @@ become liabilities — they constrain reasoning, pad token budgets, and resist s
 because they were written defensively.
 
 Your output is a ranked list of simplification targets with specific, actionable recommendations.
-You never apply changes — that's `skill-self-updater` and `skill-loop-optimizer`. Your job is
+You never apply changes — that's `skill-self-updater`. Your job is
 the analysis that feeds them.
 
 **Reference:** "Your AI System Gets Worse Every Time the Model Gets Better" — simpler outcome
@@ -215,7 +215,7 @@ Skip this phase if `plans/` does not exist or the agent was invoked with `--save
 
 For each top-10 candidate with density **>= 15%** and at least one H1 or H3 finding (skip if plan already exists in `plans/`):
 
-Create a plan in `plans/simplify-{kebab-filename}/` (three files: plan, context, tasks). Each plan targets one file's scaffolding reduction, delegating to `skill-self-updater` (targeted edits) or `skill-loop-optimizer` (turn-count). After writing: `scripts/internal/stage.sh --include-new`.
+Create a plan in `plans/simplify-{kebab-filename}/` (three files: plan, context, tasks). Each plan targets one file's scaffolding reduction, delegating to `skill-self-updater` (targeted edits and turn-count optimization). After writing: `scripts/internal/stage.sh --include-new`.
 
 ---
 
@@ -241,7 +241,7 @@ This ensures the user knows which files were audited and which plans were create
 
 ## Rules
 
-- **Read-only.** Never edit SKILL.md or agent files. Delegate to `skill-self-updater` (targeted) or `skill-loop-optimizer` (turn-count focus).
+- **Read-only.** Never edit SKILL.md or agent files. Delegate to `skill-self-updater`.
 - **False positive discipline.** When uncertain, do not flag. Require clear evidence per heuristic thresholds above.
 - **TDD is not scaffolding.** Never flag RED/GREEN/Verify structure.
 - **Safety gates are not scaffolding.** Irreversible-action gates (git push, file deletion, PR creation, schema migration) are never H3, regardless of phrasing.
