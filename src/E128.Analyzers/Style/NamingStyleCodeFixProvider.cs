@@ -210,7 +210,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
         }
 
         // Walk the string and split at lower→upper transitions.
-        var words = new System.Collections.Generic.List<string>();
+        var words = new List<string>();
         var wordStart = 0;
 
         for (var i = 1; i < name.Length; i++)
