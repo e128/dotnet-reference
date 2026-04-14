@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# PostToolUse hook — logs significant writes to .claude/tmp/session-events.jsonl.
+#
+# Triggered by: PostToolUse on Write tool
+# Input: JSON on stdin with { tool_name, tool_input: { file_path, content } }
+
+INPUT=$(cat)
+TOOL=$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)
+
+# Only act on Write calls
+if [ "$TOOL" != "Write" ]; then
+  exit 0
+fi
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+
+# Append one-line JSON entry for writes to significant paths.
+# Excludes: .claude/tmp/ (ephemeral)
+should_log=false
+case "$FILE_PATH" in
+    *.cs)                        should_log=true ;;
+    */plans/*.md)                should_log=true ;;
+    */lode/*.md)                 should_log=true ;;
+    */.claude/agents/*.md)       should_log=true ;;
+    */.claude/skills/*/SKILL.md) should_log=true ;;
+    */.claude/hooks/*)           should_log=true ;;
+esac
+
+if [ "$should_log" = "true" ]; then
+    mkdir -p .claude/tmp
+    TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    echo "{\"ts\":\"${TS}\",\"file\":\"${FILE_PATH}\"}" >> .claude/tmp/session-events.jsonl
+fi
+
+exit 0

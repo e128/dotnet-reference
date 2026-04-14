@@ -1,0 +1,85 @@
+#!/bin/bash
+# PreToolUse hook — validates .claude/agents/*.md frontmatter before git commit.
+#
+# Checks that staged agent files have all required YAML frontmatter fields:
+#   name, description, tools, maxTurns, memory
+#
+# Hook behavior: exit 0 always (warning only, never blocks). Claude sees the
+# output and can fix missing fields before proceeding.
+
+input=$(cat)
+
+# Only check Bash tool calls
+if ! echo "$input" | grep -q '"tool_name".*"Bash"'; then
+    exit 0
+fi
+
+# Only check git commit commands
+if ! echo "$input" | grep -q 'git commit'; then
+    exit 0
+fi
+
+# Get staged .claude/agents/*.md files
+staged_agents=$(git diff --cached --name-only -- '.claude/agents/*.md' 2>/dev/null)
+if [ -z "$staged_agents" ]; then
+    exit 0
+fi
+
+required_fields="name description tools maxTurns memory"
+warnings=""
+
+while IFS= read -r agent_file; do
+    [ -z "$agent_file" ] && continue
+    [ ! -f "$agent_file" ] && continue
+
+    # Extract frontmatter (between first --- and second ---)
+    frontmatter=$(sed -n '/^---$/,/^---$/p' "$agent_file" | sed '1d;$d')
+    if [ -z "$frontmatter" ]; then
+        warnings="${warnings}\n  ${agent_file}: no YAML frontmatter found"
+        continue
+    fi
+
+    missing=""
+    for field in $required_fields; do
+        if ! echo "$frontmatter" | grep -q "^${field}:"; then
+            missing="${missing} ${field}"
+        fi
+    done
+
+    if [ -n "$missing" ]; then
+        warnings="${warnings}\n  ${agent_file}: missing${missing}"
+    fi
+
+    # Semantic invariant 1: maxTurns must be a positive integer
+    maxturns_val=$(echo "$frontmatter" | grep "^maxTurns:" | sed 's/maxTurns:[[:space:]]*//')
+    if [ -n "$maxturns_val" ]; then
+        if ! echo "$maxturns_val" | grep -qE '^[0-9]+$' || [ "$maxturns_val" -le 0 ] 2>/dev/null; then
+            warnings="${warnings}\n  ${agent_file}: maxTurns must be a positive integer (got: $maxturns_val)"
+        fi
+    fi
+
+    # Semantic invariant 2: tools list must be non-empty
+    tools_val=$(echo "$frontmatter" | grep "^tools:" | sed 's/tools:[[:space:]]*//')
+    if [ -z "$(echo "$tools_val" | tr -d ' \t')" ]; then
+        warnings="${warnings}\n  ${agent_file}: tools list is empty"
+    fi
+
+    # Semantic invariant 3: description must be non-empty
+    desc_val=$(echo "$frontmatter" | grep "^description:" | sed 's/description:[[:space:]]*//')
+    if [ -z "$(echo "$desc_val" | tr -d ' \t>')" ]; then
+        desc_block=$(echo "$frontmatter" | sed -n '/^description:/,/^[a-z]/p' | tail -n +2 | head -3 | tr -d ' \t')
+        if [ -z "$desc_block" ]; then
+            warnings="${warnings}\n  ${agent_file}: description is empty"
+        fi
+    fi
+done <<< "$staged_agents"
+
+if [ -n "$warnings" ]; then
+    echo "WARNING: Staged agent files with missing frontmatter fields:"
+    echo -e "$warnings"
+    echo ""
+    echo "Required fields: ${required_fields}"
+    echo "Fix the frontmatter before committing."
+fi
+
+exit 0

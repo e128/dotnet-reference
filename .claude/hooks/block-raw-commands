@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
-# Block raw commands that should use wrapper scripts instead.
-set -euo pipefail
+# PreToolUse hook — blocks raw commands that have wrapper script equivalents.
+# Enforces token-efficiency.md rules at execution time.
 
-INPUT="${1:-}"
+input=$(cat)
+
+# Only check Bash tool calls
+if ! echo "$input" | jq -e '.tool_name == "Bash"' > /dev/null 2>&1; then
+    exit 0
+fi
+
+cmd=$(echo "$input" | jq -r '.tool_input.command // ""')
 
 # Block raw dotnet test (should use scripts/test.sh)
-if echo "$INPUT" | grep -qE '^dotnet test\b'; then
-    echo "BLOCK: Use scripts/test.sh instead of raw 'dotnet test'."
-    echo "The xUnit v3 MTP runner requires specific flags that dotnet test doesn't support."
-    exit 1
+if echo "$cmd" | grep -qE '^\s*dotnet\s+test\b'; then
+    echo "BLOCKED: Use 'scripts/test.sh' instead of raw 'dotnet test'." >&2
+    echo "The wrapper script sets the correct runner flags and output format." >&2
+    exit 2
 fi
 
 # Block raw python3
-if echo "$INPUT" | grep -qE '^python3\b'; then
-    echo "BLOCK: Do not use python3 directly. Use jq for JSON, WebFetch for URLs."
-    exit 1
+if echo "$cmd" | grep -qE '^\s*python3\b'; then
+    echo "BLOCKED: Do not use python3 directly. Use jq for JSON, WebFetch for URLs." >&2
+    exit 2
 fi
 
 exit 0

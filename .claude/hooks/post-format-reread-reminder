@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# PostToolUse hook — reminds Claude to re-read files after format/check runs.
+#
+# Format scripts (format.sh, check.sh) modify files in-place.
+# Any file read before the format run is now stale and must be re-read
+# before editing. This hook emits a system message to make that visible.
+#
+# Triggered by: PostToolUse on Bash tool
+
+input=$(cat)
+
+# Only act on Bash calls
+if ! echo "$input" | jq -e '.tool_name == "Bash"' > /dev/null 2>&1; then
+    exit 0
+fi
+
+cmd=$(echo "$input" | jq -r '.tool_input.command // ""')
+
+# Check if command ran a format or check script
+if echo "$cmd" | grep -qE 'format\.sh|check\.sh|ci\.sh'; then
+    echo '{"systemMessage":"Files may have been reformatted in-place. Re-read any file you intend to Edit before editing it."}'
+fi
+
+exit 0

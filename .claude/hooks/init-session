@@ -1,39 +1,94 @@
-#!/usr/bin/env bash
-# Session initialization hook — provides context at session start.
-set -euo pipefail
+#!/bin/bash
+# SessionStart hook — fires on new session startup (matcher: "startup")
+# Everything written to stdout is automatically injected into Claude's context
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+INPUT=$(cat)
+CWD=$(echo "$INPUT" | jq -r '.cwd // "."' 2>/dev/null || echo ".")
+
+cd "$CWD" 2>/dev/null || exit 0
 
 echo "## Auto Session Context"
 echo ""
-echo "**Branch**: $(git -C "$ROOT" branch --show-current 2>/dev/null || echo detached)"
 
-# Working tree status
-STATUS=$(git -C "$ROOT" status --porcelain 2>/dev/null | head -5)
-if [[ -z "$STATUS" ]]; then
-    echo "**Working tree**: clean"
+# --- Git state ---
+branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+status_output=$(git status --short 2>/dev/null | head -10)
+recent=$(git log --oneline -5 2>/dev/null)
+
+echo "**Branch**: \`$branch\`"
+if [ -n "$status_output" ]; then
+    status_count=$(echo "$status_output" | wc -l | tr -d ' ')
+    echo "**Working tree**: $status_count modified files"
+    echo '```'
+    echo "$status_output"
+    echo '```'
 else
-    COUNT=$(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-    echo "**Working tree**: $COUNT file(s) modified"
+    echo "**Working tree**: clean"
+fi
+
+if [ -n "$recent" ]; then
+    echo ""
+    echo "**Recent commits**:"
+    echo "$recent" | while IFS= read -r line; do echo "- $line"; done
+fi
+
+# --- Active plans ---
+if ls plans/*/tasks.md >/dev/null 2>&1; then
+    plan_output=$(scripts/task.sh progress 2>/dev/null)
+    if [ -n "$plan_output" ]; then
+        echo ""
+        echo "**Active plans**:"
+        echo "$plan_output" | while IFS= read -r line; do echo "- $line"; done
+        next_output=$(scripts/task.sh next 2>/dev/null)
+        if [ -n "$next_output" ]; then
+            echo ""
+            echo "**Next task**:"
+            echo "$next_output" | while IFS= read -r line; do echo "  $line"; done
+        fi
+    fi
+fi
+
+# --- Session handoff ---
+if [ -f .claude/tmp/session-handoff.md ]; then
+    now=$(date +%s)
+    mtime=$(stat -f %m .claude/tmp/session-handoff.md 2>/dev/null \
+         || stat -c %Y .claude/tmp/session-handoff.md 2>/dev/null \
+         || echo 0)
+    age_hours=$(( (now - mtime) / 3600 ))
+    if [ "$age_hours" -lt 168 ]; then
+        echo ""
+        echo "**Handoff from last session** (${age_hours}h ago):"
+        echo '```'
+        grep -A 5 "^## Next up" .claude/tmp/session-handoff.md 2>/dev/null \
+            || head -15 .claude/tmp/session-handoff.md
+        echo '```'
+    fi
+fi
+
+# --- Skill checkpoints ---
+for state_file in .claude/tmp/*/state.md; do
+    [ -f "$state_file" ] || continue
+    skill_name=$(basename "$(dirname "$state_file")")
+    echo ""
+    echo "**In-progress skill**: $skill_name — checkpoint exists, resume with \`/phase\`"
+done
+
+# --- Weekly digest age ---
+latest_digest=$(ls plans/weekly-digest-*.md 2>/dev/null | sort -r | head -1)
+if [ -n "$latest_digest" ]; then
+    now=$(date +%s)
+    mtime=$(stat -f %m "$latest_digest" 2>/dev/null \
+         || stat -c %Y "$latest_digest" 2>/dev/null \
+         || echo 0)
+    age_days=$(( (now - mtime) / 86400 ))
+    if [ "$age_days" -ge 7 ]; then
+        echo ""
+        echo "**Weekly digest**: ${age_days} days old — consider \`weekly-learner\`"
+    fi
 fi
 
 echo ""
-echo "**Recent commits**:"
-git -C "$ROOT" log --oneline -5 2>/dev/null | while IFS= read -r line; do
-    echo "- $line"
-done
+echo "---"
+echo "_Before starting work, ask: Run CI tests automatically after code changes? (yes / no / ask-each-time)_"
 
-# Active plans
-if [[ -d "$ROOT/plans" ]]; then
-    PLANS=$(find "$ROOT/plans" -maxdepth 2 -name '*-tasks.md' 2>/dev/null)
-    if [[ -n "$PLANS" ]]; then
-        echo ""
-        echo "**Active plans**:"
-        echo "$PLANS" | while IFS= read -r f; do
-            plan="$(basename "$(dirname "$f")")"
-            total=$(grep -c '^\- \[' "$f" 2>/dev/null || echo 0)
-            done_count=$(grep -c '^\- \[x\]' "$f" 2>/dev/null || echo 0)
-            echo "- $plan ($done_count/$total tasks)"
-        done
-    fi
-fi
+exit 0

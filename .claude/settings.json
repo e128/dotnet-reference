@@ -13,8 +13,21 @@
       "Bash(tail *)",
       "Bash(sort *)",
       "Bash(uniq *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(awk *)",
+      "Bash(sed *)",
+      "Bash(tr *)",
+      "Bash(echo *)",
+      "Bash(date *)",
+      "Bash(seq *)",
+      "Bash(xargs *)",
+      "Bash(cp *)",
       "Bash(chmod *)",
       "Bash(mkdir *)",
+      "Bash(rm -rf .claude/tmp*)",
+      "Bash(curl *)",
+      "Bash(gh *)",
       "Bash(dotnet build *)",
       "Bash(dotnet format *)",
       "Bash(dotnet restore *)",
@@ -26,10 +39,10 @@
       "Bash(scripts/internal/*.sh*)",
       "Bash(./scripts/*.sh*)",
       "Bash(./scripts/internal/*.sh*)",
+      "Bash(bash -n *)",
+      "Bash(shellcheck *)",
       "Bash(docker *)",
       "Bash(docker compose *)",
-      "Bash(shellcheck *)",
-      "Bash(bash -n *)",
       "Read(src/**)",
       "Read(tests/**)",
       "Read(scripts/**)",
@@ -40,9 +53,134 @@
       "Edit(tests/**)",
       "Edit(scripts/**)",
       "Edit(.claude/tmp/**)",
+      "Edit(.claude/hooks/**)",
+      "Edit(.claude/rules/**)",
+      "Edit(.claude/skills/**)",
+      "Edit(.claude/agents/**)",
+      "Edit(.claude/agent-memory/**)",
       "Edit(lode/**)",
       "Edit(plans/**)",
-      "Write(.claude/tmp/**)"
+      "Write(.claude/tmp/**)",
+      "Write(.claude/hooks/**)",
+      "Write(.claude/rules/**)",
+      "Write(.claude/skills/**)",
+      "Write(.claude/agents/**)",
+      "Write(.claude/agent-memory/**)",
+      "Write(plans/weekly-digest.md)",
+      "mcp__ide__getDiagnostics",
+      "Skill(dev-planning)"
     ]
+  },
+  "hooks": {
+    "StopFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop-failure"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/init-session",
+            "statusMessage": "Loading session context..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/user-prompt-submit"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "result=$(scripts/violation-scan.sh --json 2>/dev/null); violations=$(echo \"$result\" | jq \".violations // 0\"); if [ \"$violations\" -gt 0 ]; then msg=\"$violations anti-pattern violation(s) this session. Run: scripts/violation-scan.sh\"; echo \"{\\\"systemMessage\\\":\\\"$msg\\\"}\"; fi",
+            "statusMessage": "Scanning for anti-pattern violations..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-tool-use-memory-sync"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-format-reread-reminder"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-tool-use-guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/validate-agent-frontmatter"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-raw-git"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-raw-commands"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "commit-commands@claude-code-plugins": true
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash .claude/statusline.sh"
   }
 }

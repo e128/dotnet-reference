@@ -1,0 +1,94 @@
+#!/bin/bash
+# UserPromptSubmit hook — appends hints based on prompt length and tool call volume.
+# Also intercepts exit-like phrases to write an emergency handoff.
+
+# Read the full prompt from stdin
+prompt=$(cat)
+
+# Build output — start with original prompt
+output="$prompt"
+
+# Check for exit-intent phrases
+exit_pattern='^\s*(exit|done|wrap up|[iI]'"'"'m done|bye|end session|save progress|I'"'"'m leaving|call it|that'"'"'s it)\s*$'
+if echo "$prompt" | grep -qiE "$exit_pattern"; then
+    has_changes=false
+    if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+        has_changes=true
+    fi
+    recent_commits=$(git log --oneline --since="2 hours ago" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$recent_commits" -gt 0 ]; then
+        has_changes=true
+    fi
+
+    if [ "$has_changes" = true ]; then
+        HANDOFF=".claude/tmp/session-handoff.md"
+        mkdir -p .claude/tmp
+        BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+        STATUS=$(git status --short 2>/dev/null | head -15)
+        RECENT=$(git log --oneline -5 2>/dev/null)
+        PLAN_STATUS=$(scripts/task.sh progress 2>/dev/null || echo "No active plan")
+        CHANGED_COUNT=$(echo "$STATUS" | grep -c . 2>/dev/null || echo 0)
+
+        cat > "$HANDOFF" <<HANDOFF_EOF
+# Session Handoff
+*Written: $(date -u +"%Y-%m-%dT%H:%M:%SZ") (auto-saved by exit hook)*
+
+## Completed this session
+$RECENT
+
+## Current state
+- **Branch**: $BRANCH
+- **Uncommitted**: $CHANGED_COUNT files
+
+## Plan progress
+$PLAN_STATUS
+
+## Uncommitted changes
+\`\`\`
+$STATUS
+\`\`\`
+
+## Next up
+- Resume from current working state
+HANDOFF_EOF
+
+        output="Handoff saved to .claude/tmp/session-handoff.md — you can type /exit to close."
+        echo "$output"
+        exit 0
+    fi
+fi
+
+# Hint 1: If >50 words, note prompt length
+clean_prompt=$(echo "$prompt" | sed '/<task-notification>/,/<\/task-notification>/d' | sed '/<system-reminder>/,/<\/system-reminder>/d')
+word_count=$(echo "$clean_prompt" | wc -w)
+if [ "$word_count" -gt 50 ]; then
+    output="$output\n\nNote: This prompt is $(echo $word_count | tr -d ' ') words. Is the desired outcome clear? Consider starting with the end goal."
+fi
+
+# Hint 2: If 8+ tool calls, suggest sub-agent
+tool_calls=$(echo "$prompt" | grep -o '"name":' | wc -l)
+if [ "$tool_calls" -ge 8 ]; then
+    if echo "$prompt" | grep -qiE '"name":\s*"(Grep|Read|Glob|Explore|WebSearch|WebFetch|Task)"'; then
+        : # skip — exploratory work
+    else
+        output="$output\n\nOptimization hint: Consider using a sub-agent for parallel work to preserve context."
+    fi
+fi
+
+# Hint 3: Context window warning at 75%
+PCT=$(echo "$prompt" | jq -r '
+  try (
+    if (.context_window.remaining_percentage // null) != null then
+      (100 - (.context_window.remaining_percentage | floor) | tostring)
+    elif (.context_window.context_window_size // 0) > 0 then
+      (((.context_window.current_usage.input_tokens // 0) +
+        (.context_window.current_usage.cache_creation_input_tokens // 0) +
+        (.context_window.current_usage.cache_read_input_tokens // 0)) * 100 /
+       .context_window.context_window_size) | floor | tostring
+    else "0" end
+  ) catch "0"' 2>/dev/null || echo "0")
+if [ "$PCT" -gt 75 ] 2>/dev/null; then
+    output="$output\n\nContext at ${PCT}% — consider /compact before continuing to avoid losing session state."
+fi
+
+echo -e "$output"

@@ -1,0 +1,40 @@
+#!/bin/bash
+# PreToolUse guard — blocks raw git commands that have script equivalents.
+# Enforces token-efficiency.md rules at execution time.
+#
+# Exit 2 + stderr = block the tool call.
+# Exit 0 = allow.
+
+input=$(cat)
+
+# Only check Bash tool calls
+if ! echo "$input" | jq -e '.tool_name == "Bash"' > /dev/null 2>&1; then
+    exit 0
+fi
+
+cmd=$(echo "$input" | jq -r '.tool_input.command // ""')
+
+# Allow empty commands
+[ -z "$cmd" ] && exit 0
+
+# --- Rule: git status --short / git status (bare) ---
+# Allow: git status inside && chains where it follows git commit/add/mv (verification after action)
+# Block: standalone git status as a primary information-gathering command
+if echo "$cmd" | grep -qE '^\s*git\s+status\s*(--short|-s)?\s*$'; then
+    echo "BLOCKED: Use 'scripts/status.sh --json' instead of raw 'git status'. See token-efficiency.md." >&2
+    exit 2
+fi
+
+# --- Rule: git log --oneline ---
+if echo "$cmd" | grep -qE '^\s*git\s+log\s+--oneline'; then
+    echo "BLOCKED: Use 'scripts/diff.sh --json' instead of raw 'git log --oneline'. See token-efficiency.md." >&2
+    exit 2
+fi
+
+# --- Rule: git diff --name-only for .cs files ---
+if echo "$cmd" | grep -qE '^\s*git\s+diff\s+--name-only.*\.cs'; then
+    echo "BLOCKED: Use 'scripts/status.sh --files --cs-only' instead of 'git diff --name-only *.cs'." >&2
+    exit 2
+fi
+
+exit 0

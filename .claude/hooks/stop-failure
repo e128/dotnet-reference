@@ -1,17 +1,56 @@
-#!/usr/bin/env bash
-# Stop failure hook — save progress context on unexpected stops.
-set -euo pipefail
+#!/bin/bash
+# StopFailure hook — fires when a turn ends due to an API error
+# (rate limit, auth failure, etc.)
+#
+# Writes a minimal emergency handoff so init-session surfaces it on restart.
+# Does NOT overwrite a fresh handoff written by session-end (< 5 min old).
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+INPUT=$(cat)
+CWD=$(echo "$INPUT" | jq -r '.cwd // "."' 2>/dev/null || echo ".")
 
-mkdir -p "$ROOT/.claude/tmp"
+cd "$CWD" 2>/dev/null || exit 0
 
-# Save a brief context snapshot
-cat > "$ROOT/.claude/tmp/stop-context.md" << EOF
-## Stop Context
-*Saved: ${TIMESTAMP}*
+HANDOFF=".claude/tmp/session-handoff.md"
+mkdir -p .claude/tmp
 
-**Branch**: $(git -C "$ROOT" branch --show-current 2>/dev/null || echo detached)
-**Status**: $(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ') files modified
+# Don't overwrite a fresh handoff written by session-end
+if [ -f "$HANDOFF" ]; then
+    now=$(date +%s)
+    mtime=$(stat -f %m "$HANDOFF" 2>/dev/null \
+         || stat -c %Y "$HANDOFF" 2>/dev/null \
+         || echo 0)
+    age=$(( now - mtime ))
+    [ "$age" -lt 300 ] && exit 0
+fi
+
+BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+STATUS=$(git status --short 2>/dev/null | head -10)
+RECENT=$(git log --oneline -3 2>/dev/null)
+CHANGED_COUNT=$(echo "$STATUS" | grep -c . || echo 0)
+PLAN_STATUS=$(scripts/task.sh progress 2>/dev/null || echo "No active plan")
+
+cat > "$HANDOFF" <<EOF
+## Session interrupted by API error
+*Written by StopFailure hook at $(date -u +"%Y-%m-%dT%H:%M:%SZ")*
+
+## Next up
+- Session was interrupted by an API error (rate limit or auth failure)
+- Resume from current working state — check for uncommitted changes below
+
+## State
+- Branch: $BRANCH
+- Uncommitted files: $CHANGED_COUNT
+
+## Plan progress
+$PLAN_STATUS
+
+## Recent commits
+$RECENT
+
+## Uncommitted changes
+\`\`\`
+$STATUS
+\`\`\`
 EOF
+
+exit 0
