@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.9.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.10.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -42,6 +42,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128053 | Use collection of `FileInfo`/`DirectoryInfo` instead of collection of `string` for file system paths | Yes      |
 | E128058 | Return `List<T>` via `.AsReadOnly()` when exposing as `IReadOnlyList<T>`                              | Yes      |
 | E128059 | Interface method parameter is unused in implementation                                                | Yes      |
+| E128060 | Return `Dictionary<K,V>` via `.AsReadOnly()` when exposing as `IReadOnlyDictionary<K,V>`              | Yes      |
 
 ### Reliability
 
@@ -626,6 +627,18 @@ public string Format(string input, IFormatProvider? provider) =>
 // After — rename unused parameter to _ to signal intent
 public string Format(string input, IFormatProvider? _) =>
     input.ToUpperInvariant();
+```
+
+### E128060 &mdash; Return Dictionary&lt;K,V&gt; via .AsReadOnly()
+
+Flags methods and properties that return a `Dictionary<K,V>` field directly when the declared return type is `IReadOnlyDictionary<K,V>`. Callers can cast back to `Dictionary<K,V>` and mutate the internal collection. Use `.AsReadOnly()` (requires .NET 9+) or wrap in `ReadOnlyDictionary<K,V>`.
+
+```csharp
+// Before (warns)
+public IReadOnlyDictionary<string, int> Counts => _counts;
+
+// After
+public IReadOnlyDictionary<string, int> Counts => _counts.AsReadOnly();
 ```
 
 ## Configuration

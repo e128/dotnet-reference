@@ -37,7 +37,7 @@ scripts/docker.sh test
 | **E128.Reference.Web**   | Minimal API web app with Kestrel, health endpoint                   |
 | **E128.Reference.Cli**   | System.CommandLine CLI with `--name` option                         |
 | **E128.Reference.Core**  | Shared library (Greeter service, models, repositories, services)    |
-| **E128.Analyzers**       | Custom Roslyn analyzers (E128001–E128059) with code fixes, NuGet-packable |
+| **E128.Analyzers**       | Custom Roslyn analyzers (E128001–E128060) with code fixes, NuGet-packable |
 | **E128.Reference.Tests** | xUnit v3 + MTP with CI, Docker, and Manual test categories          |
 | **Architecture.Tests**   | ArchUnitNET structural invariant tests (layers, naming, sealed)     |
 | **E128.Analyzers.Tests** | Analyzer and code fix unit tests                                    |
