@@ -317,4 +317,53 @@ public sealed class NamingStyleCodeFixTests
             NumberOfFixAllIterations = 1,
         }.RunAsync();
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void BuildCompliantName_PascalCase_PreservesLeadingI_WhenNotInterfacePrefix()
+    {
+        // "IndexFilenames" starts with "I" but it is not an interface-prefixed name —
+        // "ndex..." does not begin with an uppercase letter. Previously misidentified
+        // "I" as the interface prefix and produced "NdexFilenames".
+        var result = NamingStyleCodeFixProvider.BuildCompliantName(
+            symbolName: "IndexFilenames",
+            prefix: string.Empty,
+            suffix: string.Empty,
+            wordSeparator: string.Empty,
+            capitalizationScheme: "PascalCase");
+
+        Assert.Equal("IndexFilenames", result);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void BuildCompliantName_PascalCase_PreservesLeadingT_WhenNotTypeParamPrefix()
+    {
+        // "ToolbarSelectors" starts with "T" but is not a type-param-prefixed name.
+        // Previously misidentified "T" as the type param prefix and produced "OolbarSelectors".
+        var result = NamingStyleCodeFixProvider.BuildCompliantName(
+            symbolName: "ToolbarSelectors",
+            prefix: string.Empty,
+            suffix: string.Empty,
+            wordSeparator: string.Empty,
+            capitalizationScheme: "PascalCase");
+
+        Assert.Equal("ToolbarSelectors", result);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void BuildCompliantName_PascalCase_StripsRealIPrefix_WhenFollowedByUppercase()
+    {
+        // "IList" starts with "I" followed by uppercase "L" — this IS a real interface
+        // prefix; stripping it is correct when renaming to no-prefix PascalCase.
+        var result = NamingStyleCodeFixProvider.BuildCompliantName(
+            symbolName: "IList",
+            prefix: string.Empty,
+            suffix: string.Empty,
+            wordSeparator: string.Empty,
+            capitalizationScheme: "PascalCase");
+
+        Assert.Equal("List", result);
+    }
 }

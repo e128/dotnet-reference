@@ -194,7 +194,18 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
             if (result.StartsWith(known, StringComparison.Ordinal))
             {
-                result = result.Substring(known.Length);
+                var afterKnown = result.Substring(known.Length);
+
+                // Single-char letter prefixes ("I" for interfaces, "T" for type params) only
+                // count as a prefix when the next character is uppercase. "IndexFilenames" starts
+                // with "I" but the "I" is part of the word — not a naming prefix.
+                if (known.Length == 1 && char.IsLetter(known[0]) &&
+                    (afterKnown.Length == 0 || !char.IsUpper(afterKnown[0])))
+                {
+                    continue;
+                }
+
+                result = afterKnown;
                 break;
             }
         }
