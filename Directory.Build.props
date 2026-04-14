@@ -62,6 +62,7 @@
         <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" PrivateAssets="all" />
         <PackageReference Include="Roslynator.Formatting.Analyzers" PrivateAssets="all" />
         <PackageReference Include="SharpSource" PrivateAssets="all" />
+        <!-- LGPL-3.0: PrivateAssets="all" ensures the package does not propagate to consumers -->
         <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" />
     </ItemGroup>
 

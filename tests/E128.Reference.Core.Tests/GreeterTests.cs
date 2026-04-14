@@ -1,8 +1,7 @@
 using System;
-using E128.Reference.Core;
 using Xunit;
 
-namespace E128.Reference.Tests;
+namespace E128.Reference.Core.Tests;
 
 public sealed class GreeterTests
 {

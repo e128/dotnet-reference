@@ -20,6 +20,8 @@
     <Folder Name="/tests/">
         <Project Path="tests/Architecture.Tests/Architecture.Tests.csproj" />
         <Project Path="tests/E128.Analyzers.Tests/E128.Analyzers.Tests.csproj" />
+        <Project Path="tests/E128.Reference.Cli.Tests/E128.Reference.Cli.Tests.csproj" />
+        <Project Path="tests/E128.Reference.Core.Tests/E128.Reference.Core.Tests.csproj" />
         <Project Path="tests/E128.Reference.Tests/E128.Reference.Tests.csproj" />
     </Folder>
 </Solution>

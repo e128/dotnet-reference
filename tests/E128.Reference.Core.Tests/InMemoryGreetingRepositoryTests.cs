@@ -4,7 +4,7 @@ using E128.Reference.Core.Models;
 using E128.Reference.Core.Repositories;
 using Xunit;
 
-namespace E128.Reference.Tests;
+namespace E128.Reference.Core.Tests;
 
 public sealed class InMemoryGreetingRepositoryTests
 {

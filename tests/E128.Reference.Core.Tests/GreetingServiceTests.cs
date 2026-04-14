@@ -1,12 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using E128.Reference.Core;
 using E128.Reference.Core.Models;
 using E128.Reference.Core.Repositories;
 using E128.Reference.Core.Services;
 using Xunit;
 
-namespace E128.Reference.Tests;
+namespace E128.Reference.Core.Tests;
 
 public sealed class GreetingServiceTests
 {
