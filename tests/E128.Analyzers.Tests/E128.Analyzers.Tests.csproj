@@ -3,7 +3,11 @@
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
         <!-- E128043 (null-forgiving operator) — test infrastructure legitimately uses ! for brevity -->
-        <NoWarn>$(NoWarn);E128043</NoWarn>
+        <!-- RS1036/RS1038/RS1041: FakeNamingViolationAnalyzer is a test-only DiagnosticAnalyzer in a .NET 10 project -->
+        <!-- RS2007: Roslyn 4.14 rejects valid unshipped.md content -->
+        <!-- RS2008: FakeNamingViolationAnalyzer uses IDE1006 which is not tracked in our release tracking -->
+        <!-- S2699: Roslyn testing framework uses RunAsync() as the assertion; SonarAnalyzer cannot detect it -->
+        <NoWarn>$(NoWarn);E128043;RS1036;RS1038;RS1041;RS2007;RS2008;S2699</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -16,6 +20,10 @@
         <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
         <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
         <PackageReference Include="xunit.v3.mtp-v2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
     </ItemGroup>
 
 </Project>

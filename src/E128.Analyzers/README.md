@@ -92,6 +92,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128043 | Do not use the null-forgiving operator                                    | Yes      |
 | E128047 | `#pragma warning disable` without justification comment                   | Yes      |
 | E128055 | Unbalanced `#pragma warning disable` without matching restore             | Yes      |
+| E128061 | IDE1006 naming rule — rename symbol to comply with naming conventions      | Yes      |
 
 ### Testing
 
