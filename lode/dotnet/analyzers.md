@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-13T00:17:09Z*
+*Updated: 2026-04-14T19:54:19Z*
 
 ## Strategy: Deny by Default
 
@@ -114,6 +114,18 @@ dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 [GeneratedRegex(@"...", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
 private static partial Regex MyRegex { get; }
 ```
+
+## NamingStyleCodeFixProvider (IDE1006 Fix All)
+
+`NamingStyleCodeFixProvider` in `E128.Analyzers.Style` provides a code fix for IDE1006 naming violations. It uses a custom `SequentialFixAllProvider` (not `WellKnownFixAllProviders.BatchFixer`) because `BatchFixer` computes all renames against the original solution snapshot and then tries to merge them — this fails when multiple renames touch the same document, causing `dotnet format` to log "doesn't support Fix All in Solution".
+
+The sequential provider:
+1. Collects all IDE1006 diagnostics across the fix-all scope (Document / Project / Solution)
+2. Sorts renames back-to-front within each document to prevent span drift
+3. Applies `Renamer.RenameSymbolAsync` one at a time to the evolving solution
+4. Skips a rename if the symbol has already been renamed (name mismatch guard)
+
+`dotnet format` resolves the suggested name from the `SuggestedName` property embedded in Roslyn's IDE1006 diagnostic. Tests use `FakeNamingViolationAnalyzer` which embeds `SymbolName` + style properties instead.
 
 ## Related
 
