@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.10.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.11.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -92,7 +92,6 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128043 | Do not use the null-forgiving operator                                    | Yes      |
 | E128047 | `#pragma warning disable` without justification comment                   | Yes      |
 | E128055 | Unbalanced `#pragma warning disable` without matching restore             | Yes      |
-| E128061 | IDE1006 naming rule — rename symbol to comply with naming conventions      | Yes      |
 
 ### Testing
 
