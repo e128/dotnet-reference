@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# PreToolUse hook — blocks raw commands that have wrapper script equivalents.
+# PreToolUse hook — blocks raw dotnet commands that have wrapper script equivalents.
 # Enforces token-efficiency.md rules at execution time.
+# Unanchored patterns: catches both bare and chained forms (cd ... && dotnet ...).
+#
+# Exit code 2 = block the tool call and return the reason to Claude.
 
 input=$(cat)
 
@@ -11,15 +14,45 @@ fi
 
 cmd=$(echo "$input" | jq -r '.tool_input.command // ""')
 
-# Block raw dotnet test (should use scripts/test.sh)
-if echo "$cmd" | grep -qE '^\s*dotnet\s+test\b'; then
-    echo "BLOCKED: Use 'scripts/test.sh' instead of raw 'dotnet test'." >&2
-    echo "The wrapper script sets the correct runner flags and output format." >&2
+# Allow empty commands
+[ -z "$cmd" ] && exit 0
+
+# Block raw dotnet test (unanchored — catches chained forms too)
+if echo "$cmd" | grep -qE '\b(dotnet|dotnet\.exe)[[:space:]]+test\b'; then
+    echo "BLOCKED: raw 'dotnet test' is prohibited." >&2
+    class_hint=$(echo "$cmd" | grep -oE '\-\-filter-class[[:space:]]+[A-Za-z][A-Za-z0-9.]+' | sed 's/--filter-class[[:space:]]*//' | head -1)
+    if [ -n "$class_hint" ]; then
+        echo "Use: bash scripts/test.sh $class_hint" >&2
+    else
+        echo "Use: bash scripts/test.sh <ClassName>    (targeted)" >&2
+        echo "  or: bash scripts/test.sh --all          (full suite)" >&2
+    fi
     exit 2
 fi
 
-# Block raw python3
-if echo "$cmd" | grep -qE '^\s*python3\b'; then
+# Block raw dotnet build
+if echo "$cmd" | grep -qE '\b(dotnet|dotnet\.exe)[[:space:]]+build\b'; then
+    echo "BLOCKED: raw 'dotnet build' is prohibited." >&2
+    echo "Use: bash scripts/build.sh [--project <name>] [--warnings] [--json]" >&2
+    exit 2
+fi
+
+# Block raw dotnet format
+if echo "$cmd" | grep -qE '\b(dotnet|dotnet\.exe)[[:space:]]+format\b'; then
+    echo "BLOCKED: raw 'dotnet format' is prohibited." >&2
+    echo "Use: bash scripts/format.sh --changed (apply) or --check --changed (verify)" >&2
+    exit 2
+fi
+
+# Block raw dotnet run --project
+if echo "$cmd" | grep -qE '\b(dotnet|dotnet\.exe)[[:space:]]+run[[:space:]]+--project'; then
+    echo "BLOCKED: raw 'dotnet run --project' is prohibited." >&2
+    echo "For tests: bash scripts/test.sh <ClassName>" >&2
+    exit 2
+fi
+
+# Block bare python3
+if echo "$cmd" | grep -qE '\bpython3\b'; then
     echo "BLOCKED: Do not use python3 directly. Use jq for JSON, WebFetch for URLs." >&2
     exit 2
 fi

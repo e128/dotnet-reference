@@ -47,6 +47,7 @@ dotnet_diagnostic.ide0057.severity = none       # Use range operator
 dotnet_diagnostic.ide0061.severity = none       # Use expression body for local functions
 dotnet_diagnostic.ide0066.severity = none       # Use switch expression
 dotnet_diagnostic.ide0210.severity = none       # Convert to top-level statements (destructive in dotnet format)
+dotnet_diagnostic.ide0290.severity = none       # Use primary constructors — too disruptive to enforce globally
 
 # --- Meziantou (MA) ---
 dotnet_diagnostic.ma0003.severity = none       # Add parameter name to improve readability
@@ -98,14 +99,40 @@ dotnet_diagnostic.s3267.severity = suggestion    # Loop should be simplified by 
 dotnet_diagnostic.syslib1045.severity = error    # Use GeneratedRegexAttribute
 
 # --- IDE Analyzers ---
+dotnet_diagnostic.ide0016.severity = error       # Use throw expression
+dotnet_diagnostic.ide0017.severity = error       # Use object initializer
 dotnet_diagnostic.ide0028.severity = error       # Use collection initializer
+dotnet_diagnostic.ide0029.severity = error       # Use coalesce expression
+dotnet_diagnostic.ide0031.severity = error       # Use null propagation
 dotnet_diagnostic.ide0032.severity = error       # Use auto property
+dotnet_diagnostic.ide0034.severity = error       # Use simple default expression
+dotnet_diagnostic.ide0037.severity = error       # Use inferred/explicit tuple element names
+dotnet_diagnostic.ide0039.severity = error       # Use local function instead of anonymous function
+dotnet_diagnostic.ide0041.severity = error       # Use is-null check
+dotnet_diagnostic.ide0045.severity = error       # Use conditional expression over assignment
 dotnet_diagnostic.ide0046.severity = error       # Use conditional expression (ternary)
 dotnet_diagnostic.ide0048.severity = none        # Add parentheses for clarity (suppressed — oscillates with IDE0046)
 dotnet_diagnostic.ide0049.severity = error       # Name can be simplified
+dotnet_diagnostic.ide0054.severity = error       # Use compound assignment
+dotnet_diagnostic.ide0056.severity = error       # Use index operator
+dotnet_diagnostic.ide0063.severity = error       # Use simple using statement
+dotnet_diagnostic.ide0071.severity = error       # Simplify string interpolation
+dotnet_diagnostic.ide0075.severity = error       # Simplify boolean expressions
 dotnet_diagnostic.ide0072.severity = error       # Populate switch expression
 dotnet_diagnostic.ide0078.severity = error       # Use pattern matching (is null/is not null)
+dotnet_diagnostic.ide0090.severity = error       # Use new() when type is apparent
 dotnet_diagnostic.ide0130.severity = error       # Namespace does not match folder structure
+dotnet_diagnostic.ide0150.severity = error       # Prefer null check over type check
+dotnet_diagnostic.ide0180.severity = error       # Use tuple swap
+dotnet_diagnostic.ide0200.severity = error       # Use method group conversion
+dotnet_diagnostic.ide0206.severity = error       # Use unbound generic type in nameof
+dotnet_diagnostic.ide0230.severity = error       # Use UTF-8 string literal
+dotnet_diagnostic.ide0300.severity = error       # Use collection expression for array
+dotnet_diagnostic.ide0301.severity = error       # Use collection expression for empty
+dotnet_diagnostic.ide0302.severity = error       # Use collection expression for stackalloc
+dotnet_diagnostic.ide0303.severity = error       # Use collection expression for Create
+dotnet_diagnostic.ide0304.severity = error       # Use collection expression for builder
+dotnet_diagnostic.ide0305.severity = error       # Use collection expression for fluent
 # IDE0160: Namespace style enforced via .editorconfig (file_scoped:error)
 
 # --- Meziantou (MA) ---
