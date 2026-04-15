@@ -13,7 +13,7 @@ public sealed class InMutableStructE128AnalyzerTests
         var test = new CSharpAnalyzerTest<InMutableStructE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();

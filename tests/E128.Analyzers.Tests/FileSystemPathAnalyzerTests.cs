@@ -25,7 +25,7 @@ public sealed class FileSystemPathAnalyzerTests
         {
             TestCode = code,
             MarkupOptions = MarkupOptions.UseFirstDescriptor,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();

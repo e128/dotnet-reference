@@ -8,15 +8,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
 {
-    private static readonly ReferenceAssemblies Net80WithDi = ReferenceAssemblies.Net.Net80
-        .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "8.0.0")]);
+    private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
+        .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
 
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
         var test = new CSharpAnalyzerTest<ConcreteOnlyDiRegistrationAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = Net80WithDi,
+            ReferenceAssemblies = Net100WithDi,
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();

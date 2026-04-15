@@ -13,7 +13,7 @@ public sealed class TempDirCleanupE128AnalyzerTests
         var test = new CSharpAnalyzerTest<TempDirCleanupAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();

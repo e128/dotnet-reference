@@ -9,4 +9,5 @@ E128058  | Design      | Warning  | List<T> returned as IReadOnlyList<T> without
 E128059  | Design      | Warning  | Interface method parameter unused in implementation
 E128060  | Design      | Warning  | Dictionary<K,V> returned as IReadOnlyDictionary<K,V> without .AsReadOnly()
 E128061  | Design      | Warning  | Static readonly array should be ImmutableArray<T>
+E128062  | Testing     | Warning  | Test uses outdated ReferenceAssemblies — does not match project target framework
 

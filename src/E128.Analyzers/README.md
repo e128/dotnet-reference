@@ -99,6 +99,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | Rule    | Title                                                                     | Code Fix |
 | ------- | ------------------------------------------------------------------------- | -------- |
 | E128054 | Class creates temp directory without cleanup interface                     | Yes      |
+| E128062 | Test uses outdated `ReferenceAssemblies` — does not match project TFM      | Yes      |
 
 ## What each rule catches
 
@@ -553,6 +554,18 @@ public class TestFixture : IDisposable
     private readonly string _tempDir = Path.Combine(Path.GetTempPath(), "test");
     public void Dispose() => Directory.Delete(_tempDir, recursive: true);
 }
+```
+
+### E128062 &mdash; Stale ReferenceAssemblies in tests
+
+Flags `ReferenceAssemblies.Net.Net80` / `Net90` usages in test code when the configured minimum framework version is higher. Tests that use older reference assemblies may miss API availability issues specific to the production target framework. Configurable via `e128_minimum_framework_version` in `.globalconfig` (default: 100 for net10.0).
+
+```csharp
+// Before (warns — project targets net10.0)
+ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+
+// After
+ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
 ```
 
 ### E128055 &mdash; Unbalanced pragma warning disable

@@ -15,7 +15,7 @@ public sealed class SuppressionAuditE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             // The analyzer flags #pragma warning disable directives, so the framework's
             // automatic suppression-via-pragma check creates a circular diagnostic.
             TestBehaviors = TestBehaviors.SkipSuppressionCheck,

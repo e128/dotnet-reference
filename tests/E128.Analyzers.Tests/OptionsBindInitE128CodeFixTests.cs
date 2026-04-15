@@ -19,7 +19,7 @@ public sealed class OptionsBindInitE128CodeFixTests
         var test = new CSharpAnalyzerTest<OptionsBindInitAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();

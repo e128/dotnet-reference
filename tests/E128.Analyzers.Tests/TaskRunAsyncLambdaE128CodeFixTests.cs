@@ -14,7 +14,7 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
         }.RunAsync();
     }
@@ -76,7 +76,7 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
         {
             TestCode = code,
             FixedCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 0,
         }.RunAsync();
     }

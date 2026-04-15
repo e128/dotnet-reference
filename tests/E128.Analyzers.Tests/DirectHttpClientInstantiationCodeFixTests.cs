@@ -8,8 +8,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class DirectHttpClientInstantiationCodeFixTests
 {
-    private static readonly ReferenceAssemblies Net80WithHttp = ReferenceAssemblies.Net.Net80
-        .AddPackages([new PackageIdentity("Microsoft.Extensions.Http", "8.0.0")]);
+    private static readonly ReferenceAssemblies Net100WithHttp = ReferenceAssemblies.Net.Net100
+        .AddPackages([new PackageIdentity("Microsoft.Extensions.Http", "10.0.6")]);
 
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
@@ -17,7 +17,7 @@ public sealed class DirectHttpClientInstantiationCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = Net80WithHttp,
+            ReferenceAssemblies = Net100WithHttp,
             NumberOfFixAllIterations = 1,
         }.RunAsync();
     }

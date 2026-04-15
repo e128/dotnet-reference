@@ -13,7 +13,7 @@ public sealed class E128059UnusedInterfaceParamAnalyzerTests
         var test = new CSharpAnalyzerTest<UnusedInterfaceParamAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();

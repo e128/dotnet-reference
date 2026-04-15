@@ -45,3 +45,6 @@ dotnet_diagnostic.MA0006.severity = suggestion
 
 # E128043: Null-forgiving operator (tests legitimately pass null to non-nullable params for guard clause testing)
 dotnet_diagnostic.E128043.severity = none
+
+# E128062: Minimum framework version for test reference assemblies (net10.0 = 100)
+e128_minimum_framework_version = 100

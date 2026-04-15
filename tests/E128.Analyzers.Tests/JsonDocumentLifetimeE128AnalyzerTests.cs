@@ -13,7 +13,7 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
         var test = new CSharpAnalyzerTest<JsonDocumentLifetimeAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();

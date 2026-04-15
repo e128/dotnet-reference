@@ -14,7 +14,7 @@ public sealed class MultiStringEqualsOrChainCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = fixAllIterations,
         }.RunAsync();
     }

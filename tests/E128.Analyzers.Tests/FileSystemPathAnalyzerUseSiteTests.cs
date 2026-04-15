@@ -13,7 +13,7 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
         var test = new CSharpAnalyzerTest<FileSystemPathAnalyzer, DefaultVerifier>
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             MarkupOptions = MarkupOptions.UseFirstDescriptor,
         };
         test.ExpectedDiagnostics.AddRange(expected);

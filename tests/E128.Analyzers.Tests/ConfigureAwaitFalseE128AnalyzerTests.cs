@@ -15,7 +15,7 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConfigureAwaitFalseE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.SolutionTransforms.Add((solution, projectId) =>
         {
@@ -34,7 +34,7 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConfigureAwaitFalseE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.TestState.Sources.Add("""
             namespace Microsoft.AspNetCore.Components.WebAssembly.Hosting
@@ -59,7 +59,7 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConfigureAwaitFalseE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.SolutionTransforms.Add((solution, projectId) =>
         {

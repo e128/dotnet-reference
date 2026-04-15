@@ -14,7 +14,7 @@ public sealed class TempDirCleanupE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
             NumberOfFixAllIterations = 1,
         };

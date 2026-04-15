@@ -14,7 +14,7 @@ public sealed class SealedByDefaultCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
             // CompilationEnd diagnostics are non-local by design.
             CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,

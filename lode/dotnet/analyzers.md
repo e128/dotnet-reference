@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-15T13:31:13Z*
+*Updated: 2026-04-15T18:00:00Z*
 
 ## Strategy: Deny by Default
 
@@ -76,7 +76,7 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 
 `src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"` — applied to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
-54 rules across 6 categories: Design, Reliability, Performance, Style, Testing, and FileSystem. All rules have code fixes. See `src/E128.Analyzers/README.md` for the complete rule table and usage examples.
+Rules span 6 categories: Design, Reliability, Performance, Style, Testing, and FileSystem. All rules have code fixes. See `src/E128.Analyzers/README.md` for the complete rule table and usage examples.
 
 Key rules by category (not exhaustive):
 
@@ -87,6 +87,21 @@ Key rules by category (not exhaustive):
 | Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation                  |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator              |
 | Testing     | Temp directory cleanup interface                                                     |
+| Category    | Examples                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray  |
+| Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime                     |
+| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation                                 |
+| Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
+| Testing     | Temp directory cleanup, stale ReferenceAssemblies                                                  |
+
+### E128061 — Static readonly array → ImmutableArray
+
+Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types — `readonly` prevents reassignment but callers can still mutate contents via the indexer. Code fix replaces `T[]` with `ImmutableArray<T>` and unwraps `new T[]` / `new[]` initializers to collection expressions.
+
+### E128062 — Stale ReferenceAssemblies in tests
+
+Flags `ReferenceAssemblies.Net.Net80` / `Net90` in test code when the configured minimum framework version is higher (default: 100 for net10.0). Configurable via `e128_minimum_framework_version` in `.globalconfig`. Code fix replaces outdated version with the minimum.
 
 ## Common Test Overrides
 

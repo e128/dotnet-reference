@@ -14,7 +14,7 @@ public sealed class FileSystemInfoEqualityCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         }.RunAsync();
     }
 

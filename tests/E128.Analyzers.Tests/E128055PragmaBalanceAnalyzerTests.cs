@@ -13,7 +13,7 @@ public sealed class E128055PragmaBalanceAnalyzerTests
         var test = new CSharpAnalyzerTest<PragmaBalanceAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             // E128055 fires on unbalanced pragmas; the framework's suppression-check phase
             // adds an unbalanced #pragma warning disable E128055, which would cause a
             // self-referential diagnostic. Skip the suppression check to avoid this.

@@ -14,7 +14,7 @@ public sealed class E128055PragmaBalanceCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
             // Suppress the framework's suppression-check for the same reason as the analyzer
             // tests — E128055 fires on unbalanced pragmas, and the framework adds an

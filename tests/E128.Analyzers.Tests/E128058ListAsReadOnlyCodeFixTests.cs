@@ -14,7 +14,7 @@ public sealed class E128058ListAsReadOnlyCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
         };
         return test.RunAsync();

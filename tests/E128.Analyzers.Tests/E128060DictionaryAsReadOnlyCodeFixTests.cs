@@ -15,7 +15,7 @@ public sealed class E128060DictionaryAsReadOnlyCodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             // Dictionary<K,V>.AsReadOnly() requires .NET 9+
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net90,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
         };
         return test.RunAsync();
