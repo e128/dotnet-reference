@@ -4,7 +4,7 @@ These phrases in user messages always invoke the corresponding script or skill.
 
 | User says                                                                              | Invokes                                     |
 | -------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `run tests` / `test this` / `run targeted tests` / `build and test`                   | `bash scripts/test.sh <ClassName>`          |
+| `run tests` / `test this` / `run targeted tests` / `build and test`                   | `bash scripts/test.sh <FullyQualifiedClassName>` |
 | `run all tests` / `full test suite` / `test --all`                                     | `bash scripts/test.sh --all`                |
 | `build` / `compile` / `run build` / `build project`                                   | `bash scripts/build.sh [--project <name>]`  |
 | `am I good` / `check this` / `verify changes`                                         | `scripts/check.sh`                          |

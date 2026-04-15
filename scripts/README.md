@@ -63,4 +63,5 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/plan-gate.sh`| Phase gate prerequisite verification         |
 | `internal/plan-context.sh`| List active plans, roadmap items, or details |
 | `internal/plan-path.sh`| Resolve a plan's canonical path by partial name|
+| `internal/version-bump.sh`| Increment <Version> in a project's .csproj  |
 | `internal/lode.sh`   | Legacy Claude CLI wrapper (SystemPrompt.txt) |

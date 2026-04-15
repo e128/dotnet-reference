@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-15T18:00:00Z*
+*Updated: 2026-04-15T19:55:55Z*
 
 ## Strategy: Deny by Default
 
@@ -102,6 +102,10 @@ Flags `private static readonly T[]` and `internal static readonly T[]` fields. A
 ### E128062 — Stale ReferenceAssemblies in tests
 
 Flags `ReferenceAssemblies.Net.Net80` / `Net90` in test code when the configured minimum framework version is higher (default: 100 for net10.0). Configurable via `e128_minimum_framework_version` in `.globalconfig`. Code fix replaces outdated version with the minimum.
+
+### E128063 — Mid-name underscore in private static member
+
+Flags private/internal static members whose name contains an underscore at index ≥ 2 (e.g., `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors. Code fix uses `Renamer.RenameSymbolAsync` to remove the mid-name underscore and PascalCase the segments.
 
 ## Common Test Overrides
 

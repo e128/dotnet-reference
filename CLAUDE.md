@@ -1,6 +1,6 @@
 # Project Instructions for Claude
 
-*Last updated: 2026-04-09T01:46:48Z*
+*Last updated: 2026-04-15T19:30:00Z*
 
 ## Communication
 
@@ -15,7 +15,7 @@
 
 ### Tests
 
-- **Never use raw `dotnet test` directly.** Always use `scripts/test.sh` (targeted) or `scripts/test.sh --all` (full CI suite). This project uses xUnit v3 MTP — raw `dotnet test --filter` does not work.
+- **Never use raw `dotnet test` directly.** Always use `scripts/test.sh` (targeted) or `scripts/test.sh --all` (full CI suite). This project uses xUnit v3 MTP — raw `dotnet test --filter` does not work. The `--filter-class` flag accepts a class name (e.g., `MidNameUnderscoreAnalyzerTests`); other test projects returning exit code 8 (zero matches) is expected.
 - **Never run `check.sh` and `build.sh` together.** `check.sh` already includes build.
 
 ### TDD
@@ -86,7 +86,7 @@ Prefer focused incremental changes: one change, verify, then next.
 
 Prefer `.claude/` (project-level) over `~/.claude/` (global) for all config.
 
-Always use `.claude/tmp/` instead of `/tmp`.
+Always use `.claude/tmp/` instead of `/tmp`. **Never write to `/tmp`.**
 
 **Never write absolute user profile paths.** Use `~` for home-relative or repo-relative paths.
 
@@ -117,4 +117,5 @@ Always use `.claude/tmp/` instead of `/tmp`.
 | Script catalog           | `scripts/help.sh`                   |
 | Task management          | `scripts/task.sh {check\|next\|progress}` |
 | Lode timestamps          | `scripts/lode-ts.sh --changed`      |
+| Version bump             | `scripts/internal/version-bump.sh <Project>` |
 

@@ -55,9 +55,22 @@ if [[ "$DRY_RUN" == true ]]; then
     exit 0
 fi
 
-# Run and capture output
-output=$("${CMD[@]}" 2>&1)
-EXIT_CODE=$?
+# Run and capture output (suppress set -e: MTP returns non-zero for zero-match projects)
+output=$("${CMD[@]}" 2>&1) && EXIT_CODE=0 || EXIT_CODE=$?
+
+# MTP exit code 8 means "zero tests matched filter" — not a real failure.
+# Only treat exit codes 1 (test failure) and 2 (test error) as actual failures.
+# Exit code 8 from individual projects when using --filter-class is expected.
+REAL_FAILED=0
+if [[ $EXIT_CODE -eq 1 ]]; then
+    REAL_FAILED=1
+elif [[ $EXIT_CODE -eq 2 ]]; then
+    # Exit code 2 can mean "no tests matched" in some MTP versions, or a real error
+    # Check if the output contains actual test failures
+    if echo "$output" | grep -q "failed with"; then
+        REAL_FAILED=1
+    fi
+fi
 
 # Parse MTP summary: total: N, failed: N, succeeded: N, skipped: N
 total=$(echo "$output" | sed -n 's/.*total: *\([0-9]*\).*/\1/p' | tail -1)
@@ -68,15 +81,21 @@ skipped=$(echo "$output" | sed -n 's/.*skipped: *\([0-9]*\).*/\1/p' | tail -1)
 total=${total:-0}; failed=${failed:-0}; succeeded=${succeeded:-0}; skipped=${skipped:-0}
 
 if [[ "$VERBOSE" == true ]]; then
-    if [[ $EXIT_CODE -ne 0 || "$failed" -gt 0 ]]; then
+    if [[ $REAL_FAILED -eq 1 || "$failed" -gt 0 ]]; then
         err "Tests failed: $failed failed, $succeeded passed, $skipped skipped"
-        echo "$output" | grep -E 'FAIL|error|Assert' | head -10
+        # Show full failure details from MTP output
+        echo "$output" | grep -A 20 "failed" | head -50
     else
         ok "Tests passed: $succeeded passed, $skipped skipped"
     fi
 else
-    json_object status="$([ "$failed" -eq 0 ] && echo ok || echo fail)" \
+    json_object status="$([ "$REAL_FAILED" -eq 0 ] && echo ok || echo fail)" \
         total="$total" passed="$succeeded" failed="$failed" skipped="$skipped"
+fi
+
+# Return 0 only if no real failures; exit code 8 (zero matches) is not an error
+if [[ $REAL_FAILED -eq 0 && $EXIT_CODE -eq 8 ]]; then
+    exit 0
 fi
 
 exit $EXIT_CODE

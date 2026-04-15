@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.16.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.17.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -93,6 +93,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128043 | Do not use the null-forgiving operator                                    | Yes      |
 | E128047 | `#pragma warning disable` without justification comment                   | Yes      |
 | E128055 | Unbalanced `#pragma warning disable` without matching restore             | Yes      |
+| E128063 | Mid-name underscore in private static member (IDE1006 rename artifact)    | Yes      |
 
 ### Testing
 
@@ -554,6 +555,18 @@ public class TestFixture : IDisposable
     private readonly string _tempDir = Path.Combine(Path.GetTempPath(), "test");
     public void Dispose() => Directory.Delete(_tempDir, recursive: true);
 }
+```
+
+### E128063 &mdash; Mid-name underscore in private static member
+
+Flags private/internal static members whose name contains an underscore at index &ge; 2 (e.g., `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors.
+
+```csharp
+// Before (warns)
+private static readonly string[] Nots_supportedExtensions = [];
+
+// After
+private static readonly string[] NotsSupportedExtensions = [];
 ```
 
 ### E128062 &mdash; Stale ReferenceAssemblies in tests
