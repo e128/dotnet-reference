@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-14T19:54:19Z*
+*Updated: 2026-04-15T13:31:13Z*
 
 ## Strategy: Deny by Default
 
@@ -12,11 +12,21 @@ dotnet_analyzer_diagnostic.severity = error
 
 ## Configuration Split
 
-| File               | Purpose                            | Scope             |
-| ------------------ | ---------------------------------- | ----------------- |
-| `.globalconfig`    | Analyzer diagnostic severities     | All projects      |
-| `.editorconfig`    | Code style, formatting, naming     | All projects      |
-| `tests/.globalconfig` | Test-specific overrides         | Test projects only |
+Per [Microsoft guidance](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/code-style-rule-options):
+
+| File                  | Purpose                                             | Scope              |
+| --------------------- | --------------------------------------------------- | ------------------ |
+| `.editorconfig`       | Code style, formatting, naming (canonical home)     | All projects       |
+| `.globalconfig`       | Analyzer diagnostic severities and enabling only    | All projects       |
+| `tests/.globalconfig` | Test-specific severity overrides                    | Test projects only |
+
+### Rationale
+
+**`.editorconfig` is the canonical style/formatting home.** It supports both `dotnet_style_*`/`csharp_style_*` preferences and inline severity hints (e.g., `dotnet_style_coalesce_expression = true:error`). IDEs (Visual Studio, Rider, VS Code) read it to apply settings immediately while editing. It also supports `dotnet_diagnostic.*` entries if needed, but this repo keeps diagnostic severities in `.globalconfig` for separation of concerns.
+
+**`.globalconfig` is purely for analyzer configuration.** It handles rule severity (`dotnet_diagnostic.*`) and enabling (`roslynator_analyzers.enabled_by_default`). It does NOT support editor style settings like indentation, whitespace, or formatting preferences — those must be in `.editorconfig`.
+
+**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` use the `:error`/`:suggestion`/`:silent` suffix directly on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). The `.globalconfig` then lists explicit `dotnet_diagnostic.IDE*` overrides only where the behavior deviates from the blanket `dotnet_analyzer_diagnostic.severity = error` — avoiding silent drift when rule IDs change.
 
 The `tests/.globalconfig` uses `global_level = 101` to override the root `global_level = 100`.
 
