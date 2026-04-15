@@ -1,46 +1,42 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "group:all"
+    "config:recommended"
   ],
   "timezone": "America/Chicago",
   "schedule": [
     "before 6am every weekday",
-    "every weekend"
+    "before 6am on saturday and sunday"
   ],
   "labels": [
     "dependencies"
   ],
+  "minimumReleaseAge": "3 days",
   "prConcurrentLimit": 1,
   "branchConcurrentLimit": 1,
   "vulnerabilityAlerts": {
-    "enabled": true,
     "schedule": ["at any time"],
     "groupName": null,
     "labels": ["dependencies", "security"]
   },
   "packageRules": [
     {
-      "description": "Security updates bypass schedule and grouping",
+      "description": "Security updates bypass schedule, grouping, and release age",
       "matchCategories": ["security"],
       "schedule": ["at any time"],
       "groupName": null,
+      "minimumReleaseAge": "0 days",
       "automerge": true
     },
     {
       "description": "Major version bumps require manual review",
-      "matchUpdateTypes": [
-        "major"
-      ],
+      "matchUpdateTypes": ["major"],
       "automerge": false
     },
     {
-      "description": "Patch and minor updates auto-merge",
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ],
+      "description": "Patch and minor updates grouped and auto-merged",
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "non-major",
       "automerge": true
     }
   ]

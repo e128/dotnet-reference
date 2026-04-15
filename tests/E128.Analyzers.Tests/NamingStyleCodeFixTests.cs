@@ -10,182 +10,44 @@ namespace E128.Analyzers.Tests;
 
 public sealed class NamingStyleCodeFixTests
 {
-    [Fact]
+    [Theory]
     [Trait("Category", "CI")]
-    public void SplitByCaseTransition_CamelCase_SplitsCorrectly()
+    [InlineData("myFieldName", new[] { "my", "Field", "Name" })]
+    [InlineData("MyFieldName", new[] { "My", "Field", "Name" })]
+    [InlineData("HTTPClient", new[] { "HTTP", "Client" })]
+    [InlineData("foo", new[] { "foo" })]
+    public void SplitByCaseTransition_ReturnsExpectedWords(string input, string[] expected)
     {
-        var result = NamingStyleCodeFixProvider.SplitByCaseTransition("myFieldName");
-        Assert.Equal(["my", "Field", "Name"], result);
+        var result = NamingStyleCodeFixProvider.SplitByCaseTransition(input);
+        Assert.Equal(expected, result);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "CI")]
-    public void SplitByCaseTransition_PascalCase_SplitsCorrectly()
-    {
-        var result = NamingStyleCodeFixProvider.SplitByCaseTransition("MyFieldName");
-        Assert.Equal(["My", "Field", "Name"], result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void SplitByCaseTransition_Acronym_KeepsAcronymTogether()
-    {
-        var result = NamingStyleCodeFixProvider.SplitByCaseTransition("HTTPClient");
-        Assert.Equal(["HTTP", "Client"], result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void SplitByCaseTransition_SingleWord_ReturnsOneElement()
-    {
-        var result = NamingStyleCodeFixProvider.SplitByCaseTransition("foo");
-        Assert.Equal(["foo"], result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_AddUnderscorePrefix_CamelCase()
+    // prefix "_", CamelCase
+    [InlineData("myField", "_", "", "", "CamelCase", "_myField")]   // already camelCase
+    [InlineData("MyField", "_", "", "", "CamelCase", "_myField")]   // PascalCase → lowercase first char
+    [InlineData("_MyField", "_", "", "", "CamelCase", "_myField")]   // wrong case after prefix → replace
+    // PascalCase, no prefix
+    [InlineData("myProp", "", "", "", "PascalCase", "MyProp")]
+    [InlineData("maxRetry", "", "", "", "PascalCase", "MaxRetry")]
+    [InlineData("myService", "", "", "", "PascalCase", "MyService")]
+    [InlineData("getResult", "", "", "", "PascalCase", "GetResult")]
+    // interface prefix "I"
+    [InlineData("Fetcher", "I", "", "", "PascalCase", "IFetcher")]
+    [InlineData("iFetcher", "I", "", "", "PascalCase", "IFetcher")]   // wrong-case prefix, no double "II"
+    // AllUpperCase with separator
+    [InlineData("maxRetryCount", "", "", "_", "AllUpperCase", "MAX_RETRY_COUNT")]
+    // edge cases: "I"/"T" prefix guard — letter after prefix must be uppercase
+    [InlineData("IndexFilenames", "", "", "", "PascalCase", "IndexFilenames")]  // "I" is word-initial, not prefix
+    [InlineData("ToolbarSelectors", "", "", "", "PascalCase", "ToolbarSelectors")]// "T" is word-initial, not prefix
+    [InlineData("IList", "", "", "", "PascalCase", "List")]            // "I" IS real interface prefix
+    public void BuildCompliantName_ReturnsExpectedName(
+        string symbolName, string prefix, string suffix, string wordSeparator, string capitalizationScheme, string expected)
     {
         var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "myField",
-            prefix: "_",
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "CamelCase");
-
-        Assert.Equal("_myField", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_AddUnderscorePrefix_LowercasesFirstChar()
-    {
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "MyField",
-            prefix: "_",
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "CamelCase");
-
-        Assert.Equal("_myField", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_WrongPrefix_ReplacesWithCorrect()
-    {
-        // _MyField (wrong case after _) → _myField
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "_MyField",
-            prefix: "_",
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "CamelCase");
-
-        Assert.Equal("_myField", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_PascalCase_CapitalizesFirstChar()
-    {
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "myProp",
-            prefix: string.Empty,
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("MyProp", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_InterfacePrefix_PrependI()
-    {
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "Fetcher",
-            prefix: "I",
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("IFetcher", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_AllUpper_WithSeparator()
-    {
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "maxRetryCount",
-            prefix: string.Empty,
-            suffix: string.Empty,
-            wordSeparator: "_",
-            capitalizationScheme: "AllUpperCase");
-
-        Assert.Equal("MAX_RETRY_COUNT", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_ConstField_CamelCase_ProducesPascalCase()
-    {
-        // constant_fields_should_be_pascal_case: no prefix, PascalCase
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "maxRetry",
-            prefix: string.Empty,
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("MaxRetry", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_Type_CamelCase_ProducesPascalCase()
-    {
-        // types_should_be_pascal_case: no prefix, PascalCase
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "myService",
-            prefix: string.Empty,
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("MyService", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_NonFieldMember_CamelCase_ProducesPascalCase()
-    {
-        // non_field_members_should_be_pascal_case: no prefix, PascalCase (properties/events/methods)
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "getResult",
-            prefix: string.Empty,
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("GetResult", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_Interface_WrongCasePrefix_DoesNotDoublePrefix()
-    {
-        // interface_should_be_begins_with_i: prefix "I", PascalCase.
-        // "iFetcher" has the prefix in wrong case; without the fix this produced "IIFetcher".
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "iFetcher",
-            prefix: "I",
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("IFetcher", result);
+            symbolName, prefix, suffix, wordSeparator, capitalizationScheme);
+        Assert.Equal(expected, result);
     }
 
     [Fact]
@@ -255,7 +117,7 @@ public sealed class NamingStyleCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
         }.RunAsync();
     }
@@ -282,7 +144,7 @@ public sealed class NamingStyleCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
         }.RunAsync();
     }
@@ -313,57 +175,9 @@ public sealed class NamingStyleCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
         }.RunAsync();
     }
 
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_PascalCase_PreservesLeadingI_WhenNotInterfacePrefix()
-    {
-        // "IndexFilenames" starts with "I" but it is not an interface-prefixed name —
-        // "ndex..." does not begin with an uppercase letter. Previously misidentified
-        // "I" as the interface prefix and produced "NdexFilenames".
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "IndexFilenames",
-            prefix: string.Empty,
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("IndexFilenames", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_PascalCase_PreservesLeadingT_WhenNotTypeParamPrefix()
-    {
-        // "ToolbarSelectors" starts with "T" but is not a type-param-prefixed name.
-        // Previously misidentified "T" as the type param prefix and produced "OolbarSelectors".
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "ToolbarSelectors",
-            prefix: string.Empty,
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("ToolbarSelectors", result);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void BuildCompliantName_PascalCase_StripsRealIPrefix_WhenFollowedByUppercase()
-    {
-        // "IList" starts with "I" followed by uppercase "L" — this IS a real interface
-        // prefix; stripping it is correct when renaming to no-prefix PascalCase.
-        var result = NamingStyleCodeFixProvider.BuildCompliantName(
-            symbolName: "IList",
-            prefix: string.Empty,
-            suffix: string.Empty,
-            wordSeparator: string.Empty,
-            capitalizationScheme: "PascalCase");
-
-        Assert.Equal("List", result);
-    }
 }

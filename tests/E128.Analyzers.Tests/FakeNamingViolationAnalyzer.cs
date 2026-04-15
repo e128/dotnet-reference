@@ -25,11 +25,6 @@ internal sealed class FakeNamingViolationAnalyzer : DiagnosticAnalyzer
 
     public override void Initialize(AnalysisContext context)
     {
-        if (context is null)
-        {
-            return;
-        }
-
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.RegisterSyntaxNodeAction(AnalyzeField, SyntaxKind.FieldDeclaration);

@@ -29,7 +29,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
     private const string WordSeparatorKey = "WordSeparator";
     private const string CapitalizationSchemeKey = "CapitalizationScheme";
 
-    private static readonly string[] s_knownPrefixes = ["s_", "m_", "_", "I", "T"];
+    private static readonly ImmutableArray<string> s_knownPrefixes = ["s_", "m_", "_", "I", "T"];
 
     public override ImmutableArray<string> FixableDiagnosticIds => ["IDE1006"];
 
@@ -124,7 +124,9 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
         wordSeparator ??= string.Empty;
         capitalizationScheme ??= "PascalCase";
 
-        return BuildCompliantName(symbolName!, prefix, suffix, wordSeparator, capitalizationScheme);
+        return symbolName is not string nonNullName
+            ? null
+            : BuildCompliantName(nonNullName, prefix, suffix, wordSeparator, capitalizationScheme);
     }
 
     internal static string BuildCompliantName(
@@ -221,7 +223,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
         }
 
         // Walk the string and split at lower→upper transitions.
-        var words = new List<string>();
+        var words = new List<string>((name.Length >> 2) + 1);
         var wordStart = 0;
 
         for (var i = 1; i < name.Length; i++)
@@ -416,7 +418,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
     /// </summary>
     private sealed class SequentialFixAllProvider : FixAllProvider
     {
-        public static readonly SequentialFixAllProvider Instance = new();
+        internal static readonly SequentialFixAllProvider Instance = new();
 
         public override async Task<CodeAction?> GetFixAsync(FixAllContext fixAllContext)
         {
