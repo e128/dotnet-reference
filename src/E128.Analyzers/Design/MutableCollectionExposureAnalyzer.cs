@@ -18,7 +18,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128052";
     internal const string SuggestedTypeKey = "SuggestedType";
 
-    private static readonly string[] ExcludedContainingTypeSuffixes =
+    private static readonly ImmutableArray<string> ExcludedContainingTypeSuffixes =
     [
         "Builder",
         "State",
@@ -32,7 +32,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
     /// Keyed by the unbound generic metadata name (e.g. "System.Collections.Generic.List`1").
     /// Value is (metadata name of immutable interface, display template like "IReadOnlyList&lt;{0}&gt;").
     /// </summary>
-    private static readonly (string MetadataName, string DisplayTemplate)[] MutableTypeEntries =
+    private static readonly ImmutableArray<(string MetadataName, string DisplayTemplate)> MutableTypeEntries =
     [
         ("System.Collections.Generic.List`1", "IReadOnlyList<{0}>"),
         ("System.Collections.Generic.Dictionary`2", "IReadOnlyDictionary<{0}, {1}>"),

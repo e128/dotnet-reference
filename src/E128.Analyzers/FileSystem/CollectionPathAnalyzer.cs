@@ -27,7 +27,7 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true);
 
     // Generic collection type names that, when parameterized with string, suggest FileInfo/DirectoryInfo.
-    private static readonly string[] CollectionTypeNames =
+    private static readonly ImmutableArray<string> CollectionTypeNames =
     [
         "IReadOnlyList", "IList", "List",
         "IEnumerable", "ICollection", "IReadOnlyCollection",

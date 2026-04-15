@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-14T19:54:19Z*
+*Updated: 2026-04-15T12:00:00Z*
 
 ## Strategy: Deny by Default
 
@@ -70,13 +70,17 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 
 Key rules by category (not exhaustive):
 
-| Category    | Examples                                                                            |
-| ----------- | ----------------------------------------------------------------------------------- |
-| Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI    |
-| Reliability  | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime       |
-| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation                  |
-| Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator              |
-| Testing     | Temp directory cleanup interface                                                     |
+| Category    | Examples                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray  |
+| Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime                     |
+| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation                                 |
+| Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
+| Testing     | Temp directory cleanup interface                                                                    |
+
+### E128061 — Static readonly array → ImmutableArray
+
+Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types — `readonly` prevents reassignment but callers can still mutate contents via the indexer. Code fix replaces `T[]` with `ImmutableArray<T>` and unwraps `new T[]` / `new[]` initializers to collection expressions.
 
 ## Common Test Overrides
 

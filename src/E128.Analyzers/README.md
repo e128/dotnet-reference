@@ -43,6 +43,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128058 | Return `List<T>` via `.AsReadOnly()` when exposing as `IReadOnlyList<T>`                              | Yes      |
 | E128059 | Interface method parameter is unused in implementation                                                | Yes      |
 | E128060 | Return `Dictionary<K,V>` via `.AsReadOnly()` when exposing as `IReadOnlyDictionary<K,V>`              | Yes      |
+| E128061 | Use `ImmutableArray<T>` for static readonly arrays                                                   | Yes      |
 
 ### Reliability
 
@@ -639,6 +640,18 @@ public IReadOnlyDictionary<string, int> Counts => _counts;
 
 // After
 public IReadOnlyDictionary<string, int> Counts => _counts.AsReadOnly();
+```
+
+### E128061 &mdash; Static readonly array should be ImmutableArray
+
+Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types &mdash; `readonly` prevents reassignment but callers can still mutate contents via the indexer. Use `ImmutableArray<T>` for true immutability.
+
+```csharp
+// Before (warns)
+private static readonly string[] Names = ["a", "b"];
+
+// After
+private static readonly ImmutableArray<string> Names = ["a", "b"];
 ```
 
 ## Configuration
