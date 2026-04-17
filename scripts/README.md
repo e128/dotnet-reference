@@ -1,6 +1,6 @@
 # Scripts
 
-All scripts use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live catalog.
+Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live catalog. Nushell scripts (`.nu`) require [Nushell](https://www.nushell.sh/) and are not listed by `help.sh`.
 
 ## Core Workflow
 
@@ -15,12 +15,13 @@ All scripts use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live
 
 ## Git & Status
 
-| Script       | Purpose                                              | Key flags                    |
-| ------------ | ---------------------------------------------------- | ---------------------------- |
-| `status.sh`  | Git status with structured output                    | `--json`                     |
-| `diff.sh`    | Diff summary                                         | `--json`, `--files`, `--staged` |
-| `branch.sh`  | Branch info vs base                                  | `--json`, `--human`          |
-| `assert.sh`  | Fail-fast pre-commit gates                           | `--build-pass`, `--clean-working-tree` |
+| Script              | Purpose                                                                 | Key flags                              |
+| ------------------- | ----------------------------------------------------------------------- | -------------------------------------- |
+| `status.sh`         | Git status with structured output                                       | `--json`                               |
+| `diff.sh`           | Diff summary                                                            | `--json`, `--files`, `--staged`        |
+| `branch.sh`         | Branch info vs base                                                     | `--json`, `--human`                    |
+| `assert.sh`         | Fail-fast pre-commit gates                                              | `--build-pass`, `--clean-working-tree` |
+| `git-forensics.nu`  | Git history forensics (churn, contributors, bugs, velocity, firefights) | `--since`, `--top`, `--json`           |
 
 ## Utilities
 

@@ -60,20 +60,20 @@ scripts/check.sh --no-format --all
 ```
 If exit code is non-zero → **stop and report failures.**
 
-**C) README freshness (conditional):**
-Only if any staged or unstaged changes touch analyzer source (`src/*Analyzers*/`) OR `scripts/`:
-```
-
-**D) Analyzer version bump (conditional):**
+**C) Analyzer version bump (conditional):**
 Only if any staged or unstaged `.cs` file changes under `src/E128.Analyzers/`:
 ```bash
 scripts/internal/version-bump.sh E128.Analyzers
 ```
-This increments the `<Version>` in the analyzer csproj so the NuGet package ships with a new version. If no `.cs` files changed in the analyzer project, skip with "Analyzer version bump skipped — no analyzer source changes".
+This increments the `<Version>` in the analyzer csproj so the NuGet package ships with a new version. Skip with "Analyzer version bump skipped — no analyzer source changes" if no `.cs` files changed.
 
 If the version was bumped, re-read the csproj before any subsequent edits.
-/readme-check --skip-threshold
-```
+
+**D) README freshness (conditional):**
+Only if any staged or unstaged changes touch analyzer source (`src/*Analyzers*/`) OR `scripts/`:
+
+Invoke the readme-check skill directly — use the **Skill tool** with `skill: "readme-check"` and `args: "--skip-threshold"`. Do NOT spawn an Agent for this step.
+
 This audits all READMEs against current repo state and auto-fixes drift (e.g., stale rule tables, missing scripts, wrong version in install snippet). The Analyzers README is packed into the NuGet package — stale content ships to nuget.org if not caught here.
 
 If readme-check produces edits, they become part of this commit. No separate commit.
