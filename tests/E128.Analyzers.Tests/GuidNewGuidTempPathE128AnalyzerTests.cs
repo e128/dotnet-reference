@@ -14,7 +14,7 @@ public sealed class GuidNewGuidTempPathE128AnalyzerTests
         var test = new CSharpAnalyzerTest<GuidNewGuidTempPathE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -31,17 +31,17 @@ public sealed class GuidNewGuidTempPathE128AnalyzerTests
     public Task GuidInPathCombine_Fires()
     {
         const string code = """
-            using System;
-            using System.IO;
+                            using System;
+                            using System.IO;
 
-            class Foo
-            {
-                void Create()
-                {
-                    var dir = Path.Combine(Path.GetTempPath(), $"prefix_{Guid.NewGuid():N}");
-                }
-            }
-            """;
+                            class Foo
+                            {
+                                void Create()
+                                {
+                                    var dir = Path.Combine(Path.GetTempPath(), $"prefix_{Guid.NewGuid():N}");
+                                }
+                            }
+                            """;
         return VerifyAsync(code, Expect(8, 62));
     }
 
@@ -50,16 +50,16 @@ public sealed class GuidNewGuidTempPathE128AnalyzerTests
     public Task GuidNotInPathContext_NoFire()
     {
         return VerifyAsync("""
-            using System;
+                           using System;
 
-            class Foo
-            {
-                void Create()
-                {
-                    var id = Guid.NewGuid().ToString();
-                }
-            }
-            """);
+                           class Foo
+                           {
+                               void Create()
+                               {
+                                   var id = Guid.NewGuid().ToString();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -67,17 +67,17 @@ public sealed class GuidNewGuidTempPathE128AnalyzerTests
     public Task GuidWithExtension_Fires()
     {
         const string code = """
-            using System;
-            using System.IO;
+                            using System;
+                            using System.IO;
 
-            class Foo
-            {
-                void Create()
-                {
-                    var path = Path.Combine(Path.GetTempPath(), $"audio_{Guid.NewGuid():N}.wav");
-                }
-            }
-            """;
+                            class Foo
+                            {
+                                void Create()
+                                {
+                                    var path = Path.Combine(Path.GetTempPath(), $"audio_{Guid.NewGuid():N}.wav");
+                                }
+                            }
+                            """;
         return VerifyAsync(code, Expect(8, 62));
     }
 
@@ -86,15 +86,15 @@ public sealed class GuidNewGuidTempPathE128AnalyzerTests
     public Task GuidInNonPathInterpolation_NoFire()
     {
         return VerifyAsync("""
-            using System;
+                           using System;
 
-            class Foo
-            {
-                void Create()
-                {
-                    var msg = $"Created item {Guid.NewGuid()} successfully";
-                }
-            }
-            """);
+                           class Foo
+                           {
+                               void Create()
+                               {
+                                   var msg = $"Created item {Guid.NewGuid()} successfully";
+                               }
+                           }
+                           """);
     }
 }

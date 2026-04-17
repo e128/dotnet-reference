@@ -15,7 +15,7 @@ public sealed class EmptyStringLiteralCodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 
@@ -24,24 +24,24 @@ public sealed class EmptyStringLiteralCodeFixTests
     public Task VariableDeclaration_FixReplacesWithStringEmpty()
     {
         const string source = """
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128002:""|};
-                }
-            }
-            """;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var x = {|E128002:""|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            class C
-            {
-                void M()
-                {
-                    var x = string.Empty;
-                }
-            }
-            """;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var x = string.Empty;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -51,26 +51,26 @@ public sealed class EmptyStringLiteralCodeFixTests
     public Task MultipleOccurrences_FixAllReplacesAll()
     {
         const string source = """
-            class C
-            {
-                void M(string s)
-                {
-                    var x = {|E128002:""|};
-                    var y = {|E128002:""|};
-                }
-            }
-            """;
+                              class C
+                              {
+                                  void M(string s)
+                                  {
+                                      var x = {|E128002:""|};
+                                      var y = {|E128002:""|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            class C
-            {
-                void M(string s)
-                {
-                    var x = string.Empty;
-                    var y = string.Empty;
-                }
-            }
-            """;
+                                 class C
+                                 {
+                                     void M(string s)
+                                     {
+                                         var x = string.Empty;
+                                         var y = string.Empty;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

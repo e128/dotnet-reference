@@ -19,8 +19,10 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SyncOverAsyncAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -35,9 +37,9 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace with await",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(SyncOverAsyncCodeFixProvider)),
+                "Replace with await",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(SyncOverAsyncCodeFixProvider)),
             diagnostic);
     }
 

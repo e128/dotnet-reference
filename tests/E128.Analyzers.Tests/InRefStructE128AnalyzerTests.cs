@@ -13,7 +13,7 @@ public sealed class InRefStructE128AnalyzerTests
         var test = new CSharpAnalyzerTest<InRefStructE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,12 +24,12 @@ public sealed class InRefStructE128AnalyzerTests
     public Task InReadOnlySpan_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M({|E128021:in ReadOnlySpan<char> text|}) { }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M({|E128021:in ReadOnlySpan<char> text|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -37,12 +37,12 @@ public sealed class InRefStructE128AnalyzerTests
     public Task InSpan_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M({|E128021:in Span<byte> data|}) { }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M({|E128021:in Span<byte> data|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -50,12 +50,12 @@ public sealed class InRefStructE128AnalyzerTests
     public Task InReadOnlySpanByte_StaticMethod_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                static string Convert({|E128021:in ReadOnlySpan<byte> data|}) => string.Empty;
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               static string Convert({|E128021:in ReadOnlySpan<byte> data|}) => string.Empty;
+                           }
+                           """);
     }
 
     [Fact]
@@ -63,12 +63,12 @@ public sealed class InRefStructE128AnalyzerTests
     public Task ReadOnlySpan_ByValue_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M(ReadOnlySpan<char> text) { }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M(ReadOnlySpan<char> text) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -76,12 +76,12 @@ public sealed class InRefStructE128AnalyzerTests
     public Task InRegularStruct_NoFire()
     {
         return VerifyAsync("""
-            readonly struct BigData { public readonly long A, B, C, D; }
-            class C
-            {
-                void M(in BigData d) { }
-            }
-            """);
+                           readonly struct BigData { public readonly long A, B, C, D; }
+                           class C
+                           {
+                               void M(in BigData d) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -89,10 +89,10 @@ public sealed class InRefStructE128AnalyzerTests
     public Task NoParameters_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M() { }
-            }
-            """);
+                           class C
+                           {
+                               void M() { }
+                           }
+                           """);
     }
 }

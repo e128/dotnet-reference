@@ -31,30 +31,30 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
     // For the ambiguous (name-only) case, {2} is "FileInfo' or 'DirectoryInfo" — the surrounding
     // single-quotes in the format string produce: Consider using 'FileInfo' or 'DirectoryInfo' instead of 'string'.
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use FileInfo or DirectoryInfo instead of string for file system paths",
-        messageFormat: "Parameter '{0}' appears to represent a {1}. Consider using '{2}' instead of 'string'.",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use FileInfo or DirectoryInfo instead of string for file system paths",
+        "Parameter '{0}' appears to represent a {1}. Consider using '{2}' instead of 'string'.",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     // messageFormat: {0}=optionName (e.g. "--input"), {1}=description, {2}=full suggestion (e.g. "'Option<DirectoryInfo>'").
     private static readonly DiagnosticDescriptor OptionRule = new(
-        id: DiagnosticId,
-        title: "Use Option<FileInfo> or Option<DirectoryInfo> instead of Option<string> for file system path options",
-        messageFormat: "Option '{0}' appears to represent a {1}. Consider using {2} instead of 'Option<string>'.",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use Option<FileInfo> or Option<DirectoryInfo> instead of Option<string> for file system path options",
+        "Option '{0}' appears to represent a {1}. Consider using {2} instead of 'Option<string>'.",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     // messageFormat: {0}=argumentName (e.g. "path"), {1}=description, {2}=full suggestion (e.g. "'Argument<DirectoryInfo>'").
     private static readonly DiagnosticDescriptor ArgumentRule = new(
-        id: DiagnosticId,
-        title: "Use Argument<FileInfo> or Argument<DirectoryInfo> instead of Argument<string> for file system path arguments",
-        messageFormat: "Argument '{0}' appears to represent a {1}. Consider using {2} instead of 'Argument<string>'.",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use Argument<FileInfo> or Argument<DirectoryInfo> instead of Argument<string> for file system path arguments",
+        "Argument '{0}' appears to represent a {1}. Consider using {2} instead of 'Argument<string>'.",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule, OptionRule, ArgumentRule];
 
@@ -172,11 +172,11 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
                 var rhs = variable.Initializer?.Value;
                 var localName = variable.Identifier.ValueText;
                 var isDerived = rhs is IdentifierNameSyntax id
-                    && string.Equals(id.Identifier.ValueText, paramName, StringComparison.Ordinal);
+                                && string.Equals(id.Identifier.ValueText, paramName, StringComparison.Ordinal);
                 var isPathDerived = !isDerived
-                    && rhs is InvocationExpressionSyntax init
-                    && IsPathMethodCall(init)
-                    && HasFirstArgumentNamed(init.ArgumentList, paramName);
+                                    && rhs is InvocationExpressionSyntax init
+                                    && IsPathMethodCall(init)
+                                    && HasFirstArgumentNamed(init.ArgumentList, paramName);
                 if (isDerived || isPathDerived)
                 {
                     result.Add(localName);
@@ -224,13 +224,15 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         return firstArgExpr is IdentifierNameSyntax id && names.Contains(id.Identifier.ValueText);
     }
 
-    private static bool IsPathMethodCall(InvocationExpressionSyntax invocation) =>
-        invocation.Expression is MemberAccessExpressionSyntax
+    private static bool IsPathMethodCall(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax
         {
             Expression: IdentifierNameSyntax { Identifier.ValueText: "Path" },
-            Name: SimpleNameSyntax methodName,
+            Name: SimpleNameSyntax methodName
         }
-        && IoMethodCatalog.IsPathMethod(methodName.Identifier.ValueText);
+               && IoMethodCatalog.IsPathMethod(methodName.Identifier.ValueText);
+    }
 
     // Checks whether the identifier 'name' appears as the FIRST argument (index 0).
     // Used for path-derivation: only a param/local at arg[0] of Path.Combine / Path.GetXxx
@@ -248,7 +250,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         }
 
         return args[0].Expression is IdentifierNameSyntax id
-            && string.Equals(id.Identifier.ValueText, name, StringComparison.Ordinal);
+               && string.Equals(id.Identifier.ValueText, name, StringComparison.Ordinal);
     }
 
 
@@ -331,10 +333,10 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
                 methodSymbol.ContainingType?.ContainingNamespace?.ToDisplayString(),
                 "System.IO",
                 StringComparison.Ordinal)
-            ? null
-            : info.Suggestion == SuggestedType.FileInfo
-            ? ("file path", "FileInfo")
-            : ("directory path", "DirectoryInfo");
+                ? null
+                : info.Suggestion == SuggestedType.FileInfo
+                    ? ("file path", "FileInfo")
+                    : ("directory path", "DirectoryInfo");
     }
 
     private static (string Description, string Type)? CheckObjectCreation(
@@ -387,10 +389,10 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
                 ctorSymbol.ContainingType?.ContainingNamespace?.ToDisplayString(),
                 "System.IO",
                 StringComparison.Ordinal)
-            ? null
-            : suggestion == SuggestedType.FileInfo
-            ? ("file path", "FileInfo")
-            : ("directory path", "DirectoryInfo");
+                ? null
+                : suggestion == SuggestedType.FileInfo
+                    ? ("file path", "FileInfo")
+                    : ("directory path", "DirectoryInfo");
     }
 
     private static void AnalyzeOptionCreation(SyntaxNodeAnalysisContext context)
@@ -468,25 +470,29 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         return type is GenericNameSyntax { Identifier.ValueText: "Option" or "Argument" } direct
             ? direct
             : type is QualifiedNameSyntax qualified
-            && qualified.Right is GenericNameSyntax { Identifier.ValueText: "Option" or "Argument" } nested
-            ? nested
-            : null;
+              && qualified.Right is GenericNameSyntax { Identifier.ValueText: "Option" or "Argument" } nested
+                ? nested
+                : null;
     }
 
-    private static ImmutableDictionary<string, string?> PropertiesForDescription(string description) =>
-        string.Equals(description, "file path", StringComparison.Ordinal) ? FileInfoProperties
-        : string.Equals(description, "directory path", StringComparison.Ordinal) ? DirectoryInfoProperties
-        : AmbiguousProperties;
+    private static ImmutableDictionary<string, string?> PropertiesForDescription(string description)
+    {
+        return string.Equals(description, "file path", StringComparison.Ordinal) ? FileInfoProperties
+            : string.Equals(description, "directory path", StringComparison.Ordinal) ? DirectoryInfoProperties
+            : AmbiguousProperties;
+    }
 
     // Returns true if the name (dashes stripped) suggests a file system path.
     // Extends PathNamePatterns with CLI-specific terms: "input", "output", and "file"
     // ("file" is intentionally excluded from PathNamePatterns for parameter names to avoid
     // firing on `fileName` string params, but `--file` CLI options are almost always file paths).
-    private static bool IsPathCliName(string name) =>
-        PathNamePatterns.IsPathName(name)
-        || name.IndexOf("input", StringComparison.OrdinalIgnoreCase) >= 0
-        || name.IndexOf("output", StringComparison.OrdinalIgnoreCase) >= 0
-        || name.IndexOf("file", StringComparison.OrdinalIgnoreCase) >= 0;
+    private static bool IsPathCliName(string name)
+    {
+        return PathNamePatterns.IsPathName(name)
+               || name.IndexOf("input", StringComparison.OrdinalIgnoreCase) >= 0
+               || name.IndexOf("output", StringComparison.OrdinalIgnoreCase) >= 0
+               || name.IndexOf("file", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
 
     // Returns description and the full suggestion string for the diagnostic message.
     // typeName is "Option" or "Argument" — the suggestion includes the correct generic wrapper.

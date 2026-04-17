@@ -13,7 +13,7 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
         var test = new CSharpAnalyzerTest<RedundantHashSetInFrozenSetE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,14 +24,14 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     public Task HashSetWithCollectionExpression_ToFrozenSet_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Collections.Frozen;
-            using System.Collections.Generic;
-            class C
-            {
-                static readonly FrozenSet<string> s = {|E128026:new HashSet<string>([".PDF"], StringComparer.OrdinalIgnoreCase).ToFrozenSet(StringComparer.OrdinalIgnoreCase)|};
-            }
-            """);
+                           using System;
+                           using System.Collections.Frozen;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               static readonly FrozenSet<string> s = {|E128026:new HashSet<string>([".PDF"], StringComparer.OrdinalIgnoreCase).ToFrozenSet(StringComparer.OrdinalIgnoreCase)|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -39,14 +39,14 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     public Task HashSetWithCollectionInitializer_ToFrozenSet_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Collections.Frozen;
-            using System.Collections.Generic;
-            class C
-            {
-                static readonly FrozenSet<string> s = {|E128026:new HashSet<string>(StringComparer.Ordinal) { "h1", "h2" }.ToFrozenSet(StringComparer.Ordinal)|};
-            }
-            """);
+                           using System;
+                           using System.Collections.Frozen;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               static readonly FrozenSet<string> s = {|E128026:new HashSet<string>(StringComparer.Ordinal) { "h1", "h2" }.ToFrozenSet(StringComparer.Ordinal)|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -54,13 +54,13 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     public Task HashSetWithNoComparer_ToFrozenSet_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Frozen;
-            using System.Collections.Generic;
-            class C
-            {
-                static readonly FrozenSet<int> s = {|E128026:new HashSet<int>([1, 2, 3]).ToFrozenSet()|};
-            }
-            """);
+                           using System.Collections.Frozen;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               static readonly FrozenSet<int> s = {|E128026:new HashSet<int>([1, 2, 3]).ToFrozenSet()|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -68,13 +68,13 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     public Task ArrayToFrozenSet_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            using System.Collections.Frozen;
-            class C
-            {
-                static readonly FrozenSet<string> s = new[] { ".PDF" }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
-            }
-            """);
+                           using System;
+                           using System.Collections.Frozen;
+                           class C
+                           {
+                               static readonly FrozenSet<string> s = new[] { ".PDF" }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+                           }
+                           """);
     }
 
     [Fact]
@@ -82,14 +82,14 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     public Task ListToFrozenSet_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            using System.Collections.Frozen;
-            using System.Collections.Generic;
-            class C
-            {
-                static readonly FrozenSet<string> s = new List<string> { ".PDF" }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
-            }
-            """);
+                           using System;
+                           using System.Collections.Frozen;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               static readonly FrozenSet<string> s = new List<string> { ".PDF" }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+                           }
+                           """);
     }
 
     [Fact]
@@ -97,12 +97,12 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     public Task HashSetWithoutToFrozenSet_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            using System.Collections.Generic;
-            class C
-            {
-                static readonly HashSet<string> s = new HashSet<string>(StringComparer.Ordinal) { "a" };
-            }
-            """);
+                           using System;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               static readonly HashSet<string> s = new HashSet<string>(StringComparer.Ordinal) { "a" };
+                           }
+                           """);
     }
 }

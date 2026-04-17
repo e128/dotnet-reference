@@ -9,9 +9,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SuppressionAuditE128AnalyzerTests
 {
-    private static DiagnosticResult Diagnostic(int line, int column) =>
-        new DiagnosticResult("E128047", DiagnosticSeverity.Warning)
+    private static DiagnosticResult Diagnostic(int line, int column)
+    {
+        return new DiagnosticResult("E128047", DiagnosticSeverity.Warning)
             .WithLocation(line, column);
+    }
 
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
@@ -21,7 +23,7 @@ public sealed class SuppressionAuditE128AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             // The analyzer flags #pragma warning disable directives, so the framework's
             // automatic suppression-via-pragma check creates a circular diagnostic.
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck,
+            TestBehaviors = TestBehaviors.SkipSuppressionCheck
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -32,10 +34,10 @@ public sealed class SuppressionAuditE128AnalyzerTests
     public Task PragmaDisableWithoutComment_Fires()
     {
         const string code = """
-            #pragma warning disable CS1591
-            class C { }
-            #pragma warning restore CS1591
-            """;
+                            #pragma warning disable CS1591
+                            class C { }
+                            #pragma warning restore CS1591
+                            """;
 
         return VerifyAsync(code, Diagnostic(1, 1));
     }
@@ -45,10 +47,10 @@ public sealed class SuppressionAuditE128AnalyzerTests
     public Task PragmaDisableWithTrailingComment_NoDiagnostic()
     {
         const string code = """
-            #pragma warning disable CS1591 // Missing XML comment
-            class C { }
-            #pragma warning restore CS1591
-            """;
+                            #pragma warning disable CS1591 // Missing XML comment
+                            class C { }
+                            #pragma warning restore CS1591
+                            """;
 
         return VerifyAsync(code);
     }
@@ -58,11 +60,11 @@ public sealed class SuppressionAuditE128AnalyzerTests
     public Task PragmaDisableWithPrecedingComment_NoDiagnostic()
     {
         const string code = """
-            // Missing XML comment — generated code
-            #pragma warning disable CS1591
-            class C { }
-            #pragma warning restore CS1591
-            """;
+                            // Missing XML comment — generated code
+                            #pragma warning disable CS1591
+                            class C { }
+                            #pragma warning restore CS1591
+                            """;
 
         return VerifyAsync(code);
     }
@@ -72,10 +74,10 @@ public sealed class SuppressionAuditE128AnalyzerTests
     public Task PragmaRestore_NoDiagnostic()
     {
         const string code = """
-            #pragma warning disable CS1591 // justified
-            class C { }
-            #pragma warning restore CS1591
-            """;
+                            #pragma warning disable CS1591 // justified
+                            class C { }
+                            #pragma warning restore CS1591
+                            """;
 
         return VerifyAsync(code);
     }

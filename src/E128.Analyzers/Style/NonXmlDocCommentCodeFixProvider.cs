@@ -16,7 +16,10 @@ public sealed class NonXmlDocCommentCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [NonXmlDocCommentE128Analyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -30,9 +33,9 @@ public sealed class NonXmlDocCommentCodeFixProvider : CodeFixProvider
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: "Remove comment",
-                    createChangedDocument: ct => RemoveCommentAsync(context.Document, root, diagnostic, ct),
-                    equivalenceKey: "RemoveNonXmlDocComment"),
+                    "Remove comment",
+                    ct => RemoveCommentAsync(context.Document, root, diagnostic, ct),
+                    "RemoveNonXmlDocComment"),
                 diagnostic);
         }
     }

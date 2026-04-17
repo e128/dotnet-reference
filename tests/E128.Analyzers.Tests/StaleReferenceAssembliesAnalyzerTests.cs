@@ -16,54 +16,11 @@ public sealed class StaleReferenceAssembliesAnalyzerTests
         var test = new CSharpAnalyzerTest<StaleReferenceAssembliesAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = Net100WithTesting,
+            ReferenceAssemblies = Net100WithTesting
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
     }
-
-    #region Fires
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task FiresOnNet80_WhenDefaultMinimumIs100()
-    {
-        return VerifyAsync("""
-            using Microsoft.CodeAnalysis.Testing;
-            class Tests
-            {
-                private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net80|};
-            }
-            """);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task FiresOnNet90_WhenDefaultMinimumIs100()
-    {
-        return VerifyAsync("""
-            using Microsoft.CodeAnalysis.Testing;
-            class Tests
-            {
-                private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net90|};
-            }
-            """);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task FiresOnNet80_InFieldAssignment()
-    {
-        return VerifyAsync("""
-            using Microsoft.CodeAnalysis.Testing;
-            class Tests
-            {
-                private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net80|};
-            }
-            """);
-    }
-
-    #endregion Fires
 
     #region Does not fire
 
@@ -72,13 +29,56 @@ public sealed class StaleReferenceAssembliesAnalyzerTests
     public Task DoesNotFire_WhenNet100()
     {
         return VerifyAsync("""
-            using Microsoft.CodeAnalysis.Testing;
-            class Tests
-            {
-                private static readonly ReferenceAssemblies Assemblies = ReferenceAssemblies.Net.Net100;
-            }
-            """);
+                           using Microsoft.CodeAnalysis.Testing;
+                           class Tests
+                           {
+                               private static readonly ReferenceAssemblies Assemblies = ReferenceAssemblies.Net.Net100;
+                           }
+                           """);
     }
 
     #endregion Does not fire
+
+    #region Fires
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FiresOnNet80_WhenDefaultMinimumIs100()
+    {
+        return VerifyAsync("""
+                           using Microsoft.CodeAnalysis.Testing;
+                           class Tests
+                           {
+                               private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net80|};
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FiresOnNet90_WhenDefaultMinimumIs100()
+    {
+        return VerifyAsync("""
+                           using Microsoft.CodeAnalysis.Testing;
+                           class Tests
+                           {
+                               private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net90|};
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FiresOnNet80_InFieldAssignment()
+    {
+        return VerifyAsync("""
+                           using Microsoft.CodeAnalysis.Testing;
+                           class Tests
+                           {
+                               private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net80|};
+                           }
+                           """);
+    }
+
+    #endregion Fires
 }

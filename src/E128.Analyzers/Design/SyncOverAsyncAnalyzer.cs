@@ -13,12 +13,12 @@ public sealed class SyncOverAsyncAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128008";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Avoid sync-over-async (.Result / .GetAwaiter().GetResult())",
-        messageFormat: "Avoid blocking on async code with {0} — use await instead",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Avoid sync-over-async (.Result / .GetAwaiter().GetResult())",
+        "Avoid blocking on async code with {0} — use await instead",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -109,7 +109,7 @@ public sealed class SyncOverAsyncAnalyzer : DiagnosticAnalyzer
             var name = method.Identifier.ValueText;
             return (string.Equals(name, "Main", StringComparison.Ordinal)
                     && method.Modifiers.Any(SyntaxKind.StaticKeyword))
-                || string.Equals(name, "Dispose", StringComparison.Ordinal);
+                   || string.Equals(name, "Dispose", StringComparison.Ordinal);
         }
 
         return false;
@@ -128,8 +128,8 @@ public sealed class SyncOverAsyncAnalyzer : DiagnosticAnalyzer
 
         var ns = originalDefinition.ContainingNamespace;
         return ns is { Name: "Tasks" }
-            && ns.ContainingNamespace is { Name: "Threading" }
-            && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
-            && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+               && ns.ContainingNamespace is { Name: "Threading" }
+               && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
+               && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
     }
 }

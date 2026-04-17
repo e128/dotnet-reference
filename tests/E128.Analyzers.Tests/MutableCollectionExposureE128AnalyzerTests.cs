@@ -13,7 +13,7 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
         var test = new CSharpAnalyzerTest<MutableCollectionExposureAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,13 +24,13 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task PublicMethodReturningList_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public List<string> {|E128052:GetNames|}() => new();
-            }
-            """);
+                           public class Service
+                           {
+                               public List<string> {|E128052:GetNames|}() => new();
+                           }
+                           """);
     }
 
     [Fact]
@@ -38,13 +38,13 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task PublicPropertyWithList_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public List<int> {|E128052:Items|} { get; init; }
-            }
-            """);
+                           public class Service
+                           {
+                               public List<int> {|E128052:Items|} { get; init; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -52,13 +52,13 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task PublicMethodReturningDictionary_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public Dictionary<string, int> {|E128052:GetCounts|}() => new();
-            }
-            """);
+                           public class Service
+                           {
+                               public Dictionary<string, int> {|E128052:GetCounts|}() => new();
+                           }
+                           """);
     }
 
     [Fact]
@@ -66,13 +66,13 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task PrivateMethod_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                private List<string> GetNames() => new();
-            }
-            """);
+                           public class Service
+                           {
+                               private List<string> GetNames() => new();
+                           }
+                           """);
     }
 
     [Fact]
@@ -80,13 +80,13 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task PropertyWithMutableSetter_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public List<int> Items { get; set; }
-            }
-            """);
+                           public class Service
+                           {
+                               public List<int> Items { get; set; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -94,13 +94,13 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task BuilderClass_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class QueryBuilder
-            {
-                public List<string> GetParts() => new();
-            }
-            """);
+                           public class QueryBuilder
+                           {
+                               public List<string> GetParts() => new();
+                           }
+                           """);
     }
 
     [Fact]
@@ -108,13 +108,13 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task OptionsClass_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class AppOptions
-            {
-                public List<string> AllowedHosts { get; init; }
-            }
-            """);
+                           public class AppOptions
+                           {
+                               public List<string> AllowedHosts { get; init; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -122,13 +122,13 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task InterfaceMethod_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public interface IService
-            {
-                List<string> GetNames();
-            }
-            """);
+                           public interface IService
+                           {
+                               List<string> GetNames();
+                           }
+                           """);
     }
 
     [Fact]
@@ -136,12 +136,12 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
     public Task IReadOnlyListReturn_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public IReadOnlyList<string> GetNames() => new List<string>();
-            }
-            """);
+                           public class Service
+                           {
+                               public IReadOnlyList<string> GetNames() => new List<string>();
+                           }
+                           """);
     }
 }

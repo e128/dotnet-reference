@@ -18,8 +18,10 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GeneratedRegexAnalyzer.OverlappingQuantifierDiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -39,9 +41,9 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Remove overlapping \\s quantifier",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(GeneratedRegexOverlappingCodeFixProvider)),
+                "Remove overlapping \\s quantifier",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(GeneratedRegexOverlappingCodeFixProvider)),
             diagnostic);
     }
 
@@ -131,8 +133,8 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : CodeFixProvider
 
         var ch = pattern[index];
 
-        return ch == '.' && index + 1 < pattern.Length && pattern[index + 1] is '*' or '+'
-|| ch == '(' && ContainsDotQuantifierInGroup(pattern, index);
+        return (ch == '.' && index + 1 < pattern.Length && pattern[index + 1] is '*' or '+')
+               || (ch == '(' && ContainsDotQuantifierInGroup(pattern, index));
     }
 
     private static bool HasOverlappingElementBackward(string pattern, int backslashIndex)

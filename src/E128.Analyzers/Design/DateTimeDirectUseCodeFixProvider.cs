@@ -18,8 +18,10 @@ public sealed class DateTimeDirectUseCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DateTimeDirectUseAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -45,9 +47,9 @@ public sealed class DateTimeDirectUseCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace with TimeProvider.System",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, memberAccess, replacement, ct),
-                equivalenceKey: nameof(DateTimeDirectUseCodeFixProvider)),
+                "Replace with TimeProvider.System",
+                ct => ApplyFixAsync(context.Document, memberAccess, replacement, ct),
+                nameof(DateTimeDirectUseCodeFixProvider)),
             diagnostic);
     }
 
@@ -68,16 +70,16 @@ public sealed class DateTimeDirectUseCodeFixProvider : CodeFixProvider
                 "UtcNow" => BuildChain(timeProviderSystem, "GetUtcNow", "UtcDateTime"),
                 "Now" => BuildChain(timeProviderSystem, "GetLocalNow", "DateTime"),
                 "Today" => BuildChain(timeProviderSystem, "GetLocalNow", "Date"),
-                _ => null,
+                _ => null
             }
             : string.Equals(typeName, "DateTimeOffset", StringComparison.Ordinal)
-            ? memberName switch
-            {
-                "UtcNow" => BuildMethodCall(timeProviderSystem, "GetUtcNow"),
-                "Now" => BuildMethodCall(timeProviderSystem, "GetLocalNow"),
-                _ => null,
-            }
-            : (ExpressionSyntax?)null;
+                ? memberName switch
+                {
+                    "UtcNow" => BuildMethodCall(timeProviderSystem, "GetUtcNow"),
+                    "Now" => BuildMethodCall(timeProviderSystem, "GetLocalNow"),
+                    _ => null
+                }
+                : (ExpressionSyntax?)null;
     }
 
     private static MemberAccessExpressionSyntax BuildChain(

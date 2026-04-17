@@ -17,8 +17,10 @@ public sealed class ToListInForeachCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ToListInForeachAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -38,9 +40,9 @@ public sealed class ToListInForeachCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace .ToList() with .ToArray()",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(ToListInForeachCodeFixProvider)),
+                "Replace .ToList() with .ToArray()",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(ToListInForeachCodeFixProvider)),
             diagnostic);
     }
 

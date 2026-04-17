@@ -13,16 +13,15 @@ public sealed class PrimaryConstructorBackingFieldAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128017";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use primary constructor parameter directly",
-        messageFormat: "Field '{0}' is an identity assignment from primary constructor parameter '{1}' — use the parameter directly in method bodies",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description:
-            "When a primary constructor parameter is assigned unchanged to a backing field " +
-            "(e.g. 'private readonly IFoo _foo = foo;'), the field is redundant. " +
-            "Use the primary constructor parameter directly in method bodies instead.");
+        DiagnosticId,
+        "Use primary constructor parameter directly",
+        "Field '{0}' is an identity assignment from primary constructor parameter '{1}' — use the parameter directly in method bodies",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true,
+        "When a primary constructor parameter is assigned unchanged to a backing field " +
+        "(e.g. 'private readonly IFoo _foo = foo;'), the field is redundant. " +
+        "Use the primary constructor parameter directly in method bodies instead.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

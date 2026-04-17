@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -7,19 +8,19 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Tests;
 
 /// <summary>
-/// Fake analyzer that emits IDE1006 with naming style properties on private fields
-/// that don't already start with '_'. Used only in tests.
+///     Fake analyzer that emits IDE1006 with naming style properties on private fields
+///     that don't already start with '_'. Used only in tests.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 internal sealed class FakeNamingViolationAnalyzer : DiagnosticAnalyzer
 {
     internal static readonly DiagnosticDescriptor Rule = new(
-        id: "IDE1006",
-        title: "Naming rule violation",
-        messageFormat: "Naming rule violation: Missing prefix: '_'",
-        category: "Style",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        "IDE1006",
+        "Naming rule violation",
+        "Naming rule violation: Missing prefix: '_'",
+        "Style",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -57,14 +58,14 @@ internal sealed class FakeNamingViolationAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var properties = ImmutableDictionary.CreateRange<string, string?>(
-            [
-                new("SymbolName", name),
-                new("Prefix", "_"),
-                new("Suffix", string.Empty),
-                new("WordSeparator", string.Empty),
-                new("CapitalizationScheme", "CamelCase"),
-            ]);
+            var properties = ImmutableDictionary.CreateRange(
+                [
+                    new KeyValuePair<string, string?>("SymbolName", name),
+                    new KeyValuePair<string, string?>("Prefix", "_"),
+                    new KeyValuePair<string, string?>("Suffix", string.Empty),
+                    new KeyValuePair<string, string?>("WordSeparator", string.Empty),
+                    new KeyValuePair<string, string?>("CapitalizationScheme", "CamelCase")
+                ]);
 
             var diagnostic = Diagnostic.Create(Rule, variable.Identifier.GetLocation(), properties);
             context.ReportDiagnostic(diagnostic);

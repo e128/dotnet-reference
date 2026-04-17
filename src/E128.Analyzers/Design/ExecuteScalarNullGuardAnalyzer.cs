@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128042: Detects Convert.ToInt32/ToInt64 wrapping ExecuteScalar/ExecuteScalarAsync
-/// without a null guard. ExecuteScalar returns null for empty result sets, and
-/// Convert.ToInt32(null) silently returns 0.
+///     E128042: Detects Convert.ToInt32/ToInt64 wrapping ExecuteScalar/ExecuteScalarAsync
+///     without a null guard. ExecuteScalar returns null for empty result sets, and
+///     Convert.ToInt32(null) silently returns 0.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ExecuteScalarNullGuardAnalyzer : DiagnosticAnalyzer
@@ -18,12 +18,12 @@ public sealed class ExecuteScalarNullGuardAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128042";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Convert.ToInt32/ToInt64 wrapping ExecuteScalar without null guard",
-        messageFormat: "Convert.{0} wraps {1} without a null check — ExecuteScalar returns null for empty result sets, and Convert.{0}(null) silently returns 0",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Convert.ToInt32/ToInt64 wrapping ExecuteScalar without null guard",
+        "Convert.{0} wraps {1} without a null check — ExecuteScalar returns null for empty result sets, and Convert.{0}(null) silently returns 0",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -111,11 +111,15 @@ public sealed class ExecuteScalarNullGuardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsConvertMethod(string name) =>
-        string.Equals(name, "ToInt32", StringComparison.Ordinal) ||
-        string.Equals(name, "ToInt64", StringComparison.Ordinal);
+    private static bool IsConvertMethod(string name)
+    {
+        return string.Equals(name, "ToInt32", StringComparison.Ordinal) ||
+               string.Equals(name, "ToInt64", StringComparison.Ordinal);
+    }
 
-    private static bool IsExecuteScalarMethod(string name) =>
-        string.Equals(name, "ExecuteScalar", StringComparison.Ordinal) ||
-        string.Equals(name, "ExecuteScalarAsync", StringComparison.Ordinal);
+    private static bool IsExecuteScalarMethod(string name)
+    {
+        return string.Equals(name, "ExecuteScalar", StringComparison.Ordinal) ||
+               string.Equals(name, "ExecuteScalarAsync", StringComparison.Ordinal);
+    }
 }

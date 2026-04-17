@@ -13,7 +13,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
         var test = new CSharpAnalyzerTest<EmptyStringLiteralAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,14 +24,14 @@ public sealed class EmptyStringLiteralAnalyzerTests
     public Task VariableDeclaration_EmptyLiteral_Fires()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128002:""|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var x = {|E128002:""|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -39,11 +39,11 @@ public sealed class EmptyStringLiteralAnalyzerTests
     public Task ReturnStatement_EmptyLiteral_Fires()
     {
         return VerifyAsync("""
-            class C
-            {
-                string M() => {|E128002:""|};
-            }
-            """);
+                           class C
+                           {
+                               string M() => {|E128002:""|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -51,12 +51,12 @@ public sealed class EmptyStringLiteralAnalyzerTests
     public Task AttributeArgument_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                [System.Obsolete("")]
-                void M() { }
-            }
-            """);
+                           class C
+                           {
+                               [System.Obsolete("")]
+                               void M() { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -64,11 +64,11 @@ public sealed class EmptyStringLiteralAnalyzerTests
     public Task ConstField_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                private const string K = "";
-            }
-            """);
+                           class C
+                           {
+                               private const string K = "";
+                           }
+                           """);
     }
 
     [Fact]
@@ -76,11 +76,11 @@ public sealed class EmptyStringLiteralAnalyzerTests
     public Task DefaultParameter_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M(string s = "") { }
-            }
-            """);
+                           class C
+                           {
+                               void M(string s = "") { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -88,13 +88,13 @@ public sealed class EmptyStringLiteralAnalyzerTests
     public Task NonEmptyLiteral_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var x = "hello";
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var x = "hello";
+                               }
+                           }
+                           """);
     }
 }

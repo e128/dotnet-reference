@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -21,8 +22,10 @@ public sealed class AsyncVoidCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [AsyncVoidAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -43,9 +46,9 @@ public sealed class AsyncVoidCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Change return type to Task",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, method, ct),
-                equivalenceKey: nameof(AsyncVoidCodeFixProvider)),
+                "Change return type to Task",
+                ct => ApplyFixAsync(context.Document, method, ct),
+                nameof(AsyncVoidCodeFixProvider)),
             diagnostic);
     }
 
@@ -80,7 +83,7 @@ public sealed class AsyncVoidCodeFixProvider : CodeFixProvider
 
         var parts = namespaceName.Split('.');
         var alreadyHasUsing = compilationUnit.Usings.Any(u =>
-            u.Name is not null && string.Equals(u.Name.ToString(), namespaceName, System.StringComparison.Ordinal));
+            u.Name is not null && string.Equals(u.Name.ToString(), namespaceName, StringComparison.Ordinal));
 
         if (alreadyHasUsing)
         {

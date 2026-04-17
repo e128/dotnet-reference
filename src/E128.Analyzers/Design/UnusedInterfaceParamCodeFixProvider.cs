@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
@@ -12,8 +13,8 @@ using Microsoft.CodeAnalysis.Rename;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128059: renames the unused parameter to <c>_</c> or prefixes it with
-/// an underscore (<c>_paramName</c>) to signal intentional discard.
+///     Code fix for E128059: renames the unused parameter to <c>_</c> or prefixes it with
+///     an underscore (<c>_paramName</c>) to signal intentional discard.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnusedInterfaceParamCodeFixProvider))]
 [Shared]
@@ -22,8 +23,10 @@ public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnusedInterfaceParamAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -41,15 +44,15 @@ public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
         }
 
         var paramName = param.Identifier.ValueText;
-        var newName = paramName.StartsWith("_", System.StringComparison.Ordinal)
+        var newName = paramName.StartsWith("_", StringComparison.Ordinal)
             ? paramName
             : $"_{paramName}";
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Rename to '{newName}'",
-                createChangedSolution: ct => RenameParameterAsync(context.Document, param, newName, ct),
-                equivalenceKey: nameof(UnusedInterfaceParamCodeFixProvider)),
+                $"Rename to '{newName}'",
+                ct => RenameParameterAsync(context.Document, param, newName, ct),
+                nameof(UnusedInterfaceParamCodeFixProvider)),
             diagnostic);
     }
 
@@ -69,10 +72,10 @@ public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
         return symbol is null
             ? document.Project.Solution
             : await Renamer.RenameSymbolAsync(
-            document.Project.Solution,
-            symbol,
-            new SymbolRenameOptions(),
-            newName,
-            cancellationToken).ConfigureAwait(false);
+                document.Project.Solution,
+                symbol,
+                new SymbolRenameOptions(),
+                newName,
+                cancellationToken).ConfigureAwait(false);
     }
 }

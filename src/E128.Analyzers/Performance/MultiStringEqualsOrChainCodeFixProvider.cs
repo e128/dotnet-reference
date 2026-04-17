@@ -21,7 +21,10 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MultiStringEqualsOrChainAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() => null;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return null;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -67,9 +70,9 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace OR-chain with HashSet<string>.Contains()",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, orExpr, typeDecl, ct),
-                equivalenceKey: nameof(MultiStringEqualsOrChainCodeFixProvider)),
+                "Replace OR-chain with HashSet<string>.Contains()",
+                ct => ApplyFixAsync(context.Document, orExpr, typeDecl, ct),
+                nameof(MultiStringEqualsOrChainCodeFixProvider)),
             diagnostic);
     }
 
@@ -236,7 +239,9 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
     }
 
     private static MemberDeclarationSyntax ParseFieldDeclaration(
-        string fieldName, string comparerExpr, List<string> literals)
+        string fieldName,
+        string comparerExpr,
+        List<string> literals)
     {
         var sb = new StringBuilder()
             .Append("private static readonly HashSet<string> ")
@@ -292,7 +297,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
 
         var identifier = sb.Length > 0 ? sb.ToString() : "value";
         var lowerFirst = char.ToLowerInvariant(identifier[0])
-            + (identifier.Length > 1 ? identifier.Substring(1) : string.Empty);
+                         + (identifier.Length > 1 ? identifier.Substring(1) : string.Empty);
         return "_" + lowerFirst + "Values";
     }
 

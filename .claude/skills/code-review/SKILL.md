@@ -7,6 +7,7 @@ description: >
   Triggers on: code review, review code, review changes, audit code, check code quality,
   clanker check, state bloat, grab bag review, check for flag bloat, mutation review,
   clanker discipline.
+effort: high
 ---
 
 # Code Review Skill

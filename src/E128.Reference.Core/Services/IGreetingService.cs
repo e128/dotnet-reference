@@ -5,7 +5,7 @@ using E128.Reference.Core.Models;
 namespace E128.Reference.Core.Services;
 
 /// <summary>
-/// Application service for greeting operations.
+///     Application service for greeting operations.
 /// </summary>
 public interface IGreetingService
 {

@@ -13,17 +13,16 @@ public sealed class InCancellationTokenE128Analyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128019";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Do not pass CancellationToken by 'in' reference",
-        messageFormat: "Parameter '{0}' uses 'in CancellationToken' — remove the 'in' modifier",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description:
-            "The 'in' modifier makes CancellationToken a by-ref parameter (CancellationToken&). " +
-            "Reflection-based frameworks such as Microsoft.Extensions.AI cannot serialize by-ref " +
-            "parameters, causing runtime failures. CancellationToken is a small struct; passing " +
-            "it by value has no measurable overhead.");
+        DiagnosticId,
+        "Do not pass CancellationToken by 'in' reference",
+        "Parameter '{0}' uses 'in CancellationToken' — remove the 'in' modifier",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true,
+        "The 'in' modifier makes CancellationToken a by-ref parameter (CancellationToken&). " +
+        "Reflection-based frameworks such as Microsoft.Extensions.AI cannot serialize by-ref " +
+        "parameters, causing runtime failures. CancellationToken is a small struct; passing " +
+        "it by value has no measurable overhead.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -68,8 +67,10 @@ public sealed class InCancellationTokenE128Analyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, parameter.GetLocation(), name));
     }
 
-    private static bool IsCancellationToken(INamedTypeSymbol type) =>
-        string.Equals(type.Name, "CancellationToken", StringComparison.Ordinal)
-        && type.ContainingNamespace is { Name: "Threading" }
-            and { ContainingNamespace: { Name: "System" } and { ContainingNamespace.IsGlobalNamespace: true } };
+    private static bool IsCancellationToken(INamedTypeSymbol type)
+    {
+        return string.Equals(type.Name, "CancellationToken", StringComparison.Ordinal)
+               && type.ContainingNamespace is { Name: "Threading" }
+                   and { ContainingNamespace: { Name: "System" } and { ContainingNamespace.IsGlobalNamespace: true } };
+    }
 }

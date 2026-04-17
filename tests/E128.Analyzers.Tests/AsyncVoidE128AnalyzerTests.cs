@@ -13,7 +13,7 @@ public sealed class AsyncVoidE128AnalyzerTests
         var test = new CSharpAnalyzerTest<AsyncVoidAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,15 +24,15 @@ public sealed class AsyncVoidE128AnalyzerTests
     public Task AsyncVoid_NonEventHandler_FiresE128007()
     {
         return VerifyAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                async void {|E128007:DoWork|}()
-                {
-                    await Task.Delay(1);
-                }
-            }
-            """);
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async void {|E128007:DoWork|}()
+                               {
+                                   await Task.Delay(1);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -40,16 +40,16 @@ public sealed class AsyncVoidE128AnalyzerTests
     public Task AsyncVoid_EventHandler_DoesNotFire()
     {
         return VerifyAsync("""
-            using System;
-            using System.Threading.Tasks;
-            class C
-            {
-                async void OnClick(object sender, EventArgs e)
-                {
-                    await Task.Delay(1);
-                }
-            }
-            """);
+                           using System;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async void OnClick(object sender, EventArgs e)
+                               {
+                                   await Task.Delay(1);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -57,15 +57,15 @@ public sealed class AsyncVoidE128AnalyzerTests
     public Task AsyncTask_Method_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task DoWork()
-                {
-                    await Task.Delay(1);
-                }
-            }
-            """);
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task DoWork()
+                               {
+                                   await Task.Delay(1);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -73,17 +73,17 @@ public sealed class AsyncVoidE128AnalyzerTests
     public Task AsyncVoid_CustomEventArgs_DoesNotFire()
     {
         return VerifyAsync("""
-            using System;
-            using System.Threading.Tasks;
-            class MyEventArgs : EventArgs { }
-            class C
-            {
-                async void OnCustom(object sender, MyEventArgs e)
-                {
-                    await Task.Delay(1);
-                }
-            }
-            """);
+                           using System;
+                           using System.Threading.Tasks;
+                           class MyEventArgs : EventArgs { }
+                           class C
+                           {
+                               async void OnCustom(object sender, MyEventArgs e)
+                               {
+                                   await Task.Delay(1);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -91,10 +91,10 @@ public sealed class AsyncVoidE128AnalyzerTests
     public Task SyncVoid_Method_DoesNotFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void DoWork() { }
-            }
-            """);
+                           class C
+                           {
+                               void DoWork() { }
+                           }
+                           """);
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -12,8 +13,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128061: replaces <c>static readonly T[]</c> with <c>ImmutableArray&lt;T&gt;</c>
-/// and converts the initializer to a collection expression.
+///     Code fix for E128061: replaces <c>static readonly T[]</c> with <c>ImmutableArray&lt;T&gt;</c>
+///     and converts the initializer to a collection expression.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MutableStaticReadonlyArrayCodeFixProvider))]
 [Shared]
@@ -24,7 +25,10 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MutableStaticReadonlyArrayAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -46,9 +50,9 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Convert to ImmutableArray<T>",
-                createChangedDocument: ct => ConvertToImmutableArrayAsync(context.Document, declaration, ct),
-                equivalenceKey: MutableStaticReadonlyArrayAnalyzer.DiagnosticId),
+                "Convert to ImmutableArray<T>",
+                ct => ConvertToImmutableArrayAsync(context.Document, declaration, ct),
+                MutableStaticReadonlyArrayAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
     }
 
@@ -89,9 +93,9 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
     }
 
     /// <summary>
-    /// Converts the variable initializer to a collection expression if needed.
-    /// Collection expressions (["a", "b"]) work directly with ImmutableArray.
-    /// Explicit array construction (new T[] { ... } or new[] { ... }) is unwrapped to collection expressions.
+    ///     Converts the variable initializer to a collection expression if needed.
+    ///     Collection expressions (["a", "b"]) work directly with ImmutableArray.
+    ///     Explicit array construction (new T[] { ... } or new[] { ... }) is unwrapped to collection expressions.
     /// </summary>
     private static VariableDeclaratorSyntax TransformVariable(VariableDeclaratorSyntax variable)
     {
@@ -116,9 +120,9 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
     }
 
     /// <summary>
-    /// Unwraps array creation expressions to collection expressions.
-    /// new T[] { "a", "b" } → ["a", "b"]
-    /// new[] { "a", "b" } → ["a", "b"]
+    ///     Unwraps array creation expressions to collection expressions.
+    ///     new T[] { "a", "b" } → ["a", "b"]
+    ///     new[] { "a", "b" } → ["a", "b"]
     /// </summary>
     private static CollectionExpressionSyntax? UnwrapArrayCreation(ExpressionSyntax expression)
     {
@@ -156,7 +160,7 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
         }
 
         if (compilationUnit.Usings.Any(u =>
-            string.Equals(u.Name?.ToString(), ImmutableNamespace, System.StringComparison.Ordinal)))
+                string.Equals(u.Name?.ToString(), ImmutableNamespace, StringComparison.Ordinal)))
         {
             return root;
         }
@@ -167,7 +171,7 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
         var insertIndex = 0;
         for (var i = 0; i < compilationUnit.Usings.Count; i++)
         {
-            if (System.StringComparer.Ordinal.Compare(compilationUnit.Usings[i].Name?.ToString(), ImmutableNamespace) < 0)
+            if (StringComparer.Ordinal.Compare(compilationUnit.Usings[i].Name?.ToString(), ImmutableNamespace) < 0)
             {
                 insertIndex = i + 1;
             }

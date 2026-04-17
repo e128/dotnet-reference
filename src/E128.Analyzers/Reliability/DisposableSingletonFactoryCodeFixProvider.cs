@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -12,9 +13,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128031: rewrites <c>AddSingleton(sp => new T())</c> to
-/// <c>AddSingleton&lt;IFoo, T&gt;()</c> when the concrete type implements a non-marker interface.
-/// Offers one code action per non-marker interface the type implements.
+///     Code fix for E128031: rewrites <c>AddSingleton(sp => new T())</c> to
+///     <c>AddSingleton&lt;IFoo, T&gt;()</c> when the concrete type implements a non-marker interface.
+///     Offers one code action per non-marker interface the type implements.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DisposableSingletonFactoryCodeFixProvider))]
 [Shared]
@@ -23,8 +24,10 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DisposableSingletonFactoryAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -60,7 +63,7 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
                 CodeAction.Create(
                     title,
                     ct => RewriteToGenericOverloadAsync(context.Document, invocation, returnType, iface, ct),
-                    equivalenceKey: $"E128031_{iface.ToDisplayString()}"),
+                    $"E128031_{iface.ToDisplayString()}"),
                 diagnostic);
         }
     }
@@ -68,8 +71,8 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
     private static bool IsMarkerInterface(INamedTypeSymbol iface)
     {
         var display = iface.ToDisplayString();
-        return string.Equals(display, "System.IDisposable", System.StringComparison.Ordinal)
-            || string.Equals(display, "System.IAsyncDisposable", System.StringComparison.Ordinal);
+        return string.Equals(display, "System.IDisposable", StringComparison.Ordinal)
+               || string.Equals(display, "System.IAsyncDisposable", StringComparison.Ordinal);
     }
 
     private static async Task<ITypeSymbol?> ResolveReturnTypeAsync(
@@ -87,7 +90,7 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
         {
             SimpleLambdaExpressionSyntax s => s.Body as ExpressionSyntax,
             ParenthesizedLambdaExpressionSyntax p => p.Body as ExpressionSyntax,
-            _ => null,
+            _ => null
         };
 
         return bodyExpr is null ? null : semanticModel.GetTypeInfo(bodyExpr, context.CancellationToken).Type;
@@ -113,13 +116,13 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
 
         var newTypeArgs = SyntaxFactory.TypeArgumentList(
             SyntaxFactory.SeparatedList(
-            [
-                SyntaxFactory.ParseTypeName(targetInterface.Name),
-                SyntaxFactory.ParseTypeName(concreteType.Name),
-            ]));
+                [
+                    SyntaxFactory.ParseTypeName(targetInterface.Name),
+                    SyntaxFactory.ParseTypeName(concreteType.Name)
+                ]));
 
         var newName = SyntaxFactory.GenericName(
-            SyntaxFactory.Identifier("AddSingleton"))
+                SyntaxFactory.Identifier("AddSingleton"))
             .WithTypeArgumentList(newTypeArgs);
 
         var newMemberAccess = memberAccess.WithName(newName);

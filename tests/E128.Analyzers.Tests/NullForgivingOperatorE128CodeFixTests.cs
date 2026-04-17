@@ -14,7 +14,7 @@ public sealed class NullForgivingOperatorE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,26 +23,26 @@ public sealed class NullForgivingOperatorE128CodeFixTests
     public Task NullForgiving_RemovesBangOperator()
     {
         const string source = """
-            #nullable enable
-            class C
-            {
-                void M(string? s)
-                {
-                    string x = {|E128043:s!|};
-                }
-            }
-            """;
+                              #nullable enable
+                              class C
+                              {
+                                  void M(string? s)
+                                  {
+                                      string x = {|E128043:s!|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            #nullable enable
-            class C
-            {
-                void M(string? s)
-                {
-                    string x = s;
-                }
-            }
-            """;
+                                 #nullable enable
+                                 class C
+                                 {
+                                     void M(string? s)
+                                     {
+                                         string x = s;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -52,20 +52,20 @@ public sealed class NullForgivingOperatorE128CodeFixTests
     public Task NullForgiving_OnReturn_RemovesBangOperator()
     {
         const string source = """
-            #nullable enable
-            class C
-            {
-                string M(string? s) => {|E128043:s!|};
-            }
-            """;
+                              #nullable enable
+                              class C
+                              {
+                                  string M(string? s) => {|E128043:s!|};
+                              }
+                              """;
 
         const string fixedCode = """
-            #nullable enable
-            class C
-            {
-                string M(string? s) => s;
-            }
-            """;
+                                 #nullable enable
+                                 class C
+                                 {
+                                     string M(string? s) => s;
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

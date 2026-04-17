@@ -16,7 +16,7 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConstructorNewDiRegisteredAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = Net100WithDi,
+            ReferenceAssemblies = Net100WithDi
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -29,23 +29,23 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
     public Task ConstructorNew_DiRegisteredType_Fires()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            class MyService { }
-            class Consumer
-            {
-                public Consumer()
-                {
-                    var svc = {|E128034:new MyService()|};
-                }
-            }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           class MyService { }
+                           class Consumer
+                           {
+                               public Consumer()
+                               {
+                                   var svc = {|E128034:new MyService()|};
+                               }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<MyService>();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -53,23 +53,23 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
     public Task ConstructorNew_DiRegisteredViaAddScoped_Fires()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            class MyService { }
-            class Consumer
-            {
-                public Consumer()
-                {
-                    var svc = {|E128034:new MyService()|};
-                }
-            }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddScoped<MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           class MyService { }
+                           class Consumer
+                           {
+                               public Consumer()
+                               {
+                                   var svc = {|E128034:new MyService()|};
+                               }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddScoped<MyService>();
+                               }
+                           }
+                           """);
     }
 
     #endregion Fires
@@ -81,15 +81,15 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
     public Task ConstructorNew_NotDiRegistered_NoFire()
     {
         return VerifyAsync("""
-            class MyService { }
-            class Consumer
-            {
-                public Consumer()
-                {
-                    var svc = new MyService();
-                }
-            }
-            """);
+                           class MyService { }
+                           class Consumer
+                           {
+                               public Consumer()
+                               {
+                                   var svc = new MyService();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -97,23 +97,23 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
     public Task MethodNew_DiRegistered_NoFire()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            class MyService { }
-            class Consumer
-            {
-                void DoWork()
-                {
-                    var svc = new MyService();
-                }
-            }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           class MyService { }
+                           class Consumer
+                           {
+                               void DoWork()
+                               {
+                                   var svc = new MyService();
+                               }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<MyService>();
+                               }
+                           }
+                           """);
     }
 
     #endregion Does Not Fire

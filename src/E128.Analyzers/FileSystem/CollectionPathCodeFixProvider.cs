@@ -13,8 +13,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.FileSystem;
 
 /// <summary>
-/// Code fix for E128053: replaces the <see langword="string"/> type argument in collection parameters
-/// with <c>FileInfo</c> or <c>DirectoryInfo</c>.
+///     Code fix for E128053: replaces the <see langword="string" /> type argument in collection parameters
+///     with <c>FileInfo</c> or <c>DirectoryInfo</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(CollectionPathCodeFixProvider))]
 [Shared]
@@ -23,8 +23,10 @@ public sealed class CollectionPathCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [CollectionPathAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -43,15 +45,18 @@ public sealed class CollectionPathCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Change collection type argument to " + suggestedType,
-                createChangedDocument: ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct),
-                equivalenceKey: nameof(CollectionPathCodeFixProvider)),
+                "Change collection type argument to " + suggestedType,
+                ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct),
+                nameof(CollectionPathCodeFixProvider)),
             diagnostic);
     }
 
     private static Task<Document> ApplyFixAsync(
-        Document document, SyntaxNode root, Diagnostic diagnostic,
-        string suggestedType, CancellationToken cancellationToken)
+        Document document,
+        SyntaxNode root,
+        Diagnostic diagnostic,
+        string suggestedType,
+        CancellationToken cancellationToken)
     {
         _ = cancellationToken;
 
@@ -73,7 +78,7 @@ public sealed class CollectionPathCodeFixProvider : CodeFixProvider
         {
             GenericNameSyntax direct => direct,
             QualifiedNameSyntax qualified when qualified.Right is GenericNameSyntax nested => nested,
-            _ => null,
+            _ => null
         };
 
         if (genericName is null)
@@ -111,9 +116,9 @@ public sealed class CollectionPathCodeFixProvider : CodeFixProvider
         }
 
         var usingDirective = SyntaxFactory.UsingDirective(
-            SyntaxFactory.QualifiedName(
-                SyntaxFactory.IdentifierName("System"),
-                SyntaxFactory.IdentifierName("IO")))
+                SyntaxFactory.QualifiedName(
+                    SyntaxFactory.IdentifierName("System"),
+                    SyntaxFactory.IdentifierName("IO")))
             .NormalizeWhitespace()
             .WithTrailingTrivia(SyntaxFactory.LineFeed);
 

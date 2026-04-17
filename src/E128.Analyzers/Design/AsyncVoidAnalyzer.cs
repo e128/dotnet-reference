@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,12 +14,12 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128007";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Avoid async void methods",
-        messageFormat: "Method '{0}' is async void — use async Task instead",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Avoid async void methods",
+        "Method '{0}' is async void — use async Task instead",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -60,7 +61,7 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer
     private static bool IsEventHandlerSignature(
         MethodDeclarationSyntax method,
         SemanticModel semanticModel,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         if (method.ParameterList.Parameters.Count != 2)
         {

@@ -13,7 +13,7 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ExcessiveInheritanceAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,11 +24,11 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     public Task ThreeLevelsDeep_Fires()
     {
         return VerifyAsync("""
-            class A { }
-            class B : A { }
-            class C : B { }
-            class {|E128046:D|} : C { }
-            """);
+                           class A { }
+                           class B : A { }
+                           class C : B { }
+                           class {|E128046:D|} : C { }
+                           """);
     }
 
     [Fact]
@@ -36,10 +36,10 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     public Task TwoLevelsDeep_NoDiagnostic()
     {
         return VerifyAsync("""
-            class A { }
-            class B : A { }
-            class C : B { }
-            """);
+                           class A { }
+                           class B : A { }
+                           class C : B { }
+                           """);
     }
 
     [Fact]
@@ -47,9 +47,9 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     public Task SingleInheritance_NoDiagnostic()
     {
         return VerifyAsync("""
-            class A { }
-            class B : A { }
-            """);
+                           class A { }
+                           class B : A { }
+                           """);
     }
 
     [Fact]
@@ -57,12 +57,12 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     public Task FourLevelsDeep_Fires()
     {
         return VerifyAsync("""
-            class A { }
-            class B : A { }
-            class C : B { }
-            class {|E128046:D|} : C { }
-            class {|E128046:E|} : D { }
-            """);
+                           class A { }
+                           class B : A { }
+                           class C : B { }
+                           class {|E128046:D|} : C { }
+                           class {|E128046:E|} : D { }
+                           """);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     {
         // Structs cannot have user-defined base types.
         return VerifyAsync("""
-            struct S { }
-            """);
+                           struct S { }
+                           """);
     }
 }

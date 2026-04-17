@@ -13,7 +13,7 @@ public sealed class TaskRunAsyncLambdaE128AnalyzerTests
         var test = new CSharpAnalyzerTest<TaskRunAsyncLambdaAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,15 +24,15 @@ public sealed class TaskRunAsyncLambdaE128AnalyzerTests
     public Task TaskRun_AsyncLambda_FiresE128036()
     {
         return VerifyAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    await {|E128036:Task.Run(async () => await Task.Delay(1))|};
-                }
-            }
-            """);
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M()
+                               {
+                                   await {|E128036:Task.Run(async () => await Task.Delay(1))|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -40,15 +40,15 @@ public sealed class TaskRunAsyncLambdaE128AnalyzerTests
     public Task TaskRun_SyncLambda_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    await Task.Run(() => 42);
-                }
-            }
-            """);
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M()
+                               {
+                                   await Task.Run(() => 42);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -56,15 +56,15 @@ public sealed class TaskRunAsyncLambdaE128AnalyzerTests
     public Task TaskRun_AsyncAnonymousDelegate_FiresE128036()
     {
         return VerifyAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    await {|E128036:Task.Run(async delegate { await Task.Delay(1); })|};
-                }
-            }
-            """);
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M()
+                               {
+                                   await {|E128036:Task.Run(async delegate { await Task.Delay(1); })|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -72,16 +72,16 @@ public sealed class TaskRunAsyncLambdaE128AnalyzerTests
     public Task NonTaskRun_AsyncLambda_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                static Task Run(System.Func<Task> action) => action();
-                async Task M()
-                {
-                    await Run(async () => await Task.Delay(1));
-                }
-            }
-            """);
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               static Task Run(System.Func<Task> action) => action();
+                               async Task M()
+                               {
+                                   await Run(async () => await Task.Delay(1));
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -89,18 +89,18 @@ public sealed class TaskRunAsyncLambdaE128AnalyzerTests
     public Task TaskRun_ParenthesizedAsyncLambdaWithBlock_FiresE128036()
     {
         return VerifyAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    await {|E128036:Task.Run(async () =>
-                    {
-                        await Task.Delay(1);
-                        await Task.Delay(2);
-                    })|};
-                }
-            }
-            """);
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M()
+                               {
+                                   await {|E128036:Task.Run(async () =>
+                                   {
+                                       await Task.Delay(1);
+                                       await Task.Delay(2);
+                                   })|};
+                               }
+                           }
+                           """);
     }
 }

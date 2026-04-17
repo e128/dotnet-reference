@@ -13,7 +13,7 @@ public sealed class E128060DictionaryAsReadOnlyAnalyzerTests
         var test = new CSharpAnalyzerTest<DictionaryAsReadOnlyAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,13 +24,13 @@ public sealed class E128060DictionaryAsReadOnlyAnalyzerTests
     public Task DictionaryAsReadOnly_Reports_WhenDictionaryFieldReturnedAsIReadOnlyDictionary()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class Cache
-            {
-                private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
-                public IReadOnlyDictionary<string, int> Items => {|E128060:_dict|};
-            }
-            """);
+                           using System.Collections.Generic;
+                           class Cache
+                           {
+                               private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
+                               public IReadOnlyDictionary<string, int> Items => {|E128060:_dict|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -38,12 +38,12 @@ public sealed class E128060DictionaryAsReadOnlyAnalyzerTests
     public Task DictionaryAsReadOnly_Reports_WhenNewDictionaryReturnedFromMethod()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class Cache
-            {
-                public IReadOnlyDictionary<string, int> Build() => {|E128060:new Dictionary<string, int>()|};
-            }
-            """);
+                           using System.Collections.Generic;
+                           class Cache
+                           {
+                               public IReadOnlyDictionary<string, int> Build() => {|E128060:new Dictionary<string, int>()|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -51,18 +51,18 @@ public sealed class E128060DictionaryAsReadOnlyAnalyzerTests
     public Task DictionaryAsReadOnly_Reports_WhenReturnedFromAsyncMethod()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Threading.Tasks;
-            class Cache
-            {
-                private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
-                public async Task<IReadOnlyDictionary<string, int>> GetAsync()
-                {
-                    await Task.Yield();
-                    return {|E128060:_dict|};
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class Cache
+                           {
+                               private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
+                               public async Task<IReadOnlyDictionary<string, int>> GetAsync()
+                               {
+                                   await Task.Yield();
+                                   return {|E128060:_dict|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -70,13 +70,13 @@ public sealed class E128060DictionaryAsReadOnlyAnalyzerTests
     public Task DictionaryAsReadOnly_NoReport_WhenReturnTypeIsNotReadOnly()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class Cache
-            {
-                private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
-                public Dictionary<string, int> Items => _dict;
-            }
-            """);
+                           using System.Collections.Generic;
+                           class Cache
+                           {
+                               private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
+                               public Dictionary<string, int> Items => _dict;
+                           }
+                           """);
     }
 
     [Fact]
@@ -84,12 +84,12 @@ public sealed class E128060DictionaryAsReadOnlyAnalyzerTests
     public Task DictionaryAsReadOnly_NoReport_WhenReturnedAsIDictionary()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class Cache
-            {
-                private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
-                public IDictionary<string, int> Items => _dict;
-            }
-            """);
+                           using System.Collections.Generic;
+                           class Cache
+                           {
+                               private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
+                               public IDictionary<string, int> Items => _dict;
+                           }
+                           """);
     }
 }

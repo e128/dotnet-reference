@@ -9,9 +9,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128031: Flags <c>services.AddSingleton(sp => ...)</c> factory-lambda registrations
-/// where the return type implements <see cref="IDisposable"/>.
-/// The DI container does not auto-dispose factory-registered singletons in all host configurations.
+///     E128031: Flags <c>services.AddSingleton(sp => ...)</c> factory-lambda registrations
+///     where the return type implements <see cref="IDisposable" />.
+///     The DI container does not auto-dispose factory-registered singletons in all host configurations.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
@@ -19,16 +19,16 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128031";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "AddSingleton factory returns IDisposable",
-        messageFormat: "Factory singleton '{0}' implements IDisposable but will not be disposed automatically by the DI container — register with AddSingleton<TService, TImpl>() or manage lifetime explicitly",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Factory-lambda AddSingleton registrations (services.AddSingleton(sp => ...)) " +
-            "where the lambda returns an IDisposable type are not auto-disposed by the container. " +
-            "Prefer AddSingleton<TService, TImpl>() so the container manages disposal, " +
-            "or explicitly hook IHostApplicationLifetime to dispose on shutdown.");
+        DiagnosticId,
+        "AddSingleton factory returns IDisposable",
+        "Factory singleton '{0}' implements IDisposable but will not be disposed automatically by the DI container — register with AddSingleton<TService, TImpl>() or manage lifetime explicitly",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "Factory-lambda AddSingleton registrations (services.AddSingleton(sp => ...)) " +
+        "where the lambda returns an IDisposable type are not auto-disposed by the container. " +
+        "Prefer AddSingleton<TService, TImpl>() so the container manages disposal, " +
+        "or explicitly hook IHostApplicationLifetime to dispose on shutdown.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -52,7 +52,7 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
         {
             MemberAccessExpressionSyntax m => m.Name.Identifier.Text,
             IdentifierNameSyntax i => i.Identifier.Text,
-            _ => null,
+            _ => null
         };
 
         if (!string.Equals(methodName, "AddSingleton", StringComparison.Ordinal))
@@ -76,7 +76,7 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
         {
             SimpleLambdaExpressionSyntax s => s.Body as ExpressionSyntax,
             ParenthesizedLambdaExpressionSyntax p => p.Body as ExpressionSyntax,
-            _ => null,
+            _ => null
         };
 
         if (bodyExpr is null)

@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128040: Detects concurrency primitives initialized with zero or negative limits.
-/// Covers SemaphoreSlim(0), ParallelOptions.MaxDegreeOfParallelism = 0,
-/// and Channel.CreateBounded(0).
+///     E128040: Detects concurrency primitives initialized with zero or negative limits.
+///     Covers SemaphoreSlim(0), ParallelOptions.MaxDegreeOfParallelism = 0,
+///     and Channel.CreateBounded(0).
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
@@ -18,12 +18,12 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128040";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Concurrency limit must be positive",
-        messageFormat: "Concurrency limit is {0} — zero or negative values produce cryptic runtime errors. Use a positive integer (or -1 for MaxDegreeOfParallelism to mean unlimited).",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Concurrency limit must be positive",
+        "Concurrency limit is {0} — zero or negative values produce cryptic runtime errors. Use a positive integer (or -1 for MaxDegreeOfParallelism to mean unlimited).",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -43,7 +43,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Handles <c>new SemaphoreSlim(N)</c> — first constructor arg must be positive.
+    ///     Handles <c>new SemaphoreSlim(N)</c> — first constructor arg must be positive.
     /// </summary>
     private static void AnalyzeObjectCreation(SyntaxNodeAnalysisContext context)
     {
@@ -110,7 +110,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Handles <c>MaxDegreeOfParallelism = N</c> property assignment — must be positive or -1.
+    ///     Handles <c>MaxDegreeOfParallelism = N</c> property assignment — must be positive or -1.
     /// </summary>
     private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
     {
@@ -155,7 +155,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Handles <c>Channel.CreateBounded&lt;T&gt;(N)</c> — capacity must be positive.
+    ///     Handles <c>Channel.CreateBounded&lt;T&gt;(N)</c> — capacity must be positive.
     /// </summary>
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
@@ -231,17 +231,21 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsSemaphoreSlim(INamedTypeSymbol type) =>
-        string.Equals(type.Name, "SemaphoreSlim", StringComparison.Ordinal)
-        && type.ContainingNamespace is { Name: "Threading" }
-        && type.ContainingNamespace.ContainingNamespace is { Name: "System" };
+    private static bool IsSemaphoreSlim(INamedTypeSymbol type)
+    {
+        return string.Equals(type.Name, "SemaphoreSlim", StringComparison.Ordinal)
+               && type.ContainingNamespace is { Name: "Threading" }
+               && type.ContainingNamespace.ContainingNamespace is { Name: "System" };
+    }
 
-    private static bool IsParallelOptions(INamedTypeSymbol type) =>
-        type is not null
-        && string.Equals(type.Name, "ParallelOptions", StringComparison.Ordinal)
-        && type.ContainingNamespace is { Name: "Tasks" }
-        && type.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
-        && type.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
+    private static bool IsParallelOptions(INamedTypeSymbol type)
+    {
+        return type is not null
+               && string.Equals(type.Name, "ParallelOptions", StringComparison.Ordinal)
+               && type.ContainingNamespace is { Name: "Tasks" }
+               && type.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
+               && type.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
+    }
 
     private static bool IsChannelCreateBounded(IMethodSymbol method)
     {
@@ -252,9 +256,9 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
 
         var containingType = method.ContainingType;
         return containingType is not null
-            && string.Equals(containingType.Name, "Channel", StringComparison.Ordinal)
-            && containingType.ContainingNamespace is { Name: "Channels" }
-            && containingType.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
-            && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
+               && string.Equals(containingType.Name, "Channel", StringComparison.Ordinal)
+               && containingType.ContainingNamespace is { Name: "Channels" }
+               && containingType.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
+               && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
     }
 }

@@ -22,8 +22,10 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : CodeFixProvid
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DirectHttpClientInstantiationAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -43,9 +45,9 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : CodeFixProvid
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace with IHttpClientFactory.CreateClient()",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(DirectHttpClientInstantiationCodeFixProvider)),
+                "Replace with IHttpClientFactory.CreateClient()",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(DirectHttpClientInstantiationCodeFixProvider)),
             diagnostic);
     }
 
@@ -135,10 +137,10 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : CodeFixProvid
         var parameterName = TrimLeadingUnderscore(fieldName);
 
         var fieldDecl = SyntaxFactory.FieldDeclaration(
-            SyntaxFactory.VariableDeclaration(
-                SyntaxFactory.IdentifierName(FactoryInterfaceName))
-            .WithVariables(SyntaxFactory.SingletonSeparatedList(
-                SyntaxFactory.VariableDeclarator(fieldName))))
+                SyntaxFactory.VariableDeclaration(
+                        SyntaxFactory.IdentifierName(FactoryInterfaceName))
+                    .WithVariables(SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(fieldName))))
             .WithModifiers(SyntaxFactory.TokenList(
                 SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
                 SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)))

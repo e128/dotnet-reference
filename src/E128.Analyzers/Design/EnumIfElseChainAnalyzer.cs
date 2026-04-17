@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128048: Flags <c>if/else-if</c> chains (3+ branches) that compare against enum values.
-/// Use a <see langword="switch"/> statement or expression instead — it provides exhaustiveness
-/// checking via IDE0072/SS018 and is more maintainable.
+///     E128048: Flags <c>if/else-if</c> chains (3+ branches) that compare against enum values.
+///     Use a <see langword="switch" /> statement or expression instead — it provides exhaustiveness
+///     checking via IDE0072/SS018 and is more maintainable.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EnumIfElseChainAnalyzer : DiagnosticAnalyzer
@@ -20,15 +22,14 @@ public sealed class EnumIfElseChainAnalyzer : DiagnosticAnalyzer
     private const int MinimumBranchThreshold = 3;
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use switch instead of if/else-if chain on enum values",
-        messageFormat: "if/else-if chain on enum type '{0}' with {1} branches — use a switch statement or expression instead",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description:
-            "if/else-if chains on enum values bypass the compiler's exhaustiveness checking. " +
-            "A switch statement enables IDE0072, SS018, and S125 to catch unhandled enum members at build time.");
+        DiagnosticId,
+        "Use switch instead of if/else-if chain on enum values",
+        "if/else-if chain on enum type '{0}' with {1} branches — use a switch statement or expression instead",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true,
+        "if/else-if chains on enum values bypass the compiler's exhaustiveness checking. " +
+        "A switch statement enables IDE0072, SS018, and S125 to catch unhandled enum members at build time.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -63,7 +64,7 @@ public sealed class EnumIfElseChainAnalyzer : DiagnosticAnalyzer
 
         // Span the diagnostic across the entire if/else-if chain
         var lastElse = GetLastElseIf(ifStatement);
-        var span = Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(
+        var span = TextSpan.FromBounds(
             ifStatement.SpanStart,
             lastElse?.Span.End ?? ifStatement.Span.End);
         var location = Location.Create(ifStatement.SyntaxTree, span);
@@ -74,7 +75,7 @@ public sealed class EnumIfElseChainAnalyzer : DiagnosticAnalyzer
     private static (int BranchCount, string? EnumTypeName) CountEnumBranches(
         IfStatementSyntax ifStatement,
         SemanticModel semanticModel,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         var count = 0;
         string? enumTypeName = null;
@@ -107,7 +108,7 @@ public sealed class EnumIfElseChainAnalyzer : DiagnosticAnalyzer
     private static string? GetEnumComparisonTypeName(
         ExpressionSyntax condition,
         SemanticModel semanticModel,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         if (condition is not BinaryExpressionSyntax binary)
         {

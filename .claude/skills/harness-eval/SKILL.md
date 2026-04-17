@@ -191,6 +191,7 @@ These named invariants from Primitive 8 Level 2 were not found:
 - **Failures are first-class.** Good harness design assumes crashes and plans for them at every layer.
 - **Verify the harness, not just the output.** Primitive 8 Level 2 is the most-skipped primitive. Name your invariants and test them.
 - **Phase your work.** Tier 1 before Tier 2. Foundation before operational maturity.
+- **Claude Code native compaction** (Primitive 10): use the `PreCompact` hook to inject custom summaries before context is compacted — this is the Claude Code implementation of configurable compaction policy.
 
 ## User input
 

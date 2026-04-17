@@ -6,7 +6,7 @@ using E128.Reference.Core.Models;
 namespace E128.Reference.Core.Repositories;
 
 /// <summary>
-/// Persistence abstraction for greetings.
+///     Persistence abstraction for greetings.
 /// </summary>
 public interface IGreetingRepository
 {

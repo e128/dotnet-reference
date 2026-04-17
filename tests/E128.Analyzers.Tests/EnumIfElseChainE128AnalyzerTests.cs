@@ -13,7 +13,7 @@ public sealed class EnumIfElseChainE128AnalyzerTests
         var test = new CSharpAnalyzerTest<EnumIfElseChainAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,24 +24,24 @@ public sealed class EnumIfElseChainE128AnalyzerTests
     public Task ThreeBranchEnumChain_Fires()
     {
         return VerifyAsync("""
-            enum Color { Red, Green, Blue }
+                           enum Color { Red, Green, Blue }
 
-            class C
-            {
-                void M(Color c)
-                {
-                    {|E128048:if (c == Color.Red)
-                    {
-                    }
-                    else if (c == Color.Green)
-                    {
-                    }
-                    else if (c == Color.Blue)
-                    {
-                    }|}
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M(Color c)
+                               {
+                                   {|E128048:if (c == Color.Red)
+                                   {
+                                   }
+                                   else if (c == Color.Green)
+                                   {
+                                   }
+                                   else if (c == Color.Blue)
+                                   {
+                                   }|}
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -49,21 +49,21 @@ public sealed class EnumIfElseChainE128AnalyzerTests
     public Task TwoBranchEnumChain_NoDiagnostic()
     {
         return VerifyAsync("""
-            enum Color { Red, Green }
+                           enum Color { Red, Green }
 
-            class C
-            {
-                void M(Color c)
-                {
-                    if (c == Color.Red)
-                    {
-                    }
-                    else if (c == Color.Green)
-                    {
-                    }
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M(Color c)
+                               {
+                                   if (c == Color.Red)
+                                   {
+                                   }
+                                   else if (c == Color.Green)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -71,16 +71,16 @@ public sealed class EnumIfElseChainE128AnalyzerTests
     public Task ThreeBranchNonEnumChain_NoDiagnostic()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M(int x)
-                {
-                    if (x == 1) { }
-                    else if (x == 2) { }
-                    else if (x == 3) { }
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M(int x)
+                               {
+                                   if (x == 1) { }
+                                   else if (x == 2) { }
+                                   else if (x == 3) { }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -88,18 +88,18 @@ public sealed class EnumIfElseChainE128AnalyzerTests
     public Task MixedEnumTypes_NoDiagnostic()
     {
         return VerifyAsync("""
-            enum Color { Red, Green, Blue }
-            enum Size { Small, Medium, Large }
+                           enum Color { Red, Green, Blue }
+                           enum Size { Small, Medium, Large }
 
-            class C
-            {
-                void M(Color c, Size s)
-                {
-                    if (c == Color.Red) { }
-                    else if (s == Size.Small) { }
-                    else if (c == Color.Blue) { }
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M(Color c, Size s)
+                               {
+                                   if (c == Color.Red) { }
+                                   else if (s == Size.Small) { }
+                                   else if (c == Color.Blue) { }
+                               }
+                           }
+                           """);
     }
 }

@@ -10,14 +10,14 @@ using Microsoft.CodeAnalysis.Text;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128051: Flags <see langword="async"/> methods that call an <c>HttpClient</c> method
-/// and contain a broad <c>catch (Exception)</c> clause without a preceding
-/// <c>catch (OperationCanceledException)</c> in the same try block.
-/// Swallowing cancellation silently breaks cooperative cancellation.
+///     E128051: Flags <see langword="async" /> methods that call an <c>HttpClient</c> method
+///     and contain a broad <c>catch (Exception)</c> clause without a preceding
+///     <c>catch (OperationCanceledException)</c> in the same try block.
+///     Swallowing cancellation silently breaks cooperative cancellation.
 /// </summary>
 /// <remarks>
-/// No code fix is provided — adding a catch clause with correct handler logic is too
-/// context-dependent (rethrow vs log-and-rethrow vs propagate cancellation token).
+///     No code fix is provided — adding a catch clause with correct handler logic is too
+///     context-dependent (rethrow vs log-and-rethrow vs propagate cancellation token).
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
@@ -25,15 +25,15 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128051";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Broad catch in async HttpClient method missing OperationCanceledException handler",
-        messageFormat: "Broad catch (Exception) swallows OperationCanceledException — add catch (OperationCanceledException) before this catch to handle cancellation explicitly",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "An async method that calls HttpClient methods and uses a broad catch (Exception) " +
-            "must also catch OperationCanceledException before the broad catch. " +
-            "Without it, task cancellation is silently swallowed instead of propagated to the caller.");
+        DiagnosticId,
+        "Broad catch in async HttpClient method missing OperationCanceledException handler",
+        "Broad catch (Exception) swallows OperationCanceledException — add catch (OperationCanceledException) before this catch to handle cancellation explicitly",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "An async method that calls HttpClient methods and uses a broad catch (Exception) " +
+        "must also catch OperationCanceledException before the broad catch. " +
+        "Without it, task cancellation is silently swallowed instead of propagated to the caller.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -94,17 +94,22 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool BlockContainsHttpClientCall(SyntaxNode block) =>
-        block.DescendantNodes()
+    private static bool BlockContainsHttpClientCall(SyntaxNode block)
+    {
+        return block.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Any(inv => inv.Expression is MemberAccessExpressionSyntax { Name: IdentifierNameSyntax name }
-                && IsHttpClientMethod(name.Identifier.Text));
+                        && IsHttpClientMethod(name.Identifier.Text));
+    }
 
-    private static bool IsHttpClientMethod(string name) => name switch
+    private static bool IsHttpClientMethod(string name)
     {
-        "GetAsync" or "PostAsync" or "SendAsync" or "PutAsync" or "DeleteAsync" => true,
-        _ => false,
-    };
+        return name switch
+        {
+            "GetAsync" or "PostAsync" or "SendAsync" or "PutAsync" or "DeleteAsync" => true,
+            _ => false
+        };
+    }
 
     private static bool IsBroadExceptionCatch(CatchClauseSyntax catchClause)
     {
@@ -122,18 +127,24 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         return IsExceptionTypeName(catchClause.Declaration.Type);
     }
 
-    private static bool IsOperationCanceledExceptionCatch(CatchClauseSyntax catchClause) =>
-        catchClause.Declaration is not null
-        && IsNamedType(catchClause.Declaration.Type, "OperationCanceledException");
+    private static bool IsOperationCanceledExceptionCatch(CatchClauseSyntax catchClause)
+    {
+        return catchClause.Declaration is not null
+               && IsNamedType(catchClause.Declaration.Type, "OperationCanceledException");
+    }
 
-    private static bool IsExceptionTypeName(TypeSyntax typeSyntax) =>
-        IsNamedType(typeSyntax, "Exception");
+    private static bool IsExceptionTypeName(TypeSyntax typeSyntax)
+    {
+        return IsNamedType(typeSyntax, "Exception");
+    }
 
-    private static bool IsNamedType(TypeSyntax typeSyntax, string simpleName) =>
-        typeSyntax switch
+    private static bool IsNamedType(TypeSyntax typeSyntax, string simpleName)
+    {
+        return typeSyntax switch
         {
             IdentifierNameSyntax id => string.Equals(id.Identifier.Text, simpleName, StringComparison.Ordinal),
             QualifiedNameSyntax qualified => string.Equals(qualified.Right.Identifier.Text, simpleName, StringComparison.Ordinal),
-            _ => false,
+            _ => false
         };
+    }
 }

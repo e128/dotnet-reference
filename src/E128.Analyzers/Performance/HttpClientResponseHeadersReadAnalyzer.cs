@@ -14,15 +14,15 @@ public sealed class HttpClientResponseHeadersReadAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128010";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "HttpClient call missing HttpCompletionOption.ResponseHeadersRead",
-        messageFormat: "'{0}' called without HttpCompletionOption.ResponseHeadersRead buffers the entire response body into memory",
-        category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "HttpClient.GetAsync and SendAsync default to ResponseContentRead, which buffers " +
-            "the entire response body before the Task completes. Pass HttpCompletionOption.ResponseHeadersRead " +
-            "to avoid unnecessary buffering.");
+        DiagnosticId,
+        "HttpClient call missing HttpCompletionOption.ResponseHeadersRead",
+        "'{0}' called without HttpCompletionOption.ResponseHeadersRead buffers the entire response body into memory",
+        "Performance",
+        DiagnosticSeverity.Warning,
+        true,
+        "HttpClient.GetAsync and SendAsync default to ResponseContentRead, which buffers " +
+        "the entire response body before the Task completes. Pass HttpCompletionOption.ResponseHeadersRead " +
+        "to avoid unnecessary buffering.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -92,9 +92,12 @@ public sealed class HttpClientResponseHeadersReadAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), methodName));
     }
 
-    private static bool IsTargetMethod(string name) => name switch
+    private static bool IsTargetMethod(string name)
     {
-        "GetAsync" or "SendAsync" => true,
-        _ => false,
-    };
+        return name switch
+        {
+            "GetAsync" or "SendAsync" => true,
+            _ => false
+        };
+    }
 }

@@ -13,9 +13,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128035: replaces <c>AddSingleton&lt;IFoo, TImpl&gt;()</c> with
-/// <c>AddSingleton&lt;TImpl&gt;()</c> + <c>AddSingleton&lt;IFoo&gt;(sp =&gt; sp.GetRequiredService&lt;TImpl&gt;())</c>.
-/// This ensures the concrete type is directly resolvable from the DI container.
+///     Code fix for E128035: replaces <c>AddSingleton&lt;IFoo, TImpl&gt;()</c> with
+///     <c>AddSingleton&lt;TImpl&gt;()</c> + <c>AddSingleton&lt;IFoo&gt;(sp =&gt; sp.GetRequiredService&lt;TImpl&gt;())</c>
+///     .
+///     This ensures the concrete type is directly resolvable from the DI container.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConcreteTypeDiDependencyCodeFixProvider))]
 [Shared]
@@ -24,8 +25,10 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConcreteTypeDiDependencyAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -57,7 +60,7 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : CodeFixProvider
                     context.Document, registrationInfo.Value.Invocation,
                     registrationInfo.Value.Lifetime, concreteTypeName,
                     registrationInfo.Value.InterfaceName, ct),
-                equivalenceKey: $"E128035_{concreteTypeName}"),
+                $"E128035_{concreteTypeName}"),
             diagnostic);
     }
 
@@ -153,7 +156,7 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : CodeFixProvider
         var newStatements = new SyntaxNode[]
         {
             directRegistration,
-            forwardingRegistration,
+            forwardingRegistration
         };
 
         var newRoot = root.ReplaceNode(containingStatement, newStatements);

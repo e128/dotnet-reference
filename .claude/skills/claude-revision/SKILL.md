@@ -10,6 +10,7 @@ description: >
   review, monthly claude audit, revision audit, config health, claude maintenance, agents audit,
   skills audit, claude audit.
 argument-hint: "[--no-web] [--agents-only] [--skills-only] [--self] [--archive]"
+effort: high
 ---
 
 # Claude Revision

@@ -13,12 +13,12 @@ public sealed class DateTimeParseRoundtripAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128016";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "DateTime.Parse/ParseExact missing DateTimeStyles parameter",
-        messageFormat: "{0}.{1} is missing a DateTimeStyles parameter — add DateTimeStyles.RoundtripKind to preserve UTC kind from ISO 8601 strings",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "DateTime.Parse/ParseExact missing DateTimeStyles parameter",
+        "{0}.{1} is missing a DateTimeStyles parameter — add DateTimeStyles.RoundtripKind to preserve UTC kind from ISO 8601 strings",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -76,16 +76,22 @@ public sealed class DateTimeParseRoundtripAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), typeName, methodName));
     }
 
-    private static bool IsTargetMethod(string name) =>
-        name is "Parse" or "ParseExact";
+    private static bool IsTargetMethod(string name)
+    {
+        return name is "Parse" or "ParseExact";
+    }
 
-    private static int GetExpectedArgCountWithoutStyles(string methodName) =>
-        methodName.Equals("Parse", StringComparison.Ordinal) ? 2 :
-        methodName.Equals("ParseExact", StringComparison.Ordinal) ? 3 : -1;
+    private static int GetExpectedArgCountWithoutStyles(string methodName)
+    {
+        return methodName.Equals("Parse", StringComparison.Ordinal) ? 2 :
+            methodName.Equals("ParseExact", StringComparison.Ordinal) ? 3 : -1;
+    }
 
-    private static bool IsTargetContainingType(string? containingType) =>
-        string.Equals(containingType, "System.DateTime", StringComparison.Ordinal) ||
-        string.Equals(containingType, "System.DateTimeOffset", StringComparison.Ordinal);
+    private static bool IsTargetContainingType(string? containingType)
+    {
+        return string.Equals(containingType, "System.DateTime", StringComparison.Ordinal) ||
+               string.Equals(containingType, "System.DateTimeOffset", StringComparison.Ordinal);
+    }
 
     private static bool HasDateTimeStylesLastParam(IMethodSymbol method)
     {
@@ -98,6 +104,8 @@ public sealed class DateTimeParseRoundtripAnalyzer : DiagnosticAnalyzer
         return string.Equals(lastParamType, "System.Globalization.DateTimeStyles", StringComparison.Ordinal);
     }
 
-    private static string GetShortTypeName(string? containingType) =>
-        string.Equals(containingType, "System.DateTime", StringComparison.Ordinal) ? "DateTime" : "DateTimeOffset";
+    private static string GetShortTypeName(string? containingType)
+    {
+        return string.Equals(containingType, "System.DateTime", StringComparison.Ordinal) ? "DateTime" : "DateTimeOffset";
+    }
 }

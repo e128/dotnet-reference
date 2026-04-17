@@ -14,7 +14,7 @@ public sealed class AsyncDisposableWithoutDisposableE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,30 +23,30 @@ public sealed class AsyncDisposableWithoutDisposableE128CodeFixTests
     public Task ClassWithIAsyncDisposableOnly_AddsIDisposable()
     {
         const string source = """
-            using System;
-            using System.Threading.Tasks;
+                              using System;
+                              using System.Threading.Tasks;
 
-            class {|E128044:C|} : IAsyncDisposable
-            {
-                public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-            }
-            """;
+                              class {|E128044:C|} : IAsyncDisposable
+                              {
+                                  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+                              }
+                              """;
 
         // The code fix inserts a Dispose() stub. The body braces are indented by
         // the Roslyn formatter but the method signature is not (no leading trivia).
         const string fixedCode = """
-            using System;
-            using System.Threading.Tasks;
+                                 using System;
+                                 using System.Threading.Tasks;
 
-            class C : IAsyncDisposable, IDisposable
-            {
-                public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+                                 class C : IAsyncDisposable, IDisposable
+                                 {
+                                     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-            public void Dispose()
-                {
-                }
-            }
-            """;
+                                 public void Dispose()
+                                     {
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

@@ -15,7 +15,7 @@ public sealed class InModifierE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -25,7 +25,7 @@ public sealed class InModifierE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -35,7 +35,7 @@ public sealed class InModifierE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 

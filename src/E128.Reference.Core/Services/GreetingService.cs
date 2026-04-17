@@ -7,7 +7,7 @@ using E128.Reference.Core.Repositories;
 namespace E128.Reference.Core.Services;
 
 /// <summary>
-/// Default greeting service — creates greetings and persists them.
+///     Default greeting service — creates greetings and persists them.
 /// </summary>
 public sealed class GreetingService(
     Greeter greeter,

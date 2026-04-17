@@ -8,28 +8,28 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Reports <c>.ConfigureAwait(false)</c> calls in executable application code
-/// (console apps, Worker Service hosts). These hosts have no SynchronizationContext,
-/// so <c>ConfigureAwait(false)</c> is unnecessary noise.
+///     Reports <c>.ConfigureAwait(false)</c> calls in executable application code
+///     (console apps, Worker Service hosts). These hosts have no SynchronizationContext,
+///     so <c>ConfigureAwait(false)</c> is unnecessary noise.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConfigureAwaitFalseE128Analyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128022";
 
-    private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Remove ConfigureAwait(false)",
-        messageFormat: "Remove '.ConfigureAwait(false)' — this host has no SynchronizationContext",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "ConfigureAwait(false) is unnecessary in ASP.NET Core and Worker Service hosts because there is no SynchronizationContext to avoid marshalling back to.");
-
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
-
     private const string BlazorWasmHostBuilderTypeName =
         "Microsoft.AspNetCore.Components.WebAssembly.Hosting.WebAssemblyHostBuilder";
+
+    private static readonly DiagnosticDescriptor Rule = new(
+        DiagnosticId,
+        "Remove ConfigureAwait(false)",
+        "Remove '.ConfigureAwait(false)' — this host has no SynchronizationContext",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true,
+        "ConfigureAwait(false) is unnecessary in ASP.NET Core and Worker Service hosts because there is no SynchronizationContext to avoid marshalling back to.");
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
     public override void Initialize(AnalysisContext context)
     {

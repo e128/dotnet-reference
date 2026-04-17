@@ -15,7 +15,7 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConfigureAwaitFalseE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.SolutionTransforms.Add((solution, projectId) =>
         {
@@ -34,14 +34,14 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConfigureAwaitFalseE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.TestState.Sources.Add("""
-            namespace Microsoft.AspNetCore.Components.WebAssembly.Hosting
-            {
-                public sealed class WebAssemblyHostBuilder { }
-            }
-            """);
+                                   namespace Microsoft.AspNetCore.Components.WebAssembly.Hosting
+                                   {
+                                       public sealed class WebAssemblyHostBuilder { }
+                                   }
+                                   """);
         test.SolutionTransforms.Add((solution, projectId) =>
         {
             var project = solution.GetProject(projectId)!;
@@ -59,7 +59,7 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConfigureAwaitFalseE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.SolutionTransforms.Add((solution, projectId) =>
         {
@@ -78,9 +78,9 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
     public Task ConfigureAwaitFalse_InAppCode_FiresE128022()
     {
         return VerifyAsExeAsync("""
-            using System.Threading.Tasks;
-            await {|E128022:Task.Delay(1).ConfigureAwait(false)|};
-            """);
+                                using System.Threading.Tasks;
+                                await {|E128022:Task.Delay(1).ConfigureAwait(false)|};
+                                """);
     }
 
     [Fact]
@@ -88,15 +88,15 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
     public Task ConfigureAwaitFalse_InClassLibrary_NoFire()
     {
         return VerifyAsDllAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    await Task.Delay(1).ConfigureAwait(false);
-                }
-            }
-            """);
+                                using System.Threading.Tasks;
+                                class C
+                                {
+                                    async Task M()
+                                    {
+                                        await Task.Delay(1).ConfigureAwait(false);
+                                    }
+                                }
+                                """);
     }
 
     [Fact]
@@ -104,9 +104,9 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
     public Task ConfigureAwaitFalse_InBlazorWasm_NoFire()
     {
         return VerifyAsBlazorWasmAsync("""
-            using System.Threading.Tasks;
-            await Task.Delay(1).ConfigureAwait(false);
-            """);
+                                       using System.Threading.Tasks;
+                                       await Task.Delay(1).ConfigureAwait(false);
+                                       """);
     }
 
     [Fact]
@@ -114,9 +114,9 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
     public Task ConfigureAwaitTrue_NoFire()
     {
         return VerifyAsExeAsync("""
-            using System.Threading.Tasks;
-            await Task.Delay(1).ConfigureAwait(true);
-            """);
+                                using System.Threading.Tasks;
+                                await Task.Delay(1).ConfigureAwait(true);
+                                """);
     }
 
     [Fact]
@@ -124,9 +124,9 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
     public Task ConfigureAwaitVariable_NoFire()
     {
         return VerifyAsExeAsync("""
-            using System.Threading.Tasks;
-            bool continueOnCapturedContext = true;
-            await Task.Delay(1).ConfigureAwait(continueOnCapturedContext);
-            """);
+                                using System.Threading.Tasks;
+                                bool continueOnCapturedContext = true;
+                                await Task.Delay(1).ConfigureAwait(continueOnCapturedContext);
+                                """);
     }
 }

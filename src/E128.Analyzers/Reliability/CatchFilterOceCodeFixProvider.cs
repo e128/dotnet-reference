@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128039: adds <c>OperationCanceledException</c> to the catch filter's
-/// exclusion list. For <c>catch (Exception ex) when (ex is not FooException)</c>, produces
-/// <c>catch (Exception ex) when (ex is not FooException and not OperationCanceledException)</c>.
+///     Code fix for E128039: adds <c>OperationCanceledException</c> to the catch filter's
+///     exclusion list. For <c>catch (Exception ex) when (ex is not FooException)</c>, produces
+///     <c>catch (Exception ex) when (ex is not FooException and not OperationCanceledException)</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(CatchFilterOceCodeFixProvider))]
 [Shared]
@@ -22,8 +22,10 @@ public sealed class CatchFilterOceCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [CatchFilterOceAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -44,9 +46,9 @@ public sealed class CatchFilterOceCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add OperationCanceledException to catch filter",
-                createChangedDocument: ct => AddOceToFilterAsync(context.Document, root, catchClause, ct),
-                equivalenceKey: nameof(CatchFilterOceCodeFixProvider)),
+                "Add OperationCanceledException to catch filter",
+                ct => AddOceToFilterAsync(context.Document, root, catchClause, ct),
+                nameof(CatchFilterOceCodeFixProvider)),
             diagnostic);
     }
 

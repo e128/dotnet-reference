@@ -13,7 +13,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
         var test = new CSharpAnalyzerTest<MultiStringEqualsOrChainAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -26,13 +26,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task StringEquals_ThreeChain_OrdinalIgnoreCase_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string text) =>
-                    {|E128029:string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase)|};
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string text) =>
+                                   {|E128029:string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase)|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -40,13 +40,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task StringEquals_ThreeChain_Ordinal_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string text) =>
-                    {|E128029:string.Equals(text, "a", StringComparison.Ordinal) || string.Equals(text, "b", StringComparison.Ordinal) || string.Equals(text, "c", StringComparison.Ordinal)|};
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string text) =>
+                                   {|E128029:string.Equals(text, "a", StringComparison.Ordinal) || string.Equals(text, "b", StringComparison.Ordinal) || string.Equals(text, "c", StringComparison.Ordinal)|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -54,12 +54,12 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task EqualityOperator_ThreeChain_Fires()
     {
         return VerifyAsync("""
-            class C
-            {
-                bool M(string text) =>
-                    {|E128029:text == "a" || text == "b" || text == "c"|};
-            }
-            """);
+                           class C
+                           {
+                               bool M(string text) =>
+                                   {|E128029:text == "a" || text == "b" || text == "c"|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -67,13 +67,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task StringEquals_FourChain_SingleDiagnostic_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string text) =>
-                    {|E128029:string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "d", StringComparison.OrdinalIgnoreCase)|};
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string text) =>
+                                   {|E128029:string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "d", StringComparison.OrdinalIgnoreCase)|};
+                           }
+                           """);
     }
 
     #endregion Fires — string.Equals with StringComparison
@@ -85,13 +85,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task StringEquals_TwoChain_BelowThreshold_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string text) =>
-                    string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase);
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string text) =>
+                                   string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase);
+                           }
+                           """);
     }
 
     [Fact]
@@ -99,13 +99,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task StringEquals_MixedOperands_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string text, string other) =>
-                    string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(other, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase);
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string text, string other) =>
+                                   string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(other, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase);
+                           }
+                           """);
     }
 
     [Fact]
@@ -113,13 +113,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task StringEquals_MixedComparison_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string text) =>
-                    string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.Ordinal) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase);
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string text) =>
+                                   string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.Ordinal) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase);
+                           }
+                           """);
     }
 
     [Fact]
@@ -127,13 +127,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task AndOperator_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string text) =>
-                    string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) && string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) && string.Equals(text, "c", StringComparison.OrdinalIgnoreCase);
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string text) =>
+                                   string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) && string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) && string.Equals(text, "c", StringComparison.OrdinalIgnoreCase);
+                           }
+                           """);
     }
 
     [Fact]
@@ -141,12 +141,12 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task EqualityOperator_LiteralOnLeft_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                bool M(string text) =>
-                    "a" == text || "b" == text || "c" == text;
-            }
-            """);
+                           class C
+                           {
+                               bool M(string text) =>
+                                   "a" == text || "b" == text || "c" == text;
+                           }
+                           """);
     }
 
     [Fact]
@@ -154,12 +154,12 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task EqualityOperator_IntLiterals_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                bool M(int n) =>
-                    n == 1 || n == 2 || n == 3;
-            }
-            """);
+                           class C
+                           {
+                               bool M(int n) =>
+                                   n == 1 || n == 2 || n == 3;
+                           }
+                           """);
     }
 
     #endregion No-fire cases
@@ -172,13 +172,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     {
         // Non-qualifying leaf at the head; qualifying sub-group of 3 follows.
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string href, string text) =>
-                    {|E128029:href.Contains("x") || string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase)|};
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string href, string text) =>
+                                   {|E128029:href.Contains("x") || string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase)|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -187,13 +187,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     {
         // Non-qualifying leaf at the tail; qualifying sub-group of 3 precedes.
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string href, string text) =>
-                    {|E128029:string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase) || href.Contains("x")|};
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string href, string text) =>
+                                   {|E128029:string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "c", StringComparison.OrdinalIgnoreCase) || href.Contains("x")|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -202,13 +202,13 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     {
         // Non-qualifying leaf + only 2 qualifying — below threshold, no fire.
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                bool M(string href, string text) =>
-                    href.Contains("x") || string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase);
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               bool M(string href, string text) =>
+                                   href.Contains("x") || string.Equals(text, "a", StringComparison.OrdinalIgnoreCase) || string.Equals(text, "b", StringComparison.OrdinalIgnoreCase);
+                           }
+                           """);
     }
 
     #endregion Mixed OR-chain — qualifying sub-group detected

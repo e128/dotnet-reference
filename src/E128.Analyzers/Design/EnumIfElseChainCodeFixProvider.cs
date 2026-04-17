@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128048: converts an if/else-if chain on enum values to a switch statement.
+///     Code fix for E128048: converts an if/else-if chain on enum values to a switch statement.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(EnumIfElseChainCodeFixProvider))]
 [Shared]
@@ -21,8 +21,10 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [EnumIfElseChainAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -43,9 +45,9 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Convert to switch statement",
-                createChangedDocument: ct => ConvertToSwitchAsync(context.Document, ifStatement, ct),
-                equivalenceKey: nameof(EnumIfElseChainCodeFixProvider)),
+                "Convert to switch statement",
+                ct => ConvertToSwitchAsync(context.Document, ifStatement, ct),
+                nameof(EnumIfElseChainCodeFixProvider)),
             diagnostic);
     }
 
@@ -148,6 +150,10 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
     {
         return condition is not BinaryExpressionSyntax binary
             ? null
-            : binary.Right is MemberAccessExpressionSyntax ? binary.Right : binary.Left is MemberAccessExpressionSyntax ? binary.Left : null;
+            : binary.Right is MemberAccessExpressionSyntax
+                ? binary.Right
+                : binary.Left is MemberAccessExpressionSyntax
+                    ? binary.Left
+                    : null;
     }
 }

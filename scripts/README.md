@@ -4,14 +4,14 @@ All scripts use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live
 
 ## Core Workflow
 
-| Script       | Purpose                                              | Key flags                    |
-| ------------ | ---------------------------------------------------- | ---------------------------- |
-| `build.sh`   | Build the solution or a specific project             | `--verbose`, `--project`     |
-| `test.sh`    | Run tests (defaults to CI category)                  | `--all`, `--verbose`, `--trait` |
-| `format.sh`  | Run dotnet format                                    | `--check`, `--changed`       |
-| `check.sh`   | Composed: format + build + test                      | `--all`, `--no-format`       |
-| `ci.sh`      | Full CI pipeline                                     | `--skip-format`, `--skip-test` |
-| `docker.sh`  | Docker build/run/test/stop/clean                     | `--no-cache`                 |
+| Script       | Purpose                                              | Key flags                         |
+| ------------ | ---------------------------------------------------- | --------------------------------- |
+| `build.sh`   | Build the solution or a specific project             | `--verbose`, `--project`          |
+| `test.sh`    | Run tests (defaults to CI category)                  | `--all`, `--verbose`, `--trait`   |
+| `format.sh`  | Run jb cleanupcode then dotnet format                | `--check`, `--changed`, `--no-jb` |
+| `check.sh`   | Composed: format + build + test                      | `--all`, `--no-format`            |
+| `ci.sh`      | Full CI pipeline                                     | `--skip-format`, `--skip-test`    |
+| `docker.sh`  | Docker build/run/test/stop/clean                     | `--no-cache`                      |
 
 ## Git & Status
 

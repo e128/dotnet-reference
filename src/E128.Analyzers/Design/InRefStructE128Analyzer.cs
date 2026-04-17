@@ -8,10 +8,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128021: Flags <see langword="in"/> on ref struct parameters (<see cref="Span{T}"/>,
-/// <see cref="ReadOnlySpan{T}"/>, etc.). Ref structs are already passed by
-/// reference — <see langword="in"/> is redundant at best and a compile error on
-/// extension method <see langword="this"/> parameters.
+///     E128021: Flags <see langword="in" /> on ref struct parameters (<see cref="Span{T}" />,
+///     <see cref="ReadOnlySpan{T}" />, etc.). Ref structs are already passed by
+///     reference — <see langword="in" /> is redundant at best and a compile error on
+///     extension method <see langword="this" /> parameters.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class InRefStructE128Analyzer : DiagnosticAnalyzer
@@ -19,15 +19,14 @@ public sealed class InRefStructE128Analyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128021";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Do not use 'in' modifier with ref struct parameters",
-        messageFormat: "Parameter '{0}' uses 'in {1}' — ref structs are already passed by reference; remove the 'in' modifier",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description:
-            "Ref structs (Span<T>, ReadOnlySpan<T>, etc.) are always passed by reference on the stack. " +
-            "Adding 'in' is redundant and misleading. On extension method 'this' parameters it is a compile error.");
+        DiagnosticId,
+        "Do not use 'in' modifier with ref struct parameters",
+        "Parameter '{0}' uses 'in {1}' — ref structs are already passed by reference; remove the 'in' modifier",
+        "Design",
+        DiagnosticSeverity.Error,
+        true,
+        "Ref structs (Span<T>, ReadOnlySpan<T>, etc.) are always passed by reference on the stack. " +
+        "Adding 'in' is redundant and misleading. On extension method 'this' parameters it is a compile error.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

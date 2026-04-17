@@ -13,7 +13,7 @@ public sealed class ConsoleDirectUseE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConsoleDirectUseAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,16 +24,16 @@ public sealed class ConsoleDirectUseE128AnalyzerTests
     public Task ConsoleWriteLine_Fires()
     {
         return VerifyAsync("""
-            using System;
+                           using System;
 
-            class C
-            {
-                void M()
-                {
-                    {|E128045:Console.WriteLine|}("hello");
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   {|E128045:Console.WriteLine|}("hello");
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -41,16 +41,16 @@ public sealed class ConsoleDirectUseE128AnalyzerTests
     public Task ConsoleReadLine_Fires()
     {
         return VerifyAsync("""
-            using System;
+                           using System;
 
-            class C
-            {
-                void M()
-                {
-                    var line = {|E128045:Console.ReadLine|}();
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var line = {|E128045:Console.ReadLine|}();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -58,16 +58,16 @@ public sealed class ConsoleDirectUseE128AnalyzerTests
     public Task ConsoleError_Fires()
     {
         return VerifyAsync("""
-            using System;
+                           using System;
 
-            class C
-            {
-                void M()
-                {
-                    var err = {|E128045:Console.Error|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var err = {|E128045:Console.Error|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -75,15 +75,15 @@ public sealed class ConsoleDirectUseE128AnalyzerTests
     public Task NonConsoleWriteLine_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Diagnostics;
+                           using System.Diagnostics;
 
-            class C
-            {
-                void M()
-                {
-                    Debug.WriteLine("hello");
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   Debug.WriteLine("hello");
+                               }
+                           }
+                           """);
     }
 }

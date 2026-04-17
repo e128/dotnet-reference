@@ -14,7 +14,7 @@ public sealed class ExecuteScalarNullGuardE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,33 +23,33 @@ public sealed class ExecuteScalarNullGuardE128CodeFixTests
     public Task ConvertToInt32_AddsNullGuard()
     {
         const string source = """
-            using System;
-            using System.Data;
-            using System.Data.Common;
+                              using System;
+                              using System.Data;
+                              using System.Data.Common;
 
-            class C
-            {
-                void M(DbCommand cmd)
-                {
-                    var count = {|E128042:Convert.ToInt32(cmd.ExecuteScalar())|};
-                }
-            }
-            """;
+                              class C
+                              {
+                                  void M(DbCommand cmd)
+                                  {
+                                      var count = {|E128042:Convert.ToInt32(cmd.ExecuteScalar())|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            using System.Data;
-            using System.Data.Common;
+                                 using System;
+                                 using System.Data;
+                                 using System.Data.Common;
 
-            class C
-            {
-                void M(DbCommand cmd)
-                {
-                    var result = cmd.ExecuteScalar();
-                    var count = result is null ? 0 : Convert.ToInt32(result);
-                }
-            }
-            """;
+                                 class C
+                                 {
+                                     void M(DbCommand cmd)
+                                     {
+                                         var result = cmd.ExecuteScalar();
+                                         var count = result is null ? 0 : Convert.ToInt32(result);
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

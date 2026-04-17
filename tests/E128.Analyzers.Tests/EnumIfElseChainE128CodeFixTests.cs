@@ -14,7 +14,7 @@ public sealed class EnumIfElseChainE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,52 +23,52 @@ public sealed class EnumIfElseChainE128CodeFixTests
     public Task ThreeBranchChain_ConvertsToSwitch()
     {
         const string source = """
-            enum Color { Red, Green, Blue }
+                              enum Color { Red, Green, Blue }
 
-            class C
-            {
-                int M(Color c)
-                {
-                    {|E128048:if (c == Color.Red)
-                    {
-                        return 1;
-                    }
-                    else if (c == Color.Green)
-                    {
-                        return 2;
-                    }
-                    else if (c == Color.Blue)
-                    {
-                        return 3;
-                    }|}
-                    return 0;
-                }
-            }
-            """;
+                              class C
+                              {
+                                  int M(Color c)
+                                  {
+                                      {|E128048:if (c == Color.Red)
+                                      {
+                                          return 1;
+                                      }
+                                      else if (c == Color.Green)
+                                      {
+                                          return 2;
+                                      }
+                                      else if (c == Color.Blue)
+                                      {
+                                          return 3;
+                                      }|}
+                                      return 0;
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            enum Color { Red, Green, Blue }
+                                 enum Color { Red, Green, Blue }
 
-            class C
-            {
-                int M(Color c)
-                {
-                    switch (c)
-                    {
-                        case Color.Red:
-                            return 1;
-                            break;
-                        case Color.Green:
-                            return 2;
-                            break;
-                        case Color.Blue:
-                            return 3;
-                            break;
-                    }
-                    return 0;
-                }
-            }
-            """;
+                                 class C
+                                 {
+                                     int M(Color c)
+                                     {
+                                         switch (c)
+                                         {
+                                             case Color.Red:
+                                                 return 1;
+                                                 break;
+                                             case Color.Green:
+                                                 return 2;
+                                                 break;
+                                             case Color.Blue:
+                                                 return 3;
+                                                 break;
+                                         }
+                                         return 0;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

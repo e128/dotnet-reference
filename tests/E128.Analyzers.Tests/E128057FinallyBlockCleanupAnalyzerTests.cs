@@ -13,7 +13,7 @@ public sealed class E128057FinallyBlockCleanupAnalyzerTests
         var test = new CSharpAnalyzerTest<FinallyBlockCleanupAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,19 +24,19 @@ public sealed class E128057FinallyBlockCleanupAnalyzerTests
     public Task FinallyCleanup_Reports_WhenFileDeleteIsNotInTryCatch()
     {
         return VerifyAsync("""
-            using System.IO;
-            class Processor
-            {
-                void Process(string tempPath)
-                {
-                    try { }
-                    finally
-                    {
-                        {|E128057:File.Delete(tempPath)|};
-                    }
-                }
-            }
-            """);
+                           using System.IO;
+                           class Processor
+                           {
+                               void Process(string tempPath)
+                               {
+                                   try { }
+                                   finally
+                                   {
+                                       {|E128057:File.Delete(tempPath)|};
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -44,23 +44,23 @@ public sealed class E128057FinallyBlockCleanupAnalyzerTests
     public Task FinallyCleanup_NoReport_WhenFileDeleteIsInTryCatch()
     {
         return VerifyAsync("""
-            using System.IO;
-            class Processor
-            {
-                void Process(string tempPath)
-                {
-                    try { }
-                    finally
-                    {
-                        try
-                        {
-                            File.Delete(tempPath);
-                        }
-                        catch (IOException) { }
-                    }
-                }
-            }
-            """);
+                           using System.IO;
+                           class Processor
+                           {
+                               void Process(string tempPath)
+                               {
+                                   try { }
+                                   finally
+                                   {
+                                       try
+                                       {
+                                           File.Delete(tempPath);
+                                       }
+                                       catch (IOException) { }
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -68,19 +68,19 @@ public sealed class E128057FinallyBlockCleanupAnalyzerTests
     public Task FinallyCleanup_Reports_WhenDirectoryDeleteIsNotInTryCatch()
     {
         return VerifyAsync("""
-            using System.IO;
-            class Processor
-            {
-                void Process(string tempPath)
-                {
-                    try { }
-                    finally
-                    {
-                        {|E128057:Directory.Delete(tempPath, true)|};
-                    }
-                }
-            }
-            """);
+                           using System.IO;
+                           class Processor
+                           {
+                               void Process(string tempPath)
+                               {
+                                   try { }
+                                   finally
+                                   {
+                                       {|E128057:Directory.Delete(tempPath, true)|};
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -88,17 +88,17 @@ public sealed class E128057FinallyBlockCleanupAnalyzerTests
     public Task FinallyCleanup_NoReport_WhenFinallyHasNoDangerousCall()
     {
         return VerifyAsync("""
-            class Processor
-            {
-                void Process()
-                {
-                    try { }
-                    finally
-                    {
-                        var x = 1;
-                    }
-                }
-            }
-            """);
+                           class Processor
+                           {
+                               void Process()
+                               {
+                                   try { }
+                                   finally
+                                   {
+                                       var x = 1;
+                                   }
+                               }
+                           }
+                           """);
     }
 }

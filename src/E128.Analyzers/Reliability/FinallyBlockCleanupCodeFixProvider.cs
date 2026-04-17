@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128057: wraps the flagged cleanup call's containing statement
-/// in a <c>try { } catch (System.Exception) { }</c> block within the finally clause.
+///     Code fix for E128057: wraps the flagged cleanup call's containing statement
+///     in a <c>try { } catch (System.Exception) { }</c> block within the finally clause.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FinallyBlockCleanupCodeFixProvider))]
 [Shared]
@@ -21,8 +21,10 @@ public sealed class FinallyBlockCleanupCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FinallyBlockCleanupAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -42,9 +44,9 @@ public sealed class FinallyBlockCleanupCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Wrap cleanup in try/catch(Exception)",
-                createChangedDocument: ct => WrapInTryCatchAsync(context.Document, statement, ct),
-                equivalenceKey: nameof(FinallyBlockCleanupCodeFixProvider)),
+                "Wrap cleanup in try/catch(Exception)",
+                ct => WrapInTryCatchAsync(context.Document, statement, ct),
+                nameof(FinallyBlockCleanupCodeFixProvider)),
             diagnostic);
     }
 
@@ -63,7 +65,7 @@ public sealed class FinallyBlockCleanupCodeFixProvider : CodeFixProvider
         var catchClause = SyntaxFactory.CatchClause(
             SyntaxFactory.CatchDeclaration(
                 SyntaxFactory.ParseTypeName("System.Exception")),
-            filter: null,
+            null,
             SyntaxFactory.Block());
 
         var tryCatch = SyntaxFactory.TryStatement(

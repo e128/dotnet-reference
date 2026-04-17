@@ -13,7 +13,7 @@ public sealed class CatchFilterOceE128AnalyzerTests
         var test = new CSharpAnalyzerTest<CatchFilterOceAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,18 +24,18 @@ public sealed class CatchFilterOceE128AnalyzerTests
     public Task CatchFilter_MissingOce_FiresE128039()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    try { }
-                    {|E128039:catch (Exception ex) when (ex is not OutOfMemoryException)|}
-                    {
-                    }
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   try { }
+                                   {|E128039:catch (Exception ex) when (ex is not OutOfMemoryException)|}
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -43,18 +43,18 @@ public sealed class CatchFilterOceE128AnalyzerTests
     public Task CatchFilter_IncludesOce_DoesNotFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    try { }
-                    catch (Exception ex) when (ex is not OutOfMemoryException and not OperationCanceledException)
-                    {
-                    }
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   try { }
+                                   catch (Exception ex) when (ex is not OutOfMemoryException and not OperationCanceledException)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -62,19 +62,19 @@ public sealed class CatchFilterOceE128AnalyzerTests
     public Task CatchFilter_IncludesTaskCanceledException_DoesNotFire()
     {
         return VerifyAsync("""
-            using System;
-            using System.Threading.Tasks;
-            class C
-            {
-                void M()
-                {
-                    try { }
-                    catch (Exception ex) when (ex is not OutOfMemoryException and not TaskCanceledException)
-                    {
-                    }
-                }
-            }
-            """);
+                           using System;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               void M()
+                               {
+                                   try { }
+                                   catch (Exception ex) when (ex is not OutOfMemoryException and not TaskCanceledException)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -82,19 +82,19 @@ public sealed class CatchFilterOceE128AnalyzerTests
     public Task CatchFilter_PrecedingCatchHandlesOce_DoesNotFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    try { }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception ex) when (ex is not OutOfMemoryException)
-                    {
-                    }
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   try { }
+                                   catch (OperationCanceledException) { throw; }
+                                   catch (Exception ex) when (ex is not OutOfMemoryException)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -102,17 +102,17 @@ public sealed class CatchFilterOceE128AnalyzerTests
     public Task CatchFilter_NoFilterAtAll_DoesNotFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    try { }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   try { }
+                                   catch (Exception)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 }

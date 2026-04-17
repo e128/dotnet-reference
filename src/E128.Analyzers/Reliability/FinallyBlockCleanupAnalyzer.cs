@@ -9,9 +9,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128057: Detects cleanup calls (<c>File.Delete</c>, <c>Directory.Delete</c>) inside
-/// <see langword="finally"/> blocks that are not wrapped in their own <see langword="try"/>/<see langword="catch"/>.
-/// If a cleanup throws, it masks the original exception from the enclosing <see langword="try"/>.
+///     E128057: Detects cleanup calls (<c>File.Delete</c>, <c>Directory.Delete</c>) inside
+///     <see langword="finally" /> blocks that are not wrapped in their own <see langword="try" />/<see langword="catch" />
+///     .
+///     If a cleanup throws, it masks the original exception from the enclosing <see langword="try" />.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FinallyBlockCleanupAnalyzer : DiagnosticAnalyzer
@@ -19,13 +20,13 @@ public sealed class FinallyBlockCleanupAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128057";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Unprotected cleanup in finally block",
-        messageFormat: "Cleanup call '{0}' in finally block is not wrapped in try/catch — a thrown exception will mask the original exception",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Cleanup calls inside finally blocks should be wrapped in try/catch to prevent exceptions from masking the original exception that triggered the finally.");
+        DiagnosticId,
+        "Unprotected cleanup in finally block",
+        "Cleanup call '{0}' in finally block is not wrapped in try/catch — a thrown exception will mask the original exception",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "Cleanup calls inside finally blocks should be wrapped in try/catch to prevent exceptions from masking the original exception that triggered the finally.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -83,7 +84,7 @@ public sealed class FinallyBlockCleanupAnalyzer : DiagnosticAnalyzer
 
         var receiverName = receiver.Identifier.ValueText;
         var isFileOrDirectory = string.Equals(receiverName, "File", StringComparison.Ordinal)
-            || string.Equals(receiverName, "Directory", StringComparison.Ordinal);
+                                || string.Equals(receiverName, "Directory", StringComparison.Ordinal);
 
         if (!isFileOrDirectory)
         {

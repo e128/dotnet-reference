@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.Text;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128032: Flags <c>services.AddSingleton&lt;MyService&gt;()</c> when <c>MyService</c>
-/// implements a non-marker interface. Concrete-only DI registrations prevent interface-based
-/// resolution, making the service untestable and tightly coupled.
+///     E128032: Flags <c>services.AddSingleton&lt;MyService&gt;()</c> when <c>MyService</c>
+///     implements a non-marker interface. Concrete-only DI registrations prevent interface-based
+///     resolution, making the service untestable and tightly coupled.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
@@ -21,27 +21,27 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128032";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Concrete-only DI registration with available interface",
-        messageFormat: "'{0}' implements '{1}' — register as Add{2}<{1}, {0}>() for testability and loose coupling",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Registering a concrete type via AddSingleton<T>(), AddScoped<T>(), or AddTransient<T>() " +
-            "when T implements a non-marker interface prevents consumers from resolving by interface. " +
-            "Use Add{Lifetime}<IFoo, T>() instead.");
+        DiagnosticId,
+        "Concrete-only DI registration with available interface",
+        "'{0}' implements '{1}' — register as Add{2}<{1}, {0}>() for testability and loose coupling",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true,
+        "Registering a concrete type via AddSingleton<T>(), AddScoped<T>(), or AddTransient<T>() " +
+        "when T implements a non-marker interface prevents consumers from resolving by interface. " +
+        "Use Add{Lifetime}<IFoo, T>() instead.");
 
     private static readonly HashSet<string> TargetMethodNames = new(StringComparer.Ordinal)
     {
         "AddSingleton",
         "AddScoped",
-        "AddTransient",
+        "AddTransient"
     };
 
     private static readonly HashSet<string> MarkerInterfaces = new(StringComparer.Ordinal)
     {
         "System.IDisposable",
-        "System.IAsyncDisposable",
+        "System.IAsyncDisposable"
     };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -132,7 +132,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         // Check BlockSyntax (method body) first, then CompilationUnitSyntax (top-level statements).
         var typeName = typeArg.Name;
         var scope = (SyntaxNode?)invocation.FirstAncestorOrSelf<BlockSyntax>()
-            ?? invocation.SyntaxTree.GetRoot(context.CancellationToken);
+                    ?? invocation.SyntaxTree.GetRoot(context.CancellationToken);
         if (HasForwardingRegistration(scope, typeName) || HasTypedHttpClientRegistration(scope, typeName))
         {
             return;
@@ -148,8 +148,8 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Returns true if the block contains a forwarding registration like
-    /// <c>services.AddSingleton&lt;IFoo&gt;(sp =&gt; sp.GetRequiredService&lt;ConcreteType&gt;())</c>.
+    ///     Returns true if the block contains a forwarding registration like
+    ///     <c>services.AddSingleton&lt;IFoo&gt;(sp =&gt; sp.GetRequiredService&lt;ConcreteType&gt;())</c>.
     /// </summary>
     private static bool HasForwardingRegistration(SyntaxNode scope, string concreteTypeName)
     {
@@ -158,7 +158,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Returns true if the scope contains <c>AddHttpClient&lt;ConcreteType&gt;()</c>.
+    ///     Returns true if the scope contains <c>AddHttpClient&lt;ConcreteType&gt;()</c>.
     /// </summary>
     private static bool HasTypedHttpClientRegistration(SyntaxNode scope, string concreteTypeName)
     {

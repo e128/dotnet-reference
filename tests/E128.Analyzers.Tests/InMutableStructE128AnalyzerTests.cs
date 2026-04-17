@@ -13,7 +13,7 @@ public sealed class InMutableStructE128AnalyzerTests
         var test = new CSharpAnalyzerTest<InMutableStructE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,12 +24,12 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task InMutableStruct_Fires()
     {
         return VerifyAsync("""
-            struct MutableStruct { public int X; }
-            class C
-            {
-                void M({|E128020:in MutableStruct value|}) { }
-            }
-            """);
+                           struct MutableStruct { public int X; }
+                           class C
+                           {
+                               void M({|E128020:in MutableStruct value|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -37,13 +37,13 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task InGenericMutableStruct_Fires()
     {
         return VerifyAsync("""
-            struct Batch<T> { public T[] Items; }
-            class Activity { }
-            class C
-            {
-                void M({|E128020:in Batch<Activity> batch|}) { }
-            }
-            """);
+                           struct Batch<T> { public T[] Items; }
+                           class Activity { }
+                           class C
+                           {
+                               void M({|E128020:in Batch<Activity> batch|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -51,12 +51,12 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task InGenericWrapper_Fires()
     {
         return VerifyAsync("""
-            struct Wrapper<T> { public T Value; }
-            class C
-            {
-                void M({|E128020:in Wrapper<string> w|}) { }
-            }
-            """);
+                           struct Wrapper<T> { public T Value; }
+                           class C
+                           {
+                               void M({|E128020:in Wrapper<string> w|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -64,12 +64,12 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task InMixedStruct_Fires()
     {
         return VerifyAsync("""
-            struct MixedStruct { public readonly int X; public int Y; }
-            class C
-            {
-                void M({|E128020:in MixedStruct s|}) { }
-            }
-            """);
+                           struct MixedStruct { public readonly int X; public int Y; }
+                           class C
+                           {
+                               void M({|E128020:in MixedStruct s|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -77,12 +77,12 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task ReadonlyStruct_NoFire()
     {
         return VerifyAsync("""
-            readonly struct ImmutablePoint { public int X { get; } }
-            class C
-            {
-                void M(in ImmutablePoint p) { }
-            }
-            """);
+                           readonly struct ImmutablePoint { public int X { get; } }
+                           class C
+                           {
+                               void M(in ImmutablePoint p) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -90,12 +90,12 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task DateTime_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M(in DateTime dt) { }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M(in DateTime dt) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -103,12 +103,12 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task RefStruct_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M(in ReadOnlySpan<char> text) { }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M(in ReadOnlySpan<char> text) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -116,11 +116,11 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task Primitive_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M(in int value) { }
-            }
-            """);
+                           class C
+                           {
+                               void M(in int value) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -128,12 +128,12 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task Enum_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M(in DayOfWeek day) { }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M(in DayOfWeek day) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -141,12 +141,12 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task WithoutInModifier_NoFire()
     {
         return VerifyAsync("""
-            struct MutableStruct { public int X; }
-            class C
-            {
-                void M(MutableStruct value) { }
-            }
-            """);
+                           struct MutableStruct { public int X; }
+                           class C
+                           {
+                               void M(MutableStruct value) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -154,11 +154,11 @@ public sealed class InMutableStructE128AnalyzerTests
     public Task CancellationToken_NoFire()
     {
         return VerifyAsync("""
-            using System.Threading;
-            class C
-            {
-                void M(in CancellationToken ct) { }
-            }
-            """);
+                           using System.Threading;
+                           class C
+                           {
+                               void M(in CancellationToken ct) { }
+                           }
+                           """);
     }
 }

@@ -14,7 +14,7 @@ public sealed class ConcurrencyLimitE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,28 +23,28 @@ public sealed class ConcurrencyLimitE128CodeFixTests
     public Task SemaphoreSlim_Zero_ReplacesWithProcessorCount()
     {
         const string source = """
-            using System;
-            using System.Threading;
-            class C
-            {
-                void M()
-                {
-                    var s = {|E128040:new SemaphoreSlim(0)|};
-                }
-            }
-            """;
+                              using System;
+                              using System.Threading;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var s = {|E128040:new SemaphoreSlim(0)|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            using System.Threading;
-            class C
-            {
-                void M()
-                {
-                    var s = new SemaphoreSlim(Environment.ProcessorCount);
-                }
-            }
-            """;
+                                 using System;
+                                 using System.Threading;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var s = new SemaphoreSlim(Environment.ProcessorCount);
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

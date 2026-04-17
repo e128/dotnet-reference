@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
+using E128.Analyzers.Reliability;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -16,11 +17,14 @@ public sealed class InModifierCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
     [
         InCancellationTokenE128Analyzer.DiagnosticId,
-        Reliability.InMutableStructE128Analyzer.DiagnosticId,
-        InRefStructE128Analyzer.DiagnosticId,
+        InMutableStructE128Analyzer.DiagnosticId,
+        InRefStructE128Analyzer.DiagnosticId
     ];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -40,9 +44,9 @@ public sealed class InModifierCodeFixProvider : CodeFixProvider
 
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: "Remove 'in' modifier",
-                    createChangedDocument: ct => RemoveInModifierAsync(context.Document, root, parameter, ct),
-                    equivalenceKey: "RemoveInModifier"),
+                    "Remove 'in' modifier",
+                    ct => RemoveInModifierAsync(context.Document, root, parameter, ct),
+                    "RemoveInModifier"),
                 diagnostic);
         }
     }

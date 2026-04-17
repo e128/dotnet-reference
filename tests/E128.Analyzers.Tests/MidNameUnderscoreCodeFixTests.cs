@@ -14,7 +14,7 @@ public sealed class MidNameUnderscoreCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,18 +23,18 @@ public sealed class MidNameUnderscoreCodeFixTests
     public Task PrivateStaticField_RenamesMidNameUnderscore()
     {
         const string source = """
-            class C
-            {
-                private static int {|E128063:Nots_supportedExtensions|};
-            }
-            """;
+                              class C
+                              {
+                                  private static int {|E128063:Nots_supportedExtensions|};
+                              }
+                              """;
 
         const string fixedCode = """
-            class C
-            {
-                private static int NotsSupportedExtensions;
-            }
-            """;
+                                 class C
+                                 {
+                                     private static int NotsSupportedExtensions;
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -44,18 +44,18 @@ public sealed class MidNameUnderscoreCodeFixTests
     public Task PrivateStaticField_RenamesTypeNameMangle()
     {
         const string source = """
-            class C
-            {
-                private static object {|E128063:Creates_enrichmentJsonOptions|};
-            }
-            """;
+                              class C
+                              {
+                                  private static object {|E128063:Creates_enrichmentJsonOptions|};
+                              }
+                              """;
 
         const string fixedCode = """
-            class C
-            {
-                private static object CreatesEnrichmentJsonOptions;
-            }
-            """;
+                                 class C
+                                 {
+                                     private static object CreatesEnrichmentJsonOptions;
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -65,18 +65,18 @@ public sealed class MidNameUnderscoreCodeFixTests
     public Task PrivateStaticField_RenamesSpectresPattern()
     {
         const string source = """
-            class C
-            {
-                private static string {|E128063:Spectres_terminal|};
-            }
-            """;
+                              class C
+                              {
+                                  private static string {|E128063:Spectres_terminal|};
+                              }
+                              """;
 
         const string fixedCode = """
-            class C
-            {
-                private static string SpectresTerminal;
-            }
-            """;
+                                 class C
+                                 {
+                                     private static string SpectresTerminal;
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -86,18 +86,18 @@ public sealed class MidNameUnderscoreCodeFixTests
     public Task PrivateStaticMethod_RenamesMidNameUnderscore()
     {
         const string source = """
-            class C
-            {
-                private static void {|E128063:Process_batch|}() { }
-            }
-            """;
+                              class C
+                              {
+                                  private static void {|E128063:Process_batch|}() { }
+                              }
+                              """;
 
         const string fixedCode = """
-            class C
-            {
-                private static void ProcessBatch() { }
-            }
-            """;
+                                 class C
+                                 {
+                                     private static void ProcessBatch() { }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -107,18 +107,18 @@ public sealed class MidNameUnderscoreCodeFixTests
     public Task HungarianPrefixWithMidNameUnderscore_PreservesPrefix()
     {
         const string source = """
-            class C
-            {
-                private static int {|E128063:s_batch_count|};
-            }
-            """;
+                              class C
+                              {
+                                  private static int {|E128063:s_batch_count|};
+                              }
+                              """;
 
         const string fixedCode = """
-            class C
-            {
-                private static int s_batchCount;
-            }
-            """;
+                                 class C
+                                 {
+                                     private static int s_batchCount;
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

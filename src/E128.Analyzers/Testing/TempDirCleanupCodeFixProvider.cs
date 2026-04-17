@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-/// Code fix for E128054: adds <c>IAsyncLifetime</c> to the class and generates
-/// <c>InitializeAsync</c> (returns <c>Task.CompletedTask</c>) and <c>DisposeAsync</c>
-/// (calls <c>Directory.Delete</c> on the temp path).
+///     Code fix for E128054: adds <c>IAsyncLifetime</c> to the class and generates
+///     <c>InitializeAsync</c> (returns <c>Task.CompletedTask</c>) and <c>DisposeAsync</c>
+///     (calls <c>Directory.Delete</c> on the temp path).
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TempDirCleanupCodeFixProvider))]
 [Shared]
@@ -22,8 +22,10 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TempDirCleanupAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -44,9 +46,9 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Implement IAsyncLifetime with temp cleanup",
-                createChangedDocument: ct => AddAsyncLifetimeAsync(context.Document, classDecl, ct),
-                equivalenceKey: nameof(TempDirCleanupCodeFixProvider)),
+                "Implement IAsyncLifetime with temp cleanup",
+                ct => AddAsyncLifetimeAsync(context.Document, classDecl, ct),
+                nameof(TempDirCleanupCodeFixProvider)),
             diagnostic);
     }
 
@@ -107,11 +109,11 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
                     SyntaxFactory.IdentifierName("Directory"),
                     SyntaxFactory.IdentifierName("Delete")),
                 SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(
-                [
-                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_path")),
-                    SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(
-                        SyntaxKind.TrueLiteralExpression)),
-                ]))));
+                    [
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_path")),
+                        SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(
+                            SyntaxKind.TrueLiteralExpression))
+                    ]))));
 
         var returnStatement = SyntaxFactory.ReturnStatement(
             SyntaxFactory.MemberAccessExpression(

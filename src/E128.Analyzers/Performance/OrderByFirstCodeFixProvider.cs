@@ -18,8 +18,10 @@ public sealed class OrderByFirstCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [OrderByFirstAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -39,9 +41,9 @@ public sealed class OrderByFirstCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace with MinBy/MaxBy",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, outerInvocation, ct),
-                equivalenceKey: nameof(OrderByFirstCodeFixProvider)),
+                "Replace with MinBy/MaxBy",
+                ct => ApplyFixAsync(context.Document, outerInvocation, ct),
+                nameof(OrderByFirstCodeFixProvider)),
             diagnostic);
     }
 

@@ -13,7 +13,7 @@ public sealed class ToListInForeachE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ToListInForeachAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,18 +24,18 @@ public sealed class ToListInForeachE128AnalyzerTests
     public Task ToListInForeach_DirectCall_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                void M(IEnumerable<int> items)
-                {
-                    foreach (var x in {|E128018:items.ToList()|})
-                    {
-                    }
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M(IEnumerable<int> items)
+                               {
+                                   foreach (var x in {|E128018:items.ToList()|})
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -43,18 +43,18 @@ public sealed class ToListInForeachE128AnalyzerTests
     public Task ToListInForeach_WithLinqChain_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                void M(IEnumerable<int> items)
-                {
-                    foreach (var x in {|E128018:items.Where(i => i > 0).ToList()|})
-                    {
-                    }
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M(IEnumerable<int> items)
+                               {
+                                   foreach (var x in {|E128018:items.Where(i => i > 0).ToList()|})
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -62,17 +62,17 @@ public sealed class ToListInForeachE128AnalyzerTests
     public Task ToArrayInForeach_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                void M(IEnumerable<int> items)
-                {
-                    foreach (var x in items.ToArray())
-                    {
-                    }
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M(IEnumerable<int> items)
+                               {
+                                   foreach (var x in items.ToArray())
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 }

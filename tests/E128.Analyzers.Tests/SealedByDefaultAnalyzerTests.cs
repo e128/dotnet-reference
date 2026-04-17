@@ -13,7 +13,7 @@ public sealed class SealedByDefaultAnalyzerTests
         var test = new CSharpAnalyzerTest<SealedByDefaultAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,9 +24,9 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task ClassWithNonObjectBase_NoSubclass_Fires()
     {
         return VerifyAsync("""
-            class Base { }
-            class {|E128005:Derived|} : Base { }
-            """);
+                           class Base { }
+                           class {|E128005:Derived|} : Base { }
+                           """);
     }
 
     [Fact]
@@ -34,10 +34,10 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task ClassWithNonObjectBase_HasSubclass_NoFire()
     {
         return VerifyAsync("""
-            class Base { }
-            class Middle : Base { }
-            sealed class Leaf : Middle { }
-            """);
+                           class Base { }
+                           class Middle : Base { }
+                           sealed class Leaf : Middle { }
+                           """);
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task DirectObjectSubclass_NoFire()
     {
         return VerifyAsync("""
-            class Foo { }
-            """);
+                           class Foo { }
+                           """);
     }
 
     [Fact]
@@ -54,9 +54,9 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task AbstractClass_NoFire()
     {
         return VerifyAsync("""
-            class Base { }
-            abstract class Derived : Base { }
-            """);
+                           class Base { }
+                           abstract class Derived : Base { }
+                           """);
     }
 
     [Fact]
@@ -64,9 +64,9 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task SealedClass_NoFire()
     {
         return VerifyAsync("""
-            class Base { }
-            sealed class Derived : Base { }
-            """);
+                           class Base { }
+                           sealed class Derived : Base { }
+                           """);
     }
 
     [Fact]
@@ -74,8 +74,8 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task RecordClass_NoFire()
     {
         return VerifyAsync("""
-            record class Base(int X);
-            record class Derived(int X, int Y) : Base(X);
-            """);
+                           record class Base(int X);
+                           record class Derived(int X, int Y) : Base(X);
+                           """);
     }
 }

@@ -17,7 +17,10 @@ public sealed class GuidNewGuidTempPathCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GuidNewGuidTempPathE128Analyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -37,9 +40,9 @@ public sealed class GuidNewGuidTempPathCodeFixProvider : CodeFixProvider
 
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: "Replace with Path.GetRandomFileName()",
-                    createChangedDocument: ct => ReplaceWithGetRandomFileNameAsync(context.Document, root, node, ct),
-                    equivalenceKey: "ReplaceWithGetRandomFileName"),
+                    "Replace with Path.GetRandomFileName()",
+                    ct => ReplaceWithGetRandomFileNameAsync(context.Document, root, node, ct),
+                    "ReplaceWithGetRandomFileName"),
                 diagnostic);
         }
     }
@@ -52,10 +55,10 @@ public sealed class GuidNewGuidTempPathCodeFixProvider : CodeFixProvider
     {
         _ = cancellationToken;
         var replacement = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName("Path"),
-                SyntaxFactory.IdentifierName("GetRandomFileName")))
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("Path"),
+                    SyntaxFactory.IdentifierName("GetRandomFileName")))
             .WithTriviaFrom(node);
 
         var newRoot = root.ReplaceNode(node, replacement);

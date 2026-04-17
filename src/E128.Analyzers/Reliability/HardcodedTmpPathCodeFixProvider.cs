@@ -17,7 +17,10 @@ public sealed class HardcodedTmpPathCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [HardcodedTmpPathE128Analyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -37,9 +40,9 @@ public sealed class HardcodedTmpPathCodeFixProvider : CodeFixProvider
 
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: "Replace with Path.GetTempPath()",
-                    createChangedDocument: ct => ReplaceWithGetTempPathAsync(context.Document, root, node, ct),
-                    equivalenceKey: "ReplaceWithGetTempPath"),
+                    "Replace with Path.GetTempPath()",
+                    ct => ReplaceWithGetTempPathAsync(context.Document, root, node, ct),
+                    "ReplaceWithGetTempPath"),
                 diagnostic);
         }
     }

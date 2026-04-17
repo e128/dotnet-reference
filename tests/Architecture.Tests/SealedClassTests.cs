@@ -6,7 +6,7 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 namespace Architecture.Tests;
 
 /// <summary>
-/// Enforces the project convention that concrete classes should be sealed.
+///     Enforces the project convention that concrete classes should be sealed.
 /// </summary>
 public sealed class SealedClassTests
 {

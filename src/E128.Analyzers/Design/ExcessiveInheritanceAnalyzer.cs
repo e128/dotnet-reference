@@ -7,12 +7,12 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128046: Reports classes whose user-defined inheritance depth meets or exceeds a configurable
-/// threshold (default 3). Encourages composition over deep inheritance hierarchies.
+///     E128046: Reports classes whose user-defined inheritance depth meets or exceeds a configurable
+///     threshold (default 3). Encourages composition over deep inheritance hierarchies.
 /// </summary>
 /// <remarks>
-/// No code fix is provided — fixing excessive inheritance depth requires structural redesign
-/// (e.g., extracting interfaces, using composition) that cannot be safely automated.
+///     No code fix is provided — fixing excessive inheritance depth requires structural redesign
+///     (e.g., extracting interfaces, using composition) that cannot be safely automated.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
@@ -23,12 +23,12 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
     private const string ThresholdOptionKey = "e128_max_inheritance_depth";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Class has excessive user-defined inheritance depth",
-        messageFormat: "Class '{0}' has {1} user-defined inheritance level(s), meeting or exceeding the threshold of {2}. Prefer composition over deep inheritance.",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Class has excessive user-defined inheritance depth",
+        "Class '{0}' has {1} user-defined inheritance level(s), meeting or exceeding the threshold of {2}. Prefer composition over deep inheritance.",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -92,8 +92,10 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
 
     // A type is user-defined if it belongs to the current compilation's assembly
     // (not a reference assembly such as System.Runtime or System.IO).
-    private static bool IsUserDefined(INamedTypeSymbol type, Compilation compilation) =>
-        SymbolEqualityComparer.Default.Equals(type.ContainingAssembly, compilation.Assembly);
+    private static bool IsUserDefined(INamedTypeSymbol type, Compilation compilation)
+    {
+        return SymbolEqualityComparer.Default.Equals(type.ContainingAssembly, compilation.Assembly);
+    }
 
     private static int GetThreshold(in SymbolAnalysisContext context, INamedTypeSymbol type)
     {
@@ -109,8 +111,8 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
         var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(syntaxRef.SyntaxTree);
 
         return options.TryGetValue(ThresholdOptionKey, out var rawValue)
-            && int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var threshold)
-            && threshold > 0
+               && int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var threshold)
+               && threshold > 0
             ? threshold
             : DefaultThreshold;
     }

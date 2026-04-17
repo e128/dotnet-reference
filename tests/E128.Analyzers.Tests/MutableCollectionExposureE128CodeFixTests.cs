@@ -14,7 +14,7 @@ public sealed class MutableCollectionExposureE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,22 +23,22 @@ public sealed class MutableCollectionExposureE128CodeFixTests
     public Task ListReturnToIReadOnlyList_Fixed()
     {
         const string source = """
-            using System.Collections.Generic;
+                              using System.Collections.Generic;
 
-            public class Service
-            {
-                public List<string> {|E128052:GetNames|}() => new List<string>();
-            }
-            """;
+                              public class Service
+                              {
+                                  public List<string> {|E128052:GetNames|}() => new List<string>();
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Collections.Generic;
+                                 using System.Collections.Generic;
 
-            public class Service
-            {
-                public IReadOnlyList<string> GetNames() => new List<string>();
-            }
-            """;
+                                 public class Service
+                                 {
+                                     public IReadOnlyList<string> GetNames() => new List<string>();
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -48,22 +48,22 @@ public sealed class MutableCollectionExposureE128CodeFixTests
     public Task DictionaryReturnToIReadOnlyDictionary_Fixed()
     {
         const string source = """
-            using System.Collections.Generic;
+                              using System.Collections.Generic;
 
-            public class Service
-            {
-                public Dictionary<string, int> {|E128052:GetCounts|}() => new Dictionary<string, int>();
-            }
-            """;
+                              public class Service
+                              {
+                                  public Dictionary<string, int> {|E128052:GetCounts|}() => new Dictionary<string, int>();
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Collections.Generic;
+                                 using System.Collections.Generic;
 
-            public class Service
-            {
-                public IReadOnlyDictionary<string, int> GetCounts() => new Dictionary<string, int>();
-            }
-            """;
+                                 public class Service
+                                 {
+                                     public IReadOnlyDictionary<string, int> GetCounts() => new Dictionary<string, int>();
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -73,22 +73,22 @@ public sealed class MutableCollectionExposureE128CodeFixTests
     public Task PropertyListToIReadOnlyList_Fixed()
     {
         const string source = """
-            using System.Collections.Generic;
+                              using System.Collections.Generic;
 
-            public class Service
-            {
-                public List<int> {|E128052:Items|} { get; init; }
-            }
-            """;
+                              public class Service
+                              {
+                                  public List<int> {|E128052:Items|} { get; init; }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Collections.Generic;
+                                 using System.Collections.Generic;
 
-            public class Service
-            {
-                public IReadOnlyList<int> Items { get; init; }
-            }
-            """;
+                                 public class Service
+                                 {
+                                     public IReadOnlyList<int> Items { get; init; }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

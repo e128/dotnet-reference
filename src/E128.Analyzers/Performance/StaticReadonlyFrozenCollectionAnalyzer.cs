@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Performance;
 
 /// <summary>
-/// E128027: Flags <c>static readonly HashSet&lt;T&gt;</c> and <c>static readonly Dictionary&lt;TKey, TValue&gt;</c>
-/// fields that should use <c>FrozenSet&lt;T&gt;</c> / <c>FrozenDictionary&lt;TKey, TValue&gt;</c> for
-/// optimized read performance on process-lifetime collections.
+///     E128027: Flags <c>static readonly HashSet&lt;T&gt;</c> and <c>static readonly Dictionary&lt;TKey, TValue&gt;</c>
+///     fields that should use <c>FrozenSet&lt;T&gt;</c> / <c>FrozenDictionary&lt;TKey, TValue&gt;</c> for
+///     optimized read performance on process-lifetime collections.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
@@ -22,15 +22,15 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
     private const string FrozenSetMetadataName = "System.Collections.Frozen.FrozenSet`1";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use FrozenSet/FrozenDictionary for static readonly collections",
-        messageFormat: "Static readonly '{0}' should be '{1}' for optimized read performance",
-        category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Static readonly HashSet<T> and Dictionary<TKey, TValue> fields initialized at declaration " +
-            "should use FrozenSet<T> / FrozenDictionary<TKey, TValue> from System.Collections.Frozen. " +
-            "Frozen collections trade construction time for optimized read access — ideal for process-lifetime fields.");
+        DiagnosticId,
+        "Use FrozenSet/FrozenDictionary for static readonly collections",
+        "Static readonly '{0}' should be '{1}' for optimized read performance",
+        "Performance",
+        DiagnosticSeverity.Warning,
+        true,
+        "Static readonly HashSet<T> and Dictionary<TKey, TValue> fields initialized at declaration " +
+        "should use FrozenSet<T> / FrozenDictionary<TKey, TValue> from System.Collections.Frozen. " +
+        "Frozen collections trade construction time for optimized read access — ideal for process-lifetime fields.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

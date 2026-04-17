@@ -18,7 +18,7 @@ public sealed class DisposableSingletonFactoryE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = Net100WithDi,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 

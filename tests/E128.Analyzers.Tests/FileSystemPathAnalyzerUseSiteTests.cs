@@ -14,7 +14,7 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
         {
             TestCode = testCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor,
+            MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -25,15 +25,15 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
     public Task UseSite_FileReadAllText_FiresAsFileInfo()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                void M(string {|E128001:p|})
-                {
-                    File.ReadAllText(p);
-                }
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               void M(string {|E128001:p|})
+                               {
+                                   File.ReadAllText(p);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -41,15 +41,15 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
     public Task UseSite_DirectoryGetFiles_FiresAsDirectoryInfo()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                void M(string {|E128001:p|})
-                {
-                    Directory.GetFiles(p);
-                }
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               void M(string {|E128001:p|})
+                               {
+                                   Directory.GetFiles(p);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -57,15 +57,15 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
     public Task UseSite_NewFileInfo_FiresAsFileInfo()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                void M(string {|E128001:p|})
-                {
-                    _ = new FileInfo(p);
-                }
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               void M(string {|E128001:p|})
+                               {
+                                   _ = new FileInfo(p);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -73,15 +73,15 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
     public Task UseSite_NewStreamReader_FiresAsFileInfo()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                void M(string {|E128001:p|})
-                {
-                    _ = new StreamReader(p);
-                }
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               void M(string {|E128001:p|})
+                               {
+                                   _ = new StreamReader(p);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -89,16 +89,16 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
     public Task UseSite_PathCombineThenDirectory_FiresOneHop()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                void M(string {|E128001:p|})
-                {
-                    var combined = Path.Combine(p, "sub");
-                    Directory.GetFiles(combined);
-                }
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               void M(string {|E128001:p|})
+                               {
+                                   var combined = Path.Combine(p, "sub");
+                                   Directory.GetFiles(combined);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -106,11 +106,11 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
     public Task UseSite_MessageParam_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M(string message) { }
-            }
-            """);
+                           class C
+                           {
+                               void M(string message) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -118,15 +118,15 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
     public Task UseSite_FileUsage_MessageSuggestsFileInfo()
     {
         const string code = """
-            using System.IO;
-            class C
-            {
-                void M(string p)
-                {
-                    File.ReadAllText(p);
-                }
-            }
-            """;
+                            using System.IO;
+                            class C
+                            {
+                                void M(string p)
+                                {
+                                    File.ReadAllText(p);
+                                }
+                            }
+                            """;
 
         var expected = DiagnosticResult
             .CompilerWarning("E128001")

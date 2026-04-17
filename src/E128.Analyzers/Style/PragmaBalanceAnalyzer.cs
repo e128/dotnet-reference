@@ -9,8 +9,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-/// E128055: Detects <c>#pragma warning disable</c> directives that are never matched
-/// by a corresponding <c>#pragma warning restore</c>, leaving suppressions unbounded.
+///     E128055: Detects <c>#pragma warning disable</c> directives that are never matched
+///     by a corresponding <c>#pragma warning restore</c>, leaving suppressions unbounded.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
@@ -19,13 +19,13 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticIdKey = "SuppressedId";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Unbalanced pragma warning disable",
-        messageFormat: "Unbalanced pragma: '{0}' is disabled but never restored",
-        category: "Style",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Every #pragma warning disable should have a matching #pragma warning restore to limit the scope of the suppression.");
+        DiagnosticId,
+        "Unbalanced pragma warning disable",
+        "Unbalanced pragma: '{0}' is disabled but never restored",
+        "Style",
+        DiagnosticSeverity.Warning,
+        true,
+        "Every #pragma warning disable should have a matching #pragma warning restore to limit the scope of the suppression.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

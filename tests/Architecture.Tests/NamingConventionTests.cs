@@ -6,7 +6,7 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 namespace Architecture.Tests;
 
 /// <summary>
-/// Enforces naming conventions across the Core assembly.
+///     Enforces naming conventions across the Core assembly.
 /// </summary>
 public sealed class NamingConventionTests
 {

@@ -15,7 +15,7 @@ public sealed class HttpClientResponseHeadersReadE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 

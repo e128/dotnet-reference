@@ -13,7 +13,7 @@ public sealed class EncodingDefaultE128AnalyzerTests
         var test = new CSharpAnalyzerTest<EncodingDefaultAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,15 +24,15 @@ public sealed class EncodingDefaultE128AnalyzerTests
     public Task EncodingDefault_InMethod_FiresE128006()
     {
         return VerifyAsync("""
-            using System.Text;
-            class C
-            {
-                void M()
-                {
-                    var bytes = {|E128006:Encoding.Default|}.GetBytes("test");
-                }
-            }
-            """);
+                           using System.Text;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var bytes = {|E128006:Encoding.Default|}.GetBytes("test");
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -40,15 +40,15 @@ public sealed class EncodingDefaultE128AnalyzerTests
     public Task EncodingUtf8_InMethod_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Text;
-            class C
-            {
-                void M()
-                {
-                    var bytes = Encoding.UTF8.GetBytes("test");
-                }
-            }
-            """);
+                           using System.Text;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var bytes = Encoding.UTF8.GetBytes("test");
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -56,14 +56,14 @@ public sealed class EncodingDefaultE128AnalyzerTests
     public Task EncodingAscii_InMethod_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Text;
-            class C
-            {
-                void M()
-                {
-                    var bytes = Encoding.ASCII.GetBytes("test");
-                }
-            }
-            """);
+                           using System.Text;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var bytes = Encoding.ASCII.GetBytes("test");
+                               }
+                           }
+                           """);
     }
 }

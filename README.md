@@ -37,7 +37,7 @@ scripts/docker.sh test
 | **E128.Reference.Web**   | Minimal API web app with Kestrel, health endpoint                   |
 | **E128.Reference.Cli**   | System.CommandLine CLI with `--name` option                         |
 | **E128.Reference.Core**  | Shared library (Greeter service, models, repositories, services)    |
-| **E128.Analyzers**       | Custom Roslyn analyzers (E128001–E128060) with code fixes, NuGet-packable |
+| **E128.Analyzers**       | Custom Roslyn analyzers (E128001–E128063) with code fixes, NuGet-packable |
 | **E128.Reference.Tests** | xUnit v3 + MTP with CI, Docker, and Manual test categories          |
 | **Architecture.Tests**   | ArchUnitNET structural invariant tests (layers, naming, sealed)     |
 | **E128.Analyzers.Tests** | Analyzer and code fix unit tests                                    |
@@ -66,10 +66,13 @@ scripts/docker.sh test
 
 ### Optional
 
-| Tool               | Purpose                  | Install                                        |
-| ------------------ | ------------------------ | ---------------------------------------------- |
-| shellcheck         | Bash script linter       | `brew install shellcheck`                      |
-| dotnet-outdated    | NuGet update checker     | `dotnet tool install -g dotnet-outdated-tool`  |
+| Tool               | Purpose                         | Install                                              |
+| ------------------ | ------------------------------- | ---------------------------------------------------- |
+| shellcheck         | Bash script linter              | `brew install shellcheck`                            |
+| dotnet-outdated    | NuGet update checker            | `dotnet tool install -g dotnet-outdated-tool`        |
+| jb (ReSharper CLI) | Semantic code cleanup (`format.sh`) | `dotnet tool install -g JetBrains.ReSharper.GlobalTools` |
+
+> **Note (jb):** `scripts/format.sh` runs `jb cleanupcode` before `dotnet format` when `jb` is on `$PATH`. If not installed, the step is skipped automatically. `--check` mode always skips `jb` (no verify-only equivalent exists).
 
 > **Note (macOS):** The default `/bin/bash` on macOS is 3.2 (2007). Install bash 5+ via Homebrew and ensure `/opt/homebrew/bin/bash` is in your `$PATH` before `/bin/bash`.
 

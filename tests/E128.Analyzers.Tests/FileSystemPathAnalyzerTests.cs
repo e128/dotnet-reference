@@ -13,7 +13,7 @@ public sealed class FileSystemPathAnalyzerTests
         var test = new CSharpAnalyzerTest<FileSystemPathAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor,
+            MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -25,7 +25,7 @@ public sealed class FileSystemPathAnalyzerTests
         {
             TestCode = code,
             MarkupOptions = MarkupOptions.UseFirstDescriptor,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -36,8 +36,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_PathParam_Fires()
     {
         return VerifyAsync("""
-            class C { void M(string {|E128001:path|}) { } }
-            """);
+                           class C { void M(string {|E128001:path|}) { } }
+                           """);
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_FilePathParam_Fires()
     {
         return VerifyAsync("""
-            class C { void M(string {|E128001:filePath|}) { } }
-            """);
+                           class C { void M(string {|E128001:filePath|}) { } }
+                           """);
     }
 
     [Fact]
@@ -54,8 +54,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_DirectoryParam_Fires()
     {
         return VerifyAsync("""
-            class C { void M(string {|E128001:directory|}) { } }
-            """);
+                           class C { void M(string {|E128001:directory|}) { } }
+                           """);
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_ConstructorParam_Fires()
     {
         return VerifyAsync("""
-            class C { public C(string {|E128001:path|}) { } }
-            """);
+                           class C { public C(string {|E128001:path|}) { } }
+                           """);
     }
 
     [Fact]
@@ -72,8 +72,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_RecordPrimaryConstructor_PathParam_Fires()
     {
         return VerifyWithRecordsAsync("""
-            record R(string {|E128001:htmlFilePath|}, string title);
-            """);
+                                      record R(string {|E128001:htmlFilePath|}, string title);
+                                      """);
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_XPathParam_NoFire()
     {
         return VerifyAsync("""
-            class C { void M(string xPath) { } }
-            """);
+                           class C { void M(string xPath) { } }
+                           """);
     }
 
     [Fact]
@@ -90,8 +90,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_MessageParam_NoFire()
     {
         return VerifyAsync("""
-            class C { void M(string message) { } }
-            """);
+                           class C { void M(string message) { } }
+                           """);
     }
 
     [Fact]
@@ -99,14 +99,14 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_PathParam_NonEmptyBodyNoIO_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M(string path)
-                {
-                    _ = path.Length;
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   _ = path.Length;
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -114,8 +114,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_PathParam_NoBody_StillFires()
     {
         return VerifyAsync("""
-            interface I { void M(string {|E128001:path|}); }
-            """);
+                           interface I { void M(string {|E128001:path|}); }
+                           """);
     }
 
     [Fact]
@@ -123,8 +123,8 @@ public sealed class FileSystemPathAnalyzerTests
     public Task NamePattern_Message_SuggestsAmbiguous()
     {
         const string code = """
-            class C { void M(string path) { } }
-            """;
+                            class C { void M(string path) { } }
+                            """;
 
         var expected = DiagnosticResult
             .CompilerWarning("E128001")

@@ -14,7 +14,7 @@ public sealed class FileSystemInfoEqualityCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,22 +23,22 @@ public sealed class FileSystemInfoEqualityCodeFixTests
     public Task FileInfo_Equality_FixReplacesWithStringEquals()
     {
         const string source = """
-            using System;
-            using System.IO;
-            class C
-            {
-                bool M(FileInfo a, FileInfo b) => a {|E128030:==|} b;
-            }
-            """;
+                              using System;
+                              using System.IO;
+                              class C
+                              {
+                                  bool M(FileInfo a, FileInfo b) => a {|E128030:==|} b;
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            using System.IO;
-            class C
-            {
-                bool M(FileInfo a, FileInfo b) => string.Equals(a.FullName, b.FullName, StringComparison.Ordinal);
-            }
-            """;
+                                 using System;
+                                 using System.IO;
+                                 class C
+                                 {
+                                     bool M(FileInfo a, FileInfo b) => string.Equals(a.FullName, b.FullName, StringComparison.Ordinal);
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -48,22 +48,22 @@ public sealed class FileSystemInfoEqualityCodeFixTests
     public Task FileInfo_Inequality_FixReplacesWithNegatedStringEquals()
     {
         const string source = """
-            using System;
-            using System.IO;
-            class C
-            {
-                bool M(FileInfo a, FileInfo b) => a {|E128030:!=|} b;
-            }
-            """;
+                              using System;
+                              using System.IO;
+                              class C
+                              {
+                                  bool M(FileInfo a, FileInfo b) => a {|E128030:!=|} b;
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            using System.IO;
-            class C
-            {
-                bool M(FileInfo a, FileInfo b) => !string.Equals(a.FullName, b.FullName, StringComparison.Ordinal);
-            }
-            """;
+                                 using System;
+                                 using System.IO;
+                                 class C
+                                 {
+                                     bool M(FileInfo a, FileInfo b) => !string.Equals(a.FullName, b.FullName, StringComparison.Ordinal);
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

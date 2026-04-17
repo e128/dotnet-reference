@@ -13,7 +13,7 @@ public sealed class E128058ListAsReadOnlyAnalyzerTests
         var test = new CSharpAnalyzerTest<ListAsReadOnlyAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,13 +24,13 @@ public sealed class E128058ListAsReadOnlyAnalyzerTests
     public Task ListAsReadOnly_Reports_WhenListFieldReturnedAsIReadOnlyList()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class Catalog
-            {
-                private readonly List<string> _items = new List<string>();
-                public IReadOnlyList<string> Items => {|E128058:_items|};
-            }
-            """);
+                           using System.Collections.Generic;
+                           class Catalog
+                           {
+                               private readonly List<string> _items = new List<string>();
+                               public IReadOnlyList<string> Items => {|E128058:_items|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -38,13 +38,13 @@ public sealed class E128058ListAsReadOnlyAnalyzerTests
     public Task ListAsReadOnly_NoReport_WhenAsReadOnlyIsUsed()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class Catalog
-            {
-                private readonly List<string> _items = new List<string>();
-                public IReadOnlyList<string> Items => _items.AsReadOnly();
-            }
-            """);
+                           using System.Collections.Generic;
+                           class Catalog
+                           {
+                               private readonly List<string> _items = new List<string>();
+                               public IReadOnlyList<string> Items => _items.AsReadOnly();
+                           }
+                           """);
     }
 
     [Fact]
@@ -52,13 +52,13 @@ public sealed class E128058ListAsReadOnlyAnalyzerTests
     public Task ListAsReadOnly_NoReport_WhenReturnTypeIsNotReadOnly()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class Catalog
-            {
-                private readonly List<string> _items = new List<string>();
-                public List<string> Items => _items;
-            }
-            """);
+                           using System.Collections.Generic;
+                           class Catalog
+                           {
+                               private readonly List<string> _items = new List<string>();
+                               public List<string> Items => _items;
+                           }
+                           """);
     }
 
     [Fact]
@@ -66,12 +66,12 @@ public sealed class E128058ListAsReadOnlyAnalyzerTests
     public Task ListAsReadOnly_NoReport_WhenReturnedFromMethod()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class Catalog
-            {
-                private readonly List<string> _items = new List<string>();
-                public IReadOnlyList<string> GetItems() => _items.AsReadOnly();
-            }
-            """);
+                           using System.Collections.Generic;
+                           class Catalog
+                           {
+                               private readonly List<string> _items = new List<string>();
+                               public IReadOnlyList<string> GetItems() => _items.AsReadOnly();
+                           }
+                           """);
     }
 }

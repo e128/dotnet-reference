@@ -17,7 +17,7 @@ public sealed class StaleReferenceAssembliesCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = Net100WithTesting,
+            ReferenceAssemblies = Net100WithTesting
         }.RunAsync();
     }
 

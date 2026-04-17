@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-/// E128025: Detects <c>Guid.NewGuid()</c> usage inside string interpolation
-/// combined with <c>Path.Combine</c> or <c>Path.GetTempPath()</c> context.
-/// Project standard is <c>Path.GetRandomFileName()</c>.
+///     E128025: Detects <c>Guid.NewGuid()</c> usage inside string interpolation
+///     combined with <c>Path.Combine</c> or <c>Path.GetTempPath()</c> context.
+///     Project standard is <c>Path.GetRandomFileName()</c>.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class GuidNewGuidTempPathE128Analyzer : DiagnosticAnalyzer
@@ -18,15 +18,15 @@ public sealed class GuidNewGuidTempPathE128Analyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128025";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Guid.NewGuid() used in temp file path — use Path.GetRandomFileName()",
-        messageFormat: "Use Path.GetRandomFileName() instead of Guid.NewGuid() for temp file names",
-        category: "Style",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Guid.NewGuid() in temp file path construction should be replaced with " +
-            "Path.GetRandomFileName() per project conventions. Use Path.ChangeExtension() " +
-            "for cases that need a specific file extension.");
+        DiagnosticId,
+        "Guid.NewGuid() used in temp file path — use Path.GetRandomFileName()",
+        "Use Path.GetRandomFileName() instead of Guid.NewGuid() for temp file names",
+        "Style",
+        DiagnosticSeverity.Warning,
+        true,
+        "Guid.NewGuid() in temp file path construction should be replaced with " +
+        "Path.GetRandomFileName() per project conventions. Use Path.ChangeExtension() " +
+        "for cases that need a specific file extension.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -62,9 +62,9 @@ public sealed class GuidNewGuidTempPathE128Analyzer : DiagnosticAnalyzer
     private static bool IsGuidNewGuid(InvocationExpressionSyntax invocation)
     {
         return invocation.Expression is MemberAccessExpressionSyntax memberAccess
-            && string.Equals(memberAccess.Name.Identifier.Text, "NewGuid", StringComparison.Ordinal)
-            && memberAccess.Expression is IdentifierNameSyntax identifier
-            && string.Equals(identifier.Identifier.Text, "Guid", StringComparison.Ordinal);
+               && string.Equals(memberAccess.Name.Identifier.Text, "NewGuid", StringComparison.Ordinal)
+               && memberAccess.Expression is IdentifierNameSyntax identifier
+               && string.Equals(identifier.Identifier.Text, "Guid", StringComparison.Ordinal);
     }
 
     private static bool IsInsidePathCombineInterpolation(SyntaxNode node)
@@ -103,8 +103,8 @@ public sealed class GuidNewGuidTempPathE128Analyzer : DiagnosticAnalyzer
 
         var methodName = memberAccess.Name.Identifier.Text;
         return memberAccess.Expression is IdentifierNameSyntax receiver
-            && string.Equals(receiver.Identifier.Text, "Path", StringComparison.Ordinal)
-            && (string.Equals(methodName, "Combine", StringComparison.Ordinal)
-                || string.Equals(methodName, "GetTempPath", StringComparison.Ordinal));
+               && string.Equals(receiver.Identifier.Text, "Path", StringComparison.Ordinal)
+               && (string.Equals(methodName, "Combine", StringComparison.Ordinal)
+                   || string.Equals(methodName, "GetTempPath", StringComparison.Ordinal));
     }
 }

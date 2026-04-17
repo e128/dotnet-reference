@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128049: removes the <c>[DynamicallyAccessedMembers]</c> attribute.
+///     Code fix for E128049: removes the <c>[DynamicallyAccessedMembers]</c> attribute.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DynamicallyAccessedMembersGuardCodeFixProvider))]
 [Shared]
@@ -19,8 +19,10 @@ public sealed class DynamicallyAccessedMembersGuardCodeFixProvider : CodeFixProv
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DynamicallyAccessedMembersGuardAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -41,9 +43,9 @@ public sealed class DynamicallyAccessedMembersGuardCodeFixProvider : CodeFixProv
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Remove [DynamicallyAccessedMembers] attribute",
-                createChangedDocument: ct => RemoveAttributeAsync(context.Document, attribute, ct),
-                equivalenceKey: nameof(DynamicallyAccessedMembersGuardCodeFixProvider)),
+                "Remove [DynamicallyAccessedMembers] attribute",
+                ct => RemoveAttributeAsync(context.Document, attribute, ct),
+                nameof(DynamicallyAccessedMembersGuardCodeFixProvider)),
             diagnostic);
     }
 

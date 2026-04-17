@@ -16,12 +16,12 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
     internal const int MinChainLength = 3;
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Replace multi-string OR-chain with HashSet.Contains",
-        messageFormat: "Replace {0} '||'-chained string equality tests on '{1}' with a HashSet<string>.Contains() check",
-        category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Replace multi-string OR-chain with HashSet.Contains",
+        "Replace {0} '||'-chained string equality tests on '{1}' with a HashSet<string>.Contains() check",
+        "Performance",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -66,7 +66,8 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
     }
 
     private static List<StringEqualityInfo> CollectStringEqualityInfos(
-        SyntaxNodeAnalysisContext context, List<ExpressionSyntax> operands)
+        SyntaxNodeAnalysisContext context,
+        List<ExpressionSyntax> operands)
     {
         var infos = new List<StringEqualityInfo>(operands.Count);
         foreach (var operand in operands)
@@ -136,14 +137,16 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
     //   Form 1: string.Equals(operand, "literal", StringComparison.X)
     //   Form 2: operand == "literal"  (identifier on left, string literal on right)
     internal static StringEqualityInfo? TryExtractStringEquality(
-        SemanticModel semanticModel, ExpressionSyntax expr, CancellationToken cancellationToken)
+        SemanticModel semanticModel,
+        ExpressionSyntax expr,
+        CancellationToken cancellationToken)
     {
         // Form 1: string.Equals(operand, "literal", StringComparison.X)
         if (expr is InvocationExpressionSyntax invocation
             && invocation.Expression is MemberAccessExpressionSyntax
             {
                 Expression: PredefinedTypeSyntax { Keyword.ValueText: "string" },
-                Name.Identifier.ValueText: "Equals",
+                Name.Identifier.ValueText: "Equals"
             }
             && invocation.ArgumentList.Arguments.Count == 3)
         {
@@ -158,12 +161,12 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
             // Semantic verification: confirm the call resolves to System.String.Equals.
             var symbolInfo = semanticModel.GetSymbolInfo(invocation, cancellationToken);
             return symbolInfo.Symbol is not IMethodSymbol method
-                || method.ContainingType?.SpecialType != SpecialType.System_String
+                   || method.ContainingType?.SpecialType != SpecialType.System_String
                 ? null
                 : new StringEqualityInfo(
-                args[0].Expression.ToString(),
-                ((LiteralExpressionSyntax)literalArg).Token.ValueText,
-                args[2].Expression.ToString());
+                    args[0].Expression.ToString(),
+                    ((LiteralExpressionSyntax)literalArg).Token.ValueText,
+                    args[2].Expression.ToString());
         }
 
         // Form 2: operand == "literal"
@@ -171,9 +174,9 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
         {
             RawKind: (int)SyntaxKind.EqualsExpression,
             Left: var left,
-            Right: LiteralExpressionSyntax rightLit,
+            Right: LiteralExpressionSyntax rightLit
         }
-            && rightLit.IsKind(SyntaxKind.StringLiteralExpression)
+               && rightLit.IsKind(SyntaxKind.StringLiteralExpression)
             ? new StringEqualityInfo(left.ToString(), rightLit.Token.ValueText, "==")
             : null;
     }
@@ -191,12 +194,17 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
         internal string Literal { get; }
         internal string ComparisonKey { get; }
 
-        public bool Equals(StringEqualityInfo other) =>
-            string.Equals(OperandText, other.OperandText, StringComparison.Ordinal)
-            && string.Equals(Literal, other.Literal, StringComparison.Ordinal)
-            && string.Equals(ComparisonKey, other.ComparisonKey, StringComparison.Ordinal);
+        public bool Equals(StringEqualityInfo other)
+        {
+            return string.Equals(OperandText, other.OperandText, StringComparison.Ordinal)
+                   && string.Equals(Literal, other.Literal, StringComparison.Ordinal)
+                   && string.Equals(ComparisonKey, other.ComparisonKey, StringComparison.Ordinal);
+        }
 
-        public override bool Equals(object? obj) => obj is StringEqualityInfo other && Equals(other);
+        public override bool Equals(object? obj)
+        {
+            return obj is StringEqualityInfo other && Equals(other);
+        }
 
         public override int GetHashCode()
         {
@@ -210,6 +218,9 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        public override string ToString() => $"({OperandText}, {Literal}, {ComparisonKey})";
+        public override string ToString()
+        {
+            return $"({OperandText}, {Literal}, {ComparisonKey})";
+        }
     }
 }

@@ -18,8 +18,10 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GeneratedRegexAnalyzer.CompiledDiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -39,9 +41,9 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Remove redundant RegexOptions.Compiled",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(GeneratedRegexCompiledCodeFixProvider)),
+                "Remove redundant RegexOptions.Compiled",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(GeneratedRegexCompiledCodeFixProvider)),
             diagnostic);
     }
 
@@ -118,9 +120,9 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : CodeFixProvider
         return IsCompiledReference(expression, semanticModel, cancellationToken)
             ? CreateRegexOptionsNone(expression)
             : expression is BinaryExpressionSyntax binary
-            && binary.IsKind(SyntaxKind.BitwiseOrExpression)
-            ? RemoveCompiledFromBinary(binary, expression, semanticModel, cancellationToken)
-            : expression;
+              && binary.IsKind(SyntaxKind.BitwiseOrExpression)
+                ? RemoveCompiledFromBinary(binary, expression, semanticModel, cancellationToken)
+                : expression;
     }
 
     private static ExpressionSyntax? RemoveCompiledFromBinary(
@@ -157,12 +159,14 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : CodeFixProvider
         return newRight is not null && newRight != binary.Right ? binary.WithRight(newRight).WithTriviaFrom(originalExpression) : (ExpressionSyntax?)null;
     }
 
-    private static MemberAccessExpressionSyntax CreateRegexOptionsNone(ExpressionSyntax triviaSource) =>
-        SyntaxFactory.MemberAccessExpression(
-            SyntaxKind.SimpleMemberAccessExpression,
-            SyntaxFactory.IdentifierName("RegexOptions"),
-            SyntaxFactory.IdentifierName("None"))
+    private static MemberAccessExpressionSyntax CreateRegexOptionsNone(ExpressionSyntax triviaSource)
+    {
+        return SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName("RegexOptions"),
+                SyntaxFactory.IdentifierName("None"))
             .WithTriviaFrom(triviaSource);
+    }
 
     private static bool IsCompiledReference(
         ExpressionSyntax expression,
@@ -177,10 +181,10 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : CodeFixProvider
 
         var symbol = semanticModel.GetSymbolInfo(memberAccess, cancellationToken).Symbol;
         return symbol is IFieldSymbol { ContainingType: { } containingType }
-            && string.Equals(containingType.Name, "RegexOptions", StringComparison.Ordinal)
-            && containingType.ContainingNamespace is { Name: "RegularExpressions" }
-            && containingType.ContainingNamespace.ContainingNamespace is { Name: "Text" }
-            && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" }
-            && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+               && string.Equals(containingType.Name, "RegexOptions", StringComparison.Ordinal)
+               && containingType.ContainingNamespace is { Name: "RegularExpressions" }
+               && containingType.ContainingNamespace.ContainingNamespace is { Name: "Text" }
+               && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" }
+               && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
     }
 }

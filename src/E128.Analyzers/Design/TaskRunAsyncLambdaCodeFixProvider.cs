@@ -10,9 +10,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128036: removes the <c>Task.Run</c> wrapper and keeps the inner async expression.
-/// <c>Task.Run(async () => await DoWorkAsync())</c> becomes <c>DoWorkAsync()</c>.
-/// <c>Task.Run(async () => { await A(); await B(); })</c> is not auto-fixable (block body).
+///     Code fix for E128036: removes the <c>Task.Run</c> wrapper and keeps the inner async expression.
+///     <c>Task.Run(async () => await DoWorkAsync())</c> becomes <c>DoWorkAsync()</c>.
+///     <c>Task.Run(async () => { await A(); await B(); })</c> is not auto-fixable (block body).
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TaskRunAsyncLambdaCodeFixProvider))]
 [Shared]
@@ -21,8 +21,10 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TaskRunAsyncLambdaAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -57,9 +59,9 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Remove Task.Run wrapper",
-                createChangedDocument: ct => RemoveTaskRunAsync(context.Document, root, invocation, innerExpression, ct),
-                equivalenceKey: nameof(TaskRunAsyncLambdaCodeFixProvider)),
+                "Remove Task.Run wrapper",
+                ct => RemoveTaskRunAsync(context.Document, root, invocation, innerExpression, ct),
+                nameof(TaskRunAsyncLambdaCodeFixProvider)),
             diagnostic);
     }
 
@@ -69,7 +71,7 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : CodeFixProvider
         {
             ParenthesizedLambdaExpressionSyntax { ExpressionBody: { } body } => UnwrapAwait(body),
             SimpleLambdaExpressionSyntax { ExpressionBody: { } body } => UnwrapAwait(body),
-            _ => null,
+            _ => null
         };
     }
 

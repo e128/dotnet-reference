@@ -13,12 +13,12 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128002";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use string.Empty instead of \"\"",
-        messageFormat: "Replace empty string literal \"\" with string.Empty",
-        category: "Style",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use string.Empty instead of \"\"",
+        "Replace empty string literal \"\" with string.Empty",
+        "Style",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

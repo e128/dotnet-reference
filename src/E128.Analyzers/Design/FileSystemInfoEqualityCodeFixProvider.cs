@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
@@ -17,8 +18,10 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FileSystemInfoEqualityAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -35,9 +38,9 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: "Compare .FullName instead",
-                    createChangedDocument: ct => FixBinaryExpressionAsync(context.Document, root, binary, ct),
-                    equivalenceKey: nameof(FileSystemInfoEqualityCodeFixProvider)),
+                    "Compare .FullName instead",
+                    ct => FixBinaryExpressionAsync(context.Document, root, binary, ct),
+                    nameof(FileSystemInfoEqualityCodeFixProvider)),
                 diagnostic);
         }
     }
@@ -60,7 +63,10 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
     }
 
     private static Task<Document> FixBinaryExpressionAsync(
-        Document document, SyntaxNode root, BinaryExpressionSyntax binary, CancellationToken cancellationToken)
+        Document document,
+        SyntaxNode root,
+        BinaryExpressionSyntax binary,
+        CancellationToken cancellationToken)
     {
         _ = cancellationToken;
 
@@ -89,7 +95,8 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
     }
 
     private static InvocationExpressionSyntax CreateStringEqualsInvocation(
-        ExpressionSyntax left, ExpressionSyntax right)
+        ExpressionSyntax left,
+        ExpressionSyntax right)
     {
         var stringEqualsAccess = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
@@ -105,11 +112,11 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
             stringEqualsAccess,
             SyntaxFactory.ArgumentList(
                 SyntaxFactory.SeparatedList(
-                [
-                    SyntaxFactory.Argument(left),
-                    SyntaxFactory.Argument(right),
-                    SyntaxFactory.Argument(ordinalArg),
-                ])));
+                    [
+                        SyntaxFactory.Argument(left),
+                        SyntaxFactory.Argument(right),
+                        SyntaxFactory.Argument(ordinalArg)
+                    ])));
     }
 
     private static SyntaxNode EnsureSystemUsing(SyntaxNode root)
@@ -122,7 +129,7 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
         var hasSystem = false;
         foreach (var directive in compilationUnit.Usings)
         {
-            if (string.Equals(directive.Name?.ToString(), "System", System.StringComparison.Ordinal))
+            if (string.Equals(directive.Name?.ToString(), "System", StringComparison.Ordinal))
             {
                 hasSystem = true;
                 break;
@@ -135,7 +142,7 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
         }
 
         var usingDirective = SyntaxFactory.UsingDirective(
-            SyntaxFactory.ParseName("System"))
+                SyntaxFactory.ParseName("System"))
             .WithTrailingTrivia(SyntaxFactory.LineFeed);
 
         return compilationUnit.WithUsings(compilationUnit.Usings.Insert(0, usingDirective));

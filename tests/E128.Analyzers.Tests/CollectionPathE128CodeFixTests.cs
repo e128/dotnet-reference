@@ -14,7 +14,7 @@ public sealed class CollectionPathE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,23 +23,23 @@ public sealed class CollectionPathE128CodeFixTests
     public Task ListStringPathToFileInfo_Fixed()
     {
         const string source = """
-            using System.Collections.Generic;
+                              using System.Collections.Generic;
 
-            public class Service
-            {
-                public void Process(List<string> {|E128053:filePaths|}) { }
-            }
-            """;
+                              public class Service
+                              {
+                                  public void Process(List<string> {|E128053:filePaths|}) { }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Collections.Generic;
-            using System.IO;
+                                 using System.Collections.Generic;
+                                 using System.IO;
 
-            public class Service
-            {
-                public void Process(List<FileInfo> filePaths) { }
-            }
-            """;
+                                 public class Service
+                                 {
+                                     public void Process(List<FileInfo> filePaths) { }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -49,23 +49,23 @@ public sealed class CollectionPathE128CodeFixTests
     public Task ListStringDirToDirectoryInfo_Fixed()
     {
         const string source = """
-            using System.Collections.Generic;
+                              using System.Collections.Generic;
 
-            public class Service
-            {
-                public void Process(List<string> {|E128053:directories|}) { }
-            }
-            """;
+                              public class Service
+                              {
+                                  public void Process(List<string> {|E128053:directories|}) { }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Collections.Generic;
-            using System.IO;
+                                 using System.Collections.Generic;
+                                 using System.IO;
 
-            public class Service
-            {
-                public void Process(List<DirectoryInfo> directories) { }
-            }
-            """;
+                                 public class Service
+                                 {
+                                     public void Process(List<DirectoryInfo> directories) { }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

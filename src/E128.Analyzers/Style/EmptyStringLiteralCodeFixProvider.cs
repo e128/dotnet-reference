@@ -17,8 +17,10 @@ public sealed class EmptyStringLiteralCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [EmptyStringLiteralAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -38,9 +40,9 @@ public sealed class EmptyStringLiteralCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace \"\" with string.Empty",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(EmptyStringLiteralCodeFixProvider)),
+                "Replace \"\" with string.Empty",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(EmptyStringLiteralCodeFixProvider)),
             diagnostic);
     }
 

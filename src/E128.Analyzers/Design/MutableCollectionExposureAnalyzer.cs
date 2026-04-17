@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
@@ -7,10 +8,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128052: Flags public/internal methods and properties that expose mutable collection types
-/// (<c>List&lt;T&gt;</c>, <c>Dictionary&lt;TKey,TValue&gt;</c>, <c>HashSet&lt;T&gt;</c>, etc.)
-/// where immutable interfaces (<c>IReadOnlyList&lt;T&gt;</c>, <c>IReadOnlyDictionary&lt;TKey,TValue&gt;</c>,
-/// <c>IReadOnlySet&lt;T&gt;</c>) would be sufficient.
+///     E128052: Flags public/internal methods and properties that expose mutable collection types
+///     (<c>List&lt;T&gt;</c>, <c>Dictionary&lt;TKey,TValue&gt;</c>, <c>HashSet&lt;T&gt;</c>, etc.)
+///     where immutable interfaces (<c>IReadOnlyList&lt;T&gt;</c>, <c>IReadOnlyDictionary&lt;TKey,TValue&gt;</c>,
+///     <c>IReadOnlySet&lt;T&gt;</c>) would be sufficient.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
@@ -24,13 +25,13 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         "State",
         "Stats",
         "Accumulator",
-        "Options",
+        "Options"
     ];
 
     /// <summary>
-    /// Mutable type metadata names -> suggested immutable interface display names.
-    /// Keyed by the unbound generic metadata name (e.g. "System.Collections.Generic.List`1").
-    /// Value is (metadata name of immutable interface, display template like "IReadOnlyList&lt;{0}&gt;").
+    ///     Mutable type metadata names -> suggested immutable interface display names.
+    ///     Keyed by the unbound generic metadata name (e.g. "System.Collections.Generic.List`1").
+    ///     Value is (metadata name of immutable interface, display template like "IReadOnlyList&lt;{0}&gt;").
     /// </summary>
     private static readonly ImmutableArray<(string MetadataName, string DisplayTemplate)> MutableTypeEntries =
     [
@@ -40,20 +41,20 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         ("System.Collections.Generic.SortedSet`1", "IReadOnlySet<{0}>"),
         ("System.Collections.Generic.SortedDictionary`2", "IReadOnlyDictionary<{0}, {1}>"),
         ("System.Collections.Generic.SortedList`2", "IReadOnlyDictionary<{0}, {1}>"),
-        ("System.Collections.ObjectModel.Collection`1", "IReadOnlyList<{0}>"),
+        ("System.Collections.ObjectModel.Collection`1", "IReadOnlyList<{0}>")
     ];
 
     internal static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use immutable collection interface instead of mutable concrete type",
-        messageFormat: "'{0}' exposes mutable '{1}' — use '{2}' instead",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true,
-        description: "Public and internal API surfaces should expose immutable collection interfaces " +
-            "(IReadOnlyList<T>, IReadOnlyDictionary<TKey,TValue>, IReadOnlySet<T>) instead of " +
-            "mutable concrete types (List<T>, Dictionary<TKey,TValue>, HashSet<T>). " +
-            "This enforces immutability by default at the API boundary.");
+        DiagnosticId,
+        "Use immutable collection interface instead of mutable concrete type",
+        "'{0}' exposes mutable '{1}' — use '{2}' instead",
+        "Design",
+        DiagnosticSeverity.Info,
+        true,
+        "Public and internal API surfaces should expose immutable collection interfaces " +
+        "(IReadOnlyList<T>, IReadOnlyDictionary<TKey,TValue>, IReadOnlySet<T>) instead of " +
+        "mutable concrete types (List<T>, Dictionary<TKey,TValue>, HashSet<T>). " +
+        "This enforces immutability by default at the API boundary.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -154,9 +155,9 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
                 Rule,
                 location,
                 ImmutableDictionary.CreateRange(
-                [
-                    new System.Collections.Generic.KeyValuePair<string, string?>(SuggestedTypeKey, suggestion),
-                ]),
+                    [
+                        new KeyValuePair<string, string?>(SuggestedTypeKey, suggestion)
+                    ]),
                 method.Name,
                 returnType.ToDisplayString(),
                 suggestion));
@@ -211,9 +212,9 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
                 Rule,
                 location,
                 ImmutableDictionary.CreateRange(
-                [
-                    new System.Collections.Generic.KeyValuePair<string, string?>(SuggestedTypeKey, suggestion),
-                ]),
+                    [
+                        new KeyValuePair<string, string?>(SuggestedTypeKey, suggestion)
+                    ]),
                 property.Name,
                 propertyType.ToDisplayString(),
                 suggestion));
@@ -290,7 +291,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         return args.Length == 1
             ? string.Format(CultureInfo.InvariantCulture, template, args[0].ToDisplayString())
             : args.Length == 2
-            ? string.Format(CultureInfo.InvariantCulture, template, args[0].ToDisplayString(), args[1].ToDisplayString())
-            : null;
+                ? string.Format(CultureInfo.InvariantCulture, template, args[0].ToDisplayString(), args[1].ToDisplayString())
+                : null;
     }
 }

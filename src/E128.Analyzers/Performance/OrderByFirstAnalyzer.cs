@@ -13,12 +13,12 @@ public sealed class OrderByFirstAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128009";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use MinBy/MaxBy instead of OrderBy().First()",
-        messageFormat: "Replace OrderBy/OrderByDescending + First/FirstOrDefault with MinBy/MaxBy for O(n) instead of O(n log n)",
-        category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use MinBy/MaxBy instead of OrderBy().First()",
+        "Replace OrderBy/OrderByDescending + First/FirstOrDefault with MinBy/MaxBy for O(n) instead of O(n log n)",
+        "Performance",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -138,10 +138,10 @@ public sealed class OrderByFirstAnalyzer : DiagnosticAnalyzer
 
         var ns = containingType.ContainingNamespace;
         return ns is not null
-            && string.Equals(ns.Name, "Linq", StringComparison.Ordinal)
-            && ns.ContainingNamespace is not null
-            && string.Equals(ns.ContainingNamespace.Name, "System", StringComparison.Ordinal)
-            && ns.ContainingNamespace.ContainingNamespace is not null
-            && ns.ContainingNamespace.ContainingNamespace.IsGlobalNamespace;
+               && string.Equals(ns.Name, "Linq", StringComparison.Ordinal)
+               && ns.ContainingNamespace is not null
+               && string.Equals(ns.ContainingNamespace.Name, "System", StringComparison.Ordinal)
+               && ns.ContainingNamespace.ContainingNamespace is not null
+               && ns.ContainingNamespace.ContainingNamespace.IsGlobalNamespace;
     }
 }

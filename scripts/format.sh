@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Run dotnet format on the solution or specific files.
-# Usage: format.sh [--check] [--changed] [FILE...]
+# Run jb cleanupcode then dotnet format on the solution or specific files.
+# Usage: format.sh [--check] [--changed] [--no-jb] [FILE...]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-CHECK=false; CHANGED=false
+CHECK=false; CHANGED=false; NO_JB=false
 INCLUDES=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --check)   CHECK=true ;;
         --changed) CHANGED=true ;;
+        --no-jb)   NO_JB=true ;;
         -*)        err "Unknown flag: $1"; exit 1 ;;
         *)         INCLUDES+=("$1") ;;
     esac
@@ -33,6 +34,25 @@ if [[ "$CHANGED" == true ]]; then
     fi
 elif [[ ${#INCLUDES[@]} -gt 0 ]]; then
     FILES=("${INCLUDES[@]}")
+fi
+
+# jb cleanupcode — runs first (semantic cleanup: naming, arrangement, null patterns)
+# Skipped in --check mode (no verify-only equivalent) and when --no-jb is set
+if [[ "$CHECK" == false && "$NO_JB" == false ]]; then
+    if ! command -v jb &>/dev/null; then
+        echo "Format: jb not found — skipping ReSharper cleanup (install JetBrains.ReSharper.GlobalTools)"
+    else
+        JB_ARGS=(jb cleanupcode "$SOLUTION" "--profile=Built-in: Full Cleanup")
+        if [[ ${#FILES[@]} -gt 0 ]]; then
+            for f in "${FILES[@]}"; do
+                JB_ARGS+=("--include=$f")
+            done
+        else
+            JB_ARGS+=("--include=**/*.cs")
+        fi
+        "${JB_ARGS[@]}"
+        ok "Format: jb cleanup applied"
+    fi
 fi
 
 if [[ ${#FILES[@]} -gt 0 ]]; then

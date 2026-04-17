@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -8,9 +9,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.FileSystem;
 
 /// <summary>
-/// E128053: Flags parameters typed as a collection of strings (e.g., <c>IReadOnlyList&lt;string&gt;</c>)
-/// whose name suggests file system paths. Use <c>FileInfo</c> or <c>DirectoryInfo</c> as the
-/// element type instead of <see langword="string"/>.
+///     E128053: Flags parameters typed as a collection of strings (e.g., <c>IReadOnlyList&lt;string&gt;</c>)
+///     whose name suggests file system paths. Use <c>FileInfo</c> or <c>DirectoryInfo</c> as the
+///     element type instead of <see langword="string" />.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
@@ -19,19 +20,19 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
     internal const string SuggestedTypeKey = "SuggestedType";
 
     internal static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use collection of FileInfo or DirectoryInfo instead of collection of string for file system paths",
-        messageFormat: "Parameter '{0}' appears to represent a collection of {1}. Consider using '{2}' instead of '{3}'.",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use collection of FileInfo or DirectoryInfo instead of collection of string for file system paths",
+        "Parameter '{0}' appears to represent a collection of {1}. Consider using '{2}' instead of '{3}'.",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     // Generic collection type names that, when parameterized with string, suggest FileInfo/DirectoryInfo.
     private static readonly ImmutableArray<string> CollectionTypeNames =
     [
         "IReadOnlyList", "IList", "List",
         "IEnumerable", "ICollection", "IReadOnlyCollection",
-        "ImmutableArray",
+        "ImmutableArray"
     ];
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -58,7 +59,7 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
             MethodDeclarationSyntax method => method.ParameterList,
             ConstructorDeclarationSyntax ctor => ctor.ParameterList,
             RecordDeclarationSyntax record => record.ParameterList,
-            _ => null,
+            _ => null
         };
 
         if (paramList is null)
@@ -90,9 +91,9 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
         var suggestedCollectionType = genericName.Identifier.ValueText + "<" + suggestedType + ">";
 
         var properties = ImmutableDictionary.CreateRange(
-        [
-            new System.Collections.Generic.KeyValuePair<string, string?>(SuggestedTypeKey, suggestedType),
-        ]);
+            [
+                new KeyValuePair<string, string?>(SuggestedTypeKey, suggestedType)
+            ]);
 
         context.ReportDiagnostic(Diagnostic.Create(Rule,
             param.Identifier.GetLocation(),
@@ -111,7 +112,7 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
         {
             GenericNameSyntax direct => direct,
             QualifiedNameSyntax qualified when qualified.Right is GenericNameSyntax nested => nested,
-            _ => null,
+            _ => null
         };
 
         if (candidate is null)

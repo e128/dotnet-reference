@@ -14,7 +14,7 @@ public sealed class TimeSpanForDurationE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,20 +23,20 @@ public sealed class TimeSpanForDurationE128CodeFixTests
     public Task PropertyIntToTimeSpan_Fixed()
     {
         const string source = """
-            using System;
-            public class Config
-            {
-                public int {|E128050:TimeoutSeconds|} { get; set; }
-            }
-            """;
+                              using System;
+                              public class Config
+                              {
+                                  public int {|E128050:TimeoutSeconds|} { get; set; }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            public class Config
-            {
-                public TimeSpan TimeoutSeconds { get; set; }
-            }
-            """;
+                                 using System;
+                                 public class Config
+                                 {
+                                     public TimeSpan TimeoutSeconds { get; set; }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -46,20 +46,20 @@ public sealed class TimeSpanForDurationE128CodeFixTests
     public Task ParameterDoubleToTimeSpan_Fixed()
     {
         const string source = """
-            using System;
-            public class Service
-            {
-                public void Run(double {|E128050:DelayMs|}) { }
-            }
-            """;
+                              using System;
+                              public class Service
+                              {
+                                  public void Run(double {|E128050:DelayMs|}) { }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            public class Service
-            {
-                public void Run(TimeSpan DelayMs) { }
-            }
-            """;
+                                 using System;
+                                 public class Service
+                                 {
+                                     public void Run(TimeSpan DelayMs) { }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

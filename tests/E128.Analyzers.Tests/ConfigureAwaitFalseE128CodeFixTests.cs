@@ -16,7 +16,7 @@ public sealed class ConfigureAwaitFalseE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.SolutionTransforms.Add((solution, projectId) =>
         {

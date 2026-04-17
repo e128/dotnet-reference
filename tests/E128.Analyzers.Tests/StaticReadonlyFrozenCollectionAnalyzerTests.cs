@@ -13,7 +13,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
         var test = new CSharpAnalyzerTest<StaticReadonlyFrozenCollectionAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -26,12 +26,12 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task FiresOnHashSet_WhenStaticReadonlyWithInitializer()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class C
-            {
-                private static readonly {|E128027:HashSet<string> Tags = new() { "a", "b" }|};
-            }
-            """);
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static readonly {|E128027:HashSet<string> Tags = new() { "a", "b" }|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -39,13 +39,13 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task FiresOnHashSet_WhenStaticReadonlyWithComparer()
     {
         return VerifyAsync("""
-            using System;
-            using System.Collections.Generic;
-            class C
-            {
-                private static readonly {|E128027:HashSet<string> Tags = new(StringComparer.OrdinalIgnoreCase) { "a", "b" }|};
-            }
-            """);
+                           using System;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static readonly {|E128027:HashSet<string> Tags = new(StringComparer.OrdinalIgnoreCase) { "a", "b" }|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -53,12 +53,12 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task FiresOnDictionary_WhenStaticReadonlyWithInitializer()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class C
-            {
-                private static readonly {|E128027:Dictionary<string, int> Lookup = new() { ["x"] = 1, ["y"] = 2 }|};
-            }
-            """);
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static readonly {|E128027:Dictionary<string, int> Lookup = new() { ["x"] = 1, ["y"] = 2 }|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -66,13 +66,13 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task FiresOnDictionary_WhenStaticReadonlyWithComparer()
     {
         return VerifyAsync("""
-            using System;
-            using System.Collections.Generic;
-            class C
-            {
-                private static readonly {|E128027:Dictionary<string, int> Lookup = new(StringComparer.Ordinal) { ["x"] = 1 }|};
-            }
-            """);
+                           using System;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static readonly {|E128027:Dictionary<string, int> Lookup = new(StringComparer.Ordinal) { ["x"] = 1 }|};
+                           }
+                           """);
     }
 
     #endregion Fires
@@ -84,15 +84,15 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task DoesNotFire_WhenAlreadyFrozenSet()
     {
         return VerifyAsync("""
-            using System;
-            using System.Collections.Frozen;
-            using System.Collections.Generic;
-            class C
-            {
-                private static readonly FrozenSet<string> Tags =
-                    new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "a", "b" }.ToFrozenSet();
-            }
-            """);
+                           using System;
+                           using System.Collections.Frozen;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static readonly FrozenSet<string> Tags =
+                                   new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "a", "b" }.ToFrozenSet();
+                           }
+                           """);
     }
 
     [Fact]
@@ -100,14 +100,14 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task DoesNotFire_WhenAlreadyFrozenDictionary()
     {
         return VerifyAsync("""
-            using System.Collections.Frozen;
-            using System.Collections.Generic;
-            class C
-            {
-                private static readonly FrozenDictionary<string, int> Lookup =
-                    new Dictionary<string, int> { ["x"] = 1 }.ToFrozenDictionary();
-            }
-            """);
+                           using System.Collections.Frozen;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static readonly FrozenDictionary<string, int> Lookup =
+                                   new Dictionary<string, int> { ["x"] = 1 }.ToFrozenDictionary();
+                           }
+                           """);
     }
 
     [Fact]
@@ -115,12 +115,12 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task DoesNotFire_WhenInstanceField()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class C
-            {
-                private readonly HashSet<string> _items = new() { "a" };
-            }
-            """);
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private readonly HashSet<string> _items = new() { "a" };
+                           }
+                           """);
     }
 
     [Fact]
@@ -128,12 +128,12 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task DoesNotFire_WhenNotReadonly()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class C
-            {
-                private static HashSet<string> _cache = new();
-            }
-            """);
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static HashSet<string> _cache = new();
+                           }
+                           """);
     }
 
     [Fact]
@@ -141,17 +141,17 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task DoesNotFire_WhenInitializedInStaticConstructor()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class C
-            {
-                private static readonly HashSet<string> Built;
-                static C()
-                {
-                    Built = new HashSet<string>();
-                    Built.Add("x");
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static readonly HashSet<string> Built;
+                               static C()
+                               {
+                                   Built = new HashSet<string>();
+                                   Built.Add("x");
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -159,12 +159,12 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     public Task DoesNotFire_WhenImmutableHashSet()
     {
         return VerifyAsync("""
-            using System.Collections.Immutable;
-            class C
-            {
-                private static readonly ImmutableHashSet<string> Safe = ImmutableHashSet.Create("a", "b");
-            }
-            """);
+                           using System.Collections.Immutable;
+                           class C
+                           {
+                               private static readonly ImmutableHashSet<string> Safe = ImmutableHashSet.Create("a", "b");
+                           }
+                           """);
     }
 
     #endregion Does not fire

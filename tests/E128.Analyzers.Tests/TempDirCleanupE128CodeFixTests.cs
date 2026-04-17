@@ -16,7 +16,7 @@ public sealed class TempDirCleanupE128CodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         };
         return test.RunAsync();
     }
@@ -26,45 +26,45 @@ public sealed class TempDirCleanupE128CodeFixTests
     public Task TempDirCleanup_CodeFix_AddsIAsyncLifetime()
     {
         const string source = """
-            using System.IO;
-            using System.Threading.Tasks;
+                              using System.IO;
+                              using System.Threading.Tasks;
 
-            interface IAsyncLifetime
-            {
-                Task InitializeAsync();
-                Task DisposeAsync();
-            }
+                              interface IAsyncLifetime
+                              {
+                                  Task InitializeAsync();
+                                  Task DisposeAsync();
+                              }
 
-            class {|E128054:MyTests|}
-            {
-                private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
-            }
-            """;
+                              class {|E128054:MyTests|}
+                              {
+                                  private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.IO;
-            using System.Threading.Tasks;
+                                 using System.IO;
+                                 using System.Threading.Tasks;
 
-            interface IAsyncLifetime
-            {
-                Task InitializeAsync();
-                Task DisposeAsync();
-            }
+                                 interface IAsyncLifetime
+                                 {
+                                     Task InitializeAsync();
+                                     Task DisposeAsync();
+                                 }
 
-            class MyTests
-            : IAsyncLifetime
-            {
-                private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
+                                 class MyTests
+                                 : IAsyncLifetime
+                                 {
+                                     private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
 
-            public Task InitializeAsync() => Task.CompletedTask;
+                                 public Task InitializeAsync() => Task.CompletedTask;
 
-                public Task DisposeAsync()
-                {
-                    Directory.Delete(_path, true);
-                    return Task.CompletedTask;
-                }
-            }
-            """;
+                                     public Task DisposeAsync()
+                                     {
+                                         Directory.Delete(_path, true);
+                                         return Task.CompletedTask;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

@@ -9,9 +9,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128038: Flags <c>Task.WhenAll(collection.Select(async x => await httpClient.Method(url)))</c>
-/// where the enclosing async method has a <see cref="System.Threading.CancellationToken"/> parameter
-/// but that token is not forwarded to the HttpClient or Playwright method inside the lambda.
+///     E128038: Flags <c>Task.WhenAll(collection.Select(async x => await httpClient.Method(url)))</c>
+///     where the enclosing async method has a <see cref="System.Threading.CancellationToken" /> parameter
+///     but that token is not forwarded to the HttpClient or Playwright method inside the lambda.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnalyzer
@@ -19,15 +19,15 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
     internal const string DiagnosticId = "E128038";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Task.WhenAll async lambda missing CancellationToken propagation",
-        messageFormat: "The async lambda inside Task.WhenAll calls an HttpClient or Playwright method without passing the enclosing CancellationToken",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "When an enclosing async method has a CancellationToken parameter, " +
-            "async lambdas inside Task.WhenAll must propagate that token to HttpClient and Playwright methods. " +
-            "Without propagation, cancellation of the outer operation does not cancel the individual tasks.");
+        DiagnosticId,
+        "Task.WhenAll async lambda missing CancellationToken propagation",
+        "The async lambda inside Task.WhenAll calls an HttpClient or Playwright method without passing the enclosing CancellationToken",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "When an enclosing async method has a CancellationToken parameter, " +
+        "async lambdas inside Task.WhenAll must propagate that token to HttpClient and Playwright methods. " +
+        "Without propagation, cancellation of the outer operation does not cancel the individual tasks.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -78,7 +78,7 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
         var hasUnpropagatedCall = lambdaArg.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Any(inv => IsHttpClientOrPlaywrightMethod(inv)
-                && !HasCancellationTokenArgument(context, inv));
+                        && !HasCancellationTokenArgument(context, inv));
 
         if (hasUnpropagatedCall)
         {
@@ -90,8 +90,8 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
     {
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
         return symbolInfo.Symbol is IMethodSymbol method
-            && string.Equals(method.Name, "WhenAll", StringComparison.Ordinal)
-            && string.Equals(method.ContainingType?.ToDisplayString(), "System.Threading.Tasks.Task", StringComparison.Ordinal);
+               && string.Equals(method.Name, "WhenAll", StringComparison.Ordinal)
+               && string.Equals(method.ContainingType?.ToDisplayString(), "System.Threading.Tasks.Task", StringComparison.Ordinal);
     }
 
     private static bool TryGetSelectInvocation(ExpressionSyntax expression, out InvocationExpressionSyntax selectInvocation)
@@ -126,7 +126,7 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
         {
             ParenthesizedLambdaExpressionSyntax pLambda => pLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
             SimpleLambdaExpressionSyntax sLambda => sLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            _ => false,
+            _ => false
         };
     }
 
@@ -158,21 +158,27 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
         return IsHttpClientMethod(methodName) || IsPlaywrightMethod(methodName);
     }
 
-    private static bool IsHttpClientMethod(string name) => name switch
+    private static bool IsHttpClientMethod(string name)
     {
-        "GetAsync" or "PostAsync" or "SendAsync" or "PutAsync" or "DeleteAsync"
-            or "PatchAsync" or "GetStringAsync" or "GetStreamAsync" or "GetByteArrayAsync" => true,
-        _ => false,
-    };
+        return name switch
+        {
+            "GetAsync" or "PostAsync" or "SendAsync" or "PutAsync" or "DeleteAsync"
+                or "PatchAsync" or "GetStringAsync" or "GetStreamAsync" or "GetByteArrayAsync" => true,
+            _ => false
+        };
+    }
 
-    private static bool IsPlaywrightMethod(string name) => name switch
+    private static bool IsPlaywrightMethod(string name)
     {
-        "GotoAsync" or "ClickAsync" or "FillAsync" or "TypeAsync" or "TapAsync"
-            or "CheckAsync" or "UncheckAsync" or "SelectOptionAsync" or "HoverAsync"
-            or "FocusAsync" or "PressAsync" or "DispatchEventAsync" or "WaitForSelectorAsync"
-            or "WaitForNavigationAsync" or "WaitForURLAsync" or "WaitForLoadStateAsync" => true,
-        _ => false,
-    };
+        return name switch
+        {
+            "GotoAsync" or "ClickAsync" or "FillAsync" or "TypeAsync" or "TapAsync"
+                or "CheckAsync" or "UncheckAsync" or "SelectOptionAsync" or "HoverAsync"
+                or "FocusAsync" or "PressAsync" or "DispatchEventAsync" or "WaitForSelectorAsync"
+                or "WaitForNavigationAsync" or "WaitForURLAsync" or "WaitForLoadStateAsync" => true,
+            _ => false
+        };
+    }
 
     private static bool HasCancellationTokenArgument(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
@@ -199,13 +205,13 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
         {
             ObjectCreationExpressionSyntax objCreate => objCreate.Initializer,
             ImplicitObjectCreationExpressionSyntax implicitCreate => implicitCreate.Initializer,
-            _ => null,
+            _ => null
         };
 
         return initializer is not null
-            && initializer.Expressions
-                .OfType<AssignmentExpressionSyntax>()
-                .Any(assign => assign.Left is IdentifierNameSyntax id
-                    && string.Equals(id.Identifier.Text, "CancellationToken", StringComparison.Ordinal));
+               && initializer.Expressions
+                   .OfType<AssignmentExpressionSyntax>()
+                   .Any(assign => assign.Left is IdentifierNameSyntax id
+                                  && string.Equals(id.Identifier.Text, "CancellationToken", StringComparison.Ordinal));
     }
 }

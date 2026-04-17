@@ -9,11 +9,11 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128041: Reports <c>JsonDocument.Parse()</c> calls where <c>RootElement</c> is accessed
-/// and the element escapes the enclosing <see langword="using"/> scope (via return or out-parameter),
-/// or the <c>JsonDocument</c> is not in a <see langword="using"/> scope at all.
-/// <c>JsonDocument</c> owns pooled memory — accessing <c>RootElement</c> after the document
-/// is disposed or finalized reads from returned-to-pool buffers.
+///     E128041: Reports <c>JsonDocument.Parse()</c> calls where <c>RootElement</c> is accessed
+///     and the element escapes the enclosing <see langword="using" /> scope (via return or out-parameter),
+///     or the <c>JsonDocument</c> is not in a <see langword="using" /> scope at all.
+///     <c>JsonDocument</c> owns pooled memory — accessing <c>RootElement</c> after the document
+///     is disposed or finalized reads from returned-to-pool buffers.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
@@ -21,12 +21,12 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128041";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "JsonDocument.RootElement must not escape the document's using scope",
-        messageFormat: "JsonDocument.Parse() result is not in a 'using' scope — RootElement accesses may read from returned-to-pool memory. Wrap in 'using' and call .Clone() if the element must escape.",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "JsonDocument.RootElement must not escape the document's using scope",
+        "JsonDocument.Parse() result is not in a 'using' scope — RootElement accesses may read from returned-to-pool memory. Wrap in 'using' and call .Clone() if the element must escape.",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -78,8 +78,8 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
     {
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
         return symbolInfo.Symbol is IMethodSymbol method
-            && string.Equals(method.Name, "Parse", StringComparison.Ordinal)
-            && string.Equals(method.ContainingType?.ToDisplayString(), "System.Text.Json.JsonDocument", StringComparison.Ordinal);
+               && string.Equals(method.Name, "Parse", StringComparison.Ordinal)
+               && string.Equals(method.ContainingType?.ToDisplayString(), "System.Text.Json.JsonDocument", StringComparison.Ordinal);
     }
 
     private static bool IsInUsingScope(InvocationExpressionSyntax invocation)
@@ -126,7 +126,7 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
         }
 
         return method is MethodDeclarationSyntax { ExpressionBody: { } arrowBody }
-            && ReferencesRootElementWithoutClone(arrowBody.Expression, docVariableName);
+               && ReferencesRootElementWithoutClone(arrowBody.Expression, docVariableName);
     }
 
     private static bool ReferencesRootElementWithoutClone(ExpressionSyntax expression, string docVariableName)
@@ -187,8 +187,8 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
     private static bool IsRootElementAccess(MemberAccessExpressionSyntax memberAccess, string docVariableName)
     {
         return string.Equals(memberAccess.Name.Identifier.ValueText, "RootElement", StringComparison.Ordinal)
-            && memberAccess.Expression is IdentifierNameSyntax id
-            && string.Equals(id.Identifier.ValueText, docVariableName, StringComparison.Ordinal);
+               && memberAccess.Expression is IdentifierNameSyntax id
+               && string.Equals(id.Identifier.ValueText, docVariableName, StringComparison.Ordinal);
     }
 
     private static bool HasCloneCallAbove(MemberAccessExpressionSyntax rootElementAccess, ExpressionSyntax root)

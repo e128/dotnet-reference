@@ -13,9 +13,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128052: replaces mutable collection types (List&lt;T&gt;, HashSet&lt;T&gt;, etc.)
-/// with their immutable interface counterparts (IReadOnlyList&lt;T&gt;, IReadOnlySet&lt;T&gt;, etc.)
-/// on public/internal API surfaces.
+///     Code fix for E128052: replaces mutable collection types (List&lt;T&gt;, HashSet&lt;T&gt;, etc.)
+///     with their immutable interface counterparts (IReadOnlyList&lt;T&gt;, IReadOnlySet&lt;T&gt;, etc.)
+///     on public/internal API surfaces.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MutableCollectionExposureCodeFixProvider))]
 [Shared]
@@ -24,8 +24,10 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MutableCollectionExposureAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -44,9 +46,9 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Change return type to " + suggestedType,
-                createChangedDocument: ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct),
-                equivalenceKey: nameof(MutableCollectionExposureCodeFixProvider)),
+                "Change return type to " + suggestedType,
+                ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct),
+                nameof(MutableCollectionExposureCodeFixProvider)),
             diagnostic);
     }
 
@@ -93,7 +95,7 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
         }
 
         if (compilationUnit.Usings.Any(u =>
-            string.Equals(u.Name?.ToString(), "System.Collections.Generic", StringComparison.Ordinal)))
+                string.Equals(u.Name?.ToString(), "System.Collections.Generic", StringComparison.Ordinal)))
         {
             return root;
         }

@@ -30,7 +30,7 @@ internal static class IoMethodCatalog
                 ["Exists"] = (0, SuggestedType.FileInfo),
                 ["Delete"] = (0, SuggestedType.FileInfo),
                 ["Copy"] = (0, SuggestedType.FileInfo),
-                ["Move"] = (0, SuggestedType.FileInfo),
+                ["Move"] = (0, SuggestedType.FileInfo)
             },
             ["Directory"] = new(StringComparer.Ordinal)
             {
@@ -42,8 +42,8 @@ internal static class IoMethodCatalog
                 ["CreateDirectory"] = (0, SuggestedType.DirectoryInfo),
                 ["Delete"] = (0, SuggestedType.DirectoryInfo),
                 ["Exists"] = (0, SuggestedType.DirectoryInfo),
-                ["Move"] = (0, SuggestedType.DirectoryInfo),
-            },
+                ["Move"] = (0, SuggestedType.DirectoryInfo)
+            }
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
     // Path methods are one-hop intermediaries: a local assigned from Path.*(param) inherits
@@ -59,10 +59,12 @@ internal static class IoMethodCatalog
             ["DirectoryInfo"] = SuggestedType.DirectoryInfo,
             ["StreamReader"] = SuggestedType.FileInfo,
             ["StreamWriter"] = SuggestedType.FileInfo,
-            ["FileStream"] = SuggestedType.FileInfo,
+            ["FileStream"] = SuggestedType.FileInfo
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
-    internal static bool TryGetMethodInfo(string className, string methodName,
+    internal static bool TryGetMethodInfo(
+        string className,
+        string methodName,
         out (int ArgIndex, SuggestedType Suggestion) info)
     {
         if (Methods.TryGetValue(className, out var classMethods)
@@ -75,9 +77,13 @@ internal static class IoMethodCatalog
         return false;
     }
 
-    internal static bool IsPathMethod(string methodName) =>
-        PathMethodNames.Contains(methodName);
+    internal static bool IsPathMethod(string methodName)
+    {
+        return PathMethodNames.Contains(methodName);
+    }
 
-    internal static bool TryGetConstructorInfo(string typeName, out SuggestedType suggestion) =>
-        ConstructorTypes.TryGetValue(typeName, out suggestion);
+    internal static bool TryGetConstructorInfo(string typeName, out SuggestedType suggestion)
+    {
+        return ConstructorTypes.TryGetValue(typeName, out suggestion);
+    }
 }

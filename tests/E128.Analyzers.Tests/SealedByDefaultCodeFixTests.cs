@@ -17,7 +17,7 @@ public sealed class SealedByDefaultCodeFixTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1,
             // CompilationEnd diagnostics are non-local by design.
-            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
+            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck
         }.RunAsync();
     }
 
@@ -26,14 +26,14 @@ public sealed class SealedByDefaultCodeFixTests
     public Task ClassWithBase_FixAddsSealedModifier()
     {
         const string source = """
-            class Base { }
-            class {|E128005:Derived|} : Base { }
-            """;
+                              class Base { }
+                              class {|E128005:Derived|} : Base { }
+                              """;
 
         const string fixedCode = """
-            class Base { }
-            sealed class Derived : Base { }
-            """;
+                                 class Base { }
+                                 sealed class Derived : Base { }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -43,14 +43,14 @@ public sealed class SealedByDefaultCodeFixTests
     public Task PublicClassWithBase_FixAddsSealedAfterAccess()
     {
         const string source = """
-            public class Base { }
-            public class {|E128005:Derived|} : Base { }
-            """;
+                              public class Base { }
+                              public class {|E128005:Derived|} : Base { }
+                              """;
 
         const string fixedCode = """
-            public class Base { }
-            public sealed class Derived : Base { }
-            """;
+                                 public class Base { }
+                                 public sealed class Derived : Base { }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -60,16 +60,16 @@ public sealed class SealedByDefaultCodeFixTests
     public Task MultipleUnsealedClasses_FixAllAddsSealedToAll()
     {
         const string source = """
-            class Base { }
-            class {|E128005:A|} : Base { }
-            class {|E128005:B|} : Base { }
-            """;
+                              class Base { }
+                              class {|E128005:A|} : Base { }
+                              class {|E128005:B|} : Base { }
+                              """;
 
         const string fixedCode = """
-            class Base { }
-            sealed class A : Base { }
-            sealed class B : Base { }
-            """;
+                                 class Base { }
+                                 sealed class A : Base { }
+                                 sealed class B : Base { }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

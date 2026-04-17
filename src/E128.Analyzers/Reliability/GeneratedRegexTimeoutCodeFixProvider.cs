@@ -18,8 +18,10 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GeneratedRegexAnalyzer.TimeoutDiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -39,9 +41,9 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add matchTimeoutMilliseconds: Timeout.Infinite",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(GeneratedRegexTimeoutCodeFixProvider)),
+                "Add matchTimeoutMilliseconds: Timeout.Infinite",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(GeneratedRegexTimeoutCodeFixProvider)),
             diagnostic);
     }
 

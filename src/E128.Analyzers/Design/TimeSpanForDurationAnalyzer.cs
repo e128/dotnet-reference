@@ -6,32 +6,32 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128050: Flags numeric properties and parameters whose names suggest a time duration
-/// (e.g., TimeoutSeconds, DelayMs). Use <see cref="TimeSpan"/> instead to eliminate
-/// unit ambiguity at call sites.
+///     E128050: Flags numeric properties and parameters whose names suggest a time duration
+///     (e.g., TimeoutSeconds, DelayMs). Use <see cref="TimeSpan" /> instead to eliminate
+///     unit ambiguity at call sites.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128050";
 
-    private static readonly ImmutableArray<string> DurationSuffixes = [
+    private static readonly ImmutableArray<string> DurationSuffixes =
+    [
         "Seconds", "Sec", "Millis", "Milliseconds", "Ms",
         "Minutes", "Min", "Hours", "Days",
-        "Timeout", "Delay", "Duration", "Interval", "Period",
+        "Timeout", "Delay", "Duration", "Interval", "Period"
     ];
 
     internal static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use TimeSpan for time-duration values to avoid unit ambiguity",
-        messageFormat: "'{0}' is numeric but its name suggests a time duration. Use TimeSpan instead to eliminate unit ambiguity at call sites.",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description:
-            "Numeric properties and parameters whose names imply a time duration (e.g., TimeoutSeconds, " +
-            "DelayMs) are ambiguous at call sites — callers can't tell whether the value is seconds, " +
-            "milliseconds, or ticks. Use TimeSpan to make the unit explicit in the type system.");
+        DiagnosticId,
+        "Use TimeSpan for time-duration values to avoid unit ambiguity",
+        "'{0}' is numeric but its name suggests a time duration. Use TimeSpan instead to eliminate unit ambiguity at call sites.",
+        "Design",
+        DiagnosticSeverity.Error,
+        true,
+        "Numeric properties and parameters whose names imply a time duration (e.g., TimeoutSeconds, " +
+        "DelayMs) are ambiguous at call sites — callers can't tell whether the value is seconds, " +
+        "milliseconds, or ticks. Use TimeSpan to make the unit explicit in the type system.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -53,7 +53,7 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
         {
             IPropertySymbol p => (p.Type, p.Name, p.Locations.IsEmpty ? null : p.Locations[0]),
             IParameterSymbol p => (p.Type, p.Name, p.Locations.IsEmpty ? null : p.Locations[0]),
-            _ => default,
+            _ => default
         };
 
         if (type is null || location is null)
@@ -79,16 +79,18 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
     private static ITypeSymbol UnwrapNullable(ITypeSymbol type)
     {
         return type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } named
-            && named.TypeArguments.Length == 1
+               && named.TypeArguments.Length == 1
             ? named.TypeArguments[0]
             : type;
     }
 
-    private static bool IsNumericDurationType(ITypeSymbol type) =>
-        type.SpecialType is SpecialType.System_Int32
+    private static bool IsNumericDurationType(ITypeSymbol type)
+    {
+        return type.SpecialType is SpecialType.System_Int32
             or SpecialType.System_Int64
             or SpecialType.System_Single
             or SpecialType.System_Double;
+    }
 
     internal static bool HasDurationSuffix(string name)
     {

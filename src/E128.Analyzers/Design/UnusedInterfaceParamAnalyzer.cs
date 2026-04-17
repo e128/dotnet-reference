@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -8,13 +9,13 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128059: Detects interface method implementations where a parameter declared in the
-/// interface contract is never referenced in the implementing method body. A silently
-/// ignored parameter almost always indicates a missing implementation or an incorrect
-/// interface contract.
-/// <para>
-/// CancellationToken parameters are excluded — propagation is handled by E128038.
-/// </para>
+///     E128059: Detects interface method implementations where a parameter declared in the
+///     interface contract is never referenced in the implementing method body. A silently
+///     ignored parameter almost always indicates a missing implementation or an incorrect
+///     interface contract.
+///     <para>
+///         CancellationToken parameters are excluded — propagation is handled by E128038.
+///     </para>
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
@@ -22,13 +23,13 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128059";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Interface method parameter is unused in implementation",
-        messageFormat: "Parameter '{0}' is declared in the interface contract but never referenced in the implementation — the contract promises callers that this input affects the result",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Every parameter declared by an interface contract should be consumed by the implementation. A silently ignored parameter breaks the behavioral contract with callers.");
+        DiagnosticId,
+        "Interface method parameter is unused in implementation",
+        "Parameter '{0}' is declared in the interface contract but never referenced in the implementation — the contract promises callers that this input affects the result",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true,
+        "Every parameter declared by an interface contract should be consumed by the implementation. A silently ignored parameter breaks the behavioral contract with callers.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -132,12 +133,14 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsCancellationToken(IParameterSymbol param) =>
-        string.Equals(param.Type.Name, "CancellationToken", StringComparison.Ordinal);
+    private static bool IsCancellationToken(IParameterSymbol param)
+    {
+        return string.Equals(param.Type.Name, "CancellationToken", StringComparison.Ordinal);
+    }
 
     private static MethodDeclarationSyntax? GetMethodSyntax(
         IMethodSymbol method,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         var reference = method.DeclaringSyntaxReferences.FirstOrDefault();
         return reference?.GetSyntax(cancellationToken) as MethodDeclarationSyntax;

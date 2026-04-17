@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-/// Code fix for E128062: replaces outdated <c>ReferenceAssemblies.Net.Net80</c> / <c>Net90</c>
-/// with the minimum version matching the project target framework.
+///     Code fix for E128062: replaces outdated <c>ReferenceAssemblies.Net.Net80</c> / <c>Net90</c>
+///     with the minimum version matching the project target framework.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StaleReferenceAssembliesCodeFixProvider))]
 [Shared]
@@ -21,7 +21,10 @@ public sealed class StaleReferenceAssembliesCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StaleReferenceAssembliesAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -45,9 +48,9 @@ public sealed class StaleReferenceAssembliesCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Replace with ReferenceAssemblies.Net.{newName}",
-                createChangedDocument: ct => ReplaceVersionAsync(context.Document, root, memberAccess, newName, ct),
-                equivalenceKey: StaleReferenceAssembliesAnalyzer.DiagnosticId),
+                $"Replace with ReferenceAssemblies.Net.{newName}",
+                ct => ReplaceVersionAsync(context.Document, root, memberAccess, newName, ct),
+                StaleReferenceAssembliesAnalyzer.DiagnosticId),
             diagnostic);
     }
 

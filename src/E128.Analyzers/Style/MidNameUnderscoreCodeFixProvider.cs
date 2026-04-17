@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -9,9 +11,9 @@ using Microsoft.CodeAnalysis.Rename;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-/// Code fix for E128063: renames private static members with mid-name underscores by removing
-/// the underscore and PascalCasing the segments (e.g., <c>Nots_supported</c> → <c>NotsSupported</c>).
-/// Uses Renamer.RenameSymbolAsync for safe project-wide renaming.
+///     Code fix for E128063: renames private static members with mid-name underscores by removing
+///     the underscore and PascalCasing the segments (e.g., <c>Nots_supported</c> → <c>NotsSupported</c>).
+///     Uses Renamer.RenameSymbolAsync for safe project-wide renaming.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MidNameUnderscoreCodeFixProvider))]
 [Shared]
@@ -20,8 +22,10 @@ public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MidNameUnderscoreAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -47,24 +51,24 @@ public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
         }
 
         var newName = ComputeFixedName(symbol.Name);
-        if (string.Equals(symbol.Name, newName, System.StringComparison.Ordinal))
+        if (string.Equals(symbol.Name, newName, StringComparison.Ordinal))
         {
             return;
         }
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Rename to '{newName}'",
-                createChangedSolution: ct => Renamer.RenameSymbolAsync(
+                $"Rename to '{newName}'",
+                ct => Renamer.RenameSymbolAsync(
                     context.Document.Project.Solution, symbol, new SymbolRenameOptions(), newName, ct),
-                equivalenceKey: nameof(MidNameUnderscoreCodeFixProvider)),
+                nameof(MidNameUnderscoreCodeFixProvider)),
             diagnostic);
     }
 
     /// <summary>
-    /// Removes mid-name underscores and PascalCases each segment.
-    /// Preserves legitimate prefixes: <c>s_foo_bar</c> → <c>s_fooBar</c> (only the mid-name
-    /// underscore after the prefix is fixed), <c>Nots_supported</c> → <c>NotsSupported</c>.
+    ///     Removes mid-name underscores and PascalCases each segment.
+    ///     Preserves legitimate prefixes: <c>s_foo_bar</c> → <c>s_fooBar</c> (only the mid-name
+    ///     underscore after the prefix is fixed), <c>Nots_supported</c> → <c>NotsSupported</c>.
     /// </summary>
     internal static string ComputeFixedName(string name)
     {
@@ -75,13 +79,13 @@ public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
 
         // Determine the prefix boundary (0 for no prefix, 2 for s_/m_/t_ prefixes, 1 for _ prefix)
         var prefixLength = GetPrefixLength(name);
-        var result = new System.Text.StringBuilder(name.Length);
+        var result = new StringBuilder(name.Length);
         result.Append(name, 0, prefixLength);
 
         var body = name.Substring(prefixLength);
 
         // Split the body on underscores and PascalCase each segment
-        var segments = body.Split(['_'], System.StringSplitOptions.RemoveEmptyEntries);
+        var segments = body.Split(['_'], StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length <= 1)
         {
             // No mid-name underscores in the body — nothing to fix
@@ -98,7 +102,7 @@ public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
             else
             {
                 result.Append(char.ToUpperInvariant(segments[i][0]))
-                      .Append(segments[i], 1, segments[i].Length - 1);
+                    .Append(segments[i], 1, segments[i].Length - 1);
             }
         }
 
@@ -119,6 +123,8 @@ public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
         return name.Length > 0 && name[0] == '_' ? 1 : 0;
     }
 
-    private static bool IsHungarianPrefixChar(char c) =>
-        c is 's' or 'm' or 't';
+    private static bool IsHungarianPrefixChar(char c)
+    {
+        return c is 's' or 'm' or 't';
+    }
 }

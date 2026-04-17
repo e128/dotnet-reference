@@ -9,10 +9,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128033: Detects Options classes passed to <c>.Bind(config.GetSection(...))</c>
-/// that have <c>init</c>-only property accessors instead of <c>set</c>.
-/// The Microsoft.Extensions.Configuration binder requires mutable <c>set</c> properties
-/// to populate options from appsettings — <c>init</c> breaks silently at runtime.
+///     E128033: Detects Options classes passed to <c>.Bind(config.GetSection(...))</c>
+///     that have <c>init</c>-only property accessors instead of <c>set</c>.
+///     The Microsoft.Extensions.Configuration binder requires mutable <c>set</c> properties
+///     to populate options from appsettings — <c>init</c> breaks silently at runtime.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
@@ -20,15 +20,15 @@ public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128033";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Options class bound via .Bind() has init-only property",
-        messageFormat: "Property '{0}' on Bind()-target '{1}' uses 'init' — the config binder requires 'set'",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Options classes bound via .Bind(config.GetSection(...)) must use 'set' accessors. " +
-            "The Microsoft.Extensions.Configuration binder cannot populate 'init'-only properties, " +
-            "causing silent runtime failures with no compile-time error.");
+        DiagnosticId,
+        "Options class bound via .Bind() has init-only property",
+        "Property '{0}' on Bind()-target '{1}' uses 'init' — the config binder requires 'set'",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "Options classes bound via .Bind(config.GetSection(...)) must use 'set' accessors. " +
+        "The Microsoft.Extensions.Configuration binder cannot populate 'init'-only properties, " +
+        "causing silent runtime failures with no compile-time error.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -94,7 +94,7 @@ public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
         return invocation.Expression switch
         {
             MemberAccessExpressionSyntax memberAccess => string.Equals(memberAccess.Name.Identifier.Text, "Bind", StringComparison.Ordinal),
-            _ => false,
+            _ => false
         };
     }
 
@@ -102,7 +102,7 @@ public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
     {
         var containingType = method.ContainingType?.OriginalDefinition;
         return containingType is not null
-            && SymbolEqualityComparer.Default.Equals(containingType, optionsBuilderType);
+               && SymbolEqualityComparer.Default.Equals(containingType, optionsBuilderType);
     }
 
     private static INamedTypeSymbol? GetBoundOptionsType(IMethodSymbol method)

@@ -18,7 +18,7 @@ public sealed class DirectHttpClientInstantiationCodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = Net100WithHttp,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 

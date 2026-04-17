@@ -15,7 +15,7 @@ public sealed class SyncOverAsyncCodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 
@@ -24,28 +24,28 @@ public sealed class SyncOverAsyncCodeFixTests
     public Task CodeFix_ReplacesTaskResult_WithAwait()
     {
         const string source = """
-            using System.Threading.Tasks;
-            class C
-            {
-                int M()
-                {
-                    var task = Task.FromResult(42);
-                    return {|E128008:task.Result|};
-                }
-            }
-            """;
+                              using System.Threading.Tasks;
+                              class C
+                              {
+                                  int M()
+                                  {
+                                      var task = Task.FromResult(42);
+                                      return {|E128008:task.Result|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task<int> M()
-                {
-                    var task = Task.FromResult(42);
-                    return await task;
-                }
-            }
-            """;
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                     async Task<int> M()
+                                     {
+                                         var task = Task.FromResult(42);
+                                         return await task;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -55,28 +55,28 @@ public sealed class SyncOverAsyncCodeFixTests
     public Task CodeFix_ReplacesGetAwaiterGetResult_WithAwait()
     {
         const string source = """
-            using System.Threading.Tasks;
-            class C
-            {
-                int M()
-                {
-                    var task = Task.FromResult(42);
-                    return task.{|E128008:GetAwaiter|}().GetResult();
-                }
-            }
-            """;
+                              using System.Threading.Tasks;
+                              class C
+                              {
+                                  int M()
+                                  {
+                                      var task = Task.FromResult(42);
+                                      return task.{|E128008:GetAwaiter|}().GetResult();
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task<int> M()
-                {
-                    var task = Task.FromResult(42);
-                    return await task;
-                }
-            }
-            """;
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                     async Task<int> M()
+                                     {
+                                         var task = Task.FromResult(42);
+                                         return await task;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -86,28 +86,28 @@ public sealed class SyncOverAsyncCodeFixTests
     public Task CodeFix_PromotesVoidMethod_ToAsyncTask()
     {
         const string source = """
-            using System.Threading.Tasks;
-            class C
-            {
-                void M()
-                {
-                    var task = Task.FromResult(42);
-                    _ = {|E128008:task.Result|};
-                }
-            }
-            """;
+                              using System.Threading.Tasks;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var task = Task.FromResult(42);
+                                      _ = {|E128008:task.Result|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    var task = Task.FromResult(42);
-                    _ = await task;
-                }
-            }
-            """;
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                     async Task M()
+                                     {
+                                         var task = Task.FromResult(42);
+                                         _ = await task;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

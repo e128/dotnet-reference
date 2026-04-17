@@ -10,8 +10,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-/// Code fix for E128043: removes the null-forgiving operator (<c>!</c>),
-/// leaving the inner expression intact.
+///     Code fix for E128043: removes the null-forgiving operator (<c>!</c>),
+///     leaving the inner expression intact.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(NullForgivingOperatorCodeFixProvider))]
 [Shared]
@@ -20,8 +20,10 @@ public sealed class NullForgivingOperatorCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [NullForgivingOperatorAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -41,9 +43,9 @@ public sealed class NullForgivingOperatorCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Remove null-forgiving operator",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(NullForgivingOperatorCodeFixProvider)),
+                "Remove null-forgiving operator",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(NullForgivingOperatorCodeFixProvider)),
             diagnostic);
     }
 

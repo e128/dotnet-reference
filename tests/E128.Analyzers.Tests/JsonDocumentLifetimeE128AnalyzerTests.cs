@@ -13,7 +13,7 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
         var test = new CSharpAnalyzerTest<JsonDocumentLifetimeAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,15 +24,15 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     public Task JsonDocumentParse_NoUsingScope_Fires()
     {
         return VerifyAsync("""
-            using System.Text.Json;
-            class C
-            {
-                void M()
-                {
-                    var doc = {|E128041:JsonDocument.Parse("{}")|};
-                }
-            }
-            """);
+                           using System.Text.Json;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var doc = {|E128041:JsonDocument.Parse("{}")|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -40,16 +40,16 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     public Task JsonDocumentParse_UsingDeclaration_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Text.Json;
-            class C
-            {
-                void M()
-                {
-                    using var doc = JsonDocument.Parse("{}");
-                    var root = doc.RootElement;
-                }
-            }
-            """);
+                           using System.Text.Json;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var doc = JsonDocument.Parse("{}");
+                                   var root = doc.RootElement;
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -57,16 +57,16 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     public Task JsonDocumentParse_UsingDeclaration_RootElementEscapes_Fires()
     {
         return VerifyAsync("""
-            using System.Text.Json;
-            class C
-            {
-                JsonElement M()
-                {
-                    using var doc = {|E128041:JsonDocument.Parse("{}")|};
-                    return doc.RootElement;
-                }
-            }
-            """);
+                           using System.Text.Json;
+                           class C
+                           {
+                               JsonElement M()
+                               {
+                                   using var doc = {|E128041:JsonDocument.Parse("{}")|};
+                                   return doc.RootElement;
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -74,16 +74,16 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     public Task JsonDocumentParse_UsingDeclaration_RootElementCloned_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Text.Json;
-            class C
-            {
-                JsonElement M()
-                {
-                    using var doc = JsonDocument.Parse("{}");
-                    return doc.RootElement.Clone();
-                }
-            }
-            """);
+                           using System.Text.Json;
+                           class C
+                           {
+                               JsonElement M()
+                               {
+                                   using var doc = JsonDocument.Parse("{}");
+                                   return doc.RootElement.Clone();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -91,17 +91,17 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     public Task JsonDocumentParse_UsingStatement_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Text.Json;
-            class C
-            {
-                void M()
-                {
-                    using (var doc = JsonDocument.Parse("{}"))
-                    {
-                        var root = doc.RootElement;
-                    }
-                }
-            }
-            """);
+                           using System.Text.Json;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using (var doc = JsonDocument.Parse("{}"))
+                                   {
+                                       var root = doc.RootElement;
+                                   }
+                               }
+                           }
+                           """);
     }
 }

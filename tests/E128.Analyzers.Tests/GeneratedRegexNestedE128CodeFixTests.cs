@@ -8,6 +8,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class GeneratedRegexNestedE128CodeFixTests
 {
+    private const string PartialImpl = "    private static partial System.Text.RegularExpressions.Regex DigitsOnly() => null!;";
+
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
         return new CSharpCodeFixTest<GeneratedRegexAnalyzer, GeneratedRegexNestedCodeFixProvider, DefaultVerifier>
@@ -15,11 +17,9 @@ public sealed class GeneratedRegexNestedE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
-
-    private const string PartialImpl = "    private static partial System.Text.RegularExpressions.Regex DigitsOnly() => null!;";
 
     [Fact]
     [Trait("Category", "CI")]
@@ -27,23 +27,23 @@ public sealed class GeneratedRegexNestedE128CodeFixTests
     {
         return VerifyFixAsync(
             $$"""
-            using System.Text.RegularExpressions;
-            partial class C
-            {
-                [{|E128014:GeneratedRegex(@"(.+)+", RegexOptions.None, 1000)|}]
-                private static partial Regex DigitsOnly();
-                {{PartialImpl}}
-            }
-            """,
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128014:GeneratedRegex(@"(.+)+", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
             $$"""
-            using System.Text.RegularExpressions;
-            partial class C
-            {
-                [GeneratedRegex(@"(.+)", RegexOptions.None, 1000)]
-                private static partial Regex DigitsOnly();
-                {{PartialImpl}}
-            }
-            """);
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [GeneratedRegex(@"(.+)", RegexOptions.None, 1000)]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """);
     }
 
     [Fact]
@@ -52,22 +52,22 @@ public sealed class GeneratedRegexNestedE128CodeFixTests
     {
         return VerifyFixAsync(
             $$"""
-            using System.Text.RegularExpressions;
-            partial class C
-            {
-                [{|E128014:GeneratedRegex(@"(a*)*", RegexOptions.None, 1000)|}]
-                private static partial Regex DigitsOnly();
-                {{PartialImpl}}
-            }
-            """,
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128014:GeneratedRegex(@"(a*)*", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
             $$"""
-            using System.Text.RegularExpressions;
-            partial class C
-            {
-                [GeneratedRegex(@"(a*)", RegexOptions.None, 1000)]
-                private static partial Regex DigitsOnly();
-                {{PartialImpl}}
-            }
-            """);
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [GeneratedRegex(@"(a*)", RegexOptions.None, 1000)]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """);
     }
 }

@@ -13,7 +13,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
         var test = new CSharpAnalyzerTest<MutableStaticReadonlyArrayAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -26,12 +26,12 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task FiresOnStaticReadonlyStringArray_WithCollectionExpression()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                private static readonly {|E128061:string[] Names = ["a", "b"]|};
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               private static readonly {|E128061:string[] Names = ["a", "b"]|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -39,11 +39,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task FiresOnStaticReadonlyStringArray_WithArrayInitializer()
     {
         return VerifyAsync("""
-            class C
-            {
-                private static readonly {|E128061:string[] Names = new[] { "a", "b" }|};
-            }
-            """);
+                           class C
+                           {
+                               private static readonly {|E128061:string[] Names = new[] { "a", "b" }|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -51,11 +51,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task FiresOnStaticReadonlyIntArray()
     {
         return VerifyAsync("""
-            class C
-            {
-                private static readonly {|E128061:int[] Ports = [80, 443]|};
-            }
-            """);
+                           class C
+                           {
+                               private static readonly {|E128061:int[] Ports = [80, 443]|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -63,11 +63,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task FiresOnStaticReadonlyArray_WithExplicitTypeInNew()
     {
         return VerifyAsync("""
-            class C
-            {
-                private static readonly {|E128061:string[] Suffixes = new string[] { "s_", "m_" }|};
-            }
-            """);
+                           class C
+                           {
+                               private static readonly {|E128061:string[] Suffixes = new string[] { "s_", "m_" }|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -75,11 +75,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task FiresOnInternalStaticReadonlyArray()
     {
         return VerifyAsync("""
-            class C
-            {
-                internal static readonly {|E128061:string[] Labels = ["x", "y"]|};
-            }
-            """);
+                           class C
+                           {
+                               internal static readonly {|E128061:string[] Labels = ["x", "y"]|};
+                           }
+                           """);
     }
 
     #endregion Fires
@@ -91,12 +91,12 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task DoesNotFire_WhenAlreadyImmutableArray()
     {
         return VerifyAsync("""
-            using System.Collections.Immutable;
-            class C
-            {
-                private static readonly ImmutableArray<string> Names = ImmutableArray.Create("a", "b");
-            }
-            """);
+                           using System.Collections.Immutable;
+                           class C
+                           {
+                               private static readonly ImmutableArray<string> Names = ImmutableArray.Create("a", "b");
+                           }
+                           """);
     }
 
     [Fact]
@@ -104,11 +104,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task DoesNotFire_WhenInstanceReadonlyArray()
     {
         return VerifyAsync("""
-            class C
-            {
-                private readonly string[] _items = ["a", "b"];
-            }
-            """);
+                           class C
+                           {
+                               private readonly string[] _items = ["a", "b"];
+                           }
+                           """);
     }
 
     [Fact]
@@ -116,11 +116,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task DoesNotFire_WhenStaticButNotReadonly()
     {
         return VerifyAsync("""
-            class C
-            {
-                private static string[] Names = ["a", "b"];
-            }
-            """);
+                           class C
+                           {
+                               private static string[] Names = ["a", "b"];
+                           }
+                           """);
     }
 
     [Fact]
@@ -128,11 +128,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task DoesNotFire_WhenReadonlyButNotStatic()
     {
         return VerifyAsync("""
-            class C
-            {
-                private readonly string[] Names = ["a", "b"];
-            }
-            """);
+                           class C
+                           {
+                               private readonly string[] Names = ["a", "b"];
+                           }
+                           """);
     }
 
     [Fact]
@@ -140,12 +140,12 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task DoesNotFire_WhenNoInitializer()
     {
         return VerifyAsync("""
-            class C
-            {
-                private static readonly string[] Names;
-                static C() { Names = ["a", "b"]; }
-            }
-            """);
+                           class C
+                           {
+                               private static readonly string[] Names;
+                               static C() { Names = ["a", "b"]; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -153,12 +153,12 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task DoesNotFire_WhenStaticReadonlyList()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            class C
-            {
-                private static readonly List<string> Names = ["a", "b"];
-            }
-            """);
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private static readonly List<string> Names = ["a", "b"];
+                           }
+                           """);
     }
 
     [Fact]
@@ -166,11 +166,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task DoesNotFire_WhenPublicField()
     {
         return VerifyAsync("""
-            class C
-            {
-                public static readonly string[] Names = ["a", "b"];
-            }
-            """);
+                           class C
+                           {
+                               public static readonly string[] Names = ["a", "b"];
+                           }
+                           """);
     }
 
     [Fact]
@@ -178,11 +178,11 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     public Task DoesNotFire_WhenConstField()
     {
         return VerifyAsync("""
-            class C
-            {
-                private const string Names = "a";
-            }
-            """);
+                           class C
+                           {
+                               private const string Names = "a";
+                           }
+                           """);
     }
 
     #endregion Does not fire

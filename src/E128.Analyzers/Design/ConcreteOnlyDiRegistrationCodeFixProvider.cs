@@ -14,9 +14,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128032: rewrites <c>Add{Lifetime}&lt;TImpl&gt;()</c> to
-/// <c>Add{Lifetime}&lt;IFoo, TImpl&gt;()</c>. When the concrete type implements
-/// multiple non-marker interfaces, one <see cref="CodeAction"/> is offered per interface.
+///     Code fix for E128032: rewrites <c>Add{Lifetime}&lt;TImpl&gt;()</c> to
+///     <c>Add{Lifetime}&lt;IFoo, TImpl&gt;()</c>. When the concrete type implements
+///     multiple non-marker interfaces, one <see cref="CodeAction" /> is offered per interface.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConcreteOnlyDiRegistrationCodeFixProvider))]
 [Shared]
@@ -25,14 +25,16 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
     private static readonly HashSet<string> MarkerInterfaces = new(StringComparer.Ordinal)
     {
         "System.IDisposable",
-        "System.IAsyncDisposable",
+        "System.IAsyncDisposable"
     };
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConcreteOnlyDiRegistrationAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -79,7 +81,7 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
                 CodeAction.Create(
                     title,
                     ct => RewriteToInterfaceMappedAsync(context.Document, invocation, concreteType, iface, ct),
-                    equivalenceKey: $"E128032_{iface.ToDisplayString()}"),
+                    $"E128032_{iface.ToDisplayString()}"),
                 diagnostic);
         }
     }
@@ -104,10 +106,10 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
 
         var newTypeArgs = SyntaxFactory.TypeArgumentList(
             SyntaxFactory.SeparatedList(
-            [
-                SyntaxFactory.ParseTypeName(targetInterface.Name),
-                SyntaxFactory.ParseTypeName(concreteType.Name),
-            ]));
+                [
+                    SyntaxFactory.ParseTypeName(targetInterface.Name),
+                    SyntaxFactory.ParseTypeName(concreteType.Name)
+                ]));
 
         var newName = SyntaxFactory.GenericName(memberAccess.Name.Identifier)
             .WithTypeArgumentList(newTypeArgs);

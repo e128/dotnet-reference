@@ -13,7 +13,7 @@ public sealed class TimeSpanForDurationE128AnalyzerTests
         var test = new CSharpAnalyzerTest<TimeSpanForDurationAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,11 +24,11 @@ public sealed class TimeSpanForDurationE128AnalyzerTests
     public Task PropertyWithTimeoutSeconds_Fires()
     {
         return VerifyAsync("""
-            public class Config
-            {
-                public int {|E128050:TimeoutSeconds|} { get; set; }
-            }
-            """);
+                           public class Config
+                           {
+                               public int {|E128050:TimeoutSeconds|} { get; set; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -36,11 +36,11 @@ public sealed class TimeSpanForDurationE128AnalyzerTests
     public Task ParameterWithDelayMs_Fires()
     {
         return VerifyAsync("""
-            public class Service
-            {
-                public void Execute(int {|E128050:DelayMs|}) { }
-            }
-            """);
+                           public class Service
+                           {
+                               public void Execute(int {|E128050:DelayMs|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -48,11 +48,11 @@ public sealed class TimeSpanForDurationE128AnalyzerTests
     public Task NullableIntDuration_Fires()
     {
         return VerifyAsync("""
-            public class Config
-            {
-                public int? {|E128050:Interval|} { get; set; }
-            }
-            """);
+                           public class Config
+                           {
+                               public int? {|E128050:Interval|} { get; set; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -60,12 +60,12 @@ public sealed class TimeSpanForDurationE128AnalyzerTests
     public Task TimeSpanProperty_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
-            public class Config
-            {
-                public TimeSpan Timeout { get; set; }
-            }
-            """);
+                           using System;
+                           public class Config
+                           {
+                               public TimeSpan Timeout { get; set; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -73,11 +73,11 @@ public sealed class TimeSpanForDurationE128AnalyzerTests
     public Task StringProperty_NoDiagnostic()
     {
         return VerifyAsync("""
-            public class Config
-            {
-                public string TimeoutSeconds { get; set; }
-            }
-            """);
+                           public class Config
+                           {
+                               public string TimeoutSeconds { get; set; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -86,10 +86,10 @@ public sealed class TimeSpanForDurationE128AnalyzerTests
     {
         // Bare lowercase "min" does not trigger — uppercase start required
         return VerifyAsync("""
-            public class Service
-            {
-                public void Execute(int min) { }
-            }
-            """);
+                           public class Service
+                           {
+                               public void Execute(int min) { }
+                           }
+                           """);
     }
 }

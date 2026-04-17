@@ -6,14 +6,15 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128035: Detects constructor parameters of concrete types that are only registered in DI
-/// via their interface (e.g., <c>AddSingleton&lt;IFoo, T&gt;()</c>) but lack a direct
-/// registration (<c>AddSingleton&lt;T&gt;()</c>). This causes <c>InvalidOperationException</c>
-/// at runtime when another service depends on the concrete type directly.
+///     E128035: Detects constructor parameters of concrete types that are only registered in DI
+///     via their interface (e.g., <c>AddSingleton&lt;IFoo, T&gt;()</c>) but lack a direct
+///     registration (<c>AddSingleton&lt;T&gt;()</c>). This causes <c>InvalidOperationException</c>
+///     at runtime when another service depends on the concrete type directly.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
@@ -21,15 +22,15 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128035";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Concrete-type DI dependency without direct registration",
-        messageFormat: "'{0}' is only registered via interface — add a direct DI registration (e.g., AddSingleton<{0}>()) or resolve via the interface instead",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "When a constructor parameter is a concrete type that is registered in DI only via " +
-            "an interface mapping (AddSingleton<IFoo, T>()), the DI container cannot resolve the " +
-            "concrete type directly. Add a direct registration or use the interface type instead.",
+        DiagnosticId,
+        "Concrete-type DI dependency without direct registration",
+        "'{0}' is only registered via interface — add a direct DI registration (e.g., AddSingleton<{0}>()) or resolve via the interface instead",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "When a constructor parameter is a concrete type that is registered in DI only via " +
+        "an interface mapping (AddSingleton<IFoo, T>()), the DI container cannot resolve the " +
+        "concrete type directly. Add a direct registration or use the interface type instead.",
         customTags: WellKnownDiagnosticTags.CompilationEnd);
 
     private static readonly HashSet<string> DiRegistrationMethods =
@@ -37,7 +38,7 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
         {
             "AddSingleton",
             "AddScoped",
-            "AddTransient",
+            "AddTransient"
         };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -104,7 +105,7 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
             interfaceRegistered.Add(implType);
         }
         else if (method.TypeArguments.Length == 1
-            && method.TypeArguments[0] is INamedTypeSymbol concreteType)
+                 && method.TypeArguments[0] is INamedTypeSymbol concreteType)
         {
             directlyRegistered.Add(concreteType);
         }
@@ -129,10 +130,10 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
             }
 
             if (context.SemanticModel.GetTypeInfo(param.Type, context.CancellationToken).Type
-                is INamedTypeSymbol paramType
+                    is INamedTypeSymbol paramType
                 && IsConcreteNonPrimitive(paramType))
             {
-                var span = Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(
+                var span = TextSpan.FromBounds(
                     param.Type.SpanStart,
                     param.Identifier.Span.End);
                 var location = Location.Create(param.SyntaxTree, span);
@@ -186,7 +187,7 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
         methodName = invocation.Expression switch
         {
             MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text,
-            _ => null!,
+            _ => null!
         };
 
         return methodName is not null && DiRegistrationMethods.Contains(methodName);
@@ -195,7 +196,7 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
     private static bool IsConcreteNonPrimitive(INamedTypeSymbol type)
     {
         return !(type.TypeKind is TypeKind.Interface or TypeKind.Delegate) && !type.IsAbstract
-            && type.SpecialType is SpecialType.None && !InheritsFromDelegate(type);
+                                                                           && type.SpecialType is SpecialType.None && !InheritsFromDelegate(type);
     }
 
     private static bool InheritsFromDelegate(ITypeSymbol type)

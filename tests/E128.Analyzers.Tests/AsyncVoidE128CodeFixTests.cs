@@ -15,7 +15,7 @@ public sealed class AsyncVoidE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 
@@ -24,26 +24,26 @@ public sealed class AsyncVoidE128CodeFixTests
     public Task AsyncVoid_CodeFix_ChangesVoidToTask()
     {
         const string source = """
-            using System.Threading.Tasks;
-            class C
-            {
-                async void {|E128007:DoWork|}()
-                {
-                    await Task.Delay(1);
-                }
-            }
-            """;
+                              using System.Threading.Tasks;
+                              class C
+                              {
+                                  async void {|E128007:DoWork|}()
+                                  {
+                                      await Task.Delay(1);
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task DoWork()
-                {
-                    await Task.Delay(1);
-                }
-            }
-            """;
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                     async Task DoWork()
+                                     {
+                                         await Task.Delay(1);
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -53,23 +53,23 @@ public sealed class AsyncVoidE128CodeFixTests
     public Task AsyncVoid_CodeFix_AddsUsingWhenMissing()
     {
         const string source = """
-            class C
-            {
-                async void {|E128007:DoWork|}()
-                {
-                }
-            }
-            """;
+                              class C
+                              {
+                                  async void {|E128007:DoWork|}()
+                                  {
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task DoWork()
-                {
-                }
-            }
-            """;
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                     async Task DoWork()
+                                     {
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

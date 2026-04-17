@@ -13,7 +13,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
         var test = new CSharpAnalyzerTest<FileInfoToctouAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,17 +24,17 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     public Task FileInfoToctou_Reports_WhenExistsCheckFollowedByFileRead()
     {
         return VerifyAsync("""
-            using System.IO;
-            using System.Threading.Tasks;
-            class Loader
-            {
-                async Task<byte[]?> LoadAsync(FileInfo fileInfo)
-                {
-                    if (!fileInfo.Exists) return null;
-                    return await {|E128056:File.ReadAllBytesAsync(fileInfo.FullName)|};
-                }
-            }
-            """);
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class Loader
+                           {
+                               async Task<byte[]?> LoadAsync(FileInfo fileInfo)
+                               {
+                                   if (!fileInfo.Exists) return null;
+                                   return await {|E128056:File.ReadAllBytesAsync(fileInfo.FullName)|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -42,24 +42,24 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     public Task FileInfoToctou_NoReport_WhenReadIsGuardedWithTryCatch()
     {
         return VerifyAsync("""
-            using System.IO;
-            using System.Threading.Tasks;
-            class Loader
-            {
-                async Task<byte[]?> LoadAsync(FileInfo fileInfo)
-                {
-                    if (!fileInfo.Exists) return null;
-                    try
-                    {
-                        return await File.ReadAllBytesAsync(fileInfo.FullName);
-                    }
-                    catch (IOException)
-                    {
-                        return null;
-                    }
-                }
-            }
-            """);
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class Loader
+                           {
+                               async Task<byte[]?> LoadAsync(FileInfo fileInfo)
+                               {
+                                   if (!fileInfo.Exists) return null;
+                                   try
+                                   {
+                                       return await File.ReadAllBytesAsync(fileInfo.FullName);
+                                   }
+                                   catch (IOException)
+                                   {
+                                       return null;
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -67,22 +67,22 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     public Task FileInfoToctou_NoReport_WhenNoExistsCheckPresent()
     {
         return VerifyAsync("""
-            using System.IO;
-            using System.Threading.Tasks;
-            class Loader
-            {
-                async Task<byte[]?> LoadAsync(FileInfo fileInfo)
-                {
-                    try
-                    {
-                        return await File.ReadAllBytesAsync(fileInfo.FullName);
-                    }
-                    catch (IOException)
-                    {
-                        return null;
-                    }
-                }
-            }
-            """);
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class Loader
+                           {
+                               async Task<byte[]?> LoadAsync(FileInfo fileInfo)
+                               {
+                                   try
+                                   {
+                                       return await File.ReadAllBytesAsync(fileInfo.FullName);
+                                   }
+                                   catch (IOException)
+                                   {
+                                       return null;
+                                   }
+                               }
+                           }
+                           """);
     }
 }

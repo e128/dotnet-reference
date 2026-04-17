@@ -15,7 +15,7 @@ public sealed class E128058ListAsReadOnlyCodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         };
         return test.RunAsync();
     }
@@ -25,22 +25,22 @@ public sealed class E128058ListAsReadOnlyCodeFixTests
     public Task ListAsReadOnly_CodeFix_InsertsAsReadOnlyCall()
     {
         const string source = """
-            using System.Collections.Generic;
-            class Catalog
-            {
-                private readonly List<string> _items = new List<string>();
-                public IReadOnlyList<string> Items => {|E128058:_items|};
-            }
-            """;
+                              using System.Collections.Generic;
+                              class Catalog
+                              {
+                                  private readonly List<string> _items = new List<string>();
+                                  public IReadOnlyList<string> Items => {|E128058:_items|};
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Collections.Generic;
-            class Catalog
-            {
-                private readonly List<string> _items = new List<string>();
-                public IReadOnlyList<string> Items => _items.AsReadOnly();
-            }
-            """;
+                                 using System.Collections.Generic;
+                                 class Catalog
+                                 {
+                                     private readonly List<string> _items = new List<string>();
+                                     public IReadOnlyList<string> Items => _items.AsReadOnly();
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

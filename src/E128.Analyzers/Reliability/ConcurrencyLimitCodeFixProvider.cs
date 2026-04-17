@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128040: replaces literal 0 with <c>Environment.ProcessorCount</c>.
+///     Code fix for E128040: replaces literal 0 with <c>Environment.ProcessorCount</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConcurrencyLimitCodeFixProvider))]
 [Shared]
@@ -21,8 +21,10 @@ public sealed class ConcurrencyLimitCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConcurrencyLimitAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -45,9 +47,9 @@ public sealed class ConcurrencyLimitCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace 0 with Environment.ProcessorCount",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, zeroLiteral, ct),
-                equivalenceKey: nameof(ConcurrencyLimitCodeFixProvider)),
+                "Replace 0 with Environment.ProcessorCount",
+                ct => ApplyFixAsync(context.Document, zeroLiteral, ct),
+                nameof(ConcurrencyLimitCodeFixProvider)),
             diagnostic);
     }
 

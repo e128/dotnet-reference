@@ -17,7 +17,7 @@ public sealed class FileSystemPathAnalyzerOptionTests
         var test = new CSharpAnalyzerTest<FileSystemPathAnalyzer, DefaultVerifier>
         {
             TestCode = OptionStub + testBody,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor,
+            MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -28,8 +28,8 @@ public sealed class FileSystemPathAnalyzerOptionTests
     public Task Option_StringInput_Fires()
     {
         return VerifyAsync("""
-            class C { void M() { var opt = new Option<{|E128001:string|}>("--input"); } }
-            """);
+                           class C { void M() { var opt = new Option<{|E128001:string|}>("--input"); } }
+                           """);
     }
 
     [Fact]
@@ -37,8 +37,8 @@ public sealed class FileSystemPathAnalyzerOptionTests
     public Task Option_StringDirectory_Fires()
     {
         return VerifyAsync("""
-            class C { void M() { var opt = new Option<{|E128001:string|}>("--directory"); } }
-            """);
+                           class C { void M() { var opt = new Option<{|E128001:string|}>("--directory"); } }
+                           """);
     }
 
     [Fact]
@@ -46,8 +46,8 @@ public sealed class FileSystemPathAnalyzerOptionTests
     public Task Option_StringFile_Fires()
     {
         return VerifyAsync("""
-            class C { void M() { var opt = new Option<{|E128001:string|}>("--file"); } }
-            """);
+                           class C { void M() { var opt = new Option<{|E128001:string|}>("--file"); } }
+                           """);
     }
 
     [Fact]
@@ -55,8 +55,8 @@ public sealed class FileSystemPathAnalyzerOptionTests
     public Task Option_StringVerbose_NoFire()
     {
         return VerifyAsync("""
-            class C { void M() { var opt = new Option<string>("--verbose"); } }
-            """);
+                           class C { void M() { var opt = new Option<string>("--verbose"); } }
+                           """);
     }
 
     [Fact]
@@ -64,8 +64,8 @@ public sealed class FileSystemPathAnalyzerOptionTests
     public Task Argument_StringPath_Fires()
     {
         return VerifyAsync("""
-            class C { void M() { var arg = new Argument<{|E128001:string|}>("path"); } }
-            """);
+                           class C { void M() { var arg = new Argument<{|E128001:string|}>("path"); } }
+                           """);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class FileSystemPathAnalyzerOptionTests
     public Task Argument_StringUrl_NoFire()
     {
         return VerifyAsync("""
-            class C { void M() { var arg = new Argument<string>("url"); } }
-            """);
+                           class C { void M() { var arg = new Argument<string>("url"); } }
+                           """);
     }
 }

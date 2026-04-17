@@ -11,6 +11,7 @@ description: >
   fix all warnings, language modernization, primary constructors, collection expressions, overhaul solution.
 argument-hint: "[solution-file or directory]"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write, Agent
+effort: high
 ---
 
 # .NET Overhaul

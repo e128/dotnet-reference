@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Reports non-sealed, non-abstract classes that have no derived types in the current compilation.
-/// Encourages sealing classes by default to prevent unintended inheritance.
+///     Reports non-sealed, non-abstract classes that have no derived types in the current compilation.
+///     Encourages sealing classes by default to prevent unintended inheritance.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
@@ -16,15 +16,15 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128005";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Seal classes that have no subclasses",
-        messageFormat: "Class '{0}' has no derived types in this compilation — mark it sealed or add an explicit suppression if inheritance is intentional",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: null,
-        helpLinkUri: null,
-        customTags: WellKnownDiagnosticTags.CompilationEnd);
+        DiagnosticId,
+        "Seal classes that have no subclasses",
+        "Class '{0}' has no derived types in this compilation — mark it sealed or add an explicit suppression if inheritance is intentional",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true,
+        null,
+        null,
+        WellKnownDiagnosticTags.CompilationEnd);
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -53,8 +53,7 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
                 SymbolKind.NamedType);
 
             // Pass 2: Single-threaded — report leaf classes at compilation end.
-            startContext.RegisterCompilationEndAction(
-                ctx => ReportLeafClasses(ctx, candidates, hasSubclassSet));
+            startContext.RegisterCompilationEndAction(ctx => ReportLeafClasses(ctx, candidates, hasSubclassSet));
         });
     }
 

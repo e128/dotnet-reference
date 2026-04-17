@@ -1,5 +1,5 @@
 # Claude Code Maintenance
-*Updated: 2026-04-11T14:12:16Z*
+*Updated: 2026-04-17T13:51:00Z*
 
 ## Harness Structure
 
@@ -37,6 +37,7 @@ All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for
 - `docker-compose.yml` with security hardening (`read_only`, `no-new-privileges`, `cap_drop: ALL`)
 - `scripts/docker.sh` — build, run, test, stop, clean commands
 - Colima as the Docker runtime (no Docker Desktop required)
+- `DockerSmokeTests` detects daemon availability via `docker info` and skips gracefully when daemon is unavailable (no test failures)
 
 ## Prerequisites
 
@@ -45,3 +46,4 @@ All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for
 - `jq` — used for JSON parsing in scripts
 - `bash` 5+ — required for associative arrays and modern features
 - `colima` — Docker runtime for macOS (start with `colima start`)
+- `jb` (JetBrains ReSharper CLI) — used by `scripts/format.sh` for semantic cleanup before `dotnet format`; gracefully skipped if absent; install with `dotnet tool install -g JetBrains.ReSharper.GlobalTools`

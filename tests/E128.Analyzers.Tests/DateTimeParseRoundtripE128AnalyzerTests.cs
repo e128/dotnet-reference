@@ -13,7 +13,7 @@ public sealed class DateTimeParseRoundtripE128AnalyzerTests
         var test = new CSharpAnalyzerTest<DateTimeParseRoundtripAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,16 +24,16 @@ public sealed class DateTimeParseRoundtripE128AnalyzerTests
     public Task DateTimeParse_MissingDateTimeStyles_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Globalization;
-            class C
-            {
-                void M()
-                {
-                    var d = {|E128016:DateTime.Parse("2024-01-01", CultureInfo.InvariantCulture)|};
-                }
-            }
-            """);
+                           using System;
+                           using System.Globalization;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var d = {|E128016:DateTime.Parse("2024-01-01", CultureInfo.InvariantCulture)|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -41,16 +41,16 @@ public sealed class DateTimeParseRoundtripE128AnalyzerTests
     public Task DateTimeParseExact_MissingDateTimeStyles_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Globalization;
-            class C
-            {
-                void M()
-                {
-                    var d = {|E128016:DateTime.ParseExact("2024-01-01", "yyyy-MM-dd", CultureInfo.InvariantCulture)|};
-                }
-            }
-            """);
+                           using System;
+                           using System.Globalization;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var d = {|E128016:DateTime.ParseExact("2024-01-01", "yyyy-MM-dd", CultureInfo.InvariantCulture)|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -58,15 +58,15 @@ public sealed class DateTimeParseRoundtripE128AnalyzerTests
     public Task DateTimeParse_WithDateTimeStyles_DoesNotFire()
     {
         return VerifyAsync("""
-            using System;
-            using System.Globalization;
-            class C
-            {
-                void M()
-                {
-                    var d = DateTime.Parse("2024-01-01", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
-                }
-            }
-            """);
+                           using System;
+                           using System.Globalization;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var d = DateTime.Parse("2024-01-01", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+                               }
+                           }
+                           """);
     }
 }

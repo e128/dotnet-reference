@@ -6,8 +6,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128044: Flags types that implement <c>IAsyncDisposable</c> but not <c>IDisposable</c>.
-/// Consumers using synchronous <see langword="using"/> will silently skip disposal.
+///     E128044: Flags types that implement <c>IAsyncDisposable</c> but not <c>IDisposable</c>.
+///     Consumers using synchronous <see langword="using" /> will silently skip disposal.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AsyncDisposableWithoutDisposableAnalyzer : DiagnosticAnalyzer
@@ -15,12 +15,12 @@ public sealed class AsyncDisposableWithoutDisposableAnalyzer : DiagnosticAnalyze
     internal const string DiagnosticId = "E128044";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Type implements IAsyncDisposable but not IDisposable",
-        messageFormat: "Type '{0}' implements IAsyncDisposable but not IDisposable — consumers using sync 'using' will silently skip disposal",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Type implements IAsyncDisposable but not IDisposable",
+        "Type '{0}' implements IAsyncDisposable but not IDisposable — consumers using sync 'using' will silently skip disposal",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -84,8 +84,8 @@ public sealed class AsyncDisposableWithoutDisposableAnalyzer : DiagnosticAnalyze
 
         var ns = iface.ContainingNamespace;
         return ns != null
-            && string.Equals(ns.Name, "System", StringComparison.Ordinal)
-            && ns.ContainingNamespace != null
-            && ns.ContainingNamespace.IsGlobalNamespace;
+               && string.Equals(ns.Name, "System", StringComparison.Ordinal)
+               && ns.ContainingNamespace != null
+               && ns.ContainingNamespace.IsGlobalNamespace;
     }
 }

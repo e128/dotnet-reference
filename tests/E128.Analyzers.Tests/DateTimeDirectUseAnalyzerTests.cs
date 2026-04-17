@@ -13,7 +13,7 @@ public sealed class DateTimeDirectUseAnalyzerTests
         var test = new CSharpAnalyzerTest<DateTimeDirectUseAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,15 +24,15 @@ public sealed class DateTimeDirectUseAnalyzerTests
     public Task DateTime_Now_InMethod_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128003:DateTime.Now|};
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var x = {|E128003:DateTime.Now|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -40,15 +40,15 @@ public sealed class DateTimeDirectUseAnalyzerTests
     public Task DateTime_UtcNow_InMethod_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128003:DateTime.UtcNow|};
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var x = {|E128003:DateTime.UtcNow|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -56,15 +56,15 @@ public sealed class DateTimeDirectUseAnalyzerTests
     public Task DateTime_Today_InMethod_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128003:DateTime.Today|};
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var x = {|E128003:DateTime.Today|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -72,15 +72,15 @@ public sealed class DateTimeDirectUseAnalyzerTests
     public Task DateTimeOffset_Now_InMethod_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128003:DateTimeOffset.Now|};
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var x = {|E128003:DateTimeOffset.Now|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -88,12 +88,12 @@ public sealed class DateTimeDirectUseAnalyzerTests
     public Task DateTime_UtcNow_InStaticFieldInitializer_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                private static readonly DateTime _baseline = DateTime.UtcNow;
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               private static readonly DateTime _baseline = DateTime.UtcNow;
+                           }
+                           """);
     }
 
     [Fact]
@@ -101,11 +101,11 @@ public sealed class DateTimeDirectUseAnalyzerTests
     public Task DateTimeOffset_UtcNow_InStaticReadonlyField_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                private static readonly DateTimeOffset _ts = DateTimeOffset.UtcNow;
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               private static readonly DateTimeOffset _ts = DateTimeOffset.UtcNow;
+                           }
+                           """);
     }
 }

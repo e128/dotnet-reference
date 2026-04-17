@@ -15,7 +15,7 @@ public sealed class EncodingDefaultE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 
@@ -24,26 +24,26 @@ public sealed class EncodingDefaultE128CodeFixTests
     public Task EncodingDefault_CodeFix_ReplacesWithUtf8()
     {
         const string source = """
-            using System.Text;
-            class C
-            {
-                void M()
-                {
-                    var bytes = {|E128006:Encoding.Default|}.GetBytes("test");
-                }
-            }
-            """;
+                              using System.Text;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var bytes = {|E128006:Encoding.Default|}.GetBytes("test");
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Text;
-            class C
-            {
-                void M()
-                {
-                    var bytes = Encoding.UTF8.GetBytes("test");
-                }
-            }
-            """;
+                                 using System.Text;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var bytes = Encoding.UTF8.GetBytes("test");
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -53,28 +53,28 @@ public sealed class EncodingDefaultE128CodeFixTests
     public Task MultipleOccurrences_FixAll_ReplacesAll()
     {
         const string source = """
-            using System.Text;
-            class C
-            {
-                void M()
-                {
-                    var a = {|E128006:Encoding.Default|}.GetBytes("x");
-                    var b = {|E128006:Encoding.Default|}.GetString(new byte[] { 0 });
-                }
-            }
-            """;
+                              using System.Text;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var a = {|E128006:Encoding.Default|}.GetBytes("x");
+                                      var b = {|E128006:Encoding.Default|}.GetString(new byte[] { 0 });
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Text;
-            class C
-            {
-                void M()
-                {
-                    var a = Encoding.UTF8.GetBytes("x");
-                    var b = Encoding.UTF8.GetString(new byte[] { 0 });
-                }
-            }
-            """;
+                                 using System.Text;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var a = Encoding.UTF8.GetBytes("x");
+                                         var b = Encoding.UTF8.GetString(new byte[] { 0 });
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

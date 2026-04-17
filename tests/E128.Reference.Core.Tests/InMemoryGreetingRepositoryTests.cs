@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using E128.Reference.Core.Models;
 using E128.Reference.Core.Repositories;
@@ -63,7 +64,7 @@ public sealed class InMemoryGreetingRepositoryTests
         for (var i = 0; i < 5; i++)
         {
             await _repository.SaveAsync(
-                new Greeting("msg-" + i.ToString(System.Globalization.CultureInfo.InvariantCulture), "X", BaseTime.AddMinutes(i)));
+                new Greeting("msg-" + i.ToString(CultureInfo.InvariantCulture), "X", BaseTime.AddMinutes(i)));
         }
 
         var result = await _repository.GetRecentAsync(2);

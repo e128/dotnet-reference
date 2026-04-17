@@ -13,13 +13,13 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128018";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use ToArray() instead of ToList() for read-only foreach iteration",
-        messageFormat: "ToList() in foreach loop allocates an unnecessary list — use ToArray() for read-only iteration",
-        category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "When a ToList() call is the direct expression of a foreach loop, the list is never mutated. Use ToArray() instead to avoid the per-element resizing overhead and signal read-only intent.");
+        DiagnosticId,
+        "Use ToArray() instead of ToList() for read-only foreach iteration",
+        "ToList() in foreach loop allocates an unnecessary list — use ToArray() for read-only iteration",
+        "Performance",
+        DiagnosticSeverity.Warning,
+        true,
+        "When a ToList() call is the direct expression of a foreach loop, the list is never mutated. Use ToArray() instead to avoid the per-element resizing overhead and signal read-only intent.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

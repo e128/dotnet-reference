@@ -17,8 +17,10 @@ public sealed class EncodingDefaultCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [EncodingDefaultAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -38,9 +40,9 @@ public sealed class EncodingDefaultCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Replace Encoding.Default with Encoding.UTF8",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(EncodingDefaultCodeFixProvider)),
+                "Replace Encoding.Default with Encoding.UTF8",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(EncodingDefaultCodeFixProvider)),
             diagnostic);
     }
 

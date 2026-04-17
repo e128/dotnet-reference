@@ -15,7 +15,7 @@ public sealed class DateTimeDirectUseCodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 
@@ -24,26 +24,26 @@ public sealed class DateTimeDirectUseCodeFixTests
     public Task CodeFix_ReplacesDateTimeUtcNow_WithTimeProviderSystem()
     {
         const string source = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128003:DateTime.UtcNow|};
-                }
-            }
-            """;
+                              using System;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var x = {|E128003:DateTime.UtcNow|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = TimeProvider.System.GetUtcNow().UtcDateTime;
-                }
-            }
-            """;
+                                 using System;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var x = TimeProvider.System.GetUtcNow().UtcDateTime;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -53,26 +53,26 @@ public sealed class DateTimeDirectUseCodeFixTests
     public Task CodeFix_ReplacesDateTimeNow_WithTimeProviderSystemGetLocalNow()
     {
         const string source = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128003:DateTime.Now|};
-                }
-            }
-            """;
+                              using System;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var x = {|E128003:DateTime.Now|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = TimeProvider.System.GetLocalNow().DateTime;
-                }
-            }
-            """;
+                                 using System;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var x = TimeProvider.System.GetLocalNow().DateTime;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -82,26 +82,26 @@ public sealed class DateTimeDirectUseCodeFixTests
     public Task CodeFix_ReplacesDateTimeToday_WithTimeProviderSystemGetLocalNowDate()
     {
         const string source = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = {|E128003:DateTime.Today|};
-                }
-            }
-            """;
+                              using System;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var x = {|E128003:DateTime.Today|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var x = TimeProvider.System.GetLocalNow().Date;
-                }
-            }
-            """;
+                                 using System;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var x = TimeProvider.System.GetLocalNow().Date;
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -111,26 +111,26 @@ public sealed class DateTimeDirectUseCodeFixTests
     public Task CodeFix_ReplacesDateTimeOffsetNow_WithTimeProviderSystemGetLocalNow()
     {
         const string source = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    DateTimeOffset x = {|E128003:DateTimeOffset.Now|};
-                }
-            }
-            """;
+                              using System;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      DateTimeOffset x = {|E128003:DateTimeOffset.Now|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    DateTimeOffset x = TimeProvider.System.GetLocalNow();
-                }
-            }
-            """;
+                                 using System;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         DateTimeOffset x = TimeProvider.System.GetLocalNow();
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -140,26 +140,26 @@ public sealed class DateTimeDirectUseCodeFixTests
     public Task CodeFix_ReplacesDateTimeOffsetUtcNow_WithTimeProviderSystemGetUtcNow()
     {
         const string source = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    DateTimeOffset x = {|E128003:DateTimeOffset.UtcNow|};
-                }
-            }
-            """;
+                              using System;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      DateTimeOffset x = {|E128003:DateTimeOffset.UtcNow|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    DateTimeOffset x = TimeProvider.System.GetUtcNow();
-                }
-            }
-            """;
+                                 using System;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         DateTimeOffset x = TimeProvider.System.GetUtcNow();
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

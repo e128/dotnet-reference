@@ -15,7 +15,7 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 
@@ -24,26 +24,26 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
     public Task CodeFix_RemovesTaskRunWrapper_ExpressionBody()
     {
         const string source = """
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    await {|E128036:Task.Run(async () => await Task.Delay(1))|};
-                }
-            }
-            """;
+                              using System.Threading.Tasks;
+                              class C
+                              {
+                                  async Task M()
+                                  {
+                                      await {|E128036:Task.Run(async () => await Task.Delay(1))|};
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    await Task.Delay(1);
-                }
-            }
-            """;
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                     async Task M()
+                                     {
+                                         await Task.Delay(1);
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }
@@ -55,19 +55,19 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
         // Block-body lambdas are not auto-fixable; diagnostic still fires but no code fix.
         // FixedCode == TestCode verifies no fix was applied.
         return VerifyNoFixAsync("""
-            using System.Threading.Tasks;
-            class C
-            {
-                async Task M()
-                {
-                    await {|E128036:Task.Run(async () =>
-                    {
-                        await Task.Delay(1);
-                        await Task.Delay(2);
-                    })|};
-                }
-            }
-            """);
+                                using System.Threading.Tasks;
+                                class C
+                                {
+                                    async Task M()
+                                    {
+                                        await {|E128036:Task.Run(async () =>
+                                        {
+                                            await Task.Delay(1);
+                                            await Task.Delay(2);
+                                        })|};
+                                    }
+                                }
+                                """);
     }
 
     private static Task VerifyNoFixAsync(string code)
@@ -77,7 +77,7 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
             TestCode = code,
             FixedCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 0,
+            NumberOfFixAllIterations = 0
         }.RunAsync();
     }
 }

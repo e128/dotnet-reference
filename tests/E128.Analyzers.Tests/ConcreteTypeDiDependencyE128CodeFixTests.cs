@@ -7,9 +7,9 @@ using Xunit;
 namespace E128.Analyzers.Tests;
 
 /// <summary>
-/// E128035 uses CompilationEnd (non-local diagnostics) and the code fix modifies a different
-/// location than the diagnostic. The standard code fix test framework does not support non-local
-/// fixes. These tests verify the analyzer fires correctly via the analyzer test harness.
+///     E128035 uses CompilationEnd (non-local diagnostics) and the code fix modifies a different
+///     location than the diagnostic. The standard code fix test framework does not support non-local
+///     fixes. These tests verify the analyzer fires correctly via the analyzer test harness.
 /// </summary>
 public sealed class ConcreteTypeDiDependencyE128CodeFixTests
 {
@@ -21,7 +21,7 @@ public sealed class ConcreteTypeDiDependencyE128CodeFixTests
         var test = new CSharpAnalyzerTest<ConcreteTypeDiDependencyAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = Net100WithDi,
+            ReferenceAssemblies = Net100WithDi
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -32,21 +32,21 @@ public sealed class ConcreteTypeDiDependencyE128CodeFixTests
     public Task AnalyzerFires_WhenConcreteParamOnlyInterfaceRegistered()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class MyService : IMyService { }
-            class Consumer
-            {
-                public Consumer({|E128035:MyService svc|}) { }
-            }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<IMyService, MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class MyService : IMyService { }
+                           class Consumer
+                           {
+                               public Consumer({|E128035:MyService svc|}) { }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<IMyService, MyService>();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -54,21 +54,21 @@ public sealed class ConcreteTypeDiDependencyE128CodeFixTests
     public Task AnalyzerDoesNotFire_WhenDirectRegistrationExists()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class MyService : IMyService { }
-            class Consumer
-            {
-                public Consumer(MyService svc) { }
-            }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<IMyService, MyService>();
-                    services.AddSingleton<MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class MyService : IMyService { }
+                           class Consumer
+                           {
+                               public Consumer(MyService svc) { }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<IMyService, MyService>();
+                                   services.AddSingleton<MyService>();
+                               }
+                           }
+                           """);
     }
 }

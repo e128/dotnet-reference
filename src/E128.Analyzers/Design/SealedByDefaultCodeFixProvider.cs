@@ -17,8 +17,10 @@ public sealed class SealedByDefaultCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SealedByDefaultAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -39,9 +41,9 @@ public sealed class SealedByDefaultCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add sealed modifier",
-                createChangedDocument: ct => AddSealedModifierAsync(context.Document, classDecl, ct),
-                equivalenceKey: nameof(SealedByDefaultCodeFixProvider)),
+                "Add sealed modifier",
+                ct => AddSealedModifierAsync(context.Document, classDecl, ct),
+                nameof(SealedByDefaultCodeFixProvider)),
             diagnostic);
     }
 

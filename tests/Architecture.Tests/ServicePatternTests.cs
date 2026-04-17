@@ -8,7 +8,7 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 namespace Architecture.Tests;
 
 /// <summary>
-/// Enforces service layer patterns: service classes should implement an interface.
+///     Enforces service layer patterns: service classes should implement an interface.
 /// </summary>
 public sealed class ServicePatternTests
 {

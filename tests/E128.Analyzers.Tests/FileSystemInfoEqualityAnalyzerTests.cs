@@ -13,7 +13,7 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
         var test = new CSharpAnalyzerTest<FileSystemInfoEqualityAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,12 +24,12 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     public Task FileInfo_Equality_ReportsOnEquals()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                bool M(FileInfo a, FileInfo b) => a {|E128030:==|} b;
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               bool M(FileInfo a, FileInfo b) => a {|E128030:==|} b;
+                           }
+                           """);
     }
 
     [Fact]
@@ -37,12 +37,12 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     public Task DirectoryInfo_Inequality_ReportsOnNotEquals()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                bool M(DirectoryInfo a, DirectoryInfo b) => a {|E128030:!=|} b;
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               bool M(DirectoryInfo a, DirectoryInfo b) => a {|E128030:!=|} b;
+                           }
+                           """);
     }
 
     [Fact]
@@ -50,12 +50,12 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     public Task FileInfo_EqualsMethod_ReportsOnInstanceCall()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                bool M(FileInfo a, FileInfo b) => a.{|E128030:Equals|}(b);
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               bool M(FileInfo a, FileInfo b) => a.{|E128030:Equals|}(b);
+                           }
+                           """);
     }
 
     [Fact]
@@ -63,12 +63,12 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     public Task FileInfo_NullComparison_DoesNotReport()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                bool M(FileInfo a) => a == null;
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               bool M(FileInfo a) => a == null;
+                           }
+                           """);
     }
 
     [Fact]
@@ -76,12 +76,12 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     public Task FileInfo_FullNameComparison_DoesNotReport()
     {
         return VerifyAsync("""
-            using System.IO;
-            class C
-            {
-                bool M(FileInfo a, FileInfo b) => a.FullName == b.FullName;
-            }
-            """);
+                           using System.IO;
+                           class C
+                           {
+                               bool M(FileInfo a, FileInfo b) => a.FullName == b.FullName;
+                           }
+                           """);
     }
 
     [Fact]
@@ -89,10 +89,10 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     public Task String_Equality_DoesNotReport()
     {
         return VerifyAsync("""
-            class C
-            {
-                bool M(string a, string b) => a == b;
-            }
-            """);
+                           class C
+                           {
+                               bool M(string a, string b) => a == b;
+                           }
+                           """);
     }
 }

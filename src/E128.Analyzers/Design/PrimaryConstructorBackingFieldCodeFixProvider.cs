@@ -20,8 +20,10 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [PrimaryConstructorBackingFieldAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -41,9 +43,9 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Remove backing field, use primary constructor parameter",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, diagnostic, ct),
-                equivalenceKey: nameof(PrimaryConstructorBackingFieldCodeFixProvider)),
+                "Remove backing field, use primary constructor parameter",
+                ct => ApplyFixAsync(context.Document, diagnostic, ct),
+                nameof(PrimaryConstructorBackingFieldCodeFixProvider)),
             diagnostic);
     }
 
@@ -176,10 +178,10 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
         return currentField is null
             ? root
             : currentField.Declaration.Variables.Count == 1
-            ? root.RemoveNode(currentField, SyntaxRemoveOptions.KeepNoTrivia)!
-            : root.RemoveNode(
-                currentField.Declaration.Variables.First(v =>
-                    string.Equals(v.Identifier.ValueText, variable.Identifier.ValueText, StringComparison.Ordinal)),
-                SyntaxRemoveOptions.KeepNoTrivia)!;
+                ? root.RemoveNode(currentField, SyntaxRemoveOptions.KeepNoTrivia)!
+                : root.RemoveNode(
+                    currentField.Declaration.Variables.First(v =>
+                        string.Equals(v.Identifier.ValueText, variable.Identifier.ValueText, StringComparison.Ordinal)),
+                    SyntaxRemoveOptions.KeepNoTrivia)!;
     }
 }

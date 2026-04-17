@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -12,9 +13,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Performance;
 
 /// <summary>
-/// Code fix for E128027: transforms <c>static readonly HashSet&lt;T&gt;</c> / <c>Dictionary&lt;K,V&gt;</c>
-/// to <c>FrozenSet&lt;T&gt;</c> / <c>FrozenDictionary&lt;K,V&gt;</c> by wrapping the initializer
-/// with <c>.ToFrozenSet()</c> or <c>.ToFrozenDictionary()</c>.
+///     Code fix for E128027: transforms <c>static readonly HashSet&lt;T&gt;</c> / <c>Dictionary&lt;K,V&gt;</c>
+///     to <c>FrozenSet&lt;T&gt;</c> / <c>FrozenDictionary&lt;K,V&gt;</c> by wrapping the initializer
+///     with <c>.ToFrozenSet()</c> or <c>.ToFrozenDictionary()</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StaticReadonlyFrozenCollectionCodeFixProvider))]
 [Shared]
@@ -26,7 +27,10 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
 
     public override ImmutableArray<string> FixableDiagnosticIds => [StaticReadonlyFrozenCollectionAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -48,9 +52,9 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Convert to frozen collection",
-                createChangedDocument: ct => ConvertToFrozenAsync(context.Document, declaration, ct),
-                equivalenceKey: StaticReadonlyFrozenCollectionAnalyzer.DiagnosticId),
+                "Convert to frozen collection",
+                ct => ConvertToFrozenAsync(context.Document, declaration, ct),
+                StaticReadonlyFrozenCollectionAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
     }
 
@@ -150,15 +154,15 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
             .WithType(newTypeSyntax)
             .WithVariables(
                 SyntaxFactory.SeparatedList(
-                [
-                    variable.WithInitializer(
-                        variable.Initializer.WithValue(wrappedExpression)),
-                ]));
+                    [
+                        variable.WithInitializer(
+                            variable.Initializer.WithValue(wrappedExpression))
+                    ]));
     }
 
     /// <summary>
-    /// Converts implicit <c>new()</c> to explicit <c>new HashSet&lt;T&gt;()</c> so the
-    /// initializer compiles when the field type changes to FrozenSet/FrozenDictionary.
+    ///     Converts implicit <c>new()</c> to explicit <c>new HashSet&lt;T&gt;()</c> so the
+    ///     initializer compiles when the field type changes to FrozenSet/FrozenDictionary.
     /// </summary>
     private static ExpressionSyntax MakeExplicitInitializer(ExpressionSyntax initializer, INamedTypeSymbol fieldType)
     {
@@ -183,7 +187,7 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
         }
 
         if (compilationUnit.Usings.Any(u =>
-            string.Equals(u.Name?.ToString(), FrozenNamespace, System.StringComparison.Ordinal)))
+                string.Equals(u.Name?.ToString(), FrozenNamespace, StringComparison.Ordinal)))
         {
             return root;
         }
@@ -194,7 +198,7 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
         var insertIndex = 0;
         for (var i = 0; i < compilationUnit.Usings.Count; i++)
         {
-            if (System.StringComparer.Ordinal.Compare(compilationUnit.Usings[i].Name?.ToString(), FrozenNamespace) < 0)
+            if (StringComparer.Ordinal.Compare(compilationUnit.Usings[i].Name?.ToString(), FrozenNamespace) < 0)
             {
                 insertIndex = i + 1;
             }

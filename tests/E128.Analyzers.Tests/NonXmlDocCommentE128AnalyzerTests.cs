@@ -13,7 +13,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
         var test = new CSharpAnalyzerTest<NonXmlDocCommentE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,12 +24,12 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     public Task SlashSlashAboveMethod_Fires()
     {
         return VerifyAsync("""
-            class Foo
-            {
-                {|E128024:// This does something|}
-                void DoSomething() { }
-            }
-            """);
+                           class Foo
+                           {
+                               {|E128024:// This does something|}
+                               void DoSomething() { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -37,12 +37,12 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     public Task XmlDocAboveMethod_NoFire()
     {
         return VerifyAsync("""
-            class Foo
-            {
-                /// <summary>This is proper XML doc.</summary>
-                void DoSomething() { }
-            }
-            """);
+                           class Foo
+                           {
+                               /// <summary>This is proper XML doc.</summary>
+                               void DoSomething() { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -50,15 +50,15 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     public Task CommentInsideBody_NoFire()
     {
         return VerifyAsync("""
-            class Foo
-            {
-                void DoSomething()
-                {
-                    // This comment is inside the body — fine
-                    var x = 1;
-                }
-            }
-            """);
+                           class Foo
+                           {
+                               void DoSomething()
+                               {
+                                   // This comment is inside the body — fine
+                                   var x = 1;
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -66,13 +66,13 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     public Task BlankLineBetweenCommentAndMethod_Fires()
     {
         return VerifyAsync("""
-            class Foo
-            {
-                {|E128024:// Separated by blank line|}
+                           class Foo
+                           {
+                               {|E128024:// Separated by blank line|}
 
-                void DoSomething() { }
-            }
-            """);
+                               void DoSomething() { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -80,13 +80,13 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     public Task MultipleCommentLines_Fires()
     {
         return VerifyAsync("""
-            class Foo
-            {
-                {|E128024:// First line|}
-                {|E128024:// Second line|}
-                void DoSomething() { }
-            }
-            """);
+                           class Foo
+                           {
+                               {|E128024:// First line|}
+                               {|E128024:// Second line|}
+                               void DoSomething() { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -94,12 +94,12 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     public Task CommentAboveProperty_NoFire()
     {
         return VerifyAsync("""
-            class Foo
-            {
-                // This is above a property, not a method
-                public int Value { get; set; }
-            }
-            """);
+                           class Foo
+                           {
+                               // This is above a property, not a method
+                               public int Value { get; set; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -107,15 +107,15 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     public Task CommentAboveLocalFunction_Fires()
     {
         return VerifyAsync("""
-            class Foo
-            {
-                void Outer()
-                {
-                    {|E128024:// Above a local function|}
-                    void Inner() { }
-                }
-            }
-            """);
+                           class Foo
+                           {
+                               void Outer()
+                               {
+                                   {|E128024:// Above a local function|}
+                                   void Inner() { }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -123,13 +123,13 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     public Task DecorativeSeparatorNotAboveMethod_NoFire()
     {
         return VerifyAsync("""
-            class Foo
-            {
-                public int A { get; set; }
+                           class Foo
+                           {
+                               public int A { get; set; }
 
-                // ── Section separator ───
-                public int B { get; set; }
-            }
-            """);
+                               // ── Section separator ───
+                               public int B { get; set; }
+                           }
+                           """);
     }
 }

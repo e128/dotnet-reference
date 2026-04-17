@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128023: Flags hardcoded <c>"/tmp"</c> or <c>"/tmp/..."</c> string literals.
-/// Cross-platform code must use the temp directory API instead.
+///     E128023: Flags hardcoded <c>"/tmp"</c> or <c>"/tmp/..."</c> string literals.
+///     Cross-platform code must use the temp directory API instead.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
@@ -17,13 +17,13 @@ public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128023";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Avoid hardcoded /tmp path",
-        messageFormat: "Hardcoded path '{0}' is not portable — use Path.GetTempPath() instead",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "String literals equal to \"/tmp\" or starting with \"/tmp/\" (or Windows equivalents) are not portable. Use Path.Combine with the temp directory API instead.");
+        DiagnosticId,
+        "Avoid hardcoded /tmp path",
+        "Hardcoded path '{0}' is not portable — use Path.GetTempPath() instead",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "String literals equal to \"/tmp\" or starting with \"/tmp/\" (or Windows equivalents) are not portable. Use Path.Combine with the temp directory API instead.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128033: replaces the <c>init</c> accessor keyword with <c>set</c>
-/// so the configuration binder can populate the property at runtime.
+///     Code fix for E128033: replaces the <c>init</c> accessor keyword with <c>set</c>
+///     so the configuration binder can populate the property at runtime.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(OptionsBindInitCodeFixProvider))]
 [Shared]
@@ -21,8 +21,10 @@ public sealed class OptionsBindInitCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [OptionsBindInitAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -38,7 +40,7 @@ public sealed class OptionsBindInitCodeFixProvider : CodeFixProvider
         // FindNode may return the accessor directly (when the diagnostic span covers the full accessor)
         // or a child node. Fall back to finding the token when the span targets the 'init' keyword.
         var accessor = node as AccessorDeclarationSyntax
-            ?? root.FindToken(diagnostic.Location.SourceSpan.Start).Parent as AccessorDeclarationSyntax;
+                       ?? root.FindToken(diagnostic.Location.SourceSpan.Start).Parent as AccessorDeclarationSyntax;
 
         if (accessor is null)
         {
@@ -47,9 +49,9 @@ public sealed class OptionsBindInitCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Change 'init' to 'set'",
-                createChangedDocument: ct => ChangeInitToSetAsync(context.Document, accessor, ct),
-                equivalenceKey: nameof(OptionsBindInitCodeFixProvider)),
+                "Change 'init' to 'set'",
+                ct => ChangeInitToSetAsync(context.Document, accessor, ct),
+                nameof(OptionsBindInitCodeFixProvider)),
             diagnostic);
     }
 

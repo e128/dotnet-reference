@@ -14,7 +14,7 @@ public sealed class DynamicallyAccessedMembersGuardE128CodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -23,22 +23,22 @@ public sealed class DynamicallyAccessedMembersGuardE128CodeFixTests
     public Task RemovesDynamicallyAccessedMembersAttribute()
     {
         const string source = """
-            using System.Diagnostics.CodeAnalysis;
+                              using System.Diagnostics.CodeAnalysis;
 
-            class C
-            {
-                void M([{|E128049:DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)|}] System.Type type) { }
-            }
-            """;
+                              class C
+                              {
+                                  void M([{|E128049:DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)|}] System.Type type) { }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Diagnostics.CodeAnalysis;
+                                 using System.Diagnostics.CodeAnalysis;
 
-            class C
-            {
-                void M(System.Type type) { }
-            }
-            """;
+                                 class C
+                                 {
+                                     void M(System.Type type) { }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

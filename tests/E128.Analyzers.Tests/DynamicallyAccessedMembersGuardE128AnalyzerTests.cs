@@ -13,7 +13,7 @@ public sealed class DynamicallyAccessedMembersGuardE128AnalyzerTests
         var test = new CSharpAnalyzerTest<DynamicallyAccessedMembersGuardAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,13 +24,13 @@ public sealed class DynamicallyAccessedMembersGuardE128AnalyzerTests
     public Task DynamicallyAccessedMembersAttribute_Fires()
     {
         return VerifyAsync("""
-            using System.Diagnostics.CodeAnalysis;
+                           using System.Diagnostics.CodeAnalysis;
 
-            class C
-            {
-                void M([{|E128049:DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)|}] System.Type type) { }
-            }
-            """);
+                           class C
+                           {
+                               void M([{|E128049:DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)|}] System.Type type) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -38,13 +38,13 @@ public sealed class DynamicallyAccessedMembersGuardE128AnalyzerTests
     public Task DynamicallyAccessedMembersAttribute_FullName_Fires()
     {
         return VerifyAsync("""
-            using System.Diagnostics.CodeAnalysis;
+                           using System.Diagnostics.CodeAnalysis;
 
-            class C
-            {
-                void M([{|E128049:DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes.All)|}] System.Type type) { }
-            }
-            """);
+                           class C
+                           {
+                               void M([{|E128049:DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes.All)|}] System.Type type) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -52,14 +52,14 @@ public sealed class DynamicallyAccessedMembersGuardE128AnalyzerTests
     public Task OtherAttribute_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
+                           using System;
 
-            class C
-            {
-                [Obsolete("test")]
-                void M() { }
-            }
-            """);
+                           class C
+                           {
+                               [Obsolete("test")]
+                               void M() { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -67,10 +67,10 @@ public sealed class DynamicallyAccessedMembersGuardE128AnalyzerTests
     public Task NoAttributes_NoDiagnostic()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M() { }
-            }
-            """);
+                           class C
+                           {
+                               void M() { }
+                           }
+                           """);
     }
 }

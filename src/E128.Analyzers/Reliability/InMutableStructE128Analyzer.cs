@@ -13,16 +13,15 @@ public sealed class InMutableStructE128Analyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128020";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Do not use 'in' modifier with mutable structs",
-        messageFormat: "Parameter '{0}' should not use the 'in' modifier — '{1}' is a mutable struct and 'in' causes hidden defensive copies",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description:
-            "The 'in' modifier on a mutable (non-readonly) struct parameter causes the compiler to " +
-            "create a hidden defensive copy on every member access. This silently changes behavior — " +
-            "for example, enumerating a copy of Batch<Activity> yields zero elements.");
+        DiagnosticId,
+        "Do not use 'in' modifier with mutable structs",
+        "Parameter '{0}' should not use the 'in' modifier — '{1}' is a mutable struct and 'in' causes hidden defensive copies",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "The 'in' modifier on a mutable (non-readonly) struct parameter causes the compiler to " +
+        "create a hidden defensive copy on every member access. This silently changes behavior — " +
+        "for example, enumerating a copy of Batch<Activity> yields zero elements.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

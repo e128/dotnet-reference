@@ -13,7 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128050: replaces the numeric type (int, long, float, double) with <c>TimeSpan</c>.
+///     Code fix for E128050: replaces the numeric type (int, long, float, double) with <c>TimeSpan</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TimeSpanForDurationCodeFixProvider))]
 [Shared]
@@ -22,8 +22,10 @@ public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TimeSpanForDurationAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -38,9 +40,9 @@ public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Change type to TimeSpan",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, root, node, ct),
-                equivalenceKey: nameof(TimeSpanForDurationCodeFixProvider)),
+                "Change type to TimeSpan",
+                ct => ApplyFixAsync(context.Document, root, node, ct),
+                nameof(TimeSpanForDurationCodeFixProvider)),
             diagnostic);
     }
 
@@ -82,7 +84,7 @@ public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
         }
 
         if (compilationUnit.Usings.Any(u =>
-            string.Equals(u.Name?.ToString(), "System", StringComparison.Ordinal)))
+                string.Equals(u.Name?.ToString(), "System", StringComparison.Ordinal)))
         {
             return root;
         }

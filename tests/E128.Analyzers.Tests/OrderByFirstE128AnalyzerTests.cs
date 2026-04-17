@@ -13,7 +13,7 @@ public sealed class OrderByFirstE128AnalyzerTests
         var test = new CSharpAnalyzerTest<OrderByFirstAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,17 +24,17 @@ public sealed class OrderByFirstE128AnalyzerTests
     public Task OrderByFirst_Fires_E128009()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                void M()
-                {
-                    var list = new List<int> { 3, 1, 2 };
-                    var x = {|E128009:list.OrderBy(i => i).First()|};
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var list = new List<int> { 3, 1, 2 };
+                                   var x = {|E128009:list.OrderBy(i => i).First()|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -42,17 +42,17 @@ public sealed class OrderByFirstE128AnalyzerTests
     public Task OrderByDescendingFirst_Fires_E128009()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                void M()
-                {
-                    var list = new List<int> { 3, 1, 2 };
-                    var x = {|E128009:list.OrderByDescending(i => i).First()|};
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var list = new List<int> { 3, 1, 2 };
+                                   var x = {|E128009:list.OrderByDescending(i => i).First()|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -60,17 +60,17 @@ public sealed class OrderByFirstE128AnalyzerTests
     public Task OrderByFirstOrDefault_Fires_E128009()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                void M()
-                {
-                    var list = new List<int> { 3, 1, 2 };
-                    var x = {|E128009:list.OrderBy(i => i).FirstOrDefault()|};
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var list = new List<int> { 3, 1, 2 };
+                                   var x = {|E128009:list.OrderBy(i => i).FirstOrDefault()|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -78,17 +78,17 @@ public sealed class OrderByFirstE128AnalyzerTests
     public Task MinBy_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                void M()
-                {
-                    var list = new List<int> { 3, 1, 2 };
-                    var x = list.MinBy(i => i);
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var list = new List<int> { 3, 1, 2 };
+                                   var x = list.MinBy(i => i);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -96,17 +96,17 @@ public sealed class OrderByFirstE128AnalyzerTests
     public Task FirstWithoutOrderBy_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                void M()
-                {
-                    var list = new List<int> { 3, 1, 2 };
-                    var x = list.First();
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var list = new List<int> { 3, 1, 2 };
+                                   var x = list.First();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -114,16 +114,16 @@ public sealed class OrderByFirstE128AnalyzerTests
     public Task NonLinqOrderBy_DoesNotFire()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.Linq;
-            class C
-            {
-                List<int> OrderBy(System.Func<int, int> k) => new List<int>();
-                void M()
-                {
-                    var x = OrderBy(i => i).First();
-                }
-            }
-            """);
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               List<int> OrderBy(System.Func<int, int> k) => new List<int>();
+                               void M()
+                               {
+                                   var x = OrderBy(i => i).First();
+                               }
+                           }
+                           """);
     }
 }

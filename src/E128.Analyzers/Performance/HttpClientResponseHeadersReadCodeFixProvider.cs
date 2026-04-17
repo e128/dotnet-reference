@@ -20,8 +20,10 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : CodeFixProvid
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [HttpClientResponseHeadersReadAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -41,9 +43,9 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : CodeFixProvid
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add HttpCompletionOption.ResponseHeadersRead",
-                createChangedDocument: ct => InsertResponseHeadersReadAsync(context.Document, invocation, ct),
-                equivalenceKey: nameof(HttpClientResponseHeadersReadCodeFixProvider)),
+                "Add HttpCompletionOption.ResponseHeadersRead",
+                ct => InsertResponseHeadersReadAsync(context.Document, invocation, ct),
+                nameof(HttpClientResponseHeadersReadCodeFixProvider)),
             diagnostic);
     }
 
@@ -95,7 +97,7 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : CodeFixProvid
                 if (!hasUsing)
                 {
                     var newUsing = SyntaxFactory.UsingDirective(
-                        SyntaxFactory.ParseName("System.Net.Http"))
+                            SyntaxFactory.ParseName("System.Net.Http"))
                         .NormalizeWhitespace()
                         .WithTrailingTrivia(SyntaxFactory.LineFeed);
 
@@ -121,7 +123,7 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : CodeFixProvid
         var lastArg = args.Last();
         var lastArgType = semanticModel.GetTypeInfo(lastArg.Expression, cancellationToken).Type;
         return lastArgType is not null
-            && string.Equals(lastArgType.ToDisplayString(), "System.Threading.CancellationToken", StringComparison.Ordinal)
+               && string.Equals(lastArgType.ToDisplayString(), "System.Threading.CancellationToken", StringComparison.Ordinal)
             ? args.Count - 1
             : args.Count;
     }

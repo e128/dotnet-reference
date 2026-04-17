@@ -13,12 +13,12 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128004";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use IHttpClientFactory instead of new HttpClient()",
-        messageFormat: "Use IHttpClientFactory.CreateClient() instead of new HttpClient() — register via DI",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use IHttpClientFactory instead of new HttpClient()",
+        "Use IHttpClientFactory.CreateClient() instead of new HttpClient() — register via DI",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -49,7 +49,7 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
         {
             IdentifierNameSyntax id => id.Identifier.ValueText,
             QualifiedNameSyntax q => q.Right.Identifier.ValueText,
-            _ => null,
+            _ => null
         };
 
         if (!string.Equals(typeName, "HttpClient", StringComparison.Ordinal))
@@ -82,8 +82,8 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
         var ns = type.ContainingNamespace;
         // Expecting: System.Net.Http
         return ns is { Name: "Http" }
-            && ns.ContainingNamespace is { Name: "Net" }
-            && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
-            && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+               && ns.ContainingNamespace is { Name: "Net" }
+               && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
+               && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
     }
 }

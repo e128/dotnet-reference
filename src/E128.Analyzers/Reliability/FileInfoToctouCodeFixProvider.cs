@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128056: wraps the flagged file-read call's containing statement
-/// in a <c>try { } catch (System.IO.IOException) { return default; }</c> block.
+///     Code fix for E128056: wraps the flagged file-read call's containing statement
+///     in a <c>try { } catch (System.IO.IOException) { return default; }</c> block.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FileInfoToctouCodeFixProvider))]
 [Shared]
@@ -21,8 +21,10 @@ public sealed class FileInfoToctouCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FileInfoToctouAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -42,9 +44,9 @@ public sealed class FileInfoToctouCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Wrap file read in try/catch(IOException)",
-                createChangedDocument: ct => WrapInTryCatchAsync(context.Document, statement, ct),
-                equivalenceKey: nameof(FileInfoToctouCodeFixProvider)),
+                "Wrap file read in try/catch(IOException)",
+                ct => WrapInTryCatchAsync(context.Document, statement, ct),
+                nameof(FileInfoToctouCodeFixProvider)),
             diagnostic);
     }
 
@@ -63,7 +65,7 @@ public sealed class FileInfoToctouCodeFixProvider : CodeFixProvider
         var catchClause = SyntaxFactory.CatchClause(
             SyntaxFactory.CatchDeclaration(
                 SyntaxFactory.ParseTypeName("System.IO.IOException")),
-            filter: null,
+            null,
             SyntaxFactory.Block(
                 SyntaxFactory.ReturnStatement(
                     SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression))));

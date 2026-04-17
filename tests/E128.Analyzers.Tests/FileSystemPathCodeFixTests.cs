@@ -20,7 +20,7 @@ public sealed class FileSystemPathCodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             MarkupOptions = MarkupOptions.UseFirstDescriptor,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         };
 
         if (equivalenceKey is not null)
@@ -41,16 +41,16 @@ public sealed class FileSystemPathCodeFixTests
     public Task NamePattern_EmptyBody_FixChangesToFileInfo()
     {
         const string source = """
-            class C { void M(string {|E128001:path|}) { } }
-            """;
+                              class C { void M(string {|E128001:path|}) { } }
+                              """;
 
         const string fixedCode = """
-            using System.IO;
-            class C { void M(FileInfo path) { } }
-            """;
+                                 using System.IO;
+                                 class C { void M(FileInfo path) { } }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode,
-            equivalenceKey: "FileSystemPathCodeFixProvider_FileInfo");
+            "FileSystemPathCodeFixProvider_FileInfo");
     }
 
     [Fact]
@@ -58,16 +58,16 @@ public sealed class FileSystemPathCodeFixTests
     public Task NamePattern_EmptyBody_FixChangesToDirectoryInfo()
     {
         const string source = """
-            class C { void M(string {|E128001:path|}) { } }
-            """;
+                              class C { void M(string {|E128001:path|}) { } }
+                              """;
 
         const string fixedCode = """
-            using System.IO;
-            class C { void M(DirectoryInfo path) { } }
-            """;
+                                 using System.IO;
+                                 class C { void M(DirectoryInfo path) { } }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode,
-            equivalenceKey: "FileSystemPathCodeFixProvider_DirectoryInfo");
+            "FileSystemPathCodeFixProvider_DirectoryInfo");
     }
 
     [Fact]
@@ -75,16 +75,16 @@ public sealed class FileSystemPathCodeFixTests
     public Task NamePattern_NoBody_Interface_FixChangesToFileInfo()
     {
         const string source = """
-            interface I { void M(string {|E128001:path|}); }
-            """;
+                              interface I { void M(string {|E128001:path|}); }
+                              """;
 
         const string fixedCode = """
-            using System.IO;
-            interface I { void M(FileInfo path); }
-            """;
+                                 using System.IO;
+                                 interface I { void M(FileInfo path); }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode,
-            equivalenceKey: "FileSystemPathCodeFixProvider_FileInfo");
+            "FileSystemPathCodeFixProvider_FileInfo");
     }
 
     [Fact]
@@ -92,16 +92,16 @@ public sealed class FileSystemPathCodeFixTests
     public Task NamePattern_Constructor_FixChangesToFileInfo()
     {
         const string source = """
-            class C { public C(string {|E128001:path|}) { } }
-            """;
+                              class C { public C(string {|E128001:path|}) { } }
+                              """;
 
         const string fixedCode = """
-            using System.IO;
-            class C { public C(FileInfo path) { } }
-            """;
+                                 using System.IO;
+                                 class C { public C(FileInfo path) { } }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode,
-            equivalenceKey: "FileSystemPathCodeFixProvider_FileInfo");
+            "FileSystemPathCodeFixProvider_FileInfo");
     }
 
     [Fact]
@@ -109,16 +109,16 @@ public sealed class FileSystemPathCodeFixTests
     public Task ExistingUsingSystemIO_DoesNotDuplicate()
     {
         const string source = """
-            using System.IO;
-            class C { void M(string {|E128001:filePath|}) { } }
-            """;
+                              using System.IO;
+                              class C { void M(string {|E128001:filePath|}) { } }
+                              """;
 
         const string fixedCode = """
-            using System.IO;
-            class C { void M(FileInfo filePath) { } }
-            """;
+                                 using System.IO;
+                                 class C { void M(FileInfo filePath) { } }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode,
-            equivalenceKey: "FileSystemPathCodeFixProvider_FileInfo");
+            "FileSystemPathCodeFixProvider_FileInfo");
     }
 }

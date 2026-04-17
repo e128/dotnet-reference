@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128060: appends <c>.AsReadOnly()</c> to the return expression
-/// so the caller receives a <c>ReadOnlyDictionary&lt;K,V&gt;</c> wrapper rather than
-/// the raw mutable dictionary.
+///     Code fix for E128060: appends <c>.AsReadOnly()</c> to the return expression
+///     so the caller receives a <c>ReadOnlyDictionary&lt;K,V&gt;</c> wrapper rather than
+///     the raw mutable dictionary.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DictionaryAsReadOnlyCodeFixProvider))]
 [Shared]
@@ -22,8 +22,10 @@ public sealed class DictionaryAsReadOnlyCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DictionaryAsReadOnlyAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -44,9 +46,9 @@ public sealed class DictionaryAsReadOnlyCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Return .AsReadOnly()",
-                createChangedDocument: ct => AppendAsReadOnlyAsync(context.Document, expression, ct),
-                equivalenceKey: nameof(DictionaryAsReadOnlyCodeFixProvider)),
+                "Return .AsReadOnly()",
+                ct => AppendAsReadOnlyAsync(context.Document, expression, ct),
+                nameof(DictionaryAsReadOnlyCodeFixProvider)),
             diagnostic);
     }
 
@@ -62,10 +64,10 @@ public sealed class DictionaryAsReadOnlyCodeFixProvider : CodeFixProvider
         }
 
         var asReadOnly = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                expression.WithoutTrivia(),
-                SyntaxFactory.IdentifierName("AsReadOnly")))
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    expression.WithoutTrivia(),
+                    SyntaxFactory.IdentifierName("AsReadOnly")))
             .WithTriviaFrom(expression);
 
         var newRoot = root.ReplaceNode(expression, asReadOnly);

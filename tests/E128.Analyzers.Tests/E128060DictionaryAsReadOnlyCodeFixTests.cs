@@ -16,7 +16,7 @@ public sealed class E128060DictionaryAsReadOnlyCodeFixTests
             FixedCode = fixedCode,
             // Dictionary<K,V>.AsReadOnly() requires .NET 9+
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         };
         return test.RunAsync();
     }
@@ -26,22 +26,22 @@ public sealed class E128060DictionaryAsReadOnlyCodeFixTests
     public Task DictionaryAsReadOnly_CodeFix_InsertsAsReadOnlyCall()
     {
         const string source = """
-            using System.Collections.Generic;
-            class Cache
-            {
-                private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
-                public IReadOnlyDictionary<string, int> Items => {|E128060:_dict|};
-            }
-            """;
+                              using System.Collections.Generic;
+                              class Cache
+                              {
+                                  private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
+                                  public IReadOnlyDictionary<string, int> Items => {|E128060:_dict|};
+                              }
+                              """;
 
         const string fixedCode = """
-            using System.Collections.Generic;
-            class Cache
-            {
-                private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
-                public IReadOnlyDictionary<string, int> Items => _dict.AsReadOnly();
-            }
-            """;
+                                 using System.Collections.Generic;
+                                 class Cache
+                                 {
+                                     private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
+                                     public IReadOnlyDictionary<string, int> Items => _dict.AsReadOnly();
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

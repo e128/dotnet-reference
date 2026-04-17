@@ -7,9 +7,9 @@ using Xunit;
 namespace E128.Analyzers.Tests;
 
 /// <summary>
-/// E128034 has an intentionally empty code fix provider (the fix is too complex to automate).
-/// The analyzer uses CompilationEnd (non-local diagnostics), so code fix testing is not possible
-/// via the standard framework. These tests verify the analyzer fires at the expected locations.
+///     E128034 has an intentionally empty code fix provider (the fix is too complex to automate).
+///     The analyzer uses CompilationEnd (non-local diagnostics), so code fix testing is not possible
+///     via the standard framework. These tests verify the analyzer fires at the expected locations.
 /// </summary>
 public sealed class ConstructorNewDiRegisteredE128CodeFixTests
 {
@@ -21,7 +21,7 @@ public sealed class ConstructorNewDiRegisteredE128CodeFixTests
         var test = new CSharpAnalyzerTest<ConstructorNewDiRegisteredAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = Net100WithDi,
+            ReferenceAssemblies = Net100WithDi
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -32,22 +32,22 @@ public sealed class ConstructorNewDiRegisteredE128CodeFixTests
     public Task AnalyzerFires_WhenConstructorNewsRegisteredType()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            class MyService { }
-            class Consumer
-            {
-                public Consumer()
-                {
-                    var svc = {|E128034:new MyService()|};
-                }
-            }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           class MyService { }
+                           class Consumer
+                           {
+                               public Consumer()
+                               {
+                                   var svc = {|E128034:new MyService()|};
+                               }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<MyService>();
+                               }
+                           }
+                           """);
     }
 }

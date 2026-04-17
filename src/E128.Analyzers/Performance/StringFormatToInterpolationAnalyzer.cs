@@ -13,12 +13,12 @@ public sealed class StringFormatToInterpolationAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128015";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use string interpolation instead of string.Format",
-        messageFormat: "Replace string.Format with string interpolation ($\"...\") for better performance and readability",
-        category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use string interpolation instead of string.Format",
+        "Replace string.Format with string interpolation ($\"...\") for better performance and readability",
+        "Performance",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -125,8 +125,8 @@ public sealed class StringFormatToInterpolationAnalyzer : DiagnosticAnalyzer
 
         var ns = type.ContainingNamespace;
         return ns != null
-            && string.Equals(ns.Name, "System", StringComparison.Ordinal)
-            && ns.ContainingNamespace != null
-            && ns.ContainingNamespace.IsGlobalNamespace;
+               && string.Equals(ns.Name, "System", StringComparison.Ordinal)
+               && ns.ContainingNamespace != null
+               && ns.ContainingNamespace.IsGlobalNamespace;
     }
 }

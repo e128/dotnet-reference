@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128042: wraps the Convert.ToInt32/ToInt64(cmd.ExecuteScalar()) call
-/// in a null-check pattern that extracts the scalar result into a local variable,
-/// checks for null, then converts.
+///     Code fix for E128042: wraps the Convert.ToInt32/ToInt64(cmd.ExecuteScalar()) call
+///     in a null-check pattern that extracts the scalar result into a local variable,
+///     checks for null, then converts.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ExecuteScalarNullGuardCodeFixProvider))]
 [Shared]
@@ -22,8 +22,10 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ExecuteScalarNullGuardAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -43,9 +45,9 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add null guard around ExecuteScalar",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(ExecuteScalarNullGuardCodeFixProvider)),
+                "Add null guard around ExecuteScalar",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(ExecuteScalarNullGuardCodeFixProvider)),
             diagnostic);
     }
 
@@ -117,12 +119,12 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
     private static LocalDeclarationStatementSyntax BuildResultDeclaration(ExpressionSyntax innerExpr)
     {
         return SyntaxFactory.LocalDeclarationStatement(
-            SyntaxFactory.VariableDeclaration(
-                SyntaxFactory.IdentifierName("var"),
-                SyntaxFactory.SingletonSeparatedList(
-                    SyntaxFactory.VariableDeclarator("result")
-                        .WithInitializer(
-                            SyntaxFactory.EqualsValueClause(innerExpr.WithoutTrivia())))))
+                SyntaxFactory.VariableDeclaration(
+                    SyntaxFactory.IdentifierName("var"),
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator("result")
+                            .WithInitializer(
+                                SyntaxFactory.EqualsValueClause(innerExpr.WithoutTrivia())))))
             .WithTrailingTrivia(SyntaxFactory.LineFeed);
     }
 

@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-04-11T14:12:15Z*
+*Updated: 2026-04-17T13:23:13Z*
 
 ## Design Principles
 
@@ -18,6 +18,8 @@
 - Allman brace style (opening brace on new line)
 - `using` directives outside namespace, sorted with System first
 - Implicit usings disabled — every `.cs` file has explicit `using` directives
+- Primary constructors disabled (`csharp_style_prefer_primary_constructors = false`)
+- Collection expressions disabled (`dotnet_style_prefer_collection_expression = never`)
 
 ## AI Assistant Preferences
 
@@ -35,9 +37,12 @@
 ## Verification Workflow
 
 After any code change:
-1. `scripts/format.sh --changed` — apply format
+1. `scripts/format.sh --changed` — runs `jb cleanupcode` (semantic cleanup) then `dotnet format`
 2. `scripts/check.sh --no-format` — build + test
 3. If renaming: `rg "OldName" lode/` to find stale lode references
+
+`--check` mode skips `jb` (no verify-only equivalent). Pass `--no-jb` to run dotnet format only.
+Requires `jb` from `JetBrains.ReSharper.GlobalTools` (`dotnet tool install -g JetBrains.ReSharper.GlobalTools`); gracefully skipped if not installed.
 
 ## Cross-Platform File Paths
 

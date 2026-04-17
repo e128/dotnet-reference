@@ -1,10 +1,24 @@
 # Claude Revision Log
-*Updated: 2026-04-12T23:45:00Z*
+*Updated: 2026-04-17T13:51:12Z*
 
 Persistent memory for `/claude-revision`. Each run appends one entry.
 Read at Phase 0 to recover last-known state and deferred items.
 
 ## Runs
+
+### 2026-04-17 (Run 4)
+- Agents: 16 | Skills: 17 | Memory files: 1
+- Web guidance: v2.1.112 (up from v2.1.101); `xhigh` effort level (Opus 4.7); `PreCompact` hook (v2.1.105); Agent SDK rename; `budget_tokens` removed on Opus 4.7; skill description budget 1,536 chars
+- HIGH: 0 | MEDIUM: 1 | LOW: 6
+- Actions taken:
+  - W1: Added `effort: high` to dotnet-overhaul, code-review, solution-audit, claude-revision SKILL.md files
+  - W4/W6: Updated claude-code-upstream.md — version 2.1.112, xhigh effort field, description truncation 1,536 chars, API/SDK notes section, sources dated 2026-04-17
+  - W5: Added PreCompact hook note to harness-eval Guidelines (Primitive 10 implementation in Claude Code)
+  - W6: Updated claude-code-maintenance.md — added `jb` prerequisite; noted DockerSmokeTests graceful daemon-unavailable skip
+  - W2/W3: No file changes needed — vars (`${CLAUDE_SKILL_DIR}`, `${CLAUDE_SESSION_ID}`) and `skills:` agent field already documented in upstream doc
+- Deferred:
+  - A1 (MEDIUM): 4 agents missing explicit `model:` — `fill-test-gaps`, `review-applier`, `sme-researcher`, `tdd-loop-optimizer`. Intentionally left to inherit session model per Run 2 (opus use case). Confirm intent and add explicit model next run.
+- Notes: Session also included jb cleanupcode integration (format.sh), editorconfig updates (primary constructors off, collection expressions = never), and Docker test graceful skip (Assert.Skip when daemon unavailable). All 553 tests passing.
 
 ### 2026-04-12 (Run 3)
 - Agents: 16 | Skills: 17 | Memory files: 1

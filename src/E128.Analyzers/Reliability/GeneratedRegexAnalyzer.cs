@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -17,36 +18,36 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
     internal const string MatchTimeoutParameterName = "matchTimeoutMilliseconds";
 
     private static readonly DiagnosticDescriptor TimeoutRule = new(
-        id: TimeoutDiagnosticId,
-        title: "[GeneratedRegex] attribute is missing 'matchTimeoutMilliseconds'",
-        messageFormat: "[GeneratedRegex] attribute is missing 'matchTimeoutMilliseconds' — add a timeout to prevent catastrophic backtracking",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        TimeoutDiagnosticId,
+        "[GeneratedRegex] attribute is missing 'matchTimeoutMilliseconds'",
+        "[GeneratedRegex] attribute is missing 'matchTimeoutMilliseconds' — add a timeout to prevent catastrophic backtracking",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true);
 
     private static readonly DiagnosticDescriptor CompiledRule = new(
-        id: CompiledDiagnosticId,
-        title: "RegexOptions.Compiled is redundant in [GeneratedRegex]",
-        messageFormat: "RegexOptions.Compiled is ignored by the source generator — remove it to avoid confusion",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        CompiledDiagnosticId,
+        "RegexOptions.Compiled is redundant in [GeneratedRegex]",
+        "RegexOptions.Compiled is ignored by the source generator — remove it to avoid confusion",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true);
 
     private static readonly DiagnosticDescriptor OverlappingQuantifierRule = new(
-        id: OverlappingQuantifierDiagnosticId,
-        title: "[GeneratedRegex] pattern has overlapping quantifiers that risk catastrophic backtracking",
-        messageFormat: "[GeneratedRegex] pattern contains '\\s*' or '\\s+' adjacent to a quantifier with overlapping character set (e.g., '.*', '.+') — this causes exponential backtracking",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        OverlappingQuantifierDiagnosticId,
+        "[GeneratedRegex] pattern has overlapping quantifiers that risk catastrophic backtracking",
+        "[GeneratedRegex] pattern contains '\\s*' or '\\s+' adjacent to a quantifier with overlapping character set (e.g., '.*', '.+') — this causes exponential backtracking",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true);
 
     private static readonly DiagnosticDescriptor NestedQuantifierRule = new(
-        id: NestedQuantifierDiagnosticId,
-        title: "[GeneratedRegex] pattern has nested quantifiers that cause exponential backtracking",
-        messageFormat: "[GeneratedRegex] pattern contains a quantified group with an inner quantifier (e.g., '(.+)+', '(\\w+)+', '(a*)*') — this causes exponential backtracking",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        NestedQuantifierDiagnosticId,
+        "[GeneratedRegex] pattern has nested quantifiers that cause exponential backtracking",
+        "[GeneratedRegex] pattern contains a quantified group with an inner quantifier (e.g., '(.+)+', '(\\w+)+', '(a*)*') — this causes exponential backtracking",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         [TimeoutRule, CompiledRule, OverlappingQuantifierRule, NestedQuantifierRule];
@@ -71,7 +72,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
         {
             IdentifierNameSyntax id => id.Identifier.ValueText,
             QualifiedNameSyntax q => q.Right.Identifier.ValueText,
-            _ => null,
+            _ => null
         };
 
         if (!string.Equals(name, "GeneratedRegex", StringComparison.Ordinal)
@@ -148,16 +149,16 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
 
     private static bool IsNamedTimeoutArgument(AttributeArgumentSyntax arg)
     {
-        return arg.NameColon is { } nameColon
-            && string.Equals(
-                nameColon.Name.Identifier.ValueText,
-                MatchTimeoutParameterName,
-                StringComparison.Ordinal)
-            || arg.NameEquals is { } nameEquals
-            && string.Equals(
-                nameEquals.Name.Identifier.ValueText,
-                MatchTimeoutParameterName,
-                StringComparison.Ordinal);
+        return (arg.NameColon is { } nameColon
+                && string.Equals(
+                    nameColon.Name.Identifier.ValueText,
+                    MatchTimeoutParameterName,
+                    StringComparison.Ordinal))
+               || (arg.NameEquals is { } nameEquals
+                   && string.Equals(
+                       nameEquals.Name.Identifier.ValueText,
+                       MatchTimeoutParameterName,
+                       StringComparison.Ordinal));
     }
 
     private static int CountPositionalArguments(
@@ -178,7 +179,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
     private static bool HasCompiledOption(
         AttributeSyntax attribute,
         SemanticModel semanticModel,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         if (attribute.ArgumentList is null)
         {
@@ -215,13 +216,13 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
     private static bool ExpressionContainsCompiled(
         ExpressionSyntax expression,
         SemanticModel semanticModel,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         if (expression is BinaryExpressionSyntax binary
             && binary.IsKind(SyntaxKind.BitwiseOrExpression))
         {
             return ExpressionContainsCompiled(binary.Left, semanticModel, cancellationToken)
-                || ExpressionContainsCompiled(binary.Right, semanticModel, cancellationToken);
+                   || ExpressionContainsCompiled(binary.Right, semanticModel, cancellationToken);
         }
 
         if (expression is MemberAccessExpressionSyntax memberAccess
@@ -233,9 +234,9 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
             {
                 var ns = containingType.ContainingNamespace;
                 return ns is { Name: "RegularExpressions" }
-                    && ns.ContainingNamespace is { Name: "Text" }
-                    && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
-                    && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+                       && ns.ContainingNamespace is { Name: "Text" }
+                       && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
+                       && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
             }
         }
 
@@ -251,9 +252,9 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
 
         var ns = type.ContainingNamespace;
         return ns is { Name: "RegularExpressions" }
-            && ns.ContainingNamespace is { Name: "Text" }
-            && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
-            && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+               && ns.ContainingNamespace is { Name: "Text" }
+               && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
+               && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
     }
 
     private static string? GetPatternLiteral(AttributeSyntax attribute)
@@ -276,7 +277,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
             {
                 LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression) =>
                     literal.Token.ValueText,
-                _ => null,
+                _ => null
             };
     }
 
@@ -446,8 +447,8 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
         return ch is '.'
             ? index + 1 < pattern.Length && pattern[index + 1] is '*' or '+' or '?'
             : ch is '('
-            ? GroupContainsOverlappingContent(pattern, index)
-            : ch is '[' && index + 1 < pattern.Length && pattern[index + 1] is '^' && NegatedClassOverlapsWhitespace(pattern, index);
+                ? GroupContainsOverlappingContent(pattern, index)
+                : ch is '[' && index + 1 < pattern.Length && pattern[index + 1] is '^' && NegatedClassOverlapsWhitespace(pattern, index);
     }
 
     private static bool HasOverlappingElementBefore(string pattern, int backslashSIndex)

@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-/// E128047: Flags <c>#pragma warning disable</c> directives that lack a justification comment.
-/// Every suppression must explain why it is necessary.
+///     E128047: Flags <c>#pragma warning disable</c> directives that lack a justification comment.
+///     Every suppression must explain why it is necessary.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
@@ -16,12 +16,12 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128047";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "#pragma warning disable without justification comment",
-        messageFormat: "Add a justification comment explaining why this suppression is necessary",
-        category: "Style",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "#pragma warning disable without justification comment",
+        "Add a justification comment explaining why this suppression is necessary",
+        "Style",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

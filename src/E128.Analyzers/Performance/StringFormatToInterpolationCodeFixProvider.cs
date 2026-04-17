@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Globalization;
@@ -18,8 +19,10 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StringFormatToInterpolationAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -39,9 +42,9 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Convert to string interpolation",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(StringFormatToInterpolationCodeFixProvider)),
+                "Convert to string interpolation",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(StringFormatToInterpolationCodeFixProvider)),
             diagnostic);
     }
 
@@ -116,7 +119,7 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
         string formatString,
         ExpressionSyntax[] arguments)
     {
-        var contents = new System.Collections.Generic.List<InterpolatedStringContentSyntax>();
+        var contents = new List<InterpolatedStringContentSyntax>();
         var i = 0;
 
         while (i < formatString.Length)
@@ -149,7 +152,7 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
         string formatString,
         int i,
         ExpressionSyntax[] arguments,
-        System.Collections.Generic.List<InterpolatedStringContentSyntax> contents)
+        List<InterpolatedStringContentSyntax> contents)
     {
         if (i + 1 < formatString.Length && formatString[i + 1] == '{')
         {
@@ -208,7 +211,7 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
     private static int ProcessLiteralText(
         string formatString,
         int start,
-        System.Collections.Generic.List<InterpolatedStringContentSyntax> contents)
+        List<InterpolatedStringContentSyntax> contents)
     {
         var i = start;
         while (i < formatString.Length && formatString[i] != '{' && formatString[i] != '}')

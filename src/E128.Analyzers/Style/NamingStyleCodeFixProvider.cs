@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -14,16 +16,16 @@ using Microsoft.CodeAnalysis.Text;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-/// Code fix for IDE1006 (naming rule violation): renames the symbol to the compliant name
-/// derived from the diagnostic's embedded naming style properties.
+///     Code fix for IDE1006 (naming rule violation): renames the symbol to the compliant name
+///     derived from the diagnostic's embedded naming style properties.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(NamingStyleCodeFixProvider))]
 [Shared]
 public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 {
     // Roslyn embeds these keys in IDE1006 diagnostic properties.
-    private const string SuggestedNameKey = "SuggestedName";      // pre-computed by Roslyn's naming analyzer
-    private const string SymbolNameKey = "SymbolName";             // only present in FakeNamingViolationAnalyzer (tests)
+    private const string SuggestedNameKey = "SuggestedName"; // pre-computed by Roslyn's naming analyzer
+    private const string SymbolNameKey = "SymbolName"; // only present in FakeNamingViolationAnalyzer (tests)
     private const string PrefixKey = "Prefix";
     private const string SuffixKey = "Suffix";
     private const string WordSeparatorKey = "WordSeparator";
@@ -33,7 +35,10 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
     public override ImmutableArray<string> FixableDiagnosticIds => ["IDE1006"];
 
-    public override FixAllProvider? GetFixAllProvider() => SequentialFixAllProvider.Instance;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return SequentialFixAllProvider.Instance;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -55,7 +60,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         var symbol = semanticModel.GetDeclaredSymbol(node, context.CancellationToken)
-            ?? semanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol;
+                     ?? semanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol;
 
         if (symbol is null)
         {
@@ -75,15 +80,18 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Rename to '{suggestedName}'",
-                createChangedSolution: ct => RenameSymbolAsync(
+                $"Rename to '{suggestedName}'",
+                ct => RenameSymbolAsync(
                     context.Document.Project.Solution, symbol, suggestedName, ct),
-                equivalenceKey: nameof(NamingStyleCodeFixProvider)),
+                nameof(NamingStyleCodeFixProvider)),
             diagnostic);
     }
 
     private static Task<Solution> RenameSymbolAsync(
-        Solution solution, ISymbol symbol, string newName, CancellationToken cancellationToken)
+        Solution solution,
+        ISymbol symbol,
+        string newName,
+        CancellationToken cancellationToken)
     {
         return Renamer.RenameSymbolAsync(
             solution, symbol, new SymbolRenameOptions(), newName, cancellationToken);
@@ -91,7 +99,9 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
     // Single-arg overload: used by tests (FakeNamingViolationAnalyzer embeds SymbolName in properties).
     internal static string? ComputeCompliantName(Diagnostic diagnostic)
-        => ComputeCompliantName(diagnostic, symbolNameFallback: null);
+    {
+        return ComputeCompliantName(diagnostic, null);
+    }
 
     // Two-arg overload: used by RegisterCodeFixesAsync with the actual resolved symbol name.
     // When the diagnostic was produced by Roslyn's built-in naming analyzer it embeds
@@ -265,13 +275,13 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
                 "AllUpperCase" or "AllUpper" => ApplyAllUpper(words, wordSeparator),
                 "AllLowerCase" or "AllLower" => ApplyAllLower(words, wordSeparator),
                 "FirstUpper" => ApplyFirstUpper(words, wordSeparator),
-                _ => ApplyPascalCase(words, wordSeparator),
+                _ => ApplyPascalCase(words, wordSeparator)
             };
     }
 
     private static string ApplyPascalCase(string[] words, string separator)
     {
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         for (var i = 0; i < words.Length; i++)
         {
             if (i > 0 && !string.IsNullOrEmpty(separator))
@@ -287,7 +297,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
     private static string ApplyCamelCase(string[] words, string separator)
     {
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         for (var i = 0; i < words.Length; i++)
         {
             if (i > 0 && !string.IsNullOrEmpty(separator))
@@ -310,7 +320,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
     private static string ApplyAllUpper(string[] words, string separator)
     {
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         for (var i = 0; i < words.Length; i++)
         {
             if (i > 0 && !string.IsNullOrEmpty(separator))
@@ -326,7 +336,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
     private static string ApplyAllLower(string[] words, string separator)
     {
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         for (var i = 0; i < words.Length; i++)
         {
             if (i > 0 && !string.IsNullOrEmpty(separator))
@@ -345,7 +355,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
     private static string ApplyFirstUpper(string[] words, string separator)
     {
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         for (var i = 0; i < words.Length; i++)
         {
             if (i > 0 && !string.IsNullOrEmpty(separator))
@@ -366,7 +376,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
         return builder.ToString();
     }
 
-    private static void AppendCapitalized(System.Text.StringBuilder builder, string word)
+    private static void AppendCapitalized(StringBuilder builder, string word)
     {
         if (string.IsNullOrEmpty(word))
         {
@@ -380,7 +390,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
         }
     }
 
-    private static void AppendLowered(System.Text.StringBuilder builder, string word)
+    private static void AppendLowered(StringBuilder builder, string word)
     {
         if (string.IsNullOrEmpty(word))
         {
@@ -411,10 +421,10 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
     }
 
     /// <summary>
-    /// Applies IDE1006 renames one at a time to the evolving solution so each rename sees
-    /// the result of the previous one. BatchFixer is document-oriented and merges changes
-    /// from the original snapshot; that merge fails when multiple renames touch the same
-    /// document, causing dotnet format to log "doesn't support Fix All in Solution".
+    ///     Applies IDE1006 renames one at a time to the evolving solution so each rename sees
+    ///     the result of the previous one. BatchFixer is document-oriented and merges changes
+    ///     from the original snapshot; that merge fails when multiple renames touch the same
+    ///     document, causing dotnet format to log "doesn't support Fix All in Solution".
     /// </summary>
     private sealed class SequentialFixAllProvider : FixAllProvider
     {
@@ -430,7 +440,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
             var title = renames.Count == 1
                 ? $"Rename '{renames[0].OldName}' to '{renames[0].NewName}'"
-                : $"Fix {renames.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)} naming style violations";
+                : $"Fix {renames.Count.ToString(CultureInfo.InvariantCulture)} naming style violations";
 
             return CodeAction.Create(
                 title,
@@ -455,7 +465,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
                 {
                     var node = root.FindNode(diagnostic.Location.SourceSpan);
                     var symbol = semanticModel.GetDeclaredSymbol(node, context.CancellationToken)
-                        ?? semanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol;
+                                 ?? semanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol;
 
                     if (symbol is null)
                     {
@@ -534,7 +544,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
 
                 var node = root.FindNode(rename.Span);
                 var symbol = semanticModel.GetDeclaredSymbol(node, ct)
-                    ?? semanticModel.GetSymbolInfo(node, ct).Symbol;
+                             ?? semanticModel.GetSymbolInfo(node, ct).Symbol;
 
                 // Skip if the symbol was already renamed by a previous fix (name no longer matches).
                 if (symbol is null || !string.Equals(symbol.Name, rename.OldName, StringComparison.Ordinal))
@@ -543,7 +553,7 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
                 }
 
                 solution = await Renamer.RenameSymbolAsync(
-                    solution, symbol, new SymbolRenameOptions(), rename.NewName, ct)
+                        solution, symbol, new SymbolRenameOptions(), rename.NewName, ct)
                     .ConfigureAwait(false);
             }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
@@ -17,8 +18,10 @@ public sealed class DateTimeParseRoundtripCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DateTimeParseRoundtripAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -38,9 +41,9 @@ public sealed class DateTimeParseRoundtripCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add DateTimeStyles.RoundtripKind",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(DateTimeParseRoundtripCodeFixProvider)),
+                "Add DateTimeStyles.RoundtripKind",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(DateTimeParseRoundtripCodeFixProvider)),
             diagnostic);
     }
 
@@ -58,10 +61,10 @@ public sealed class DateTimeParseRoundtripCodeFixProvider : CodeFixProvider
         var invocation = (InvocationExpressionSyntax)invocationNode;
 
         var roundtripKindArg = SyntaxFactory.Argument(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName("DateTimeStyles"),
-                SyntaxFactory.IdentifierName("RoundtripKind")))
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("DateTimeStyles"),
+                    SyntaxFactory.IdentifierName("RoundtripKind")))
             .WithLeadingTrivia(SyntaxFactory.Space);
 
         var newArgList = invocation.ArgumentList.AddArguments(roundtripKindArg);
@@ -87,7 +90,7 @@ public sealed class DateTimeParseRoundtripCodeFixProvider : CodeFixProvider
 
         foreach (var existing in compilationUnit.Usings)
         {
-            if (string.Equals(existing.Name?.ToString(), namespaceName, System.StringComparison.Ordinal))
+            if (string.Equals(existing.Name?.ToString(), namespaceName, StringComparison.Ordinal))
             {
                 return document;
             }

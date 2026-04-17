@@ -13,12 +13,12 @@ public sealed class EncodingDefaultAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128006";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use Encoding.UTF8 instead of Encoding.Default",
-        messageFormat: "Use Encoding.UTF8 instead of Encoding.Default — Encoding.Default is platform-specific",
-        category: "Style",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use Encoding.UTF8 instead of Encoding.Default",
+        "Use Encoding.UTF8 instead of Encoding.Default — Encoding.Default is platform-specific",
+        "Style",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -58,8 +58,10 @@ public sealed class EncodingDefaultAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, memberAccess.GetLocation()));
     }
 
-    private static bool IsSystemTextEncoding(INamedTypeSymbol type) =>
-        string.Equals(type.Name, "Encoding", StringComparison.Ordinal)
-        && type.ContainingNamespace is { Name: "Text" }
-        && type.ContainingNamespace.ContainingNamespace is { Name: "System" };
+    private static bool IsSystemTextEncoding(INamedTypeSymbol type)
+    {
+        return string.Equals(type.Name, "Encoding", StringComparison.Ordinal)
+               && type.ContainingNamespace is { Name: "Text" }
+               && type.ContainingNamespace.ContainingNamespace is { Name: "System" };
+    }
 }

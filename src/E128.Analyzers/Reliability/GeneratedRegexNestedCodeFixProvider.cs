@@ -18,8 +18,10 @@ public sealed class GeneratedRegexNestedCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GeneratedRegexAnalyzer.NestedQuantifierDiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -39,9 +41,9 @@ public sealed class GeneratedRegexNestedCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Remove outer quantifier from nested group",
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, ct),
-                equivalenceKey: nameof(GeneratedRegexNestedCodeFixProvider)),
+                "Remove outer quantifier from nested group",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(GeneratedRegexNestedCodeFixProvider)),
             diagnostic);
     }
 

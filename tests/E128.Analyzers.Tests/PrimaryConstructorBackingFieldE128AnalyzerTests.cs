@@ -13,7 +13,7 @@ public sealed class PrimaryConstructorBackingFieldE128AnalyzerTests
         var test = new CSharpAnalyzerTest<PrimaryConstructorBackingFieldAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,11 +24,11 @@ public sealed class PrimaryConstructorBackingFieldE128AnalyzerTests
     public Task ReadonlyFieldFromPrimaryCtorParam_Fires()
     {
         return VerifyAsync("""
-            class C(int value)
-            {
-                private readonly int {|E128017:_value|} = value;
-            }
-            """);
+                           class C(int value)
+                           {
+                               private readonly int {|E128017:_value|} = value;
+                           }
+                           """);
     }
 
     [Fact]
@@ -36,12 +36,12 @@ public sealed class PrimaryConstructorBackingFieldE128AnalyzerTests
     public Task MutableFieldFromPrimaryCtorParam_DoesNotFire()
     {
         return VerifyAsync("""
-            class C(int value)
-            {
-                private int _value = value;
-                void Mutate() { _value = 42; }
-            }
-            """);
+                           class C(int value)
+                           {
+                               private int _value = value;
+                               void Mutate() { _value = 42; }
+                           }
+                           """);
     }
 
     [Fact]
@@ -49,11 +49,11 @@ public sealed class PrimaryConstructorBackingFieldE128AnalyzerTests
     public Task StructWithPrimaryCtorField_DoesNotFire()
     {
         return VerifyAsync("""
-            struct S(int value)
-            {
-                private readonly int _value = value;
-                int Get() => _value;
-            }
-            """);
+                           struct S(int value)
+                           {
+                               private readonly int _value = value;
+                               int Get() => _value;
+                           }
+                           """);
     }
 }

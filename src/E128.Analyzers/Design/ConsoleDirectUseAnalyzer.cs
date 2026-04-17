@@ -8,12 +8,12 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128045: Flags direct usage of <c>System.Console</c> members.
-/// Use <c>ILogger</c> (services) or <c>ITerminalWriter</c>/<c>ITerminalPrompt</c> (CLI) instead.
+///     E128045: Flags direct usage of <c>System.Console</c> members.
+///     Use <c>ILogger</c> (services) or <c>ITerminalWriter</c>/<c>ITerminalPrompt</c> (CLI) instead.
 /// </summary>
 /// <remarks>
-/// No code fix is provided — the replacement depends on whether the consuming code
-/// is a service (use <c>ILogger</c>) or a CLI tool (use <c>ITerminalPrompt</c>).
+///     No code fix is provided — the replacement depends on whether the consuming code
+///     is a service (use <c>ILogger</c>) or a CLI tool (use <c>ITerminalPrompt</c>).
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConsoleDirectUseAnalyzer : DiagnosticAnalyzer
@@ -21,12 +21,12 @@ public sealed class ConsoleDirectUseAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128045";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Avoid direct System.Console usage",
-        messageFormat: "Use ILogger (services) or ITerminalWriter/ITerminalPrompt (CLI) instead of System.Console.{0}",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Avoid direct System.Console usage",
+        "Use ILogger (services) or ITerminalWriter/ITerminalPrompt (CLI) instead of System.Console.{0}",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -68,7 +68,9 @@ public sealed class ConsoleDirectUseAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, memberAccess.GetLocation(), memberName));
     }
 
-    private static bool IsSystemConsole(INamedTypeSymbol type) =>
-        string.Equals(type.Name, "Console", StringComparison.Ordinal)
-        && type.ContainingNamespace is { Name: "System", ContainingNamespace.IsGlobalNamespace: true };
+    private static bool IsSystemConsole(INamedTypeSymbol type)
+    {
+        return string.Equals(type.Name, "Console", StringComparison.Ordinal)
+               && type.ContainingNamespace is { Name: "System", ContainingNamespace.IsGlobalNamespace: true };
+    }
 }

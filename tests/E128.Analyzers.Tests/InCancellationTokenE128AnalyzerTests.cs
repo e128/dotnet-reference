@@ -13,7 +13,7 @@ public sealed class InCancellationTokenE128AnalyzerTests
         var test = new CSharpAnalyzerTest<InCancellationTokenE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,12 +24,12 @@ public sealed class InCancellationTokenE128AnalyzerTests
     public Task InCancellationToken_PublicMethod_FiresE128019()
     {
         return VerifyAsync("""
-            using System.Threading;
-            class C
-            {
-                void M({|E128019:in CancellationToken cancellationToken|}) { }
-            }
-            """);
+                           using System.Threading;
+                           class C
+                           {
+                               void M({|E128019:in CancellationToken cancellationToken|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -37,12 +37,12 @@ public sealed class InCancellationTokenE128AnalyzerTests
     public Task InCancellationToken_PrivateMethod_FiresE128019()
     {
         return VerifyAsync("""
-            using System.Threading;
-            class C
-            {
-                private void M({|E128019:in CancellationToken ct|}) { }
-            }
-            """);
+                           using System.Threading;
+                           class C
+                           {
+                               private void M({|E128019:in CancellationToken ct|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -50,12 +50,12 @@ public sealed class InCancellationTokenE128AnalyzerTests
     public Task InCancellationToken_StaticMethod_FiresE128019()
     {
         return VerifyAsync("""
-            using System.Threading;
-            class C
-            {
-                static void M(string name, {|E128019:in CancellationToken cancellationToken|}) { }
-            }
-            """);
+                           using System.Threading;
+                           class C
+                           {
+                               static void M(string name, {|E128019:in CancellationToken cancellationToken|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -63,12 +63,12 @@ public sealed class InCancellationTokenE128AnalyzerTests
     public Task InCancellationToken_WithDefault_FiresE128019()
     {
         return VerifyAsync("""
-            using System.Threading;
-            class C
-            {
-                void M({|E128019:in CancellationToken cancellationToken = default|}) { }
-            }
-            """);
+                           using System.Threading;
+                           class C
+                           {
+                               void M({|E128019:in CancellationToken cancellationToken = default|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -76,12 +76,12 @@ public sealed class InCancellationTokenE128AnalyzerTests
     public Task CancellationToken_ByValue_NoFire()
     {
         return VerifyAsync("""
-            using System.Threading;
-            class C
-            {
-                void M(CancellationToken cancellationToken) { }
-            }
-            """);
+                           using System.Threading;
+                           class C
+                           {
+                               void M(CancellationToken cancellationToken) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -89,12 +89,12 @@ public sealed class InCancellationTokenE128AnalyzerTests
     public Task CancellationToken_ByValueWithDefault_NoFire()
     {
         return VerifyAsync("""
-            using System.Threading;
-            class C
-            {
-                void M(CancellationToken cancellationToken = default) { }
-            }
-            """);
+                           using System.Threading;
+                           class C
+                           {
+                               void M(CancellationToken cancellationToken = default) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -102,12 +102,12 @@ public sealed class InCancellationTokenE128AnalyzerTests
     public Task InOtherStruct_NoFire()
     {
         return VerifyAsync("""
-            struct BigStruct { public long A, B, C, D; }
-            class C
-            {
-                void M(in BigStruct s) { }
-            }
-            """);
+                           struct BigStruct { public long A, B, C, D; }
+                           class C
+                           {
+                               void M(in BigStruct s) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -115,10 +115,10 @@ public sealed class InCancellationTokenE128AnalyzerTests
     public Task NoCancellationToken_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M(string name) { }
-            }
-            """);
+                           class C
+                           {
+                               void M(string name) { }
+                           }
+                           """);
     }
 }

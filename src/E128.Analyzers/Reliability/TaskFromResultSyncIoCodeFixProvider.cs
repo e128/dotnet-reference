@@ -14,15 +14,15 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128028: converts sync I/O calls to their async equivalents,
-/// adds <c>async</c> modifier, inserts <c>await</c>, and removes <c>Task.FromResult</c> wrapper.
+///     Code fix for E128028: converts sync I/O calls to their async equivalents,
+///     adds <c>async</c> modifier, inserts <c>await</c>, and removes <c>Task.FromResult</c> wrapper.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TaskFromResultSyncIoCodeFixProvider))]
 [Shared]
 public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
 {
     /// <summary>
-    /// Maps sync I/O method names to their async equivalents.
+    ///     Maps sync I/O method names to their async equivalents.
     /// </summary>
     private static readonly ImmutableDictionary<string, string> SyncToAsyncMethodNames =
         new Dictionary<string, string>(StringComparer.Ordinal)
@@ -39,14 +39,16 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
             ["Write"] = "WriteAsync",
             ["CopyTo"] = "CopyToAsync",
             ["Flush"] = "FlushAsync",
-            ["Send"] = "SendAsync",
+            ["Send"] = "SendAsync"
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TaskFromResultSyncIoAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -66,9 +68,9 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Convert to async/await",
-                createChangedDocument: ct => ConvertToAsyncAsync(context.Document, invocation, ct),
-                equivalenceKey: nameof(TaskFromResultSyncIoCodeFixProvider)),
+                "Convert to async/await",
+                ct => ConvertToAsyncAsync(context.Document, invocation, ct),
+                nameof(TaskFromResultSyncIoCodeFixProvider)),
             diagnostic);
     }
 
@@ -193,8 +195,8 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
             return rewritten.ArgumentList.Arguments.Count != 1
                 ? rewritten
                 : (SyntaxNode)rewritten.ArgumentList.Arguments[0].Expression
-                .WithLeadingTrivia(rewritten.GetLeadingTrivia())
-                .WithTrailingTrivia(rewritten.GetTrailingTrivia());
+                    .WithLeadingTrivia(rewritten.GetLeadingTrivia())
+                    .WithTrailingTrivia(rewritten.GetTrailingTrivia());
         });
     }
 
@@ -212,6 +214,6 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
 
         // Check that the receiver is Task or ValueTask (syntactic check — good enough for code fix)
         return memberAccess.Expression is IdentifierNameSyntax identifier && (string.Equals(identifier.Identifier.ValueText, "Task", StringComparison.Ordinal)
-                || string.Equals(identifier.Identifier.ValueText, "ValueTask", StringComparison.Ordinal));
+                                                                              || string.Equals(identifier.Identifier.ValueText, "ValueTask", StringComparison.Ordinal));
     }
 }

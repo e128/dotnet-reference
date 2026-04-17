@@ -13,17 +13,16 @@ public sealed class FileSystemInfoEqualityAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128030";
 
     internal static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Do not compare FileSystemInfo types by reference",
-        messageFormat: "'{0}' compares FileSystemInfo by reference — compare .FullName instead",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true,
-        description:
-            "FileInfo and DirectoryInfo do not override Equals or operator==. " +
-            "Equality comparisons use reference equality from System.Object, which " +
-            "means two FileInfo objects pointing to the same path are never equal. " +
-            "Compare .FullName properties instead.");
+        DiagnosticId,
+        "Do not compare FileSystemInfo types by reference",
+        "'{0}' compares FileSystemInfo by reference — compare .FullName instead",
+        "Design",
+        DiagnosticSeverity.Info,
+        true,
+        "FileInfo and DirectoryInfo do not override Equals or operator==. " +
+        "Equality comparisons use reference equality from System.Object, which " +
+        "means two FileInfo objects pointing to the same path are never equal. " +
+        "Compare .FullName properties instead.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -106,8 +105,8 @@ public sealed class FileSystemInfoEqualityAnalyzer : DiagnosticAnalyzer
     private static bool IsNullOrDefault(ExpressionSyntax expression)
     {
         return expression.IsKind(SyntaxKind.NullLiteralExpression)
-            || expression.IsKind(SyntaxKind.DefaultLiteralExpression)
-            || expression.IsKind(SyntaxKind.DefaultExpression);
+               || expression.IsKind(SyntaxKind.DefaultLiteralExpression)
+               || expression.IsKind(SyntaxKind.DefaultExpression);
     }
 
     private static bool InheritsFromFileSystemInfo(ITypeSymbol type)
@@ -129,7 +128,7 @@ public sealed class FileSystemInfoEqualityAnalyzer : DiagnosticAnalyzer
     private static bool IsFileSystemInfoType(ITypeSymbol type)
     {
         return string.Equals(type.Name, "FileSystemInfo", StringComparison.Ordinal)
-            && type.ContainingNamespace is { Name: "IO" }
-                and { ContainingNamespace: { Name: "System" } and { ContainingNamespace.IsGlobalNamespace: true } };
+               && type.ContainingNamespace is { Name: "IO" }
+                   and { ContainingNamespace: { Name: "System" } and { ContainingNamespace.IsGlobalNamespace: true } };
     }
 }

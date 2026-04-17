@@ -13,12 +13,12 @@ public sealed class TaskRunAsyncLambdaAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128036";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Task.Run wrapping async lambda — unnecessary thread pool hop for I/O-bound work",
-        messageFormat: "Task.Run wrapping an async lambda queues I/O-bound work to the thread pool unnecessarily — await the async method directly unless the work is CPU-bound",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Task.Run wrapping async lambda — unnecessary thread pool hop for I/O-bound work",
+        "Task.Run wrapping an async lambda queues I/O-bound work to the thread pool unnecessarily — await the async method directly unless the work is CPU-bound",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -75,7 +75,7 @@ public sealed class TaskRunAsyncLambdaAnalyzer : DiagnosticAnalyzer
     private static bool IsTaskRunSyntax(InvocationExpressionSyntax invocation)
     {
         return invocation.Expression is MemberAccessExpressionSyntax memberAccess
-            && string.Equals(memberAccess.Name.Identifier.ValueText, "Run", StringComparison.Ordinal);
+               && string.Equals(memberAccess.Name.Identifier.ValueText, "Run", StringComparison.Ordinal);
     }
 
     private static bool IsAsyncLambdaOrDelegate(ExpressionSyntax expression)
@@ -85,7 +85,7 @@ public sealed class TaskRunAsyncLambdaAnalyzer : DiagnosticAnalyzer
             ParenthesizedLambdaExpressionSyntax lambda => lambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
             SimpleLambdaExpressionSyntax lambda => lambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
             AnonymousMethodExpressionSyntax anonymous => anonymous.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            _ => false,
+            _ => false
         };
     }
 
@@ -98,9 +98,9 @@ public sealed class TaskRunAsyncLambdaAnalyzer : DiagnosticAnalyzer
 
         var containingType = method.ContainingType;
         return containingType is not null
-            && string.Equals(containingType.Name, "Task", StringComparison.Ordinal)
-            && containingType.ContainingNamespace is { Name: "Tasks" }
-            && containingType.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
-            && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
+               && string.Equals(containingType.Name, "Task", StringComparison.Ordinal)
+               && containingType.ContainingNamespace is { Name: "Tasks" }
+               && containingType.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
+               && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
     }
 }

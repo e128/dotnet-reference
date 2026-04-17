@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-/// Code fix for E128047: appends <c>// Justification: </c> after the <c>#pragma warning disable</c> directive.
+///     Code fix for E128047: appends <c>// Justification: </c> after the <c>#pragma warning disable</c> directive.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SuppressionAuditCodeFixProvider))]
 [Shared]
@@ -19,8 +19,10 @@ public sealed class SuppressionAuditCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SuppressionAuditAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -34,9 +36,9 @@ public sealed class SuppressionAuditCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add justification comment",
-                createChangedDocument: ct => AddJustificationCommentAsync(context.Document, root, diagnostic, ct),
-                equivalenceKey: nameof(SuppressionAuditCodeFixProvider)),
+                "Add justification comment",
+                ct => AddJustificationCommentAsync(context.Document, root, diagnostic, ct),
+                nameof(SuppressionAuditCodeFixProvider)),
             diagnostic);
     }
 
@@ -48,7 +50,7 @@ public sealed class SuppressionAuditCodeFixProvider : CodeFixProvider
     {
         _ = cancellationToken;
 
-        var diagnosticNode = root.FindNode(diagnostic.Location.SourceSpan, findInsideTrivia: true, getInnermostNodeForTie: true);
+        var diagnosticNode = root.FindNode(diagnostic.Location.SourceSpan, true, true);
         if (diagnosticNode is null)
         {
             return Task.FromResult(document);

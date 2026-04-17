@@ -16,7 +16,7 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ConcreteOnlyDiRegistrationAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = Net100WithDi,
+            ReferenceAssemblies = Net100WithDi
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -29,17 +29,17 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddSingleton_ConcreteWithInterface_Fires()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class MyService : IMyService { }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.{|E128032:AddSingleton<MyService>()|};
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class MyService : IMyService { }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.{|E128032:AddSingleton<MyService>()|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -47,17 +47,17 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddScoped_ConcreteWithInterface_Fires()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class MyService : IMyService { }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.{|E128032:AddScoped<MyService>()|};
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class MyService : IMyService { }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.{|E128032:AddScoped<MyService>()|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -65,17 +65,17 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddTransient_ConcreteWithInterface_Fires()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class MyService : IMyService { }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.{|E128032:AddTransient<MyService>()|};
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class MyService : IMyService { }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.{|E128032:AddTransient<MyService>()|};
+                               }
+                           }
+                           """);
     }
 
     #endregion Fires
@@ -87,16 +87,16 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddSingleton_NoInterface_NoFire()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            class MyService { }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           class MyService { }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<MyService>();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -104,20 +104,20 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddSingleton_OnlyDisposable_NoFire()
     {
         return VerifyAsync("""
-            using System;
-            using Microsoft.Extensions.DependencyInjection;
-            class MyService : IDisposable
-            {
-                public void Dispose() { }
-            }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<MyService>();
-                }
-            }
-            """);
+                           using System;
+                           using Microsoft.Extensions.DependencyInjection;
+                           class MyService : IDisposable
+                           {
+                               public void Dispose() { }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<MyService>();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -125,17 +125,17 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddSingleton_TwoTypeArgs_NoFire()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class MyService : IMyService { }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<IMyService, MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class MyService : IMyService { }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<IMyService, MyService>();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -143,16 +143,16 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddSingleton_InterfaceTypeArg_NoFire()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<IMyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<IMyService>();
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -160,18 +160,18 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddSingleton_WithForwardingRegistration_NoFire()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class MyService : IMyService { }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddSingleton<MyService>();
-                    services.AddSingleton<IMyService>(sp => sp.GetRequiredService<MyService>());
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class MyService : IMyService { }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<MyService>();
+                                   services.AddSingleton<IMyService>(sp => sp.GetRequiredService<MyService>());
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -179,22 +179,22 @@ public sealed class ConcreteOnlyDiRegistrationE128AnalyzerTests
     public Task AddSingleton_WithHttpClient_NoFire()
     {
         return VerifyAsync("""
-            using Microsoft.Extensions.DependencyInjection;
-            interface IMyService { }
-            class MyService : IMyService { }
-            static class HttpClientExtensions
-            {
-                public static IServiceCollection AddHttpClient<T>(this IServiceCollection services) => services;
-            }
-            class Startup
-            {
-                void Configure(IServiceCollection services)
-                {
-                    services.AddHttpClient<MyService>();
-                    services.AddSingleton<MyService>();
-                }
-            }
-            """);
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IMyService { }
+                           class MyService : IMyService { }
+                           static class HttpClientExtensions
+                           {
+                               public static IServiceCollection AddHttpClient<T>(this IServiceCollection services) => services;
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddHttpClient<MyService>();
+                                   services.AddSingleton<MyService>();
+                               }
+                           }
+                           """);
     }
 
     #endregion Does Not Fire

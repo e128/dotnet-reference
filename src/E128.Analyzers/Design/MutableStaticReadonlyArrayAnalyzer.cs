@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -8,10 +9,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// E128061: Flags <c>private static readonly T[]</c> and <c>internal static readonly T[]</c> fields
-/// where <c>ImmutableArray&lt;T&gt;</c> should be used instead. Arrays are reference types — the
-/// <see langword="readonly"/> modifier prevents reassigning the field but callers can still mutate content
-/// via the indexer.
+///     E128061: Flags <c>private static readonly T[]</c> and <c>internal static readonly T[]</c> fields
+///     where <c>ImmutableArray&lt;T&gt;</c> should be used instead. Arrays are reference types — the
+///     <see langword="readonly" /> modifier prevents reassigning the field but callers can still mutate content
+///     via the indexer.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
@@ -20,15 +21,15 @@ public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
     internal const string ElementTypeKey = "ElementType";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use ImmutableArray<T> for static readonly arrays",
-        messageFormat: "Static readonly array '{0}' should be ImmutableArray<{1}> — readonly prevents reassignment but not content mutation",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "A 'static readonly T[]' field is not truly immutable — readonly prevents reassignment, " +
-            "but callers can still mutate the array via the indexer. Use ImmutableArray<T> from " +
-            "System.Collections.Immutable for true immutability.");
+        DiagnosticId,
+        "Use ImmutableArray<T> for static readonly arrays",
+        "Static readonly array '{0}' should be ImmutableArray<{1}> — readonly prevents reassignment but not content mutation",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true,
+        "A 'static readonly T[]' field is not truly immutable — readonly prevents reassignment, " +
+        "but callers can still mutate the array via the indexer. Use ImmutableArray<T> from " +
+        "System.Collections.Immutable for true immutability.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -83,9 +84,9 @@ public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
                 Rule,
                 fieldDeclaration.Declaration.GetLocation(),
                 ImmutableDictionary.CreateRange(
-                [
-                    new System.Collections.Generic.KeyValuePair<string, string?>(ElementTypeKey, elementType),
-                ]),
+                    [
+                        new KeyValuePair<string, string?>(ElementTypeKey, elementType)
+                    ]),
                 variable.Identifier.Text,
                 elementType));
         }

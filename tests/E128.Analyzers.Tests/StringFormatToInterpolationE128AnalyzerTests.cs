@@ -13,7 +13,7 @@ public sealed class StringFormatToInterpolationE128AnalyzerTests
         var test = new CSharpAnalyzerTest<StringFormatToInterpolationAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,16 +24,16 @@ public sealed class StringFormatToInterpolationE128AnalyzerTests
     public Task StringFormat_WithLiteralAndArgs_Fires()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M()
-                {
-                    var name = "world";
-                    var s = {|E128015:string.Format("Hello {0}", name)|};
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var name = "world";
+                                   var s = {|E128015:string.Format("Hello {0}", name)|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -41,17 +41,17 @@ public sealed class StringFormatToInterpolationE128AnalyzerTests
     public Task StringFormat_WithFormatProvider_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Globalization;
-            class C
-            {
-                void M()
-                {
-                    var n = 42;
-                    var s = {|E128015:string.Format(CultureInfo.InvariantCulture, "Value: {0}", n)|};
-                }
-            }
-            """);
+                           using System;
+                           using System.Globalization;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var n = 42;
+                                   var s = {|E128015:string.Format(CultureInfo.InvariantCulture, "Value: {0}", n)|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -59,14 +59,14 @@ public sealed class StringFormatToInterpolationE128AnalyzerTests
     public Task StringFormat_VariableFormatString_DoesNotFire()
     {
         return VerifyAsync("""
-            using System;
-            class C
-            {
-                void M(string fmt)
-                {
-                    var s = string.Format(fmt, 42);
-                }
-            }
-            """);
+                           using System;
+                           class C
+                           {
+                               void M(string fmt)
+                               {
+                                   var s = string.Format(fmt, 42);
+                               }
+                           }
+                           """);
     }
 }

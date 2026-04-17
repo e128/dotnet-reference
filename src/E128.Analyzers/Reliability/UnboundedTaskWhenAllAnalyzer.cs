@@ -9,10 +9,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Reports <c>Task.WhenAll</c> calls whose argument is a LINQ <c>.Select(async ...)</c>
-/// without a <c>SemaphoreSlim.WaitAsync()</c> throttle in the async lambda body.
-/// Unbounded fan-out can exhaust resources (memory, connections, thread pool) when the
-/// collection is large.
+///     Reports <c>Task.WhenAll</c> calls whose argument is a LINQ <c>.Select(async ...)</c>
+///     without a <c>SemaphoreSlim.WaitAsync()</c> throttle in the async lambda body.
+///     Unbounded fan-out can exhaust resources (memory, connections, thread pool) when the
+///     collection is large.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
@@ -20,12 +20,12 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128037";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Unbounded Task.WhenAll over async Select",
-        messageFormat: "Task.WhenAll fans out all items concurrently with no throttle — add SemaphoreSlim or use bounded parallelism",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Unbounded Task.WhenAll over async Select",
+        "Task.WhenAll fans out all items concurrently with no throttle — add SemaphoreSlim or use bounded parallelism",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -80,8 +80,8 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
     {
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
         return symbolInfo.Symbol is IMethodSymbol method
-            && string.Equals(method.Name, "WhenAll", StringComparison.Ordinal)
-            && string.Equals(method.ContainingType?.ToDisplayString(), "System.Threading.Tasks.Task", StringComparison.Ordinal);
+               && string.Equals(method.Name, "WhenAll", StringComparison.Ordinal)
+               && string.Equals(method.ContainingType?.ToDisplayString(), "System.Threading.Tasks.Task", StringComparison.Ordinal);
     }
 
     private static bool TryGetSelectInvocation(ExpressionSyntax expression, out InvocationExpressionSyntax selectInvocation)
@@ -116,7 +116,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         {
             ParenthesizedLambdaExpressionSyntax pLambda => pLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
             SimpleLambdaExpressionSyntax sLambda => sLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            _ => false,
+            _ => false
         };
     }
 
@@ -133,6 +133,6 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         return lambdaArg.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                && string.Equals(ma.Name.Identifier.ValueText, "WaitAsync", StringComparison.Ordinal));
+                        && string.Equals(ma.Name.Identifier.ValueText, "WaitAsync", StringComparison.Ordinal));
     }
 }

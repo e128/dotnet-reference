@@ -16,7 +16,10 @@ public sealed class ConfigureAwaitFalseCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConfigureAwaitFalseE128Analyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -41,9 +44,9 @@ public sealed class ConfigureAwaitFalseCodeFixProvider : CodeFixProvider
 
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: "Remove .ConfigureAwait(false)",
-                    createChangedDocument: ct => RemoveConfigureAwaitAsync(context.Document, root, invocation, memberAccess, ct),
-                    equivalenceKey: "RemoveConfigureAwaitFalse"),
+                    "Remove .ConfigureAwait(false)",
+                    ct => RemoveConfigureAwaitAsync(context.Document, root, invocation, memberAccess, ct),
+                    "RemoveConfigureAwaitFalse"),
                 diagnostic);
         }
     }

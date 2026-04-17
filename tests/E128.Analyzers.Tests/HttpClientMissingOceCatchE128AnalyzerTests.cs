@@ -13,7 +13,7 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
         var test = new CSharpAnalyzerTest<HttpClientMissingOceCatchAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,26 +24,26 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     public Task BroadCatchWithoutOce_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Net.Http;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
 
-            public class Service
-            {
-                private readonly HttpClient _client = new();
+                           public class Service
+                           {
+                               private readonly HttpClient _client = new();
 
-                public async Task DoWork()
-                {
-                    try
-                    {
-                        await _client.GetAsync("https://example.com");
-                    }
-                    {|E128051:catch (Exception)|}
-                    {
-                    }
-                }
-            }
-            """);
+                               public async Task DoWork()
+                               {
+                                   try
+                                   {
+                                       await _client.GetAsync("https://example.com");
+                                   }
+                                   {|E128051:catch (Exception)|}
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -51,31 +51,31 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     public Task OceCatchBeforeBroadCatch_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
-            using System.Net.Http;
-            using System.Threading;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading;
+                           using System.Threading.Tasks;
 
-            public class Service
-            {
-                private readonly HttpClient _client = new();
+                           public class Service
+                           {
+                               private readonly HttpClient _client = new();
 
-                public async Task DoWork()
-                {
-                    try
-                    {
-                        await _client.GetAsync("https://example.com");
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        throw;
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-            """);
+                               public async Task DoWork()
+                               {
+                                   try
+                                   {
+                                       await _client.GetAsync("https://example.com");
+                                   }
+                                   catch (OperationCanceledException)
+                                   {
+                                       throw;
+                                   }
+                                   catch (Exception)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -83,26 +83,26 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     public Task NonAsyncMethod_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
-            using System.Net.Http;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
 
-            public class Service
-            {
-                private readonly HttpClient _client = new();
+                           public class Service
+                           {
+                               private readonly HttpClient _client = new();
 
-                public void DoWork()
-                {
-                    try
-                    {
-                        _client.GetAsync("https://example.com").Wait();
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-            """);
+                               public void DoWork()
+                               {
+                                   try
+                                   {
+                                       _client.GetAsync("https://example.com").Wait();
+                                   }
+                                   catch (Exception)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -110,26 +110,26 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     public Task WhenFilteredCatch_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
-            using System.Net.Http;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
 
-            public class Service
-            {
-                private readonly HttpClient _client = new();
+                           public class Service
+                           {
+                               private readonly HttpClient _client = new();
 
-                public async Task DoWork()
-                {
-                    try
-                    {
-                        await _client.GetAsync("https://example.com");
-                    }
-                    catch (Exception ex) when (ex is not OperationCanceledException)
-                    {
-                    }
-                }
-            }
-            """);
+                               public async Task DoWork()
+                               {
+                                   try
+                                   {
+                                       await _client.GetAsync("https://example.com");
+                                   }
+                                   catch (Exception ex) when (ex is not OperationCanceledException)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -137,25 +137,25 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     public Task BareCatchWithHttpClient_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Net.Http;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
 
-            public class Service
-            {
-                private readonly HttpClient _client = new();
+                           public class Service
+                           {
+                               private readonly HttpClient _client = new();
 
-                public async Task DoWork()
-                {
-                    try
-                    {
-                        await _client.PostAsync("https://example.com", null);
-                    }
-                    {|E128051:catch|}
-                    {
-                    }
-                }
-            }
-            """);
+                               public async Task DoWork()
+                               {
+                                   try
+                                   {
+                                       await _client.PostAsync("https://example.com", null);
+                                   }
+                                   {|E128051:catch|}
+                                   {
+                                   }
+                               }
+                           }
+                           """);
     }
 }

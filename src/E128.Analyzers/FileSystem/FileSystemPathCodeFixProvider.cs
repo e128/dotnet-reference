@@ -19,8 +19,10 @@ public sealed class FileSystemPathCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FileSystemPathAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -75,9 +77,9 @@ public sealed class FileSystemPathCodeFixProvider : CodeFixProvider
         var title = $"Change type to {typeName}";
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: title,
-                createChangedDocument: ct => ApplyFixAsync(context.Document, node, typeName, ct),
-                equivalenceKey: $"{nameof(FileSystemPathCodeFixProvider)}_{typeName}"),
+                title,
+                ct => ApplyFixAsync(context.Document, node, typeName, ct),
+                $"{nameof(FileSystemPathCodeFixProvider)}_{typeName}"),
             diagnostic);
     }
 
@@ -122,7 +124,7 @@ public sealed class FileSystemPathCodeFixProvider : CodeFixProvider
         }
 
         if (compilationUnit.Usings.Any(u =>
-            string.Equals(u.Name?.ToString(), "System.IO", StringComparison.Ordinal)))
+                string.Equals(u.Name?.ToString(), "System.IO", StringComparison.Ordinal)))
         {
             return root;
         }

@@ -13,12 +13,12 @@ public sealed class DateTimeDirectUseAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128003";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Use TimeProvider instead of DateTime/DateTimeOffset direct access",
-        messageFormat: "Use TimeProvider instead of {0}.{1} — inject TimeProvider via DI",
-        category: "Design",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
+        DiagnosticId,
+        "Use TimeProvider instead of DateTime/DateTimeOffset direct access",
+        "Use TimeProvider instead of {0}.{1} — inject TimeProvider via DI",
+        "Design",
+        DiagnosticSeverity.Warning,
+        true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -76,14 +76,18 @@ public sealed class DateTimeDirectUseAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, memberAccess.GetLocation(), typeName, memberName));
     }
 
-    private static bool IsTargetMemberName(string name) =>
-        string.Equals(name, "Now", StringComparison.Ordinal)
-        || string.Equals(name, "UtcNow", StringComparison.Ordinal)
-        || string.Equals(name, "Today", StringComparison.Ordinal);
+    private static bool IsTargetMemberName(string name)
+    {
+        return string.Equals(name, "Now", StringComparison.Ordinal)
+               || string.Equals(name, "UtcNow", StringComparison.Ordinal)
+               || string.Equals(name, "Today", StringComparison.Ordinal);
+    }
 
-    private static bool IsDateTimeOffset(INamedTypeSymbol type) =>
-        string.Equals(type.Name, "DateTimeOffset", StringComparison.Ordinal)
-        && type.ContainingNamespace is { Name: "System" };
+    private static bool IsDateTimeOffset(INamedTypeSymbol type)
+    {
+        return string.Equals(type.Name, "DateTimeOffset", StringComparison.Ordinal)
+               && type.ContainingNamespace is { Name: "System" };
+    }
 
     // Returns true if the node is inside a static field declaration's initializer.
     // Covers patterns such as: private static readonly DateTime _baseline = DateTime.UtcNow

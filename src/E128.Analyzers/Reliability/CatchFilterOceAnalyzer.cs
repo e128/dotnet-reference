@@ -1,17 +1,19 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// E128039: Flags filtered catch blocks (<c>catch (Exception ex) when (ex is not ...)</c>)
-/// that do not exclude <see cref="OperationCanceledException"/> (or its subclass
-/// <see cref="System.Threading.Tasks.TaskCanceledException"/>). Swallowing cancellation
-/// silently breaks cooperative cancellation.
+///     E128039: Flags filtered catch blocks (<c>catch (Exception ex) when (ex is not ...)</c>)
+///     that do not exclude <see cref="OperationCanceledException" /> (or its subclass
+///     <see cref="System.Threading.Tasks.TaskCanceledException" />). Swallowing cancellation
+///     silently breaks cooperative cancellation.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
@@ -19,16 +21,15 @@ public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128039";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Catch filter must exclude OperationCanceledException",
-        messageFormat: "Catch filter does not exclude OperationCanceledException — swallowing cancellation breaks cooperative cancellation",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description:
-            "Filtered catch blocks that exclude specific exception types (e.g., OutOfMemoryException) " +
-            "must also exclude OperationCanceledException (or TaskCanceledException). Without this, " +
-            "cancellation tokens are silently swallowed, breaking cooperative cancellation patterns.");
+        DiagnosticId,
+        "Catch filter must exclude OperationCanceledException",
+        "Catch filter does not exclude OperationCanceledException — swallowing cancellation breaks cooperative cancellation",
+        "Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "Filtered catch blocks that exclude specific exception types (e.g., OutOfMemoryException) " +
+        "must also exclude OperationCanceledException (or TaskCanceledException). Without this, " +
+        "cancellation tokens are silently swallowed, breaking cooperative cancellation patterns.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -70,7 +71,7 @@ public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var span = Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(
+        var span = TextSpan.FromBounds(
             catchClause.CatchKeyword.SpanStart,
             catchClause.Filter.CloseParenToken.Span.End);
         var location = Location.Create(catchClause.SyntaxTree, span);
@@ -80,7 +81,7 @@ public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
     private static bool PrecedingCatchHandlesOce(
         CatchClauseSyntax catchClause,
         SemanticModel semanticModel,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         if (catchClause.Parent is not TryStatementSyntax tryStatement)
         {
@@ -121,7 +122,7 @@ public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
         {
             IsPatternExpressionSyntax { Pattern: UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern } } => true,
             IsPatternExpressionSyntax { Pattern: BinaryPatternSyntax pattern } => ContainsNotPattern(pattern),
-            _ => false,
+            _ => false
         };
     }
 
@@ -131,14 +132,14 @@ public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
         {
             UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern } => true,
             BinaryPatternSyntax binary => ContainsNotPattern(binary.Left) || ContainsNotPattern(binary.Right),
-            _ => false,
+            _ => false
         };
     }
 
     private static bool ExcludesOperationCanceledException(
         ExpressionSyntax filterExpression,
         SemanticModel semanticModel,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         foreach (var typeNode in filterExpression.DescendantNodes())
         {

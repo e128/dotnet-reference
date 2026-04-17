@@ -15,7 +15,7 @@ public sealed class CatchFilterOceE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
+            NumberOfFixAllIterations = 1
         }.RunAsync();
     }
 
@@ -24,32 +24,32 @@ public sealed class CatchFilterOceE128CodeFixTests
     public Task CodeFix_AddsOce_ToSingleNotFilter()
     {
         const string source = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    try { }
-                    {|E128039:catch (Exception ex) when (ex is not OutOfMemoryException)|}
-                    {
-                    }
-                }
-            }
-            """;
+                              using System;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      try { }
+                                      {|E128039:catch (Exception ex) when (ex is not OutOfMemoryException)|}
+                                      {
+                                      }
+                                  }
+                              }
+                              """;
 
         const string fixedCode = """
-            using System;
-            class C
-            {
-                void M()
-                {
-                    try { }
-                    catch (Exception ex) when (ex is not OutOfMemoryException and not OperationCanceledException)
-                    {
-                    }
-                }
-            }
-            """;
+                                 using System;
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         try { }
+                                         catch (Exception ex) when (ex is not OutOfMemoryException and not OperationCanceledException)
+                                         {
+                                         }
+                                     }
+                                 }
+                                 """;
 
         return VerifyFixAsync(source, fixedCode);
     }

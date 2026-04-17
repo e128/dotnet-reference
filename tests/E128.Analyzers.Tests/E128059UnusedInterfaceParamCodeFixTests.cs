@@ -1,10 +1,11 @@
+using E128.Analyzers.Design;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 /// <summary>
-/// Registration test for the UnusedInterfaceParam code fix provider.
-/// Rename-based code fix tests require workspace support not available in the unit test harness.
+///     Registration test for the UnusedInterfaceParam code fix provider.
+///     Rename-based code fix tests require workspace support not available in the unit test harness.
 /// </summary>
 public sealed class E128059UnusedInterfaceParamCodeFixTests
 {
@@ -12,7 +13,7 @@ public sealed class E128059UnusedInterfaceParamCodeFixTests
     [Trait("Category", "CI")]
     public void UnusedInterfaceParam_CodeFixProvider_IsRegistered()
     {
-        var provider = new Design.UnusedInterfaceParamCodeFixProvider();
+        var provider = new UnusedInterfaceParamCodeFixProvider();
         Assert.Contains("E128059", provider.FixableDiagnosticIds);
     }
 }

@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Performance;
 
 /// <summary>
-/// E128026: Flags <c>new HashSet&lt;T&gt;(...).ToFrozenSet(...)</c> — the intermediate HashSet allocation
-/// is unnecessary. The collection can be passed directly to <c>ToFrozenSet()</c>.
+///     E128026: Flags <c>new HashSet&lt;T&gt;(...).ToFrozenSet(...)</c> — the intermediate HashSet allocation
+///     is unnecessary. The collection can be passed directly to <c>ToFrozenSet()</c>.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
@@ -19,15 +19,14 @@ public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
     private const string HashSetMetadataName = "System.Collections.Generic.HashSet`1";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Redundant HashSet allocation in FrozenSet creation",
-        messageFormat: "Intermediate HashSet<{0}> allocation is unnecessary — pass the collection directly to ToFrozenSet()",
-        category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description:
-            "Creating a HashSet<T> only to immediately call .ToFrozenSet() allocates an intermediate collection " +
-            "that is immediately discarded. Pass the collection expression or array directly to ToFrozenSet() instead.");
+        DiagnosticId,
+        "Redundant HashSet allocation in FrozenSet creation",
+        "Intermediate HashSet<{0}> allocation is unnecessary — pass the collection directly to ToFrozenSet()",
+        "Performance",
+        DiagnosticSeverity.Warning,
+        true,
+        "Creating a HashSet<T> only to immediately call .ToFrozenSet() allocates an intermediate collection " +
+        "that is immediately discarded. Pass the collection expression or array directly to ToFrozenSet() instead.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -86,7 +85,7 @@ public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
     private static bool IsToFrozenSetCall(InvocationExpressionSyntax invocation)
     {
         return invocation.Expression is MemberAccessExpressionSyntax memberAccess
-            && string.Equals(memberAccess.Name.Identifier.Text, "ToFrozenSet", StringComparison.Ordinal);
+               && string.Equals(memberAccess.Name.Identifier.Text, "ToFrozenSet", StringComparison.Ordinal);
     }
 
     private static ExpressionSyntax? GetReceiverExpression(InvocationExpressionSyntax invocation)

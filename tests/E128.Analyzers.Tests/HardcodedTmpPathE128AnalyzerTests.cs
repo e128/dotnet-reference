@@ -13,7 +13,7 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
         var test = new CSharpAnalyzerTest<HardcodedTmpPathE128Analyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,14 +24,14 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     public Task ExactTmp_Fires()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var path = {|E128023:"/tmp"|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var path = {|E128023:"/tmp"|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -39,14 +39,14 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     public Task TmpPrefix_Fires()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var path = {|E128023:"/tmp/foo/cache.db"|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var path = {|E128023:"/tmp/foo/cache.db"|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -54,14 +54,14 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     public Task WindowsTemp_Fires()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var path = {|E128023:@"C:\Temp"|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var path = {|E128023:@"C:\Temp"|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -69,14 +69,14 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     public Task WindowsWindowsTemp_Fires()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var path = {|E128023:@"C:\Windows\Temp\cache.db"|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var path = {|E128023:@"C:\Windows\Temp\cache.db"|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -84,14 +84,14 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     public Task PathGetTempPath_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "cache.db");
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "cache.db");
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -99,14 +99,14 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     public Task TmpFooWithoutSlash_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var path = "/tmpfoo";
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var path = "/tmpfoo";
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -114,13 +114,13 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     public Task TemporaryPath_NoFire()
     {
         return VerifyAsync("""
-            class C
-            {
-                void M()
-                {
-                    var path = "/temporary";
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var path = "/temporary";
+                               }
+                           }
+                           """);
     }
 }

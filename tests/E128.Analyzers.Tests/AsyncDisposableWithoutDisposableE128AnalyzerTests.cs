@@ -13,7 +13,7 @@ public sealed class AsyncDisposableWithoutDisposableE128AnalyzerTests
         var test = new CSharpAnalyzerTest<AsyncDisposableWithoutDisposableAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,14 +24,14 @@ public sealed class AsyncDisposableWithoutDisposableE128AnalyzerTests
     public Task ClassWithIAsyncDisposableOnly_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Threading.Tasks;
 
-            class {|E128044:C|} : IAsyncDisposable
-            {
-                public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-            }
-            """);
+                           class {|E128044:C|} : IAsyncDisposable
+                           {
+                               public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+                           }
+                           """);
     }
 
     [Fact]
@@ -39,15 +39,15 @@ public sealed class AsyncDisposableWithoutDisposableE128AnalyzerTests
     public Task ClassWithBothInterfaces_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Threading.Tasks;
 
-            class C : IAsyncDisposable, IDisposable
-            {
-                public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-                public void Dispose() { }
-            }
-            """);
+                           class C : IAsyncDisposable, IDisposable
+                           {
+                               public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+                               public void Dispose() { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -55,13 +55,13 @@ public sealed class AsyncDisposableWithoutDisposableE128AnalyzerTests
     public Task ClassWithOnlyIDisposable_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
+                           using System;
 
-            class C : IDisposable
-            {
-                public void Dispose() { }
-            }
-            """);
+                           class C : IDisposable
+                           {
+                               public void Dispose() { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -69,11 +69,11 @@ public sealed class AsyncDisposableWithoutDisposableE128AnalyzerTests
     public Task InterfaceWithIAsyncDisposable_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Threading.Tasks;
 
-            interface IC : IAsyncDisposable { }
-            """);
+                           interface IC : IAsyncDisposable { }
+                           """);
     }
 
     [Fact]
@@ -81,13 +81,13 @@ public sealed class AsyncDisposableWithoutDisposableE128AnalyzerTests
     public Task StructWithIAsyncDisposableOnly_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Threading.Tasks;
 
-            struct {|E128044:S|} : IAsyncDisposable
-            {
-                public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-            }
-            """);
+                           struct {|E128044:S|} : IAsyncDisposable
+                           {
+                               public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+                           }
+                           """);
     }
 }

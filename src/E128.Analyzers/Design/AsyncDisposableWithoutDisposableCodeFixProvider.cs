@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-/// Code fix for E128044: adds <c>: IDisposable</c> to the type declaration
-/// and implements a <c>Dispose()</c> method stub.
+///     Code fix for E128044: adds <c>: IDisposable</c> to the type declaration
+///     and implements a <c>Dispose()</c> method stub.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AsyncDisposableWithoutDisposableCodeFixProvider))]
 [Shared]
@@ -21,8 +21,10 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : CodeFixPro
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [AsyncDisposableWithoutDisposableAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -43,9 +45,9 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : CodeFixPro
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Implement IDisposable",
-                createChangedDocument: ct => AddIDisposableAsync(context.Document, typeDecl, ct),
-                equivalenceKey: nameof(AsyncDisposableWithoutDisposableCodeFixProvider)),
+                "Implement IDisposable",
+                ct => AddIDisposableAsync(context.Document, typeDecl, ct),
+                nameof(AsyncDisposableWithoutDisposableCodeFixProvider)),
             diagnostic);
     }
 

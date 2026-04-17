@@ -13,7 +13,7 @@ public sealed class CollectionPathE128AnalyzerTests
         var test = new CSharpAnalyzerTest<CollectionPathAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,13 +24,13 @@ public sealed class CollectionPathE128AnalyzerTests
     public Task ListOfStringWithPathName_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public void Process(List<string> {|E128053:filePaths|}) { }
-            }
-            """);
+                           public class Service
+                           {
+                               public void Process(List<string> {|E128053:filePaths|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -38,13 +38,13 @@ public sealed class CollectionPathE128AnalyzerTests
     public Task IReadOnlyListOfStringWithDirName_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public void Process(IReadOnlyList<string> {|E128053:directories|}) { }
-            }
-            """);
+                           public class Service
+                           {
+                               public void Process(IReadOnlyList<string> {|E128053:directories|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -52,13 +52,13 @@ public sealed class CollectionPathE128AnalyzerTests
     public Task IEnumerableOfStringWithPathName_Fires()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public void Process(IEnumerable<string> {|E128053:inputPaths|}) { }
-            }
-            """);
+                           public class Service
+                           {
+                               public void Process(IEnumerable<string> {|E128053:inputPaths|}) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -66,13 +66,13 @@ public sealed class CollectionPathE128AnalyzerTests
     public Task ListOfStringWithNonPathName_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public void Process(List<string> names) { }
-            }
-            """);
+                           public class Service
+                           {
+                               public void Process(List<string> names) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -80,14 +80,14 @@ public sealed class CollectionPathE128AnalyzerTests
     public Task ListOfFileInfo_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
-            using System.IO;
+                           using System.Collections.Generic;
+                           using System.IO;
 
-            public class Service
-            {
-                public void Process(List<FileInfo> filePaths) { }
-            }
-            """);
+                           public class Service
+                           {
+                               public void Process(List<FileInfo> filePaths) { }
+                           }
+                           """);
     }
 
     [Fact]
@@ -95,12 +95,12 @@ public sealed class CollectionPathE128AnalyzerTests
     public Task XPathExclusion_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System.Collections.Generic;
+                           using System.Collections.Generic;
 
-            public class Service
-            {
-                public void Process(List<string> xpaths) { }
-            }
-            """);
+                           public class Service
+                           {
+                               public void Process(List<string> xpaths) { }
+                           }
+                           """);
     }
 }

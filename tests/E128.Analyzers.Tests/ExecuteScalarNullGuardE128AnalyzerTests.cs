@@ -13,7 +13,7 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
         var test = new CSharpAnalyzerTest<ExecuteScalarNullGuardAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,18 +24,18 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
     public Task ConvertToInt32_WrappingExecuteScalar_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Data;
-            using System.Data.Common;
+                           using System;
+                           using System.Data;
+                           using System.Data.Common;
 
-            class C
-            {
-                void M(DbCommand cmd)
-                {
-                    var count = {|E128042:Convert.ToInt32(cmd.ExecuteScalar())|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M(DbCommand cmd)
+                               {
+                                   var count = {|E128042:Convert.ToInt32(cmd.ExecuteScalar())|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -43,18 +43,18 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
     public Task ConvertToInt64_WrappingExecuteScalar_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Data;
-            using System.Data.Common;
+                           using System;
+                           using System.Data;
+                           using System.Data.Common;
 
-            class C
-            {
-                void M(DbCommand cmd)
-                {
-                    var count = {|E128042:Convert.ToInt64(cmd.ExecuteScalar())|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M(DbCommand cmd)
+                               {
+                                   var count = {|E128042:Convert.ToInt64(cmd.ExecuteScalar())|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -62,19 +62,19 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
     public Task ConvertToInt32_WrappingExecuteScalarAsync_Fires()
     {
         return VerifyAsync("""
-            using System;
-            using System.Data;
-            using System.Data.Common;
-            using System.Threading.Tasks;
+                           using System;
+                           using System.Data;
+                           using System.Data.Common;
+                           using System.Threading.Tasks;
 
-            class C
-            {
-                async Task M(DbCommand cmd)
-                {
-                    var count = {|E128042:Convert.ToInt32(await cmd.ExecuteScalarAsync())|};
-                }
-            }
-            """);
+                           class C
+                           {
+                               async Task M(DbCommand cmd)
+                               {
+                                   var count = {|E128042:Convert.ToInt32(await cmd.ExecuteScalarAsync())|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -82,16 +82,16 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
     public Task ConvertToInt32_NormalValue_NoDiagnostic()
     {
         return VerifyAsync("""
-            using System;
+                           using System;
 
-            class C
-            {
-                void M()
-                {
-                    var x = Convert.ToInt32("42");
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M()
+                               {
+                                   var x = Convert.ToInt32("42");
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -101,18 +101,18 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
         // The analyzer only fires when ExecuteScalar is the direct argument —
         // if the user extracts it into a local variable with a null check, no diagnostic.
         return VerifyAsync("""
-            using System;
-            using System.Data;
-            using System.Data.Common;
+                           using System;
+                           using System.Data;
+                           using System.Data.Common;
 
-            class C
-            {
-                void M(DbCommand cmd)
-                {
-                    var result = cmd.ExecuteScalar();
-                    var count = result is null ? 0 : Convert.ToInt32(result);
-                }
-            }
-            """);
+                           class C
+                           {
+                               void M(DbCommand cmd)
+                               {
+                                   var result = cmd.ExecuteScalar();
+                                   var count = result is null ? 0 : Convert.ToInt32(result);
+                               }
+                           }
+                           """);
     }
 }

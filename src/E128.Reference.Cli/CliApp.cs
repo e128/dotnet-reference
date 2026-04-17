@@ -12,7 +12,7 @@ internal static class CliApp
 
         var rootCommand = new RootCommand("E128 Reference CLI — hello world with System.CommandLine")
         {
-            nameOption,
+            nameOption
         };
 
         rootCommand.SetAction(async (parseResult, _) =>

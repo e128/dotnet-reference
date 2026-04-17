@@ -13,7 +13,7 @@ public sealed class DirectHttpClientInstantiationAnalyzerTests
         var test = new CSharpAnalyzerTest<DirectHttpClientInstantiationAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -24,15 +24,15 @@ public sealed class DirectHttpClientInstantiationAnalyzerTests
     public Task NewHttpClientNoArgs_Fires()
     {
         return VerifyAsync("""
-            using System.Net.Http;
-            class C
-            {
-                void M()
-                {
-                    var client = {|E128004:new HttpClient()|};
-                }
-            }
-            """);
+                           using System.Net.Http;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var client = {|E128004:new HttpClient()|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -40,12 +40,12 @@ public sealed class DirectHttpClientInstantiationAnalyzerTests
     public Task NewHttpClientNoArgs_AsField_Fires()
     {
         return VerifyAsync("""
-            using System.Net.Http;
-            class C
-            {
-                private readonly HttpClient _client = {|E128004:new HttpClient()|};
-            }
-            """);
+                           using System.Net.Http;
+                           class C
+                           {
+                               private readonly HttpClient _client = {|E128004:new HttpClient()|};
+                           }
+                           """);
     }
 
     [Fact]
@@ -53,16 +53,16 @@ public sealed class DirectHttpClientInstantiationAnalyzerTests
     public Task NewHttpClientWithHandler_NoFire()
     {
         return VerifyAsync("""
-            using System.Net.Http;
-            class C
-            {
-                void M()
-                {
-                    var handler = new HttpClientHandler();
-                    var client = new HttpClient(handler);
-                }
-            }
-            """);
+                           using System.Net.Http;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var handler = new HttpClientHandler();
+                                   var client = new HttpClient(handler);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
@@ -70,17 +70,17 @@ public sealed class DirectHttpClientInstantiationAnalyzerTests
     public Task UserDefinedHttpClient_NoFire()
     {
         return VerifyAsync("""
-            class HttpClient
-            {
-                public HttpClient() { }
-            }
-            class C
-            {
-                void M()
-                {
-                    var client = new HttpClient();
-                }
-            }
-            """);
+                           class HttpClient
+                           {
+                               public HttpClient() { }
+                           }
+                           class C
+                           {
+                               void M()
+                               {
+                                   var client = new HttpClient();
+                               }
+                           }
+                           """);
     }
 }

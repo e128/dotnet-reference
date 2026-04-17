@@ -1,8 +1,12 @@
 using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -17,12 +21,29 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
     private static readonly string RepoRoot = FindRepoRoot();
 
     private readonly HttpClient _client = new() { BaseAddress = new Uri($"http://localhost:{HostPort}") };
+    private bool _dockerAvailable;
 
     public async ValueTask InitializeAsync()
     {
+        _dockerAvailable = await IsDockerAvailableAsync();
+        if (!_dockerAvailable)
+        {
+            return;
+        }
+
         await RunDockerAsync($"build --tag {ImageName} .");
         await RunDockerAsync($"run -d --name {ContainerName} -p {HostPort}:8080 {ImageName}");
         await WaitForHealthy();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _client.Dispose();
+        if (_dockerAvailable)
+        {
+            await RunDockerAsync($"rm -f {ContainerName}", false);
+            await RunDockerAsync($"rmi -f {ImageName}", false);
+        }
     }
 
     public void Dispose()
@@ -30,17 +51,15 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
         _client.Dispose();
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        _client.Dispose();
-        await RunDockerAsync($"rm -f {ContainerName}", throwOnError: false);
-        await RunDockerAsync($"rmi -f {ImageName}", throwOnError: false);
-    }
-
     [Fact]
     [Trait("Category", "Docker")]
     public async Task Root_ReturnsGreeting()
     {
+        if (!_dockerAvailable)
+        {
+            Assert.Skip("Docker daemon not available");
+        }
+
         var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -53,6 +72,11 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
     [Trait("Category", "Docker")]
     public async Task Health_ReturnsHealthy()
     {
+        if (!_dockerAvailable)
+        {
+            Assert.Skip("Docker daemon not available");
+        }
+
         var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -64,7 +88,7 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
 
     private async Task WaitForHealthy()
     {
-        using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         while (!cts.Token.IsCancellationRequested)
         {
             try
@@ -97,21 +121,49 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
         throw new TimeoutException("Container did not become healthy within 30 seconds");
     }
 
+    private static async Task<bool> IsDockerAvailableAsync()
+    {
+        try
+        {
+            using var process = new Process();
+            process.StartInfo = new ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = "info",
+                WorkingDirectory = RepoRoot,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+            process.Start();
+            await process.WaitForExitAsync();
+            return process.ExitCode == 0;
+        }
+        catch (Win32Exception)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>
-    /// Runs a docker command with the repo root as the working directory.
+    ///     Runs a docker command with the repo root as the working directory.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
     private static async Task RunDockerAsync(string arguments, bool throwOnError = true)
     {
-        using var process = new System.Diagnostics.Process();
-        process.StartInfo = new System.Diagnostics.ProcessStartInfo
+        using var process = new Process();
+        process.StartInfo = new ProcessStartInfo
         {
             FileName = "docker",
             Arguments = arguments,
             WorkingDirectory = RepoRoot,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            UseShellExecute = false,
+            UseShellExecute = false
         };
         process.Start();
         var stderr = await process.StandardError.ReadToEndAsync();
@@ -120,12 +172,12 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
         if (throwOnError && process.ExitCode != 0)
         {
             throw new InvalidOperationException(
-                $"'docker {arguments}' failed (exit {process.ExitCode.ToString(System.Globalization.CultureInfo.InvariantCulture)}): {stderr}");
+                $"'docker {arguments}' failed (exit {process.ExitCode.ToString(CultureInfo.InvariantCulture)}): {stderr}");
         }
     }
 
     /// <summary>
-    /// Walks up from the test output directory to find the repo root (contains Dockerfile).
+    ///     Walks up from the test output directory to find the repo root (contains Dockerfile).
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
     private static string FindRepoRoot()
@@ -137,6 +189,6 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
         }
 
         return dir?.FullName
-            ?? throw new InvalidOperationException("Could not find repo root containing Dockerfile");
+               ?? throw new InvalidOperationException("Could not find repo root containing Dockerfile");
     }
 }

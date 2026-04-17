@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-/// Code fix for E128055: inserts a matching <c>#pragma warning restore X</c>
-/// at the end of the file so the suppression scope is bounded.
+///     Code fix for E128055: inserts a matching <c>#pragma warning restore X</c>
+///     at the end of the file so the suppression scope is bounded.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(PragmaBalanceCodeFixProvider))]
 [Shared]
@@ -21,8 +21,10 @@ public sealed class PragmaBalanceCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [PragmaBalanceAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -41,9 +43,9 @@ public sealed class PragmaBalanceCodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Add #pragma warning restore {suppressedId}",
-                createChangedDocument: ct => AddRestorePragmaAsync(context.Document, suppressedId, ct),
-                equivalenceKey: $"{nameof(PragmaBalanceCodeFixProvider)}.{suppressedId}"),
+                $"Add #pragma warning restore {suppressedId}",
+                ct => AddRestorePragmaAsync(context.Document, suppressedId, ct),
+                $"{nameof(PragmaBalanceCodeFixProvider)}.{suppressedId}"),
             diagnostic);
     }
 
@@ -71,7 +73,7 @@ public sealed class PragmaBalanceCodeFixProvider : CodeFixProvider
             SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
                 SyntaxFactory.IdentifierName(suppressedId).WithLeadingTrivia(SyntaxFactory.Space)),
             SyntaxFactory.Token(SyntaxKind.EndOfDirectiveToken).WithTrailingTrivia(SyntaxFactory.LineFeed),
-            isActive: true);
+            true);
 
         // Append the restore directive as trailing trivia of the last real token.
         // Attaching to the last token's trailing list avoids the EndOfFileToken

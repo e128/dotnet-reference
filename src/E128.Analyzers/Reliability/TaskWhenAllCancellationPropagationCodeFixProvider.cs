@@ -14,8 +14,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-/// Code fix for E128038: appends the enclosing method's <c>CancellationToken</c> parameter
-/// to HttpClient/Playwright method calls inside the async lambda that are missing it.
+///     Code fix for E128038: appends the enclosing method's <c>CancellationToken</c> parameter
+///     to HttpClient/Playwright method calls inside the async lambda that are missing it.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TaskWhenAllCancellationPropagationCodeFixProvider))]
 [Shared]
@@ -24,8 +24,10 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : CodeFixP
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TaskWhenAllCancellationPropagationAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -45,9 +47,9 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : CodeFixP
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add CancellationToken to HttpClient/Playwright calls",
-                createChangedDocument: ct => AddCancellationTokenAsync(context.Document, invocation, ct),
-                equivalenceKey: nameof(TaskWhenAllCancellationPropagationCodeFixProvider)),
+                "Add CancellationToken to HttpClient/Playwright calls",
+                ct => AddCancellationTokenAsync(context.Document, invocation, ct),
+                nameof(TaskWhenAllCancellationPropagationCodeFixProvider)),
             diagnostic);
     }
 
@@ -120,10 +122,13 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : CodeFixP
 
         var lambdaArg = selectArgs.Last().Expression;
 
-        return [.. lambdaArg.DescendantNodes()
-            .OfType<InvocationExpressionSyntax>()
-            .Where(inv => IsHttpClientOrPlaywrightMethod(inv)
-                && !HasCancellationTokenArgument(semanticModel, inv, cancellationToken))];
+        return
+        [
+            .. lambdaArg.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Where(inv => IsHttpClientOrPlaywrightMethod(inv)
+                              && !HasCancellationTokenArgument(semanticModel, inv, cancellationToken))
+        ];
     }
 
     private static string? FindCancellationTokenParameterName(
@@ -164,7 +169,7 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : CodeFixP
                 or "CheckAsync" or "UncheckAsync" or "SelectOptionAsync" or "HoverAsync"
                 or "FocusAsync" or "PressAsync" or "DispatchEventAsync" or "WaitForSelectorAsync"
                 or "WaitForNavigationAsync" or "WaitForURLAsync" or "WaitForLoadStateAsync" => true,
-            _ => false,
+            _ => false
         };
     }
 

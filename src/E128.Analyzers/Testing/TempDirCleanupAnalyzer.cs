@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -8,10 +9,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-/// E128054: Flags classes that call <c>Path.GetTempPath()</c> in a field initializer,
-/// property initializer, or constructor without implementing <c>IDisposable</c>,
-/// <c>IAsyncDisposable</c>, or xUnit's <c>IAsyncLifetime</c>.
-/// Temp directories allocated at class level leak without a cleanup interface.
+///     E128054: Flags classes that call <c>Path.GetTempPath()</c> in a field initializer,
+///     property initializer, or constructor without implementing <c>IDisposable</c>,
+///     <c>IAsyncDisposable</c>, or xUnit's <c>IAsyncLifetime</c>.
+///     Temp directories allocated at class level leak without a cleanup interface.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
@@ -19,13 +20,13 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128054";
 
     private static readonly DiagnosticDescriptor Rule = new(
-        id: DiagnosticId,
-        title: "Class creates temp directory without cleanup interface",
-        messageFormat: "Class '{0}' calls Path.GetTempPath() but does not implement IDisposable, IAsyncDisposable, or IAsyncLifetime",
-        category: "Testing",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Classes that allocate temp directories in field initializers or constructors must implement a cleanup interface to avoid resource leaks.");
+        DiagnosticId,
+        "Class creates temp directory without cleanup interface",
+        "Class '{0}' calls Path.GetTempPath() but does not implement IDisposable, IAsyncDisposable, or IAsyncLifetime",
+        "Testing",
+        DiagnosticSeverity.Warning,
+        true,
+        "Classes that allocate temp directories in field initializers or constructors must implement a cleanup interface to avoid resource leaks.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -78,15 +79,15 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
     private static bool IsGetTempPathCall(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         var symbolInfo = semanticModel.GetSymbolInfo(invocation, cancellationToken);
 
         return symbolInfo.Symbol is IMethodSymbol method
-            && string.Equals(method.Name, "GetTempPath", StringComparison.Ordinal)
-            && method.ContainingType is { } containingType
-            && string.Equals(containingType.Name, "Path", StringComparison.Ordinal)
-            && string.Equals(containingType.ContainingNamespace?.ToDisplayString(), "System.IO", StringComparison.Ordinal);
+               && string.Equals(method.Name, "GetTempPath", StringComparison.Ordinal)
+               && method.ContainingType is { } containingType
+               && string.Equals(containingType.Name, "Path", StringComparison.Ordinal)
+               && string.Equals(containingType.ContainingNamespace?.ToDisplayString(), "System.IO", StringComparison.Ordinal);
     }
 
     private static bool IsInInitializerOrConstructor(SyntaxNode node)
@@ -102,7 +103,9 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
             if (current is EqualsValueClauseSyntax
                 && (current.Parent is PropertyDeclarationSyntax
                     || current.Parent is VariableDeclaratorSyntax
-                    { Parent: VariableDeclarationSyntax { Parent: FieldDeclarationSyntax } }))
+                    {
+                        Parent: VariableDeclarationSyntax { Parent: FieldDeclarationSyntax }
+                    }))
             {
                 return true;
             }

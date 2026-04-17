@@ -16,7 +16,10 @@ public sealed class RedundantHashSetInFrozenSetCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [RedundantHashSetInFrozenSetE128Analyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -36,9 +39,9 @@ public sealed class RedundantHashSetInFrozenSetCodeFixProvider : CodeFixProvider
 
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: "Remove intermediate HashSet",
-                    createChangedDocument: ct => RemoveHashSetAsync(context.Document, root, invocation, ct),
-                    equivalenceKey: "RemoveRedundantHashSet"),
+                    "Remove intermediate HashSet",
+                    ct => RemoveHashSetAsync(context.Document, root, invocation, ct),
+                    "RemoveRedundantHashSet"),
                 diagnostic);
         }
     }

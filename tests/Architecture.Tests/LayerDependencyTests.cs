@@ -6,7 +6,7 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 namespace Architecture.Tests;
 
 /// <summary>
-/// Enforces layer dependency direction: Models → (nothing), Services → Models + Repositories, Repositories → Models.
+///     Enforces layer dependency direction: Models → (nothing), Services → Models + Repositories, Repositories → Models.
 /// </summary>
 public sealed class LayerDependencyTests
 {
