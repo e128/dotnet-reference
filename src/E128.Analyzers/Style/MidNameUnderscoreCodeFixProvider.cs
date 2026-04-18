@@ -19,12 +19,16 @@ namespace E128.Analyzers.Style;
 [Shared]
 public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
 {
+    private static readonly SequentialRenameFixAllProvider s_fixAllProvider =
+        new((_, symbolName) => symbolName is null ? null : ComputeFixedName(symbolName),
+            nameof(MidNameUnderscoreCodeFixProvider));
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MidNameUnderscoreAnalyzer.DiagnosticId];
 
     public override FixAllProvider GetFixAllProvider()
     {
-        return WellKnownFixAllProviders.BatchFixer;
+        return s_fixAllProvider;
     }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)

@@ -12,7 +12,8 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `show diff` / `diff summary`                              | `scripts/diff.sh`             |
 | `next task` / `task progress`                              | `scripts/task.sh next`        |
 | `format check` / `check format`                           | `scripts/format.sh --check`   |
-| `fix format` / `apply format`                             | `scripts/format.sh --changed` |
+| `fix format` / `apply format`                             | `scripts/format.sh --changed`         |
+| `format no jb` / `skip jb format`                        | `scripts/format.sh --changed --no-jb` |
 | `get timestamp` / `iso timestamp`                          | `scripts/ts.sh`               |
 | `run ci` / `full ci`                                       | `scripts/ci.sh`               |
 | `preflight` / `ready to commit`                            | `/yeet --dry-run`             |

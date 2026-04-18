@@ -10,5 +10,5 @@ E128059  | Design      | Warning  | Interface method parameter unused in impleme
 E128060  | Design      | Warning  | Dictionary<K,V> returned as IReadOnlyDictionary<K,V> without .AsReadOnly()
 E128061  | Design      | Warning  | Static readonly array should be ImmutableArray<T>
 E128062  | Testing     | Warning  | Test uses outdated ReferenceAssemblies — does not match project target framework
-E128063  | Style       | Warning  | Private static member name contains a mid-name underscore
+E128063  | Style       | Error    | Private static member name contains a mid-name underscore
 

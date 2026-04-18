@@ -37,7 +37,8 @@ elif [[ ${#INCLUDES[@]} -gt 0 ]]; then
 fi
 
 # jb cleanupcode — runs first (semantic cleanup: naming, arrangement, null patterns)
-# Skipped in --check mode (no verify-only equivalent) and when --no-jb is set
+# Skipped in --check mode: jb has no verify-only equivalent, so format --check only
+# validates dotnet format compliance. --no-jb bypasses jb when it is not installed.
 if [[ "$CHECK" == false && "$NO_JB" == false ]]; then
     if ! command -v jb &>/dev/null; then
         echo "Format: jb not found — skipping ReSharper cleanup (install JetBrains.ReSharper.GlobalTools)"

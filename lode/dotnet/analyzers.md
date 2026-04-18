@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-15T19:55:55Z*
+*Updated: 2026-04-18T18:01:39Z*
 
 ## Strategy: Deny by Default
 
@@ -105,7 +105,7 @@ Flags `ReferenceAssemblies.Net.Net80` / `Net90` in test code when the configured
 
 ### E128063 — Mid-name underscore in private static member
 
-Flags private/internal static members whose name contains an underscore at index ≥ 2 (e.g., `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors. Code fix uses `Renamer.RenameSymbolAsync` to remove the mid-name underscore and PascalCase the segments.
+Severity: **Error**. Flags private/internal static members whose name contains an underscore at index ≥ 2 (e.g., `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors. Code fix uses `SequentialRenameFixAllProvider` (not `BatchFixer`) and removes the mid-name underscore by PascalCasing each segment.
 
 ## Common Test Overrides
 
@@ -144,17 +144,22 @@ dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 private static partial Regex MyRegex { get; }
 ```
 
-## NamingStyleCodeFixProvider (IDE1006 Fix All)
+## SequentialRenameFixAllProvider (Shared Fix-All Logic)
 
-`NamingStyleCodeFixProvider` in `E128.Analyzers.Style` provides a code fix for IDE1006 naming violations. It uses a custom `SequentialFixAllProvider` (not `WellKnownFixAllProviders.BatchFixer`) because `BatchFixer` computes all renames against the original solution snapshot and then tries to merge them — this fails when multiple renames touch the same document, causing `dotnet format` to log "doesn't support Fix All in Solution".
+`SequentialRenameFixAllProvider` in `E128.Analyzers.Style` is a shared `FixAllProvider` used by any code fix that renames symbols via `Renamer.RenameSymbolAsync`. It replaces `WellKnownFixAllProviders.BatchFixer`, which computes all renames from the original solution snapshot and then merges — this merge fails when multiple renames touch the same document, causing `dotnet format` to log "doesn't support Fix All in Solution".
 
-The sequential provider:
-1. Collects all IDE1006 diagnostics across the fix-all scope (Document / Project / Solution)
+The provider accepts a `Func<Diagnostic, string?, string?>` delegate for computing the new name, allowing reuse across different fixers:
+
+- `NamingStyleCodeFixProvider` (IDE1006): delegates to `ComputeCompliantName(diagnostic, symbolName)`
+- `MidNameUnderscoreCodeFixProvider` (E128063): delegates to `ComputeFixedName(symbolName)`
+
+Sequential application:
+1. Collects all diagnostics across the fix-all scope (Document / Project / Solution)
 2. Sorts renames back-to-front within each document to prevent span drift
 3. Applies `Renamer.RenameSymbolAsync` one at a time to the evolving solution
 4. Skips a rename if the symbol has already been renamed (name mismatch guard)
 
-`dotnet format` resolves the suggested name from the `SuggestedName` property embedded in Roslyn's IDE1006 diagnostic. Tests use `FakeNamingViolationAnalyzer` which embeds `SymbolName` + style properties instead.
+`dotnet format` resolves the IDE1006 suggested name from the `SuggestedName` property embedded in Roslyn's diagnostic. Tests use `FakeNamingViolationAnalyzer` which embeds `SymbolName` + style properties instead.
 
 ## Related
 

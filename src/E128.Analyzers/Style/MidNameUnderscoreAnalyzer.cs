@@ -30,7 +30,7 @@ public sealed class MidNameUnderscoreAnalyzer : DiagnosticAnalyzer
         "Private static member name contains a mid-name underscore",
         "Private static member '{0}' contains a mid-name underscore — likely an IDE1006 batch-rename artifact; remove the underscore and adjust capitalization",
         "Style",
-        DiagnosticSeverity.Warning,
+        DiagnosticSeverity.Error,
         true,
         "An underscore in the middle of a private static member name (e.g., 'Nots_supportedExtensions') " +
         "is typically an artifact of IDE1006 batch-rename operations that mangle the identifier. " +
