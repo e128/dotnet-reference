@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-18T18:01:39Z*
+*Updated: 2026-04-19T21:17:06Z*
 
 ## Strategy: Deny by Default
 
@@ -68,28 +68,47 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 ## Suppression Policy
 
 - Never use `#pragma warning disable` or `[SuppressMessage]` without user approval
-- Never use the null-forgiving operator `!` to silence CS8600-CS8604
+- Never use the null-forgiving operator `!` — enforced as error via `MA0191` (production) and `E128043`; test projects relax both for guard-clause assertions
 - Editorconfig severity downgrades require justification
 - Test project relaxations go in `tests/.globalconfig`, not inline suppressions
+
+## Key Meziantou Rules Enabled as Error
+
+Aligned with Meziantou's [comparison table](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/comparison-with-other-analyzers.md):
+
+| Rule    | Guardrail                                                                   |
+| ------- | --------------------------------------------------------------------------- |
+| MA0036  | Make class static (distinct from CA1822 which only covers methods)          |
+| MA0110  | Use `[GeneratedRegex]` source generator over `new Regex(...)`               |
+| MA0186  | `Equals(object?)` override must use `[NotNullWhen(true)]` on the parameter  |
+| MA0191  | Do not use the null-forgiving operator (aligns with custom `E128043`)       |
+
+## Netstandard2.0 Nullable Polyfill (E128.Analyzers)
+
+The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) which lacks `System.Diagnostics.CodeAnalysis.NotNullWhenAttribute`. Rather than hand-rolling a polyfill (which trips MA0048 file-name rules and IDE0130 namespace-mismatch), the project references **PolySharp** as a source generator:
+
+```xml
+<PackageReference Include="PolySharp" PrivateAssets="all" />
+<PropertyGroup>
+  <PolySharpIncludeGeneratedTypes>
+    System.Diagnostics.CodeAnalysis.NotNullWhenAttribute
+  </PolySharpIncludeGeneratedTypes>
+</PropertyGroup>
+```
+
+`PrivateAssets="all"` keeps the generator out of the NuGet package. `PolySharpIncludeGeneratedTypes` scopes generation to only the attribute the project actually uses, avoiding duplicate-type conflicts with consumer projects that target modern TFMs.
 
 ## Custom Analyzers: E128.Analyzers
 
 `src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"` — applied to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
-Rules span 6 categories: Design, Reliability, Performance, Style, Testing, and FileSystem. All rules have code fixes. See `src/E128.Analyzers/README.md` for the complete rule table and usage examples.
+Rules span categories: Design, Reliability, Performance, Style, Testing, and FileSystem. Most rules ship with a code fix; a few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128051` Broad HttpClient catch) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
 
 Key rules by category (not exhaustive):
 
-| Category    | Examples                                                                            |
-| ----------- | ----------------------------------------------------------------------------------- |
-| Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI    |
-| Reliability  | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime       |
-| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation                  |
-| Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator              |
-| Testing     | Temp directory cleanup interface                                                     |
-| Category    | Examples                                                                                            |
+| Category    | Examples                                                                                           |
 | ----------- | -------------------------------------------------------------------------------------------------- |
-| Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray  |
+| Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray   |
 | Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime                     |
 | Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation                                 |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -74,10 +75,10 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
 
     private static bool TryExtractParts(
         InvocationExpressionSyntax convertInvocation,
-        out ExpressionSyntax innerExpr,
+        [NotNullWhen(true)] out ExpressionSyntax? innerExpr,
         out string convertMethodName)
     {
-        innerExpr = null!;
+        innerExpr = null;
         convertMethodName = string.Empty;
 
         if (!convertInvocation.ArgumentList.Arguments.Any())

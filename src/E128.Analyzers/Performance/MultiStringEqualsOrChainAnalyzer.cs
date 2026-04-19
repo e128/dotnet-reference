@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -201,7 +202,7 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
                    && string.Equals(ComparisonKey, other.ComparisonKey, StringComparison.Ordinal);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is StringEqualityInfo other && Equals(other);
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -85,7 +86,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         ReportIfConcreteOnly(context, invocation, nameNode, methodSymbol);
     }
 
-    private static bool TryGetMethodName(InvocationExpressionSyntax invocation, out SimpleNameSyntax nameNode)
+    private static bool TryGetMethodName(InvocationExpressionSyntax invocation, [NotNullWhen(true)] out SimpleNameSyntax? nameNode)
     {
         switch (invocation.Expression)
         {
@@ -96,7 +97,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
                 nameNode = i;
                 return true;
             default:
-                nameNode = null!;
+                nameNode = null;
                 return false;
         }
     }

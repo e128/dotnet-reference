@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -182,12 +183,12 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool TryGetDiMethodName(InvocationExpressionSyntax invocation, out string methodName)
+    private static bool TryGetDiMethodName(InvocationExpressionSyntax invocation, [NotNullWhen(true)] out string? methodName)
     {
         methodName = invocation.Expression switch
         {
             MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text,
-            _ => null!
+            _ => null
         };
 
         return methodName is not null && DiRegistrationMethods.Contains(methodName);

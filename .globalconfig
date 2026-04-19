@@ -21,8 +21,9 @@ dotnet_analyzer_diagnostic.category-xUnit.severity = error
 
 dotnet_diagnostic.CS0246.severity = error
 
-# CA2007: Scope to DLL projects only — library code must use ConfigureAwait(false); app code must not
+# CA2007: Scope to DLL projects only — library code must use ConfigureAwait(false); app code must not.
 # Microsoft docs explicitly endorse suppressing CA2007 for application projects.
+# MA0004 does not support project-type scoping, so CA2007 remains the enforcement source here.
 dotnet_diagnostic.CA2007.severity = error
 dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 
@@ -32,8 +33,12 @@ dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 
 
 # --- CA (.NET Analyzers) ---
+# Favor MA rules over CA equivalents (project policy).
+dotnet_diagnostic.ca1002.severity = none       # Do not expose generic lists (covered by E128052)
 dotnet_diagnostic.ca1303.severity = none       # Do not pass literals as localized parameters
 dotnet_diagnostic.ca1416.severity = none       # Validate platform compatibility
+dotnet_diagnostic.ca1819.severity = none       # Properties should not return arrays (covered by E128052; static readonly arrays by E128061)
+dotnet_diagnostic.ca1852.severity = none       # Seal internal types (covered by MA0053)
 dotnet_diagnostic.ca2252.severity = none       # This API requires opting into preview features
 
 # --- Compiler Warnings ---
@@ -53,12 +58,10 @@ dotnet_diagnostic.ide0290.severity = none       # Use primary constructors — t
 dotnet_diagnostic.ma0003.severity = none       # Add parameter name to improve readability
 dotnet_diagnostic.ma0007.severity = none       # Add comma after last enum value
 dotnet_diagnostic.ma0009.severity = none       # Add null check after as
+dotnet_diagnostic.ma0016.severity = none       # Prefer collection abstraction (covered by E128052 with domain-aware exclusions + code fix)
 dotnet_diagnostic.ma0018.severity = none       # Do not declare static members on generic types (deprecated)
-dotnet_diagnostic.ma0036.severity = none       # Make class static (use CA1822 instead)
 dotnet_diagnostic.ma0038.severity = none       # Make method static (deprecated, use CA1822)
 dotnet_diagnostic.ma0041.severity = none       # Make property static (deprecated, use CA1822)
-dotnet_diagnostic.ma0053.severity = none       # Make class sealed (overlaps with MA0115/CA1852)
-dotnet_diagnostic.ma0110.severity = none       # Use Regex source generator
 dotnet_diagnostic.ma0141.severity = none       # Use pattern matching for null check (overlaps IDE0041)
 dotnet_diagnostic.ma0142.severity = none       # Use pattern matching for null check (overlaps IDE0041)
 dotnet_diagnostic.ma0148.severity = none       # Use pattern matching for discrete value
@@ -136,11 +139,15 @@ dotnet_diagnostic.ide0305.severity = error       # Use collection expression for
 # IDE0160: Namespace style enforced via .editorconfig (file_scoped:error)
 
 # --- Meziantou (MA) ---
+dotnet_diagnostic.ma0036.severity = error        # Make class static (distinct from CA1822 which covers methods)
 dotnet_diagnostic.ma0071.severity = error        # Avoid using redundant else
+dotnet_diagnostic.ma0110.severity = error        # Use Regex source generator
 dotnet_diagnostic.ma0154.severity = error        # Use pattern matching
 dotnet_diagnostic.ma0159.severity = error        # Use Order instead of OrderBy
 dotnet_diagnostic.ma0184.severity = error        # Do not use interpolated string without parameters
 dotnet_diagnostic.ma0185.severity = error        # Simplify string.Create when culture invariant
+dotnet_diagnostic.ma0186.severity = error        # Equals method should use [NotNullWhen(true)] on parameter
+dotnet_diagnostic.ma0191.severity = error        # Do not use the null-forgiving operator (aligns with E128043)
 
 # --- Roslynator (RCS) ---
 dotnet_diagnostic.rcs1021.severity = error       # Convert lambda block body to expression body

@@ -44,7 +44,7 @@ scripts/docker.sh test
 | **Docker**               | Hardened Alpine multi-stage Dockerfile + docker-compose.yml         |
 | **Bash scripts**         | Build, test, format, CI, Docker, lode management ([catalog](scripts/README.md)) |
 | **Claude Code harness**  | CLAUDE.md, rules, hooks, skills, agents (see `.claude/`)            |
-| **CI/CD**                | GitHub Actions CI + NuGet trusted publishing + Azure DevOps YAML    |
+| **CI/CD**                | GitHub Actions CI + NuGet trusted publishing                        |
 | **Renovate**             | Automated dependency updates with grouped PRs and security bypass   |
 | **Lode**                 | Structured documentation via [Lode Coding Toolkit][lode-toolkit]    |
 
@@ -93,7 +93,6 @@ scripts/docker.sh test
 ├── .globalconfig             # Analyzer severities (deny-by-default)
 ├── .github/workflows/ci.yml  # GitHub Actions CI
 ├── .github/workflows/publish.yml # NuGet trusted publishing
-├── azure-pipelines.yml       # Azure DevOps CI
 ├── CLAUDE.md                 # Always-loaded AI instructions
 ├── Directory.Build.props     # Shared build properties
 ├── Directory.Build.targets   # Conditional targets (test project config)
@@ -113,9 +112,11 @@ scripts/docker.sh test
 │   ├── E128.Reference.Web/   # ASP.NET Core minimal API
 │   └── E128.Reference.Cli/   # System.CommandLine CLI
 └── tests/
-    ├── Architecture.Tests/   # ArchUnitNET structural invariants
-    ├── E128.Analyzers.Tests/ # Analyzer unit tests
-    └── E128.Reference.Tests/ # xUnit v3 + MTP
+    ├── Architecture.Tests/       # ArchUnitNET structural invariants
+    ├── E128.Analyzers.Tests/     # Analyzer unit tests
+    ├── E128.Reference.Cli.Tests/ # CLI unit tests
+    ├── E128.Reference.Core.Tests/# Core library unit tests
+    └── E128.Reference.Tests/     # Web integration tests (xUnit v3 + MTP)
 ```
 
 ## Analyzer Configuration
@@ -181,7 +182,7 @@ docker compose down
 
 ## CI/CD
 
-**GitHub Actions** (`.github/workflows/ci.yml`) and **Azure DevOps** (`azure-pipelines.yml`) run:
+**GitHub Actions** (`.github/workflows/ci.yml`) runs:
 
 1. Format check (`dotnet format --verify-no-changes`)
 2. Release build

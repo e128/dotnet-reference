@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -94,9 +95,9 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
                && string.Equals(method.ContainingType?.ToDisplayString(), "System.Threading.Tasks.Task", StringComparison.Ordinal);
     }
 
-    private static bool TryGetSelectInvocation(ExpressionSyntax expression, out InvocationExpressionSyntax selectInvocation)
+    private static bool TryGetSelectInvocation(ExpressionSyntax expression, [NotNullWhen(true)] out InvocationExpressionSyntax? selectInvocation)
     {
-        selectInvocation = null!;
+        selectInvocation = null;
 
         if (expression is not InvocationExpressionSyntax candidate)
         {

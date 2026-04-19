@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -90,10 +91,10 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
         SemanticModel semanticModel,
         VariableDeclaratorSyntax variable,
         CancellationToken cancellationToken,
-        out INamedTypeSymbol fieldType,
+        [NotNullWhen(true)] out INamedTypeSymbol? fieldType,
         out bool isHashSet)
     {
-        fieldType = null!;
+        fieldType = null;
         isHashSet = false;
 
         if (semanticModel.GetDeclaredSymbol(variable, cancellationToken) is not IFieldSymbol fieldSymbol)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -103,9 +104,9 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
 
     private static bool TryGetStringCollectionType(
         TypeSyntax? type,
-        out GenericNameSyntax genericName)
+        [NotNullWhen(true)] out GenericNameSyntax? genericName)
     {
-        genericName = default!;
+        genericName = null;
 
         // Handle both unqualified (IReadOnlyList<string>) and qualified (System.Collections.Generic.List<string>)
         var candidate = type switch

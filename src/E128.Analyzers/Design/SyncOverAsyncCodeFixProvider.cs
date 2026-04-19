@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -83,10 +84,10 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
     private static bool TryGetAwaitTarget(
         SyntaxNode diagnosticNode,
         out SyntaxNode nodeToReplace,
-        out ExpressionSyntax taskExpression)
+        [NotNullWhen(true)] out ExpressionSyntax? taskExpression)
     {
         nodeToReplace = diagnosticNode;
-        taskExpression = null!;
+        taskExpression = null;
 
         // Case 1: .Result — diagnostic is on the MemberAccessExpression "task.Result"
         if (diagnosticNode is MemberAccessExpressionSyntax memberAccess

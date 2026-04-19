@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -65,9 +66,9 @@ public sealed class OrderByFirstAnalyzer : DiagnosticAnalyzer
 
     private static bool IsFirstOrFirstOrDefault(
         InvocationExpressionSyntax invocation,
-        out MemberAccessExpressionSyntax outerAccess)
+        [NotNullWhen(true)] out MemberAccessExpressionSyntax? outerAccess)
     {
-        outerAccess = null!;
+        outerAccess = null;
 
         if (invocation.Expression is not MemberAccessExpressionSyntax access)
         {
@@ -92,9 +93,9 @@ public sealed class OrderByFirstAnalyzer : DiagnosticAnalyzer
 
     private static bool IsOrderByWithSingleArg(
         MemberAccessExpressionSyntax outerAccess,
-        out InvocationExpressionSyntax innerInvocation)
+        [NotNullWhen(true)] out InvocationExpressionSyntax? innerInvocation)
     {
-        innerInvocation = null!;
+        innerInvocation = null;
 
         if (outerAccess.Expression is not InvocationExpressionSyntax inner)
         {
