@@ -94,6 +94,15 @@ internal static class DiskIoCatalog
         return name is "Write" or "WriteAsync" or "WriteLine" or "WriteLineAsync" or "Flush" or "FlushAsync";
     }
 
+    internal static bool IsOpaqueWriteMethodName(string name)
+    {
+        return name.Contains("ToDisk", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("ToFile", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("SaveTo", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("WriteTo", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("DownloadTo", StringComparison.OrdinalIgnoreCase);
+    }
+
     internal static bool IsReaderReadMethod(string name)
     {
         return name is "Read" or "ReadAsync" or "ReadToEnd" or "ReadToEndAsync"

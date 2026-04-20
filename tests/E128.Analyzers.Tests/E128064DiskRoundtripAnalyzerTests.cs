@@ -488,4 +488,85 @@ public sealed class E128064DiskRoundtripAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TierE_FetchToDiskAsync_ReadAllTextAsync_ResultProperty_Flags()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           using System.Threading;
+                           using System.Threading.Tasks;
+                           class FetchResult { public FileInfo HtmlFilePath { get; init; } = null!; }
+                           interface IFetcher { Task<FetchResult> FetchToDiskAsync(string url, CancellationToken ct); }
+                           class C
+                           {
+                               async Task<string> M(IFetcher fetcher, string url, CancellationToken ct)
+                               {
+                                   var fetchResult = await fetcher.FetchToDiskAsync(url, ct);
+                                   return {|E128064:await File.ReadAllTextAsync(fetchResult.HtmlFilePath.FullName, ct)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TierE_SaveToDisk_ReadAllBytes_ResultProperty_Flags()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class SaveResult { public string FilePath { get; init; } = ""; }
+                           interface ISaver { Task<SaveResult> SaveToDiskAsync(byte[] data); }
+                           class C
+                           {
+                               async Task<byte[]> M(ISaver saver, byte[] data)
+                               {
+                                   var result = await saver.SaveToDiskAsync(data);
+                                   return {|E128064:await File.ReadAllBytesAsync(result.FilePath)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Negative_TierE_GenericMethodName_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class FetchResult { public string HtmlFilePath { get; init; } = ""; }
+                           interface IFetcher { Task<FetchResult> FetchAsync(string url); }
+                           class C
+                           {
+                               async Task<string> M(IFetcher fetcher, string url)
+                               {
+                                   var fetchResult = await fetcher.FetchAsync(url);
+                                   return await File.ReadAllTextAsync(fetchResult.HtmlFilePath);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Negative_TierE_DifferentResultVariable_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class FetchResult { public string HtmlFilePath { get; init; } = ""; }
+                           interface IFetcher { Task<FetchResult> FetchToDiskAsync(string url); }
+                           class C
+                           {
+                               async Task<string> M(IFetcher fetcher, string url, string otherPath)
+                               {
+                                   var fetchResult = await fetcher.FetchToDiskAsync(url);
+                                   return await File.ReadAllTextAsync(otherPath);
+                               }
+                           }
+                           """);
+    }
 }

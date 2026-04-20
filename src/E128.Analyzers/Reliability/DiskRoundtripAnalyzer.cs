@@ -100,6 +100,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             else if (node is LocalDeclarationStatementSyntax local)
             {
                 TrackWriterVariable(local.Declaration, writes, writerVarToFactory, null);
+                TryTrackOpaqueWriteResult(local.Declaration, writes);
             }
             else if (node is UsingStatementSyntax usingStmt && usingStmt.Declaration is { } decl)
             {
@@ -132,6 +133,47 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
                     writes[factoryIndex] = writes[factoryIndex].WithDisposalBoundary(enclosingUsing.Span.End);
                 }
             }
+        }
+    }
+
+    private static void TryTrackOpaqueWriteResult(
+        VariableDeclarationSyntax decl,
+        List<WriteOp> writes)
+    {
+        foreach (var v in decl.Variables)
+        {
+            var initializer = v.Initializer?.Value;
+            if (initializer is null)
+            {
+                continue;
+            }
+
+            var invocation = initializer switch
+            {
+                AwaitExpressionSyntax { Expression: InvocationExpressionSyntax inv } => inv,
+                InvocationExpressionSyntax inv => inv,
+                _ => null
+            };
+
+            if (invocation?.Expression is not MemberAccessExpressionSyntax ma)
+            {
+                continue;
+            }
+
+            if (!DiskIoCatalog.IsOpaqueWriteMethodName(ma.Name.Identifier.ValueText))
+            {
+                continue;
+            }
+
+            writes.Add(new WriteOp(
+                invocation,
+                null,
+                "OpaqueWriteResult:" + v.Identifier.ValueText,
+                null,
+                DiskIoCatalog.IoKind.Unknown,
+                false,
+                false,
+                invocation.SpanStart));
         }
     }
 
@@ -625,8 +667,28 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             IdentifierNameSyntax id => "Ident:" + id.Identifier.ValueText,
             MemberAccessExpressionSyntax ma when ma.Expression is IdentifierNameSyntax recv
                 => "Member:" + recv.Identifier.ValueText + "." + ma.Name.Identifier.ValueText,
+            MemberAccessExpressionSyntax ma when TryExtractChainRoot(ma, out var root)
+                => "OpaqueWriteRoot:" + root,
             _ => "Expr:" + expr.ToFullString()
         };
+    }
+
+    private static bool TryExtractChainRoot(MemberAccessExpressionSyntax ma, out string rootIdent)
+    {
+        var current = ma.Expression;
+        while (current is MemberAccessExpressionSyntax inner)
+        {
+            current = inner.Expression;
+        }
+
+        if (current is IdentifierNameSyntax id)
+        {
+            rootIdent = id.Identifier.ValueText;
+            return true;
+        }
+
+        rootIdent = string.Empty;
+        return false;
     }
 
     private static string NormalizeFileInfoInstance(ExpressionSyntax receiver)
@@ -754,7 +816,22 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        return false;
+        return OpaqueWriteResultOverlap(a, b) || OpaqueWriteResultOverlap(b, a);
+    }
+
+    private static bool OpaqueWriteResultOverlap(string writeKey, string readKey)
+    {
+        if (!writeKey.StartsWith("OpaqueWriteResult:", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var varName = writeKey.Substring("OpaqueWriteResult:".Length);
+
+        return readKey.StartsWith("OpaqueWriteRoot:", StringComparison.Ordinal)
+            ? string.Equals(varName, readKey.Substring("OpaqueWriteRoot:".Length), StringComparison.Ordinal)
+            : readKey.StartsWith("Member:", StringComparison.Ordinal)
+              && readKey.Substring("Member:".Length).StartsWith(varName + ".", StringComparison.Ordinal);
     }
 
     private static bool WriteLinearlyPrecedesRead(StatementSyntax writeStmt, StatementSyntax readStmt)
@@ -867,7 +944,11 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
 
         return key.StartsWith("FileInfo:", StringComparison.Ordinal)
             ? key.Substring("FileInfo:".Length)
-            : null;
+            : key.StartsWith("OpaqueWriteResult:", StringComparison.Ordinal)
+                ? key.Substring("OpaqueWriteResult:".Length)
+                : key.StartsWith("OpaqueWriteRoot:", StringComparison.Ordinal)
+                    ? key.Substring("OpaqueWriteRoot:".Length)
+                    : null;
     }
 
     private struct WriteOp

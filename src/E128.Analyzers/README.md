@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.20.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.21.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -584,7 +584,7 @@ ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
 
 ### E128064 &mdash; Disk write-then-read round-trip
 
-Flags file-I/O sequences that write to a path and then immediately read the same path back into memory in the same method body. Returning the in-memory source value avoids a needless disk round-trip and the associated race window where another process can modify the file between the write and the read. Covers `File.WriteAllText`/`ReadAllText`, `File.WriteAllBytes`/`ReadAllBytes`, `File.WriteAllLines`/`ReadAllLines`, their `Async` variants, `AppendAllText` and `AppendAllLines`, `File.CreateText`/`AppendText`/`Create`/`OpenWrite`, `StreamWriter`/`StreamReader`, `FileStream` (write intent vs. read intent), `BinaryWriter`/`BinaryReader`, and the equivalent `FileInfo` instance methods. Cross-kind matches (text write → bytes read, or bytes write → text read) are wrapped by the code fix in `Encoding.UTF8.GetBytes`/`GetString`. Disabled for test projects via `.globalconfig` (fixtures legitimately round-trip through disk).
+Flags file-I/O sequences that write to a path and then immediately read the same path back into memory in the same method body. Returning the in-memory source value avoids a needless disk round-trip and the associated race window where another process can modify the file between the write and the read. Covers `File.WriteAllText`/`ReadAllText`, `File.WriteAllBytes`/`ReadAllBytes`, `File.WriteAllLines`/`ReadAllLines`, their `Async` variants, `AppendAllText` and `AppendAllLines`, `File.CreateText`/`AppendText`/`Create`/`OpenWrite`, `StreamWriter`/`StreamReader`, `FileStream` (write intent vs. read intent), `BinaryWriter`/`BinaryReader`, the equivalent `FileInfo` instance methods, and opaque write-to-disk calls (methods whose name contains `ToDisk`, `ToFile`, `SaveTo`, `WriteTo`, or `DownloadTo`) whose result is subsequently passed to `File.Read*`. Cross-kind matches (text write → bytes read, or bytes write → text read) are wrapped by the code fix in `Encoding.UTF8.GetBytes`/`GetString`. Opaque write-to-disk matches fire the diagnostic but offer no code fix (no in-memory source to substitute). Disabled for test projects via `.globalconfig` (fixtures legitimately round-trip through disk).
 
 ```csharp
 // Before (warns)

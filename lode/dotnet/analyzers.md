@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-20T14:33:24Z*
+*Updated: 2026-04-20T18:34:34Z*
 
 ## Strategy: Deny by Default
 
@@ -131,9 +131,10 @@ Flags file-I/O sequences that write to a path and then immediately read the same
 - **Tier B** — `File.CreateText` / `File.AppendText` / `File.Create` / `File.OpenWrite` followed by `File.ReadAllText`/`ReadAllBytes` (sync or async) on the same path
 - **Tier C** — `StreamWriter`/`StreamReader` ctors, `FileStream(path, FileMode.Create|CreateNew|Truncate|Append, ...)` write intent vs. `FileStream(path, FileMode.Open, FileAccess.Read)` read intent, `BinaryWriter`/`BinaryReader` over a `FileStream`
 - **Tier D** — `FileInfo` instance methods: `CreateText`/`AppendText`/`Create`/`OpenWrite` paired with `OpenRead`/`OpenText` or `File.ReadAll*(fi.FullName)`
+- **Tier E** — Opaque write-to-disk: a local variable assigned from an awaited call whose method name matches `*ToDisk*`, `*ToFile*`, `*SaveTo*`, `*WriteTo*`, or `*DownloadTo*` (case-insensitive), followed by `File.Read*` with a path sourced from a property of that result variable (e.g., `result.HtmlFilePath.FullName` or `result.FilePath`). No code fix is offered (no in-memory source expression); the diagnostic still fires.
 
 **Correlation rules**:
-- Path-key normalization (`Ident:`, `Member:`, `Expr:`, `FileInfo:`) so `p`, `this.p`, `fi.FullName`, and `Path.Combine(...)` all match the corresponding read against the same source
+- Path-key normalization (`Ident:`, `Member:`, `OpaqueWriteRoot:`, `Expr:`, `FileInfo:`) so `p`, `this.p`, `fi.FullName`, `result.FilePath`, `fetchResult.HtmlFilePath.FullName`, and `Path.Combine(...)` all match the corresponding read against the same source
 - Block-scope linear domination — the write must precede the read on the same execution path; writes inside conditional branches do not match reads outside them
 - Path reassignment between write and read (`p = other;`) disqualifies the match
 - Stream-writer variables track ctor → `.Write*(...)` calls through to disposal; multi-write disposals (`BinaryWriter`, `FileStream` with multiple `.Write` calls, `AppendAllText`) still flag but attach no `SourceExpression` — the code fix is skipped rather than producing a wrong rewrite
