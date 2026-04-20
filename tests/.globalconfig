@@ -47,5 +47,8 @@ dotnet_diagnostic.MA0006.severity = suggestion
 dotnet_diagnostic.E128043.severity = none
 dotnet_diagnostic.MA0191.severity = none
 
+# E128064: Disk write-then-read round-trip (fixtures for file I/O analyzers legitimately round-trip through disk)
+dotnet_diagnostic.E128064.severity = none
+
 # E128062: Minimum framework version for test reference assemblies (net10.0 = 100)
 e128_minimum_framework_version = 100

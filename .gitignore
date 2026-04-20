@@ -233,6 +233,7 @@ UpgradeLog*.htm
 .claude/settings.local.json
 .claude/tmp/
 .claude/worktrees/
+.context/
 
 # =============================================================================
 # Project-specific

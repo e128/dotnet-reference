@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-19T21:17:06Z*
+*Updated: 2026-04-20T14:33:24Z*
 
 ## Strategy: Deny by Default
 
@@ -121,6 +121,26 @@ Flags `private static readonly T[]` and `internal static readonly T[]` fields. A
 ### E128062 — Stale ReferenceAssemblies in tests
 
 Flags `ReferenceAssemblies.Net.Net80` / `Net90` in test code when the configured minimum framework version is higher (default: 100 for net10.0). Configurable via `e128_minimum_framework_version` in `.globalconfig`. Code fix replaces outdated version with the minimum.
+
+### E128064 — Disk write-then-read round-trip
+
+Flags file-I/O sequences that write to a path and then immediately read the same path back into memory within the same method body. The recoverable in-memory source should be returned instead of re-reading from disk — this eliminates both the redundant syscall and the TOCTOU race window where another process can modify the file between write and read.
+
+**Coverage tiers**:
+- **Tier A** — `File` static API: `WriteAllText`/`ReadAllText`, `WriteAllBytes`/`ReadAllBytes`, `WriteAllLines`/`ReadAllLines`, `AppendAllText`/`AppendAllLines`, plus every `*Async` variant
+- **Tier B** — `File.CreateText` / `File.AppendText` / `File.Create` / `File.OpenWrite` followed by `File.ReadAllText`/`ReadAllBytes` (sync or async) on the same path
+- **Tier C** — `StreamWriter`/`StreamReader` ctors, `FileStream(path, FileMode.Create|CreateNew|Truncate|Append, ...)` write intent vs. `FileStream(path, FileMode.Open, FileAccess.Read)` read intent, `BinaryWriter`/`BinaryReader` over a `FileStream`
+- **Tier D** — `FileInfo` instance methods: `CreateText`/`AppendText`/`Create`/`OpenWrite` paired with `OpenRead`/`OpenText` or `File.ReadAll*(fi.FullName)`
+
+**Correlation rules**:
+- Path-key normalization (`Ident:`, `Member:`, `Expr:`, `FileInfo:`) so `p`, `this.p`, `fi.FullName`, and `Path.Combine(...)` all match the corresponding read against the same source
+- Block-scope linear domination — the write must precede the read on the same execution path; writes inside conditional branches do not match reads outside them
+- Path reassignment between write and read (`p = other;`) disqualifies the match
+- Stream-writer variables track ctor → `.Write*(...)` calls through to disposal; multi-write disposals (`BinaryWriter`, `FileStream` with multiple `.Write` calls, `AppendAllText`) still flag but attach no `SourceExpression` — the code fix is skipped rather than producing a wrong rewrite
+
+**Code fix**: replaces the read expression (or whole `await ...` for async reads) with the captured in-memory source expression. Same-kind matches use the source directly; text↔bytes cross-kind matches wrap in `Encoding.UTF8.GetBytes(...)` / `Encoding.UTF8.GetString(...)` and auto-add `using System.Text;`. `BatchFixer` is sufficient because each fix is a local expression replacement.
+
+**Test-project exemption**: `tests/.globalconfig` sets `dotnet_diagnostic.E128064.severity = none`. Fixtures for file-I/O analyzers (E128028, E128056, E128057) legitimately round-trip through disk to exercise the analyzer under test.
 
 ### E128063 — Mid-name underscore in private static member
 

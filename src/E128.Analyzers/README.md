@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.19.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.20.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -69,6 +69,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128051 | Broad catch in async `HttpClient` method missing `OperationCanceledException` handler    | No       |
 | E128056 | `FileInfo.Exists` TOCTOU race condition                                                  | Yes      |
 | E128057 | Unprotected cleanup in finally block                                                     | Yes      |
+| E128064 | Disk write-then-read round-trip — use the in-memory value instead of reading back         | Yes      |
 
 ### Performance
 
@@ -579,6 +580,20 @@ ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
 
 // After
 ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+```
+
+### E128064 &mdash; Disk write-then-read round-trip
+
+Flags file-I/O sequences that write to a path and then immediately read the same path back into memory in the same method body. Returning the in-memory source value avoids a needless disk round-trip and the associated race window where another process can modify the file between the write and the read. Covers `File.WriteAllText`/`ReadAllText`, `File.WriteAllBytes`/`ReadAllBytes`, `File.WriteAllLines`/`ReadAllLines`, their `Async` variants, `AppendAllText` and `AppendAllLines`, `File.CreateText`/`AppendText`/`Create`/`OpenWrite`, `StreamWriter`/`StreamReader`, `FileStream` (write intent vs. read intent), `BinaryWriter`/`BinaryReader`, and the equivalent `FileInfo` instance methods. Cross-kind matches (text write → bytes read, or bytes write → text read) are wrapped by the code fix in `Encoding.UTF8.GetBytes`/`GetString`. Disabled for test projects via `.globalconfig` (fixtures legitimately round-trip through disk).
+
+```csharp
+// Before (warns)
+File.WriteAllText(path, content);
+return File.ReadAllText(path);
+
+// After
+File.WriteAllText(path, content);
+return content;
 ```
 
 ### E128055 &mdash; Unbalanced pragma warning disable
