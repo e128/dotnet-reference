@@ -120,6 +120,15 @@ Glob for `.editorconfig`.
   2. Check it does NOT contain `dotnet_analyzer_diagnostic.severity = none` or `suggestion` as a blanket override
   3. Flag any `dotnet_diagnostic.CA*.severity = none` that suppress security-critical rules (CA2300-CA2362, CA3001-CA3012, CA5350-CA5405) for review
 
+**Mandatory global `severity = none` entries.** Whenever the root `.globalconfig` or
+`.editorconfig` is created OR audited, ensure these rules are explicitly set to `none`
+(per `conventions.md` §Global Suppressions). Add any missing entries:
+
+```ini
+dotnet_diagnostic.s4055.severity = none     # Literals as localized parameters — no L10N
+dotnet_diagnostic.vsthrd111.severity = none # Add ConfigureAwait — VS extension model only
+```
+
 **After changes:**
 1. `dotnet build` — expect new errors from previously unenforced rules; these are pre-existing issues, not regressions
 2. If new errors: **fix inline first** — these are real pre-existing issues now surfaced; if <= 10 errors and each is fixable in under 2 minutes, fix them now; only fall back to temporary suppressions if >10 errors or if a fix requires architectural decisions; track each suppression as a finding to resolve in Steps 3-8

@@ -77,6 +77,9 @@ dotnet_diagnostic.ma0181.severity = none       # Do not use cast
 dotnet_diagnostic.ss039.severity = none        # Enum default must be "Unknown"/"None"
 dotnet_diagnostic.ss066.severity = suggestion  # Disposable field not disposed — false positives on ?.Dispose()
 
+# --- SonarAnalyzer (S) ---
+dotnet_diagnostic.s4055.severity = none        # Literals should not be passed as localized parameters (not applicable — no localization)
+
 # --- VS Threading (VSTHRD) ---
 dotnet_diagnostic.vsthrd001.severity = none    # Avoid legacy thread switching APIs
 dotnet_diagnostic.vsthrd111.severity = none    # Add ConfigureAwait — VS extension model (JoinableTaskFactory), not relevant here

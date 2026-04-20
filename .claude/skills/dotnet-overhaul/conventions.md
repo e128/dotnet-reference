@@ -79,6 +79,17 @@ These fixes align with common auto-approval policies — apply without prompting
 | CS8600-CS8604 | Null-ref warnings require human judgment — list in findings, don't add `!` |
 | Any `#pragma` | Suppressions require explicit approval |
 
+## Global Suppressions (Always `severity = none`)
+
+These rules must be set to `severity = none` in the root `.globalconfig` (or `.editorconfig`)
+whenever the overhaul creates or audits analyzer configuration. They apply repo-wide, not just
+to tests.
+
+| Rule      | Reason                                                                                |
+|-----------|---------------------------------------------------------------------------------------|
+| S4055     | Literals should not be passed as localized parameters — not applicable (no L10N)      |
+| VSTHRD111 | Add ConfigureAwait — VS extension model (JoinableTaskFactory), not relevant here      |
+
 ## Test Project Relaxations
 
 Rules that are NOT violations in test code (files under `tests/` or `*Tests*` directories):
