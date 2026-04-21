@@ -72,7 +72,12 @@ If the version was bumped, re-read the csproj before any subsequent edits.
 **D) README freshness (conditional):**
 Only if any staged or unstaged changes touch analyzer source (`src/*Analyzers*/`) OR `scripts/`:
 
-Invoke the readme-check skill directly — use the **Skill tool** with `skill: "readme-check"` and `args: "--skip-threshold"`. Do NOT spawn an Agent for this step.
+Use the **Agent tool** with `subagent_type: "general-purpose"` and a self-contained prompt that instructs the agent to:
+1. Run `fd README.md --type f --exclude obj --exclude bin --exclude .git` to find all READMEs
+2. Audit each one: for `src/E128.Analyzers/README.md` — verify version matches `<Version>` in the csproj, all E128xxx diagnostic IDs appear in the rule table, code-fix column is correct; for `scripts/README.md` — verify against `scripts/help.sh`; for root `README.md` — spot-check rule range and project table
+3. Apply any fixes with Edit, then report what changed
+
+**Do NOT use the Skill tool for this step** — Skill replaces the current execution context, causing yeet to stop after the audit and never reach step 2.
 
 This audits all READMEs against current repo state and auto-fixes drift (e.g., stale rule tables, missing scripts, wrong version in install snippet). The Analyzers README is packed into the NuGet package — stale content ships to nuget.org if not caught here.
 
