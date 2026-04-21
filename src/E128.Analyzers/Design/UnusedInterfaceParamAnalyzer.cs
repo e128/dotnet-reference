@@ -27,7 +27,7 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
         "Interface method parameter is unused in implementation",
         "Parameter '{0}' is declared in the interface contract but never referenced in the implementation — the contract promises callers that this input affects the result",
         "Design",
-        DiagnosticSeverity.Warning,
+        DiagnosticSeverity.Error,
         true,
         "Every parameter declared by an interface contract should be consumed by the implementation. A silently ignored parameter breaks the behavioral contract with callers.");
 

@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.21.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.22.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -41,7 +41,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128052 | Use immutable collection interface instead of mutable concrete type (default: Info)                  | Yes      |
 | E128053 | Use collection of `FileInfo`/`DirectoryInfo` instead of collection of `string` for file system paths | Yes      |
 | E128058 | Return `List<T>` via `.AsReadOnly()` when exposing as `IReadOnlyList<T>`                              | Yes      |
-| E128059 | Interface method parameter is unused in implementation                                                | Yes      |
+| E128059 | Interface method parameter is unused in implementation (default: Error)                               | Yes      |
 | E128060 | Return `Dictionary<K,V>` via `.AsReadOnly()` when exposing as `IReadOnlyDictionary<K,V>`              | Yes      |
 | E128061 | Use `ImmutableArray<T>` for static readonly arrays                                                   | Yes      |
 
@@ -662,7 +662,7 @@ public IReadOnlyList<string> Items => _items.AsReadOnly();
 Flags interface method implementations where a parameter declared in the interface contract is never referenced in the implementation body. The interface promises callers that the parameter affects behavior; ignoring it silently violates that contract.
 
 ```csharp
-// Before (warns)
+// Before (error)
 public string Format(string input, IFormatProvider? provider) =>
     input.ToUpperInvariant();  // provider is ignored
 
