@@ -22,6 +22,10 @@
 - [analyzers.md](dotnet/analyzers.md) — Deny-by-default strategy, analyzer packages, suppression policy
 - [release-tracking.md](dotnet/release-tracking.md) — AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
 
+## dotnet-reference/
+
+- [dep-map.md](dotnet-reference/dep-map.md) — NuGet deps, Docker runtime images, SDK pins + project structure for all 4 production projects
+
 ## infrastructure/
 
 - [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md) — Claude Code harness maintenance notes

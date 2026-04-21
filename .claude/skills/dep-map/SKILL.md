@@ -18,7 +18,7 @@ cross-repo dependency heat map.
 ```
 /dep-map auth
 /dep-map payments src/services
-/dep-map platform /Users/you/repos/platform
+/dep-map platform /path/to/repos/platform
 ```
 
 The first argument is the **scope label** (used for lode output naming and headings).
@@ -33,7 +33,7 @@ The optional second argument is the **path** to scan for repos. If omitted:
 | Concept              | Resolved as                                              |
 | -------------------- | -------------------------------------------------------- |
 | Scope label          | First argument — used in lode path and headings          |
-| Scan root            | Second argument, or `repos/<scope>/`, or cwd             |
+| Scan root            | Second argument, or `repos/<scope>/`, or cwd (use absolute paths in tool calls; never write them into lode output) |
 | Lode output          | `lode/<scope>/dep-map.md` (relative to cwd)              |
 | Lode map             | `lode/lode-map.md` (relative to cwd)                     |
 
@@ -391,7 +391,7 @@ Write the complete document to `lode/<scope>/dep-map.md` (relative to cwd).
 ```markdown
 # <Scope> — Dependency Map
 
-> Scope: `<scope>` | Scan root: `<resolved-scan-path>`
+> Scope: `<scope>` | Scan root: `<directory name or relative path — never an absolute path>`
 > Repos discovered: **T** | Scanned: **N** | Skipped (no manifests): **K**
 
 ## Repo Summary
@@ -487,6 +487,8 @@ graph TB
 - Omit empty sections.
 - For repos with > 30 third-party packages, list only architecturally significant ones.
   Add: `> N additional packages omitted. See <relative path to manifest>.`
+- **Never embed absolute home-directory paths** (e.g. paths starting with `~` expanded to a real username).
+  Use the directory name (e.g. `dotnet-reference`) or a repo-relative path instead.
 
 ---
 
