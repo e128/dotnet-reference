@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.22.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.23.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -95,6 +95,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128047 | `#pragma warning disable` without justification comment                   | Yes      |
 | E128055 | Unbalanced `#pragma warning disable` without matching restore             | Yes      |
 | E128063 | Mid-name underscore in private static member (IDE1006 rename artifact) (default: Error) | Yes      |
+| E128065 | `#pragma warning disable` with multiple IDs — use one pragma per ID                     | Yes      |
 
 ### Testing
 
@@ -594,6 +595,19 @@ return File.ReadAllText(path);
 // After
 File.WriteAllText(path, content);
 return content;
+```
+
+### E128065 &mdash; Bundled pragma warning disable
+
+Flags `#pragma warning disable` directives that list more than one diagnostic ID. Each suppression requires independent justification; bundling multiple IDs on one line hides weak reasoning and makes suppression audits harder. Split into one pragma per ID so each can carry its own justification comment. Companion to E128055.
+
+```csharp
+// Before (warns)
+#pragma warning disable CS8600, CS8602
+
+// After
+#pragma warning disable CS8600
+#pragma warning disable CS8602
 ```
 
 ### E128055 &mdash; Unbalanced pragma warning disable
