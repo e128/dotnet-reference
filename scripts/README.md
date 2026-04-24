@@ -43,7 +43,7 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `lode-summary.sh`   | Find and display lode content by section                         |
 | `task.sh`           | Task management: check/next/progress                             |
 | `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected    |
-| `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default glm-5.1:cloud) |
+| `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default glm-5:cloud) |
 
 ## Coverage & Analysis
 
