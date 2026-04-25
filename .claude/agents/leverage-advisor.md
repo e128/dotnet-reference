@@ -13,7 +13,6 @@ description: >
   highest value omission, what to subtract, strategic addition, codebase strategy,
   tool gap finder, find the best tool, tool learner, new tool suggestion, what cli tool,
   tool opportunity, tool gap, what tool should I add, highest leverage tool.
-model: sonnet
 tools: Bash, Glob, Grep, Read, Write, Edit
 maxTurns: 50
 effort: high

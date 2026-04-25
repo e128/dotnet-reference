@@ -10,7 +10,7 @@ description: >
   missed issues before reporting. Use after planning phases or
   code overhauler steps when multiple approved findings need applying.
   Triggers on: batch fixes, tdd loop, optimize test cycle, fix and test,
-  batch and test, reduce test runs, fix cycle optimization, apply findings.
+  batch and test, reduce test runs, fix cycle optimization.
 tools: Bash, Glob, Grep, Read, Edit, Write
 maxTurns: 35
 memory: project

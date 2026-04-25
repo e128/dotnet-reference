@@ -1,10 +1,24 @@
 # Claude Revision Log
-*Updated: 2026-04-17T13:51:12Z*
+*Updated: 2026-04-25T00:00:00Z*
 
 Persistent memory for `/claude-revision`. Each run appends one entry.
 Read at Phase 0 to recover last-known state and deferred items.
 
 ## Runs
+
+### 2026-04-25 (Run 5)
+- Agents: 16 | Skills: 18 | Memory files: 1
+- Web guidance: v2.1.119 (up from v2.1.112); new skill fields `when_to_use` and `arguments`; description budget: 1% context window (fallback 8,000 chars); skill compaction: 5,000 tokens/skill, 25,000-token combined re-attach budget; `/cost`+`/stats` merged into `/usage`; lode/infrastructure/claude-code-upstream.md updated by research agent
+- HIGH: 0 | MEDIUM: 1 (carried) | LOW: 1
+- Actions taken:
+  - S1: dep-map SKILL.md decomposed 634→162 lines; extracted 4 reference files: `references/manifest-parsing.md` (183 lines), `references/output-template.md` (130 lines), `references/dependency-classification.md` (46 lines), `references/edge-cases.md` (20 lines)
+  - W1: Added `when_to_use` field to dep-map frontmatter — trigger phrases moved out of `description`
+  - W2: Added `arguments: scope path` to dep-map frontmatter — enables `$scope`/`$path` named substitution
+- Deferred:
+  - A1 (MEDIUM): 4 agents missing explicit `model:` — `fill-test-gaps`, `review-applier`, `sme-researcher`, `tdd-loop-optimizer`. Intentionally left to inherit session model. Carry forward to Run 6.
+  - M1 (MEDIUM): `confirmation-reducer` agent-memory dir orphaned — agent removed in Run 2; dir persists. Low urgency.
+  - M2 (LOW): `simplification-agent` and `sme-researcher` agent-memory dirs exist but no `MEMORY.md`.
+- Notes: Web guidance already applied to upstream doc by research agent before report. `when_to_use` / `arguments` fields not yet applied to other skills — dep-map was the only HIGH-priority candidate. Skill count bumped to 18 (dep-map references/ are not independently invocable skills, but skill directory count tracks loaded SKILL.md files).
 
 ### 2026-04-17 (Run 4)
 - Agents: 16 | Skills: 17 | Memory files: 1

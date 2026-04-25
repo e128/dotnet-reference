@@ -12,7 +12,6 @@ description: >
   skill simplification, prompt drift, model upgrade audit, over-scaffolded skills,
   skills need simplifying, audit for scaffolding, prune scaffolding, skill friction,
   skills need updating.
-model: sonnet
 tools: Read, Glob, Grep, Bash, Write
 maxTurns: 35
 memory: project

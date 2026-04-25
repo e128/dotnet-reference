@@ -1,23 +1,29 @@
 # Claude Code Upstream Reference
-*Updated: 2026-04-17T13:51:00Z*
+*Updated: 2026-04-25T00:00:00Z*
 
 Baseline snapshot of official Claude Code guidance. Used for periodic config health checks.
 
-## Current Version: 2.1.112
+## Current Version: 2.1.119
 
-Key recent changes (2.1.91-2.1.112):
+Key recent changes (2.1.91-2.1.119):
 
-| Version  | Notable Changes                                                                   |
-| -------- | --------------------------------------------------------------------------------- |
-| 2.1.112  | Bugfix: Opus 4.7 unavailability in auto mode resolved                             |
-| 2.1.111  | `xhigh` effort (Opus 4.7); auto mode for Max; `/ultrareview`; `/effort` slider    |
-| 2.1.110  | `/tui` fullscreen rendering; push notification tool; improved plugin system       |
-| 2.1.108  | Prompt cache TTL; `/recap` session summary; Skill tool discovers built-in cmds    |
-| 2.1.105  | `EnterWorktree` path param; `PreCompact` hook; plugin background monitors         |
-| 2.1.101  | Sub-agents inherit MCP; worktree Read/Edit fixed; SDK → "Claude Agent SDK"        |
-| 2.1.98   | Subprocess sandboxing; bash hardening; git worktree isolation for agents          |
-| 2.1.96   | Default effort → `high`; skill `name` used for stable invocation names            |
-| 2.1.91   | MCP 500K result size; `disableSkillShellExecution`; edit tool efficiency          |
+| Version      | Notable Changes                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| 2.1.119      | Config persistence to `~/.claude/settings.json`; custom PR URL templates; OAuth/MCP fixes |
+| 2.1.118      | Vim visual modes; `cost`+`stats` merged into `usage`; MCP tools callable from hooks       |
+| 2.1.117      | Forked subagents on external builds; concurrent MCP startup; persistent model selection    |
+| 2.1.116      | Fast session resume for large files; inline thinking indicators; concurrent stdio servers  |
+| 2.1.114-115  | Permission dialog crash fixes; stability                                                   |
+| 2.1.113      | Native binary execution (was bundled JS); network domain blocking; security hardening      |
+| 2.1.112      | Bugfix: Opus 4.7 unavailability in auto mode resolved                                      |
+| 2.1.111      | `xhigh` effort (Opus 4.7); auto mode for Max; `/ultrareview`; `/effort` slider             |
+| 2.1.110      | `/tui` fullscreen rendering; push notification tool; improved plugin system                |
+| 2.1.108      | Prompt cache TTL; `/recap` session summary; Skill tool discovers built-in cmds             |
+| 2.1.105      | `EnterWorktree` path param; `PreCompact` hook; plugin background monitors                  |
+| 2.1.101      | Sub-agents inherit MCP; worktree Read/Edit fixed; SDK → "Claude Agent SDK"                 |
+| 2.1.98       | Subprocess sandboxing; bash hardening; git worktree isolation for agents                   |
+| 2.1.96       | Default effort → `high`; skill `name` used for stable invocation names                     |
+| 2.1.91       | MCP 500K result size; `disableSkillShellExecution`; edit tool efficiency                   |
 
 ## Subagent Frontmatter Fields
 
@@ -46,23 +52,42 @@ All fields for `.claude/agents/*.md` YAML frontmatter:
 
 All fields for `.claude/skills/*/SKILL.md` YAML frontmatter:
 
-| Field                      | Required    | Notes                                                       |
-| -------------------------- | ----------- | ----------------------------------------------------------- |
-| `name`                     | No          | Display name; defaults to directory name. Max 64 chars      |
-| `description`              | Recommended | Front-load key use case; truncated at 1,536 chars           |
-| `argument-hint`            | No          | Autocomplete hint, e.g. `[issue-number]`                    |
-| `disable-model-invocation` | No          | `true` = manual-only via `/name`                            |
-| `user-invocable`           | No          | `false` = hidden from `/` menu, Claude-only                 |
-| `allowed-tools`            | No          | Space-separated or YAML list                                |
-| `model`                    | No          | Model override when skill is active                         |
-| `effort`                   | No          | `low`, `medium`, `high`, `xhigh`, `max`                     |
-| `context`                  | No          | `fork` to run in subagent                                   |
+| Field                      | Required    | Notes                                                         |
+| -------------------------- | ----------- | ------------------------------------------------------------- |
+| `name`                     | No          | Display name; defaults to directory name. Max 64 chars        |
+| `description`              | Recommended | Front-load key use case; truncated at 1,536 chars per skill   |
+| `when_to_use`              | No          | Extra trigger context; appended to `description`; counts toward 1,536-char cap |
+| `argument-hint`            | No          | Autocomplete hint, e.g. `[issue-number]`                      |
+| `arguments`                | No          | Named positional args for `$name` substitution; space-sep or YAML list |
+| `disable-model-invocation` | No          | `true` = manual-only via `/name`; also blocks subagent preload |
+| `user-invocable`           | No          | `false` = hidden from `/` menu, Claude-only                   |
+| `allowed-tools`            | No          | Space-separated or YAML list                                  |
+| `model`                    | No          | Model override when skill is active                           |
+| `effort`                   | No          | `low`, `medium`, `high`, `xhigh`, `max`                       |
+| `context`                  | No          | `fork` to run in subagent                                     |
 | `agent`                    | No          | Subagent type when `context: fork` (default: general-purpose) |
-| `hooks`                    | No          | Lifecycle hooks scoped to skill                             |
-| `paths`                    | No          | Glob patterns limiting auto-activation                      |
-| `shell`                    | No          | `bash` (default) or `powershell`                            |
+| `hooks`                    | No          | Lifecycle hooks scoped to skill                               |
+| `paths`                    | No          | Glob patterns limiting auto-activation                        |
+| `shell`                    | No          | `bash` (default) or `powershell`                              |
 
-String substitutions: `$ARGUMENTS`, `$ARGUMENTS[N]`, `$N`, `${CLAUDE_SESSION_ID}`, `${CLAUDE_SKILL_DIR}`.
+String substitutions: `$ARGUMENTS`, `$ARGUMENTS[N]`, `$N`, `$name` (named args), `${CLAUDE_SESSION_ID}`, `${CLAUDE_SKILL_DIR}`.
+
+### Skill description budget (total across all skills)
+
+- Per-skill cap: 1,536 chars (`description` + `when_to_use` combined)
+- Total budget: 1% of context window, fallback 8,000 chars if context window unknown
+- Override: `SLASH_COMMAND_TOOL_CHAR_BUDGET` env var
+
+### Skill compaction behavior
+
+After auto-compaction, Claude Code re-attaches the most recent invocation of each active skill:
+- Each skill: first 5,000 tokens retained
+- All re-attached skills share a **25,000-token combined budget**, filled most-recent-first
+- Older skills can be dropped entirely if budget is exhausted
+
+### Skill size guideline
+
+Keep `SKILL.md` under 500 lines (official guidance). Move large reference material to supporting files in the skill directory.
 
 ## File Naming
 
@@ -85,8 +110,8 @@ String substitutions: `$ARGUMENTS`, `$ARGUMENTS[N]`, `$N`, `${CLAUDE_SESSION_ID}
 
 ## Sources
 
-- https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md (2026-04-17)
-- https://code.claude.com/docs/en/sub-agents (2026-04-17)
-- https://code.claude.com/docs/en/skills (2026-04-17)
-- https://github.com/anthropics/skills (2026-04-17)
-- https://github.com/anthropics/skills/commits/main/ (2026-04-17)
+- https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md (2026-04-25)
+- https://code.claude.com/docs/en/sub-agents (2026-04-25)
+- https://code.claude.com/docs/en/skills (2026-04-25)
+- https://code.claude.com/docs/en/agent-sdk/overview (2026-04-25)
+- https://github.com/anthropics/skills/commits/main/ (2026-04-25)

@@ -8,10 +8,9 @@ description: >
   retirement/merge list. Auto-retires DORMANT items; creates plans for LOW_USE and DUPLICATE.
   Triggers on: prune catalog, retire dead skills, catalog cleanup, dead weight removal,
   skill consolidation, consolidate skills, too many skills, skill overlap, redundant skills,
-  skill audit, agent overlap, retire skill, merge skills, clean up skills, skill catalog audit,
+  agent overlap, retire skill, merge skills, clean up skills, skill catalog audit,
   check skill health, audit all skills, skill health report, skill health, find dead skills,
   review all skills.
-model: sonnet
 tools: Bash, Glob, Grep, Read, Write
 maxTurns: 15
 effort: low

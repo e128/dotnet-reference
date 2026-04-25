@@ -13,7 +13,6 @@ description: >
   weekly knowledge sync, knowledge consolidation, sync learnings.
   Not for: single-insight capture (use lode-sync capture mode), session debugging,
   or plan-specific retrospectives (use weekly-learner --plan-retro).
-model: sonnet
 tools: Read, Glob, Grep, Edit, Write, Bash
 maxTurns: 30
 effort: high

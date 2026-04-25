@@ -12,9 +12,9 @@ description: >
   Triggers on: weekly learning, session analysis, pattern analysis, what am I repeating,
   workflow audit, efficiency audit, learn from sessions, plan retro, plan retrospective,
   session audit, quarterly review, what should become a skill, what should be an agent,
-  token optimizer, reduce tokens, token audit, token efficiency audit, analyze this session.
-  Not for: single-session debugging, real-time workflow monitoring, or manual code review.
-model: sonnet
+  analyze this session.
+  Not for: single-session debugging, real-time workflow monitoring, manual code review,
+  or token plan creation (use token-optimizer).
 tools: Bash, Glob, Grep, Read, Write, Agent
 maxTurns: 25
 effort: high
@@ -84,17 +84,16 @@ Issue all of the following in the same turn — they are independent reads:
 
 **Claude Code version** — Run `claude --version` and compare against `last_claude_version` in memory. **If the version is unchanged, skip the changelog entirely.** Only when the version differs, run `claude changelog 2>/dev/null | head -80`. If the version changed, scan the changelog for new or changed capabilities that would affect tool types, hook events, agent/skill frontmatter, CLI flags, or permission/settings behavior. Cross-reference against current friction points (Phase 2.2), dead skills/agents, configuration rules, and settings.json patterns. Flag findings as **Version Upgrade Opportunity** in Phase 3 recommendations.
 
-## Token Analysis Mode (`--current` or token-related triggers)
+## Session Analysis Mode (`--current` or "analyze this session")
 
-When triggered by token-related phrases ("token optimizer", "reduce tokens", "analyze this session"):
+When triggered by "analyze this session":
 
 1. Use `--sessions 1` for all `session-health.sh` calls (current session only)
 2. Cross-reference tool counts against `.claude/rules/token-efficiency.md`
-3. Score each finding on Frequency (0-3) + Token Cost (0-3) + Feasibility (0-3). Only findings scoring >= 5 become plans.
-4. Skip Phase 4.5 plan creation — return a findings table with recommendations
-5. Also suggest improvements to skills, agents, and scripts — not just new scripts
+3. Skip plan creation — return a findings table with recommendations
+4. Suggest improvements to skills, agents, and scripts — not just new scripts
 
-This is a lightweight pass (~10 turns). For full retrospective analysis, use the default weekly mode.
+This is a lightweight pass (~10 turns). For scored plan creation, use token-optimizer instead.
 
 ## Phase 2: Pattern Analysis
 

@@ -10,7 +10,7 @@ description: >
   Reduces the manual "fix all" → approve each → apply each loop to a single
   confirmation + one test run.
   Triggers on: fix all findings, apply review, fix code review issues, apply all fixes,
-  fix all, apply findings.
+  apply findings.
 tools: Read, Edit, Write, Bash, Glob, Grep, Agent
 maxTurns: 25
 memory: project

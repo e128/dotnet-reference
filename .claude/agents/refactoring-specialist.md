@@ -10,7 +10,6 @@ description: >
   refactor impact, find usages, who calls this, impact analysis, change impact,
   refactoring plan, usage analysis, what depends on, trace callers, where is this used,
   class dependencies, caller list.
-model: sonnet
 tools: Read, Write, Edit, Bash, Glob, Grep
 maxTurns: 30
 effort: high

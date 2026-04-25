@@ -1,6 +1,6 @@
 # Project Instructions for Claude
 
-*Last updated: 2026-04-15T19:30:00Z*
+*Last updated: 2026-04-25T00:00:00Z*
 
 ## Communication
 
@@ -79,6 +79,8 @@ When making design trade-offs, apply this priority order:
 - **Squash all local commits before push** — one clean commit per PR.
 
 ## General Behavior
+
+**Agents and skills must not specify `model:`.** All inherit the session model. See [Agent & Skill Routing](.claude/rules/agent-vs-skill-routing.md).
 
 Prefer focused incremental changes: one change, verify, then next.
 

@@ -8,7 +8,6 @@ description: >
   main context with verbose MSBuild output.
   Triggers on: build validation, verify build, check build, validate changes,
   run build, build check, does it build.
-model: haiku
 tools: Bash, Grep, Read, Glob
 maxTurns: 8
 memory: project

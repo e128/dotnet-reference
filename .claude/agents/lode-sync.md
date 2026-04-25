@@ -9,7 +9,6 @@ description: >
   stale docs, update documentation, docs out of date, save this to the lode,
   capture this insight, capture to lode, remember this for next time,
   save this knowledge, capture that knowledge.
-model: sonnet
 tools: Read, Edit, Grep, Glob, Bash
 maxTurns: 20
 effort: low

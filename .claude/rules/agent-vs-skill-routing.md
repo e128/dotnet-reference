@@ -7,6 +7,12 @@
 
 **Never use the `Skill` tool to invoke an agent.**
 
+## Agent & Skill Frontmatter Conventions
+
+**No `model:` field in agents or skills.** All agents and skills inherit the session model. Explicitly setting a model pins it to a specific version and bypasses model selection in the UI — this creates upgrade friction and split behavior. Omit the field entirely; inheritance is correct.
+
+**No `effort:` field unless the task genuinely requires non-default effort.** Most agents should inherit.
+
 ## Write Code Before Running Tests
 
 - **Write all implementation code first**, then verify

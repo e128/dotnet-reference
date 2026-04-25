@@ -7,7 +7,7 @@ description: >
   verifies all CI tests pass. Presents severity-rated findings for user-directed action at each step.
   Review conventions.md before first use — preferences are configurable.
   Use iteratively for initial large overhauls, then periodically to catch drift.
-  Triggers on: code overhaul, modernize codebase, .NET modernization, overhaul loop, code review pass,
+  Triggers on: code overhaul, modernize codebase, .NET modernization, overhaul loop, overhaul pass,
   fix all warnings, language modernization, primary constructors, collection expressions, overhaul solution.
 argument-hint: "[solution-file or directory]"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write, Agent
