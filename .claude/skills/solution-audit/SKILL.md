@@ -118,7 +118,7 @@ src/Foo.cs:42: #pragma warning disable CA1234
 
 ## Phase 2: Spawn 3 Parallel Agents
 
-Spawn all in a **single message**. Use `subagent_type: "general-purpose"`, `model: "sonnet"`.
+Spawn all in a **single message**. Use `subagent_type: "general-purpose"`.
 
 ### Agent A: Structure (D1, D2)
 

@@ -1,14 +1,15 @@
 # Claude Code Upstream Reference
-*Updated: 2026-04-25T00:00:00Z*
+*Updated: 2026-05-02T00:00:00Z*
 
 Baseline snapshot of official Claude Code guidance. Used for periodic config health checks.
 
-## Current Version: 2.1.119
+## Current Version: 2.1.126
 
-Key recent changes (2.1.91-2.1.119):
+Key recent changes (2.1.91-2.1.126):
 
 | Version      | Notable Changes                                                                            |
 | ------------ | ------------------------------------------------------------------------------------------ |
+| 2.1.126      | Model picker shows gateway `/v1/models`; `claude project purge`; `--dangerously-skip-permissions` covers `.claude/`+`.git/`; OAuth paste-to-terminal fallback; OTel `claude_code.skill_activated` event adds `invocation_trigger`; fixed deferred tools in `context: fork` skills; Agent SDK hang fixed for malformed parallel tool names; security fix for `allowManagedDomainsOnly`; images >2000px auto-downscaled |
 | 2.1.119      | Config persistence to `~/.claude/settings.json`; custom PR URL templates; OAuth/MCP fixes |
 | 2.1.118      | Vim visual modes; `cost`+`stats` merged into `usage`; MCP tools callable from hooks       |
 | 2.1.117      | Forked subagents on external builds; concurrent MCP startup; persistent model selection    |
@@ -110,8 +111,8 @@ Keep `SKILL.md` under 500 lines (official guidance). Move large reference materi
 
 ## Sources
 
-- https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md (2026-04-25)
-- https://code.claude.com/docs/en/sub-agents (2026-04-25)
-- https://code.claude.com/docs/en/skills (2026-04-25)
-- https://code.claude.com/docs/en/agent-sdk/overview (2026-04-25)
-- https://github.com/anthropics/skills/commits/main/ (2026-04-25)
+- https://github.com/anthropics/claude-code/raw/refs/heads/main/CHANGELOG.md (2026-05-02)
+- https://code.claude.com/docs/en/sub-agents (2026-05-02)
+- https://code.claude.com/docs/en/skills (2026-05-02)
+- https://code.claude.com/docs/en/agent-sdk/overview (2026-05-02)
+- https://github.com/anthropics/skills/commits/main/ (2026-05-02)

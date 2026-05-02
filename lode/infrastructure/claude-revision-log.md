@@ -1,10 +1,27 @@
 # Claude Revision Log
-*Updated: 2026-04-25T00:00:00Z*
+*Updated: 2026-05-02T00:00:00Z*
 
 Persistent memory for `/claude-revision`. Each run appends one entry.
 Read at Phase 0 to recover last-known state and deferred items.
 
 ## Runs
+
+### 2026-05-02 (Run 6)
+- Agents: 17 | Skills: 18 | Memory files: 1
+- Web guidance: v2.1.126 (up from v2.1.119); no new frontmatter fields; `claude project purge` CLI command, expanded `--dangerously-skip-permissions`, OTel `invocation_trigger` attribute, image auto-downscale; no convention changes; lode/infrastructure/claude-code-upstream.md updated by research agent
+- HIGH: 0 | MEDIUM: 1 | LOW: 3
+- Actions taken:
+  - S1: Removed `model: "sonnet"` from solution-audit SKILL.md sub-agent spawn instruction (line 121) — contradicted agent-vs-skill-routing.md rule
+  - M1: Deleted orphaned `confirmation-reducer/` agent-memory dir (agent removed in Run 2; empty dir persisted 4 runs)
+  - M2: Deleted empty `simplification-agent/` and `sme-researcher/` agent-memory dirs (no MEMORY.md, just empty dirs)
+  - L1: Verified `summary.md` and `terminology.md` content is still accurate; bumped timestamps to 2026-05-02
+  - W1: Research agent updated `claude-code-upstream.md` — version bumped to v2.1.126, new version table row added
+- Deferred: none
+- Resolved from prior runs:
+  - A1 (MEDIUM, carried Runs 2–5): 4 agents missing `model:` — resolved by design. Rule in agent-vs-skill-routing.md explicitly says "No `model:` field." All 17 agents correctly inherit session model.
+  - M1 (LOW, carried Runs 3–5): `confirmation-reducer/` orphaned dir — deleted
+  - M2 (LOW, carried Runs 4–5): empty agent-memory dirs — deleted
+- Notes: New agent `knowledge-consolidator` added since Run 5 (17th agent). All fields present, no issues. Agent count now 17. Cleanest run to date — zero deferred items.
 
 ### 2026-04-25 (Run 5)
 - Agents: 16 | Skills: 18 | Memory files: 1
