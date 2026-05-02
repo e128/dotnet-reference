@@ -399,7 +399,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
     {
         for (var i = 0; i < pattern.Length - 2; i++)
         {
-            if (pattern[i] is not '\\' || pattern[i + 1] is not 's')
+            if (pattern[i] != '\\' || pattern[i + 1] != 's')
             {
                 continue;
             }
