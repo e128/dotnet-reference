@@ -10,7 +10,7 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ConfigureAwaitFalseE128AnalyzerTests
 {
-    private static Task VerifyAsExeAsync(string code, params DiagnosticResult[] expected)
+    private static Task VerifyWithOutputKindAsync(string code, OutputKind outputKind, params DiagnosticResult[] expected)
     {
         var test = new CSharpAnalyzerTest<ConfigureAwaitFalseE128Analyzer, DefaultVerifier>
         {
@@ -23,10 +23,20 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
             var options = (CSharpCompilationOptions)project.CompilationOptions!;
             return solution.WithProjectCompilationOptions(
                 projectId,
-                options.WithOutputKind(OutputKind.ConsoleApplication));
+                options.WithOutputKind(outputKind));
         });
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
+    }
+
+    private static Task VerifyAsExeAsync(string code, params DiagnosticResult[] expected)
+    {
+        return VerifyWithOutputKindAsync(code, OutputKind.ConsoleApplication, expected);
+    }
+
+    private static Task VerifyAsWindowsAppAsync(string code, params DiagnosticResult[] expected)
+    {
+        return VerifyWithOutputKindAsync(code, OutputKind.WindowsApplication, expected);
     }
 
     private static Task VerifyAsBlazorWasmAsync(string code, params DiagnosticResult[] expected)
@@ -56,21 +66,7 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
 
     private static Task VerifyAsDllAsync(string code, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<ConfigureAwaitFalseE128Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.SolutionTransforms.Add((solution, projectId) =>
-        {
-            var project = solution.GetProject(projectId)!;
-            var options = (CSharpCompilationOptions)project.CompilationOptions!;
-            return solution.WithProjectCompilationOptions(
-                projectId,
-                options.WithOutputKind(OutputKind.DynamicallyLinkedLibrary));
-        });
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return VerifyWithOutputKindAsync(code, OutputKind.DynamicallyLinkedLibrary, expected);
     }
 
     [Fact]
@@ -106,6 +102,23 @@ public sealed class ConfigureAwaitFalseE128AnalyzerTests
         return VerifyAsBlazorWasmAsync("""
                                        using System.Threading.Tasks;
                                        await Task.Delay(1).ConfigureAwait(false);
+                                       """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConfigureAwaitFalse_InWindowsApp_FiresE128022()
+    {
+        return VerifyAsWindowsAppAsync("""
+                                       using System.Threading.Tasks;
+                                       class C
+                                       {
+                                           static void Main() { }
+                                           async Task M()
+                                           {
+                                               await {|E128022:Task.Delay(1).ConfigureAwait(false)|};
+                                           }
+                                       }
                                        """);
     }
 

@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.23.2" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.23.3" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -27,7 +27,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128017 | Use primary constructor parameter directly                                                          | Yes      |
 | E128019 | Do not pass `CancellationToken` by `in` reference                                                   | Yes      |
 | E128021 | Do not use `in` modifier with ref struct parameters (default: Error)                                | Yes      |
-| E128022 | Remove `ConfigureAwait(false)` in apps without `SynchronizationContext`                              | Yes      |
+| E128022 | Remove `ConfigureAwait(false)` in application code                                                   | Yes      |
 | E128030 | Do not compare `FileSystemInfo` types by reference (default: Info)                                   | Yes      |
 | E128032 | Concrete-only DI registration with available interface                                              | Yes      |
 | E128036 | `Task.Run` wrapping async lambda — unnecessary thread pool hop                                      | Yes      |
@@ -287,7 +287,7 @@ void Read(ReadOnlySpan<byte> buffer) { }
 
 ### E128022 &mdash; ConfigureAwait(false)
 
-Flags `.ConfigureAwait(false)` in executable application code (console apps, ASP.NET Core, Worker Service). These hosts have no `SynchronizationContext`, so the call is unnecessary noise. Skips Blazor WASM projects.
+Flags `.ConfigureAwait(false)` in application code (console apps, ASP.NET Core, Worker Services, WPF, WinForms). Per Microsoft guidance, application-level code should not use `ConfigureAwait(false)` — it belongs only in general-purpose library code. Skips DLL projects and Blazor WASM.
 
 ```csharp
 // Before (warns)

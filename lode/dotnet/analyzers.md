@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-04-20T18:34:34Z*
+*Updated: 2026-05-03T00:00:00Z*
 
 ## Strategy: Deny by Default
 
@@ -166,13 +166,17 @@ Rules suppressed in test projects (via `tests/.globalconfig` at `global_level=10
 | xunit1051 | xUnit v3 ambient CancellationToken too noisy                 |
 | MA0006    | Relaxed to suggestion — test LINQ predicates use string `==` |
 
-## CA2007 (ConfigureAwait) Scoping
+## ConfigureAwait Scoping (CA2007 + E128022)
 
-Library code must use `ConfigureAwait(false)`. App code (ASP.NET, CLI) must not. Scope CA2007 to DLL projects only:
+Library code must use `ConfigureAwait(false)`. Application code must not. Two complementary rules enforce this:
+
+- **CA2007** (DLL projects only): requires `ConfigureAwait(false)` in library code
+- **E128022** (Exe/WindowsApplication projects): flags `ConfigureAwait(false)` as unnecessary in app code (console, ASP.NET Core, WPF, WinForms, Worker Services). Excludes Blazor WASM.
 
 ```
 dotnet_diagnostic.CA2007.severity = error
 dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
+# E128022 inherits error from blanket dotnet_analyzer_diagnostic.severity = error
 ```
 
 ## Source Generators

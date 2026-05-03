@@ -22,12 +22,12 @@ public sealed class ConfigureAwaitFalseE128Analyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "Remove ConfigureAwait(false)",
-        "Remove '.ConfigureAwait(false)' — this host has no SynchronizationContext",
+        "Remove ConfigureAwait(false) in application code",
+        "Remove '.ConfigureAwait(false)' — application code should not use ConfigureAwait",
         "Design",
         DiagnosticSeverity.Warning,
         true,
-        "ConfigureAwait(false) is unnecessary in ASP.NET Core and Worker Service hosts because there is no SynchronizationContext to avoid marshalling back to.");
+        "ConfigureAwait(false) should only be used in general-purpose library code. Application projects (console apps, ASP.NET Core hosts, WPF, WinForms, Worker Services) should not use it.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -42,7 +42,8 @@ public sealed class ConfigureAwaitFalseE128Analyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            if (compilationContext.Compilation.Options.OutputKind != OutputKind.ConsoleApplication)
+            var outputKind = compilationContext.Compilation.Options.OutputKind;
+            if (outputKind is not OutputKind.ConsoleApplication and not OutputKind.WindowsApplication)
             {
                 return;
             }
