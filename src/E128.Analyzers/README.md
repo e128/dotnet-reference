@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.23.3" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.24.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -82,6 +82,10 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128026 | Redundant `HashSet` allocation in `FrozenSet` creation                | Yes      |
 | E128027 | Use `FrozenSet`/`FrozenDictionary` for static readonly collections    | Yes      |
 | E128029 | Replace multi-string OR-chain with `HashSet.Contains`                 | Yes      |
+| E128066 | Linear lookup inside loop creates O(n²) complexity                    | Yes      |
+| E128067 | String concatenation in loop creates O(n²) allocations                | Yes      |
+| E128068 | Sort operation inside loop creates O(n² log n) complexity             | No       |
+| E128069 | `List.Insert(0, ...)` in loop creates O(n²) complexity                | No       |
 
 ### Style
 
@@ -707,6 +711,66 @@ private static readonly string[] Names = ["a", "b"];
 
 // After
 private static readonly ImmutableArray<string> Names = ["a", "b"];
+```
+
+### E128066 &mdash; Linear lookup in loop (O(n²))
+
+Flags linear-time methods (`.Contains`, `.Any`, `.IndexOf`, `.Remove`, `.Exists`, `.Find`, `.FindAll`, `.FindIndex`) called on list/array/`IEnumerable<T>` types inside loops or LINQ lambdas. Also detects `.Where(...).Count()` chains. Excludes O(1) types (`HashSet<T>`, `Dictionary<K,V>`, `FrozenSet<T>`, etc.) and constant-bound `for` loops.
+
+```csharp
+// Before (warns)
+foreach (var item in items)
+    if (lookup.Contains(item)) { }
+
+// After
+var lookupSet = lookup.ToHashSet();
+foreach (var item in items)
+    if (lookupSet.Contains(item)) { }
+```
+
+Code fix converts receiver to `HashSet<T>` via `.ToHashSet()` (offered for `.Contains` and `.Any` only).
+
+### E128067 &mdash; String concatenation in loop
+
+Flags `string +=` inside loops. Each iteration allocates a new string, creating O(n²) total allocations. Use `StringBuilder` instead.
+
+```csharp
+// Before (warns)
+foreach (var line in lines)
+    result += line;
+
+// After
+var sb = new StringBuilder();
+foreach (var line in lines)
+    sb.Append(line);
+var result = sb.ToString();
+```
+
+### E128068 &mdash; Sort operation inside loop
+
+Flags `.Sort()` (`List<T>`, `Array`), `.OrderBy()`, `.OrderByDescending()`, `.ThenBy()`, `.ThenByDescending()` (`System.Linq.Enumerable`) inside loops. Sorting per iteration is O(n² log n) overall. Sort once before the loop or use a sorted collection.
+
+```csharp
+// Before (warns)
+foreach (var batch in batches)
+    items.Sort();
+
+// After
+items.Sort();
+foreach (var batch in batches) { }
+```
+
+### E128069 &mdash; List.Insert(0, ...) in loop
+
+Flags `list.Insert(0, ...)` inside loops. Each insert at index 0 shifts all existing elements, making the loop O(n²). Use `LinkedList<T>.AddFirst` or collect and reverse.
+
+```csharp
+// Before (warns)
+foreach (var item in source)
+    result.Insert(0, item);
+
+// After
+var result = source.Reverse().ToList();
 ```
 
 ## Configuration

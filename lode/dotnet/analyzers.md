@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-05-03T00:00:00Z*
+*Updated: 2026-05-04T00:00:00Z*
 
 ## Strategy: Deny by Default
 
@@ -110,7 +110,7 @@ Key rules by category (not exhaustive):
 | ----------- | -------------------------------------------------------------------------------------------------- |
 | Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray   |
 | Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime                     |
-| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation                                 |
+| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation, O(n²) loop patterns            |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
 | Testing     | Temp directory cleanup, stale ReferenceAssemblies                                                  |
 
@@ -146,6 +146,31 @@ Flags file-I/O sequences that write to a path and then immediately read the same
 ### E128063 — Mid-name underscore in private static member
 
 Severity: **Error**. Flags private/internal static members whose name contains an underscore at index ≥ 2 (e.g., `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors. Code fix uses `SequentialRenameFixAllProvider` (not `BatchFixer`) and removes the mid-name underscore by PascalCasing each segment.
+
+### E128066 — Linear lookup in loop (O(n²))
+
+Flags linear-time methods (`.Contains`, `.Any`, `.IndexOf`, `.Remove`, `.Exists`, `.Find`, `.FindAll`, `.FindIndex`) on collection types inside loops (`for`, `foreach`, `while`, `do`) and LINQ lambda callbacks (`.Where`, `.Select`, `.SelectMany`, `.Any`, `.All`, `.First`, `.Count`, `.ForEach`, etc.).
+
+**Exclusions**:
+- O(1) lookup types: `ISet<T>`, `IReadOnlySet<T>`, `IDictionary<K,V>`, `IReadOnlyDictionary<K,V>`, `FrozenSet<T>`, `FrozenDictionary<K,V>`, `ImmutableHashSet<T>`, `ImmutableDictionary<K,V>` — checked via `SymbolEqualityComparer` against types resolved at `CompilationStart`
+- Constant-bound `for` loops (e.g., `for (int i = 0; i < 10; i++)`) — literal bound means total work is bounded
+- Also detects `.Where(...).Count()` chains (linear scan + count = O(n) per call)
+
+**Code fix**: For `.Contains` and `.Any`, inserts `var xSet = x.ToHashSet();` before the enclosing loop and rewrites the receiver. Other methods lack automatic fixes (remediation is context-specific). Ensures `using System.Linq;` is present.
+
+Uses `RegisterCompilationStartAction` to pre-resolve O(1) type symbols, then `RegisterSyntaxNodeAction` on `InvocationExpression`. Falls back to `CandidateSymbols[0]` when `GetSymbolInfo().Symbol` is null (overloaded methods).
+
+### E128067 — String concatenation in loop
+
+Flags `string +=` inside loops. Each iteration allocates a new string, creating O(n²) total allocations. Registers on `SyntaxKind.AddAssignmentExpression` and checks `SpecialType.System_String`. Code fix is a placeholder (string-to-StringBuilder refactoring is too invasive for automation).
+
+### E128068 — Sort in loop (O(n² log n))
+
+Flags `.Sort()` (on `List<T>` or `System.Array`), `.OrderBy()`, `.OrderByDescending()`, `.ThenBy()`, `.ThenByDescending()` (on `System.Linq.Enumerable`) inside loops. Sorting on every iteration is almost always a bug — sort once before the loop or use a sorted collection. No code fix (remediation is context-specific).
+
+### E128069 — List.Insert(0, ...) in loop (O(n²))
+
+Flags `list.Insert(0, ...)` inside loops. Each insert at index 0 shifts all existing elements, making the overall loop O(n²). Verifies the first argument is literal `0` and the containing type is `List<T>`. No code fix — use `LinkedList<T>.AddFirst` or collect-and-reverse instead.
 
 ## Common Test Overrides
 
