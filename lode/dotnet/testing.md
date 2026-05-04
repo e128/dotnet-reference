@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-04-11T14:10:55Z*
+*Updated: 2026-05-04T20:33:09Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -82,13 +82,15 @@ Use `[Trait("Category", "...")]` to organize tests:
 
 ## Test Project Structure
 
-Three test projects, all sharing `<IsTestProject>true</IsTestProject>` (inherits MTP config from `Directory.Build.targets`):
+Five test projects, all sharing `<IsTestProject>true</IsTestProject>` (inherits MTP config from `Directory.Build.targets`):
 
-| Project                  | Purpose                                  | Notable Packages (beyond `xunit.v3.mtp-v2`)                                    |
-| ------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------- |
-| `E128.Reference.Tests`   | Core + Web integration tests             | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Extensions.Diagnostics.Testing`  |
-| `Architecture.Tests`     | ArchUnitNET structural invariant tests   | `TngTech.ArchUnitNET.xUnitV3`                                                  |
-| `E128.Analyzers.Tests`   | Roslyn analyzer + code fix verification  | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `*.CodeFix.Testing`           |
+| Project                     | Purpose                                  | Notable Packages (beyond `xunit.v3.mtp-v2`)                                                                  |
+| --------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `E128.Reference.Tests`      | Web integration tests                    | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Extensions.Diagnostics.Testing`                                |
+| `E128.Reference.Core.Tests` | Core library unit tests                  | —                                                                                                             |
+| `E128.Reference.Cli.Tests`  | CLI unit tests                           | —                                                                                                             |
+| `Architecture.Tests`        | ArchUnitNET structural invariant tests   | `TngTech.ArchUnitNET.xUnitV3`                                                                                 |
+| `E128.Analyzers.Tests`      | Roslyn analyzer + code fix verification  | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing`             |
 
 Minimal `.csproj` template (all versions from CPM):
 

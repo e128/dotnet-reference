@@ -1,13 +1,13 @@
 # NuGet Trusted Publishing
 
-*Updated: 2026-04-11T14:12:11Z*
+*Updated: 2026-05-04T20:34:00Z*
 
 OIDC-based package publishing from GitHub Actions to nuget.org. Eliminates long-lived API keys.
 
 ## How It Works
 
 1. GitHub Actions job requests OIDC token (signed, includes repo/workflow metadata)
-2. `NuGet/login@v1` sends token to nuget.org token exchange endpoint
+2. Workflow calls nuget.org token exchange endpoint via `curl` (manual, no third-party action)
 3. nuget.org validates token against your trusted publishing policy
 4. Returns a **1-hour, single-use** API key
 5. Workflow uses that key with `dotnet nuget push`
@@ -27,7 +27,7 @@ Profile menu -> Trusted Publishing -> Create.
 
 ### Private Repo Bootstrap
 
-New policies for private repos are **active 7 days**. First successful `NuGet/login` call permanently activates via immutable GitHub IDs. Miss the window? Re-activate manually from the Trusted Publishing page.
+New policies for private repos are **active 7 days**. First successful OIDC token exchange permanently activates via immutable GitHub IDs. Miss the window? Re-activate manually from the Trusted Publishing page.
 
 ## GitHub Actions Workflow
 
@@ -73,10 +73,22 @@ jobs:
 
       - name: NuGet login (OIDC)
         if: steps.check.outputs.exists == 'false'
-        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1.1.0
         id: login
-        with:
-          user: ${{ secrets.NUGET_USER }}
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+        run: |
+          OIDC_TOKEN=$(curl -sL \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https%3A%2F%2Fwww.nuget.org" \
+            | jq -r '.value')
+          echo "::add-mask::$OIDC_TOKEN"
+          NUGET_API_KEY=$(curl -sL -X POST "https://www.nuget.org/api/v2/token" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            -d "{\"username\":\"${NUGET_USER}\",\"tokenType\":\"ApiKey\"}" \
+            | jq -r '.apiKey')
+          echo "::add-mask::$NUGET_API_KEY"
+          echo "NUGET_API_KEY=$NUGET_API_KEY" >> "$GITHUB_OUTPUT"
 
       - name: Push
         if: steps.check.outputs.exists == 'false'
@@ -86,15 +98,9 @@ jobs:
           --source https://api.nuget.org/v3/index.json
 ```
 
-### `NuGet/login@v1` Action Inputs
+The workflow does NOT use the `NuGet/login` GitHub Action. Instead it performs the OIDC exchange manually via `curl` + `jq`, calling the GitHub OIDC endpoint and then the nuget.org token endpoint directly. This avoids the third-party action dependency.
 
-| Input               | Required | Default                              |
-| ------------------- | -------- | ------------------------------------ |
-| `user`              | yes      | --                                   |
-| `token-service-url` | no       | `https://www.nuget.org/api/v2/token` |
-| `audience`          | no       | `https://www.nuget.org`              |
-
-Output: `NUGET_API_KEY` (short-lived, single-use).
+Output: `NUGET_API_KEY` (short-lived, single-use) written to `$GITHUB_OUTPUT`.
 
 ## Roslyn Analyzer csproj for Packaging
 
@@ -102,7 +108,7 @@ Key properties that differ from a normal library package:
 
 ```xml
 <PropertyGroup>
-  <Version>1.0.0</Version>
+  <Version>1.24.2</Version>
   <IsPackable>true</IsPackable>
   <IncludeBuildOutput>false</IncludeBuildOutput>
   <DevelopmentDependency>true</DevelopmentDependency>
@@ -112,8 +118,8 @@ Key properties that differ from a normal library package:
   <!-- Package metadata -->
   <PackageId>E128.Analyzers</PackageId>
   <Authors>Brent Miller</Authors>
-  <Description>Roslyn analyzers enforcing E128 conventions: file system path types,
-    string.Empty, TimeProvider, IHttpClientFactory, and sealed-by-default.</Description>
+  <Description>Roslyn analyzers enforcing opinionated .NET conventions at compile time.
+    <!-- full description maintained in E128.Analyzers.csproj --></Description>
   <PackageTags>roslyn;analyzer;csharp;code-analysis</PackageTags>
   <PackageLicenseExpression>MIT</PackageLicenseExpression>
   <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -132,7 +138,7 @@ Key properties that differ from a normal library package:
 
 | Property                          | Why                                                        |
 | --------------------------------- | ---------------------------------------------------------- |
-| `Version`                           | Pinned in csproj (`1.0.0`); workflow reads via `sed`       |
+| `Version`                           | Pinned in csproj (currently `1.24.2`); workflow reads via `sed` |
 | `IncludeBuildOutput=false`          | Prevents DLL in `lib/` (would be treated as library ref)   |
 | `DevelopmentDependency=true`        | Marks as dev-only; consumers get analyzer, not dependency   |
 | `SuppressDependenciesWhenPacking`   | Keeps analyzer deps out of the nupkg dependency list       |
@@ -144,7 +150,7 @@ Key properties that differ from a normal library package:
 ### Critical
 
 - **Token scope is ALL packages for the owner.** A single compromised repo can publish any package under that owner. No per-package scoping exists yet.
-- **Reusable workflows break it.** OIDC token validation uses the repo containing the `NuGet/login` step, not the calling repo. Shared workflow repos get 401s. Keep `NuGet/login` in the originating repo.
+- **Reusable workflows break it.** OIDC token validation uses the repo containing the token exchange step, not the calling repo. Shared workflow repos get 401s. Keep the OIDC login step in the originating repo.
 - **`user` is your nuget.org profile name, NOT email.** Common mistake; causes silent auth failures.
 
 ### Operational

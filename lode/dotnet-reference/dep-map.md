@@ -19,14 +19,14 @@ All production projects also receive the following **analyzer packages** via `Di
 | Analyzer Package                                | Version          |
 | ----------------------------------------------- | ---------------- |
 | `AsyncFixer`                                    | 2.1.0            |
-| `Meziantou.Analyzer`                            | 3.0.50           |
+| `Meziantou.Analyzer`                            | 3.0.60           |
 | `Microsoft.CodeAnalysis.CSharp.CodeStyle`       | 5.3.0            |
 | `Microsoft.VisualStudio.Threading.Analyzers`    | 17.14.15         |
 | `Roslynator.Analyzers`                          | 4.15.0           |
 | `Roslynator.CodeAnalysis.Analyzers`             | 4.15.0           |
 | `Roslynator.Formatting.Analyzers`               | 4.15.0           |
 | `SharpSource`                                   | 1.33.1           |
-| `SonarAnalyzer.CSharp`                          | 10.24.0.138807   |
+| `SonarAnalyzer.CSharp`                          | 10.25.0.139117   |
 
 ## Cross-Project Dependency Heat Map
 
@@ -56,7 +56,7 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 | --------------------- | ------------------------------------------ | ------------------------------------- |
 | Runtime image         | `mcr.microsoft.com/dotnet/aspnet:10.0-alpine` | `Dockerfile` (final `runtime` stage) |
 | SDK/build image       | `mcr.microsoft.com/dotnet/sdk:10.0-alpine`    | `Dockerfile` (`restore`/`build` stages) |
-| .NET SDK pin          | `10.0.202`                                 | `global.json`                         |
+| .NET SDK pin          | `10.0.203`                                 | `global.json`                         |
 | SDK rollForward       | `latestMajor` ⚠                           | `global.json` — permits any future major version |
 | Target framework      | `net10.0` (all except `E128.Analyzers`)    | `Directory.Build.props`               |
 | Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj`               |
@@ -107,7 +107,7 @@ graph TB
 
 | Package             | Version | Role                     |
 | ------------------- | ------- | ------------------------ |
-| `System.CommandLine`| 2.0.6   | CLI argument parsing     |
+| `System.CommandLine`| 2.0.7   | CLI argument parsing     |
 
 ### E128.Analyzers
 
@@ -140,9 +140,9 @@ by `publish.yml` via OIDC trusted publishing.
 | `TngTech.ArchUnitNET.xUnitV3`                 | 0.13.3   | Architecture invariant tests      |
 | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing` | 1.1.3 | Roslyn analyzer test harness      |
 | `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing` | 1.1.3  | Roslyn code fix test harness      |
-| `Microsoft.AspNetCore.Mvc.Testing`            | 10.0.6   | Integration test web host         |
-| `Microsoft.Testing.Extensions.HangDump`       | 2.2.1    | Hang detection in CI              |
-| `Microsoft.Testing.Extensions.TrxReport`      | 2.2.1    | TRX report output                 |
+| `Microsoft.AspNetCore.Mvc.Testing`            | 10.0.7   | Integration test web host         |
+| `Microsoft.Testing.Extensions.HangDump`       | 2.2.2    | Hang detection in CI              |
+| `Microsoft.Testing.Extensions.TrxReport`      | 2.2.2    | TRX report output                 |
 
 ---
 
@@ -155,4 +155,4 @@ severity for all deps (direct and transitive).
 
 ---
 
-*Updated: 2026-04-21T13:23:50Z*
+*Updated: 2026-05-04T20:33:47Z*

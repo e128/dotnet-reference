@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-04-12T06:00:00Z*
+*Updated: 2026-05-04T20:33:47Z*
 
 ## Overview
 
@@ -92,8 +92,8 @@ E128099 | Design | Warning | No longer needed
 - `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content) and `RS1038`
 - Files registered as `<AdditionalFiles>` in csproj
 - Published to NuGet: https://www.nuget.org/packages/E128.Analyzers/
-- `Shipped.md` has 10 release sections (1.0.0 through 1.6.0), 53 rules total
-- `Unshipped.md` tracks pending changes only (category recategorizations, new rules not yet published)
+- `Shipped.md` has 10 release sections (1.0.0 through 1.23.3), 67 rules total
+- `Unshipped.md` tracks pending changes only (E128066-069 — O(n²) loop performance rules not yet published)
 
 ### Release-to-Rule Mapping
 
@@ -109,6 +109,8 @@ E128099 | Design | Warning | No longer needed
 | 1.4.0   | E128019-026   | in-modifier, ConfigureAwait, hardcoded tmp, etc. |
 | 1.5.0   | E128027-030   | FrozenSet, TaskFromResult, multi-string, FileSystemInfo |
 | 1.6.0   | E128031-053   | DI patterns, concurrency, JSON lifetime, etc. |
+| 1.8.0   | E128054       | Temp dir cleanup; E128003/004 recategorized to Design |
+| 1.23.3  | E128055-065   | Pragma, TOCTOU, readonly array, interface param, etc. |
 
 ## Sources
 

@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-05-04T00:00:00Z*
+*Updated: 2026-05-04T15:28:00Z*
 
 ## Strategy: Deny by Default
 
@@ -152,6 +152,7 @@ Severity: **Error**. Flags private/internal static members whose name contains a
 Flags linear-time methods (`.Contains`, `.Any`, `.IndexOf`, `.Remove`, `.Exists`, `.Find`, `.FindAll`, `.FindIndex`) on collection types inside loops (`for`, `foreach`, `while`, `do`) and LINQ lambda callbacks (`.Where`, `.Select`, `.SelectMany`, `.Any`, `.All`, `.First`, `.Count`, `.ForEach`, etc.).
 
 **Exclusions**:
+- `System.String` receivers: `string.Contains(substring)` and `string.IndexOf(substring)` are O(n) substring operations, not collection lookups. `System.String` implements `IEnumerable<char>`, which would otherwise cause false positives
 - O(1) lookup types: `ISet<T>`, `IReadOnlySet<T>`, `IDictionary<K,V>`, `IReadOnlyDictionary<K,V>`, `FrozenSet<T>`, `FrozenDictionary<K,V>`, `ImmutableHashSet<T>`, `ImmutableDictionary<K,V>` — checked via `SymbolEqualityComparer` against types resolved at `CompilationStart`
 - Constant-bound `for` loops (e.g., `for (int i = 0; i < 10; i++)`) — literal bound means total work is bounded
 - Also detects `.Where(...).Count()` chains (linear scan + count = O(n) per call)

@@ -1,5 +1,5 @@
 # .NET 10 Project Structure
-*Updated: 2026-04-11T14:10:21Z*
+*Updated: 2026-05-04T20:33:09Z*
 
 ## Solution Format
 
@@ -23,10 +23,12 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 │   ├── E128.Reference.Core/   # Core library
 │   └── E128.Reference.Web/    # Web application
 ├── tests/
-│   ├── Architecture.Tests/    # ArchUnitNET structural tests
-│   ├── E128.Analyzers.Tests/  # Roslyn analyzer unit tests
-│   ├── E128.Reference.Tests/  # Core + Web integration tests
-│   └── .globalconfig          # Test-specific severity overrides (global_level=101)
+│   ├── Architecture.Tests/         # ArchUnitNET structural tests
+│   ├── E128.Analyzers.Tests/       # Roslyn analyzer unit tests
+│   ├── E128.Reference.Cli.Tests/   # CLI unit tests
+│   ├── E128.Reference.Core.Tests/  # Core library unit tests
+│   ├── E128.Reference.Tests/       # Web integration tests
+│   └── .globalconfig               # Test-specific severity overrides (global_level=101)
 ```
 
 ## Central Package Management (CPM)
@@ -48,7 +50,7 @@ Key properties in `Directory.Build.props`:
 
 ```json
 {
-  "sdk": { "version": "10.0.201", "rollForward": "latestMajor", "allowPrerelease": false },
+  "sdk": { "version": "10.0.203", "rollForward": "latestMajor", "allowPrerelease": false },
   "test": { "runner": "Microsoft.Testing.Platform" }
 }
 ```
