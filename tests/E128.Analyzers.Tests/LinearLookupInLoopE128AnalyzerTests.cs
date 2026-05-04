@@ -372,4 +372,81 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HashSetContains_InLinqWhere_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var items = new List<int> { 1, 2, 3 };
+                                   var lookup = new HashSet<int> { 2, 3, 4 };
+                                   var result = items.Where(x => lookup.Contains(x));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StringContains_InForeach_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var items = new List<string> { "a", "b", "c" };
+                                   foreach (var item in items)
+                                   {
+                                       if (item.Contains("x")) { }
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StringIndexOf_InForeach_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var items = new List<string> { "a", "b", "c" };
+                                   foreach (var item in items)
+                                   {
+                                       var idx = item.IndexOf("x");
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StringContains_InLinqWhere_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var items = new List<string> { "abc", "def", "ghi" };
+                                   var result = items.Where(x => x.Contains("a"));
+                               }
+                           }
+                           """);
+    }
 }

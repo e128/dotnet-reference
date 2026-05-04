@@ -269,6 +269,11 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
 
     private static bool IsLinearLookupType(ITypeSymbol type, string methodName)
     {
+        if (type.SpecialType == SpecialType.System_String)
+        {
+            return false;
+        }
+
         if (type.TypeKind == TypeKind.Array)
         {
             return string.Equals(methodName, "Contains", StringComparison.Ordinal)
