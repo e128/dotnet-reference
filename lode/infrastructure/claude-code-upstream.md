@@ -1,11 +1,21 @@
 # Claude Code Upstream Reference
-*Updated: 2026-05-04T20:34:29Z*
+*Updated: 2026-05-08T00:00:00Z*
 
 Baseline snapshot of official Claude Code guidance. Used for periodic config health checks.
 
-## Current Version: 2.1.126
+## Current Version: 2.1.133
 
-Key recent changes (2.1.91-2.1.126):
+Key recent changes (2.1.127-2.1.133):
+
+| Version      | Notable Changes                                                                                                                     |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 2.1.133      | `worktree.baseRef` setting; `sandbox.bwrapPath`+`sandbox.socatPath` for custom binary paths; effort level exposed to hooks+Bash env |
+| 2.1.132      | `CLAUDE_SESSION_ID` env var in Bash tool; alternate-screen renderer opt-out                                                         |
+| 2.1.131      | VS Code extension Windows activation fix; Mantle auth fix                                                                           |
+| 2.1.129      | Plugin URL fetching; synchronized output force-enable; auto-update prompting                                                        |
+| 2.1.128      | Random session colors; MCP tool counting; `--channels` console auth support                                                         |
+
+Key prior changes (2.1.91-2.1.126):
 
 | Version      | Notable Changes                                                                            |
 | ------------ | ------------------------------------------------------------------------------------------ |
@@ -111,8 +121,8 @@ Keep `SKILL.md` under 500 lines (official guidance). Move large reference materi
 
 ## Sources
 
-- https://github.com/anthropics/claude-code/raw/refs/heads/main/CHANGELOG.md (2026-05-02)
-- https://code.claude.com/docs/en/sub-agents (2026-05-02)
-- https://code.claude.com/docs/en/skills (2026-05-02)
-- https://code.claude.com/docs/en/agent-sdk/overview (2026-05-02)
-- https://github.com/anthropics/skills/commits/main/ (2026-05-02)
+- https://github.com/anthropics/claude-code/raw/refs/heads/main/CHANGELOG.md (2026-05-08)
+- https://code.claude.com/docs/en/sub-agents (2026-05-08)
+- https://code.claude.com/docs/en/skills (2026-05-08)
+- https://code.claude.com/docs/en/agent-sdk/overview (2026-05-08)
+- https://github.com/anthropics/skills/commits/main/ (2026-05-08)

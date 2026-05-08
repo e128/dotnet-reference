@@ -1,10 +1,22 @@
 # Claude Revision Log
-*Updated: 2026-05-04T20:33:11Z*
+*Updated: 2026-05-08T12:44:25Z*
 
 Persistent memory for `/claude-revision`. Each run appends one entry.
 Read at Phase 0 to recover last-known state and deferred items.
 
 ## Runs
+
+### 2026-05-08 (Run 7)
+- Doctor: unable to capture (interactive mode; no errors in session)
+- Description budget: 22453/8000 chars | Truncated: 0 | At risk: 1 (bash-patterns 1327)
+- Agents: 17 | Skills: 18 | Memory files: 1
+- Web guidance: v2.1.133 (up from v2.1.126); `worktree.baseRef` setting, `CLAUDE_SESSION_ID` env var in Bash, effort exposed to hooks, sandbox path customization; no breaking changes, no new frontmatter fields; lode/infrastructure/claude-code-upstream.md updated by research agent
+- HIGH: 1 | MEDIUM: 1 | LOW: 0
+- Actions taken:
+  - A1: Compressed `token-optimizer` agent 278→155 lines — replaced verbose plan/report templates with compact table summaries
+  - B1: Description budget 22453 chars exceeds 8000 budget, but no individual entry exceeds 1536-char truncation threshold. Runtime compresses descriptions in startup listing. Monitored, not actionable.
+- Deferred: none
+- Notes: Agent/skill counts unchanged at 17/16. All agents: no `model:` (correct), all have `memory: project`, `maxTurns`, explicit tools. Zero stale references across all skills and rules. Cleanest config state to date — only finding was token-optimizer line count (fixed).
 
 ### 2026-05-02 (Run 6)
 - Agents: 17 | Skills: 18 | Memory files: 1

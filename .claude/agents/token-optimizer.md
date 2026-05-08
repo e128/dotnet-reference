@@ -113,104 +113,15 @@ For each finding with score ≥ 5, create a plan in `plans/{slug}/`.
 
 `token-opt-{short-description}` — e.g. `token-opt-git-log-script`, `token-opt-context-combo`
 
-### Files to create (write all three in one parallel turn per plan)
+### Plan files (write all three per plan in one parallel turn)
 
-**`{slug}-plan.md`** — overview and architecture only; no checkboxes
-```markdown
-# Plan: {human title}
-*Created: {ISO 8601 UTC timestamp from `scripts/ts.sh`}*
-*Updated: {same}*
+Each plan creates three files in `plans/{slug}/`. Timestamps via `scripts/ts.sh`.
 
-## Overview
-
-{1-paragraph description of the token waste and the fix}
-
-## Pattern Being Fixed
-
-- **Observed command:** `{exact bad command}`
-- **Frequency:** {N}x in last 48h
-- **Cost:** {N} extra tool calls per occurrence
-- **Score:** {score}/9
-
-## Fix Approach
-
-{brief description of what will be created or edited — script, hook, doc, rule}
-
-## Success Criteria
-
-- {criterion 1 — concrete, verifiable}
-- {criterion 2}
-- One session after ship: `scripts/violation-scan.sh --json` shows pattern count ≤ 1
-```
-
-**`{slug}-context.md`** — evidence and implementation decisions
-```markdown
-# Context: {human title}
-*Created: {ISO 8601 UTC timestamp}*
-*Updated: {same}*
-
-## Problem
-
-{specific pattern being fixed — include the exact command sequences that were wasteful}
-
-## Evidence
-
-- Frequency: {N} times in last 48h
-- Token cost estimate: {N} extra tool calls per occurrence
-- Score: {score}/9
-
-## Violation Source
-
-{quote the exact token-efficiency.md rule being broken, or "gap — no rule exists yet"}
-
-## Existing Scripts Checked
-
-{list of related scripts//*.sh reviewed and why they don't cover this}
-
-## Implementation Notes
-
-{specific design decisions for the new/edited script — flags, output format, etc.}
-
-## Architectural Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| {decision} | {why} |
-```
-
-**`{slug}-tasks.md`** — all checkboxes live here; plan.md has none
-```markdown
-# Tasks: {human title}
-*Created: {ISO 8601 UTC timestamp}*
-*Updated: {same}*
-
-## Phase 0 — Baseline
-
-- [ ] Run `scripts/session-health.sh stats --sessions 1 --json` — capture baseline count for this pattern
-- [ ] Read any existing related scripts to confirm no duplication
-
-## Phase 1 — Implement
-
-{concrete tasks specific to this finding — e.g.:}
-- [ ] Add rule to `scripts/violation-scan.sh`
-- [ ] Write `scripts/{name}.sh` following bash-patterns conventions
-- [ ] Validate: `scripts/check.sh --all`
-
-## Phase 2 — Wire In
-
-- [ ] Update `.claude/rules/token-efficiency.md` — add routing rule or gotcha note
-- [ ] Update `.claude/rules/keyword-shortcuts.md` if user-facing shortcut needed
-
-## Phase 3 — Verify
-
-- [ ] `scripts/violation-scan.sh --json` — confirm pattern count dropped
-- [ ] `scripts/check.sh --all` — no regressions
-
-## Phase 4 — Retrospective
-
-- [ ] Run `/weekly-learner --plan-retro {slug}` — captures learnings from plan execution
-- [ ] Spawn `lode-sync` agent for any new pattern or invariant discovered
-```
+| File               | Purpose                                                                        |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `{slug}-plan.md`   | Overview, Pattern Being Fixed (command, freq, cost, score), Fix Approach, Success Criteria. No checkboxes. |
+| `{slug}-context.md`| Problem, Evidence, Violation Source (quote rule or "gap"), Scripts Checked, Implementation Notes, Decisions table. |
+| `{slug}-tasks.md`  | Checkboxes only: Baseline → Implement → Wire In (token-efficiency.md, keyword-shortcuts.md) → Verify (violation-scan.sh) → Retrospective (/weekly-learner --plan-retro). |
 
 ### After writing all plan files
 
@@ -228,41 +139,7 @@ git add plans/{slug}/
 recommendations for skill/agent/script improvements, and any suggested edits
 (with file paths and specific changes). Return the report content in the conversation.
 
-**Retrospective mode:** Write to `plans/token-report-{date}.md` (where `{date}` is
-from `scripts/ts.sh`), then stage:
-
-```bash
-git add plans/token-report-{date}.md
-```
-
-```markdown
-# Token Optimizer Report
-*Generated: {ISO 8601 UTC timestamp}*
-*Window: last 48 hours*
-
-## Plans Created
-
-| Plan                       | Pattern                    | Freq | Score | Status  |
-| -------------------------- | -------------------------- | ---- | ----- | ------- |
-| token-opt-{slug}           | {short description}        | {N}x | {N}/9 | created |
-
-## Below Threshold (noted, no plan)
-
-| Pattern                    | Freq | Score | Reason                     |
-| -------------------------- | ---- | ----- | -------------------------- |
-| {pattern}                  | {N}x | {N}/9 | {why score was too low}    |
-
-## Top Violations (by frequency)
-
-{ordered list of violation-scan.sh findings}
-
-## Session Stats
-- Sessions analyzed: {N}
-- Total bash commands: {N}
-- Distinct command patterns: {N}
-```
-
-Output the report to the conversation after writing.
+**Retrospective mode:** Write to `plans/token-report-{date}.md` (date from `scripts/ts.sh`), then `git add`. Sections: Plans Created (table: plan, pattern, freq, score, status), Below Threshold (table: pattern, freq, score, reason), Top Violations (by frequency), Session Stats. Output the report to the conversation after writing.
 
 ---
 

@@ -10,7 +10,6 @@ description: >
   review, monthly claude audit, revision audit, config health, claude maintenance, agents audit,
   skills audit, claude audit.
 argument-hint: "[--no-web] [--agents-only] [--skills-only] [--self] [--archive]"
-effort: high
 ---
 
 # Claude Revision
@@ -28,7 +27,7 @@ continuity — the log at `lode/infrastructure/claude-revision-log.md` is this s
 - `--self` — include `claude-revision` itself in Phase 3 skill review (normally skipped)
 - `--archive` — move older entries in the revision log to an archive file before running
 
-## Phase 0: Load Last Run Context
+## Phase 0: Load Last Run Context & Doctor Check
 
 Read `lode/infrastructure/claude-revision-log.md` if it exists. Surface:
 - Date of last run and deferred items
@@ -40,6 +39,35 @@ If the file doesn't exist, this is the first run — proceed without prior conte
 and suggest running with `--archive` to move older entries to `claude-revision-log-archive.md`. If
 `--archive` flag is present, do the archive before proceeding.
 
+### 0b. Doctor Check
+
+Run `claude doctor` (60s timeout). Parse output: errors → HIGH, warnings → MEDIUM, clean → note and continue. If errors found, present immediately before Phase 1.
+
+### 0c. Skill/Agent Description Budget Audit
+
+Claude Code allocates ~1% of context window (fallback 8,000 chars) for the combined skill+agent listing
+at startup. Each entry's `description` + `when_to_use` is capped at 1,536 characters — anything beyond
+is silently truncated, degrading the model's ability to route to the right skill/agent.
+
+Measure all descriptions in one pass:
+
+```bash
+for f in .claude/agents/*.md .claude/skills/*/SKILL.md .claude/skills/*/WORKFLOW.md; do
+    [ -f "$f" ] || continue
+    desc=$(sed -n '/^description:/,/^[a-z]/p' "$f" | tr '\n' ' ')
+    name=$(basename "$(dirname "$f")")/$(basename "$f")
+    echo "${#desc} $name"
+done | sort -rn
+```
+
+Flag entries:
+- **Over 1,536 chars** (description + when_to_use combined) → HIGH: silently truncated at startup
+- **Over 1,000 chars** → MEDIUM: at risk if context budget shrinks or more skills are added
+- **Under 50 chars** → LOW: may be too terse for accurate routing
+
+Include a total character count across all entries. If the total exceeds 8,000 chars, flag HIGH —
+low-priority entries are being dropped from startup context entirely.
+
 ## Phase 1: Web Research _(skip with `--no-web`)_
 
 Spawn `sme-researcher` agent with these targets:
@@ -50,13 +78,10 @@ Spawn `sme-researcher` agent with these targets:
 - `https://github.com/anthropics/skills` — official skill examples: frontmatter conventions, trigger phrasing, file structure, and reference implementations
 - `https://github.com/anthropics/skills/commits/main/` — recent commits: detect new skills, structural changes, or pattern shifts since the last run date
 
-Compare against the last revision log entry date (from Phase 0) to determine if guidance has changed
-since the last run. Report new or changed fields, features, or best practices. Report "No new guidance
-since YYYY-MM-DD" if unchanged.
+Compare against the last revision log entry date (from Phase 0). Report new or changed guidance, or
+"No new guidance since YYYY-MM-DD" if unchanged.
 
 ## Phases 2–4: Run Directly (No Sub-Agents)
-
-Run in sequence. Direct bash/grep — no Explore agents.
 
 ### Phase 2: Agent Review
 
@@ -69,22 +94,20 @@ Run these bash commands directly (no sub-agent):
 2. Extract all frontmatter fields in one pass:
    `rg -l "" .claude/agents/ | xargs rg "^(model|memory|maxTurns|isolation|tools):" --with-filename`
 
-3. Flag agents with `isolation: worktree` but no explicit `model:`:
-   `rg -l "isolation: worktree" .claude/agents/ | xargs -I{} sh -c 'grep -L "^model:" {} && echo "  → no model"'`
-
-4. Find iterating agents (have Agent/Bash tool) missing maxTurns:
+3. Find iterating agents (have Agent/Bash tool) missing maxTurns:
    `rg -l "Agent|Bash" .claude/agents/ | xargs rg -L "maxTurns:"`
 
 Evaluate only what the grep output reveals against these criteria:
 
-| Check       | Criteria                                                                                     |
-| ----------- | -------------------------------------------------------------------------------------------- |
-| Model       | `haiku` = read/search/count/parse; `sonnet` = reasoning/writing/cross-ref; `opus` = rare orchestration only |
-| Tools       | Allowlist present? Unnecessary tools increase attack surface and context load                 |
-| maxTurns    | Iterating agents (build→fix→test loops) need an explicit limit to prevent runaway            |
-| memory      | Agents that learn codebase-specific patterns across sessions should have `memory: project`    |
-| Overlap     | Does it duplicate another agent? Should it be merged or differentiated?                      |
-| Description | Clear trigger keywords? Unambiguous when to use vs. similar agents?                          |
+| Check | Criteria |
+|-------|----------|
+| Model | Inherit from parent context (omit `model` parameter). Reserve explicit model routing for rare cases only. |
+| Tools | Allowlist present? Unnecessary tools increase attack surface and context load |
+| maxTurns | Iterating agents (build→fix→test loops) need an explicit limit to prevent runaway |
+| memory | Agents that learn codebase-specific patterns across sessions should have `memory: project` |
+| Overlap | Does it duplicate another agent? Should it be merged or differentiated? |
+| Description | Clear trigger keywords? Unambiguous when to use vs. similar agents? |
+| Desc length | Over 1,536 chars → HIGH (truncated at startup). Cross-ref Phase 0c findings. |
 
 Do not read individual agent files unless a specific field is missing from the grep output.
 
@@ -101,22 +124,25 @@ Run these bash commands directly (no sub-agent):
    `fd -e md "(SKILL|WORKFLOW)" .claude/skills | xargs wc -l | awk '$1>250 {print}' | sort -rn`
 
 3. Check for stale agent references in skills:
-   Get current agent names: `ls .claude/agents/ | sed 's/\.md//'`
-   Then grep skills for any `subagent_type` or agent-name references and cross-check against the
-   actual agent list. Flag references to agents that no longer exist:
-   `rg "subagent_type|agent" .claude/skills/ --with-filename | grep -v "sub-agent\|sub_agent"`
+   Get agent names: `ls .claude/agents/ | sed 's/\.md//'`
+   Then grep for any known-removed agents (from Phase 0 log context) across skills.
+   Build the grep pattern dynamically from the "Deferred" and "Actions" sections of the last
+   revision log entry — these list agents removed or flagged in prior runs.
+   `rg "<removed-agent-1>|<removed-agent-2>" .claude/skills/ --with-filename`
+   (Substitute actual removed agent names from the Phase 0 log each run)
 
 Read individual skill files only for skills flagged as over-size or containing stale references.
 
 Evaluate flagged skills against these criteria:
 
-| Check     | Criteria                                                                                           |
-| --------- | -------------------------------------------------------------------------------------------------- |
-| Size      | Over 200 lines? Identify content suitable for lode/ or a referenced sub-file                       |
-| Triggers  | Too broad (always fires)? Too narrow (never fires)? Missing key phrases?                           |
-| Overlap   | Duplicates content in another skill or CLAUDE.md?                                                  |
-| Staleness | References removed files, old APIs, or outdated patterns?                                          |
-| Type      | Operational (workflow steps) vs Reference (knowledge injection) — both valid; never flag reference skills for lacking workflow steps |
+| Check | Criteria |
+|-------|----------|
+| Size | Over 200 lines? Identify content suitable for lode/ or a referenced sub-file |
+| Triggers | Too broad (always fires)? Too narrow (never fires)? Missing key phrases? |
+| Overlap | Duplicates content in another skill or CLAUDE.md? |
+| Staleness | References removed files, old APIs, or outdated patterns? |
+| Type | Operational (workflow steps) vs Reference (knowledge injection) -- both valid; never flag reference skills for lacking workflow steps |
+| Desc length | Over 1,536 chars → HIGH (truncated at startup). Cross-ref Phase 0c findings. |
 
 Return: table of `(skill, lines, type, issues)`. Flag issues HIGH/MEDIUM/LOW.
 Skip `claude-revision` itself unless `--self` flag is provided or user explicitly requests it.
@@ -125,14 +151,14 @@ Skip `claude-revision` itself unless `--self` flag is provided or user explicitl
 
 Run these bash commands directly (no sub-agent):
 
-1. Check keyword-shortcuts or routing rules for stale agent references:
-   `rg "agent" .claude/rules/ --with-filename`
+1. Check keyword-shortcuts.md for stale agent references:
+   `rg "\| [a-z-]+-agent" .claude/rules/keyword-shortcuts.md`
    Extract agent names from output → verify each exists in `.claude/agents/`
 
-2. Check CLAUDE.md and rules for references to removed scripts/agents:
-   Get current agent names: `ls .claude/agents/ | sed 's/\.md//'`
-   Get current script names: `ls scripts/*.sh 2>/dev/null | xargs -I{} basename {}`
-   Grep CLAUDE.md and rules for any agent or script name that doesn't exist on disk.
+2. Check CLAUDE.md and rules for references to removed scripts/agents.
+   Build the grep pattern dynamically from removed items listed in the Phase 0 log context:
+   `rg "<removed-item-1>|<removed-item-2>" CLAUDE.md .claude/rules/`
+   (Substitute actual removed names from the Phase 0 log each run)
 
 3. Check for volatile counts in rules files:
    `rg "[0-9]+ errors? in [0-9]+ days" .claude/rules/`
@@ -141,12 +167,12 @@ Only read the full `CLAUDE.md` or `~/.claude/CLAUDE.md` if a specific issue is f
 
 Evaluate findings against these criteria:
 
-| Type             | Flag When                                                        |
-| ---------------- | ---------------------------------------------------------------- |
-| Redundant        | Duplicates a skill, lode entry, or the other CLAUDE.md           |
-| Verbose          | Long explanation where a short rule works; unnecessary examples   |
-| Memory candidate | One-off learning that belongs in lode/ instead                   |
-| Conflict         | Contradicts a skill or project convention                        |
+| Type | Flag When |
+|------|-----------|
+| Redundant | Duplicates a skill, lode entry, or the other CLAUDE.md |
+| Verbose | Long explanation where a short rule works; unnecessary examples |
+| Memory candidate | One-off learning that belongs in lode/ instead |
+| Conflict | Contradicts a skill or project convention |
 
 Return: table of `(file, line, type, finding, recommendation)`.
 
@@ -165,13 +191,10 @@ If untracked files found, report them and offer to `git add` them before moving 
 
 **5b. Scripts Relevance Check**
 
-1. Discover all project scripts dynamically:
-   `ls scripts/*.sh 2>/dev/null | xargs -I{} basename {} .sh`
-   If a `scripts/help.sh` (or equivalent catalog script) exists, use its output instead.
+1. Get all script names: `scripts/help.sh | grep -oP '^\s*\S+\.sh'` or `ls scripts/*.sh | xargs -I{} basename {}`
 
-2. Check which scripts are referenced across config in one pass — build a single rg alternation
-   pattern from the discovered script names, then search:
-   `rg -l "<script1>|<script2>|..." .claude/rules/ .claude/skills/ .claude/agents/ CLAUDE.md`
+2. Check which scripts are referenced across config in one pass — build a single rg alternation pattern from the script names, then:
+   `rg -l "script-a|script-b|script-c" .claude/rules/ .claude/skills/ .claude/agents/ CLAUDE.md`
    (Substitute the actual script names discovered in step 1)
 
 3. For scripts with zero reference hits, read only their header (~25 lines) to understand purpose.
@@ -184,18 +207,12 @@ If untracked files found, report them and offer to `git add` them before moving 
 
 **5c. Lode Check**
 
-Check last-modified dates for key lode infrastructure files:
+Check revision-relevant lode files for staleness:
 
 ```bash
-for f in lode/summary.md lode/terminology.md lode/practices.md lode/lode-map.md; do
-  [ -f "$f" ] && git log --format="%ad %s" --date=short -1 -- "$f"
+for f in lode/infrastructure/claude-revision-log.md lode/infrastructure/claude-code-maintenance.md; do
+    [ -f "$f" ] && git log --format="%ad %s" --date=short -1 -- "$f"
 done
-```
-
-Also check any lode files that document agents, skills, or infrastructure:
-
-```bash
-fd -e md . lode/ | xargs git log --format="%ad %H %s" --date=short -1 -- | sort | head -20
 ```
 
 Flag entries where last commit date is older than 30 days, or where the file's content references
@@ -203,20 +220,17 @@ agents/skills that no longer exist.
 
 ## Phase 6: Report & Log
 
-Report sections: header (agents/skills reviewed, last run date), Web Guidance, Agent Health table (agent, lines, model, memory, issues + severity), Skill Health table (skill, lines, type, issues + severity), CLAUDE.md table (file, line, type, finding, recommendation), Scripts Relevance table (script, referenced, assessment, recommendation), Memory Health table (agent, MEMORY.md, lines, git tracked, issues), Lode status, severity totals (HIGH/MEDIUM/LOW).
+See [references/report-template.md](references/report-template.md) for the report and log entry formats.
 
-Present the report. **Do not apply any changes yet.** Then ask:
-> "Which items would you like to address? (IDs, 'all high', 'agents only', or 'skip')"
-
-After user responds, append a run entry to `lode/infrastructure/claude-revision-log.md` with: date, agent/skill/memory counts, web guidance status, severity counts, actions taken, deferred items. If the file doesn't exist, create it with a header explaining its purpose.
+Present findings, ask which to address, then append a log entry to `lode/infrastructure/claude-revision-log.md`.
 
 ## Guidelines
 
-- **Phases 2–4 use direct bash/grep, not sub-agents** — sub-agents burn 90–150 KB per phase on JSONL transcripts; direct grep is 1–3 tool calls and returns exactly the fields needed
-- **Don't auto-fix** — present findings, wait for user direction
-- **Phase 5a git check is mandatory** — untracked MEMORY.md files silently vanish on clone
-- **Phase 5b scripts check: prefer removal over orphan** — if a script is both unreferenced AND its functionality is now native to Claude Code, flag HIGH for removal; if it just lacks a shortcut, flag MEDIUM and suggest adding one
-- **Reference skills are complete as-is** — do not flag knowledge-only skills for lacking workflow steps
+- Phases 2–4: direct bash/grep, not sub-agents (context savings)
+- Don't auto-fix — present findings, wait for user direction
+- Phase 5a git check is mandatory — untracked MEMORY.md files vanish on clone
+- Phase 5b: unreferenced + native-to-Claude = HIGH removal; unreferenced + useful = MEDIUM add shortcut
+- Reference skills are complete as-is — never flag for missing workflow steps
 
 ## User Input
 
@@ -224,20 +238,13 @@ $ARGUMENTS
 
 ## Self-Improvement (Mandatory)
 
-This skill must get better with every use. The revision log at `lode/infrastructure/claude-revision-log.md` IS this skill's persistent memory — always append to it at Phase 6.
+The revision log is this skill's persistent memory — always append to it at Phase 6.
 
-1. **Always write the Phase 6 log entry** — Even if no changes were made, the dated entry creates a timestamp baseline for detecting drift. Never skip Phase 6.
-2. **Record deferred items explicitly** — When the user declines to fix a finding, log it under "Deferred" in the Phase 6 entry with the original severity so it resurfaces next run.
-3. **Capture new check criteria** — If a new pattern was found that should be checked in future runs (e.g., a new agent frontmatter field, a new lode convention), document it in SKILL.md Phases 2–5 criteria tables.
-4. **Note guidance changes** — When Phase 1 web research finds a new Anthropic best practice, append a concise note to `lode/infrastructure/claude-code-maintenance.md` alongside the revision log entry.
-
-The goal: each revision run recovers prior context instantly from the log and builds on previous findings rather than re-discovering the same issues.
+1. **Always write the Phase 6 log entry** — even if no changes were made; the timestamp prevents drift.
+2. **Record deferred items** — log declined findings under "Deferred" with severity so they resurface.
+3. **Capture new check criteria** — add new patterns to the Phases 2–5 criteria tables in this workflow.
+4. **Note guidance changes** — append new Anthropic best practices to the appropriate lode file.
 
 ## Troubleshooting
 
-- **Web fetch fails** — use `--no-web` for fast local-only run
-- **Sparse grep results** — no matches means the field is absent; note and continue
-- **First run** — normal; no prior context; log created at Phase 6
-- **Untracked MEMORY.md files** — run `git add .claude/agent-memory/`
-- **Reference skills flagged for missing workflow** — reference skills are complete as-is; re-check classification
-- **Log too large** — archive older runs to `claude-revision-log-archive.md`
+See [references/troubleshooting.md](references/troubleshooting.md).
