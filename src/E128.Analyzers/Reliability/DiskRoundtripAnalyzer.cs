@@ -67,8 +67,8 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var writes = new List<WriteOp>();
-        var reads = new List<ReadOp>();
+        var writes = new List<DiskIoCatalog.WriteOp>();
+        var reads = new List<DiskIoCatalog.ReadOp>();
         var writerVarToFactory = new Dictionary<string, int>(StringComparer.Ordinal);
 
         CollectOps(context, body, writes, reads, writerVarToFactory);
@@ -83,8 +83,8 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
     private static void CollectOps(
         SyntaxNodeAnalysisContext context,
         SyntaxNode body,
-        List<WriteOp> writes,
-        List<ReadOp> reads,
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads,
         Dictionary<string, int> writerVarToFactory)
     {
         foreach (var node in body.DescendantNodes())
@@ -99,102 +99,21 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             }
             else if (node is LocalDeclarationStatementSyntax local)
             {
-                TrackWriterVariable(local.Declaration, writes, writerVarToFactory, null);
-                TryTrackOpaqueWriteResult(local.Declaration, writes);
+                DiskIoCatalog.TrackWriterVariable(local.Declaration, writes, writerVarToFactory, null);
+                DiskIoCatalog.TryTrackOpaqueWriteResult(local.Declaration, writes);
             }
             else if (node is UsingStatementSyntax usingStmt && usingStmt.Declaration is { } decl)
             {
-                TrackWriterVariable(decl, writes, writerVarToFactory, usingStmt);
+                DiskIoCatalog.TrackWriterVariable(decl, writes, writerVarToFactory, usingStmt);
             }
         }
-    }
-
-    // Tracks local variable decls whose initializer is a write-factory call, so that
-    // subsequent `.Write(...)` invocations on that variable can be attributed to the factory.
-    private static void TrackWriterVariable(
-        VariableDeclarationSyntax decl,
-        List<WriteOp> writes,
-        Dictionary<string, int> writerVarToFactory,
-        SyntaxNode? enclosingUsing)
-    {
-        foreach (var v in decl.Variables)
-        {
-            if (v.Initializer?.Value is null)
-            {
-                continue;
-            }
-
-            var factoryIndex = FindFactoryIndex(writes, v.Initializer.Value);
-            if (factoryIndex >= 0)
-            {
-                writerVarToFactory[v.Identifier.ValueText] = factoryIndex;
-                if (enclosingUsing is not null)
-                {
-                    writes[factoryIndex] = writes[factoryIndex].WithDisposalBoundary(enclosingUsing.Span.End);
-                }
-            }
-        }
-    }
-
-    private static void TryTrackOpaqueWriteResult(
-        VariableDeclarationSyntax decl,
-        List<WriteOp> writes)
-    {
-        foreach (var v in decl.Variables)
-        {
-            var initializer = v.Initializer?.Value;
-            if (initializer is null)
-            {
-                continue;
-            }
-
-            var invocation = initializer switch
-            {
-                AwaitExpressionSyntax { Expression: InvocationExpressionSyntax inv } => inv,
-                InvocationExpressionSyntax inv => inv,
-                _ => null
-            };
-
-            if (invocation?.Expression is not MemberAccessExpressionSyntax ma)
-            {
-                continue;
-            }
-
-            if (!DiskIoCatalog.IsOpaqueWriteMethodName(ma.Name.Identifier.ValueText))
-            {
-                continue;
-            }
-
-            writes.Add(new WriteOp(
-                invocation,
-                null,
-                "OpaqueWriteResult:" + v.Identifier.ValueText,
-                null,
-                DiskIoCatalog.IoKind.Unknown,
-                false,
-                false,
-                invocation.SpanStart));
-        }
-    }
-
-    private static int FindFactoryIndex(List<WriteOp> writes, ExpressionSyntax candidate)
-    {
-        for (var i = 0; i < writes.Count; i++)
-        {
-            if (writes[i].FactoryNode == candidate)
-            {
-                return i;
-            }
-        }
-
-        return -1;
     }
 
     private static void TryClassifyInvocation(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,
-        List<WriteOp> writes,
-        List<ReadOp> reads,
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads,
         Dictionary<string, int> writerVarToFactory)
     {
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
@@ -223,10 +142,10 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         ExpressionSyntax receiver,
         string methodName,
-        List<WriteOp> writes,
-        List<ReadOp> reads)
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads)
     {
-        if (!IsReceiverType(receiver, "File"))
+        if (!DiskIoCatalog.IsReceiverType(receiver, "File"))
         {
             return false;
         }
@@ -278,7 +197,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static void AddFileValueWrite(InvocationExpressionSyntax invocation, string methodName, List<WriteOp> writes)
+    private static void AddFileValueWrite(InvocationExpressionSyntax invocation, string methodName, List<DiskIoCatalog.WriteOp> writes)
     {
         var args = invocation.ArgumentList.Arguments;
         if (args.Count < 2)
@@ -286,10 +205,10 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        writes.Add(new WriteOp(
+        writes.Add(new DiskIoCatalog.WriteOp(
             invocation,
             null,
-            Normalize(args[0].Expression),
+            DiskIoCatalog.Normalize(args[0].Expression),
             args[1].Expression,
             DiskIoCatalog.FileMethodKind(methodName),
             DiskIoCatalog.IsAsyncName(methodName),
@@ -297,7 +216,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             invocation.SpanStart));
     }
 
-    private static void AddFileValueRead(InvocationExpressionSyntax invocation, string methodName, List<ReadOp> reads)
+    private static void AddFileValueRead(InvocationExpressionSyntax invocation, string methodName, List<DiskIoCatalog.ReadOp> reads)
     {
         var args = invocation.ArgumentList.Arguments;
         if (args.Count < 1)
@@ -305,15 +224,15 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        reads.Add(new ReadOp(
-            GetAwaitedNodeOrSelf(invocation),
-            Normalize(args[0].Expression),
+        reads.Add(new DiskIoCatalog.ReadOp(
+            DiskIoCatalog.GetAwaitedNodeOrSelf(invocation),
+            DiskIoCatalog.Normalize(args[0].Expression),
             DiskIoCatalog.FileMethodKind(methodName),
             DiskIoCatalog.IsAsyncName(methodName),
-            IsInsideAwait(invocation)));
+            DiskIoCatalog.IsInsideAwait(invocation)));
     }
 
-    private static void AddFileWriteFactory(InvocationExpressionSyntax invocation, string methodName, List<WriteOp> writes)
+    private static void AddFileWriteFactory(InvocationExpressionSyntax invocation, string methodName, List<DiskIoCatalog.WriteOp> writes)
     {
         var args = invocation.ArgumentList.Arguments;
         if (args.Count < 1)
@@ -321,10 +240,10 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        writes.Add(new WriteOp(
+        writes.Add(new DiskIoCatalog.WriteOp(
             invocation,
             invocation,
-            Normalize(args[0].Expression),
+            DiskIoCatalog.Normalize(args[0].Expression),
             null,
             DiskIoCatalog.FileMethodKind(methodName),
             false,
@@ -332,7 +251,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             int.MaxValue));
     }
 
-    private static void AddFileReadFactory(InvocationExpressionSyntax invocation, string methodName, List<ReadOp> reads)
+    private static void AddFileReadFactory(InvocationExpressionSyntax invocation, string methodName, List<DiskIoCatalog.ReadOp> reads)
     {
         var args = invocation.ArgumentList.Arguments;
         if (args.Count < 1)
@@ -340,9 +259,9 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        reads.Add(new ReadOp(
+        reads.Add(new DiskIoCatalog.ReadOp(
             invocation,
-            Normalize(args[0].Expression),
+            DiskIoCatalog.Normalize(args[0].Expression),
             DiskIoCatalog.FileMethodKind(methodName),
             false,
             false));
@@ -353,8 +272,8 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         ExpressionSyntax receiver,
         string methodName,
-        List<WriteOp> writes,
-        List<ReadOp> reads)
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads)
     {
         if (!IsFileInfoReceiver(context, receiver))
         {
@@ -363,10 +282,10 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
 
         if (DiskIoCatalog.IsFileWriteFactory(methodName))
         {
-            writes.Add(new WriteOp(
+            writes.Add(new DiskIoCatalog.WriteOp(
                 invocation,
                 invocation,
-                NormalizeFileInfoInstance(receiver),
+                DiskIoCatalog.NormalizeFileInfoInstance(receiver),
                 null,
                 DiskIoCatalog.FileMethodKind(methodName),
                 false,
@@ -377,9 +296,9 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
 
         if (DiskIoCatalog.IsFileReadFactory(methodName))
         {
-            reads.Add(new ReadOp(
+            reads.Add(new DiskIoCatalog.ReadOp(
                 invocation,
-                NormalizeFileInfoInstance(receiver),
+                DiskIoCatalog.NormalizeFileInfoInstance(receiver),
                 DiskIoCatalog.FileMethodKind(methodName),
                 false,
                 false));
@@ -393,7 +312,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         ExpressionSyntax receiver,
         string methodName,
-        List<WriteOp> writes,
+        List<DiskIoCatalog.WriteOp> writes,
         Dictionary<string, int> writerVarToFactory)
     {
         if (!DiskIoCatalog.IsWriterWriteMethod(methodName))
@@ -421,10 +340,10 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
     private static void TryClassifyCtor(
         SyntaxNodeAnalysisContext context,
         ObjectCreationExpressionSyntax creation,
-        List<WriteOp> writes,
-        List<ReadOp> reads)
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads)
     {
-        var typeName = ExtractCtorTypeName(creation.Type);
+        var typeName = DiskIoCatalog.ExtractCtorTypeName(creation.Type);
         if (typeName is null)
         {
             return;
@@ -487,12 +406,12 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
     private static void AddStreamWriterCtor(
         ObjectCreationExpressionSyntax creation,
         SeparatedSyntaxList<ArgumentSyntax> args,
-        List<WriteOp> writes)
+        List<DiskIoCatalog.WriteOp> writes)
     {
-        writes.Add(new WriteOp(
+        writes.Add(new DiskIoCatalog.WriteOp(
             creation,
             creation,
-            Normalize(args[0].Expression),
+            DiskIoCatalog.Normalize(args[0].Expression),
             null,
             DiskIoCatalog.IoKind.Writer,
             false,
@@ -503,11 +422,11 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
     private static void AddStreamReaderCtor(
         ObjectCreationExpressionSyntax creation,
         SeparatedSyntaxList<ArgumentSyntax> args,
-        List<ReadOp> reads)
+        List<DiskIoCatalog.ReadOp> reads)
     {
-        reads.Add(new ReadOp(
+        reads.Add(new DiskIoCatalog.ReadOp(
             creation,
-            Normalize(args[0].Expression),
+            DiskIoCatalog.Normalize(args[0].Expression),
             DiskIoCatalog.IoKind.Reader,
             false,
             false));
@@ -516,18 +435,18 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
     private static void AddFileStreamCtor(
         ObjectCreationExpressionSyntax creation,
         SeparatedSyntaxList<ArgumentSyntax> args,
-        List<WriteOp> writes,
-        List<ReadOp> reads)
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads)
     {
         var mode = args.Count >= 2 ? args[1].Expression : null;
         var access = args.Count >= 3 ? args[2].Expression : null;
-        var isWrite = IsFileStreamWriteIntent(mode, access);
+        var isWrite = DiskIoCatalog.IsFileStreamWriteIntent(mode, access);
         if (isWrite)
         {
-            writes.Add(new WriteOp(
+            writes.Add(new DiskIoCatalog.WriteOp(
                 creation,
                 creation,
-                Normalize(args[0].Expression),
+                DiskIoCatalog.Normalize(args[0].Expression),
                 null,
                 DiskIoCatalog.IoKind.Stream,
                 false,
@@ -536,9 +455,9 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         }
         else
         {
-            reads.Add(new ReadOp(
+            reads.Add(new DiskIoCatalog.ReadOp(
                 creation,
-                Normalize(args[0].Expression),
+                DiskIoCatalog.Normalize(args[0].Expression),
                 DiskIoCatalog.IoKind.Stream,
                 false,
                 false));
@@ -548,15 +467,15 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
     private static void AddBinaryWriterCtor(
         ObjectCreationExpressionSyntax creation,
         SeparatedSyntaxList<ArgumentSyntax> args,
-        List<WriteOp> writes)
+        List<DiskIoCatalog.WriteOp> writes)
     {
-        var innerWritePath = ExtractPathFromStreamArg(args[0].Expression);
+        var innerWritePath = DiskIoCatalog.ExtractPathFromStreamArg(args[0].Expression);
         if (innerWritePath is not null)
         {
-            writes.Add(new WriteOp(
+            writes.Add(new DiskIoCatalog.WriteOp(
                 creation,
                 creation,
-                Normalize(innerWritePath),
+                DiskIoCatalog.Normalize(innerWritePath),
                 null,
                 DiskIoCatalog.IoKind.Binary,
                 false,
@@ -568,68 +487,18 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
     private static void AddBinaryReaderCtor(
         ObjectCreationExpressionSyntax creation,
         SeparatedSyntaxList<ArgumentSyntax> args,
-        List<ReadOp> reads)
+        List<DiskIoCatalog.ReadOp> reads)
     {
-        var innerReadPath = ExtractPathFromStreamArg(args[0].Expression);
+        var innerReadPath = DiskIoCatalog.ExtractPathFromStreamArg(args[0].Expression);
         if (innerReadPath is not null)
         {
-            reads.Add(new ReadOp(
+            reads.Add(new DiskIoCatalog.ReadOp(
                 creation,
-                Normalize(innerReadPath),
+                DiskIoCatalog.Normalize(innerReadPath),
                 DiskIoCatalog.IoKind.Binary,
                 false,
                 false));
         }
-    }
-
-    private static ExpressionSyntax? ExtractPathFromStreamArg(ExpressionSyntax arg)
-    {
-        return arg is InvocationExpressionSyntax inv
-               && inv.Expression is MemberAccessExpressionSyntax ma
-               && ma.Expression is IdentifierNameSyntax { Identifier.ValueText: "File" }
-               && inv.ArgumentList.Arguments.Count >= 1
-            ? inv.ArgumentList.Arguments[0].Expression
-            : null;
-    }
-
-    private static bool IsFileStreamWriteIntent(ExpressionSyntax? mode, ExpressionSyntax? access)
-    {
-        if (access is MemberAccessExpressionSyntax accessMa)
-        {
-            var name = accessMa.Name.Identifier.ValueText;
-            return name switch
-            {
-                "Write" => true,
-                "Read" => false,
-                "ReadWrite" => true,
-                _ => IsWriteFileMode(mode)
-            };
-        }
-
-        return IsWriteFileMode(mode);
-    }
-
-    private static bool IsWriteFileMode(ExpressionSyntax? mode)
-    {
-        return mode is MemberAccessExpressionSyntax modeMa
-               && modeMa.Name.Identifier.ValueText is "Create" or "CreateNew" or "Append";
-    }
-
-    private static string? ExtractCtorTypeName(TypeSyntax type)
-    {
-        return type switch
-        {
-            IdentifierNameSyntax id => id.Identifier.ValueText,
-            QualifiedNameSyntax qn => qn.Right.Identifier.ValueText,
-            GenericNameSyntax gn => gn.Identifier.ValueText,
-            _ => null
-        };
-    }
-
-    private static bool IsReceiverType(ExpressionSyntax receiver, string expectedName)
-    {
-        return receiver is IdentifierNameSyntax id
-               && string.Equals(id.Identifier.ValueText, expectedName, StringComparison.Ordinal);
     }
 
     private static bool IsFileInfoReceiver(SyntaxNodeAnalysisContext context, ExpressionSyntax receiver)
@@ -660,76 +529,11 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
                && string.Equals(method.ContainingType?.ContainingNamespace?.ToDisplayString(), "System.IO", StringComparison.Ordinal);
     }
 
-    private static string Normalize(ExpressionSyntax expr)
-    {
-        return expr switch
-        {
-            IdentifierNameSyntax id => "Ident:" + id.Identifier.ValueText,
-            MemberAccessExpressionSyntax ma when ma.Expression is IdentifierNameSyntax recv
-                => "Member:" + recv.Identifier.ValueText + "." + ma.Name.Identifier.ValueText,
-            MemberAccessExpressionSyntax ma when TryExtractChainRoot(ma, out var root)
-                => "OpaqueWriteRoot:" + root,
-            _ => "Expr:" + expr.ToFullString()
-        };
-    }
-
-    private static bool TryExtractChainRoot(MemberAccessExpressionSyntax ma, out string rootIdent)
-    {
-        var current = ma.Expression;
-        while (current is MemberAccessExpressionSyntax inner)
-        {
-            current = inner.Expression;
-        }
-
-        if (current is IdentifierNameSyntax id)
-        {
-            rootIdent = id.Identifier.ValueText;
-            return true;
-        }
-
-        rootIdent = string.Empty;
-        return false;
-    }
-
-    private static string NormalizeFileInfoInstance(ExpressionSyntax receiver)
-    {
-        return receiver is IdentifierNameSyntax id
-            ? "FileInfo:" + id.Identifier.ValueText
-            : "Expr:" + receiver.ToFullString();
-    }
-
-    // A read's matching write may target the FileInfo instance while the read targets fi.FullName
-    // (Tier D cross-key). This helper expands a path key into the set of compatible keys.
-    private static IEnumerable<string> CompatibleKeys(string key)
-    {
-        yield return key;
-        if (key.StartsWith("Member:", StringComparison.Ordinal) && key.EndsWith(".FullName", StringComparison.Ordinal))
-        {
-            var inner = key.Substring("Member:".Length, key.Length - "Member:".Length - ".FullName".Length);
-            yield return "FileInfo:" + inner;
-        }
-        else if (key.StartsWith("FileInfo:", StringComparison.Ordinal))
-        {
-            var inner = key.Substring("FileInfo:".Length);
-            yield return "Member:" + inner + ".FullName";
-        }
-    }
-
-    private static SyntaxNode GetAwaitedNodeOrSelf(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Parent is AwaitExpressionSyntax awaitExpr ? awaitExpr : invocation;
-    }
-
-    private static bool IsInsideAwait(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Parent is AwaitExpressionSyntax;
-    }
-
     private static void Correlate(
         SyntaxNodeAnalysisContext context,
         SyntaxNode body,
-        List<WriteOp> writes,
-        List<ReadOp> reads)
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads)
     {
         foreach (var read in reads)
         {
@@ -749,16 +553,16 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static WriteOp? FindMatchingWrite(
+    private static DiskIoCatalog.WriteOp? FindMatchingWrite(
         SyntaxNode body,
-        List<WriteOp> writes,
-        ReadOp read,
+        List<DiskIoCatalog.WriteOp> writes,
+        DiskIoCatalog.ReadOp read,
         StatementSyntax readStmt)
     {
         for (var i = writes.Count - 1; i >= 0; i--)
         {
             var write = writes[i];
-            if (!KeysOverlap(write.PathKey, read.PathKey))
+            if (!DiskIoCatalog.KeysOverlap(write.PathKey, read.PathKey))
             {
                 continue;
             }
@@ -769,12 +573,12 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (!WriteLinearlyPrecedesRead(writeStmt, readStmt))
+            if (!DiskIoCatalog.WriteLinearlyPrecedesRead(writeStmt, readStmt))
             {
                 continue;
             }
 
-            if (IsIdentifierReassignedBetween(body, write, read))
+            if (DiskIoCatalog.IsIdentifierReassignedBetween(body, write, read))
             {
                 continue;
             }
@@ -785,7 +589,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static void ReportRoundtrip(SyntaxNodeAnalysisContext context, ReadOp read, WriteOp match)
+    private static void ReportRoundtrip(SyntaxNodeAnalysisContext context, DiskIoCatalog.ReadOp read, DiskIoCatalog.WriteOp match)
     {
         var properties = ImmutableDictionary<string, string?>.Empty
             .Add(PropWriteKind, match.Kind.ToString())
@@ -799,235 +603,5 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             properties,
             DiskIoCatalog.KindDescription(match.Kind),
             DiskIoCatalog.KindDescription(read.Kind)));
-    }
-
-    private static bool KeysOverlap(string a, string b)
-    {
-        if (string.Equals(a, b, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        foreach (var expanded in CompatibleKeys(a))
-        {
-            if (string.Equals(expanded, b, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return OpaqueWriteResultOverlap(a, b) || OpaqueWriteResultOverlap(b, a);
-    }
-
-    private static bool OpaqueWriteResultOverlap(string writeKey, string readKey)
-    {
-        if (!writeKey.StartsWith("OpaqueWriteResult:", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var varName = writeKey.Substring("OpaqueWriteResult:".Length);
-
-        return readKey.StartsWith("OpaqueWriteRoot:", StringComparison.Ordinal)
-            ? string.Equals(varName, readKey.Substring("OpaqueWriteRoot:".Length), StringComparison.Ordinal)
-            : readKey.StartsWith("Member:", StringComparison.Ordinal)
-              && readKey.Substring("Member:".Length).StartsWith(varName + ".", StringComparison.Ordinal);
-    }
-
-    private static bool WriteLinearlyPrecedesRead(StatementSyntax writeStmt, StatementSyntax readStmt)
-    {
-        if (writeStmt.SpanStart >= readStmt.SpanStart)
-        {
-            return false;
-        }
-
-        // Walk up from write to any branching construct before reaching a BlockSyntax ancestor
-        // that also contains the read. If we exit a conditional branch before reaching that block,
-        // the write does not dominate the read.
-        SyntaxNode? cursor = writeStmt;
-        while (cursor != null)
-        {
-            var parent = cursor.Parent;
-            if (parent is null)
-            {
-                return false;
-            }
-
-            if (parent is BlockSyntax block)
-            {
-                if (block.Contains(readStmt))
-                {
-                    return WriteBlockChildPrecedesReadBlockChild(block, writeStmt, readStmt);
-                }
-
-                cursor = block;
-                continue;
-            }
-
-            if (IsConditionalConstruct(parent))
-            {
-                return false;
-            }
-
-            cursor = parent;
-        }
-
-        return false;
-    }
-
-    private static bool WriteBlockChildPrecedesReadBlockChild(BlockSyntax block, StatementSyntax writeStmt, StatementSyntax readStmt)
-    {
-        StatementSyntax? wChild = null;
-        StatementSyntax? rChild = null;
-        foreach (var s in block.Statements)
-        {
-            if (s.Span.Contains(writeStmt.Span))
-            {
-                wChild = s;
-            }
-
-            if (s.Span.Contains(readStmt.Span))
-            {
-                rChild = s;
-            }
-        }
-
-        return wChild is not null && rChild is not null && wChild.SpanStart < rChild.SpanStart;
-    }
-
-    private static bool IsConditionalConstruct(SyntaxNode node)
-    {
-        return node is IfStatementSyntax or ElseClauseSyntax or SwitchSectionSyntax
-            or SwitchStatementSyntax or DoStatementSyntax or WhileStatementSyntax
-            or ForStatementSyntax or ForEachStatementSyntax or CatchClauseSyntax
-            or FinallyClauseSyntax;
-    }
-
-    private static bool IsIdentifierReassignedBetween(SyntaxNode body, WriteOp write, ReadOp read)
-    {
-        var ident = ExtractIdentifier(write.PathKey) ?? ExtractIdentifier(read.PathKey);
-        if (ident is null)
-        {
-            return false;
-        }
-
-        var writePos = write.ReportNode.SpanStart;
-        var readPos = read.ReportNode.SpanStart;
-
-        foreach (var assign in body.DescendantNodes())
-        {
-            if (assign is AssignmentExpressionSyntax assignment
-                && assignment.SpanStart > writePos
-                && assignment.SpanStart < readPos
-                && assignment.Left is IdentifierNameSyntax left
-                && string.Equals(left.Identifier.ValueText, ident, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? ExtractIdentifier(string key)
-    {
-        if (key.StartsWith("Ident:", StringComparison.Ordinal))
-        {
-            return key.Substring("Ident:".Length);
-        }
-
-        if (key.StartsWith("Member:", StringComparison.Ordinal))
-        {
-            var dot = key.IndexOf('.', "Member:".Length);
-            return dot > 0 ? key.Substring("Member:".Length, dot - "Member:".Length) : null;
-        }
-
-        return key.StartsWith("FileInfo:", StringComparison.Ordinal)
-            ? key.Substring("FileInfo:".Length)
-            : key.StartsWith("OpaqueWriteResult:", StringComparison.Ordinal)
-                ? key.Substring("OpaqueWriteResult:".Length)
-                : key.StartsWith("OpaqueWriteRoot:", StringComparison.Ordinal)
-                    ? key.Substring("OpaqueWriteRoot:".Length)
-                    : null;
-    }
-
-    private struct WriteOp
-    {
-        public WriteOp(
-            SyntaxNode reportNode,
-            ExpressionSyntax? factoryNode,
-            string pathKey,
-            ExpressionSyntax? sourceExpr,
-            DiskIoCatalog.IoKind kind,
-            bool isAsync,
-            bool isStreamFactory,
-            int disposalBoundary)
-        {
-            ReportNode = reportNode;
-            FactoryNode = factoryNode;
-            PathKey = pathKey;
-            SourceExpr = sourceExpr;
-            Kind = kind;
-            IsAsync = isAsync;
-            IsStreamFactory = isStreamFactory;
-            DisposalBoundary = disposalBoundary;
-            HasMultipleWrites = false;
-        }
-
-        public SyntaxNode ReportNode { get; }
-        public ExpressionSyntax? FactoryNode { get; }
-        public string PathKey { get; }
-        public ExpressionSyntax? SourceExpr { get; set; }
-        public DiskIoCatalog.IoKind Kind { get; }
-        public bool IsAsync { get; }
-        public bool IsStreamFactory { get; }
-        public int DisposalBoundary { get; set; }
-        public bool HasMultipleWrites { get; set; }
-
-        public readonly WriteOp WithDisposalBoundary(int pos)
-        {
-            var copy = this;
-            copy.DisposalBoundary = pos;
-            return copy;
-        }
-
-        public readonly WriteOp WithMergedSource(ExpressionSyntax src)
-        {
-            var copy = this;
-            if (copy.SourceExpr is null && !copy.HasMultipleWrites)
-            {
-                copy.SourceExpr = src;
-            }
-            else
-            {
-                copy.HasMultipleWrites = true;
-                copy.SourceExpr = null;
-            }
-
-            return copy;
-        }
-    }
-
-    private readonly struct ReadOp
-    {
-        public ReadOp(
-            SyntaxNode reportNode,
-            string pathKey,
-            DiskIoCatalog.IoKind kind,
-            bool isAsync,
-            bool isAwaited)
-        {
-            ReportNode = reportNode;
-            PathKey = pathKey;
-            Kind = kind;
-            IsAsync = isAsync;
-            IsAwaited = isAwaited;
-        }
-
-        public SyntaxNode ReportNode { get; }
-        public string PathKey { get; }
-        public DiskIoCatalog.IoKind Kind { get; }
-        public bool IsAsync { get; }
-        public bool IsAwaited { get; }
     }
 }

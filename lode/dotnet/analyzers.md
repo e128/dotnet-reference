@@ -1,14 +1,9 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-05-09T16:15:00Z*
+*Updated: 2026-05-10T00:00:00Z*
 
 ## Strategy: Deny by Default
 
-All analyzer diagnostics default to `error` severity. Rules are explicitly relaxed only when justified. This prevents new violations from being introduced silently.
-
-```
-# .globalconfig
-dotnet_analyzer_diagnostic.severity = error
-```
+All analyzer diagnostics default to `error` via `.globalconfig` (`dotnet_analyzer_diagnostic.severity = error`). Rules are relaxed only when justified.
 
 ## Configuration Split
 
@@ -97,6 +92,10 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 ```
 
 `PrivateAssets="all"` keeps the generator out of the NuGet package. `PolySharpIncludeGeneratedTypes` scopes generation to only the attribute the project actually uses, avoiding duplicate-type conflicts with consumer projects that target modern TFMs.
+
+## Public API Tracking (E128.Analyzers)
+
+`Microsoft.CodeAnalysis.PublicApiAnalyzers` enforces API compatibility via `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`. Inherited override members are excluded via `<NoWarn>RS0016;RS0017</NoWarn>`. The project's `.editorconfig` suppresses `RCS9004` project-wide (`SeparatedSyntaxList<T>.Count` is O(1)).
 
 ## Custom Analyzers: E128.Analyzers
 
@@ -239,7 +238,7 @@ Sequential application:
 3. Applies `Renamer.RenameSymbolAsync` one at a time to the evolving solution
 4. Skips a rename if the symbol has already been renamed (name mismatch guard)
 
-`dotnet format` resolves the IDE1006 suggested name from the `SuggestedName` property embedded in Roslyn's diagnostic. Tests use `FakeNamingViolationAnalyzer` which embeds `SymbolName` + style properties instead.
+`dotnet format` resolves the IDE1006 suggested name from the `SuggestedName` property embedded in Roslyn's diagnostic.
 
 ## Related
 

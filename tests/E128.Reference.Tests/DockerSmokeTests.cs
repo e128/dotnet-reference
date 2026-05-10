@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -82,8 +81,7 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(content);
-        Assert.Equal("healthy", doc.RootElement.GetProperty("status").GetString());
+        Assert.Equal("Healthy", content);
     }
 
     private async Task WaitForHealthy()

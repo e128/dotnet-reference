@@ -50,9 +50,7 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-#pragma warning disable RCS9004 // Call 'Any' instead of accessing 'Count'.
         if (args.Count != 1)
-#pragma warning restore RCS9004
         {
             return;
         }

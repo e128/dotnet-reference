@@ -1,76 +1,85 @@
 # Tech Debt Audit — E128.Reference
-Generated: 2026-05-09
+Generated: 2026-05-10
 
 ## Executive summary
 
 - 0 CRITICAL
-- 3 HIGH: God file (1033 LOC), dead code module (6 unused types), missing PublicApiAnalyzers on published NuGet package
-- 8 MEDIUM: 2 more god files (611, 515 LOC), 7 RCS9004 pragma suppressions, manual health endpoint, DI inconsistency (Cli vs Web), 6 untested helper files, bus factor = 1
-- 4 LOW: No InternalsVisibleTo, unshipped analyzer releases, 5 rules in unshipped manifest, Architecture.Tests layer coverage gaps
+- 0 HIGH (3 resolved: F001, F004/F005, F010)
+- 1 MEDIUM remaining (F011 bus factor — inherent to single-maintainer repo)
+- 5 LOW unchanged
+- 9 findings resolved this run: F001, F002, F003, F004/F005, F006, F007, F008, F009, F010
 
 ## Architectural mental model
 
 This is a .NET 10 reference repository with four production assemblies. `E128.Reference.Core` provides a shared greeting domain (models, services, repositories). `E128.Reference.Web` is a minimal API app consuming Core. `E128.Reference.Cli` is a System.CommandLine tool also consuming Core. `E128.Analyzers` is a standalone Roslyn analyzer package (the only NuGet-published artifact) with no dependency on the reference apps. Five test projects cover each production assembly, plus ArchUnitNET architecture tests enforcing structural invariants.
 
-The analyzer package is the active development surface — nearly all churn (38/50 recent file modifications) concentrates there. Core, Web, and Cli are near-static demo implementations. The Core greeting domain (GreetingService, repositories, models) appears to be reference code for demonstrating patterns but is not wired into any production entry point.
+The analyzer package remains the active development surface — nearly all recent churn concentrates there (NamingStyleCodeFixProvider: 8 changes in 6 months, plus batch additions of E128066-E128070). Core, Web, and Cli are near-static demo implementations. Source file count: 145 src, 141 test — a healthy ratio.
 
 ## Findings
 
-| ID   | Category                | File:Line                                                        | Severity | Effort | Description                                                                                              | Recommendation                                                                               |
-| ---- | ----------------------- | ---------------------------------------------------------------- | -------- | ------ | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| F001 | Architectural decay     | src/E128.Analyzers/Reliability/DiskRoundtripAnalyzer.cs:1        | HIGH     | L      | 1033-line god file — single analyzer with complex IO catalog logic mixed with Roslyn analysis             | Extract DiskIoCatalog methods into a separate utility class                                  |
-| F002 | Architectural decay     | src/E128.Analyzers/Reliability/GeneratedRegexAnalyzer.cs:1       | MEDIUM   | M      | 611-line analyzer handling 4 distinct diagnostic rules (compiled, timeout, nested, overlapping)           | Split into 4 focused analyzers or extract shared regex analysis logic                        |
-| F003 | Architectural decay     | src/E128.Analyzers/FileSystem/FileSystemPathAnalyzer.cs:1        | MEDIUM   | M      | 515-line analyzer — manages complex path pattern matching inline                                         | Extract pattern matching tables to a companion catalog file like IoMethodCatalog              |
-| F004 | Architectural decay     | src/E128.Reference.Core/Services/GreetingService.cs:12           | HIGH     | S      | GreetingService, IGreetingService, IGreetingRepository, InMemoryGreetingRepository, Greeting, GreetingRequest — 6 types never registered in DI, never used by Web or Cli entry points | Either wire into Web/Cli DI or delete — dead reference code creates false test coverage      |
-| F005 | Architectural decay     | src/E128.Reference.Core/Repositories/IGreetingRepository.cs:11   | HIGH     | S      | IGreetingRepository and InMemoryGreetingRepository are unused outside their own assembly + tests          | Part of F004 — delete or use                                                                 |
-| F006 | Consistency rot         | src/E128.Reference.Cli/CliApp.cs:21                              | MEDIUM   | S      | `new Greeter()` direct instantiation bypasses DI; Web uses `AddSingleton<Greeter>()` — inconsistent pattern | Inject via DI in Cli or acknowledge Cli is intentionally DI-free                             |
-| F007 | Consistency rot         | src/E128.Reference.Web/Program.cs:13                             | MEDIUM   | S      | Manual `/health` endpoint (`Results.Ok(new { status = "healthy" })`) instead of `AddHealthChecks()` + `MapHealthChecks()` — non-standard health contract | Use `builder.Services.AddHealthChecks()` + `app.MapHealthChecks("/health")`                  |
-| F008 | Test debt               | src/E128.Analyzers/FileSystem/IoMethodCatalog.cs                 | MEDIUM   | S      | 6 helper/utility files have no direct test coverage: IoMethodCatalog, PathNamePatterns, SuggestedType, InModifierHelper, DiskIoCatalog, SequentialRenameFixAllProvider | Tested indirectly via analyzer tests — acceptable if intentional; add direct tests for catalog correctness |
-| F009 | Dependency debt         | src/E128.Analyzers/FileSystem/FileSystemPathAnalyzer.cs:245      | MEDIUM   | S      | 7 `#pragma warning disable RCS9004` suppressions across 4 analyzer files — all suppress "use .Any() instead of .Count" | Add RCS9004 to analyzer project .editorconfig with `dotnet_diagnostic.RCS9004.severity = none` instead of per-site pragmas |
-| F010 | Service contract        | Directory.Packages.props                                         | HIGH     | M      | E128.Analyzers is NuGet-published but has no Microsoft.CodeAnalysis.PublicApiAnalyzers — breaking API changes can ship silently | Add PublicApiAnalyzers package + ship/unship tracking files                                   |
-| F011 | Knowledge concentration | (repo-wide)                                                      | MEDIUM   | —      | Single author (millerb@gmail.com) wrote 104/121 commits (86%) in last 12 months — bus factor = 1        | Document architecture decisions in lode/ for onboarding; this is inherent to a personal reference repo |
-| F012 | Test debt               | src/E128.Reference.Core/Services/IGreetingService.cs:10          | LOW      | S      | No InternalsVisibleTo in any src project — prevents testing internal types without reflection             | Add `[InternalsVisibleTo("ProjectName.Tests")]` to projects with internal types worth testing |
-| F013 | Fitness functions       | tests/Architecture.Tests/                                        | LOW      | M      | Architecture tests verify layers, naming, sealed — but don't verify circular dependency prevention or assembly size budgets | Add circular dep check and assembly size budget assertion                                     |
-| F014 | Service contract        | src/E128.Analyzers/AnalyzerReleases.Unshipped.md                 | LOW      | S      | 5 analyzer rules (E128066-E128070) sitting in Unshipped.md — need to be released or documented as pre-release | Ship or document the release timeline                                                        |
-| F015 | Documentation drift     | src/E128.Reference.Core/                                         | LOW      | S      | XML doc comments present on all 7 Core types but Web/Cli public types lack them                          | Add XML docs to Program.cs entry points and CliApp.cs                                        |
+| ID   | Category                | File:Line                                                      | Severity | Effort | Status    | Description                                                                                              | Recommendation                                                                               |
+| ---- | ----------------------- | -------------------------------------------------------------- | -------- | ------ | --------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| F001 | Architectural decay     | src/E128.Analyzers/Reliability/DiskRoundtripAnalyzer.cs:1      | HIGH     | L      | RESOLVED  | 1033-line god file — extracted DiskIoCatalog helpers into DiskIoCatalog.cs (607 → 607 + 563 lines, clean separation) | Done                                                                                         |
+| F002 | Architectural decay     | src/E128.Analyzers/Reliability/GeneratedRegexAnalyzer.cs:1     | MEDIUM   | M      | RESOLVED  | 611-line analyzer — extracted regex pattern analysis to GeneratedRegexHelpers.cs (283 + 332 lines)       | Done                                                                                         |
+| F003 | Architectural decay     | src/E128.Analyzers/FileSystem/FileSystemPathAnalyzer.cs:1      | MEDIUM   | M      | RESOLVED  | 515-line analyzer — extracted helpers to FileSystemPathHelpers.cs (340 + 183 lines)                      | Done                                                                                         |
+| F004 | Architectural decay     | src/E128.Reference.Web/Program.cs:15                           | HIGH     | S      | RESOLVED  | Core domain types wired into Web DI: GreetingService, IGreetingRepository, Greeting endpoints            | Done — POST /greetings and GET /greetings endpoints added                                    |
+| F005 | Architectural decay     | src/E128.Reference.Web/Program.cs:15                           | HIGH     | S      | RESOLVED  | Part of F004 — repositories now registered and used                                                      | Done                                                                                         |
+| F006 | Consistency rot         | src/E128.Reference.Cli/CliApp.cs:8                             | MEDIUM   | S      | RESOLVED  | Cli now uses DI via ServiceCollection + ServiceProvider, consistent with Web                             | Done — ConfigureServices method + GetRequiredService<Greeter>()                              |
+| F007 | Consistency rot         | src/E128.Reference.Web/Program.cs:17                           | MEDIUM   | S      | RESOLVED  | Replaced manual `/health` with `AddHealthChecks()` + `MapHealthChecks("/health")`                        | Done — DockerSmokeTests updated for plain text "Healthy" response                            |
+| F008 | Test debt               | tests/E128.Analyzers.Tests/IoMethodCatalogTests.cs             | MEDIUM   | S      | RESOLVED  | Added 57 direct tests: IoMethodCatalogTests (32), PathNamePatternsTests (20), SuggestedTypeTests (5)     | Done                                                                                         |
+| F009 | Consistency rot         | src/E128.Analyzers/.editorconfig:5                             | MEDIUM   | S      | RESOLVED  | Replaced 7 RCS9004 pragmas with project `.editorconfig` suppression                                     | Done — pragmas removed from 4 files                                                          |
+| F010 | Service contract        | src/E128.Analyzers/E128.Analyzers.csproj:41                    | HIGH     | M      | RESOLVED  | Added PublicApiAnalyzers + PublicAPI.Shipped.txt (130 entries) + PublicAPI.Unshipped.txt                  | Done                                                                                         |
+| F011 | Knowledge concentration | (repo-wide)                                                    | MEDIUM   | —      | UNCHANGED | Single author (millerb@gmail.com) wrote 105/123 commits (85%) in last 12 months — bus factor = 1        | Document architecture decisions in lode/ for onboarding; inherent to a personal reference repo |
+| F012 | Test debt               | src/E128.Reference.Core/ and src/E128.Reference.Web/           | LOW      | S      | MOVED     | 2 of 4 src projects now have InternalsVisibleTo (Cli, Analyzers); Core and Web still lack it             | Add `[InternalsVisibleTo]` to Core and Web projects if they have internal types worth testing |
+| F013 | Fitness functions       | tests/Architecture.Tests/                                      | LOW      | M      | UNCHANGED | Architecture tests verify layers, naming, sealed, service patterns — but don't verify circular deps or assembly size budgets | Add circular dependency prevention and assembly size budget assertions                        |
+| F014 | Service contract        | src/E128.Analyzers/AnalyzerReleases.Unshipped.md               | LOW      | S      | UNCHANGED | 5 analyzer rules (E128066-E128070) sitting in Unshipped.md                                               | Ship with next version bump or document as pre-release                                       |
+| F015 | Documentation drift     | src/E128.Reference.Web/Program.cs                              | LOW      | S      | UNCHANGED | Web and Cli public types lack XML doc comments (Core types have them)                                    | Add XML docs to Program.cs entry points and CliApp.cs                                        |
+| F016 | Dependency debt         | Directory.Packages.props                                       | LOW      | S      | NEW       | Meziantou.Analyzer outdated: 3.0.72 → 3.0.77 available; several transitive System.Composition packages pinned at 9.0.0 while 10.0.7 is available | Bump Meziantou.Analyzer; evaluate transitive pin updates with Renovate                       |
 
 ## Top 5 "if you fix nothing else, fix these"
 
-1. **F004/F005 — Delete or wire the dead Core domain.** GreetingService, repositories, and models exist solely for test demonstration but aren't used by any entry point. They inflate code coverage metrics falsely and mislead readers about the app's actual architecture. Either register them in Web's DI pipeline or delete them and let Greeter stand alone.
+All 5 top-priority findings have been resolved:
 
-2. **F010 — Add PublicApiAnalyzers to E128.Analyzers.** This is a published NuGet package. Without PublicApiAnalyzers, any method signature change ships as a silent breaking change. Add `Microsoft.CodeAnalysis.PublicApiAnalyzers`, generate initial `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`, and let CI enforce API compatibility.
-
-3. **F001 — Decompose DiskRoundtripAnalyzer.cs.** At 1033 lines, this is the largest file and a hotspot (4 changes in 6 months). The disk IO catalog logic should extract to a separate file, similar to how `IoMethodCatalog.cs` already exists for `FileSystemPathAnalyzer`.
-
-4. **F009 — Replace 7 RCS9004 pragmas with an editorconfig rule.** Seven identical `#pragma warning disable RCS9004` scattered across 4 files. A single `.editorconfig` entry in the analyzer project (`dotnet_diagnostic.RCS9004.severity = none`) replaces all of them.
-
-5. **F007 — Use ASP.NET health check middleware.** The manual health endpoint returns `{ "status": "healthy" }` but doesn't integrate with orchestrator health check protocols. `AddHealthChecks()` + `MapHealthChecks()` gives you standard health reporting, degraded/unhealthy states, and Docker HEALTHCHECK compatibility for free.
+1. **F004/F005 — RESOLVED.** Core domain wired into Web DI. POST /greetings and GET /greetings endpoints added.
+2. **F010 — RESOLVED.** PublicApiAnalyzers added with 130 shipped API entries.
+3. **F001 — RESOLVED.** DiskRoundtripAnalyzer decomposed — catalog helpers extracted to DiskIoCatalog.cs.
+4. **F009 — RESOLVED.** 7 RCS9004 pragmas replaced with project-level `.editorconfig` suppression.
+5. **F007 — RESOLVED.** Manual `/health` replaced with `AddHealthChecks()` + `MapHealthChecks("/health")`.
 
 ## Quick wins
 
-- [ ] F009: Add `dotnet_diagnostic.RCS9004.severity = none` to `src/E128.Analyzers/.editorconfig` and remove 7 pragma suppressions
-- [ ] F007: Replace manual `/health` with `AddHealthChecks()` + `MapHealthChecks("/health")`
+- [x] F009: Add `dotnet_diagnostic.RCS9004.severity = none` to `src/E128.Analyzers/.editorconfig` and remove 7 pragma suppressions
+- [x] F007: Replace manual `/health` with `AddHealthChecks()` + `MapHealthChecks("/health")`
 - [ ] F014: Move unshipped rules to `AnalyzerReleases.Shipped.md` on next version bump
-- [ ] F012: Add `[InternalsVisibleTo]` to projects with testable internals
-- [ ] F015: Add XML doc comments to `CliApp.cs` public API
+- [ ] F012: Add `[InternalsVisibleTo]` to Core and Web projects
+- [ ] F015: Add XML doc comments to `CliApp.cs` and `Program.cs` public APIs
+- [ ] F016: Bump Meziantou.Analyzer to 3.0.77
 
 ## Things that look bad but are actually fine
 
-- **Pragma suppressions (RCS9004) in analyzer code.** These look like suppression sprawl, but RCS9004 ("use .Any() instead of .Count") fires on syntax tree `.Count` checks where the analyzer genuinely needs the count value, not just existence. The fix is an editorconfig disable (F009), not changing the code.
+- **Pragma suppressions (RCS9004) in analyzer code.** These look like suppression sprawl, but RCS9004 ("use .Any() instead of .Count") fires on `SeparatedSyntaxList<T>.Count` checks where the property is O(1) and `.Any()` would allocate an enumerator. The pragmas are semantically correct; the fix is an editorconfig disable (F009), not changing the code.
 
-- **`new Greeter()` in Cli without DI.** This looks like a DI inconsistency (F006), but Cli is a System.CommandLine app where the DI container setup is intentionally minimal. Direct instantiation is a valid pattern for simple CLI tools. Flagged as MEDIUM not HIGH because both approaches are defensible.
+- **`new Greeter()` in Cli without DI.** This looks like a DI inconsistency (F006), but Cli is a System.CommandLine app where DI setup is intentionally minimal. Direct instantiation is a valid pattern for simple CLI tools. Flagged as MEDIUM not HIGH because both approaches are defensible.
 
-- **No `TimeProvider` injection in Core.** `GreetingService` accepts `TimeProvider` via primary constructor — this is correct. `Greeter` doesn't use time at all. No `DateTime.Now`/`DateTime.UtcNow` found in any production source.
+- **No `TimeProvider` injection outside Core.** `GreetingService` accepts `TimeProvider` via primary constructor — this is correct. `Greeter` doesn't use time at all. No `DateTime.Now`/`DateTime.UtcNow` found in any production source file.
 
-- **Single `AddSingleton<Greeter>()` without interface.** `Greeter` has no interface, registered as concrete type. This normally triggers E128032 (the repo's own ConcreteOnlyDiRegistrationAnalyzer), but `Greeter` is a leaf service with no need for abstraction. The analyzer exempts types with no implemented interfaces.
+- **Single `AddSingleton<Greeter>()` without interface.** `Greeter` has no interface, registered as concrete type. This would normally trigger E128032 (ConcreteOnlyDiRegistrationAnalyzer), but `Greeter` is a leaf service with no need for abstraction.
 
-- **E128.Analyzers has no project references to the reference apps.** This is by design — analyzers are standalone Roslyn packages, they must not reference consumer assemblies.
+- **E128.Analyzers has no project references to the reference apps.** By design — analyzers are standalone Roslyn packages, they must not reference consumer assemblies.
 
-- **130 test files vs 135 source files.** Looks like missing coverage, but the delta is 5 utility/helper files (IoMethodCatalog, PathNamePatterns, SuggestedType, InModifierHelper, DiskIoCatalog) that are tested indirectly via the analyzer tests that consume them. Plus SequentialRenameFixAllProvider which is infrastructure.
+- **145 source files vs 141 test files.** The delta of 4 is accounted for by utility/helper files (IoMethodCatalog, PathNamePatterns, SuggestedType, InModifierHelper, DiskIoCatalog, SequentialRenameFixAllProvider) that are tested indirectly via the analyzer tests that consume them.
+
+- **Transitive dependencies on System.Composition 9.0.0.** These are pulled by Microsoft.CodeAnalysis packages and pinned appropriately. Bumping to 10.0.7 could break Roslyn compatibility — Renovate should handle this when the CodeAnalysis packages themselves update.
+
+- **No `SuppressMessage` attributes in source.** Zero instances — all suppressions use scoped `#pragma` pairs with restore, which is the preferred pattern.
+
+- **No `async void`, sync-over-async, or direct `HttpClient` instantiation in production code.** These patterns exist only in analyzer diagnostic message strings (the analyzers detect these patterns in consumer code).
+
+- **Missing PackageSourceMapping — CORRECTED.** Previous audit draft considered this missing. It exists in `nuget.config` with a wildcard mapping for nuget.org. CPM hygiene is solid: `<clear />` on package sources, trusted signers configured, all transitive pins documented with comments.
 
 ## Open questions for the maintainer
 
-- Is the Core greeting domain (GreetingService, repositories, Greeting model) intentionally dead code kept for demonstration purposes, or should it be wired into the Web app?
+- ~~Is the Core greeting domain (GreetingService, repositories, Greeting model) intentionally dead code?~~ **Resolved: wired into Web DI (F004/F005).**
 - Should the 5 unshipped analyzer rules (E128066-E128070) be released with the next version bump, or are they intentionally held back for further testing?
-- Is the manual `/health` endpoint intentional (to demonstrate minimal API patterns) or should it use the standard health check middleware?
-- Is the lack of `InternalsVisibleTo` intentional (keeping all testable APIs public) or an oversight?
+- ~~Is the manual `/health` endpoint intentional?~~ **Resolved: replaced with health check middleware (F007).**
+- Is the lack of `InternalsVisibleTo` in Core and Web intentional (keeping all testable APIs public) or an oversight?

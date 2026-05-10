@@ -1,0 +1,259 @@
+#nullable enable
+E128.Analyzers.Design.AsyncDisposableWithoutDisposableAnalyzer
+E128.Analyzers.Design.AsyncDisposableWithoutDisposableAnalyzer.AsyncDisposableWithoutDisposableAnalyzer() -> void
+E128.Analyzers.Design.AsyncDisposableWithoutDisposableCodeFixProvider
+E128.Analyzers.Design.AsyncDisposableWithoutDisposableCodeFixProvider.AsyncDisposableWithoutDisposableCodeFixProvider() -> void
+E128.Analyzers.Design.AsyncVoidAnalyzer
+E128.Analyzers.Design.AsyncVoidAnalyzer.AsyncVoidAnalyzer() -> void
+E128.Analyzers.Design.AsyncVoidCodeFixProvider
+E128.Analyzers.Design.AsyncVoidCodeFixProvider.AsyncVoidCodeFixProvider() -> void
+E128.Analyzers.Design.ConcreteOnlyDiRegistrationAnalyzer
+E128.Analyzers.Design.ConcreteOnlyDiRegistrationAnalyzer.ConcreteOnlyDiRegistrationAnalyzer() -> void
+E128.Analyzers.Design.ConcreteOnlyDiRegistrationCodeFixProvider
+E128.Analyzers.Design.ConcreteOnlyDiRegistrationCodeFixProvider.ConcreteOnlyDiRegistrationCodeFixProvider() -> void
+E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider
+E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider.ConfigureAwaitFalseCodeFixProvider() -> void
+E128.Analyzers.Design.ConfigureAwaitFalseE128Analyzer
+E128.Analyzers.Design.ConfigureAwaitFalseE128Analyzer.ConfigureAwaitFalseE128Analyzer() -> void
+E128.Analyzers.Design.ConsoleDirectUseAnalyzer
+E128.Analyzers.Design.ConsoleDirectUseAnalyzer.ConsoleDirectUseAnalyzer() -> void
+E128.Analyzers.Design.DateTimeDirectUseAnalyzer
+E128.Analyzers.Design.DateTimeDirectUseAnalyzer.DateTimeDirectUseAnalyzer() -> void
+E128.Analyzers.Design.DateTimeDirectUseCodeFixProvider
+E128.Analyzers.Design.DateTimeDirectUseCodeFixProvider.DateTimeDirectUseCodeFixProvider() -> void
+E128.Analyzers.Design.DictionaryAsReadOnlyAnalyzer
+E128.Analyzers.Design.DictionaryAsReadOnlyAnalyzer.DictionaryAsReadOnlyAnalyzer() -> void
+E128.Analyzers.Design.DictionaryAsReadOnlyCodeFixProvider
+E128.Analyzers.Design.DictionaryAsReadOnlyCodeFixProvider.DictionaryAsReadOnlyCodeFixProvider() -> void
+E128.Analyzers.Design.DirectHttpClientInstantiationAnalyzer
+E128.Analyzers.Design.DirectHttpClientInstantiationAnalyzer.DirectHttpClientInstantiationAnalyzer() -> void
+E128.Analyzers.Design.DirectHttpClientInstantiationCodeFixProvider
+E128.Analyzers.Design.DirectHttpClientInstantiationCodeFixProvider.DirectHttpClientInstantiationCodeFixProvider() -> void
+E128.Analyzers.Design.DynamicallyAccessedMembersGuardAnalyzer
+E128.Analyzers.Design.DynamicallyAccessedMembersGuardAnalyzer.DynamicallyAccessedMembersGuardAnalyzer() -> void
+E128.Analyzers.Design.DynamicallyAccessedMembersGuardCodeFixProvider
+E128.Analyzers.Design.DynamicallyAccessedMembersGuardCodeFixProvider.DynamicallyAccessedMembersGuardCodeFixProvider() -> void
+E128.Analyzers.Design.EnumIfElseChainAnalyzer
+E128.Analyzers.Design.EnumIfElseChainAnalyzer.EnumIfElseChainAnalyzer() -> void
+E128.Analyzers.Design.EnumIfElseChainCodeFixProvider
+E128.Analyzers.Design.EnumIfElseChainCodeFixProvider.EnumIfElseChainCodeFixProvider() -> void
+E128.Analyzers.Design.ExcessiveInheritanceAnalyzer
+E128.Analyzers.Design.ExcessiveInheritanceAnalyzer.ExcessiveInheritanceAnalyzer() -> void
+E128.Analyzers.Design.ExecuteScalarNullGuardAnalyzer
+E128.Analyzers.Design.ExecuteScalarNullGuardAnalyzer.ExecuteScalarNullGuardAnalyzer() -> void
+E128.Analyzers.Design.ExecuteScalarNullGuardCodeFixProvider
+E128.Analyzers.Design.ExecuteScalarNullGuardCodeFixProvider.ExecuteScalarNullGuardCodeFixProvider() -> void
+E128.Analyzers.Design.FileSystemInfoEqualityAnalyzer
+E128.Analyzers.Design.FileSystemInfoEqualityAnalyzer.FileSystemInfoEqualityAnalyzer() -> void
+E128.Analyzers.Design.FileSystemInfoEqualityCodeFixProvider
+E128.Analyzers.Design.FileSystemInfoEqualityCodeFixProvider.FileSystemInfoEqualityCodeFixProvider() -> void
+E128.Analyzers.Design.InCancellationTokenE128Analyzer
+E128.Analyzers.Design.InCancellationTokenE128Analyzer.InCancellationTokenE128Analyzer() -> void
+E128.Analyzers.Design.InModifierCodeFixProvider
+E128.Analyzers.Design.InModifierCodeFixProvider.InModifierCodeFixProvider() -> void
+E128.Analyzers.Design.InRefStructE128Analyzer
+E128.Analyzers.Design.InRefStructE128Analyzer.InRefStructE128Analyzer() -> void
+E128.Analyzers.Design.ListAsReadOnlyAnalyzer
+E128.Analyzers.Design.ListAsReadOnlyAnalyzer.ListAsReadOnlyAnalyzer() -> void
+E128.Analyzers.Design.ListAsReadOnlyCodeFixProvider
+E128.Analyzers.Design.ListAsReadOnlyCodeFixProvider.ListAsReadOnlyCodeFixProvider() -> void
+E128.Analyzers.Design.MutableCollectionExposureAnalyzer
+E128.Analyzers.Design.MutableCollectionExposureAnalyzer.MutableCollectionExposureAnalyzer() -> void
+E128.Analyzers.Design.MutableCollectionExposureCodeFixProvider
+E128.Analyzers.Design.MutableCollectionExposureCodeFixProvider.MutableCollectionExposureCodeFixProvider() -> void
+E128.Analyzers.Design.MutableStaticReadonlyArrayAnalyzer
+E128.Analyzers.Design.MutableStaticReadonlyArrayAnalyzer.MutableStaticReadonlyArrayAnalyzer() -> void
+E128.Analyzers.Design.MutableStaticReadonlyArrayCodeFixProvider
+E128.Analyzers.Design.MutableStaticReadonlyArrayCodeFixProvider.MutableStaticReadonlyArrayCodeFixProvider() -> void
+E128.Analyzers.Design.PrimaryConstructorBackingFieldAnalyzer
+E128.Analyzers.Design.PrimaryConstructorBackingFieldAnalyzer.PrimaryConstructorBackingFieldAnalyzer() -> void
+E128.Analyzers.Design.PrimaryConstructorBackingFieldCodeFixProvider
+E128.Analyzers.Design.PrimaryConstructorBackingFieldCodeFixProvider.PrimaryConstructorBackingFieldCodeFixProvider() -> void
+E128.Analyzers.Design.SealedByDefaultAnalyzer
+E128.Analyzers.Design.SealedByDefaultAnalyzer.SealedByDefaultAnalyzer() -> void
+E128.Analyzers.Design.SealedByDefaultCodeFixProvider
+E128.Analyzers.Design.SealedByDefaultCodeFixProvider.SealedByDefaultCodeFixProvider() -> void
+E128.Analyzers.Design.SyncOverAsyncAnalyzer
+E128.Analyzers.Design.SyncOverAsyncAnalyzer.SyncOverAsyncAnalyzer() -> void
+E128.Analyzers.Design.SyncOverAsyncCodeFixProvider
+E128.Analyzers.Design.SyncOverAsyncCodeFixProvider.SyncOverAsyncCodeFixProvider() -> void
+E128.Analyzers.Design.TaskRunAsyncLambdaAnalyzer
+E128.Analyzers.Design.TaskRunAsyncLambdaAnalyzer.TaskRunAsyncLambdaAnalyzer() -> void
+E128.Analyzers.Design.TaskRunAsyncLambdaCodeFixProvider
+E128.Analyzers.Design.TaskRunAsyncLambdaCodeFixProvider.TaskRunAsyncLambdaCodeFixProvider() -> void
+E128.Analyzers.Design.TimeSpanForDurationAnalyzer
+E128.Analyzers.Design.TimeSpanForDurationAnalyzer.TimeSpanForDurationAnalyzer() -> void
+E128.Analyzers.Design.TimeSpanForDurationCodeFixProvider
+E128.Analyzers.Design.TimeSpanForDurationCodeFixProvider.TimeSpanForDurationCodeFixProvider() -> void
+E128.Analyzers.Design.UnusedInterfaceParamAnalyzer
+E128.Analyzers.Design.UnusedInterfaceParamAnalyzer.UnusedInterfaceParamAnalyzer() -> void
+E128.Analyzers.Design.UnusedInterfaceParamCodeFixProvider
+E128.Analyzers.Design.UnusedInterfaceParamCodeFixProvider.UnusedInterfaceParamCodeFixProvider() -> void
+E128.Analyzers.FileSystem.CollectionPathAnalyzer
+E128.Analyzers.FileSystem.CollectionPathAnalyzer.CollectionPathAnalyzer() -> void
+E128.Analyzers.FileSystem.CollectionPathCodeFixProvider
+E128.Analyzers.FileSystem.CollectionPathCodeFixProvider.CollectionPathCodeFixProvider() -> void
+E128.Analyzers.FileSystem.FileSystemPathAnalyzer
+E128.Analyzers.FileSystem.FileSystemPathAnalyzer.FileSystemPathAnalyzer() -> void
+E128.Analyzers.FileSystem.FileSystemPathCodeFixProvider
+E128.Analyzers.FileSystem.FileSystemPathCodeFixProvider.FileSystemPathCodeFixProvider() -> void
+E128.Analyzers.Performance.HttpClientResponseHeadersReadAnalyzer
+E128.Analyzers.Performance.HttpClientResponseHeadersReadAnalyzer.HttpClientResponseHeadersReadAnalyzer() -> void
+E128.Analyzers.Performance.HttpClientResponseHeadersReadCodeFixProvider
+E128.Analyzers.Performance.HttpClientResponseHeadersReadCodeFixProvider.HttpClientResponseHeadersReadCodeFixProvider() -> void
+E128.Analyzers.Performance.LinearLookupInLoopAnalyzer
+E128.Analyzers.Performance.LinearLookupInLoopAnalyzer.LinearLookupInLoopAnalyzer() -> void
+E128.Analyzers.Performance.LinearLookupInLoopCodeFixProvider
+E128.Analyzers.Performance.LinearLookupInLoopCodeFixProvider.LinearLookupInLoopCodeFixProvider() -> void
+E128.Analyzers.Performance.MultiStringEqualsOrChainAnalyzer
+E128.Analyzers.Performance.MultiStringEqualsOrChainAnalyzer.MultiStringEqualsOrChainAnalyzer() -> void
+E128.Analyzers.Performance.MultiStringEqualsOrChainCodeFixProvider
+E128.Analyzers.Performance.MultiStringEqualsOrChainCodeFixProvider.MultiStringEqualsOrChainCodeFixProvider() -> void
+E128.Analyzers.Performance.OrderByFirstAnalyzer
+E128.Analyzers.Performance.OrderByFirstAnalyzer.OrderByFirstAnalyzer() -> void
+E128.Analyzers.Performance.OrderByFirstCodeFixProvider
+E128.Analyzers.Performance.OrderByFirstCodeFixProvider.OrderByFirstCodeFixProvider() -> void
+E128.Analyzers.Performance.RedundantHashSetInFrozenSetCodeFixProvider
+E128.Analyzers.Performance.RedundantHashSetInFrozenSetCodeFixProvider.RedundantHashSetInFrozenSetCodeFixProvider() -> void
+E128.Analyzers.Performance.RedundantHashSetInFrozenSetE128Analyzer
+E128.Analyzers.Performance.RedundantHashSetInFrozenSetE128Analyzer.RedundantHashSetInFrozenSetE128Analyzer() -> void
+E128.Analyzers.Performance.SortInLoopAnalyzer
+E128.Analyzers.Performance.SortInLoopAnalyzer.SortInLoopAnalyzer() -> void
+E128.Analyzers.Performance.StaticReadonlyFrozenCollectionAnalyzer
+E128.Analyzers.Performance.StaticReadonlyFrozenCollectionAnalyzer.StaticReadonlyFrozenCollectionAnalyzer() -> void
+E128.Analyzers.Performance.StaticReadonlyFrozenCollectionCodeFixProvider
+E128.Analyzers.Performance.StaticReadonlyFrozenCollectionCodeFixProvider.StaticReadonlyFrozenCollectionCodeFixProvider() -> void
+E128.Analyzers.Performance.StringConcatInLoopAnalyzer
+E128.Analyzers.Performance.StringConcatInLoopAnalyzer.StringConcatInLoopAnalyzer() -> void
+E128.Analyzers.Performance.StringConcatInLoopCodeFixProvider
+E128.Analyzers.Performance.StringConcatInLoopCodeFixProvider.StringConcatInLoopCodeFixProvider() -> void
+E128.Analyzers.Performance.StringFormatToInterpolationAnalyzer
+E128.Analyzers.Performance.StringFormatToInterpolationAnalyzer.StringFormatToInterpolationAnalyzer() -> void
+E128.Analyzers.Performance.StringFormatToInterpolationCodeFixProvider
+E128.Analyzers.Performance.StringFormatToInterpolationCodeFixProvider.StringFormatToInterpolationCodeFixProvider() -> void
+E128.Analyzers.Performance.ToListInForeachAnalyzer
+E128.Analyzers.Performance.ToListInForeachAnalyzer.ToListInForeachAnalyzer() -> void
+E128.Analyzers.Performance.ToListInForeachCodeFixProvider
+E128.Analyzers.Performance.ToListInForeachCodeFixProvider.ToListInForeachCodeFixProvider() -> void
+E128.Analyzers.Reliability.CatchFilterOceAnalyzer
+E128.Analyzers.Reliability.CatchFilterOceAnalyzer.CatchFilterOceAnalyzer() -> void
+E128.Analyzers.Reliability.CatchFilterOceCodeFixProvider
+E128.Analyzers.Reliability.CatchFilterOceCodeFixProvider.CatchFilterOceCodeFixProvider() -> void
+E128.Analyzers.Reliability.ConcreteTypeDiDependencyAnalyzer
+E128.Analyzers.Reliability.ConcreteTypeDiDependencyAnalyzer.ConcreteTypeDiDependencyAnalyzer() -> void
+E128.Analyzers.Reliability.ConcreteTypeDiDependencyCodeFixProvider
+E128.Analyzers.Reliability.ConcreteTypeDiDependencyCodeFixProvider.ConcreteTypeDiDependencyCodeFixProvider() -> void
+E128.Analyzers.Reliability.ConcurrencyLimitAnalyzer
+E128.Analyzers.Reliability.ConcurrencyLimitAnalyzer.ConcurrencyLimitAnalyzer() -> void
+E128.Analyzers.Reliability.ConcurrencyLimitCodeFixProvider
+E128.Analyzers.Reliability.ConcurrencyLimitCodeFixProvider.ConcurrencyLimitCodeFixProvider() -> void
+E128.Analyzers.Reliability.ConstructorNewDiRegisteredAnalyzer
+E128.Analyzers.Reliability.ConstructorNewDiRegisteredAnalyzer.ConstructorNewDiRegisteredAnalyzer() -> void
+E128.Analyzers.Reliability.ConstructorNewDiRegisteredCodeFixProvider
+E128.Analyzers.Reliability.ConstructorNewDiRegisteredCodeFixProvider.ConstructorNewDiRegisteredCodeFixProvider() -> void
+E128.Analyzers.Reliability.DateTimeParseRoundtripAnalyzer
+E128.Analyzers.Reliability.DateTimeParseRoundtripAnalyzer.DateTimeParseRoundtripAnalyzer() -> void
+E128.Analyzers.Reliability.DateTimeParseRoundtripCodeFixProvider
+E128.Analyzers.Reliability.DateTimeParseRoundtripCodeFixProvider.DateTimeParseRoundtripCodeFixProvider() -> void
+E128.Analyzers.Reliability.DiskRoundtripAnalyzer
+E128.Analyzers.Reliability.DiskRoundtripAnalyzer.DiskRoundtripAnalyzer() -> void
+E128.Analyzers.Reliability.DiskRoundtripCodeFixProvider
+E128.Analyzers.Reliability.DiskRoundtripCodeFixProvider.DiskRoundtripCodeFixProvider() -> void
+E128.Analyzers.Reliability.DisposableSingletonFactoryAnalyzer
+E128.Analyzers.Reliability.DisposableSingletonFactoryAnalyzer.DisposableSingletonFactoryAnalyzer() -> void
+E128.Analyzers.Reliability.DisposableSingletonFactoryCodeFixProvider
+E128.Analyzers.Reliability.DisposableSingletonFactoryCodeFixProvider.DisposableSingletonFactoryCodeFixProvider() -> void
+E128.Analyzers.Reliability.FileInfoToctouAnalyzer
+E128.Analyzers.Reliability.FileInfoToctouAnalyzer.FileInfoToctouAnalyzer() -> void
+E128.Analyzers.Reliability.FileInfoToctouCodeFixProvider
+E128.Analyzers.Reliability.FileInfoToctouCodeFixProvider.FileInfoToctouCodeFixProvider() -> void
+E128.Analyzers.Reliability.FinallyBlockCleanupAnalyzer
+E128.Analyzers.Reliability.FinallyBlockCleanupAnalyzer.FinallyBlockCleanupAnalyzer() -> void
+E128.Analyzers.Reliability.FinallyBlockCleanupCodeFixProvider
+E128.Analyzers.Reliability.FinallyBlockCleanupCodeFixProvider.FinallyBlockCleanupCodeFixProvider() -> void
+E128.Analyzers.Reliability.GeneratedRegexAnalyzer
+E128.Analyzers.Reliability.GeneratedRegexAnalyzer.GeneratedRegexAnalyzer() -> void
+E128.Analyzers.Reliability.GeneratedRegexCompiledCodeFixProvider
+E128.Analyzers.Reliability.GeneratedRegexCompiledCodeFixProvider.GeneratedRegexCompiledCodeFixProvider() -> void
+E128.Analyzers.Reliability.GeneratedRegexNestedCodeFixProvider
+E128.Analyzers.Reliability.GeneratedRegexNestedCodeFixProvider.GeneratedRegexNestedCodeFixProvider() -> void
+E128.Analyzers.Reliability.GeneratedRegexOverlappingCodeFixProvider
+E128.Analyzers.Reliability.GeneratedRegexOverlappingCodeFixProvider.GeneratedRegexOverlappingCodeFixProvider() -> void
+E128.Analyzers.Reliability.GeneratedRegexTimeoutCodeFixProvider
+E128.Analyzers.Reliability.GeneratedRegexTimeoutCodeFixProvider.GeneratedRegexTimeoutCodeFixProvider() -> void
+E128.Analyzers.Reliability.HardcodedTmpPathCodeFixProvider
+E128.Analyzers.Reliability.HardcodedTmpPathCodeFixProvider.HardcodedTmpPathCodeFixProvider() -> void
+E128.Analyzers.Reliability.HardcodedTmpPathE128Analyzer
+E128.Analyzers.Reliability.HardcodedTmpPathE128Analyzer.HardcodedTmpPathE128Analyzer() -> void
+E128.Analyzers.Reliability.HttpClientMissingOceCatchAnalyzer
+E128.Analyzers.Reliability.HttpClientMissingOceCatchAnalyzer.HttpClientMissingOceCatchAnalyzer() -> void
+E128.Analyzers.Reliability.InMutableStructE128Analyzer
+E128.Analyzers.Reliability.InMutableStructE128Analyzer.InMutableStructE128Analyzer() -> void
+E128.Analyzers.Reliability.JsonDocumentLifetimeAnalyzer
+E128.Analyzers.Reliability.JsonDocumentLifetimeAnalyzer.JsonDocumentLifetimeAnalyzer() -> void
+E128.Analyzers.Reliability.JsonDocumentLifetimeCodeFixProvider
+E128.Analyzers.Reliability.JsonDocumentLifetimeCodeFixProvider.JsonDocumentLifetimeCodeFixProvider() -> void
+E128.Analyzers.Reliability.OptionsBindInitAnalyzer
+E128.Analyzers.Reliability.OptionsBindInitAnalyzer.OptionsBindInitAnalyzer() -> void
+E128.Analyzers.Reliability.OptionsBindInitCodeFixProvider
+E128.Analyzers.Reliability.OptionsBindInitCodeFixProvider.OptionsBindInitCodeFixProvider() -> void
+E128.Analyzers.Reliability.PoolRentCapacityGuardAnalyzer
+E128.Analyzers.Reliability.PoolRentCapacityGuardAnalyzer.PoolRentCapacityGuardAnalyzer() -> void
+E128.Analyzers.Reliability.TaskFromResultSyncIoAnalyzer
+E128.Analyzers.Reliability.TaskFromResultSyncIoAnalyzer.TaskFromResultSyncIoAnalyzer() -> void
+E128.Analyzers.Reliability.TaskFromResultSyncIoCodeFixProvider
+E128.Analyzers.Reliability.TaskFromResultSyncIoCodeFixProvider.TaskFromResultSyncIoCodeFixProvider() -> void
+E128.Analyzers.Reliability.TaskWhenAllCancellationPropagationAnalyzer
+E128.Analyzers.Reliability.TaskWhenAllCancellationPropagationAnalyzer.TaskWhenAllCancellationPropagationAnalyzer() -> void
+E128.Analyzers.Reliability.TaskWhenAllCancellationPropagationCodeFixProvider
+E128.Analyzers.Reliability.TaskWhenAllCancellationPropagationCodeFixProvider.TaskWhenAllCancellationPropagationCodeFixProvider() -> void
+E128.Analyzers.Reliability.UnboundedTaskWhenAllAnalyzer
+E128.Analyzers.Reliability.UnboundedTaskWhenAllAnalyzer.UnboundedTaskWhenAllAnalyzer() -> void
+E128.Analyzers.Reliability.UnboundedTaskWhenAllCodeFixProvider
+E128.Analyzers.Reliability.UnboundedTaskWhenAllCodeFixProvider.UnboundedTaskWhenAllCodeFixProvider() -> void
+E128.Analyzers.Style.EmptyStringLiteralAnalyzer
+E128.Analyzers.Style.EmptyStringLiteralAnalyzer.EmptyStringLiteralAnalyzer() -> void
+E128.Analyzers.Style.EmptyStringLiteralCodeFixProvider
+E128.Analyzers.Style.EmptyStringLiteralCodeFixProvider.EmptyStringLiteralCodeFixProvider() -> void
+E128.Analyzers.Style.EncodingDefaultAnalyzer
+E128.Analyzers.Style.EncodingDefaultAnalyzer.EncodingDefaultAnalyzer() -> void
+E128.Analyzers.Style.EncodingDefaultCodeFixProvider
+E128.Analyzers.Style.EncodingDefaultCodeFixProvider.EncodingDefaultCodeFixProvider() -> void
+E128.Analyzers.Style.GuidNewGuidTempPathCodeFixProvider
+E128.Analyzers.Style.GuidNewGuidTempPathCodeFixProvider.GuidNewGuidTempPathCodeFixProvider() -> void
+E128.Analyzers.Style.GuidNewGuidTempPathE128Analyzer
+E128.Analyzers.Style.GuidNewGuidTempPathE128Analyzer.GuidNewGuidTempPathE128Analyzer() -> void
+E128.Analyzers.Style.MidNameUnderscoreAnalyzer
+E128.Analyzers.Style.MidNameUnderscoreAnalyzer.MidNameUnderscoreAnalyzer() -> void
+E128.Analyzers.Style.MidNameUnderscoreCodeFixProvider
+E128.Analyzers.Style.MidNameUnderscoreCodeFixProvider.MidNameUnderscoreCodeFixProvider() -> void
+E128.Analyzers.Style.NamingStyleCodeFixProvider
+E128.Analyzers.Style.NamingStyleCodeFixProvider.NamingStyleCodeFixProvider() -> void
+E128.Analyzers.Style.NonXmlDocCommentCodeFixProvider
+E128.Analyzers.Style.NonXmlDocCommentCodeFixProvider.NonXmlDocCommentCodeFixProvider() -> void
+E128.Analyzers.Style.NonXmlDocCommentE128Analyzer
+E128.Analyzers.Style.NonXmlDocCommentE128Analyzer.NonXmlDocCommentE128Analyzer() -> void
+E128.Analyzers.Style.NullForgivingOperatorAnalyzer
+E128.Analyzers.Style.NullForgivingOperatorAnalyzer.NullForgivingOperatorAnalyzer() -> void
+E128.Analyzers.Style.NullForgivingOperatorCodeFixProvider
+E128.Analyzers.Style.NullForgivingOperatorCodeFixProvider.NullForgivingOperatorCodeFixProvider() -> void
+E128.Analyzers.Style.PragmaBalanceAnalyzer
+E128.Analyzers.Style.PragmaBalanceAnalyzer.PragmaBalanceAnalyzer() -> void
+E128.Analyzers.Style.PragmaBalanceCodeFixProvider
+E128.Analyzers.Style.PragmaBalanceCodeFixProvider.PragmaBalanceCodeFixProvider() -> void
+E128.Analyzers.Style.PragmaBundlingAnalyzer
+E128.Analyzers.Style.PragmaBundlingAnalyzer.PragmaBundlingAnalyzer() -> void
+E128.Analyzers.Style.PragmaBundlingCodeFixProvider
+E128.Analyzers.Style.PragmaBundlingCodeFixProvider.PragmaBundlingCodeFixProvider() -> void
+E128.Analyzers.Style.SuppressionAuditAnalyzer
+E128.Analyzers.Style.SuppressionAuditAnalyzer.SuppressionAuditAnalyzer() -> void
+E128.Analyzers.Style.SuppressionAuditCodeFixProvider
+E128.Analyzers.Style.SuppressionAuditCodeFixProvider.SuppressionAuditCodeFixProvider() -> void
+E128.Analyzers.Testing.StaleReferenceAssembliesAnalyzer
+E128.Analyzers.Testing.StaleReferenceAssembliesAnalyzer.StaleReferenceAssembliesAnalyzer() -> void
+E128.Analyzers.Testing.StaleReferenceAssembliesCodeFixProvider
+E128.Analyzers.Testing.StaleReferenceAssembliesCodeFixProvider.StaleReferenceAssembliesCodeFixProvider() -> void
+E128.Analyzers.Testing.TempDirCleanupAnalyzer
+E128.Analyzers.Testing.TempDirCleanupAnalyzer.TempDirCleanupAnalyzer() -> void
+E128.Analyzers.Testing.TempDirCleanupCodeFixProvider
+E128.Analyzers.Testing.TempDirCleanupCodeFixProvider.TempDirCleanupCodeFixProvider() -> void

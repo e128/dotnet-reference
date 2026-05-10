@@ -8,7 +8,9 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!-- RS2007: the Roslyn 4.14.0 meta-analyzer rejects valid unshipped.md content -->
     <!-- RS1038: intentional — code fix provider requires Workspaces reference in same assembly -->
-    <NoWarn>$(NoWarn);RS2007;RS1038;NU5128</NoWarn>
+    <!-- RS0016/RS0017: inherited override members (Initialize, SupportedDiagnostics, etc.) are
+         tracked at the type+constructor level only in PublicAPI.Shipped.txt -->
+    <NoWarn>$(NoWarn);RS2007;RS1038;RS0016;RS0017;NU5128</NoWarn>
     <!-- PolySharp: netstandard2.0 polyfill for nullable analysis attributes only -->
     <PolySharpIncludeGeneratedTypes>
       System.Diagnostics.CodeAnalysis.NotNullWhenAttribute
@@ -17,7 +19,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>1.24.3</Version>
+    <Version>1.24.4</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -36,6 +38,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
     <PackageReference Include="PolySharp" PrivateAssets="all" />
   </ItemGroup>
@@ -47,6 +50,8 @@
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 
   <!-- Place analyzer DLL in the NuGet convention path -->

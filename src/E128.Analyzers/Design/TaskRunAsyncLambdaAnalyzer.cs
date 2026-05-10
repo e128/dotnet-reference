@@ -45,9 +45,7 @@ public sealed class TaskRunAsyncLambdaAnalyzer : DiagnosticAnalyzer
 
         var args = invocation.ArgumentList.Arguments;
 
-#pragma warning disable RCS9004
         if (args.Count == 0)
-#pragma warning restore RCS9004
         {
             return;
         }

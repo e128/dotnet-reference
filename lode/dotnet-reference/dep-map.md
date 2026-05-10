@@ -10,8 +10,8 @@
 | ------------------------- | ---------------- | --------------- | ------------------------------- | ----------------------------- |
 | `E128.Reference.Core`     | `Microsoft.NET.Sdk`     | `net10.0`  | Shared library for Web + Cli    | —                             |
 | `E128.Reference.Web`      | `Microsoft.NET.Sdk.Web` | `net10.0`  | ASP.NET Core web service        | — (project ref only)          |
-| `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net10.0`  | Console executable              | `System.CommandLine`          |
-| `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.Workspaces.Common` |
+| `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net10.0`  | Console executable              | `System.CommandLine`, `Microsoft.Extensions.DependencyInjection` |
+| `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.Workspaces.Common`, `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
 
 All production projects also receive the following **analyzer packages** via `Directory.Build.props`
 (`PrivateAssets="all"` — compile-time only, not shipped to consumers):
@@ -78,9 +78,11 @@ from `Directory.Build.props`. Referenced by Web and Cli via project reference.
 
 ### E128.Reference.Web
 
-**Role:** ASP.NET Core web application (`Microsoft.NET.Sdk.Web`). No additional package
-dependencies beyond the `E128.Reference.Core` project reference and shared analyzers.
-Built and shipped via the multi-stage `Dockerfile`.
+**Role:** ASP.NET Core web application (`Microsoft.NET.Sdk.Web`). References
+`E128.Reference.Core` via project reference — the full Core domain (Greeter,
+GreetingService, IGreetingRepository, InMemoryGreetingRepository) is wired into DI.
+Exposes `GET /`, `POST /greetings`, `GET /greetings`, and `/health` (via
+`AddHealthChecks` middleware). Built and shipped via the multi-stage `Dockerfile`.
 
 #### Service Layer Diagram
 
@@ -102,12 +104,15 @@ graph TB
 ### E128.Reference.Cli
 
 **Role:** Console executable using `System.CommandLine`. References `E128.Reference.Core`.
+Uses `Microsoft.Extensions.DependencyInjection` for service registration (consistent
+with the Web project's DI approach).
 
 #### Key Packages
 
-| Package             | Version | Role                     |
-| ------------------- | ------- | ------------------------ |
-| `System.CommandLine`| 2.0.7   | CLI argument parsing     |
+| Package                                     | Version | Role                     |
+| ------------------------------------------- | ------- | ------------------------ |
+| `System.CommandLine`                        | 2.0.7   | CLI argument parsing     |
+| `Microsoft.Extensions.DependencyInjection`  | (CPM)   | DI container             |
 
 ### E128.Analyzers
 
@@ -117,11 +122,12 @@ by `publish.yml` via OIDC trusted publishing.
 
 #### Key Packages
 
-| Package                                | Version | Role                                     |
-| -------------------------------------- | ------- | ---------------------------------------- |
-| `Microsoft.CodeAnalysis.CSharp`        | 5.3.0   | Roslyn syntax/semantic analysis APIs     |
-| `Microsoft.CodeAnalysis.Workspaces.Common` | 5.3.0 | Code fix / workspace APIs              |
-| `PolySharp`                            | 1.15.0  | netstandard2.0 polyfill for nullable attributes (PrivateAssets=all) |
+| Package                                        | Version | Role                                     |
+| ---------------------------------------------- | ------- | ---------------------------------------- |
+| `Microsoft.CodeAnalysis.CSharp`                | 5.3.0   | Roslyn syntax/semantic analysis APIs     |
+| `Microsoft.CodeAnalysis.Workspaces.Common`     | 5.3.0   | Code fix / workspace APIs                |
+| `Microsoft.CodeAnalysis.PublicApiAnalyzers`     | 3.3.4   | API tracking via PublicAPI.Shipped/Unshipped.txt (PrivateAssets=all) |
+| `PolySharp`                                    | 1.15.0  | netstandard2.0 polyfill for nullable attributes (PrivateAssets=all) |
 
 #### Publishing
 
@@ -155,4 +161,4 @@ severity for all deps (direct and transitive).
 
 ---
 
-*Updated: 2026-05-04T20:33:47Z*
+*Updated: 2026-05-10T00:00:00Z*

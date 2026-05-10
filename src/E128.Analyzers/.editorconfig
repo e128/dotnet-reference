@@ -1,0 +1,5 @@
+[*.cs]
+
+# RCS9004: SeparatedSyntaxList<T>.Count is O(1); .Any() would allocate an enumerator.
+# All usages in this project check argument count on syntax lists, not LINQ collections.
+dotnet_diagnostic.RCS9004.severity = none

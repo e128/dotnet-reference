@@ -53,9 +53,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-#pragma warning disable RCS9004
         if (argumentList.Arguments.Count == 0)
-#pragma warning restore RCS9004
         {
             return;
         }
@@ -172,9 +170,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-#pragma warning disable RCS9004
         if (args.Count == 0)
-#pragma warning restore RCS9004
         {
             return;
         }
