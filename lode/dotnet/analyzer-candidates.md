@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-04-15T12:09:01Z*
+*Updated: 2026-05-09T16:15:00Z*
 *Source: analyzer-review-miner 2026-04-15 — evidence window: 2026-04-12..2026-04-15*
 
 ## Candidate: mutable-static-readonly-array - 5/5
@@ -69,8 +69,9 @@ private readonly struct RenameInfo {
 
 ## Catalog
 
-| ID  | Name                                  | Status | Score | Last seen  |
-| --- | ------------------------------------- | ------ | ----- | ---------- |
-| —   | mutable-static-readonly-array         | new    | 5/5   | 2026-04-15 |
-| —   | test-reference-assemblies-tfm-mismatch | new   | 4/5   | 2026-04-15 |
-| —   | readonly-struct-property-no-init      | new    | 3/5   | 2026-04-15 |
+| ID      | Name                                   | Status      | Score | Last seen  |
+| ------- | -------------------------------------- | ----------- | ----- | ---------- |
+| E128061 | mutable-static-readonly-array          | implemented | 5/5   | 2026-04-15 |
+| E128062 | test-reference-assemblies-tfm-mismatch | implemented | 4/5   | 2026-04-15 |
+| —       | readonly-struct-property-no-init       | new         | 3/5   | 2026-04-15 |
+| E128070 | pool-rent-capacity-guard               | implemented | —     | 2026-05-09 |

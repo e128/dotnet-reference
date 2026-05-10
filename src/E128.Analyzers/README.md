@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.24.2" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.24.3" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -70,6 +70,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128056 | `FileInfo.Exists` TOCTOU race condition                                                  | Yes      |
 | E128057 | Unprotected cleanup in finally block                                                     | Yes      |
 | E128064 | Disk write-then-read round-trip — use the in-memory value instead of reading back         | Yes      |
+| E128070 | Pool `Rent()` capacity must be bounded — guard with `Math.Min`                             | No       |
 
 ### Performance
 
@@ -771,6 +772,18 @@ foreach (var item in source)
 
 // After
 var result = source.Reverse().ToList();
+```
+
+### E128070 &mdash; Pool Rent() capacity guard
+
+Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or any type with "Pool" in the name) where the capacity argument is not bounded. Passing `int.MaxValue` or an unbounded variable causes an OOM crash. Guard with `Math.Min(value, cap)`. No code fix &mdash; the cap value is context-specific.
+
+```csharp
+// Before (warns)
+var buf = ArrayPool<char>.Shared.Rent(length);
+
+// After
+var buf = ArrayPool<char>.Shared.Rent(Math.Min(length, maxCapacity));
 ```
 
 ## Configuration

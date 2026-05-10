@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-05-04T15:28:00Z*
+*Updated: 2026-05-09T16:15:00Z*
 
 ## Strategy: Deny by Default
 
@@ -109,7 +109,7 @@ Key rules by category (not exhaustive):
 | Category    | Examples                                                                                           |
 | ----------- | -------------------------------------------------------------------------------------------------- |
 | Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray   |
-| Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime                     |
+| Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard  |
 | Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation, O(n²) loop patterns            |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
 | Testing     | Temp directory cleanup, stale ReferenceAssemblies                                                  |
@@ -172,6 +172,16 @@ Flags `.Sort()` (on `List<T>` or `System.Array`), `.OrderBy()`, `.OrderByDescend
 ### E128069 — List.Insert(0, ...) in loop (O(n²))
 
 Flags `list.Insert(0, ...)` inside loops. Each insert at index 0 shifts all existing elements, making the overall loop O(n²). Verifies the first argument is literal `0` and the containing type is `List<T>`. No code fix — use `LinkedList<T>.AddFirst` or collect-and-reverse instead.
+
+### E128070 — Pool Rent() capacity guard
+
+Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or any type with "Pool" in the name) where the capacity argument is not bounded. Passing `int.MaxValue` or an unbounded variable causes an OOM crash. Guard with `Math.Min(value, cap)`.
+
+**Detection**: Registers on `InvocationExpression`, checks for method named `Rent` with a single `int` parameter on a type containing "Pool" in the name. Flags when the argument is `int.MaxValue` (literal or constant), a non-constant variable not assigned from `Math.Min`, or any non-safe-literal expression.
+
+**Exclusions**: `Math.Min(value, cap)` as the direct argument or via a local variable. Small constant literals (e.g., `Rent(1024)`).
+
+No code fix — the cap value is context-specific.
 
 ## Common Test Overrides
 
