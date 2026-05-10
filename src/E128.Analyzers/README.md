@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.24.4" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.26.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -44,6 +44,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128059 | Interface method parameter is unused in implementation (default: Error)                               | Yes      |
 | E128060 | Return `Dictionary<K,V>` via `.AsReadOnly()` when exposing as `IReadOnlyDictionary<K,V>`              | Yes      |
 | E128061 | Use `ImmutableArray<T>` for static readonly arrays                                                   | Yes      |
+| E128074 | Readonly struct property should use `init` accessor                                                  | Yes      |
 
 ### Reliability
 
@@ -87,6 +88,14 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128067 | String concatenation in loop creates O(n²) allocations                | Yes      |
 | E128068 | Sort operation inside loop creates O(n² log n) complexity             | No       |
 | E128069 | `List.Insert(0, ...)` in loop creates O(n²) complexity                | No       |
+| E128072 | Prefer `SHA256.HashData()` over `SHA256.Create()` (default: Info)     | Yes      |
+
+### Security
+
+| Rule    | Title                                                                     | Code Fix |
+| ------- | ------------------------------------------------------------------------- | -------- |
+| E128071 | Use a FIPS-approved hash algorithm                                        | No       |
+| E128075 | Use `RandomNumberGenerator` instead of `Random` in crypto context         | No       |
 
 ### Style
 
@@ -108,6 +117,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | ------- | ------------------------------------------------------------------------- | -------- |
 | E128054 | Class creates temp directory without cleanup interface                     | Yes      |
 | E128062 | Test uses outdated `ReferenceAssemblies` — does not match project TFM      | Yes      |
+| E128073 | Test method missing `[Trait("Category", ...)]` attribute                   | Yes      |
 
 ## What each rule catches
 
@@ -784,6 +794,76 @@ var buf = ArrayPool<char>.Shared.Rent(length);
 
 // After
 var buf = ArrayPool<char>.Shared.Rent(Math.Min(length, maxCapacity));
+```
+
+### E128071 &mdash; FIPS-approved hash algorithm
+
+Flags use of non-FIPS hash algorithms (`MD5`, `SHA1`) in production code. FIPS compliance requires SHA-256 or stronger. No code fix &mdash; the correct replacement depends on the protocol context.
+
+```csharp
+// Before (warns)
+using var md5 = MD5.Create();
+
+// After
+using var sha256 = SHA256.Create();
+```
+
+### E128072 &mdash; SHA256.Create() obsolete pattern (Info)
+
+Flags `SHA256.Create()` followed by `.ComputeHash()`. The static `SHA256.HashData()` method introduced in .NET 5 performs the same operation without allocating a disposable object.
+
+```csharp
+// Before (info)
+using var sha = SHA256.Create();
+var hash = sha.ComputeHash(data);
+
+// After
+var hash = SHA256.HashData(data);
+```
+
+### E128073 &mdash; Missing [Trait("Category", ...)]
+
+Flags xUnit test methods that are missing a `[Trait("Category", "...")]` attribute. The MTP runner in this repo uses category traits to filter CI, Docker, and Manual test runs; methods without a category are silently excluded from all filtered runs.
+
+```csharp
+// Before (warns)
+[Fact]
+public async Task MyTest() { }
+
+// After
+[Fact]
+[Trait("Category", "CI")]
+public async Task MyTest() { }
+```
+
+### E128074 &mdash; Readonly struct property should use init accessor
+
+Flags properties in `readonly struct` types that use a private setter instead of an `init` accessor. Properties with private setters in readonly structs allow mutation at construction time but do not communicate immutability to callers. Use `init` to make the intent explicit and enforce immutability post-construction.
+
+```csharp
+// Before (warns)
+public readonly struct Point
+{
+    public int X { get; private set; }
+}
+
+// After
+public readonly struct Point
+{
+    public int X { get; init; }
+}
+```
+
+### E128075 &mdash; Random in crypto context
+
+Flags `new Random()`, `Random.Shared`, and `Random.Next*` calls in methods whose names or surrounding types suggest cryptographic or security contexts (e.g., `Generate`, `Token`, `Secret`, `Password`, `Key`, `Nonce`, `Salt`). `System.Random` is not cryptographically secure. Use `RandomNumberGenerator` instead. No code fix &mdash; the correct usage pattern varies by context.
+
+```csharp
+// Before (warns)
+var token = Random.Shared.Next(100000, 999999).ToString();
+
+// After
+var token = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
 ```
 
 ## Configuration

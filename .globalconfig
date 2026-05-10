@@ -101,6 +101,22 @@ dotnet_diagnostic.s3267.severity = suggestion    # Loop should be simplified by 
 # ── Guardrails ───────────────────────────────
 # Rules enforced at error to prevent regression.
 
+# --- FIPS Compliance (CA53xx Security) ---
+# Explicitly pinned — blanket default covers these, but FIPS-critical rules
+# must survive any blanket-default change.
+dotnet_diagnostic.ca5350.severity = error        # Do not use weak cryptographic algorithms (MD5, SHA1)
+dotnet_diagnostic.ca5351.severity = error        # Do not use broken cryptographic algorithms (DES, RC2)
+dotnet_diagnostic.ca5358.severity = error        # Do not use unsafe cipher modes (ECB)
+dotnet_diagnostic.ca5364.severity = error        # Do not use deprecated security protocols (SSL3, TLS 1.0, TLS 1.1)
+dotnet_diagnostic.ca5379.severity = error        # Ensure key derivation function algorithm is sufficiently strong
+dotnet_diagnostic.ca5384.severity = error        # Do not use DSA
+dotnet_diagnostic.ca5385.severity = error        # Use RSA with sufficient key size (>= 2048)
+dotnet_diagnostic.ca5394.severity = error        # Do not use insecure randomness (System.Random for security)
+dotnet_diagnostic.ca5397.severity = error        # Do not use deprecated SslProtocols values
+dotnet_diagnostic.ca5401.severity = error        # Do not use CreateEncryptor with non-default IV
+dotnet_diagnostic.ca5402.severity = error        # Use CreateEncryptor with the default IV
+dotnet_diagnostic.ca5403.severity = error        # Do not hard-code certificate
+
 # --- Compiler Warnings ---
 dotnet_diagnostic.syslib1045.severity = error    # Use GeneratedRegexAttribute
 

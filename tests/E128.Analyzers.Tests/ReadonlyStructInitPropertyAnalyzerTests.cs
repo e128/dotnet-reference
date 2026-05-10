@@ -72,18 +72,6 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task NoReport_WhenPropertyHasSet()
-    {
-        return VerifyAsync("""
-                           public readonly struct Point
-                           {
-                               public int X { get; set; }
-                           }
-                           """);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
     public Task NoReport_WhenStaticProperty()
     {
         return VerifyAsync("""

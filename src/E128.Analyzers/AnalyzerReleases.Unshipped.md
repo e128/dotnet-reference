@@ -11,3 +11,4 @@ E128071  | Security    | Warning  | Use a FIPS-approved hash algorithm
 E128072  | Performance | Info     | Prefer SHA256.HashData() over SHA256.Create()
 E128073  | Testing     | Warning  | Test method missing [Trait("Category", ...)] attribute
 E128074  | Design      | Warning  | Readonly struct property should use init accessor
+E128075  | Security    | Warning  | Use RandomNumberGenerator instead of Random in crypto context

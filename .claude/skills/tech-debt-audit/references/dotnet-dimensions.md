@@ -91,6 +91,65 @@ rg "IHealthChecksBuilder|AddHealthChecks" src/ -g "*.cs"
 rg "IHostApplicationLifetime|ApplicationStopping" src/ -g "*.cs"
 ```
 
+### FIPS Compliance (Conditional)
+
+Only evaluated when `System.Security.Cryptography` is referenced, or when the project targets government/regulated environments (FIPS keywords in docs, FedRAMP/FISMA/NIST references, `CryptoConfig` usage).
+
+| Finding                                                              | Severity | Logic                                                         |
+| -------------------------------------------------------------------- | -------- | ------------------------------------------------------------- |
+| `MD5.Create()` or `MD5.HashData()` usage                            | CRITICAL | FIPS 140-2 non-compliant; use SHA-256+ for integrity checks   |
+| `SHA1.Create()` or `SHA1.HashData()` for security purposes          | CRITICAL | FIPS deprecated; use SHA-256/384/512                          |
+| `DES`, `RC2`, `TripleDES` usage                                     | CRITICAL | Broken/weak algorithms; use AES                              |
+| `Rijndael` instead of `Aes`                                         | HIGH     | Legacy API; `Aes` is the FIPS-compliant equivalent            |
+| `RNGCryptoServiceProvider` instead of `RandomNumberGenerator`       | MEDIUM   | Obsolete (SYSLIB0023); use `RandomNumberGenerator.Create()`   |
+| `System.Random` for security-sensitive values                       | CRITICAL | Not cryptographically secure; use `RandomNumberGenerator`     |
+| `ECB` cipher mode usage                                             | CRITICAL | Deterministic encryption; use CBC or GCM                      |
+| Hardcoded encryption keys or IVs                                    | CRITICAL | Keys must come from key management, never source code         |
+| RSA key size < 2048 bits                                            | HIGH     | NIST minimum is 2048; prefer 3072+                            |
+| `DSA` usage                                                         | HIGH     | FIPS 186-5 deprecated DSA; use ECDSA or EdDSA                |
+| `SslProtocols.Ssl3` or `SslProtocols.Tls` (1.0) or `Tls11`        | CRITICAL | Deprecated protocols; enforce TLS 1.2+ minimum               |
+| `ServicePointManager.SecurityProtocol` set manually                 | HIGH     | Let the OS/framework negotiate; setting manually risks pinning weak protocols |
+| `PasswordDeriveBytes` instead of `Rfc2898DeriveBytes`               | CRITICAL | Non-standard PBKDF1; use PBKDF2 (`Rfc2898DeriveBytes`) with SHA-256+ |
+| `Rfc2898DeriveBytes` with SHA1 (default before .NET 8)              | HIGH     | Explicitly specify `HashAlgorithmName.SHA256` or higher       |
+| Missing CA53xx FIPS rules in `.globalconfig` / `.editorconfig`      | MEDIUM   | CA5350-CA5403 should be error-severity for FIPS compliance    |
+| `HMACMD5` or `HMACRIPEMD160` usage                                 | HIGH     | Non-FIPS HMACs; use HMACSHA256+                              |
+| `Convert.ToBase64String` on raw secrets without encryption          | MEDIUM   | Encoding is not encryption; flag for review                   |
+
+**Detection:**
+```bash
+# Non-FIPS algorithm usage
+rg "MD5|SHA1[^0-9]|DES\b|RC2|TripleDES|Rijndael|HMACMD5|HMACRIPEMD160" src/ -g "*.cs" -n
+
+# Obsolete crypto APIs
+rg "RNGCryptoServiceProvider|PasswordDeriveBytes|DSACryptoServiceProvider" src/ -g "*.cs" -n
+
+# Weak TLS configuration
+rg "SslProtocols\.(Ssl3|Tls\b|Tls11)|SecurityProtocol" src/ -g "*.cs" -n
+
+# Hardcoded keys/IVs (byte arrays near crypto usage)
+rg "new byte\[\].*\{" src/ -g "*.cs" -n -A2 | rg -i "key|iv|secret|encrypt"
+
+# ECB mode
+rg "CipherMode\.ECB|Mode\s*=\s*CipherMode" src/ -g "*.cs" -n
+
+# System.Random for security
+rg "new Random\(\)" src/ -g "*.cs" -n
+
+# Weak PBKDF2
+rg "Rfc2898DeriveBytes" src/ -g "*.cs" -n -A3
+
+# Missing FIPS analyzer guardrails
+rg "ca5350|ca5351|ca5358|ca5364|ca5379|ca5384|ca5385|ca5394|ca5397" .globalconfig .editorconfig 2>/dev/null
+
+# Any crypto namespace usage (broad scan)
+rg "System\.Security\.Cryptography" src/ -g "*.cs" -n
+```
+
+**Analyzer guardrail check:** Verify that these CA rules are set to `error` in `.globalconfig` or `.editorconfig`. If missing, flag as MEDIUM — the blanket default may cover them, but explicit pinning prevents regression:
+- CA5350 (weak crypto), CA5351 (broken crypto), CA5358 (ECB), CA5364 (deprecated TLS)
+- CA5379 (weak KDF), CA5384 (DSA), CA5385 (RSA key size), CA5394 (insecure random)
+- CA5397 (deprecated SslProtocols), CA5401/CA5402 (IV handling), CA5403 (hardcoded certs)
+
 ### Service Contract Drift (Conditional)
 
 Only evaluated when OpenAPI specs, published NuGet packages, or gRPC/protobuf definitions are present.

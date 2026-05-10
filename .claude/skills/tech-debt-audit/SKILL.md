@@ -63,7 +63,7 @@ Use `rg`, `fd`, Roslyn MCP (when available), and `dotnet` CLI tools to find conc
 
 7. **Error handling & observability** — swallowed exceptions, blanket catches, errors logged but not handled, inconsistent error shapes across modules, missing structured logs on critical paths. Structural observability gaps: traces without span correlation, logs with no correlation ID, metrics with unbounded label cardinality.
 
-8. **Security hygiene** — hardcoded secrets, string-concat SQL, missing input validation at trust boundaries, permissive auth or CORS, weak crypto, `DateTime.Now`/`DateTime.UtcNow` instead of injected `TimeProvider`.
+8. **Security hygiene** — hardcoded secrets, string-concat SQL, missing input validation at trust boundaries, permissive auth or CORS, weak crypto, `DateTime.Now`/`DateTime.UtcNow` instead of injected `TimeProvider`. FIPS compliance violations (see FIPS Compliance dimension in dotnet-dimensions.md).
 
 9. **Documentation drift** — README claims that don't match reality, comments that contradict adjacent code, public APIs without XML doc comments.
 
@@ -112,6 +112,7 @@ See [references/dotnet-dimensions.md](references/dotnet-dimensions.md) for full 
 - **Blazor WASM Health** — when `Microsoft.NET.Sdk.BlazorWebAssembly` SDK present
 - **Data / Schema Debt** — when EF Core referenced
 - **Cloud / Container Readiness** — when Dockerfiles or container config present
+- **FIPS Compliance** — non-compliant algorithms, weak TLS, hardcoded keys, missing CA53xx guardrails
 - **Analyzer Configuration** — `.editorconfig` vs `.globalconfig` drift, suppression sprawl
 
 ## Phase 3: Deliverable
