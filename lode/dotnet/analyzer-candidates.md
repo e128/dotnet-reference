@@ -75,3 +75,5 @@ private readonly struct RenameInfo {
 | E128062 | test-reference-assemblies-tfm-mismatch | implemented | 4/5   | 2026-04-15 |
 | —       | readonly-struct-property-no-init       | new         | 3/5   | 2026-04-15 |
 | E128070 | pool-rent-capacity-guard               | implemented | —     | 2026-05-09 |
+| E128071 | fips-unapproved-hash                   | implemented | —     | 2026-05-10 |
+| E128072 | sha256-create-obsolete                 | implemented | —     | 2026-05-10 |
