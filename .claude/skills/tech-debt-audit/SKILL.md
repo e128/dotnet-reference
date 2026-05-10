@@ -35,11 +35,14 @@ Do not skip this. Forming opinions before understanding the system produces bad 
 
 1. Read the README, `Directory.Packages.props`, solution file(s), and any architecture docs in `lode/` or `docs/`.
 2. Map the directory structure and identify the major projects / layers.
-3. Run `git log --oneline -200` and `git log --stat --since="6 months ago"` to see what's actually changing and where churn concentrates.
-4. Identify entry points, hot paths, and cold corners.
-5. List the top 20 largest `.cs` files by line count, and the 20 files most frequently modified in the last 6 months. The intersection is where debt usually hides.
-6. Run VCS-based analysis for behavioral dimensions — hotspot candidates, author concentration, co-change pairs, SATD age attribution. See "VCS-based analysis" in the tooling section. This data feeds dimensions 11–13 and enriches dimension 10.
-7. Use `TaskCreate` to publish a plan so the user can see progress through the phases.
+3. Run `git log --oneline -200` to see recent activity direction.
+4. Run the co-located scripts to gather metrics (all accept an optional scope path):
+   ```bash
+   .claude/skills/tech-debt-audit/scripts/tda-file-metrics.sh 6 20 [scope]
+   .claude/skills/tech-debt-audit/scripts/tda-vcs-analysis.sh 6 30 [scope]
+   ```
+5. Identify entry points, hot paths, and cold corners from the script output.
+6. Use `TaskCreate` to publish a plan so the user can see progress through the phases.
 
 Write a 1–2 paragraph mental model of the architecture before proceeding. If your model contradicts the README, flag it — that itself is a finding.
 
@@ -57,7 +60,7 @@ Use `rg`, `fd`, Roslyn MCP (when available), and `dotnet` CLI tools to find conc
 
 4. **Test debt** — run coverage if available; identify gaps on critical paths. Tests that assert implementation rather than behavior. Skipped or flaky tests. High-churn files with no tests. Reflection usage in tests instead of `InternalsVisibleTo`.
 
-5. **Dependency & config debt** — `dotnet list package --vulnerable --include-transitive`. **NuGet freshness**: run `dotnet list package --outdated --include-transitive` and report all packages with available major or minor version bumps. Deprecated packages are **CRITICAL** severity regardless of version gap. Major version behind = HIGH, minor version behind = MEDIUM. Patch-only updates are informational (don't clutter findings unless combined with other issues). Unused deps. Duplicate deps doing the same job. CPM hygiene: missing `<clear />`, missing `PackageSourceMapping`, unpinned transitive versions. Env var sprawl (referenced but not documented).
+5. **Dependency & config debt** — run `tda-nuget-health.sh` for vulnerable/outdated/deprecated checks in parallel. Deprecated packages are **CRITICAL** severity regardless of version gap. Major version behind = HIGH, minor version behind = MEDIUM. Patch-only updates are informational. Also check: unused deps, duplicate deps doing the same job, CPM hygiene (missing `<clear />`, missing `PackageSourceMapping`, unpinned transitive versions), env var sprawl.
 
 6. **Performance & resource hygiene** — N+1 queries, sync-over-async (`.Result`, `.GetAwaiter().GetResult()`), `async void` (non-event-handler), `new HttpClient()` instead of `IHttpClientFactory`, blocking I/O on hot paths, uncleaned handles, unnecessary serialization, missing `Span<T>`/`Memory<T>` opportunities.
 
@@ -69,51 +72,26 @@ Use `rg`, `fd`, Roslyn MCP (when available), and `dotnet` CLI tools to find conc
 
 10. **Code quality & maintainability** — cognitive complexity hotspots (penalizes nesting depth, not just branch count), deep nesting, magic numbers/strings, inconsistent error types. SATD analysis: not just TODO/FIXME count, but age distribution via `git log -S "TODO"`, author attribution, and category (design compromise vs missing test vs known bug).
 
-11. **Hotspot density** — files with both high complexity AND high change frequency. A complex file untouched for two years is low risk; the same complexity in a file with 3+ commits per sprint is a productivity tax paid constantly. Cross-reference Phase 1 churn data with complexity scores.
+11. **Hotspot density** — files with both high complexity AND high change frequency. Cross-reference `tda-file-metrics.sh` intersection output with complexity scores.
 
-    **Detection:**
-    ```bash
-    git log --since="6 months ago" --name-only --pretty=format: | sort | uniq -c | sort -rn | head -30
-    ```
+12. **Temporal / change coupling** — files always changed together across commits with no explicit reference relationship. Use `tda-vcs-analysis.sh` co-change pairs output.
 
-12. **Temporal / change coupling** — files always changed together across commits that have no explicit reference relationship. High co-change frequency between unrelated modules reveals hidden architectural entanglement.
+13. **Knowledge concentration (bus factor)** — files where a single developer authored 80%+ of recent commits. Use `tda-vcs-analysis.sh` author concentration output.
 
-    **Detection:**
-    ```bash
-    git log --since="6 months ago" --name-only --pretty=format:"---" | awk '/^---$/{if(NR>1) for(i in files) for(j in files) if(i<j) print files[i], files[j]; delete files; next} NF{files[$0]=$0}'
-    ```
+14. **Package / assembly coupling metrics** — Robert C. Martin's package metrics: Afferent Coupling (Ca), Efferent Coupling (Ce), Instability (I = Ce/(Ca+Ce)), Abstractness (A = abstract types / total types), Distance from Main Sequence (D = |A + I − 1|). Flag assemblies in the Zone of Pain (I≈0, A≈0) and Zone of Uselessness (I≈1, A≈1). Threshold: D > 0.7. Compute from Roslyn MCP `get_project_graph` + `get_public_api`.
 
-13. **Knowledge concentration (bus factor)** — files or subsystems where a single developer authored 80%+ of recent commits. Flag files where the primary author has left the team or project.
+15. **Service contract & API drift** — drift between published API contracts and actual runtime behavior. Missing `PublicApiAnalyzers`. Undocumented breaking changes. Use `tda-detect-dimensions.sh` → `SERVICE_CONTRACT` output.
 
-    **Detection:**
-    ```bash
-    git log --since="12 months ago" --format="%ae" -- <file> | sort | uniq -c | sort -rn
-    ```
-
-14. **Package / assembly coupling metrics** — Robert C. Martin's package metrics: Afferent Coupling (Ca), Efferent Coupling (Ce), Instability (I = Ce/(Ca+Ce)), Abstractness (A = abstract types / total types), Distance from Main Sequence (D = |A + I − 1|). Flag assemblies in the Zone of Pain (I≈0, A≈0) and Zone of Uselessness (I≈1, A≈1). Threshold: D > 0.7.
-
-    **Detection:** Compute from project reference graph. Roslyn MCP `get_project_graph` + `get_public_api` can approximate it.
-
-15. **Service contract & API drift** — drift between published API contracts (OpenAPI specs, protobuf schemas, NuGet package public APIs) and actual runtime behavior. Missing `PublicApiAnalyzers`. Undocumented breaking changes. Missing consumer-driven contract tests.
-
-16. **Fitness function coverage** — architectural properties verified by CI, not just unit tests. Layer violation tests, namespace rules, assembly size budgets, circular dependency prevention. Flag constraints that exist only in documentation with no CI enforcement.
-
-    **Detection:**
-    ```bash
-    rg "NetArchTest|ArchUnitNET|ArchTest" . -l
-    rg "Architecture|LayerViolation|FitnessFunction" tests/ -l
-    ```
+16. **Fitness function coverage** — architectural properties verified by CI, not just unit tests. Use `tda-detect-dimensions.sh` → `Fitness Function Coverage` output.
 
 ### .NET-Specific Dimensions (conditional)
 
-See [references/dotnet-dimensions.md](references/dotnet-dimensions.md) for full dimension tables with severity mappings. These are evaluated only when the relevant technology is detected:
+Run the detection script first to determine which conditional dimensions apply:
+```bash
+.claude/skills/tech-debt-audit/scripts/tda-detect-dimensions.sh [scope]
+```
 
-- **AOT & Trimming** — when `PublishAot=true` or `IsAotCompatible=true` present
-- **Blazor WASM Health** — when `Microsoft.NET.Sdk.BlazorWebAssembly` SDK present
-- **Data / Schema Debt** — when EF Core referenced
-- **Cloud / Container Readiness** — when Dockerfiles or container config present
-- **FIPS Compliance** — non-compliant algorithms, weak TLS, hardcoded keys, missing CA53xx guardrails
-- **Analyzer Configuration** — `.editorconfig` vs `.globalconfig` drift, suppression sprawl
+Only evaluate dimensions the script reports as `ACTIVE`. See [references/dotnet-dimensions.md](references/dotnet-dimensions.md) for severity tables and what to flag for each active dimension.
 
 ## Phase 3: Deliverable
 
@@ -135,45 +113,31 @@ Write to `plans/TECH_DEBT_AUDIT.md` with this structure:
 - Don't pad. If a category has nothing material, write "Nothing material" and move on.
 - No sycophancy. Tell the user what's broken.
 
-## .NET Tooling
+## Tooling
 
-```bash
-# Package vulnerabilities
-dotnet list package --vulnerable --include-transitive
+### Co-located scripts (run these instead of inline bash)
 
-# NuGet freshness: outdated + deprecated (dimension 5)
-dotnet list package --outdated --include-transitive
-dotnet list package --deprecated --include-transitive
+| Script                     | Purpose                                    | Args                     |
+| -------------------------- | ------------------------------------------ | ------------------------ |
+| `scripts/tda-vcs-analysis.sh`    | Hotspots, co-change, SATD, author concentration | `[months] [top_n] [scope]` |
+| `scripts/tda-file-metrics.sh`    | Largest files, churn, intersection         | `[months] [top_n] [scope]` |
+| `scripts/tda-detect-dimensions.sh` | Conditional dimension detection          | `[scope]`                |
+| `scripts/tda-nuget-health.sh`    | Vulnerable + outdated + deprecated (parallel) | (none)               |
 
-# Dead code detection (if Roslyn MCP available)
+All paths are relative to `.claude/skills/tech-debt-audit/`.
+
+### Roslyn MCP (when available)
+
+```
 mcp__cwm-roslyn-navigator__find_dead_code scope=solution
-
-# Circular dependencies
 mcp__cwm-roslyn-navigator__detect_circular_dependencies scope=projects
-
-# Project dependency graph (for package coupling metrics D14)
 mcp__cwm-roslyn-navigator__get_project_graph
-
-# Build warnings (use repo scripts when available, else raw dotnet build)
-scripts/build.sh --warnings 2>/dev/null || dotnet build --no-incremental 2>&1 | grep -i warning
 ```
 
-## VCS-based analysis
-
-Run these in Phase 1 to feed dimensions 11-13.
+### Build warnings
 
 ```bash
-# Hotspot candidates: change frequency per file (last 6 months)
-git log --since="6 months ago" --name-only --pretty=format: | sort | uniq -c | sort -rn | head -40
-
-# Author concentration per high-churn file
-git log --since="12 months ago" --format="%ae" -- <file> | sort | uniq -c | sort -rn
-
-# SATD age attribution (oldest unresolved TODOs)
-git log -S "TODO" --format="%H %ad %ae" --date=short -- "*.cs"
-
-# Co-change pairs (temporal coupling)
-git log --since="6 months ago" --name-only --pretty=format:"---" -- "*.cs" | awk '/^---$/{if(NR>1) for(i in files) for(j in files) if(i<j) print files[i], files[j]; delete files; next} NF{files[$0]=$0}' | sort | uniq -c | sort -rn | head -20
+scripts/build.sh --warnings 2>/dev/null || dotnet build --no-incremental 2>&1 | grep -i warning
 ```
 
 If a tool isn't installed, note it in the audit and move on rather than blocking.

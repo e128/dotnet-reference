@@ -69,6 +69,10 @@ E128.Analyzers.Design.PrimaryConstructorBackingFieldAnalyzer
 E128.Analyzers.Design.PrimaryConstructorBackingFieldAnalyzer.PrimaryConstructorBackingFieldAnalyzer() -> void
 E128.Analyzers.Design.PrimaryConstructorBackingFieldCodeFixProvider
 E128.Analyzers.Design.PrimaryConstructorBackingFieldCodeFixProvider.PrimaryConstructorBackingFieldCodeFixProvider() -> void
+E128.Analyzers.Design.ReadonlyStructInitPropertyAnalyzer
+E128.Analyzers.Design.ReadonlyStructInitPropertyAnalyzer.ReadonlyStructInitPropertyAnalyzer() -> void
+E128.Analyzers.Design.ReadonlyStructInitPropertyCodeFixProvider
+E128.Analyzers.Design.ReadonlyStructInitPropertyCodeFixProvider.ReadonlyStructInitPropertyCodeFixProvider() -> void
 E128.Analyzers.Design.SealedByDefaultAnalyzer
 E128.Analyzers.Design.SealedByDefaultAnalyzer.SealedByDefaultAnalyzer() -> void
 E128.Analyzers.Design.SealedByDefaultCodeFixProvider
@@ -113,6 +117,10 @@ E128.Analyzers.Performance.OrderByFirstAnalyzer
 E128.Analyzers.Performance.OrderByFirstAnalyzer.OrderByFirstAnalyzer() -> void
 E128.Analyzers.Performance.OrderByFirstCodeFixProvider
 E128.Analyzers.Performance.OrderByFirstCodeFixProvider.OrderByFirstCodeFixProvider() -> void
+E128.Analyzers.Performance.Sha256CreateObsoleteAnalyzer
+E128.Analyzers.Performance.Sha256CreateObsoleteAnalyzer.Sha256CreateObsoleteAnalyzer() -> void
+E128.Analyzers.Performance.Sha256CreateObsoleteCodeFixProvider
+E128.Analyzers.Performance.Sha256CreateObsoleteCodeFixProvider.Sha256CreateObsoleteCodeFixProvider() -> void
 E128.Analyzers.Performance.RedundantHashSetInFrozenSetCodeFixProvider
 E128.Analyzers.Performance.RedundantHashSetInFrozenSetCodeFixProvider.RedundantHashSetInFrozenSetCodeFixProvider() -> void
 E128.Analyzers.Performance.RedundantHashSetInFrozenSetE128Analyzer
@@ -211,6 +219,10 @@ E128.Analyzers.Reliability.UnboundedTaskWhenAllAnalyzer
 E128.Analyzers.Reliability.UnboundedTaskWhenAllAnalyzer.UnboundedTaskWhenAllAnalyzer() -> void
 E128.Analyzers.Reliability.UnboundedTaskWhenAllCodeFixProvider
 E128.Analyzers.Reliability.UnboundedTaskWhenAllCodeFixProvider.UnboundedTaskWhenAllCodeFixProvider() -> void
+E128.Analyzers.Security.FipsUnapprovedHashAnalyzer
+E128.Analyzers.Security.FipsUnapprovedHashAnalyzer.FipsUnapprovedHashAnalyzer() -> void
+E128.Analyzers.Security.InsecureRandomInCryptoContextAnalyzer
+E128.Analyzers.Security.InsecureRandomInCryptoContextAnalyzer.InsecureRandomInCryptoContextAnalyzer() -> void
 E128.Analyzers.Style.EmptyStringLiteralAnalyzer
 E128.Analyzers.Style.EmptyStringLiteralAnalyzer.EmptyStringLiteralAnalyzer() -> void
 E128.Analyzers.Style.EmptyStringLiteralCodeFixProvider
@@ -249,6 +261,10 @@ E128.Analyzers.Style.SuppressionAuditAnalyzer
 E128.Analyzers.Style.SuppressionAuditAnalyzer.SuppressionAuditAnalyzer() -> void
 E128.Analyzers.Style.SuppressionAuditCodeFixProvider
 E128.Analyzers.Style.SuppressionAuditCodeFixProvider.SuppressionAuditCodeFixProvider() -> void
+E128.Analyzers.Testing.MissingTraitCategoryAnalyzer
+E128.Analyzers.Testing.MissingTraitCategoryAnalyzer.MissingTraitCategoryAnalyzer() -> void
+E128.Analyzers.Testing.MissingTraitCategoryCodeFixProvider
+E128.Analyzers.Testing.MissingTraitCategoryCodeFixProvider.MissingTraitCategoryCodeFixProvider() -> void
 E128.Analyzers.Testing.StaleReferenceAssembliesAnalyzer
 E128.Analyzers.Testing.StaleReferenceAssembliesAnalyzer.StaleReferenceAssembliesAnalyzer() -> void
 E128.Analyzers.Testing.StaleReferenceAssembliesCodeFixProvider

@@ -1,10 +1,25 @@
 # Claude Revision Log
-*Updated: 2026-05-09T00:00:00Z*
+*Updated: 2026-05-10T00:00:00Z*
 
 Persistent memory for `/claude-revision`. Each run appends one entry.
 Read at Phase 0 to recover last-known state and deferred items.
 
 ## Runs
+
+### 2026-05-10 (Run 9)
+- Doctor: captured via pseudo-TTY; 1 error, 2 warnings
+  - ERROR: Plugin `devex@devex-skills` missing `agents/code-reviewer.md` — manifest declares it but file absent from cache. Fix: `rm -rf ~/.claude/plugins/cache/devex-skills/devex/2026.03.14` (manual — outside project scope)
+  - WARNING: Orphaned npm global package at `/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code` — removed
+  - WARNING: macOS Keychain not writable (duplicate item) — environment issue, not actionable here
+- Description budget: 21094/8000 chars | Truncated: 0 | At risk: 1 (simplification-agent 1010)
+- Agents: 17 | Skills: 19 | Memory files: 1
+- Web guidance: skipped (`--no-web`)
+- HIGH: 1 | MEDIUM: 0 | LOW: 0
+- Actions taken:
+  - H1: Removed orphaned npm global package `/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code`
+- Deferred:
+  - D1 (HIGH): Plugin cache purge for `devex/2026.03.14` — user must run manually: `rm -rf ~/.claude/plugins/cache/devex-skills/devex/2026.03.14`
+- Notes: All 17 agents clean — no `model:` fields, all have `memory: project`, `maxTurns`, explicit `tools`. All 19 skills under 250 lines. No stale references in CLAUDE.md, rules, or keyword-shortcuts. All 24 scripts referenced. Agent memory: 1 file (leverage-advisor, 1 line, tracked). Lode files current. First run to successfully capture `claude doctor` output (pseudo-TTY workaround).
 
 ### 2026-05-09 (Run 8)
 - Doctor: unable to capture (background task; no errors in session)

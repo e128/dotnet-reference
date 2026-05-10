@@ -18,12 +18,7 @@ Only evaluated when `PublishAot=true` or `IsAotCompatible=true` found in any pro
 | Reflection-heavy code paths without `DynamicDependency`      | HIGH     | Breaks at runtime under trimming                             |
 | `System.Text.Json` source generator not configured for AOT   | MEDIUM   | Critical for Blazor WASM, informational otherwise            |
 
-**Detection:**
-```bash
-rg "PublishAot|IsAotCompatible" src/ -l
-rg "DynamicDependency" src/
-rg "JsonSerializerContext" src/
-```
+**Detection:** `tda-detect-dimensions.sh` → `AOT_TRIMMING` section.
 
 ### Blazor WASM Health (Conditional)
 
@@ -39,12 +34,7 @@ Only evaluated when `Microsoft.NET.Sdk.BlazorWebAssembly` SDK found in any proje
 | JS interop calls in `OnInitializedAsync`                            | MEDIUM   | JS not available during prerender               |
 | `JsonSerializerIsReflectionEnabledByDefault=false`                  | CRITICAL | Fatal for Blazor WASM                          |
 
-**Detection:**
-```bash
-rg "Microsoft\.NET\.Sdk\.BlazorWebAssembly" src/ -l
-rg "BlazorCacheBootResources|BlazorEnableCompression|JsonSerializerIsReflectionEnabledByDefault" src/
-rg "IJSObjectReference" src/
-```
+**Detection:** `tda-detect-dimensions.sh` → `BLAZOR_WASM` section.
 
 ### Data / Schema Debt (Conditional)
 
@@ -60,13 +50,7 @@ Only evaluated when EF Core (`Microsoft.EntityFrameworkCore`) is referenced.
 | No migration history table or schema versioning       | HIGH     | Schema state is untracked                            |
 | Shadow properties used without documentation          | LOW      | Hidden columns that surprise maintainers             |
 
-**Detection:**
-```bash
-rg "Microsoft\.EntityFrameworkCore" src/ -l
-rg "NotImplementedException" src/ -g "*Migration*.cs"
-rg "protected override void Down" src/ -g "*Migration*.cs" -A 5
-fd "Migration" src/ -e cs
-```
+**Detection:** `tda-detect-dimensions.sh` → `EF_CORE` section.
 
 ### Cloud / Container Readiness (Conditional)
 
@@ -82,14 +66,7 @@ Only evaluated when Dockerfiles, container config, or cloud deployment targets a
 | Missing `HEALTHCHECK` instruction in Dockerfile                  | LOW      | Orchestrator relies on process exit only                 |
 | Large Docker image layers (no multi-stage build)                 | LOW      | Slow deploys, wasted bandwidth                           |
 
-**Detection:**
-```bash
-fd Dockerfile .
-rg "Environment\.GetEnvironmentVariable" src/ -g "*.cs"
-rg "Registry\.|GetFolderPath|COM\b" src/ -g "*.cs"
-rg "IHealthChecksBuilder|AddHealthChecks" src/ -g "*.cs"
-rg "IHostApplicationLifetime|ApplicationStopping" src/ -g "*.cs"
-```
+**Detection:** `tda-detect-dimensions.sh` → `CLOUD_CONTAINER` section.
 
 ### FIPS Compliance (Conditional)
 
@@ -115,35 +92,7 @@ Only evaluated when `System.Security.Cryptography` is referenced, or when the pr
 | `HMACMD5` or `HMACRIPEMD160` usage                                 | HIGH     | Non-FIPS HMACs; use HMACSHA256+                              |
 | `Convert.ToBase64String` on raw secrets without encryption          | MEDIUM   | Encoding is not encryption; flag for review                   |
 
-**Detection:**
-```bash
-# Non-FIPS algorithm usage
-rg "MD5|SHA1[^0-9]|DES\b|RC2|TripleDES|Rijndael|HMACMD5|HMACRIPEMD160" src/ -g "*.cs" -n
-
-# Obsolete crypto APIs
-rg "RNGCryptoServiceProvider|PasswordDeriveBytes|DSACryptoServiceProvider" src/ -g "*.cs" -n
-
-# Weak TLS configuration
-rg "SslProtocols\.(Ssl3|Tls\b|Tls11)|SecurityProtocol" src/ -g "*.cs" -n
-
-# Hardcoded keys/IVs (byte arrays near crypto usage)
-rg "new byte\[\].*\{" src/ -g "*.cs" -n -A2 | rg -i "key|iv|secret|encrypt"
-
-# ECB mode
-rg "CipherMode\.ECB|Mode\s*=\s*CipherMode" src/ -g "*.cs" -n
-
-# System.Random for security
-rg "new Random\(\)" src/ -g "*.cs" -n
-
-# Weak PBKDF2
-rg "Rfc2898DeriveBytes" src/ -g "*.cs" -n -A3
-
-# Missing FIPS analyzer guardrails
-rg "ca5350|ca5351|ca5358|ca5364|ca5379|ca5384|ca5385|ca5394|ca5397" .globalconfig .editorconfig 2>/dev/null
-
-# Any crypto namespace usage (broad scan)
-rg "System\.Security\.Cryptography" src/ -g "*.cs" -n
-```
+**Detection:** `tda-detect-dimensions.sh` → `FIPS_COMPLIANCE` section.
 
 **Analyzer guardrail check:** Verify that these CA rules are set to `error` in `.globalconfig` or `.editorconfig`. If missing, flag as MEDIUM — the blanket default may cover them, but explicit pinning prevents regression:
 - CA5350 (weak crypto), CA5351 (broken crypto), CA5358 (ECB), CA5364 (deprecated TLS)
@@ -162,29 +111,11 @@ Only evaluated when OpenAPI specs, published NuGet packages, or gRPC/protobuf de
 | Event/message schemas with no versioning strategy        | MEDIUM   | Breaking changes propagate to consumers    |
 | Missing consumer-driven contract tests                   | LOW      | No consumer-side validation                |
 
-**Detection:**
-```bash
-fd "openapi|swagger" . -e json -e yaml -e yml
-rg "PublicApiAnalyzers|Microsoft\.CodeAnalysis\.PublicApiAnalyzers" . -l
-fd ".proto" src/
-rg "Pact|PactNet" tests/ -l
-```
+**Detection:** `tda-detect-dimensions.sh` → `SERVICE_CONTRACT` section.
 
 ## .NET Tooling
 
-Use repo-specific build/test scripts when available, fall back to raw `dotnet` commands otherwise.
-
-```bash
-# Coverage (if script exists)
-scripts/coverage.sh 2>/dev/null
-
-# Build diagnostics (prefer repo scripts)
-scripts/check.sh --all 2>/dev/null || dotnet build --no-incremental
-
-# Package analysis
-dotnet list package --vulnerable --include-transitive
-dotnet list package --outdated --include-transitive
-```
+Use the co-located scripts in `../scripts/` for detection and NuGet analysis. For build/test, prefer repo scripts (`scripts/check.sh`, `scripts/build.sh`) over raw `dotnet` commands.
 
 ## Severity Conventions
 

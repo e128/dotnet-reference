@@ -1,17 +1,1 @@
 #nullable enable
-E128.Analyzers.Design.ReadonlyStructInitPropertyAnalyzer
-E128.Analyzers.Design.ReadonlyStructInitPropertyAnalyzer.ReadonlyStructInitPropertyAnalyzer() -> void
-E128.Analyzers.Design.ReadonlyStructInitPropertyCodeFixProvider
-E128.Analyzers.Design.ReadonlyStructInitPropertyCodeFixProvider.ReadonlyStructInitPropertyCodeFixProvider() -> void
-E128.Analyzers.Performance.Sha256CreateObsoleteAnalyzer
-E128.Analyzers.Performance.Sha256CreateObsoleteAnalyzer.Sha256CreateObsoleteAnalyzer() -> void
-E128.Analyzers.Performance.Sha256CreateObsoleteCodeFixProvider
-E128.Analyzers.Performance.Sha256CreateObsoleteCodeFixProvider.Sha256CreateObsoleteCodeFixProvider() -> void
-E128.Analyzers.Security.FipsUnapprovedHashAnalyzer
-E128.Analyzers.Security.FipsUnapprovedHashAnalyzer.FipsUnapprovedHashAnalyzer() -> void
-E128.Analyzers.Security.InsecureRandomInCryptoContextAnalyzer
-E128.Analyzers.Security.InsecureRandomInCryptoContextAnalyzer.InsecureRandomInCryptoContextAnalyzer() -> void
-E128.Analyzers.Testing.MissingTraitCategoryAnalyzer
-E128.Analyzers.Testing.MissingTraitCategoryAnalyzer.MissingTraitCategoryAnalyzer() -> void
-E128.Analyzers.Testing.MissingTraitCategoryCodeFixProvider
-E128.Analyzers.Testing.MissingTraitCategoryCodeFixProvider.MissingTraitCategoryCodeFixProvider() -> void
