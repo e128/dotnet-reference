@@ -1,2 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="E128.Reference.Core.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -3,18 +3,16 @@ Generated: 2026-05-10
 
 ## Executive summary
 
-- 0 CRITICAL
-- 0 HIGH (3 resolved: F001, F004/F005, F010)
-- 2 MEDIUM remaining (F011 bus factor, F017 missing CancellationToken in Web endpoints)
-- 6 LOW (F012–F016 unchanged, F018 redundant pragmas, F019 stale NuGet description)
-- 9 findings resolved from prior runs: F001, F002, F003, F004/F005, F006, F007, F008, F009, F010
-- F016 updated: Meziantou.Analyzer bumped to 3.0.77
+- 0 CRITICAL, 0 HIGH
+- 2 MEDIUM remaining (F011 bus factor — inherent, F022 NuGet.* blocked by Roslyn internals)
+- 1 LOW remaining (F016 System.Composition held by Roslyn)
+- 19 findings resolved from prior runs: F001–F010, F012–F015, F017–F021, F023–F024
 
 ## Architectural mental model
 
-This is a .NET 10 reference repository with four production assemblies. `E128.Reference.Core` provides a shared greeting domain (models, services, repositories). `E128.Reference.Web` is a minimal API app consuming Core. `E128.Reference.Cli` is a System.CommandLine tool also consuming Core. `E128.Analyzers` is a standalone Roslyn analyzer package (the only NuGet-published artifact) with no dependency on the reference apps. Five test projects cover each production assembly, plus ArchUnitNET architecture tests enforcing structural invariants.
+This is a .NET 10 reference repository with four production assemblies. `E128.Reference.Core` provides a shared greeting domain (models, services, repositories). `E128.Reference.Web` is a minimal API app consuming Core. `E128.Reference.Cli` is a System.CommandLine tool also consuming Core. `E128.Analyzers` is a standalone Roslyn analyzer package (the only NuGet-published artifact) with no dependency on the reference apps. Five test projects cover each production assembly, plus ArchUnitNET architecture tests enforcing structural invariants including circular dependency prevention.
 
-The analyzer package remains the active development surface — nearly all recent churn concentrates there (NamingStyleCodeFixProvider: 8 changes in 6 months, plus batch additions of E128066-E128070). Core, Web, and Cli are near-static demo implementations. Source file count: 147 src, 144 test — a healthy ratio. FIPS compliance guardrails (CA5350-CA5403) were explicitly pinned in `.globalconfig` this session; no crypto code exists in the codebase.
+The analyzer package remains the active development surface. 75 unique diagnostic IDs exist, all shipped in release 1.26.1. FIPS compliance guardrails (CA5350–CA5403) are explicitly pinned in `.globalconfig`; no crypto code exists in the codebase. All production projects are fully up-to-date on direct and transitive packages. Zero deprecated, zero vulnerable packages. Zero build warnings. Zero TODO/FIXME markers.
 
 ## Findings
 
@@ -30,64 +28,72 @@ The analyzer package remains the active development surface — nearly all recen
 | F008 | Test debt               | tests/E128.Analyzers.Tests/IoMethodCatalogTests.cs             | MEDIUM   | S      | RESOLVED  | Added direct tests for IoMethodCatalog, PathNamePatterns, SuggestedType                                  | Done                                                                                         |
 | F009 | Consistency rot         | src/E128.Analyzers/.editorconfig:5                             | MEDIUM   | S      | RESOLVED  | Replaced 7 RCS9004 pragmas with project `.editorconfig` suppression                                     | Done                                                                                         |
 | F010 | Service contract        | src/E128.Analyzers/E128.Analyzers.csproj:41                    | HIGH     | M      | RESOLVED  | Added PublicApiAnalyzers + PublicAPI.Shipped.txt + PublicAPI.Unshipped.txt                                | Done                                                                                         |
-| F011 | Knowledge concentration | (repo-wide)                                                    | MEDIUM   | —      | UNCHANGED | Single author (millerb@gmail.com) wrote 106/124 commits (85%) in last 12 months — bus factor = 1        | Document architecture decisions in lode/ for onboarding; inherent to a personal reference repo |
-| F012 | Test debt               | src/E128.Reference.Core/ and src/E128.Reference.Web/           | LOW      | S      | UNCHANGED | 2 of 4 src projects have InternalsVisibleTo (Cli, Analyzers); Core and Web lack it — but neither has internal members currently | No action unless internal types are added to Core or Web                                      |
-| F013 | Fitness functions       | tests/Architecture.Tests/                                      | LOW      | M      | UNCHANGED | Architecture tests verify layers, naming, sealed, service patterns — but don't verify circular deps or assembly size budgets | Add circular dependency prevention and assembly size budget assertions                        |
-| F014 | Service contract        | src/E128.Analyzers/AnalyzerReleases.Unshipped.md               | LOW      | S      | UNCHANGED | 5 analyzer rules (E128066-E128070) sitting in Unshipped.md                                               | Ship with next version bump or document as pre-release                                       |
-| F015 | Documentation drift     | src/E128.Reference.Web/Program.cs                              | LOW      | S      | UNCHANGED | Web and Cli public types lack XML doc comments (Core types have them)                                    | Add XML docs to Program.cs entry points and CliApp.cs                                        |
-| F016 | Dependency debt         | Directory.Packages.props                                       | LOW      | S      | MOVED     | Meziantou.Analyzer bumped to 3.0.77. Transitive System.Composition pins at 9.0.0 remain — held by Roslyn compatibility | Monitor for Roslyn package updates via Renovate                                               |
-| F017 | Reliability             | src/E128.Reference.Web/Program.cs:23                           | MEDIUM   | S      | NEW       | Async endpoints (`MapPost "/greetings"`, `MapGet "/greetings"`) don't accept `CancellationToken` — request abort won't propagate to `GreetAsync` or `GetRecentAsync` | Add `CancellationToken cancellationToken` parameter to each lambda; ASP.NET Core injects it from `HttpContext.RequestAborted` |
-| F018 | Consistency rot         | src/E128.Analyzers/FileSystem/FileSystemPathAnalyzer.cs:267    | LOW      | S      | NEW       | 2 residual `#pragma warning disable RCS9004` in FileSystem files — redundant since `src/E128.Analyzers/.editorconfig` disables RCS9004 project-wide | Remove the 2 remaining pragmas and their matching restores                                    |
-| F019 | Documentation drift     | src/E128.Analyzers/E128.Analyzers.csproj:30                    | LOW      | S      | NEW       | NuGet `<Description>` says "64 rules" — actual count is 70 unique diagnostic IDs (E128001-E128070, with 5 unshipped) | Update description to reflect current rule count: "70 rules" (or "65 shipped + 5 pre-release") |
+| F011 | Knowledge concentration | (repo-wide)                                                    | MEDIUM   | —      | UNCHANGED | Single author wrote 100% of recent commits — bus factor = 1                                              | Document architecture decisions in lode/ for onboarding; inherent to a personal reference repo |
+| F012 | Test debt               | src/E128.Reference.Core/ and src/E128.Reference.Web/           | LOW      | S      | RESOLVED  | Added InternalsVisibleTo to Core (→ Core.Tests) and Web (→ Reference.Tests)                              | Done                                                                                         |
+| F013 | Fitness functions       | tests/Architecture.Tests/CircularDependencyTests.cs            | LOW      | M      | RESOLVED  | Added CircularDependencyTests with 2 assertions preventing layer back-references                         | Done                                                                                         |
+| F014 | Service contract        | src/E128.Analyzers/AnalyzerReleases.Shipped.md                 | LOW      | S      | RESOLVED  | Moved 10 rules (E128066–E128075) from Unshipped.md to Shipped.md under Release 1.26.1                   | Done                                                                                         |
+| F015 | Documentation drift     | src/E128.Reference.Web/Program.cs                              | LOW      | S      | RESOLVED  | No public types exist in Web or Cli — all are internal or top-level statements. Finding was invalid       | N/A                                                                                          |
+| F016 | Dependency debt         | Directory.Packages.props                                       | LOW      | S      | UNCHANGED | Transitive System.Composition pins at 9.0.0 remain — held by Roslyn 5.3.0 compatibility                 | Monitor for Roslyn package updates; bump when Roslyn supports .NET 10 transitives             |
+| F017 | Reliability             | src/E128.Reference.Web/Program.cs:24                           | MEDIUM   | S      | RESOLVED  | Async endpoints now accept `CancellationToken` and propagate to service/repository calls                 | Done                                                                                         |
+| F018 | Consistency rot         | src/E128.Analyzers/FileSystem/FileSystemPathAnalyzer.cs:266    | LOW      | S      | RESOLVED  | Removed 2 redundant RCS9004 pragmas; simplified exposed `HasFirstArgumentNamed` (IDE0046)                | Done                                                                                         |
+| F019 | Documentation drift     | src/E128.Analyzers/E128.Analyzers.csproj:30                    | LOW      | S      | RESOLVED  | Updated NuGet `<Description>` from "64 rules" to "75 rules" with new categories (security, pool guard, etc.) | Done                                                                                         |
+| F020 | Dependency debt         | Directory.Packages.props                                       | CRITICAL | S      | RESOLVED  | Pinned `System.Security.Cryptography.Pkcs` from deprecated 5.0.0 to 10.0.7                              | Done                                                                                         |
+| F021 | Dependency debt         | Directory.Packages.props                                       | HIGH     | M      | RESOLVED  | Pinned `Humanizer.Core` from 2.14.1 to 3.0.10 — no compatibility issues                                 | Done                                                                                         |
+| F022 | Dependency debt         | E128.Analyzers.Tests (transitive)                              | MEDIUM   | M      | UNCHANGED | NuGet.* 6.3.4 → 7.3.1 — BLOCKED: `NuGetFrameworkSorter` constructor changed accessibility in 7.x, breaking `Microsoft.CodeAnalysis.Testing.ReferenceAssemblies`. Requires upstream Roslyn testing package update | Wait for Microsoft.CodeAnalysis.CSharp.Analyzer.Testing to support NuGet 7.x                 |
+| F023 | Dependency debt         | Directory.Packages.props                                       | MEDIUM   | S      | RESOLVED  | Pinned `Microsoft.ApplicationInsights` from 2.23.0 to 3.1.1 — no compatibility issues                   | Done                                                                                         |
+| F024 | Dependency debt         | All test projects (transitive)                                 | MEDIUM   | S      | RESOLVED  | `System.Security.Cryptography.ProtectedData` 4.5.0 → 10.0.7 resolved by F020 Pkcs pin                  | Done                                                                                         |
 
 ## Top 5 "if you fix nothing else, fix these"
 
-All prior top-5 findings have been resolved. Current priorities:
+All CRITICAL, HIGH, and most MEDIUM/LOW findings resolved. Only unfixable items remain:
 
-1. **F017 — MEDIUM.** Add `CancellationToken` to async Web endpoints. Small change, high reliability impact — without it, cancelled HTTP requests continue executing in the background.
-2. **F014 — LOW.** Ship E128066-E128070 (5 unshipped analyzer rules) with the next version bump.
-3. **F019 — LOW.** Update NuGet package description — "64 rules" is stale.
-4. **F018 — LOW.** Remove 2 redundant RCS9004 pragmas.
-5. **F013 — LOW.** Add circular dependency prevention architecture tests.
+1. **F022 — MEDIUM (blocked).** NuGet.* 6→7 bump causes `MethodAccessException` in Roslyn test infrastructure. Blocked until upstream `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing` supports NuGet 7.x.
+2. **F011 — MEDIUM (inherent).** Bus factor = 1. Inherent to personal reference repo.
+3. **F016 — LOW (held).** System.Composition 9.0.0 transitives held by Roslyn 5.3.0 netstandard2.0 compatibility.
+
+No additional actionable findings identified.
 
 ## Quick wins
 
-- [x] F009: Add `dotnet_diagnostic.RCS9004.severity = none` to `src/E128.Analyzers/.editorconfig` and remove pragma suppressions
-- [x] F007: Replace manual `/health` with `AddHealthChecks()` + `MapHealthChecks("/health")`
-- [ ] F017: Add `CancellationToken cancellationToken` to the two async endpoint lambdas in Program.cs
-- [ ] F018: Remove 2 residual RCS9004 pragmas in FileSystemPathAnalyzer.cs:267 and FileSystemPathHelpers.cs:97
-- [ ] F019: Update NuGet `<Description>` rule count from "64" to "70"
-- [ ] F014: Move unshipped rules to `AnalyzerReleases.Shipped.md` on next version bump
-- [ ] F015: Add XML doc comments to `CliApp.cs` and `Program.cs` public APIs
-- [ ] F016: Monitor Roslyn package updates via Renovate for System.Composition transitive bump
+- [x] F009: `.editorconfig` suppression for RCS9004
+- [x] F007: `AddHealthChecks()` + `MapHealthChecks("/health")`
+- [x] F020: Pin `System.Security.Cryptography.Pkcs` 10.0.7
+- [x] F017: `CancellationToken` on async Web endpoints
+- [x] F021: Pin `Humanizer.Core` 3.0.10
+- [x] F023: Pin `Microsoft.ApplicationInsights` 3.1.1
+- [x] F018: Remove 2 redundant RCS9004 pragmas + simplify `HasFirstArgumentNamed`
+- [x] F019: Update NuGet `<Description>` rule count to 75
+- [x] F014: Ship 10 rules to `AnalyzerReleases.Shipped.md` under Release 1.26.1
+- [x] F012: Add InternalsVisibleTo to Core and Web
+- [x] F013: Add CircularDependencyTests to Architecture.Tests
+- [x] F015: Verified no public types exist — finding invalid
 
 ## Things that look bad but are actually fine
 
-- **DiskRoundtripAnalyzer.cs (607 lines) and DiskIoCatalog.cs (562 lines).** These exceed the 500-line threshold and were previously flagged (F001). After decomposition, DiskRoundtripAnalyzer has the core analysis logic and DiskIoCatalog has the method catalog and helpers. Both are cohesive — further splitting would scatter related logic without reducing complexity.
+- **DiskRoundtripAnalyzer.cs (607 lines) and DiskIoCatalog.cs (562 lines).** Exceed 500-line threshold. Both are cohesive after decomposition — further splitting scatters related logic.
 
-- **NamingStyleCodeFixProvider.cs (406 lines, highest churn).** This is the most frequently modified file (8 changes in 6 months). However, it's a complex code fix provider that handles multiple naming convention transformations (PascalCase, camelCase, underscore prefixes). The churn is legitimate feature additions, not rework.
+- **NamingStyleCodeFixProvider.cs (406 lines, highest churn: 8 changes in 6 months).** Complex code fix provider handling multiple naming convention transformations. Churn is legitimate feature additions.
 
-- **`count ?? 10` in MapGet "/greetings".** Looks like a magic number, but it's a default pagination limit in a demo endpoint — naming a constant for a single-use default in a reference app adds ceremony without value.
+- **`count ?? 10` in MapGet "/greetings".** Default pagination limit in a demo endpoint — naming a constant for single-use adds ceremony without value.
 
-- **No `ConfigureAwait(false)` in Web endpoints.** Web app code runs in the ASP.NET Core SynchronizationContext — `ConfigureAwait(false)` is not needed and CA2007 is correctly scoped to DLL projects only.
+- **No `ConfigureAwait(false)` in Web endpoints.** ASP.NET Core SynchronizationContext doesn't require it; CA2007 correctly scoped to DLL projects only.
 
-- **No `IHostApplicationLifetime` in Web.** `WebApplication.RunAsync()` handles SIGTERM gracefully via the host's built-in shutdown — no custom handler needed for this simple app.
+- **Transitive System.Composition 9.0.0 → 10.0.7 gap (F016).** Pulled by Roslyn 5.3.0. Bumping may break netstandard2.0 analyzer compatibility. Held intentionally.
 
-- **2 remaining RCS9004 pragmas (F018).** These are in FileSystem analyzer files where `SeparatedSyntaxList<T>.Count` is O(1) and `.Any()` would allocate. The pragmas are semantically correct — they're just redundant now that the .editorconfig disables RCS9004 project-wide.
+- **Microsoft.Testing.Platform 2.0.2 → 2.2.2 gap.** Minor version behind — pulled by xunit.v3.mtp-v2. Pinning separately risks diamond dependency conflicts.
 
-- **No `async void`, sync-over-async, or direct `HttpClient` instantiation in production code.** These patterns exist only in analyzer diagnostic message strings (the analyzers detect these patterns in consumer code).
+- **No `async void`, sync-over-async, or direct `HttpClient` instantiation in production code.** These appear only in analyzer diagnostic message strings.
 
-- **No crypto code, no FIPS violations.** The codebase uses zero `System.Security.Cryptography` APIs. CA53xx FIPS guardrails are explicitly pinned in `.globalconfig` as preventive controls.
+- **No crypto code, no FIPS violations.** Zero `System.Security.Cryptography` API usage. CA53xx guardrails pinned preventively.
 
-- **`new Greeter()` pattern not used — Cli uses DI.** F006 was resolved; `CliApp.ConfigureServices` registers `Greeter` via `ServiceCollection`.
+- **Microsoft.VisualStudio.Composition 16→17 and Microsoft.VisualStudio.Validation 15→17 gaps.** Roslyn test infrastructure transitives — pinning may break analyzer test harness.
 
-- **Single `AddSingleton<Greeter>()` without interface.** `Greeter` has no interface, registered as concrete type. This would normally trigger E128032 (ConcreteOnlyDiRegistrationAnalyzer), but `Greeter` is a leaf service with no need for abstraction.
+- **System.ComponentModel.Composition 4.5.0 → 10.0.7 gap.** Roslyn test infrastructure transitive. Same upstream constraint as F022.
 
-- **Transitive dependencies on System.Composition 9.0.0.** These are pulled by Microsoft.CodeAnalysis packages and pinned appropriately. Bumping to 10.0.7 could break Roslyn compatibility.
+- **Multiple Azure.Core / OpenTelemetry / Microsoft.Identity.* minor version gaps in test projects.** All patch/minor, no security impact. Pulled by test infrastructure.
 
-- **No `SuppressMessage` attributes in source.** Zero instances — all suppressions use scoped `#pragma` pairs with restore.
+- **Zero TODO/FIXME/HACK/XXX markers in source.** Clean codebase.
 
 ## Open questions for the maintainer
 
-- Should the 5 unshipped analyzer rules (E128066-E128070) be released with the next version bump, or are they intentionally held back for further testing?
-- Is the lack of `InternalsVisibleTo` in Core and Web intentional (all types are public currently) or should it be added proactively for future internal types?
+- None remaining. All prior open questions have been resolved by testing (Humanizer independently pinnable, NuGet.* not pinnable, InternalsVisibleTo added proactively).

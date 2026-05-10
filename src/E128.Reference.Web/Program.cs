@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Threading;
 using E128.Reference.Core;
 using E128.Reference.Core.Models;
 using E128.Reference.Core.Repositories;
@@ -20,15 +21,15 @@ var app = builder.Build();
 
 app.MapGet("/", (Greeter greeter) => greeter.Greet());
 
-app.MapPost("/greetings", async (GreetingRequest request, IGreetingService service) =>
+app.MapPost("/greetings", async (GreetingRequest request, IGreetingService service, CancellationToken cancellationToken) =>
 {
-    var greeting = await service.GreetAsync(request);
+    var greeting = await service.GreetAsync(request, cancellationToken);
     return Results.Created(string.Create(CultureInfo.InvariantCulture, $"/greetings/{greeting.CreatedAt.Ticks}"), greeting);
 });
 
-app.MapGet("/greetings", async (IGreetingRepository repository, int? count) =>
+app.MapGet("/greetings", async (IGreetingRepository repository, int? count, CancellationToken cancellationToken) =>
 {
-    var greetings = await repository.GetRecentAsync(count ?? 10);
+    var greetings = await repository.GetRecentAsync(count ?? 10, cancellationToken);
     return Results.Ok(greetings);
 });
 

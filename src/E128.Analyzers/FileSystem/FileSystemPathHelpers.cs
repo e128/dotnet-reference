@@ -93,15 +93,8 @@ internal static class FileSystemPathHelpers
     {
         var args = argList.Arguments;
 
-        // RCS9004: SeparatedSyntaxList<T>.Count is O(1).
-#pragma warning disable RCS9004
-        if (args.Count == 0)
-#pragma warning restore RCS9004
-        {
-            return false;
-        }
-
-        return args[0].Expression is IdentifierNameSyntax id
+        return args.Count != 0
+               && args[0].Expression is IdentifierNameSyntax id
                && string.Equals(id.Identifier.ValueText, name, StringComparison.Ordinal);
     }
 

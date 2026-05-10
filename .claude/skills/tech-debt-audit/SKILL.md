@@ -57,7 +57,7 @@ Use `rg`, `fd`, Roslyn MCP (when available), and `dotnet` CLI tools to find conc
 
 4. **Test debt** — run coverage if available; identify gaps on critical paths. Tests that assert implementation rather than behavior. Skipped or flaky tests. High-churn files with no tests. Reflection usage in tests instead of `InternalsVisibleTo`.
 
-5. **Dependency & config debt** — `dotnet list package --vulnerable --include-transitive`. Unused deps. Duplicate deps doing the same job. CPM hygiene: missing `<clear />`, missing `PackageSourceMapping`, unpinned transitive versions. Env var sprawl (referenced but not documented).
+5. **Dependency & config debt** — `dotnet list package --vulnerable --include-transitive`. **NuGet freshness**: run `dotnet list package --outdated --include-transitive` and report all packages with available major or minor version bumps. Deprecated packages are **CRITICAL** severity regardless of version gap. Major version behind = HIGH, minor version behind = MEDIUM. Patch-only updates are informational (don't clutter findings unless combined with other issues). Unused deps. Duplicate deps doing the same job. CPM hygiene: missing `<clear />`, missing `PackageSourceMapping`, unpinned transitive versions. Env var sprawl (referenced but not documented).
 
 6. **Performance & resource hygiene** — N+1 queries, sync-over-async (`.Result`, `.GetAwaiter().GetResult()`), `async void` (non-event-handler), `new HttpClient()` instead of `IHttpClientFactory`, blocking I/O on hot paths, uncleaned handles, unnecessary serialization, missing `Span<T>`/`Memory<T>` opportunities.
 
@@ -138,9 +138,12 @@ Write to `plans/TECH_DEBT_AUDIT.md` with this structure:
 ## .NET Tooling
 
 ```bash
-# Package vulnerabilities and staleness
+# Package vulnerabilities
 dotnet list package --vulnerable --include-transitive
+
+# NuGet freshness: outdated + deprecated (dimension 5)
 dotnet list package --outdated --include-transitive
+dotnet list package --deprecated --include-transitive
 
 # Dead code detection (if Roslyn MCP available)
 mcp__cwm-roslyn-navigator__find_dead_code scope=solution

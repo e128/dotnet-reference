@@ -263,10 +263,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        // RCS9004: SeparatedSyntaxList<T>.Count is O(1); calling Any() would allocate an enumerator.
-#pragma warning disable RCS9004
         if (argList.Arguments.Count == 0)
-#pragma warning restore RCS9004
         {
             return null;
         }
