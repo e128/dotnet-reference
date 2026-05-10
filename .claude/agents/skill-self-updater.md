@@ -7,9 +7,7 @@ description: >
   targeted edits: updating workflow steps, adding patterns, trimming prompt gates,
   optimizing turn counts, collapsing phases, and recording lessons learned.
   Triggers on: update skill, apply learnings to skill, skill improvement, fix skill,
-  improve skill, skill self-update, update the skill, skill update, patch skill,
-  optimize skill, skill too slow, reduce skill turns, fix skill loops, make skill faster,
-  collapse phases, skill efficiency fix.
+  improve skill, skill self-update, update the skill, skill update, patch skill.
 tools: Read, Edit, Glob, Grep
 maxTurns: 15
 memory: project

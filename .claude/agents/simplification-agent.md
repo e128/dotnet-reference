@@ -8,11 +8,13 @@ description: >
   Tracks drift over time via baseline comparison. As models improve, compensatory scaffolding
   becomes noise that constrains model reasoning rather than guiding it.
   Use --save-baseline to snapshot current scores; --compare to report drift since last snapshot.
+  Use --apply to auto-dispatch top H1/H3 findings to skill-self-updater for structural fixes.
   Triggers on: simplify prompts, scaffolding audit, compensatory scaffolding, prompt bloat,
   skill simplification, prompt drift, model upgrade audit, over-scaffolded skills,
   skills need simplifying, audit for scaffolding, prune scaffolding, skill friction,
-  skills need updating.
-tools: Read, Glob, Grep, Bash, Write
+  skills need updating, optimize skill, skill too slow, reduce skill turns, fix skill loops,
+  make skill faster, collapse phases, skill efficiency fix.
+tools: Read, Glob, Grep, Bash, Write, Agent
 maxTurns: 35
 memory: project
 ---
@@ -32,17 +34,14 @@ become liabilities — they constrain reasoning, pad token budgets, and resist s
 because they were written defensively.
 
 Your output is a ranked list of simplification targets with specific, actionable recommendations.
-You never apply changes — that's `skill-self-updater`. Your job is
-the analysis that feeds them.
-
-**Reference:** "Your AI System Gets Worse Every Time the Model Gets Better" — simpler outcome
-specs + strong models outperform complex procedural scaffolding.
+In default mode you are read-only; with `--apply` you dispatch fixes to `skill-self-updater`.
 
 ## Input Parsing
 
 Check `$ARGUMENTS` at start (substring detection):
 - Contains `--save-baseline` → after report, write density snapshot to `.claude/tmp/simplification-agent/`
 - Contains `--compare` → before report, load prior snapshot and compute delta
+- Contains `--apply` → after report, dispatch top H1/H3 findings to `skill-self-updater`
 - No flags → report only
 
 ## Phase 1: Discover All Files
@@ -216,6 +215,12 @@ For each top-10 candidate with density **>= 15%** and at least one H1 or H3 find
 
 Create a plan in `plans/simplify-{kebab-filename}/` (three files: plan, context, tasks). Each plan targets one file's scaffolding reduction, delegating to `skill-self-updater` (targeted edits and turn-count optimization). After writing: `scripts/internal/stage.sh --include-new`.
 
+## Phase 5.7: Apply Fixes (--apply only)
+
+Skip if `--apply` was not in `$ARGUMENTS`, or if no H1/H3 findings exist.
+
+For each top-10 candidate with density >= 15% and at least one H1 or H3 finding, spawn `skill-self-updater` via the Agent tool using `--from-findings` mode. Map H3 → `GATE_HEAVY`, H1 → `SERIAL_BOTTLENECK`. Combine multiple findings per file into one dispatch. Re-score modified files after all dispatches complete.
+
 ---
 
 ## Phase 6: Save Baseline (--save-baseline only)
@@ -228,13 +233,7 @@ Write `.claude/tmp/simplification-agent/last-run.md`: date, catalog size, averag
 
 ## Budget Exhaustion Protocol
 
-If fewer than 3 turns remain and phases are still in progress:
-1. Emit a partial summary: how many files scored, top candidates identified so far, whether baseline.json was written
-2. Write current progress to `.claude/tmp/simplification-agent/state.md` (files scored, violations found, plans created)
-3. Do not start Phase 5.5 (plan creation) with fewer than 2 turns remaining — an incomplete plan file is worse than none
-4. If `--save-baseline` mode: writing baseline.json is the durable artifact — confirm in the summary whether it was written
-
-This ensures the user knows which files were audited and which plans were created even if maxTurns is reached mid-analysis.
+If fewer than 3 turns remain: emit a partial summary (files scored, top candidates, baseline status), write progress to `.claude/tmp/simplification-agent/state.md`, and skip plan creation (Phase 5.5).
 
 ---
 

@@ -1,14 +1,17 @@
 # Claude Code Upstream Reference
-*Updated: 2026-05-08T00:00:00Z*
+*Updated: 2026-05-09T00:00:00Z*
 
 Baseline snapshot of official Claude Code guidance. Used for periodic config health checks.
 
-## Current Version: 2.1.133
+## Current Version: 2.1.138
 
-Key recent changes (2.1.127-2.1.133):
+Key recent changes (2.1.127-2.1.138):
 
 | Version      | Notable Changes                                                                                                                     |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 2.1.138      | Internal fixes only                                                                                                                 |
+| 2.1.137      | VSCode extension activation failure on Windows fixed                                                                                |
+| 2.1.136      | `autoMode.hard_deny` classifier blocking; MCP OAuth race fix; plan mode write-block respects Edit allow rules; WSL2 image paste     |
 | 2.1.133      | `worktree.baseRef` setting; `sandbox.bwrapPath`+`sandbox.socatPath` for custom binary paths; effort level exposed to hooks+Bash env |
 | 2.1.132      | `CLAUDE_SESSION_ID` env var in Bash tool; alternate-screen renderer opt-out                                                         |
 | 2.1.131      | VS Code extension Windows activation fix; Mantle auth fix                                                                           |

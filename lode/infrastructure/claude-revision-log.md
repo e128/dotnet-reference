@@ -1,10 +1,21 @@
 # Claude Revision Log
-*Updated: 2026-05-08T12:44:25Z*
+*Updated: 2026-05-09T00:00:00Z*
 
 Persistent memory for `/claude-revision`. Each run appends one entry.
 Read at Phase 0 to recover last-known state and deferred items.
 
 ## Runs
+
+### 2026-05-09 (Run 8)
+- Doctor: unable to capture (background task; no errors in session)
+- Description budget: 22155/8000 chars | Truncated: 0 | At risk: 1 (simplification-agent 1048)
+- Agents: 17 | Skills: 19 | Memory files: 1
+- Web guidance: v2.1.138 (up from v2.1.133); `autoMode.hard_deny` setting, MCP OAuth race fix, plan mode write-block respects Edit allow rules, SDK renamed to Claude Agent SDK; no breaking changes, no new frontmatter fields
+- HIGH: 0 | MEDIUM: 1 | LOW: 0
+- Actions taken:
+  - M1: Compressed `simplification-agent` 270→247 lines — removed redundant prose, compressed Phase 5.7 `--apply` protocol and Budget Exhaustion Protocol
+- Deferred: none
+- Session context: Also executed leverage-subtract-simplifier-merge plan (added `--apply` flag to simplification-agent, moved optimization triggers from skill-self-updater), leverage-subtract-commit-paths plan (fixed stale /commit references in smart-commit, added "commit" trigger), and created tech-debt-audit skill (225 lines + 2 reference files). Skill count 18→19.
 
 ### 2026-05-08 (Run 7)
 - Doctor: unable to capture (interactive mode; no errors in session)

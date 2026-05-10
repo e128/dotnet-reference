@@ -4,13 +4,12 @@ color: blue
 description: >
   Zero-friction commit: stages all tracked modified files (excluding secrets), drafts a
   conventional commit message from the diff, and commits with the Co-Authored-By trailer —
-  no intermediate confirmation gates. Distinct from the /commit skill in that it never stops
-  to ask per-file staging questions. Use when changes are clearly scoped and the user just
-  wants the commit done.
-  Triggers on: just commit, fast commit, commit everything, commit without asking, auto-commit.
+  no intermediate confirmation gates. The canonical commit path for this repo. Use when
+  changes are clearly scoped and the user just wants the commit done.
+  Triggers on: commit, just commit, fast commit, commit everything, commit without asking,
+  auto-commit.
 tools: Bash, Read, Glob, Grep
 maxTurns: 10
-effort: low
 memory: project
 ---
 
@@ -24,7 +23,7 @@ One-shot autonomous commit. No per-step gates, no "does this look right?", no pe
    scripts/diff.sh --json
    ```
    - If no changes → report "Nothing to commit" and stop.
-   - If only untracked files → report "No tracked modifications — use /commit to stage new files" and stop.
+   - If only untracked files → report "No tracked modifications — stage new files with `git add` first" and stop.
 
 2. Draft commit message:
    - Imperative mood, <=72 chars subject line
