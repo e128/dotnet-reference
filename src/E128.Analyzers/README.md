@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.28.2" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.28.3" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -69,7 +69,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128039 | Catch filter must exclude `OperationCanceledException`                                   | Yes      |
 | E128040 | Concurrency limit must be positive                                                       | Yes      |
 | E128041 | `JsonDocument.RootElement` must not escape the document's `using` scope                   | Yes      |
-| E128051 | Broad catch in async `HttpClient` method missing `OperationCanceledException` handler    | No       |
+| E128051 | Broad catch in async `HttpClient` method missing `OperationCanceledException` handler    | Yes      |
 | E128056 | `FileInfo.Exists` TOCTOU race condition                                                  | Yes      |
 | E128057 | Unprotected cleanup in finally block                                                     | Yes      |
 | E128064 | Disk write-then-read round-trip — use the in-memory value instead of reading back         | Yes      |
@@ -95,7 +95,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128068 | Sort operation inside loop creates O(n² log n) complexity             | No       |
 | E128069 | `List.Insert(0, ...)` in loop creates O(n²) complexity                | No       |
 | E128072 | Prefer `SHA256.HashData()` over `SHA256.Create()` (default: Info)     | Yes      |
-| E128081 | Use `StringBuilderPool` instead of `new StringBuilder()` (default: Info) | No       |
+| E128081 | Use `StringBuilderPool` instead of `new StringBuilder()` (default: Info) | Yes      |
 
 ### Security
 
@@ -510,7 +510,7 @@ Flags `int` or `double` parameters/properties with names like `timeout`, `delay`
 
 ### E128051 &mdash; HttpClient missing OCE catch
 
-Flags broad `catch (Exception)` blocks inside async methods that call `HttpClient` without a preceding `catch (OperationCanceledException)`. Swallowing OCE prevents proper timeout/cancellation handling. No code fix.
+Flags broad `catch (Exception)` blocks inside async methods that call `HttpClient` without a preceding `catch (OperationCanceledException)`. Swallowing OCE prevents proper timeout/cancellation handling. The code fix inserts a `catch (OperationCanceledException) { throw; }` clause before the broad catch.
 
 ### E128052 &mdash; Mutable collection exposure
 
