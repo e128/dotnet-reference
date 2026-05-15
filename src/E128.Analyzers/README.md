@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.28.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.28.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -46,7 +46,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128061 | Use `ImmutableArray<T>` for static readonly arrays                                                   | Yes      |
 | E128074 | Readonly struct property should use `init` accessor                                                  | Yes      |
 | E128080 | Use `ByteSize` for data-size values to avoid unit ambiguity (default: Error)                         | Yes      |
-| E128082 | Do not unwrap `ByteSize` via cast                                                                    | No       |
+| E128082 | Do not unwrap `ByteSize` via cast                                                                    | Yes      |
 
 ### Reliability
 
@@ -101,8 +101,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 | Rule    | Title                                                                     | Code Fix |
 | ------- | ------------------------------------------------------------------------- | -------- |
-| E128071 | Use a FIPS-approved hash algorithm                                        | No       |
-| E128075 | Use `RandomNumberGenerator` instead of `Random` in crypto context         | No       |
+| E128071 | Use a FIPS-approved hash algorithm                                        | Yes      |
+| E128075 | Use `RandomNumberGenerator` instead of `Random` in crypto context         | Yes      |
 
 ### Style
 
@@ -805,7 +805,7 @@ var buf = ArrayPool<char>.Shared.Rent(Math.Min(length, maxCapacity));
 
 ### E128071 &mdash; FIPS-approved hash algorithm
 
-Flags use of non-FIPS hash algorithms (`MD5`, `SHA1`) in production code. FIPS compliance requires SHA-256 or stronger. No code fix &mdash; the correct replacement depends on the protocol context.
+Flags use of non-FIPS hash algorithms (`MD5`, `SHA1`) in production code. FIPS compliance requires SHA-256 or stronger.
 
 ```csharp
 // Before (warns)
@@ -863,7 +863,7 @@ public readonly struct Point
 
 ### E128075 &mdash; Random in crypto context
 
-Flags `new Random()`, `Random.Shared`, and `Random.Next*` calls in methods whose names or surrounding types suggest cryptographic or security contexts (e.g., `Generate`, `Token`, `Secret`, `Password`, `Key`, `Nonce`, `Salt`). `System.Random` is not cryptographically secure. Use `RandomNumberGenerator` instead. No code fix &mdash; the correct usage pattern varies by context.
+Flags `new Random()`, `Random.Shared`, and `Random.Next*` calls in methods whose names or surrounding types suggest cryptographic or security contexts (e.g., `Generate`, `Token`, `Secret`, `Password`, `Key`, `Nonce`, `Salt`). `System.Random` is not cryptographically secure. Use `RandomNumberGenerator` instead.
 
 ```csharp
 // Before (warns)
