@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.27.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.28.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -45,6 +45,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128060 | Return `Dictionary<K,V>` via `.AsReadOnly()` when exposing as `IReadOnlyDictionary<K,V>`              | Yes      |
 | E128061 | Use `ImmutableArray<T>` for static readonly arrays                                                   | Yes      |
 | E128074 | Readonly struct property should use `init` accessor                                                  | Yes      |
+| E128080 | Use `ByteSize` for data-size values to avoid unit ambiguity (default: Error)                         | Yes      |
+| E128082 | Do not unwrap `ByteSize` via cast                                                                    | No       |
 
 ### Reliability
 
@@ -72,6 +74,10 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128057 | Unprotected cleanup in finally block                                                     | Yes      |
 | E128064 | Disk write-then-read round-trip — use the in-memory value instead of reading back         | Yes      |
 | E128070 | Pool `Rent()` capacity must be bounded — guard with `Math.Min`                             | No       |
+| E128076 | Materialize `QuerySelectorAll` result before iterating                                     | Yes      |
+| E128077 | `TextContent` string match requires a preceding length guard                               | No       |
+| E128078 | `GetAttribute("href")` on element that does not carry href                                 | No       |
+| E128079 | `CompositeDetection` with single generic ID selector lacks specificity                     | No       |
 
 ### Performance
 
@@ -89,6 +95,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128068 | Sort operation inside loop creates O(n² log n) complexity             | No       |
 | E128069 | `List.Insert(0, ...)` in loop creates O(n²) complexity                | No       |
 | E128072 | Prefer `SHA256.HashData()` over `SHA256.Create()` (default: Info)     | Yes      |
+| E128081 | Use `StringBuilderPool` instead of `new StringBuilder()` (default: Info) | No       |
 
 ### Security
 
