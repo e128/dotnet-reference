@@ -25,3 +25,6 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `check updates` / `outdated packages`                      | `scripts/update.sh`           |
 | `poll until` / `wait for build` / `loop until`            | `scripts/loop.sh`             |
 | `scan violations` / `check anti-patterns` / `violation scan` | `scripts/violation-scan.sh` |
+| `analyzer context` / `analyzer status`                       | `scripts/analyzer-context.sh`   |
+| `verify and ship` / `ship this branch`                       | `scripts/verify-and-ship.sh`    |
+| `lode guard` / `check lode size`                             | `scripts/lode-guard.sh <file>`  |

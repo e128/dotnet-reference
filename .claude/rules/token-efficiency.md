@@ -17,4 +17,6 @@
 - **Use `scripts/branch.sh` instead of `git rev-list --count`.**
 - **Use `scripts/help.sh` to discover available scripts.**
 - **Use `/yeet` (via Skill tool) instead of raw `git push`.** `/yeet` runs preflight + commit + push.
+- **Use `scripts/analyzer-context.sh --json` instead of reading analyzer metadata files individually.** Replaces 6+ reads (csproj, Unshipped, Shipped, PublicAPI, README, rg DiagnosticId) with one call.
+- **Use `scripts/lode-guard.sh <file>` instead of manual `wc -l` before lode writes.**
 - Do not summarize what you just did unless the result is ambiguous.
