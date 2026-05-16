@@ -132,8 +132,12 @@ if [[ "$CACHE_PCT" =~ ^[0-9]+$ ]]; then
   CACHE_PART="\033[2m\033[38;5;242m ║ \033[0m${CACHE_CLR}⚡${CACHE_PCT}%\033[0m"
 fi
 
-# Claude Code version — stone gold
+# Claude Code version — dim gray (low-priority metadata)
 VER_PART=""
-[ -n "$VERSION" ] && VER_PART="\033[38;5;220mv${VERSION}\033[0m\033[2m\033[38;5;242m ║ \033[0m"
+[ -n "$VERSION" ] && VER_PART="\033[38;5;242mv${VERSION}\033[0m\033[2m\033[38;5;242m ║ \033[0m"
 
-echo -e "\033[38;5;208m☥\033[0m ${VER_PART}\033[38;5;208;1m$MODEL\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;208m📁 $DIR\033[0m\033[2m\033[38;5;242m ║ \033[0m$([ -n "$BRANCH" ] && printf '%b' "\033[38;5;45m🌿 $BRANCH\033[0m")\033[2m\033[38;5;242m ║ \033[0m$CI_ICON\033[0m$WIN_PART$TOK_PART$CACHE_PART\033[2m\033[38;5;242m ║ \033[0m$BAR\033[0m ${CTX_CLR}$PCT%\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;208m$TIME\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;45m+$ADDED\033[0m \033[38;5;202m-$REMOVED\033[0m\033[0m"
+# Color distribution:
+#   ☥ + model: Leeloo orange 208 (hero element, bold)
+#   repo dir:  bright lavender 183 (distinct from orange, readable on dark bg)
+#   version:   dim gray 242 (background metadata)
+echo -e "\033[38;5;208m☥\033[0m ${VER_PART}\033[38;5;208;1m$MODEL\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;183m📁 $DIR\033[0m\033[2m\033[38;5;242m ║ \033[0m$([ -n "$BRANCH" ] && printf '%b' "\033[38;5;45m🌿 $BRANCH\033[0m")\033[2m\033[38;5;242m ║ \033[0m$CI_ICON\033[0m$WIN_PART$TOK_PART$CACHE_PART\033[2m\033[38;5;242m ║ \033[0m$BAR\033[0m ${CTX_CLR}$PCT%\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;220m$TIME\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;45m+$ADDED\033[0m \033[38;5;202m-$REMOVED\033[0m\033[0m"
