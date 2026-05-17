@@ -4,14 +4,15 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 
 ## Core Workflow
 
-| Script       | Purpose                                              | Key flags                         |
-| ------------ | ---------------------------------------------------- | --------------------------------- |
-| `build.sh`   | Build the solution or a specific project             | `--verbose`, `--project`          |
-| `test.sh`    | Run tests (defaults to CI category)                  | `--all`, `--verbose`, `--trait`   |
-| `format.sh`  | Run jb cleanupcode then dotnet format                | `--check`, `--changed`, `--no-jb` |
-| `check.sh`   | Composed: format + build + test                      | `--all`, `--no-format`            |
-| `ci.sh`      | Full CI pipeline                                     | `--skip-format`, `--skip-test`    |
-| `docker.sh`  | Docker build/run/test/stop/clean                     | `--no-cache`                      |
+| Script                | Purpose                                                   | Key flags                         |
+| --------------------- | --------------------------------------------------------- | --------------------------------- |
+| `build.sh`            | Build the solution or a specific project                  | `--verbose`, `--project`          |
+| `test.sh`             | Run tests (defaults to CI category)                       | `--all`, `--verbose`, `--trait`   |
+| `format.sh`           | Run jb cleanupcode then dotnet format                     | `--check`, `--changed`, `--no-jb` |
+| `check.sh`            | Composed: format + build + test                           | `--all`, `--no-format`            |
+| `ci.sh`               | Full CI pipeline                                          | `--skip-format`, `--skip-test`    |
+| `docker.sh`           | Docker build/run/test/stop/clean                          | `--no-cache`                      |
+| `verify-and-ship.sh`  | Verify, commit, and push (format → check → commit → push) | —                                 |
 
 ## Git & Status
 
@@ -34,6 +35,9 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `update.sh`         | Check for outdated NuGet packages               |
 | `gh-actions-update.sh` | Check GitHub Actions for outdated versions   |
 | `lint-yaml.sh`      | Validate YAML syntax                            |
+| `sdk-version.sh`    | Read SDK version from global.json                |
+| `build-budget.sh`   | Per-session build cycle budget enforcer           |
+| `format-invalidate.sh` | List .cs files modified by last format run     |
 
 ## Lode & Plans
 
@@ -41,17 +45,28 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | ------------------- | ---------------------------------------------------------------- |
 | `lode-ts.sh`        | Update timestamps on lode files                                  |
 | `lode-summary.sh`   | Find and display lode content by section                         |
+| `lode-guard.sh`     | Lode file size guard: check line count before appending          |
 | `task.sh`           | Task management: check/next/progress                             |
 | `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected    |
 | `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default glm-5:cloud) |
 
+## Code Navigation & Analysis
+
+| Script               | Purpose                                                        | Key flags                                       |
+| -------------------- | -------------------------------------------------------------- | ----------------------------------------------- |
+| `find.sh`            | Deterministic symbol lookup (class/method/callers/refs/file)   | `--class`, `--method`, `--callers`, `--refs`, `--file`, `--json` |
+| `file-outline.sh`    | File structure outline with line ranges for targeted reading   | `--json`, `--method`, `--section`               |
+| `code-read.sh`       | Extract method/class/section source by name                    | `--method`, `--class`, `--section`, `--line`, `--json` |
+| `deps.sh`            | Type dependency graph (callers, callees, interfaces)           | `--callers`, `--callees`, `--interfaces`, `--json` |
+
 ## Coverage & Analysis
 
-| Script              | Purpose                                         |
-| ------------------- | ----------------------------------------------- |
-| `coverage-areas.sh` | Test coverage heuristic by namespace/project    |
-| `session-health.sh` | Session analytics: error trends, tool counts, bash commands |
-| `violation-scan.sh` | Scan for .NET anti-patterns and rule violations  |
+| Script                 | Purpose                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `analyzer-context.sh`  | Analyzer project context: version, rules, fix providers, and public API surface |
+| `coverage-areas.sh`    | Test coverage heuristic by namespace/project                                    |
+| `session-health.sh`    | Session analytics: error trends, tool counts, bash commands                     |
+| `violation-scan.sh`    | Scan for .NET anti-patterns and rule violations                                 |
 
 ## Internal Scripts
 
