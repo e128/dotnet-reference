@@ -26,6 +26,7 @@ Default window is 7 days. Override with `--days N` from `$ARGUMENTS`.
 Run all of these in parallel — they are independent:
 
 ```bash
+scripts/session-mine.sh all --days 7 --json
 scripts/session-health.sh tool-counts --days 7 --json
 scripts/session-health.sh bash-commands --days 7 --json
 scripts/session-health.sh bash-commands --days 7 --category --json
@@ -36,11 +37,7 @@ scripts/help.sh
 rg "pattern|workflow|manual|TODO" lode/ -l 2>/dev/null || true
 ```
 
-Also scan raw JSONL transcripts in the session directory for:
-- Multi-tool sequences that repeat across sessions (3+ tool calls, same pattern)
-- Repeated Read patterns (same file read 3+ times per session)
-- Recurring agent spawns for simple tasks
-- Any bash command sequence run 2+ times identically
+`session-mine.sh all` provides tool frequencies, repeated commands, most-read files, and agent spawns — use it instead of ad-hoc `jq` pipelines over JSONL transcripts.
 
 ### Error patterns (proxy for hook blocks)
 

@@ -88,8 +88,7 @@ Compare against the last revision log entry date (from Phase 0). Report new or c
 Run these bash commands directly (no sub-agent):
 
 1. Count and list agents:
-   `ls .claude/agents/*.md | wc -l` → agent count
-   `ls .claude/agents/*.md` → agent list
+   `ls .claude/agents/*.md` → agent list (count from output)
 
 2. Extract all frontmatter fields in one pass:
    `rg -l "" .claude/agents/ | xargs rg "^(model|memory|maxTurns|isolation|tools):" --with-filename`

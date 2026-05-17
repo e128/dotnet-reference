@@ -64,8 +64,11 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | Script                 | Purpose                                                                         |
 | ---------------------- | ------------------------------------------------------------------------------- |
 | `analyzer-context.sh`  | Analyzer project context: version, rules, fix providers, and public API surface |
+| `analyzer-stats.sh`    | Analyzer rule and source file statistics                                        |
+| `codebase-stats.sh`    | Codebase file and LOC statistics by project                                     |
 | `coverage-areas.sh`    | Test coverage heuristic by namespace/project                                    |
 | `session-health.sh`    | Session analytics: error trends, tool counts, bash commands                     |
+| `session-mine.sh`      | Mine Claude Code session transcripts for repeated patterns                      |
 | `violation-scan.sh`    | Scan for .NET anti-patterns and rule violations                                 |
 
 ## Internal Scripts

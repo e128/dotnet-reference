@@ -16,6 +16,9 @@ Every repeated operation goes through a canonical script. Never use raw commands
 | Ad-hoc `rg` for callers                | `scripts/find.sh --callers MethodName`           |
 | Full-file Read for one method          | `scripts/code-read.sh --method Name PATH`       |
 | `cat global.json \| jq .sdk.version`  | `scripts/sdk-version.sh`                        |
+| Ad-hoc `rg E128 \| wc -l` chains      | `scripts/analyzer-stats.sh [--json]`            |
+| Ad-hoc `fd -e cs \| wc -l` chains     | `scripts/codebase-stats.sh [--json]`            |
+| Ad-hoc `jq` over session JSONL        | `scripts/session-mine.sh <subcmd> [--json]`     |
 
 ## Build Budget
 

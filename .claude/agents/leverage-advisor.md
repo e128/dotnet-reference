@@ -65,7 +65,8 @@ Scan for gaps by reviewing:
 - Active plans — what keeps getting planned but never shipped?
 - Roadmap — is there something conspicuously absent?
 - Recent session patterns (from `scripts/diff.sh` commits) — what keeps being done manually?
-- Bash invocation history — `scripts/session-health.sh --json` for repeated raw commands not yet mapped to scripts
+- Bash invocation history — `scripts/session-mine.sh repeated-commands --days 7 --json` for repeated raw commands not yet mapped to scripts
+- Codebase shape — `scripts/codebase-stats.sh --json` for file/LOC distribution across projects
 
 Score the top 5 candidates. Pick the winner (highest score; break ties on Compound).
 

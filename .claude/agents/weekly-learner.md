@@ -76,7 +76,7 @@ Issue all of the following in the same turn — they are independent reads:
 
 **Memory** — Read the memory file (`.claude/tmp/weekly-learner/memory.md`) for previously identified patterns, implemented recommendations, dismissed patterns, and `last_claude_version`.
 
-**Session data** — Gather session stats, tool counts, bash command categories, and topics for the analysis window via `scripts/session-health.sh` subcommands (stats, tool-counts, bash-commands --category, topics) with `--days 7 --json`.
+**Session data** — Gather session stats, tool counts, bash command categories, and topics for the analysis window via `scripts/session-health.sh` subcommands (stats, tool-counts, bash-commands --category, topics) with `--days 7 --json`. Also run `scripts/session-mine.sh all --days 7 --json` for tool frequencies, repeated commands, most-read files, and agent spawn patterns.
 
 **Skill/command invocations** — Extract slash-command frequencies from `~/.claude/history.jsonl` (grep display names, sort/uniq, top 20).
 
