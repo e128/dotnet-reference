@@ -92,32 +92,43 @@ Always use `.claude/tmp/` instead of `/tmp`. **Never write to `/tmp`.**
 
 **Never write absolute user profile paths.** Use `~` for home-relative or repo-relative paths.
 
+### Design Principle: Deterministic Scripts Over Ad-Hoc Commands
+
+**Favor deterministic scripts for all repeated operations.** When an operation runs more than once -- builds, tests, formatting, status checks, symbol lookups -- it belongs in a `scripts/*.sh` script, not in inline shell commands. Never use raw `dotnet build/test/format`, raw `git status/log/diff`, or ad-hoc `rg` chains when a script covers the same operation.
+
 ### Scripts & Tooling
 
 **Never use inline scripts for repeated operations.** Check `scripts/help.sh` first.
 
-**Fix broken scripts immediately — never work around them.** When a script produces wrong output, fix the script first.
+**Fix broken scripts immediately -- never work around them.** When a script produces wrong output, fix the script first.
 
 **Script naming convention:**
-- `scripts/*.sh` — all scripts use bash 5+ and live in `scripts/`
-- `scripts/internal/*.sh` — scripts invoked by skills and agents only
+- `scripts/*.sh` -- all scripts use bash 5+ and live in `scripts/`
+- `scripts/internal/*.sh` -- scripts invoked by skills and agents only
 
 ### Key Scripts
 
-| Task                     | Script                              |
-| ------------------------ | ----------------------------------- |
-| Build                    | `scripts/build.sh [--verbose]`      |
-| Test                     | `scripts/test.sh [--all] [--verbose]` |
-| Format check             | `scripts/format.sh --check`         |
-| Full CI                  | `scripts/ci.sh`                     |
-| Composed check           | `scripts/check.sh [--all]`          |
-| Git status               | `scripts/status.sh [--json]`        |
-| Diff summary             | `scripts/diff.sh [--json] [--staged]` |
-| Branch info              | `scripts/branch.sh [--json]`        |
-| Fail-fast gate           | `scripts/assert.sh --build-pass`    |
-| Timestamp                | `scripts/ts.sh [FILE]`              |
-| Script catalog           | `scripts/help.sh`                   |
-| Task management          | `scripts/task.sh {check\|next\|progress}` |
-| Lode timestamps          | `scripts/lode-ts.sh --changed`      |
-| Version bump             | `scripts/internal/version-bump.sh <Project>` |
+| Task                     | Script                                              |
+| ------------------------ | --------------------------------------------------- |
+| Build                    | `scripts/build.sh [--verbose]`                      |
+| Test                     | `scripts/test.sh [--all] [--verbose]`               |
+| Format check             | `scripts/format.sh --check`                         |
+| Full CI                  | `scripts/ci.sh`                                     |
+| Composed check           | `scripts/check.sh [--all]`                          |
+| Git status               | `scripts/status.sh [--json]`                        |
+| Diff summary             | `scripts/diff.sh [--json] [--staged]`               |
+| Branch info              | `scripts/branch.sh [--json]`                        |
+| Fail-fast gate           | `scripts/assert.sh --build-pass`                    |
+| Timestamp                | `scripts/ts.sh [FILE]`                              |
+| Script catalog           | `scripts/help.sh`                                   |
+| Task management          | `scripts/task.sh {check\|next\|progress}`           |
+| Lode timestamps          | `scripts/lode-ts.sh --changed`                      |
+| Version bump             | `scripts/internal/version-bump.sh <Project>`        |
+| Find symbol              | `scripts/find.sh --class\|--method\|--callers NAME` |
+| File outline             | `scripts/file-outline.sh PATH [--json]`             |
+| Extract source           | `scripts/code-read.sh --method\|--class NAME PATH`  |
+| Type dependencies        | `scripts/deps.sh TYPE [--callers] [--json]`         |
+| Build budget             | `scripts/build-budget.sh tick\|status\|reset`       |
+| SDK version              | `scripts/sdk-version.sh [--json]`                   |
+| Format invalidation      | `scripts/format-invalidate.sh [--json]`             |
 
