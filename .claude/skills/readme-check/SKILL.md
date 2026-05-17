@@ -62,8 +62,8 @@ Verify the inventory above is still complete. If a new README exists, flag it.
 ### src/*/README.md (packable projects)
 For each README found under `src/` in a packable project (`<IsPackable>true</IsPackable>`):
 1. Read the README
-2. If the project contains analyzers, grep all `DiagnosticId` constants from `*Analyzer.cs` — every rule must appear in the rule table
-3. Grep all `*CodeFixProvider.cs` files — the "Code Fix" column must be Yes for rules that have one, No otherwise
+2. If the project contains analyzers, run `scripts/analyzer-stats.sh --json` to get all diagnostic IDs and code fix provider coverage — every rule must appear in the rule table
+3. Cross-reference the `diagnostic_ids` against fix providers from `analyzer-stats.sh` output — the "Code Fix" column must be Yes for rules that have a provider, No otherwise
 4. Check `<Version>` in the `.csproj` matches any installation snippet in the README
 5. Verify rule categories and titles match the `DiagnosticDescriptor` fields
 

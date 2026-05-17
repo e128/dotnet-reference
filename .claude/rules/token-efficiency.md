@@ -19,4 +19,7 @@
 - **Use `/yeet` (via Skill tool) instead of raw `git push`.** `/yeet` runs preflight + commit + push.
 - **Use `scripts/analyzer-context.sh --json` instead of reading analyzer metadata files individually.** Replaces 6+ reads (csproj, Unshipped, Shipped, PublicAPI, README, rg DiagnosticId) with one call.
 - **Use `scripts/lode-guard.sh <file>` instead of manual `wc -l` before lode writes.**
+- **Use `scripts/analyzer-stats.sh --json` instead of ad-hoc `rg E128 | wc -l` chains.** Counts diagnostic IDs, analyzer classes, fix providers, PublicAPI entries, and source metrics.
+- **Use `scripts/codebase-stats.sh --json` instead of ad-hoc `fd -e cs | wc -l` chains.** Counts files and LOC by project, lists largest files.
+- **Use `scripts/session-mine.sh <subcommand> --json` instead of ad-hoc `jq` pipelines over JSONL transcripts.** Subcommands: `tool-freq`, `repeated-commands`, `most-read`, `agent-spawns`, `all`.
 - Do not summarize what you just did unless the result is ambiguous.

@@ -131,4 +131,7 @@ Always use `.claude/tmp/` instead of `/tmp`. **Never write to `/tmp`.**
 | Build budget             | `scripts/build-budget.sh tick\|status\|reset`       |
 | SDK version              | `scripts/sdk-version.sh [--json]`                   |
 | Format invalidation      | `scripts/format-invalidate.sh [--json]`             |
+| Analyzer stats           | `scripts/analyzer-stats.sh [--json]`                |
+| Codebase stats           | `scripts/codebase-stats.sh [--json] [--threshold N]`|
+| Session mining           | `scripts/session-mine.sh <subcmd> [--days N] [--json]`|
 

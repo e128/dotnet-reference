@@ -28,3 +28,6 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `analyzer context` / `analyzer status`                       | `scripts/analyzer-context.sh`   |
 | `verify and ship` / `ship this branch`                       | `scripts/verify-and-ship.sh`    |
 | `lode guard` / `check lode size`                             | `scripts/lode-guard.sh <file>`  |
+| `analyzer stats` / `rule count`                              | `scripts/analyzer-stats.sh`     |
+| `codebase stats` / `file counts` / `largest files`          | `scripts/codebase-stats.sh`     |
+| `session mine` / `transcript analysis` / `session patterns`  | `scripts/session-mine.sh all`   |

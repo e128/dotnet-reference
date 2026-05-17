@@ -70,10 +70,13 @@ Run in parallel:
 
 Then also run:
 ```bash
+scripts/session-mine.sh all --days 2 --json
 scripts/session-health.sh tool-counts --days 2 --json
 scripts/session-health.sh bash-commands --days 2 --json
 scripts/violation-scan.sh --json
 ```
+
+`session-mine.sh` provides tool frequencies, repeated commands, most-read files, and agent spawns in a single call — use it instead of ad-hoc `jq` pipelines over JSONL transcripts.
 
 Also read `.claude/rules/token-efficiency.md` — cross-reference all violations against documented rules.
 
