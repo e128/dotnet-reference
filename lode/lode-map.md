@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-05-10T00:00:00Z*
+*Updated: 2026-05-17T00:00:00Z*
 
 ## Root Files
 
@@ -22,6 +22,11 @@
 - [analyzers.md](dotnet/analyzers.md) — Deny-by-default strategy, analyzer packages, suppression policy
 - [release-tracking.md](dotnet/release-tracking.md) — AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
 - [analyzer-candidates.md](dotnet/analyzer-candidates.md) — Candidate analyzer ideas and investigation notes
+
+### dotnet/analyzers/
+
+- [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md) — Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
+- [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md) — Code fix implementation patterns, BatchFixer vs SequentialRename, AddUsing blank line behavior
 
 ## dotnet-reference/
 
