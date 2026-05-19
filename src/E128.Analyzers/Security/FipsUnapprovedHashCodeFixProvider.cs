@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
@@ -15,10 +16,14 @@ namespace E128.Analyzers.Security;
 [Shared]
 public sealed class FipsUnapprovedHashCodeFixProvider : CodeFixProvider
 {
-    private static readonly ImmutableHashSet<string> FixableTypes = ImmutableHashSet.Create(
-        StringComparer.Ordinal,
-        "MD5",
-        "SHA1");
+    private static readonly ImmutableDictionary<string, string> ReplacementMap =
+        ImmutableDictionary.CreateRange(StringComparer.Ordinal, new[]
+        {
+            new KeyValuePair<string, string>("MD5", "SHA256"),
+            new KeyValuePair<string, string>("SHA1", "SHA256"),
+            new KeyValuePair<string, string>("HMACMD5", "HMACSHA256"),
+            new KeyValuePair<string, string>("HMACSHA1", "HMACSHA256")
+        });
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FipsUnapprovedHashAnalyzer.DiagnosticId];
@@ -37,33 +42,48 @@ public sealed class FipsUnapprovedHashCodeFixProvider : CodeFixProvider
         }
 
         var diagnostic = context.Diagnostics[0];
-        if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation)
-        {
-            return;
-        }
+        var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        if (node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess })
         {
-            return;
+            var receiverName = GetIdentifierName(memberAccess.Expression);
+            if (receiverName is not null && ReplacementMap.TryGetValue(receiverName, out var replacement))
+            {
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        $"Replace with {replacement}",
+                        ct => ReplaceReceiverAsync(context.Document, memberAccess, replacement, ct),
+                        nameof(FipsUnapprovedHashCodeFixProvider)),
+                    diagnostic);
+            }
         }
-
-        var receiverName = GetReceiverTypeName(memberAccess.Expression);
-        if (receiverName is null || !FixableTypes.Contains(receiverName))
+        else if (node is ObjectCreationExpressionSyntax creation)
         {
-            return;
+            var typeName = GetIdentifierName(creation.Type);
+            if (typeName is not null && ReplacementMap.TryGetValue(typeName, out var replacement))
+            {
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        $"Replace with {replacement}",
+                        ct => ReplaceConstructorTypeAsync(context.Document, creation, replacement, ct),
+                        nameof(FipsUnapprovedHashCodeFixProvider)),
+                    diagnostic);
+            }
         }
-
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace with SHA256",
-                ct => ReplaceReceiverAsync(context.Document, memberAccess, ct),
-                nameof(FipsUnapprovedHashCodeFixProvider)),
-            diagnostic);
     }
 
-    private static string? GetReceiverTypeName(ExpressionSyntax expression)
+    private static string? GetIdentifierName(ExpressionSyntax expression)
     {
         return expression switch
+        {
+            IdentifierNameSyntax id => id.Identifier.ValueText,
+            _ => null
+        };
+    }
+
+    private static string? GetIdentifierName(TypeSyntax type)
+    {
+        return type switch
         {
             IdentifierNameSyntax id => id.Identifier.ValueText,
             _ => null
@@ -73,6 +93,7 @@ public sealed class FipsUnapprovedHashCodeFixProvider : CodeFixProvider
     private static async Task<Document> ReplaceReceiverAsync(
         Document document,
         MemberAccessExpressionSyntax memberAccess,
+        string replacement,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -81,12 +102,33 @@ public sealed class FipsUnapprovedHashCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var newReceiver = SyntaxFactory.IdentifierName("SHA256")
+        var newReceiver = SyntaxFactory.IdentifierName(replacement)
             .WithLeadingTrivia(memberAccess.Expression.GetLeadingTrivia())
             .WithTrailingTrivia(memberAccess.Expression.GetTrailingTrivia());
 
         var newMemberAccess = memberAccess.WithExpression(newReceiver);
         var newRoot = root.ReplaceNode(memberAccess, newMemberAccess);
+        return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static async Task<Document> ReplaceConstructorTypeAsync(
+        Document document,
+        ObjectCreationExpressionSyntax creation,
+        string replacement,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+        {
+            return document;
+        }
+
+        var newType = SyntaxFactory.IdentifierName(replacement)
+            .WithLeadingTrivia(creation.Type.GetLeadingTrivia())
+            .WithTrailingTrivia(creation.Type.GetTrailingTrivia());
+
+        var newCreation = creation.WithType(newType);
+        var newRoot = root.ReplaceNode(creation, newCreation);
         return document.WithSyntaxRoot(newRoot);
     }
 }

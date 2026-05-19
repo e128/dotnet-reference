@@ -103,4 +103,62 @@ public sealed class FipsUnapprovedHashE128CodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HMACMD5Constructor_FixedToHMACSHA256()
+    {
+        return VerifyFixAsync(
+            """
+            using System;
+            using System.Security.Cryptography;
+            class C
+            {
+                void M()
+                {
+                    using var h = {|E128071:new HMACMD5(Array.Empty<byte>())|};
+                }
+            }
+            """,
+            """
+            using System;
+            using System.Security.Cryptography;
+            class C
+            {
+                void M()
+                {
+                    using var h = new HMACSHA256(Array.Empty<byte>());
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HMACSHA1HashData_FixedToHMACSHA256HashData()
+    {
+        return VerifyFixAsync(
+            """
+            using System;
+            using System.Security.Cryptography;
+            class C
+            {
+                void M()
+                {
+                    var hash = {|E128071:HMACSHA1.HashData(Array.Empty<byte>(), Array.Empty<byte>())|};
+                }
+            }
+            """,
+            """
+            using System;
+            using System.Security.Cryptography;
+            class C
+            {
+                void M()
+                {
+                    var hash = HMACSHA256.HashData(Array.Empty<byte>(), Array.Empty<byte>());
+                }
+            }
+            """);
+    }
 }

@@ -101,6 +101,57 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task HMACMD5HashData_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var hash = {|E128071:HMACMD5.HashData(Array.Empty<byte>(), Array.Empty<byte>())|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewHMACMD5_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var h = {|E128071:new HMACMD5(Array.Empty<byte>())|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewHMACSHA1_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var h = {|E128071:new HMACSHA1(Array.Empty<byte>())|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task SHA256Create_NoDiagnostic()
     {
         return VerifyAsync("""
@@ -127,6 +178,40 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
                                void M()
                                {
                                    var hash = SHA256.HashData(Array.Empty<byte>());
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HMACSHA256HashData_NoDiagnostic()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var hash = HMACSHA256.HashData(Array.Empty<byte>(), Array.Empty<byte>());
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewHMACSHA256_NoDiagnostic()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var h = new HMACSHA256(Array.Empty<byte>());
                                }
                            }
                            """);

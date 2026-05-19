@@ -15,7 +15,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use a FIPS-approved hash algorithm",
-        "'{0}.{1}()' is not FIPS 140-2 approved — use SHA256, SHA384, or SHA512",
+        "'{0}' is not FIPS 140-2 approved — use a SHA256/SHA384/SHA512-based equivalent",
         "Security",
         DiagnosticSeverity.Warning,
         true);
@@ -26,7 +26,9 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         "SHA1",
         "DES",
         "RC2",
-        "TripleDES");
+        "TripleDES",
+        "HMACMD5",
+        "HMACSHA1");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -41,6 +43,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ObjectCreationExpression);
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
@@ -80,7 +83,34 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(
             Rule,
             invocation.GetLocation(),
-            typeName,
-            methodName));
+            $"{typeName}.{methodName}()"));
+    }
+
+    private static void AnalyzeObjectCreation(SyntaxNodeAnalysisContext context)
+    {
+        var creation = (ObjectCreationExpressionSyntax)context.Node;
+
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(creation, context.CancellationToken);
+        if (symbolInfo.Symbol is not IMethodSymbol { MethodKind: MethodKind.Constructor } constructor)
+        {
+            return;
+        }
+
+        var typeName = constructor.ContainingType?.Name;
+        if (typeName is null || !UnapprovedTypes.Contains(typeName))
+        {
+            return;
+        }
+
+        var containingNamespace = constructor.ContainingType?.ContainingNamespace?.ToDisplayString();
+        if (!string.Equals(containingNamespace, "System.Security.Cryptography", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            creation.GetLocation(),
+            $"new {typeName}()"));
     }
 }

@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.29.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.29.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -809,14 +809,16 @@ var buf = ArrayPool<char>.Shared.Rent(Math.Min(length, maxCapacity));
 
 ### E128071 &mdash; FIPS-approved hash algorithm
 
-Flags use of non-FIPS hash algorithms (`MD5`, `SHA1`) in production code. FIPS compliance requires SHA-256 or stronger.
+Flags use of non-FIPS algorithms (`MD5`, `SHA1`, `DES`, `RC2`, `TripleDES`, `HMACMD5`, `HMACSHA1`) in production code. Detects both factory methods (`.Create()`, `.HashData()`) and constructors (`new HMACMD5(key)`). FIPS 140-2 compliance requires SHA-256 or stronger.
 
 ```csharp
 // Before (warns)
 using var md5 = MD5.Create();
+using var hmac = new HMACSHA1(key);
 
 // After
 using var sha256 = SHA256.Create();
+using var hmac = new HMACSHA256(key);
 ```
 
 ### E128072 &mdash; SHA256.Create() obsolete pattern (Info)

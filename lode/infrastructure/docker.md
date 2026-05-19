@@ -1,5 +1,5 @@
 # Docker
-*Updated: 2026-05-04T20:34:29Z*
+*Updated: 2026-05-19T16:46:27Z*
 
 ## Build Commands
 
@@ -35,11 +35,11 @@ Hardcoded port `58080` — could conflict in parallel CI. Tests tagged `[Trait("
 
 ## Dockerfile Structure
 
-Three-stage Alpine-based build (`Dockerfile` at repo root):
+Three-stage Noble-based build (`Dockerfile` at repo root), FIPS 140-2 compliant:
 
-1. **restore** — `sdk:10.0-alpine`, copies build infra + csproj files, runs `dotnet restore`
+1. **restore** — `sdk:10.0-noble`, copies build infra + csproj files, runs `dotnet restore`
 2. **build** — copies source, runs `dotnet publish --configuration Release`
-3. **runtime** — `aspnet:10.0-alpine`, hardened (apk removed), non-root user, health check via `wget`
+3. **runtime** — `aspnet:10.0-noble`, OpenSSL 3.x FIPS provider activated via `openssl fipsinstall` + custom `openssl-fips.cnf` (`default_properties = fips=yes`), non-root user, health check via `curl`
 
 ## `.dockerignore`
 
