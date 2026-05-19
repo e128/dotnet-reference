@@ -39,8 +39,10 @@ if [[ "$ALL" == true ]]; then
     # No filter — run everything including Docker and Manual
     :
 elif [[ ${#CLASSES[@]} -gt 0 ]]; then
-    # Filter to specific test class
-    MTP_ARGS+=(--filter-class "${CLASSES[0]}")
+    # Filter to specific test class(es) — MTP supports repeated --filter-class
+    for cls in "${CLASSES[@]}"; do
+        MTP_ARGS+=(--filter-class "$cls")
+    done
 else
     # Default: CI category only
     MTP_ARGS+=(--filter-trait "$TRAIT")
