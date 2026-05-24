@@ -49,23 +49,16 @@ Claude Code allocates ~1% of context window (fallback 8,000 chars) for the combi
 at startup. Each entry's `description` + `when_to_use` is capped at 1,536 characters — anything beyond
 is silently truncated, degrading the model's ability to route to the right skill/agent.
 
-Measure all descriptions in one pass:
-
 ```bash
-for f in .claude/agents/*.md .claude/skills/*/SKILL.md .claude/skills/*/WORKFLOW.md; do
-    [ -f "$f" ] || continue
-    desc=$(sed -n '/^description:/,/^[a-z]/p' "$f" | tr '\n' ' ')
-    name=$(basename "$(dirname "$f")")/$(basename "$f")
-    echo "${#desc} $name"
-done | sort -rn
+scripts/catalog-stats.sh --json
 ```
 
-Flag entries:
-- **Over 1,536 chars** (description + when_to_use combined) → HIGH: silently truncated at startup
+Parse `desc_chars` per entry from the `catalog` array. Flag entries:
+- **Over 1,536 chars** → HIGH: silently truncated at startup
 - **Over 1,000 chars** → MEDIUM: at risk if context budget shrinks or more skills are added
 - **Under 50 chars** → LOW: may be too terse for accurate routing
 
-Include a total character count across all entries. If the total exceeds 8,000 chars, flag HIGH —
+Sum all `desc_chars` values. If the total exceeds 8,000 chars, flag HIGH —
 low-priority entries are being dropped from startup context entirely.
 
 ## Phase 1: Web Research _(skip with `--no-web`)_
@@ -85,18 +78,15 @@ Compare against the last revision log entry date (from Phase 0). Report new or c
 
 ### Phase 2: Agent Review
 
-Run these bash commands directly (no sub-agent):
+Run the catalog inventory (already fetched in Phase 0c — reuse the output):
 
-1. Count and list agents:
-   `ls .claude/agents/*.md` → agent list (count from output)
+```bash
+scripts/catalog-stats.sh --json
+```
 
-2. Extract all frontmatter fields in one pass:
-   `rg -l "" .claude/agents/ | xargs rg "^(model|memory|maxTurns|isolation|tools):" --with-filename`
+Filter the `catalog` array to entries where `type == "agent"`. The JSON includes `tools`, `maxTurns`, `memory`, `model`, `isolation`, `total_lines`, `desc_chars`, and `in_keywords` per entry.
 
-3. Find iterating agents (have Agent/Bash tool) missing maxTurns:
-   `rg -l "Agent|Bash" .claude/agents/ | xargs rg -L "maxTurns:"`
-
-Evaluate only what the grep output reveals against these criteria:
+Evaluate against these criteria:
 
 | Check | Criteria |
 |-------|----------|
@@ -114,21 +104,13 @@ Return: table of `(agent, lines, model, memory, issues)`. Flag issues HIGH/MEDIU
 
 ### Phase 3: Skill Review
 
-Run these bash commands directly (no sub-agent):
+Reuse the `scripts/catalog-stats.sh --json` output from Phase 0c. Filter the `catalog` array to
+entries where `type == "skill"`. The JSON includes `total_lines`, `meaningful_lines`, `desc_chars`,
+`tools`, `maxTurns`, and `in_keywords` per entry.
 
-1. Count skills and get line counts:
-   `fd -e md "(SKILL|WORKFLOW)" .claude/skills | xargs wc -l | sort -rn | head -20`
-
-2. Flag skills over 250 lines for review — read only those files:
-   `fd -e md "(SKILL|WORKFLOW)" .claude/skills | xargs wc -l | awk '$1>250 {print}' | sort -rn`
-
-3. Check for stale agent references in skills:
-   Get agent names: `ls .claude/agents/ | sed 's/\.md//'`
-   Then grep for any known-removed agents (from Phase 0 log context) across skills.
-   Build the grep pattern dynamically from the "Deferred" and "Actions" sections of the last
-   revision log entry — these list agents removed or flagged in prior runs.
-   `rg "<removed-agent-1>|<removed-agent-2>" .claude/skills/ --with-filename`
-   (Substitute actual removed agent names from the Phase 0 log each run)
+Flag skills over 250 `total_lines` for review — read only those files. Check for stale agent
+references in skills by grepping for known-removed agents from the Phase 0 log context:
+`rg "<removed-agent-1>|<removed-agent-2>" .claude/skills/ --with-filename`
 
 Read individual skill files only for skills flagged as over-size or containing stale references.
 
@@ -190,10 +172,11 @@ If untracked files found, report them and offer to `git add` them before moving 
 
 **5b. Scripts Relevance Check**
 
-1. Get all script names: `scripts/help.sh | grep -oP '^\s*\S+\.sh'` or `ls scripts/*.sh | xargs -I{} basename {}`
+1. Get all script names from `scripts/help.sh` output.
 
-2. Check which scripts are referenced across config in one pass — build a single rg alternation pattern from the script names, then:
-   `rg -l "script-a|script-b|script-c" .claude/rules/ .claude/skills/ .claude/agents/ CLAUDE.md`
+2. Cross-reference the `catalog` JSON from Phase 0c — check each script name against all
+   agent/skill descriptions and paths. Also check `CLAUDE.md` and `.claude/rules/`:
+   `rg -l "script-a|script-b|script-c" .claude/rules/ CLAUDE.md`
    (Substitute the actual script names discovered in step 1)
 
 3. For scripts with zero reference hits, read only their header (~25 lines) to understand purpose.

@@ -72,15 +72,16 @@ This increments the `<Version>` in the analyzer csproj so the NuGet package ship
 If the version was bumped, re-read the csproj before any subsequent edits.
 
 **C.2) Unshipped/Shipped validation:**
-Validate that `AnalyzerReleases.Unshipped.md` and `AnalyzerReleases.Shipped.md` are consistent with the actual analyzer source. Run these checks:
 
-1. **New diagnostic IDs have Unshipped entries.** Scan changed `.cs` files under `src/E128.Analyzers/` for `DiagnosticId` string constants (pattern: `"E128\d{3}"`). Every ID that does NOT appear in `Shipped.md` must appear in `Unshipped.md`. Missing entries → add them to Unshipped.md with the correct Rule ID, Category, Severity, and Notes from the analyzer source.
+```bash
+scripts/internal/analyzer-release-check.sh --json
+```
 
-2. **No duplicates across files.** Every E128xxx ID must appear in exactly one of the two files. If an ID appears in both Unshipped and Shipped → remove it from Unshipped (Shipped wins).
-
-3. **No orphaned Unshipped entries.** Every ID in Unshipped.md must correspond to an analyzer class that exists on disk. If an ID is in Unshipped but no analyzer source defines it → flag and remove the orphan.
-
-4. **Table format consistency.** Unshipped.md must use aligned-column markdown tables matching the existing format (pipe-separated, header + separator + rows). Verify column order: `Rule ID | Category | Severity | Notes`.
+Parse the JSON output. If `status` is `"issues"`:
+- **`missing`** array → add each ID to Unshipped.md with the correct Rule ID, Category, Severity, and Notes from the analyzer source
+- **`duplicates`** array → remove each from Unshipped (Shipped wins)
+- **`orphans`** array → remove each orphaned entry from Unshipped.md
+- Verify table format consistency: aligned-column markdown, column order `Rule ID | Category | Severity | Notes`
 
 If any fixes are needed, apply them silently (auto-approval per project rules). Log what was fixed.
 

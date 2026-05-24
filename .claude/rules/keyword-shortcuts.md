@@ -31,3 +31,5 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `analyzer stats` / `rule count`                              | `scripts/analyzer-stats.sh`     |
 | `codebase stats` / `file counts` / `largest files`          | `scripts/codebase-stats.sh`     |
 | `session mine` / `transcript analysis` / `session patterns`  | `scripts/session-mine.sh all`   |
+| `catalog stats` / `skill count` / `agent count`             | `scripts/catalog-stats.sh`      |
+| `check releases` / `analyzer releases` / `release check`    | `scripts/internal/analyzer-release-check.sh` |

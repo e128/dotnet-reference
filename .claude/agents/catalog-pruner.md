@@ -26,11 +26,9 @@ Creates plans in `plans/` for LOW_USE and DUPLICATE candidates — no approval g
 
 Gather all data in parallel — no dependencies between these:
 
-- **File counts**: number of skills (`skills/*/SKILL.md`) and agents (`agents/*.md`)
-- **Trigger phrases**: extracted from each skill/agent frontmatter `description:` field
+- **Catalog inventory**: `scripts/catalog-stats.sh --json` — returns agents, skills, frontmatter fields, description lengths, keyword-table membership, and line counts in one call
 - **Session invocation frequency** (30-day window): `scripts/session-health.sh --json`
 - **Git modification history**: `scripts/diff.sh --json` — filter for `.claude/agents/` and `.claude/skills/` paths
-- **CLAUDE.md keyword table**: `grep -oP '`/[a-z-]+`' CLAUDE.md | sort -u` — skills in the keyword table are actively routed, never retire these
 - **Most recent weekly digest**: read for dead-weight candidates section (skip if none found)
 
 ## Phase 2: Classify

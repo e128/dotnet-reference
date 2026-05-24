@@ -19,6 +19,9 @@ Every repeated operation goes through a canonical script. Never use raw commands
 | Ad-hoc `rg E128 \| wc -l` chains      | `scripts/analyzer-stats.sh [--json]`            |
 | Ad-hoc `fd -e cs \| wc -l` chains     | `scripts/codebase-stats.sh [--json]`            |
 | Ad-hoc `jq` over session JSONL        | `scripts/session-mine.sh <subcmd> [--json]`     |
+| Ad-hoc `fd`/`ls` over agents+skills   | `scripts/catalog-stats.sh [--json]`             |
+| Manual analyzer release file checks    | `scripts/internal/analyzer-release-check.sh`    |
+| Manual agent discovery for reviews     | `scripts/internal/review-agents.sh [--json]`    |
 
 ## Build Budget
 

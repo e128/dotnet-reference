@@ -116,9 +116,9 @@ Analyze the gathered data for:
 - Tasks that span multiple sessions (continuity problems)
 - Manual steps between automated steps (workflow breaks)
 - Agents or skills that are never used (dead weight):
-  - If `.claude/agents/catalog-pruner.md` exists: spawn `catalog-pruner` agent for deep analysis
-  - Otherwise: list skills from `.claude/skills/` and agents from `.claude/agents/`, cross-reference against invocation data to identify unused items
-  - If 5+ dead weight candidates found, recommend running catalog-pruner
+  - Run `scripts/catalog-stats.sh --json` to get the full catalog with `in_keywords` flags
+  - Cross-reference catalog entries against invocation data from Phase 1
+  - If `.claude/agents/catalog-pruner.md` exists and 5+ dead weight candidates found: recommend running catalog-pruner
 - Agent/skill invocations that are immediately followed by the same manual work (ineffective automation)
 - **Duplicate CI runs**: consecutive `check.sh --all`, `ci.sh`, or `build.sh` calls with no file edits between them — flag as "redundant CI" and recommend `--skip-tests` on `/yeet` when the prior phase verify already passed
 - **Fallback chains**: a `test.sh` failure followed by raw `dotnet test` attempts — flag as "test runner fallback" and recommend fixing `test.sh` output instead of working around it

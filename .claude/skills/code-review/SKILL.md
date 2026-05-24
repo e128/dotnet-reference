@@ -52,10 +52,10 @@ If no scope is provided, ask the user for one.
 4. **Detect mechanical commits** — if all changes in the diff are pure namespace renames (every `+`/`-` line is identical except for a namespace prefix substitution), mark those files as `MECHANICAL` and exclude them from deep agent review. Add a one-line note to the report: "N files excluded: namespace rename only." This prevents a single mechanical refactor from inflating the diff 10-20x and wasting agent budget.
 5. **Generate unified diff** for the review window — this is the primary input for all agents
 6. **Discover agents dynamically**:
-   - Read `.claude/agents/` directory
-   - Parse agent `.md` files for descriptions
-   - Filter to code-review-relevant agents using keywords
-   - Exclude non-code-review agents (pipeline, lode, corpus tools)
+   ```bash
+   scripts/internal/review-agents.sh --json
+   ```
+   Parse the `agents` array — each entry has `name` and `path`. This replaces manual directory reading, description parsing, and keyword filtering.
 
 ### Phase 2: Execution
 

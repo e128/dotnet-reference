@@ -22,4 +22,7 @@
 - **Use `scripts/analyzer-stats.sh --json` instead of ad-hoc `rg E128 | wc -l` chains.** Counts diagnostic IDs, analyzer classes, fix providers, PublicAPI entries, and source metrics.
 - **Use `scripts/codebase-stats.sh --json` instead of ad-hoc `fd -e cs | wc -l` chains.** Counts files and LOC by project, lists largest files.
 - **Use `scripts/session-mine.sh <subcommand> --json` instead of ad-hoc `jq` pipelines over JSONL transcripts.** Subcommands: `tool-freq`, `repeated-commands`, `most-read`, `agent-spawns`, `all`.
+- **Use `scripts/catalog-stats.sh --json` instead of ad-hoc `fd`/`ls` over `.claude/agents/` and `.claude/skills/`.** Returns frontmatter fields, description lengths, keyword membership, and line counts.
+- **Use `scripts/internal/analyzer-release-check.sh --json` instead of manual DiagnosticId scanning and release file comparison.**
+- **Use `scripts/internal/review-agents.sh --json` instead of manually reading `.claude/agents/` and filtering by keywords.**
 - Do not summarize what you just did unless the result is ambiguous.

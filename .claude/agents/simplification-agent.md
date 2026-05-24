@@ -46,14 +46,13 @@ Check `$ARGUMENTS` at start (substring detection):
 
 ## Phase 1: Discover All Files
 
-Launch these in parallel — no dependencies between them:
+Run the catalog inventory script:
 
 ```bash
-fd -t f -g "SKILL.md" .claude/skills | sort
-fd -t f -g "*.md" .claude/agents | sort
+scripts/catalog-stats.sh --json
 ```
 
-Record full paths. Catalog size = N skills + M agents.
+Parse the `catalog` array from the JSON output. Each entry has `path`, `type`, `name`, `total_lines`, `meaningful_lines`, and frontmatter fields. Catalog size = `agents` + `skills` from the top-level counts.
 
 ## Phase 2: Score Each File
 

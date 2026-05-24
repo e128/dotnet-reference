@@ -65,6 +65,7 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | ---------------------- | ------------------------------------------------------------------------------- |
 | `analyzer-context.sh`  | Analyzer project context: version, rules, fix providers, and public API surface |
 | `analyzer-stats.sh`    | Analyzer rule and source file statistics                                        |
+| `catalog-stats.sh`     | Inventory all agents and skills with frontmatter fields, description lengths, and line counts |
 | `codebase-stats.sh`    | Codebase file and LOC statistics by project                                     |
 | `coverage-areas.sh`    | Test coverage heuristic by namespace/project                                    |
 | `session-health.sh`    | Session analytics: error trends, tool counts, bash commands                     |
@@ -75,14 +76,16 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 
 These are invoked by skills and agents only — not intended for direct use:
 
-| Script                 | Purpose                                      |
-| ---------------------- | -------------------------------------------- |
-| `internal/commit.sh`   | Commit helper with co-author trailer         |
-| `internal/precommit.sh`| PII scan on staged files                     |
-| `internal/stage.sh`    | Stage modified + new files, excluding secrets|
-| `internal/plan-close.sh`| Verify tasks complete, then remove plan dir |
-| `internal/plan-gate.sh`| Phase gate prerequisite verification         |
-| `internal/plan-context.sh`| List active plans, roadmap items, or details |
-| `internal/plan-path.sh`| Resolve a plan's canonical path by partial name|
-| `internal/version-bump.sh`| Increment <Version> in a project's .csproj  |
-| `internal/lode.sh`   | Legacy Claude CLI wrapper (SystemPrompt.txt) |
+| Script                              | Purpose                                                                       |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| `internal/analyzer-release-check.sh` | Validate analyzer release files (Unshipped/Shipped) against source DiagnosticId constants |
+| `internal/commit.sh`                | Commit helper with co-author trailer                                          |
+| `internal/lode.sh`                  | Legacy Claude CLI wrapper (SystemPrompt.txt)                                  |
+| `internal/plan-close.sh`            | Verify tasks complete, then remove plan dir                                   |
+| `internal/plan-context.sh`          | List active plans, roadmap items, or details                                  |
+| `internal/plan-gate.sh`             | Phase gate prerequisite verification                                          |
+| `internal/plan-path.sh`             | Resolve a plan's canonical path by partial name                               |
+| `internal/precommit.sh`             | PII scan on staged files                                                      |
+| `internal/review-agents.sh`         | Discover code-review-relevant agents dynamically from .claude/agents/         |
+| `internal/stage.sh`                 | Stage modified + new files, excluding secrets                                 |
+| `internal/version-bump.sh`          | Increment \<Version\> in a project's .csproj                                  |
