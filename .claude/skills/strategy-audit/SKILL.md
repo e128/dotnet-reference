@@ -83,17 +83,10 @@ REPORT_PATH="plans/strategy-audit-$(date -u +%Y-%m-%d).md"
 Run these bash commands in parallel — no dependencies between them, no agent needed:
 
 ```bash
-# File counts by language
-fd -e cs src/ | wc -l          # C# source files
-fd -e cs tests/ | wc -l        # C# test files
-fd -e sh scripts/ | wc -l      # Shell scripts
-# Key modules (top-level src dirs)
-ls <repo-path>/src/
-# Entry points and project structure
+scripts/codebase-stats.sh --json
+ls src/
 fd -e csproj src/ --max-depth 2
 ```
-
-If `fd` is unavailable, fall back to: `find src/ -name "*.cs" | wc -l`
 
 Synthesize a concise summary (under 20 lines) covering: Languages, Framework(s), key `src/` dirs and their purpose, entry points, test project names, file count by language, key namespaces.
 

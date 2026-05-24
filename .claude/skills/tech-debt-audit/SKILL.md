@@ -2,11 +2,15 @@
 name: tech-debt-audit
 description: >
   Tech debt and architecture audit for .NET repos. Produces plans/TECH_DEBT_AUDIT.md with file-cited
-  findings, severity, and effort estimates. Supports module scoping. Does not auto-invoke.
-when_to_use: >
-  tech debt audit, debt audit, codebase health check, architecture review,
-  code quality assessment, audit tech debt, tech debt scan.
-argument-hint: "[scope path] -- e.g., src/Core to audit only that module"
+  findings, severity, and effort estimates. Supports module scoping and focused-mode shortcuts
+  (crap, dead-code, duplicates, suppressions, solid) for single-dimension audits. Does not auto-invoke.
+  Triggers on: tech debt audit, debt audit, codebase health check, architecture review,
+  code quality assessment, audit tech debt, tech debt scan, code health, crap analysis,
+  crap score, dead code audit, find dead code, unused types, dup-scan, code duplication,
+  duplicate code, find duplicates, DRY violations, review code suppressions,
+  audit pragma warnings, pragma warning disable, suppression cleanup, code hygiene,
+  SOLID violations, solid review.
+argument-hint: "[scope path] [crap | dead-code | duplicates | suppressions | solid | all]"
 ---
 
 # Tech Debt Audit
@@ -20,6 +24,24 @@ When invoked via `/tech-debt-audit [scope]`, follow the protocol below. Everythi
 | Argument        | Required | Description                                                                  |
 | --------------- | -------- | ---------------------------------------------------------------------------- |
 | `[scope path]`  | No       | Limit audit to a specific directory (e.g., `src/Core`). Full repo if omitted |
+| `[mode]`        | No       | Focused mode — run only one dimension (see table below). Full audit if omitted |
+
+## Focused Modes (formerly code-health-audit)
+
+When a mode argument is provided, skip Phase 1 orientation and Phase 2 full audit. Run only the specified dimension, produce findings in the standard output format, and write to `plans/TECH_DEBT_AUDIT.md`.
+
+| Mode           | Dimension                        | What it finds                                              |
+| -------------- | -------------------------------- | ---------------------------------------------------------- |
+| `crap`         | §4 Test debt (CRAP scoring)      | High-risk methods via `CRAP = CC² × (1−cov)³ + CC`        |
+| `dead-code`    | §1 Architectural decay           | Unused public types + orphaned NuGet packages              |
+| `duplicates`   | §1 Architectural decay           | Copy-pasted code blocks + repeated helper patterns         |
+| `suppressions` | §8 Security hygiene              | `#pragma warning disable` — proposes fixes over suppression |
+| `solid`        | §10 Code quality                 | SRP, OCP, LSP, ISP, DIP violations with refactoring suggestions |
+| `all`          | All 16 dimensions                | Same as omitting the mode argument                         |
+
+**CRAP formula:** `CRAP = CC² × (1 − cov/100)³ + CC` — use source-level cyclomatic complexity, not IL-level. See `references/crap-formula.md` in the former code-health-audit for the C#-specific counting rules.
+
+**Suppression policy:** Default stance is fix, don't suppress. Move recurring test suppressions to `tests/.editorconfig`. All suppressions require explicit user approval per CLAUDE.md.
 
 ---
 

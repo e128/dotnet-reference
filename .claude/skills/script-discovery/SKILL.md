@@ -5,13 +5,15 @@ description: >
   bash scripts. A "deterministic script" replaces an ad-hoc multi-turn Claude
   behavior with a repeatable, token-free automation (bash script + optional
   hook + optional keyword shortcut). Scores candidates on token-savings potential
-  and builds the top 3 if approved.
+  and builds the top 3 if approved. Supports --scan-skills mode to statically
+  analyze agent/skill files for inline bash that should be extracted to scripts.
   Triggers on: script discovery, find script candidates, what should be a script,
   repeated patterns, deterministic scripts, automate patterns, session patterns,
-  discover scripts, what keeps repeating, find automations, script opportunities.
+  discover scripts, what keeps repeating, find automations, script opportunities,
+  review agents for scripts, extract scripts from skills, deterministic portions.
   Not for: token optimization plans (use token-optimizer), weekly session analysis
   (use weekly-learner), or single-session review (use token-optimizer --current).
-argument-hint: "[--days N]"
+argument-hint: "[--days N] [--scan-skills]"
 ---
 
 # Script Discovery
@@ -19,9 +21,16 @@ argument-hint: "[--days N]"
 Find ad-hoc multi-turn Claude behaviors that should be deterministic bash scripts.
 Score each candidate on token-savings potential and build the top 3 if approved.
 
-## Phase 1: Gather Data (7-day window)
+## Mode Selection
+
+Check `$ARGUMENTS` for mode:
+- **`--scan-skills`** → Static analysis mode (Phase 1b below). Reads all agent/skill files for inline bash patterns that could be extracted into `scripts/*.sh`. Also updates affected agents/skills to reference the new scripts.
+- **Default** → Session-mining mode (Phase 1a below). Mines transcript data for repeated commands.
+
+## Phase 1a: Gather Session Data (default mode, 7-day window)
 
 Default window is 7 days. Override with `--days N` from `$ARGUMENTS`.
+Skip this phase if `--scan-skills` mode.
 
 Run all of these in parallel — they are independent:
 
@@ -49,6 +58,37 @@ repeated `bash-failure` → fragile manual commands needing a robust script).
 
 From the `rg` output, look for: documented patterns describing multi-step
 processes without a corresponding script in `scripts/`.
+
+---
+
+## Phase 1b: Static Skill/Agent Analysis (--scan-skills mode)
+
+Skip Phase 1a entirely. Instead, statically analyze all agent and skill files for inline bash patterns that should be deterministic scripts.
+
+### 1b.1 Inventory
+
+```bash
+scripts/catalog-stats.sh --json
+```
+
+### 1b.2 Read all agent and skill files
+
+Read each file from the catalog. For each file, identify:
+
+- **Inline bash blocks** — `\`\`\`bash` fenced blocks containing multi-command sequences
+- **Ad-hoc command chains** — `rg ... | sort | uniq`, `fd ... | xargs wc -l`, `for f in ... done` loops
+- **Repeated data gathering** — the same commands appearing in 2+ different agents/skills
+- **Deterministic validation** — checks with no LLM judgment needed (e.g., comparing file lists, counting entries, parsing YAML fields)
+
+### 1b.3 Cross-reference with existing scripts
+
+For each inline pattern found, check `scripts/help.sh` output — skip if already covered.
+
+### 1b.4 Score and report
+
+Score using the same Phase 2 rubric below. For `--scan-skills` mode, the Frequency dimension measures how many agents/skills contain the pattern (1 file = 0, 2 files = 1, 3-4 files = 2, 5+ files = 3).
+
+After approval in Phase 4, Phase 5 builds the scripts AND updates each affected agent/skill file to reference the new script instead of inline bash.
 
 ---
 
@@ -118,6 +158,11 @@ For each of the top 3:
    bash -n scripts/{name}.sh
    shellcheck scripts/{name}.sh 2>/dev/null || true
    ```
+
+6. **Update affected agents/skills** (--scan-skills mode only):
+   - Read each agent/skill that contained the inline pattern
+   - Replace the inline bash with a reference to the new script
+   - Verify the agent/skill still reads correctly after the edit
 
 No plan needed — these are small, self-contained scripts, not features.
 

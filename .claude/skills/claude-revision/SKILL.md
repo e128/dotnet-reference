@@ -192,13 +192,10 @@ If untracked files found, report them and offer to `git add` them before moving 
 Check revision-relevant lode files for staleness:
 
 ```bash
-for f in lode/infrastructure/claude-revision-log.md lode/infrastructure/claude-code-maintenance.md; do
-    [ -f "$f" ] && git log --format="%ad %s" --date=short -1 -- "$f"
-done
+scripts/lode-ts.sh --stale --json
 ```
 
-Flag entries where last commit date is older than 30 days, or where the file's content references
-agents/skills that no longer exist.
+Filter the output to `lode/infrastructure/claude-revision-log.md` and `lode/infrastructure/claude-code-maintenance.md`. Flag entries where `days_ago > 30`, or where the file's content references agents/skills that no longer exist.
 
 ## Phase 6: Report & Log
 

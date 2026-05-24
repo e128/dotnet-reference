@@ -73,7 +73,7 @@ If no scope is provided, ask the user for one.
 5. **Provide actionable next steps** based on highest severity. Additionally, check whether any finding pattern matches a `new` entry in `lode/dotnet/analyzer-candidates.md` (read file if not already loaded). If a match exists, append:
    > "Pattern '{pattern}' found in review findings — matches analyzer candidate (score N/5). Consider evaluating E128 analyzer candidacy."
 6. **Cross-reference with deeper audits** — if findings include `#pragma warning disable`, code duplication, or high-complexity methods, append:
-   > "Deeper analysis available: run `/code-health-audit suppressions|duplicates|crap` for a full audit."
+   > "Deeper analysis available: run `/tech-debt-audit suppressions|duplicates|crap` for a focused audit."
 7. **Save report** to `.claude/tmp/code-review-latest.md` (enables `review-applier` agent to batch-apply findings)
 
 ### Phase 4: Exit
