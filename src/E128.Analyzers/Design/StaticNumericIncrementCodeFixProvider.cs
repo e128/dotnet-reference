@@ -73,13 +73,13 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
             PrefixUnaryExpressionSyntax p => p,
             PostfixUnaryExpressionSyntax p => p,
             AssignmentExpressionSyntax a when a.IsKind(SyntaxKind.AddAssignmentExpression)
-                || a.IsKind(SyntaxKind.SubtractAssignmentExpression) => a,
+                                              || a.IsKind(SyntaxKind.SubtractAssignmentExpression) => a,
             _ => tokenNode.Parent switch
             {
                 PrefixUnaryExpressionSyntax p => p,
                 PostfixUnaryExpressionSyntax p => p,
                 AssignmentExpressionSyntax a when a.IsKind(SyntaxKind.AddAssignmentExpression)
-                    || a.IsKind(SyntaxKind.SubtractAssignmentExpression) => a,
+                                                  || a.IsKind(SyntaxKind.SubtractAssignmentExpression) => a,
                 _ => null
             }
         };
@@ -154,6 +154,7 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
             {
                 return true;
             }
+
             containingType = containingType.ContainingType;
         }
 
@@ -185,7 +186,7 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
             null, SyntaxFactory.Token(SyntaxKind.RefKeyword),
             fieldOperand.WithoutTrivia());
 
-        (var methodName, var extraArg) = expression switch
+        var (methodName, extraArg) = expression switch
         {
             PrefixUnaryExpressionSyntax unary when unary.OperatorToken.IsKind(SyntaxKind.PlusPlusToken) =>
                 ("Increment", null),
@@ -208,10 +209,10 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
             : SyntaxFactory.SeparatedList(new[] { refArgument });
 
         var interlockedInvocation = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName("Interlocked"),
-                SyntaxFactory.IdentifierName(methodName)))
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("Interlocked"),
+                    SyntaxFactory.IdentifierName(methodName)))
             .WithArgumentList(SyntaxFactory.ArgumentList(arguments));
 
         return SyntaxFactory.AssignmentExpression(

@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.29.2" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.29.3" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -47,6 +47,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128074 | Readonly struct property should use `init` accessor                                                   | Yes      |
 | E128080 | Use `ByteSize` for data-size values to avoid unit ambiguity (default: Error)                          | Yes      |
 | E128082 | Do not unwrap `ByteSize` via cast                                                                     | Yes      |
+| E128087 | Static numeric field should not be incremented with ++/--                                             | Yes      |
 
 ### Reliability
 
@@ -932,6 +933,20 @@ var buf = ArrayPool<byte>.Shared.Rent(dataLength);
 // ... fill buf[0..dataLength]
 var param = new SqliteParameter("@data", buf) { Size = dataLength };
 cmd.Parameters.Add(param);
+```
+
+### E128087 &mdash; Static numeric field should not be incremented with ++/--
+
+Flags `static` numeric fields mutated with `++`, `--`, `+=`, or `-=`. These operations are not atomic — concurrent invocations produce data races, and the accumulated value leaks across call contexts. Use `Interlocked.Increment`/`Decrement`/`Add` for int/long fields, or remove the `static` keyword.
+
+```csharp
+// Before (warns)
+private static int _count;
+void Track() => _count++;
+
+// After — atomic
+private static int _count;
+void Track() => Interlocked.Increment(ref _count);
 ```
 
 ## Configuration
