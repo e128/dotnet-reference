@@ -15,5 +15,9 @@ E128.Analyzers.Design.ByteSizeForDataSizeCodeFixProvider
 E128.Analyzers.Design.ByteSizeForDataSizeCodeFixProvider.ByteSizeForDataSizeCodeFixProvider() -> void
 E128.Analyzers.Design.ByteSizeUnwrapViaCastAnalyzer
 E128.Analyzers.Design.ByteSizeUnwrapViaCastAnalyzer.ByteSizeUnwrapViaCastAnalyzer() -> void
+E128.Analyzers.Design.StaticNumericIncrementAnalyzer
+E128.Analyzers.Design.StaticNumericIncrementAnalyzer.StaticNumericIncrementAnalyzer() -> void
+E128.Analyzers.Design.StaticNumericIncrementCodeFixProvider
+E128.Analyzers.Design.StaticNumericIncrementCodeFixProvider.StaticNumericIncrementCodeFixProvider() -> void
 E128.Analyzers.Performance.StringBuilderPoolAnalyzer
 E128.Analyzers.Performance.StringBuilderPoolAnalyzer.StringBuilderPoolAnalyzer() -> void

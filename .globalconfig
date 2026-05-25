@@ -210,6 +210,7 @@ dotnet_diagnostic.rcs1262.severity = error       # Unnecessary raw string litera
 dotnet_diagnostic.rcs1267.severity = suggestion  # Use string interpolation instead of string.Concat
 
 # --- SonarAnalyzer (S) ---
+dotnet_diagnostic.E128087.severity = error        # Static numeric field increment without Interlocked
 dotnet_diagnostic.s1121.severity = error         # Assignments should not be made from within sub-expressions
 dotnet_diagnostic.s2761.severity = error         # Simplify logical negation
 dotnet_diagnostic.s3358.severity = suggestion    # Ternary operators should not be nested — kept at suggestion (matches RCS1238)

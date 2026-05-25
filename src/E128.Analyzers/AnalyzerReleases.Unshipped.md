@@ -13,3 +13,4 @@ E128083  | Performance | Warning  | Use ImmutableCollectionsMarshal.AsImmutableA
 E128084  | Performance | Warning  | Use CollectionsMarshal.AsSpan with Slice instead of List.GetRange
 E128085  | Performance | Warning  | Use foreach+AddRange instead of SelectMany.ToList
 E128086  | Reliability | Warning  | ArrayPool buffer used as SqliteParameter value without Size
+E128087  | Design      | Warning  | Static numeric field should not be incremented with ++/--
