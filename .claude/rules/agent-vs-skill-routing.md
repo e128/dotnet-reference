@@ -13,6 +13,14 @@
 
 **No `effort:` field unless the task genuinely requires non-default effort.** Most agents should inherit.
 
+## Canonical Paths (repo-specific agents supersede generic plugins)
+
+| Action      | Use                  | Not                                          |
+| ----------- | -------------------- | -------------------------------------------- |
+| Commit      | `smart-commit` agent | `devex:commit`, `commit-commands:commit`     |
+| Ship (push) | `/yeet` skill        | raw `git push`                               |
+| Lode write  | `/lode-capture` skill| `lode-sync` agent (for batch sync only)      |
+
 ## Write Code Before Running Tests
 
 - **Write all implementation code first**, then verify

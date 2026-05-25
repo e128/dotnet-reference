@@ -4,27 +4,21 @@ color: orange
 description: >
   Batch-apply findings from the most recent /code-review run. Reads the saved review
   report from .claude/tmp/code-review-latest.md, confirms once, then applies all approved
-  findings in a single TDD batch (collect all edits, test once). After verify, runs a
-  bounded self-review → cross-review reflection loop (cap N=2): checks each fix against
-  its original finding intent, then spawns silent-failure-hunter on modified files.
+  findings in a single TDD batch (collect all edits, test once).
   Reduces the manual "fix all" → approve each → apply each loop to a single
-  confirmation + one test run.
+  confirmation + one test run. After verify, runs a bounded self-review → cross-review
+  reflection loop (cap N=2) to catch missed issues.
   Triggers on: fix all findings, apply review, fix code review issues, apply all fixes,
   apply findings.
 tools: Read, Edit, Write, Bash, Glob, Grep, Agent
 maxTurns: 25
-memory: project
 ---
 
 Apply code review findings in one batch pass. One confirmation, one test run.
 
 ## Phase 1: Load Findings
 
-```bash
-cat .claude/tmp/code-review-latest.md 2>/dev/null
-```
-
-If not found:
+Read `.claude/tmp/code-review-latest.md`. If the file does not exist:
 1. Check for leftover diff artifacts: `ls .claude/tmp/cr-*.diff 2>/dev/null`
 2. If neither exists → report: "No saved review found. Run `/code-review --commits N` first,
    then invoke this agent." Stop.
@@ -106,46 +100,13 @@ Reflection: N/2 iterations | skipped (clean) | ⚠️ cap reached: {unresolved l
 
 ## Phase 4.5: Bounded Reflection Loop
 
-**Skip entirely** if Phase 4 tests passed cleanly and all findings were applied without any "stop and ask" escalations.
+Skip if Phase 4 tests passed cleanly with no escalations.
 
-Cap: N=2 (override with `--review-iterations N`). Check cap at the TOP of each iteration.
-
-For each iteration (while `iteration < cap`):
-
-1. **Self-review** — for each applied finding, re-read the fix location and verify it matches the finding's intent:
-   - Does the fix address the root cause described, or only the symptom?
-   - Does it introduce a new `!` null-forgiving operator? (flag — do not apply)
-   - For structural findings: was the structural issue actually resolved, or was a cosmetic change made?
-2. **Verify** — run tests on all modified files
-3. **Cross-review** — review all modified files for silent failures
-4. If **no issues** from self-review AND cross-review → break early (clean)
-5. If **issues found** AND `iteration < cap`:
-   - Apply fixes (batch, no test between individual fixes)
-   - Increment iteration, continue
-6. If `iteration == cap` AND issues remain → emit cap-exceeded warning, proceed to cleanup
-
-Emit per-iteration tracking:
-```
---- Reflection Loop: Iteration N/2 ---
-Self-review: [N findings addressed correctly | M findings incomplete]
-Cross-review: [issues found | clean]
-Action: [fixes applied | exiting early — clean]
-```
-
-On cap exceeded:
-```
-⚠️ Quality cap reached (2/2 iterations). Shipping with unresolved findings:
-  • [file:line] — [finding description]
-```
-
-Clean up:
-```bash
-rm -f .claude/tmp/code-review-latest.md
-```
+Run the bounded reflection loop (cap N=2) per `lode/infrastructure/agent-patterns.md`.
+After loop completes: `rm -f .claude/tmp/code-review-latest.md`.
 
 ## Rules
 
-- **Re-Read after format** — after any `scripts/format.sh` run, re-Read every file you intend to Edit. Format modifies files in-place; editing from stale content causes "file modified since read" errors.
 - **One batch, one test run** — never run tests between individual fixes
 - **Never apply LOW findings** — always advisory, never auto-applied
 - **Never apply "needs verification" findings** — build-validator is authoritative

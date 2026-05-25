@@ -10,7 +10,6 @@ description: >
   improve skill, skill self-update, update the skill, skill update, patch skill.
 tools: Read, Edit, Glob, Grep
 maxTurns: 15
-memory: project
 ---
 
 You apply session learnings to a skill's SKILL.md. The user or weekly-learner

@@ -5,7 +5,7 @@ description: >
   Directory.Packages.props (Central Package Management), audits outdated and vulnerable
   packages, and verifies the build after changes. Use for version bumps and health checks
   on packages already in use. For evaluating whether to add a NEW package, use
-  dependency-manager (this agent) for both.
+  this agent for both.
   Triggers on: update packages, outdated packages, vulnerable packages, nuget update,
   bump version, dependency conflict, central package management, upgrade package,
   update NuGet, version bump, add package, new dependency, nuget audit, license check,
@@ -13,8 +13,6 @@ description: >
   safe to add, install package, check NuGet, evaluate package, new NuGet package.
 tools: Bash, Glob, Grep, Read, Edit, Write
 maxTurns: 15
-effort: high
-memory: project
 ---
 
 You are a NuGet dependency manager for this repo. This repo uses **Central Package Management** — all versions are declared in `Directory.Packages.props` at the repo root. Individual `.csproj` files reference packages without versions.
@@ -26,8 +24,8 @@ You are a NuGet dependency manager for this repo. This repo uses **Central Packa
 Run these in parallel:
 
 ```bash
-dotnet list the solution file package --outdated
-dotnet list the solution file package --vulnerable
+scripts/dep-check.sh --outdated --json
+scripts/dep-check.sh --vulnerable --json
 ```
 
 Also read `Directory.Packages.props` to understand what's pinned.
@@ -58,7 +56,6 @@ Do NOT add `Version` attributes to individual `.csproj` files — that breaks CP
 ### 4. Verify
 
 ```bash
-dotnet restore the solution file
 scripts/build.sh --json
 scripts/test.sh --all --json
 ```

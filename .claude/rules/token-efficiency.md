@@ -25,4 +25,5 @@
 - **Use `scripts/catalog-stats.sh --json` instead of ad-hoc `fd`/`ls` over `.claude/agents/` and `.claude/skills/`.** Returns frontmatter fields, description lengths, keyword membership, and line counts.
 - **Use `scripts/internal/analyzer-release-check.sh --json` instead of manual DiagnosticId scanning and release file comparison.**
 - **Use `scripts/internal/review-agents.sh --json` instead of manually reading `.claude/agents/` and filtering by keywords.**
+- **Use `scripts/dep-check.sh --json` instead of raw `dotnet list ... --outdated/--vulnerable`.**
 - Do not summarize what you just did unless the result is ambiguous.

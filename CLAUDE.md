@@ -137,4 +137,5 @@ Always use `.claude/tmp/` instead of `/tmp`. **Never write to `/tmp`.**
 | Catalog inventory        | `scripts/catalog-stats.sh [--json] [--verbose]`       |
 | Analyzer release check   | `scripts/internal/analyzer-release-check.sh [--json]`  |
 | Review agent discovery   | `scripts/internal/review-agents.sh [--json]`           |
+| Dependency check         | `scripts/dep-check.sh [--outdated] [--vulnerable] [--json]` |
 

@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-05-17T00:00:00Z*
+*Updated: 2026-05-25T00:00:00Z*
 
 ## Root Files
 
@@ -18,6 +18,7 @@
 
 - [project-structure.md](dotnet/project-structure.md) — .NET 10 solution format, CPM, build props/targets, global.json
 - [testing.md](dotnet/testing.md) — MTP, xUnit v3, test configuration, categories, conventions
+- [test-patterns.md](dotnet/test-patterns.md) — Test family patterns (A-D), fake conventions, naming rules
 - [architecture-testing.md](dotnet/architecture-testing.md) — ArchUnitNET structural invariant tests (layers, naming, sealed)
 - [analyzers.md](dotnet/analyzers.md) — Deny-by-default strategy, analyzer packages, suppression policy
 - [release-tracking.md](dotnet/release-tracking.md) — AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
@@ -40,3 +41,6 @@
 - [claude-revision-log.md](infrastructure/claude-revision-log.md) — Revision log: dated entries from `/claude-revision` runs
 - [docker.md](infrastructure/docker.md) — Docker build commands, buildx `-t`/`--load` issue, smoke test patterns
 - [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md) — OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging
+- [agent-patterns.md](infrastructure/agent-patterns.md) — Shared agent patterns: plan convention, budget exhaustion, reflection loop
+- [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md) — Simplification-agent heuristic definitions (H1-H6)
+- [scoring-rubric.md](infrastructure/scoring-rubric.md) — Shared four-dimension scoring rubric for strategic analysis agents

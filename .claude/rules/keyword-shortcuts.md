@@ -33,3 +33,5 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `session mine` / `transcript analysis` / `session patterns`  | `scripts/session-mine.sh all`   |
 | `catalog stats` / `skill count` / `agent count`             | `scripts/catalog-stats.sh`      |
 | `check releases` / `analyzer releases` / `release check`    | `scripts/internal/analyzer-release-check.sh` |
+| `dep check` / `vulnerable packages` / `outdated deps`       | `scripts/dep-check.sh --json`                |
+| `capture to lode` / `save this to lode`                      | `/lode-capture`                              |

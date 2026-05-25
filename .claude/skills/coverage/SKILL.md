@@ -40,7 +40,7 @@ Accepts three formats (pasted as `$ARGUMENTS` or message body):
 1. **Parse input** — extract `(class_name, coverage_percentage)` pairs
 2. **Rank and filter** — sort ascending, remove 100% and test classes, take bottom 15
 3. **Present selection** — show ranked list, ask: "Which classes? (numbers, 'all', or 'top 5')"
-4. **Locate source files** — `fd -e cs {ClassName}.cs src/`
+4. **Locate source files** — `scripts/find.sh --class {ClassName}`
 5. **Dispatch to fill-test-gaps** — spawn agents (up to 3 parallel) for selected classes
 6. **Summary** — report before coverage + tests generated
 

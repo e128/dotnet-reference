@@ -57,7 +57,7 @@ Do not skip this. Forming opinions before understanding the system produces bad 
 
 1. Read the README, `Directory.Packages.props`, solution file(s), and any architecture docs in `lode/` or `docs/`.
 2. Map the directory structure and identify the major projects / layers.
-3. Run `git log --oneline -200` to see recent activity direction.
+3. Run `scripts/branch.sh --json` to see recent activity direction.
 4. Run the co-located scripts to gather metrics (all accept an optional scope path):
    ```bash
    .claude/skills/tech-debt-audit/scripts/tda-file-metrics.sh 6 20 [scope]
@@ -159,7 +159,7 @@ mcp__cwm-roslyn-navigator__get_project_graph
 ### Build warnings
 
 ```bash
-scripts/build.sh --warnings 2>/dev/null || dotnet build --no-incremental 2>&1 | grep -i warning
+scripts/build.sh --warnings
 ```
 
 If a tool isn't installed, note it in the audit and move on rather than blocking.

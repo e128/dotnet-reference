@@ -13,7 +13,6 @@ description: >
   batch and test, reduce test runs, fix cycle optimization.
 tools: Bash, Glob, Grep, Read, Edit, Write
 maxTurns: 35
-memory: project
 ---
 
 You are a TDD loop optimizer. Apply a batch of approved fixes efficiently — running the
@@ -99,38 +98,9 @@ scripts/check.sh --all --json
 
 ### Phase 5.5: Bounded Reflection Loop
 
-**Skip entirely** if Phase 5 full suite passed cleanly with no regressions and the report has no deferred findings.
+Skip if Phase 5 full suite passed cleanly with no regressions or deferred findings.
 
-Cap: N=2 (override with `--review-iterations N`). Check cap at the TOP of each iteration.
-
-For each iteration (while `iteration < cap`):
-
-1. **Self-review** — read each file modified during this session. Check for:
-   - Issues the batch fix may have introduced (e.g., a CA fix that broke a null guard)
-   - Missing `[Trait("Category", "CI")]` on any new test methods
-   - `string.Empty` vs `""` violations
-   - Any deferred INDIVIDUAL findings not yet addressed
-2. **Verify** — run targeted tests on all modified files
-3. **Cross-review** — review all modified files for issues
-4. If **no issues** from self-review AND cross-review → break early (clean)
-5. If **issues found** AND `iteration < cap`:
-   - Apply fixes (batch all edits, no test between individual fixes)
-   - Increment iteration, continue
-6. If `iteration == cap` AND issues remain → emit cap-exceeded warning, proceed to Phase 6
-
-Emit per-iteration tracking:
-```
---- Reflection Loop: Iteration N/2 ---
-Self-review: [issues found | clean]
-Cross-review: [issues found | clean]
-Action: [fixes applied | exiting early — clean]
-```
-
-On cap exceeded:
-```
-⚠️ Quality cap reached (2/2 iterations). Shipping with unresolved findings:
-  • [file:line] — [finding description]
-```
+Run the bounded reflection loop (cap N=2) per `lode/infrastructure/agent-patterns.md`.
 
 ### Phase 6: Report
 
@@ -155,21 +125,10 @@ On cap exceeded:
 - `File2.cs`: IDE0011 (2 fixed)
 ```
 
-## Budget Exhaustion Protocol
-
-If fewer than 3 turns remain and work is still in progress:
-1. Finish the current targeted-test run if one is already running — do not abandon a test in flight
-2. Emit a partial summary: tiers completed, fixes applied, test runs used, any deferred findings
-3. Write current progress to `.claude/tmp/tdd-loop-optimizer/state.md` (fixes applied, files changed, baseline delta so far)
-4. Do not start a new BATCH or INDIVIDUAL phase with fewer than 2 turns remaining — a partial batch without a verification run leaves the codebase in an unknown state
-
-This ensures the user knows exactly what was applied and tested even if maxTurns is reached mid-cycle.
-
----
+Follow the budget exhaustion protocol in `lode/infrastructure/agent-patterns.md`.
 
 ## Rules
 
-- **Re-Read after format** — after any `scripts/format.sh` run, re-Read every file you intend to Edit. Format modifies files in-place; editing from stale content causes "file modified since read" errors.
 - **Never run the full suite after each individual fix** — batch first
 - **Use targeted tests between BATCH groups** — full suite only at end
 - **AUTO-tier fixes need no approval** — CLAUDE.md auto-approvals cover these

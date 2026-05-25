@@ -9,8 +9,7 @@ description: >
   results are presented. Triggers on: token plan, token improvement plans,
   plan token optimizations, score token patterns, token waste plans, create token plans.
 tools: Bash, Glob, Grep, Read, Write, Agent, Edit
-maxTurns: 30
-effort: high
+maxTurns: 25
 memory: project
 ---
 
@@ -37,18 +36,6 @@ When running in current-session mode, suggest improvements to skills, agents, an
 Find concrete, scriptable opportunities to reduce token use in Claude Code sessions
 by creating or editing `scripts/*.sh` scripts. Each actionable finding with score ≥ 5
 becomes a plan in `plans/`.
-
-## Auto-Approvals
-
-- All Read/Glob/Grep calls
-- All `scripts/session-health.sh` invocations
-- All `scripts/violation-scan.sh` invocations
-- All `scripts/diff.sh`, `scripts/status.sh`, `scripts/help.sh` calls
-- Writes to `.claude/tmp/`
-- Writes to `plans/` (plan creation is the agent's job)
-- `git add` for newly created plan files
-
----
 
 ## Phase 0: Environment Setup
 
@@ -110,28 +97,8 @@ summary report as "Noted but below threshold."
 
 ## Phase 4: Create Plans
 
-For each finding with score ≥ 5, create a plan in `plans/{slug}/`.
-
-### Plan slug format
-
-`token-opt-{short-description}` — e.g. `token-opt-git-log-script`, `token-opt-context-combo`
-
-### Plan files (write all three per plan in one parallel turn)
-
-Each plan creates three files in `plans/{slug}/`. Timestamps via `scripts/ts.sh`.
-
-| File               | Purpose                                                                        |
-| ------------------ | ------------------------------------------------------------------------------ |
-| `{slug}-plan.md`   | Overview, Pattern Being Fixed (command, freq, cost, score), Fix Approach, Success Criteria. No checkboxes. |
-| `{slug}-context.md`| Problem, Evidence, Violation Source (quote rule or "gap"), Scripts Checked, Implementation Notes, Decisions table. |
-| `{slug}-tasks.md`  | Checkboxes only: Baseline → Implement → Wire In (token-efficiency.md, keyword-shortcuts.md) → Verify (violation-scan.sh) → Retrospective (/weekly-learner --plan-retro). |
-
-### After writing all plan files
-
-Stage each plan immediately:
-```bash
-git add plans/{slug}/
-```
+For each finding with score >= 5, create a plan per the 3-file convention
+(see `lode/infrastructure/agent-patterns.md`). Slug: `token-opt-{short-description}`.
 
 ---
 
@@ -142,7 +109,7 @@ git add plans/{slug}/
 recommendations for skill/agent/script improvements, and any suggested edits
 (with file paths and specific changes). Return the report content in the conversation.
 
-**Retrospective mode:** Write to `plans/token-report-{date}.md` (date from `scripts/ts.sh`), then `git add`. Sections: Plans Created (table: plan, pattern, freq, score, status), Below Threshold (table: pattern, freq, score, reason), Top Violations (by frequency), Session Stats. Output the report to the conversation after writing.
+**Retrospective mode:** Write to `plans/token-report-{date}.md` (date from `scripts/ts.sh`), then `scripts/internal/stage.sh`. Sections: Plans Created (table: plan, pattern, freq, score, status), Below Threshold (table: pattern, freq, score, reason), Top Violations (by frequency), Session Stats. Output the report to the conversation after writing.
 
 ---
 

@@ -88,13 +88,13 @@ Read `.claude/settings.json`. Extract all currently allowed tool patterns.
 
 ### 5b: Inventory skill and agent commands
 
-Grep all skill SKILL.md files and agent .md files for Bash tool invocations and shell commands:
+Use the catalog stats script to inventory skill and agent commands:
 
 ```bash
-grep -rn 'Bash\|scripts/' .claude/skills/ .claude/agents/ | head -100
+scripts/catalog-stats.sh --json
 ```
 
-Build a frequency table: command → files that use it.
+Build a frequency table: command → files that use it from the catalog output.
 
 ### 5c: Classify gaps
 

@@ -88,17 +88,13 @@ If any fixes are needed, apply them silently (auto-approval per project rules). 
 **D) README freshness (conditional):**
 Only if any staged or unstaged changes touch analyzer source (`src/*Analyzers*/`) OR `scripts/`:
 
-Use the **Agent tool** with `subagent_type: "general-purpose"` and a self-contained prompt that instructs the agent to:
-1. Run `fd README.md --type f --exclude obj --exclude bin --exclude .git` to find all READMEs
-2. Use `rg` (ripgrep) for all content searches — never use `grep` or `find`. Use `fd` for file discovery — never use `find`.
-3. Audit each one: for `src/E128.Analyzers/README.md` — verify version matches `<Version>` in the csproj, use `rg -o '"E128\d{3}"' src/E128.Analyzers/ --no-filename | sort -u` to get all diagnostic IDs from source, verify all appear in the rule table, check code-fix column is correct; for `scripts/README.md` — verify against `scripts/help.sh`; for root `README.md` — spot-check rule range and project table
-4. Apply any fixes with Edit, then report what changed
+Spawn the `readme-auditor` agent:
+```
+Agent(subagent_type="readme-auditor",
+      prompt="Audit all README.md files for staleness and auto-fix drift.")
+```
 
-**Do NOT use the Skill tool for this step** — Skill replaces the current execution context, causing yeet to stop after the audit and never reach step 2.
-
-This audits all READMEs against current repo state and auto-fixes drift (e.g., stale rule tables, missing scripts, wrong version in install snippet). The Analyzers README is packed into the NuGet package — stale content ships to nuget.org if not caught here.
-
-If readme-check produces edits, they become part of this commit. No separate commit.
+If the agent produces edits, they become part of this commit. No separate commit.
 
 Skip with "README check skipped — no analyzer or script changes" if neither path is touched.
 

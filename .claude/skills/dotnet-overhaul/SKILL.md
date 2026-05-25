@@ -52,6 +52,19 @@ Test projects identified by name containing `Test`/`Tests`, referencing xUnit/NU
 - **Hotfix or time-sensitive change** — this skill is for planned maintenance windows, not emergency patches
 - **Single-issue fix** — if you know exactly what needs fixing, run a targeted analysis using the pattern files in `steps/` (e.g., `step7-patterns.md` for security) instead of running the full loop
 
+## Overlap with /solution-audit
+
+Both skills audit infrastructure config (build config, analyzer config, NuGet config, package health). The distinction:
+
+| Concern               | `/solution-audit`                      | `/dotnet-overhaul`                      |
+| --------------------- | -------------------------------------- | --------------------------------------- |
+| **Purpose**           | Structural health report (read-only)   | Modernization loop (finds + fixes)      |
+| **Scope**             | 10 dimensions, all config-level        | Config (Step 2) + code (Steps 3–8)      |
+| **Output**            | Severity-grouped findings report       | Findings → approval → applied fixes     |
+| **When to use**       | Quick health check, CI gate            | Planned maintenance, onboarding new repo|
+
+**Do not run both.** If running a full overhaul, Step 2 covers everything `/solution-audit` does. Use `/solution-audit` independently for a lightweight config-only check.
+
 ## The Overhaul Loop
 
 Each step -> findings table -> user picks what to fix -> **Fix Cycle** -> next step.
@@ -80,11 +93,7 @@ Each step -> findings table -> user picks what to fix -> **Fix Cycle** -> next s
 
 Before doing anything else, check for an in-progress run:
 
-```bash
-cat .claude/tmp/overhauler/progress.md 2>/dev/null
-```
-
-If `progress.md` exists: read it, recover baseline from `.claude/tmp/overhauler/baseline.md`, skip `DONE`/`SKIPPED` steps, resume from first incomplete step, include completed step summaries in Step 10. If absent: `mkdir -p .claude/tmp/overhauler` and initialize `progress.md` (solution path, start date).
+Read `.claude/tmp/overhauler/progress.md`. If the file exists: recover baseline from `.claude/tmp/overhauler/baseline.md`, skip `DONE`/`SKIPPED` steps, resume from first incomplete step, include completed step summaries in Step 10. If absent: `mkdir -p .claude/tmp/overhauler` and initialize `progress.md` (solution path, start date).
 
 **Checkpoint after each step:** Append `- Step N ([name]): DONE — [one-line summary]` to `progress.md`.
 

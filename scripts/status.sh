@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Git status wrapper with structured output.
-# Usage: status.sh [--json] [--files] [--cs-only] [--classify]
+# Usage: status.sh [--json] [--files] [--cs-only] [--classify] [--history N]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-JSON=false; FILES_ONLY=false; CS_ONLY=false; CLASSIFY=false
+JSON=false; FILES_ONLY=false; CS_ONLY=false; CLASSIFY=false; HISTORY=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -11,12 +11,26 @@ while [[ $# -gt 0 ]]; do
         --files)    FILES_ONLY=true ;;
         --cs-only)  CS_ONLY=true ;;
         --classify) CLASSIFY=true ;;
+        --history)  HISTORY="$2"; shift ;;
         *)          err "Unknown flag: $1"; exit 1 ;;
     esac
     shift
 done
 
 ROOT="$(find_repo_root)"
+
+# --history N: count unique .cs files changed in last N commits, then exit
+if [[ "$HISTORY" -gt 0 ]]; then
+    CS_COUNT=$(git -C "$ROOT" log --oneline -"$HISTORY" --name-only --diff-filter=d -- '*.cs' 2>/dev/null \
+        | grep '\.cs$' | sort -u | wc -l | tr -d ' ')
+    if [[ "$JSON" == true ]]; then
+        printf '{"commits":%d,"cs_files_changed":%d}\n' "$HISTORY" "$CS_COUNT"
+    else
+        printf "%d\n" "$CS_COUNT"
+    fi
+    exit 0
+fi
+
 BRANCH="$(git -C "$ROOT" branch --show-current 2>/dev/null || echo detached)"
 
 # Get file lists

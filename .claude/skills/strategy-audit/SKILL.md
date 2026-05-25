@@ -51,11 +51,7 @@ One optional argument: the code path to audit. Defaults to current working direc
 
 Before doing anything else, check for an in-progress run:
 
-```bash
-cat .claude/tmp/strategy-audit/state.md 2>/dev/null
-```
-
-If `state.md` exists, read it to determine which phases are `DONE`, skip them, and load
+Read `.claude/tmp/strategy-audit/state.md`. If the file exists, determine which phases are `DONE`, skip them, and load
 referenced intermediate files:
 - If Phase 2 is `DONE`, load strategic profile from `.claude/tmp/strategy-audit/strategic-profile.md`
 - If Phase 3 is `DONE`, load merged findings from `.claude/tmp/strategy-audit/findings.md`
@@ -64,7 +60,7 @@ If `state.md` does not exist, start fresh: `mkdir -p .claude/tmp/strategy-audit`
 
 Set the report output path:
 ```bash
-REPORT_PATH="plans/strategy-audit-$(date -u +%Y-%m-%d).md"
+REPORT_PATH="plans/strategy-audit-$(scripts/ts.sh | cut -dT -f1).md"
 ```
 
 **Append after each phase completes:**
@@ -94,7 +90,7 @@ Synthesize a concise summary (under 20 lines) covering: Languages, Framework(s),
 
 ### Phase 2: Read the Code as Strategy
 
-Launch an `Explore` agent (`model: sonnet`) to answer:
+Launch an `Explore` agent to answer:
 
 1. **Where is investment concentrated?** — *revealed differentiators*
 2. **Where is investment minimal?** — *revealed table stakes*
@@ -122,7 +118,7 @@ simultaneously produces mediocrity on both dimensions. See rubric for the signal
 
 ### Phase 3: Strategic Code Audit
 
-Launch **parallel `Explore` agents** (`model: sonnet`, max 6, one per architectural concern):
+Launch **parallel `Explore` agents** (max 6, one per architectural concern):
 
 - **Agent 1:** Core differentiator #1 — primary value-generating pipeline
 - **Agent 2:** Core differentiator #2 — second major capability area

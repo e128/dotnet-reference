@@ -13,7 +13,6 @@ description: >
   code review analyzer suggestions, analyzer suggestions.
 tools: Bash, Glob, Grep, Read, Write, Agent
 maxTurns: 35
-effort: high
 memory: project
 ---
 
@@ -23,20 +22,6 @@ candidates, update the analyzer candidates catalog, and create a plan if any sco
 
 You never prompt the user during analysis. The only gate is before writing plan files —
 present your findings and ask for confirmation once.
-
-## Auto-Approvals
-
-Never prompt for:
-- All Read/Glob/Grep tool calls
-- All `scripts/*.sh` invocations
-- Bash commands that only read state (git log, git diff, ls, cat, head, wc, grep, awk)
-- Writes to `.claude/tmp/`
-
-Prompt once before:
-- Writing plan files to `plans/`
-- Updating `lode/analyzers/candidates.md` with new candidates
-
----
 
 ## Phase 1: Gather Code Review Evidence (all parallel)
 
@@ -122,48 +107,17 @@ scoring >= 3, add a detail section above the catalog table with:
 
 ---
 
-## Phase 6: Present Findings and Gate
+## Phase 6: Present Findings and Create Plans
 
-Print a findings summary to the conversation:
+Print a findings summary: window, commits, files reviewed, new candidates (recommended vs. cataloged).
 
-Summary table: window, commits, files reviewed, code review reports found/not found, new candidates (recommended vs. cataloged), already-covered count, stale-skipped updates.
+For each candidate scoring >= 3: score, pattern name, evidence, Roslyn approach sketch.
+For score 1-2: one-line description each.
 
-Then for each recommended candidate (score >= 3): score, pattern name, what it flags, evidence (occurrences + files), coverage gap, Roslyn approach sketch (1 sentence).
+If candidates score >= 3, create plans using the 3-file convention (see `lode/infrastructure/agent-patterns.md`).
+Slug: `analyzer-{kebab-name}` (single) or `analyzer-batch-{YYYY-MM}` (multiple).
 
-Then cataloged-only candidates (score 1-2): score and one-line description each.
-
-If **no candidates score >= 3**: output the summary and stop. No plan is created.
-
-If **candidates score >= 3**: proceed immediately to Phase 7 — no approval gate.
-
----
-
-## Phase 7: Create Plan (auto — no confirmation needed)
-
-Create a plan for all candidates scoring >= 3.
-
-### Plan naming
-
-- Single candidate: `analyzer-{kebab-name}` (e.g., `analyzer-init-property`)
-- Multiple candidates: `analyzer-batch-{YYYY-MM}` (e.g., `analyzer-batch-2026-04`)
-
-### Create three files in `plans/{name}/` (all in one parallel turn)
-
-- **`{name}-plan.md`**: Overview (implement N Roslyn rules from code review mining), candidate list with scores, success criteria (rule fires on bad pattern, 0 false positives, promoted to `error` in `.globalconfig`, candidates.md updated to `implemented`, all violations fixed). Out of scope: rules scoring < 3, modifying existing rules.
-- **`{name}-context.md`**: Discovery source and date, evidence window, code review reports cross-referenced, full candidate detail sections from Phase 5, implementation notes (custom analyzer vs. configuring existing third-party rule, one `.cs` file + one test class per rule, promotion checklist: warning → verify → error → 0 violations). Link to `lode/analyzers/candidates.md`.
-- **`{name}-tasks.md`**: Phase 0 (baseline `scripts/check.sh --all`), then one phase per candidate following TDD: RED (failing tests for bad+correct patterns) → GREEN (implement, register, set to warning) → VERIFY (scan violations, fix, promote to error, update candidates.md). Final phase: full CI + lode update + `/yeet`.
-
-After writing: `scripts/internal/stage.sh --include-new`
-
----
-
-## Budget Exhaustion Protocol
-
-If fewer than 3 turns remain and phases are still in progress:
-1. Emit a partial summary: which phases completed, candidates discovered so far, whether the catalog was updated
-2. Write current progress to `.claude/tmp/analyzer-review-miner/state.md` (candidates found, phases complete)
-3. Do not start Phase 7 (plan creation) with fewer than 2 turns remaining — an incomplete plan file is worse than no plan
-4. If catalog was already updated (Phase 5 complete), that work is durable — confirm it in the summary
+Follow the budget exhaustion protocol in `lode/infrastructure/agent-patterns.md`.
 
 ---
 

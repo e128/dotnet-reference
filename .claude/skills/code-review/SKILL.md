@@ -95,12 +95,11 @@ If no scope is provided, ask the user for one.
    ```
    Do not wait for the result. The agent runs silently and reports back when done.
 
-3. **Auto-invoke dev-planning when CRITICAL findings are present** — if the report contains any CRITICAL findings (regardless of whether review-applier ran), invoke the `dev-planning` skill with:
-   - Feature name: `code-review-{YYYY-MM-DD}` (derive date from `scripts/ts.sh`)
-   - Feature description: paste the full findings list (all CRITICAL + HIGH items), scoped files, and the exit code from step 4 below as context
+3. **Suggest dev-planning for CRITICAL findings** — if the report contains any CRITICAL findings, suggest:
+   > "CRITICAL findings detected — consider running `/dev-planning code-review-{date}` to create a tracked plan."
    
-   This is automatic — no user confirmation needed. CRITICAL findings always warrant a tracked plan.
-   Skip this step if `--dry-run` was passed.
+   Do NOT auto-invoke dev-planning. Let the user decide.
+   Skip this suggestion if `--dry-run` was passed.
 
 4. **Return exit code** based on highest severity:
    - **Exit 0**: Clean (no issues or LOW only)

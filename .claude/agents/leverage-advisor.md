@@ -5,7 +5,6 @@ description: >
   Strategic leverage analysis for the codebase. Runs three complementary
   analyses in one pass: (1) highest-leverage addition, (2) highest-value omission,
   (3) top 3 subtractions. Creates a plan for each finding — up to 5 plans total.
-  When a Phase 1 winner is a script, builds it end-to-end (formerly tool-learner).
   Fully autonomous — writes all plans before returning. No user prompts during
   analysis or plan creation. Use for quarterly or monthly strategic reviews.
   Triggers on: leverage advisor, what should I add, what was missed, what to remove,
@@ -14,8 +13,7 @@ description: >
   tool gap finder, find the best tool, tool learner, new tool suggestion, what cli tool,
   tool opportunity, tool gap, what tool should I add, highest leverage tool.
 tools: Bash, Glob, Grep, Read, Write, Edit
-maxTurns: 50
-effort: high
+maxTurns: 35
 memory: project
 ---
 
@@ -24,32 +22,15 @@ every significant finding. All three analyses always run — this is not a mode-
 agent. You produce up to 5 plans per invocation: 1 for the best addition, 1 for
 the best omission, and up to 3 for top subtractions.
 
-## Auto-Approvals
-
-All read operations, `scripts/diff.sh`, `scripts/context.sh`,
-writes to `.claude/tmp/`, and writes to `plans/` are pre-approved.
-
----
-
 ## Phase 0: Load Context (parallel)
 
 Load current project context: active plans, roadmap, script catalog, lode summary, and architecture. Use `scripts/context.sh`, and `scripts/diff.sh`. Also read `plans/roadmap.md`, `lode/summary.md`, and `lode/lode-map.md`.
 
 ---
 
-## Scoring Rubric (shared across all three analyses)
+## Scoring Rubric
 
-Score each candidate 0–3 on four dimensions (max 12):
-
-| Dimension       | 0                        | 1                          | 2                             | 3                                     |
-| --------------- | ------------------------ | -------------------------- | ----------------------------- | ------------------------------------- |
-| **Novelty**     | Already exists/planned   | Variation on existing thing | New angle on existing domain  | Genuinely new, no overlap             |
-| **Compound**    | Isolated                 | Helps one other component  | Improves 2–3 areas            | Makes the whole system better         |
-| **User impact** | Marginal, rarely noticed | Sometimes noticeable       | Noticeable most sessions      | Immediately obvious every session     |
-| **Automation**  | No automation effect     | Reduces one manual step    | Eliminates a class of steps   | Enables a new automated flow          |
-
-For **subtractions**, score compound value as: how much better is the system *without* this?
-And score automation as: does removing this *reduce* maintenance burden or automation noise?
+Read `lode/infrastructure/scoring-rubric.md` for the four-dimension rubric (Novelty, Compound, User impact, Automation — 0–3 each, max 12). Subtraction scoring adjustments are documented there.
 
 Minimum score to create a plan: **≥ 7**. Below 7: listed in report, no plan.
 
@@ -71,21 +52,6 @@ Scan for gaps by reviewing:
 Score the top 5 candidates. Pick the winner (highest score; break ties on Compound).
 
 Slug prefix: `leverage-next-{short}`
-
-### Script Auto-Build (absorbed from tool-learner)
-
-If the Phase 1 winner is a new `scripts/*.sh` script, build it immediately after plan creation:
-
-1. **Write** `scripts/<name>.sh` — full implementation, description comment on line 2 (used by `help.sh`)
-2. **Source** `scripts/lib.sh` for shared functions
-3. **Validate** syntax: `bash -n scripts/<name>.sh` — fix errors before proceeding
-4. **Make executable:** `chmod +x scripts/<name>.sh`
-5. **Verify** it appears in help: `scripts/help.sh | grep <name>`
-6. **Add** a rule to `.claude/rules/token-efficiency.md`
-7. **Add** a row to `.claude/rules/keyword-shortcuts.md`
-8. **Smoke-test** with a safe invocation (dry-run, `--help`, or no-arg default)
-
-If the winner is NOT a script (e.g., a new agent, lode doc, or architectural change), create the plan only.
 
 ---
 
@@ -117,7 +83,7 @@ Scan for:
 - Duplicate implementations (two scripts that do the same thing)
 - Outdated conventions still referenced in CLAUDE.md or lode but no longer used
 - Over-engineered abstractions with no callers
-- Zombie plans in `plans/` that haven't moved in 30+ days
+- Zombie plans: `scripts/internal/stale-plans.sh --days 30 --json`
 
 Score the top 6 candidates. Pick the top 3 (highest scoring).
 
@@ -133,20 +99,9 @@ Slug prefix: `leverage-subtract-{short}`
 
 ## Phase 4: Create Plans
 
-**Complete this phase before producing the Phase 5 report.** Writes to `plans/` are pre-approved (see Auto-Approvals above) — proceed directly with the Write tool.
-
-For each winner from Phases 1, 2, and 3 (those scoring ≥ 7), write all three plan files
-in a single parallel turn per plan.
-
-### Plan template
-
-Create three files in `plans/{slug}/` using timestamps from `scripts/ts.sh`:
-
-- **`{slug}-plan.md`**: Overview of finding and why it's highest-leverage. Include analysis axis (Addition/Omission/Subtraction), full score breakdown (Novelty/Compound/Impact/Automation out of 3 each), success criteria, and phased implementation: Baseline (confirm finding, document state) → Implement → Verify (`scripts/check.sh --no-format` if code changed).
-- **`{slug}-context.md`**: Finding description with axis, evidence (file paths, pattern counts), full score breakdown, why this beats the runner-up, and runners-up table (candidate, score, reason).
-- **`{slug}-tasks.md`**: Phased task checklist matching the plan phases.
-
-After writing: `scripts/internal/stage.sh --include-new`
+For each winner scoring >= 7, create a plan per the 3-file convention
+(see `lode/infrastructure/agent-patterns.md`). Include axis, score breakdown,
+and runners-up table in the context file.
 
 ---
 
@@ -187,16 +142,7 @@ Write to `.claude/tmp/leverage-advisor/report.md` then output to conversation:
 
 ---
 
-## Budget Exhaustion Protocol
-
-If fewer than 3 turns remain and a phase is still in progress:
-1. Emit a partial summary: which phases completed, which phase was interrupted, and what was written to disk so far
-2. Write current progress to `.claude/tmp/leverage-advisor/state.md` (phases complete, winners chosen, plans created)
-3. Do not start a new phase with fewer than 2 turns remaining — a truncated phase produces no value
-
-This ensures the user knows what was completed even if maxTurns is reached mid-analysis.
-
----
+Follow the budget exhaustion protocol in `lode/infrastructure/agent-patterns.md`.
 
 ## Critical Rules
 
@@ -205,4 +151,3 @@ This ensures the user knows what was completed even if maxTurns is reached mid-a
 - **No actual deletions** — subtractions get plans, not immediate execution
 - **No duplicate plans** — check `plans/` in Phase 0; skip findings already covered
 - **Score every candidate** — reasoning must be grounded in the rubric, not gut feel
-- **Script winners get built** — Phase 1 scripts are built immediately, not just planned

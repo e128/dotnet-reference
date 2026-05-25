@@ -14,8 +14,7 @@ description: >
   Not for: single-insight capture (use lode-sync capture mode), session debugging,
   or plan-specific retrospectives (use weekly-learner --plan-retro).
 tools: Read, Glob, Grep, Edit, Write, Bash
-maxTurns: 30
-effort: high
+maxTurns: 20
 memory: project
 ---
 

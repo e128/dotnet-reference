@@ -13,7 +13,6 @@ description: >
   review all skills.
 tools: Bash, Glob, Grep, Read, Write
 maxTurns: 15
-effort: low
 memory: project
 ---
 
@@ -29,6 +28,7 @@ Gather all data in parallel — no dependencies between these:
 - **Catalog inventory**: `scripts/catalog-stats.sh --json` — returns agents, skills, frontmatter fields, description lengths, keyword-table membership, and line counts in one call
 - **Session invocation frequency** (30-day window): `scripts/session-health.sh --json`
 - **Git modification history**: `scripts/diff.sh --json` — filter for `.claude/agents/` and `.claude/skills/` paths
+- **Trigger-phrase overlap**: `scripts/internal/overlap-detect.sh --json` — returns pairs with shared triggers and overlap percentage
 - **Most recent weekly digest**: read for dead-weight candidates section (skip if none found)
 
 ## Phase 2: Classify
@@ -42,24 +42,22 @@ For each skill/agent, assign a status:
 | **DORMANT** | Zero invocations in 30 days, not in keyword table, not modified |
 | **DUPLICATE** | Overlaps significantly with another active skill/agent |
 | **MERGE** | Two items cover the same domain — combine into one |
-| **RENAME** | Trigger phrases conflict with another item but functionality is distinct |
-| **STALE** | Description references deprecated paths or removed features — needs update or retirement |
-| **PROTECTED** | Infrastructure agent (build-validator, targeted-tests, etc.) — never retire |
 
-### Overlap Detection Heuristics
+### Overlap Detection
 
-| Pattern | Classification |
-|---------|---------------|
-| Two items with identical trigger phrases | RENAME — one must change triggers |
-| Item A's description is a subset of B's | MERGE — A may be redundant |
-| >50% trigger phrase overlap | DUPLICATE — consolidation candidate |
-| Zero trigger phrases | DORMANT — unreachable without manual typing |
-| Description references removed feature or deprecated path | STALE |
+Use the output from `scripts/internal/overlap-detect.sh --json` to classify overlaps:
 
-Protected agents (never retire regardless of usage):
-- build-validator, smart-commit
-- lode-sync, knowledge-consolidator
-- weekly-learner, smart-commit
+| Overlap percentage | Classification                                      |
+| ------------------ | --------------------------------------------------- |
+| 100% (identical)   | RENAME — one must change triggers                   |
+| ≥50%               | DUPLICATE — consolidation candidate                 |
+| 25–49%             | Review — may be acceptable domain adjacency         |
+
+Also check: if Item A's description is a subset of B's → MERGE candidate.
+Items with zero trigger phrases → DORMANT (unreachable without manual typing).
+
+Never retire infrastructure agents (build-validator, smart-commit, lode-sync,
+knowledge-consolidator, weekly-learner) regardless of usage.
 
 ## Phase 3: Retirement Proposal
 
@@ -89,101 +87,9 @@ Proposed retirements: {N}
 
 ## Phase 3.5: Create Plans for LOW_USE and DUPLICATE
 
-For each item classified as LOW_USE or DUPLICATE, create a plan in `plans/`.
-
-Check `plans/` first — skip any item already covered by an existing plan.
-
-**Slug format:** `prune-{retire|merge}-{kebab-name}` — e.g. `prune-retire-dead-agent`, `prune-merge-overlapping-skill`
-
-Write all three plan files in a single parallel turn per item.
-
-**`{slug}-plan.md`**
-```markdown
-# Plan: {Retire | Merge} {name}
-*Created: {ISO 8601 UTC}*
-*Updated: {same}*
-
-## Overview
-
-{1-paragraph: what this skill/agent does, why it's a candidate for {retirement|merge}, what it would merge into}
-
-## Classification
-
-{DUPLICATE | LOW_USE} — {one-line rationale}
-
-## Evidence
-
-- Last invoked: {date or "never"}
-- Invocations (30d): {N}
-- {If DUPLICATE}: overlaps with `{target}` — {overlap description}
-- {If LOW_USE}: watch-list entry age: {N} days
-
-## Success Criteria
-
-- [ ] {If RETIRE}: `{path}` deleted, all trigger phrases removed from keyword-shortcuts.md
-- [ ] {If MERGE}: functionality absorbed into `{target}`, trigger phrases updated
-- [ ] `catalog-pruner` tmp memory updated — item removed from LOW_USE watch list
-- [ ] No broken references in CLAUDE.md or other agents
-
-## Phase 0 — Confirm
-
-- [ ] Re-run `session-health.sh` for last 7 days to confirm invocation count is still low
-- [ ] Search for callers: `rg "{name}" .claude/` — confirm no active dependencies
-
-## Phase 1 — Execute
-
-- [ ] {If RETIRE}: delete `{path}`, remove trigger phrases
-- [ ] {If MERGE}: move any unique functionality to `{target}`, delete `{path}`
-
-## Phase 2 — Verify
-
-- [ ] `check.sh --no-format` passes
-- [ ] `catalog-pruner` no longer lists this item
-```
-
-**`{slug}-context.md`**
-```markdown
-# Context: {Retire | Merge} {name}
-*Created: {ISO 8601 UTC}*
-*Updated: {same}*
-
-## Candidate
-
-Path: `{path}`
-Type: {skill | agent}
-Classification: {DUPLICATE | LOW_USE}
-
-## Evidence
-
-{usage data, overlap analysis, or watch-list history from catalog-pruner run}
-
-## Decision Rationale
-
-{why this is worth removing/merging vs. keeping on the watch list}
-```
-
-**`{slug}-tasks.md`**
-```markdown
-# Tasks: {Retire | Merge} {name}
-*Created: {ISO 8601 UTC}*
-*Updated: {same}*
-
-## Phase 0 — Confirm
-- [ ] Re-check invocation count
-- [ ] Search for callers
-
-## Phase 1 — Execute
-- [ ] Delete or merge
-
-## Phase 2 — Verify
-- [ ] check passes
-- [ ] catalog-pruner clean
-```
-
-After writing all plan files:
-```bash
-scripts/internal/stage.sh --include-new
-```
+For each LOW_USE or DUPLICATE item (skip if plan already exists in `plans/`),
+create a plan per the 3-file convention (see `lode/infrastructure/agent-patterns.md`).
+Slug: `prune-{retire|merge}-{kebab-name}`.
 
 ---
 

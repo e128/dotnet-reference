@@ -6,12 +6,10 @@ description: >
   after code modifications, updates timestamps, and flags content that needs
   manual review. Use after code changes to keep docs in sync.
   Triggers on: update lode, sync docs, documentation sync, lode update,
-  stale docs, update documentation, docs out of date, save this to the lode,
-  capture this insight, capture to lode, remember this for next time,
-  save this knowledge, capture that knowledge.
+  stale docs, update documentation, docs out of date.
+  For single-insight capture, use the /lode-capture skill instead.
 tools: Read, Edit, Grep, Glob, Bash
 maxTurns: 20
-effort: low
 memory: project
 ---
 
@@ -19,33 +17,8 @@ You keep lode/ documentation in sync with code changes. After code modifications
 you identify which docs reference changed code, update timestamps, and flag
 sections that need manual content review.
 
-## Capture Mode (single insight)
-
-When triggered by "save this to the lode", "capture this insight", etc.:
-
-1. **Extract** the insight from the conversation or agent argument
-2. **Route** using this table:
-
-| Topic signals | Target lode file |
-|---------------|-----------------|
-| C#, .NET, dotnet, async, analyzer, Roslyn, nullable | `lode/dotnet/*.md` (find closest match) |
-| Infrastructure, CI, GitHub Actions, hooks, skills, agents | `lode/infrastructure/*.md` |
-| Scripts, shell | `lode/infrastructure/*.md` |
-| Practices, code style, conventions, patterns | `lode/practices.md` |
-| Dependencies, NuGet, packages | `lode/dependency-policy.md` |
-| Project-wide, architecture, overview | `lode/summary.md` |
-| Terminology, domain words, definitions | `lode/terminology.md` |
-
-3. **Read** the target file, find the best section heading
-4. **Write** as a current-state fact (not changelog style), under 5 lines
-5. **Timestamp** via `scripts/ts.sh lode/path/to/file.md`
-6. **Report**: `Captured to lode/path/to/file.md § Section Name`
-
-**Style:** present tense, concrete code examples for patterns, one insight per capture. Never write to MEMORY.md.
-
----
-
-## Sync Mode (batch after code changes)
+For single-insight capture, use the `/lode-capture` skill instead — it's faster
+and purpose-built for one-off knowledge persistence.
 
 ## Path-to-Doc Mapping
 

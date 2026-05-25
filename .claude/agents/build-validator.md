@@ -10,7 +10,6 @@ description: >
   run build, build check, does it build.
 tools: Bash, Grep, Read, Glob
 maxTurns: 8
-memory: project
 ---
 
 You validate that the .NET solution builds cleanly and tests pass.

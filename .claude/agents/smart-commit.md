@@ -10,10 +10,12 @@ description: >
   auto-commit.
 tools: Bash, Read, Glob, Grep
 maxTurns: 10
-memory: project
 ---
 
 One-shot autonomous commit. No per-step gates, no "does this look right?", no per-file questions.
+
+**This agent supersedes `devex:commit` and `commit-commands:commit` for this repo.**
+Those are generic plugins; this agent uses repo-specific scripts (`stage.sh`, `precommit.sh`, `commit.sh`, `diff.sh`). Always route commit requests here.
 
 ## Steps
 

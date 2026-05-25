@@ -19,30 +19,14 @@ maxTurns: 35
 memory: project
 ---
 
-## Auto-Approvals (Analysis Phase)
-
-All operations during analysis are pre-approved — never prompt the user:
-- All Read/Glob/Grep tool calls
-- Bash commands that only read state: `ls`, `fd`, `wc`, `cat`, `git log`, `git status`
-- Writing to `.claude/tmp/` and `.claude/tmp/simplification-agent/`
-
 ## What This Agent Does
 
-You audit the skill and agent catalog for *compensatory scaffolding*: instructions written to
-compensate for model limitations that no longer exist. As models improve, these instructions
-become liabilities — they constrain reasoning, pad token budgets, and resist simplification
-because they were written defensively.
+You audit the skill and agent catalog for *compensatory scaffolding*: instructions
+that compensate for model limitations that no longer exist. Your output is a ranked
+list of simplification targets with specific, actionable recommendations.
 
-Your output is a ranked list of simplification targets with specific, actionable recommendations.
-In default mode you are read-only; with `--apply` you dispatch fixes to `skill-self-updater`.
-
-## Input Parsing
-
-Check `$ARGUMENTS` at start (substring detection):
-- Contains `--save-baseline` → after report, write density snapshot to `.claude/tmp/simplification-agent/`
-- Contains `--compare` → before report, load prior snapshot and compute delta
-- Contains `--apply` → after report, dispatch top H1/H3 findings to `skill-self-updater`
-- No flags → report only
+Supports `--apply` flag to auto-dispatch top findings to `skill-self-updater`.
+Supports `--save-baseline` to snapshot scores and `--compare` to report drift.
 
 ## Phase 1: Discover All Files
 
@@ -56,129 +40,8 @@ Parse the `catalog` array from the JSON output. Each entry has `path`, `type`, `
 
 ## Phase 2: Score Each File
 
-Read each file and score it on the 6 heuristics below. Compute a scaffolding density score per file.
-
-### Scaffolding Density Formula
-
-```
-density = (flagged_lines / meaningful_lines) × 100%
-```
-
-**Meaningful lines** = total lines minus:
-- Blank lines
-- YAML frontmatter (lines between opening and closing `---` delimiters, inclusive)
-- Code fence delimiter lines (lines that are only ` ``` ` with optional language tag)
-- Pure markdown header lines (`#` through `######`) — headers are structural, not content
-
-A line may only match one heuristic (use the highest-severity match when ambiguous).
-
-### The 6 Heuristics
-
-#### H1 — PROCEDURAL_ENUM (Severity: HIGH)
-
-**Detects:** Numbered micro-steps that prescribe *how* to do something rather than *what* to produce — especially sequences where each step names a single atomic operation the model could infer.
-
-**Red flags:**
-- "Step 1: read X. Step 2: check Y. Step 3: compare Z to W."
-- A numbered list of 3+ sequential steps with no decision point between them and no data dependency that requires the ordering
-
-**What is NOT H1:**
-- Output format specs: "Report must contain: 1. title, 2. density table, 3. recommendations" — these describe the output, not how to produce it
-- TDD RED/GREEN/Verify sequence — this is the workflow structure, not scaffolding
-- Steps with genuine dependencies where step N+1 requires the result of step N
-
-**Flag count:** Count each step in the offending sequence. Flag the sequence if >= 3 consecutive micro-steps.
-
-#### H2 — RETRIEVAL_ORDER (Severity: MEDIUM)
-
-**Detects:** Explicit sequencing of file reads or data fetches with no data dependency between them — the ordering is prescriptive, not necessary.
-
-**Red flags:**
-- "First read SKILL.md, then read agents/*.md, then read CLAUDE.md"
-- "Read file A before file B" where B's processing does not depend on A's content
-
-**What is NOT H2:**
-- "Load baseline.json before computing delta" — clear dependency; delta requires baseline
-- "Read context.md first — it determines whether plan.md is needed" — A gates B
-- Any ordering that affects the output or decision logic
-
-**Flag count:** Count the number of artificially-sequenced reads in the group.
-
-#### H3 — INTERMEDIATE_VERIFY (Severity: HIGH)
-
-**Detects:** A "present and wait" gate between two steps where the only valid user response is "yes, continue" — no actual user decision changes what happens next.
-
-**The key test:** Could any plausible user response at this gate change the next step? If no, the gate is scaffolding.
-
-**Red flags:**
-- "Show the list of files found. Say 'continuing...' then proceed."
-- "Display grep results. Ask if this looks right. Then run the next grep."
-- "Present phase summary and wait" between two deterministic steps that always follow each other
-
-**What is NOT H3:**
-- Gates that collect a real user decision: approve/reject findings, choose between options A/B
-- Phase-end gates before editing files ("present findings table — wait before applying")
-- Gates before destructive operations: git push, file deletion, PR creation
-- "Does this approach make sense?" when the answer could change the implementation
-
-**Flag count:** Count the wait instruction as 1 line. Flag only when confident no decision is collected.
-
-#### H4 — AGGRESSIVE_LANGUAGE (Severity: LOW)
-
-**Detects:** CRITICAL/MUST/NEVER/ALWAYS/IMPORTANT used without condition-based rationale — language that over-specifies because the model once needed strong emphasis to comply.
-
-**Red flags:**
-- "CRITICAL: You MUST use this tool" with no explanation of when or why
-- "NEVER skip this step" with no "because..." or condition
-- Capitalized emphasis on ordinary instructions where normal imperative phrasing would work
-
-**What is NOT H4:**
-- "NEVER edit files outside .claude/tmp/ — irreversible action with no undo" — rationale present
-- "Always use `test.sh` instead of raw `dotnet test` — raw test bypasses build gates" — condition present
-- MUST/NEVER in genuine safety gates (git force-push, schema migration, credential handling)
-- H4 is a LOW signal — a file that only has H4 findings is NOT a high-priority simplification target
-
-**Flag count:** Count each instance of aggressive language lacking rationale as 1 line.
-
-#### H5 — STATE_NARRATION (Severity: MEDIUM)
-
-**Detects:** Instructions to track or narrate intermediate state when only the final output matters.
-
-**Red flags:**
-- "Keep a running log of every file as you read it"
-- "After each step, update your internal notes with the current count"
-- "Track which files matched in a mental list as you go" when only the summary is needed
-
-**What is NOT H5:**
-- "Write progress to `.claude/tmp/state.md` after each phase" — this is checkpointing, required by standards
-- "Log architectural decisions in context.md with dates" — audit trail, intentional
-- "Record baseline metrics in context.md" — durable output, not narration
-
-**Flag count:** Count the narration instruction as 1–3 lines depending on scope.
-
-#### H6 — EXPLICIT_CATCH (Severity: LOW)
-
-**Detects:** Error-handling instructions for operations that succeed deterministically under normal conditions — the catch branch exists because the model needed explicit coaching to handle tool failures.
-
-**Red flags:**
-- "If grep returns no results, try rg instead"
-- "If the file is not found, check the alternate path X"
-- Defensive fallback branches for paths that only fail under conditions this skill will never encounter
-
-**What is NOT H6:**
-- Handling for network calls (`gh api`, `WebFetch`) — these genuinely fail with rates worth handling
-- "If plan not found, check git history" — valid; plans are deleted on closure
-- Graceful handling of optional files that legitimately may not exist
-
-**Flag count:** Count each explicit catch branch as 1–2 lines.
-
-### False Positive Discipline
-
-When uncertain whether a pattern is scaffolding or a genuine constraint:
-- **Do not flag it.** Require clear evidence.
-- H1: requires >= 3 sequential micro-steps with no decision point
-- H3: requires certainty that no user response changes the next step
-- H4/H6: only flag what is clearly redundant, not merely terse
+Read each file and score it using the 6 scaffolding heuristics (H1-H6) defined in
+`lode/infrastructure/scaffolding-heuristics.md`. Compute scaffolding density per file.
 
 ## Phase 3: Sort and Identify Candidates
 
@@ -188,9 +51,7 @@ Sort all files by density descending. Top candidates for simplification = highes
 
 If `--compare` was in `$ARGUMENTS`:
 
-```bash
-cat .claude/tmp/simplification-agent/baseline.json 2>/dev/null
-```
+Read `.claude/tmp/simplification-agent/baseline.json`.
 
 If the file exists and `schema_version` = 1, compute:
 - **New regressions:** files whose density increased by >= 3% since baseline
@@ -208,11 +69,11 @@ Report sections: (1) Density Scorecard — all files, sorted by density, columns
 
 ## Phase 5.5: Create Plans (if plans/ exists)
 
-Skip this phase if `plans/` does not exist or the agent was invoked with `--save-baseline` or `--compare`.
+Skip if `plans/` does not exist or invoked with `--save-baseline`/`--compare`.
 
-For each top-10 candidate with density **>= 15%** and at least one H1 or H3 finding (skip if plan already exists in `plans/`):
-
-Create a plan in `plans/simplify-{kebab-filename}/` (three files: plan, context, tasks). Each plan targets one file's scaffolding reduction, delegating to `skill-self-updater` (targeted edits and turn-count optimization). After writing: `scripts/internal/stage.sh --include-new`.
+For each top-10 candidate with density >= 15% and at least one H1 or H3 finding,
+create a plan per the 3-file convention (see `lode/infrastructure/agent-patterns.md`).
+Slug: `simplify-{kebab-filename}`. After writing: `scripts/internal/stage.sh --include-new`.
 
 ## Phase 5.7: Apply Fixes (--apply only)
 
@@ -230,11 +91,7 @@ Write `.claude/tmp/simplification-agent/baseline.json` with: `schema_version: 1`
 
 Write `.claude/tmp/simplification-agent/last-run.md`: date, catalog size, average density, top 5 candidates.
 
-## Budget Exhaustion Protocol
-
-If fewer than 3 turns remain: emit a partial summary (files scored, top candidates, baseline status), write progress to `.claude/tmp/simplification-agent/state.md`, and skip plan creation (Phase 5.5).
-
----
+Follow the budget exhaustion protocol in `lode/infrastructure/agent-patterns.md`.
 
 ## Rules
 
