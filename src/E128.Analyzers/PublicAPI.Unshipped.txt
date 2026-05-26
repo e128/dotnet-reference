@@ -21,3 +21,5 @@ E128.Analyzers.Design.StaticNumericIncrementCodeFixProvider
 E128.Analyzers.Design.StaticNumericIncrementCodeFixProvider.StaticNumericIncrementCodeFixProvider() -> void
 E128.Analyzers.Performance.StringBuilderPoolAnalyzer
 E128.Analyzers.Performance.StringBuilderPoolAnalyzer.StringBuilderPoolAnalyzer() -> void
+E128.Analyzers.Reliability.BareParseAnalyzer
+E128.Analyzers.Reliability.BareParseAnalyzer.BareParseAnalyzer() -> void

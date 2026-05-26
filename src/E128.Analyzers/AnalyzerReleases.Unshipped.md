@@ -14,3 +14,4 @@ E128084  | Performance | Warning  | Use CollectionsMarshal.AsSpan with Slice ins
 E128085  | Performance | Warning  | Use foreach+AddRange instead of SelectMany.ToList
 E128086  | Reliability | Warning  | ArrayPool buffer used as SqliteParameter value without Size
 E128087  | Design      | Warning  | Static numeric field should not be incremented with ++/--
+E128089  | Reliability | Warning  | Bare .Parse() call without TryParse — use TryParse to avoid FormatException
