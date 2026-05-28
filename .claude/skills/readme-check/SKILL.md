@@ -50,7 +50,7 @@ Verify the inventory above is still complete. If a new README exists, flag it.
 1. Read `README.md`
 2. Cross-reference project tables against the solution file and `src/` directory
 3. Cross-reference script table against `scripts/help.sh` output
-4. Check .NET version against `Directory.Build.props` or `global.json`
+4. Check .NET version against `Directory.Build.props` or the global.json SDK pin (`scripts/sdk-version.sh`)
 5. Verify lode links resolve to existing files
 
 ### scripts/README.md

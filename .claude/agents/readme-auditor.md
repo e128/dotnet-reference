@@ -35,7 +35,7 @@ fd README.md --type f --exclude obj --exclude bin --exclude .git
 **Root README.md:**
 - Cross-reference project table against the solution file
 - Cross-reference script table against `scripts/help.sh`
-- Check .NET version against `global.json` or `Directory.Build.props`
+- Check .NET version against the global.json SDK pin (`scripts/sdk-version.sh`) or `Directory.Build.props`
 
 ### 3. Apply fixes
 

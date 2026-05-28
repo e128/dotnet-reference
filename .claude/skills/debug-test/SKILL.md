@@ -37,7 +37,7 @@ Locate the file by test class name (try `{TestClass}Tests.cs` and `{TestClass}Te
 
 ## Step 4: Locate and read source under test
 
-From the test method, identify the system under test and locate its source file in `src/`. Focus on the method(s) called by the failing test. Do not read the entire file unless the class is small.
+From the test method, identify the system under test and locate its source file in `src/` (`scripts/find.sh --class {ClassName}`). Focus on the method(s) called by the failing test — extract just those with `scripts/code-read.sh --method {Name} {path}`, or map the file first with `scripts/file-outline.sh {path}`. Do not read the entire file unless the class is small.
 
 ## Step 5: Categorize the failure
 

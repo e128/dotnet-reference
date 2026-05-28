@@ -95,7 +95,7 @@ When evaluating a NEW package (not already in `Directory.Packages.props`):
 
 1. **Fetch metadata**: `dotnet package search "{PackageName}" --take 5`
 2. **Check license**: Look up on nuget.org, classify as APPROVED/PROHIBITED/NEEDS_REVIEW
-3. **Check security**: `dotnet list package --vulnerable --include-transitive` + search for CVEs
+3. **Check security**: `scripts/dep-check.sh --vulnerable --json` + search for CVEs
 4. **Assess health**: Last publish date, download count, source repo activity
 5. **Check transitive deps**: Temporarily add the package, inspect transitive tree, verify no GPL transitives
 6. **Check conflicts**: `dotnet restore the solution file` — look for version conflicts or downgrades
