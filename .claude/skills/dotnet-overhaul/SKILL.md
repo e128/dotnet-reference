@@ -16,13 +16,11 @@ effort: high
 
 # .NET Overhaul
 
-> **Opinionated.** This skill enforces specific conventions (deny-by-default analyzers, immutability,
-> MTP test runner, strict code analysis). Review and edit `conventions.md` to match your project's
-> preferences before the first run.
+> **Opinionated.** Enforces specific conventions (deny-by-default analyzers, immutability, MTP runner,
+> strict code analysis). Review/edit `conventions.md` to match your project before the first run.
 >
-> **Iterative.** For large codebases, run the overhaul in phases — approve a subset of findings
-> per run, commit, then run again. For maintained codebases, run periodically to catch drift
-> from new code, updated analyzers, or TFM upgrades.
+> **Iterative.** For large codebases, run in phases — approve a subset of findings per run, commit,
+> run again. For maintained codebases, run periodically to catch drift.
 
 Systematic overhaul loop combining language modernization, design review, and specialist analysis.
 Every step produces findings for user approval before any code is changed.
@@ -177,14 +175,10 @@ then run the Fix Cycle for approved items. Only domain-specific details are note
 TFM & package updates (Agent 0), Dockerfile review (Agent 0b), 4 parallel language agents.
 **Findings ID prefixes:** `MI` (infrastructure), `M` (language)
 
----
-
 ## Step 4: Cross-Cutting Design Review -> read steps/step4.md
 
 5 parallel `Explore` agents: error handling, logging, DI & lifetime, organization, SOLID design.
 **Findings ID prefix:** `CC`
-
----
 
 ## Step 5: Performance Review -> read steps/step5.md
 
@@ -228,16 +222,13 @@ After user approves findings: create a plan (if dev-planning available and >=8 f
 
 ## Self-Improvement (Mandatory)
 
-This skill must get better with every use. After completing any overhaul cycle:
+After each overhaul cycle, update this SKILL.md:
+1. **Modernization patterns** — new C#/.NET feature or API replacement that worked → add to the modernization checklist.
+2. **Analyzer evolution** — new Roslyn/Meziantou/xUnit rule + its fix pattern → common pitfalls section.
+3. **False positives** — code flagged but actually correct (intentional allocation, deliberate sync call) → known exceptions.
+4. **Specialist triggers** — issues a specialist caught that the main loop missed → refine trigger criteria.
 
-1. **Capture modernization patterns** — If a new C#/.NET language feature or API replacement proved effective (e.g., collection expressions, primary constructors, `SearchValues<T>`), add it to the modernization checklist in this SKILL.md.
-2. **Record analyzer evolution** — If new Roslyn/Meziantou/xUnit analyzer rules required code changes, document the rule ID and fix pattern in this SKILL.md's common pitfalls section.
-3. **Log false-positive findings** — If the overhaul flagged code that was actually correct (e.g., intentional allocation, deliberate synchronous call), add it to this SKILL.md as a known exception.
-4. **Update specialist triggers** — If the concurrency or security specialist agents caught issues that the main overhaul missed, refine their trigger criteria in this SKILL.md so they're invoked earlier next time.
-
-Format for modernization pattern notes: `- [dotnet-overhaul YYYY-MM-DD] Added: <pattern/API> — before: <old approach> -> after: <new approach>`
-
-The goal: each overhaul cycle should start with a more accurate checklist and produce fewer false positives than the last.
+Pattern note format: `- [dotnet-overhaul YYYY-MM-DD] Added: <pattern/API> — before: <old> -> after: <new>`
 
 ### Project-Specific Lessons
 

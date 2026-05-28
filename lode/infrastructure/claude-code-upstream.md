@@ -1,11 +1,26 @@
 # Claude Code Upstream Reference
-*Updated: 2026-05-09T00:00:00Z*
+*Updated: 2026-05-28T20:38:16Z*
 
 Baseline snapshot of official Claude Code guidance. Used for periodic config health checks.
 
-## Current Version: 2.1.138
+## Current Version: 2.1.154
 
-Key recent changes (2.1.127-2.1.138):
+Key recent changes (2.1.139-2.1.154):
+
+| Version      | Notable Changes                                                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2.1.154      | Opus 4.8 defaults to high effort (`/effort xhigh` for demanding tasks); dynamic workflows (orchestrate tens-hundreds of agents); lean system prompt default; `/simplify` cleanup-only; `claude agents` `! <cmd>` background shell; stdio MCP gets `CLAUDE_CODE_SESSION_ID`+`CLAUDECODE=1` |
+| 2.1.153      | `skipLfs` for git plugin marketplaces; subagent MCP servers now honor strict MCP config + managed policies; `--strict-mcp-config` keeps inline `mcpServers` from explicit agent defs |
+| 2.1.152      | **Skills/commands can set `disallowed-tools` in frontmatter**; `/reload-skills` command; `SessionStart` hooks can return `reloadSkills: true`+`sessionTitle`; `MessageDisplay` hook event; `plugin.json` `defaultEnabled: false` |
+| 2.1.149      | `/usage` per-category breakdown (skills, subagents, plugins, MCP); `allowAllClaudeAiMcps` managed setting; PowerShell+worktree sandbox security fixes        |
+| 2.1.147      | `/simplify` renamed to `/code-review` with effort levels; pinned background sessions stay alive (`Ctrl+T`)                                                   |
+| 2.1.145      | `claude agents --json` for scripting; `agent_id`+`parent_agent_id` OTEL spans; `/plugin` previews commands/agents/skills/hooks pre-install                   |
+| 2.1.144      | `/resume` for background sessions; `/model` change is session-only (press `d` for default); "extra usage" → "usage credits"                                  |
+| 2.1.142      | `claude agents` CLI flags: `--add-dir`, `--settings`, `--mcp-config`, `--plugin-dir`, `--permission-mode`, `--model`, `--effort`, `--dangerously-skip-permissions`; fast mode → Opus 4.7 |
+| 2.1.140      | Agent tool `subagent_type` matching now case/separator-insensitive                                                                                           |
+| 2.1.139      | Agent view (Research Preview): unified session list; `/goal` command (completion condition); hook `args: string[]` exec form; MCP stdio gets `CLAUDE_PROJECT_DIR` |
+
+Key prior changes (2.1.127-2.1.138):
 
 | Version      | Notable Changes                                                                                                                     |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -76,6 +91,7 @@ All fields for `.claude/skills/*/SKILL.md` YAML frontmatter:
 | `disable-model-invocation` | No          | `true` = manual-only via `/name`; also blocks subagent preload |
 | `user-invocable`           | No          | `false` = hidden from `/` menu, Claude-only                   |
 | `allowed-tools`            | No          | Space-separated or YAML list                                  |
+| `disallowed-tools`         | No          | (CC 2.1.152+) Tools removed from pool while skill active; e.g. block `AskUserQuestion` in a background loop. Restriction clears on next user message |
 | `model`                    | No          | Model override when skill is active                           |
 | `effort`                   | No          | `low`, `medium`, `high`, `xhigh`, `max`                       |
 | `context`                  | No          | `fork` to run in subagent                                     |
@@ -84,7 +100,7 @@ All fields for `.claude/skills/*/SKILL.md` YAML frontmatter:
 | `paths`                    | No          | Glob patterns limiting auto-activation                        |
 | `shell`                    | No          | `bash` (default) or `powershell`                              |
 
-String substitutions: `$ARGUMENTS`, `$ARGUMENTS[N]`, `$N`, `$name` (named args), `${CLAUDE_SESSION_ID}`, `${CLAUDE_SKILL_DIR}`.
+String substitutions: `$ARGUMENTS`, `$ARGUMENTS[N]`, `$N`, `$name` (named args), `${CLAUDE_SESSION_ID}`, `${CLAUDE_SKILL_DIR}`, `${CLAUDE_EFFORT}` (`low`/`medium`/`high`/`xhigh`/`max`/`ultra`).
 
 ### Skill description budget (total across all skills)
 
@@ -124,8 +140,8 @@ Keep `SKILL.md` under 500 lines (official guidance). Move large reference materi
 
 ## Sources
 
-- https://github.com/anthropics/claude-code/raw/refs/heads/main/CHANGELOG.md (2026-05-08)
-- https://code.claude.com/docs/en/sub-agents (2026-05-08)
-- https://code.claude.com/docs/en/skills (2026-05-08)
+- https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md (2026-05-28)
+- https://code.claude.com/docs/en/sub-agents (2026-05-28)
+- https://code.claude.com/docs/en/skills (2026-05-28)
+- https://github.com/anthropics/skills/commits/main/ (2026-05-28)
 - https://code.claude.com/docs/en/agent-sdk/overview (2026-05-08)
-- https://github.com/anthropics/skills/commits/main/ (2026-05-08)

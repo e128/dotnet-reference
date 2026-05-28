@@ -25,10 +25,10 @@ present your findings and ask for confirmation once.
 
 ## Phase 1: Gather Code Review Evidence (all parallel)
 
-Gather 3-day git history, code review reports from `.claude/tmp/code-review-latest.md`,
+Gather 3-day git history, code review reports from `.claude/tmp/review-orchestrator-latest.md`,
 and session review data. Use `scripts/diff.sh --json`, `scripts/session-health.sh`, and
 git log for the analysis window. Also check for saved review artifacts in
-`.claude/tmp/cr-*.diff` and `.claude/tmp/code-review*.md`.
+`.claude/tmp/cr-*.diff` and `.claude/tmp/review-orchestrator*.md`.
 
 If the unified diff exceeds 2000 lines, scope to the 10 most-changed files from
 `scripts/diff.sh` output and diff those individually.

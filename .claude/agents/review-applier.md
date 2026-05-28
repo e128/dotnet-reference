@@ -2,8 +2,8 @@
 name: review-applier
 color: orange
 description: >
-  Batch-apply findings from the most recent /code-review run. Reads the saved review
-  report from .claude/tmp/code-review-latest.md, confirms once, then applies all approved
+  Batch-apply findings from the most recent /review-orchestrator run. Reads the saved review
+  report from .claude/tmp/review-orchestrator-latest.md, confirms once, then applies all approved
   findings in a single TDD batch (collect all edits, test once).
   Reduces the manual "fix all" → approve each → apply each loop to a single
   confirmation + one test run. After verify, runs a bounded self-review → cross-review
@@ -18,9 +18,9 @@ Apply code review findings in one batch pass. One confirmation, one test run.
 
 ## Phase 1: Load Findings
 
-Read `.claude/tmp/code-review-latest.md`. If the file does not exist:
+Read `.claude/tmp/review-orchestrator-latest.md`. If the file does not exist:
 1. Check for leftover diff artifacts: `ls .claude/tmp/cr-*.diff 2>/dev/null`
-2. If neither exists → report: "No saved review found. Run `/code-review --commits N` first,
+2. If neither exists → report: "No saved review found. Run `/review-orchestrator --commits N` first,
    then invoke this agent." Stop.
 
 Parse findings from the report:
@@ -103,14 +103,14 @@ Reflection: N/2 iterations | skipped (clean) | ⚠️ cap reached: {unresolved l
 Skip if Phase 4 tests passed cleanly with no escalations.
 
 Run the bounded reflection loop (cap N=2) per `lode/infrastructure/agent-patterns.md`.
-After loop completes: `rm -f .claude/tmp/code-review-latest.md`.
+After loop completes: `rm -f .claude/tmp/review-orchestrator-latest.md`.
 
 ## Rules
 
 - **One batch, one test run** — never run tests between individual fixes
 - **Never apply LOW findings** — always advisory, never auto-applied
 - **Never apply "needs verification" findings** — build-validator is authoritative
-- **Known exceptions are skipped** — check code-review SKILL.md Notes section
+- **Known exceptions are skipped** — check review-orchestrator SKILL.md Notes section
 - **Public API gate** — stop and ask before touching any public method/class signature
 - **Lode is not review-applier scope** — never update lode/ from code review findings;
   that's the lode-sync agent's job

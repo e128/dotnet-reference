@@ -1,5 +1,5 @@
 ---
-name: code-review
+name: review-orchestrator
 description: >
   Orchestrates all code review agents to audit recent .NET changes. Accepts --commits N or --days N
   to define review scope, discovers agents dynamically, runs them in parallel, and produces a
@@ -10,7 +10,7 @@ description: >
 effort: high
 ---
 
-# Code Review Skill
+# Review Orchestrator Skill
 
 Comprehensive code review using all available agents. Discovers changed .NET files from git history, dynamically identifies code review agents, runs them in parallel, and produces a consolidated report grouped by severity.
 
@@ -74,7 +74,7 @@ If no scope is provided, ask the user for one.
    > "Pattern '{pattern}' found in review findings — matches analyzer candidate (score N/5). Consider evaluating E128 analyzer candidacy."
 6. **Cross-reference with deeper audits** — if findings include `#pragma warning disable`, code duplication, or high-complexity methods, append:
    > "Deeper analysis available: run `/tech-debt-audit suppressions|duplicates|crap` for a focused audit."
-7. **Save report** to `.claude/tmp/code-review-latest.md` (enables `review-applier` agent to batch-apply findings)
+7. **Save report** to `.claude/tmp/review-orchestrator-latest.md` (enables `review-applier` agent to batch-apply findings)
 
 ### Phase 4: Exit
 
@@ -89,7 +89,7 @@ If no scope is provided, ask the user for one.
    ```
    Agent(subagent_type="analyzer-review-miner", run_in_background=true,
          prompt="Code review just completed. Mine the last 3 days of git diffs and the
-                 saved review report at .claude/tmp/code-review-latest.md for Roslyn
+                 saved review report at .claude/tmp/review-orchestrator-latest.md for Roslyn
                  analyzer candidates. Update lode/dotnet/analyzer-candidates.md and
                  ask once before creating a pug plan for any candidate scoring >= 3.")
    ```
@@ -198,7 +198,7 @@ You are a skill that orchestrates code review agents. See [references/implementa
 
 After generating the report, you can post it to a PR:
 
-**GitHub**: `gh pr comment <number> --body "$(cat .claude/tmp/code-review-latest.md)"` — use `@author-login` for mentions, ATX headers (`##`).
+**GitHub**: `gh pr comment <number> --body "$(cat .claude/tmp/review-orchestrator-latest.md)"` — use `@author-login` for mentions, ATX headers (`##`).
 
 **ADO**: Use `mcp__azure-devops__repo_create_pull_request_thread` with project parameter. Use setext headers, escape `<`/`>` as `&lt;`/`&gt;`, use `@[Display Name]` for mentions. Note: `repo_get_pull_request_by_id` often fails — use `repo_list_pull_requests_by_repo_or_project` as fallback.
 

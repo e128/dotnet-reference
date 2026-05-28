@@ -1,10 +1,26 @@
 # Claude Revision Log
-*Updated: 2026-05-10T00:00:00Z*
+*Updated: 2026-05-28T00:00:00Z*
 
 Persistent memory for `/claude-revision`. Each run appends one entry.
 Read at Phase 0 to recover last-known state and deferred items.
 
 ## Runs
+
+### 2026-05-28 (Run 10)
+- Doctor: uncapturable in non-interactive mode (TUI did not flush to pipe, even via pseudo-TTY `script`). No doctor errors surfaced during the session.
+- Description budget: 21772/8000 chars (agents 10889 + skills 10883) | Truncated: 0 | At risk: 1 (simplification-agent 1009). Consistent with Runs 7–9; runtime compresses startup listing. Monitored, not actionable.
+- Agents: 18 (+1) | Skills: 19 | Memory files: 1
+- New agent since Run 9: `catalog-pruner` (clean — `memory: project`, `maxTurns: 15`, explicit tools, no `model:`)
+- Web guidance: v2.1.154 (up from v2.1.138). NEW skill frontmatter field `disallowed-tools` (2.1.152) — removes tools from pool while skill active (e.g. block `AskUserQuestion` in no-prompt loops). NEW `${CLAUDE_EFFORT}` substitution. `/simplify` renamed to `/code-review` (2.1.147). Opus 4.8 default high effort + lean system prompt (2.1.154). No new AGENT frontmatter fields. Research agent bumped `lode/infrastructure/claude-code-upstream.md` to 2.1.154.
+- HIGH: 0 | MEDIUM: 1 | LOW: 3
+- Actions taken:
+  - M1: Trimmed `dotnet-overhaul` SKILL.md 258→249 lines (compressed Self-Improvement section, opening blockquote; removed 2 cosmetic `---` step separators). Back under 250 hard limit. (Had drifted up since Run 1 trimmed it to 248.)
+  - L1: Deleted orphaned empty `.claude/agent-memory/sme-researcher/` dir (created today by the Phase 1 research agent; no MEMORY.md).
+  - L3: **Resolved trigger-name collision** — renamed repo skill `code-review` → `review-orchestrator` (it shared the exact `/code-review` trigger with the new built-in diff-reviewer renamed from `/simplify` in CC 2.1.147). `git mv` of the skill dir; updated `name:` + title in SKILL.md; renamed the handshake artifact `.claude/tmp/code-review-latest.md` → `review-orchestrator-latest.md` across SKILL.md, `review-applier.md`, and `analyzer-review-miner.md`; updated `/code-review` invocation refs → `/review-orchestrator`. No `code-review` row existed in keyword-shortcuts.md (skill routes via trigger phrases). Built-in `/code-review` no longer collides.
+- Deferred:
+  - L2 (LOW): New `disallowed-tools` skill field — opportunity for autonomous skills (claude-revision, etc.) to block `AskUserQuestion` during no-prompt phases. User declined this run; resurface next run.
+  - D1 (HIGH, carried from Run 9): plugin cache purge `devex/2026.03.14` — manual user action, unverifiable this run (doctor uncapturable): `rm -rf ~/.claude/plugins/cache/devex-skills/devex/2026.03.14`
+- Notes: All 18 agents clean — no `model:`, explicit tools + `maxTurns`. 9 agents have `memory: project`. No stale agent refs in keyword-shortcuts/CLAUDE.md/rules; disk matches. `leverage-advisor/MEMORY.md` (1 line, tracked); no untracked MEMORY.md files. No revision-relevant lode staleness.
 
 ### 2026-05-10 (Run 9)
 - Doctor: captured via pseudo-TTY; 1 error, 2 warnings
