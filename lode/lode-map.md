@@ -1,5 +1,9 @@
 # Lode Map
-*Updated: 2026-05-25T00:00:00Z*
+*Updated: 2026-05-29T19:02:39Z*
+
+## Generated Docs
+
+- `docs/` — multi-audience wiki (markdown, Mermaid) built by `/repo-map-wiki`. Entry point: `docs/index.md`. Presentation layer only; this lode remains authoritative.
 
 ## Root Files
 
