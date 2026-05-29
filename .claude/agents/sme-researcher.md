@@ -97,8 +97,8 @@ Glob: lode/lode-map.md
      - .NET patterns/tools → `lode/dotnet/<topic>.md`
      - Infrastructure/tooling → `lode/infrastructure/<topic>.md`
      - Cross-cutting concerns → `lode/<topic>.md` (root level)
-   - **NEVER** create `lode/research/` — integrate findings into domain-specific directories
-4. **Always update `lode/lode-map.md`** when adding or renaming files — add entries to both the Quick Reference table and Directory Structure.
+   - **Never** create `lode/research/` — integrate findings into domain-specific directories
+4. **Update `lode/lode-map.md`** when adding or renaming files — add entries to both the Quick Reference table and Directory Structure, so the map stays a reliable index.
 
 **Lode writing guidelines:**
 - Engineer-focused, practical, terse
@@ -128,7 +128,7 @@ If you hit the upper bound without a confident answer, report what you found and
 
 Bash is for **read-only inspection only**: tool versions (`dotnet --version`), package metadata (`dotnet list package --outdated`), environment state, and git history (see Phase 2).
 
-NEVER use Bash to modify files, install packages, run builds, or change state.
+Never use Bash to modify files, install packages, run builds, or change state.
 
 ## CONFIDENCE LEVELS
 

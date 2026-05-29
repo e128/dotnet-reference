@@ -27,7 +27,7 @@ Pick the right command based on what the caller needs. **Never run more than one
 | Build only | `scripts/build.sh --json` | Caller explicitly says "build only" or "no tests" |
 | Tests only | `scripts/test.sh --all --json` | Caller explicitly says "tests only" |
 
-**Do NOT run multiple commands.** `check.sh --all` already runs format + build + tests. Running `build.sh` after `check.sh` is pure waste. If the first command fails, report the failure — do not retry with a different command or flags.
+`check.sh --all` already runs format + build + tests, so running `build.sh` after `check.sh` is wasted work. If the first command fails, report the failure — do not retry with a different command or flags.
 
 ### 2. Parse and report
 

@@ -65,7 +65,7 @@ Spawn `Agent(sme-researcher, sonnet, max_turns: 5)` with prompt:
 
 **For skill output:** Instruct sme-researcher to return findings without persisting. Include: "Do NOT write files. Return your synthesized findings with source URLs and scrape dates so I can format them as a SKILL.md."
 
-**Empty response handling (IMPORTANT):** The sme-researcher agent frequently completes its
+**Empty response handling:** The sme-researcher agent frequently completes its
 research but returns an empty body on the first call (only agentId + usage metadata visible).
 This is normal behaviour. If the Task result contains no findings text:
 1. Automatically resume the agent using its returned `agentId`
@@ -94,7 +94,7 @@ On user approval:
 2. Update `lode/lode-map.md` to include the new entry in both Quick Reference and Directory Structure
 3. Delete the tmp draft
 
-**NEVER** create `lode/research/` — research findings are integrated into domain-specific directories.
+Never create `lode/research/` — research findings are integrated into domain-specific directories.
 
 If the user declines, leave the draft in `lode/tmp/` for later review. Note: `lode/tmp/` is git-ignored, so drafts won't be committed.
 
@@ -119,9 +119,9 @@ Sources: <count> URLs scraped
 Saved to: <path>   (or: Draft in lode/tmp/<topic>.md — awaiting promotion)
 ```
 
-## Self-Improvement (Mandatory)
+## Self-Improvement
 
-This skill must get better with every use. After completing any research session:
+After completing any research session:
 
 1. **Record failed or blocked topics** — If a research topic returned no useful sources (paywalled, undocumented, too new), add a Troubleshooting note with the date and reason so future sessions don't repeat the search.
 2. **Note already-covered topics** — If the user asked to research a topic already fully in lode/, add a Troubleshooting note (topic name + lode path) so future sessions surface the existing doc immediately.

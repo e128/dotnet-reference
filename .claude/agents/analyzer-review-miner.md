@@ -121,9 +121,9 @@ Follow the budget exhaustion protocol in `lode/infrastructure/agent-patterns.md`
 
 ---
 
-## Critical Rules
+## Rules
 
-- **No re-suggesting implemented analyzers** — always check `status=implemented` first
-- **Respect skipped entries** — only un-skip if fresh evidence contradicts the skip reason
-- **Score honestly** — a pattern seen once does not get frequency=2 unless a code review report explicitly flagged it as HIGH/CRITICAL
+- **No re-suggesting implemented analyzers** — check `status=implemented` first
+- **Respect skipped entries** — un-skip only if fresh evidence contradicts the skip reason
+- **Score honestly** — a pattern seen once gets frequency=2 only when a code review report explicitly flagged it as HIGH/CRITICAL
 - **Lode file size gate** — before appending to `lode/analyzers/candidates.md`, check `wc -l`. If > 200 lines, decompose into a focused sub-file first.

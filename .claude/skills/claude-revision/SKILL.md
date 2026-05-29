@@ -215,11 +215,11 @@ Present findings, ask which to address, then append a log entry to `lode/infrast
 
 $ARGUMENTS
 
-## Self-Improvement (Mandatory)
+## Self-Improvement
 
-The revision log is this skill's persistent memory — always append to it at Phase 6.
+The revision log is this skill's persistent memory — append to it at Phase 6.
 
-1. **Always write the Phase 6 log entry** — even if no changes were made; the timestamp prevents drift.
+1. **Write the Phase 6 log entry** — even if no changes were made; the timestamp prevents drift.
 2. **Record deferred items** — log declined findings under "Deferred" with severity so they resurface.
 3. **Capture new check criteria** — add new patterns to the Phases 2–5 criteria tables in this workflow.
 4. **Note guidance changes** — append new Anthropic best practices to the appropriate lode file.

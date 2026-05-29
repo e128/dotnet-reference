@@ -152,7 +152,7 @@ Write findings to `.claude/tmp/weekly-learner/memory.md` with sections: Active P
 
 **Checkpoint:** Write `.claude/tmp/weekly-learner/state.md` with all phases complete.
 
-## Critical Rules
+## Rules
 
 - **Read-only on session data** — never modify history.jsonl or session files
 - **No PII in reports** — don't include file paths with usernames; use repo-relative paths

@@ -60,7 +60,7 @@ If no scope is provided, ask the user for one.
 ### Phase 2: Execution
 
 1. **Spawn agents in parallel** — pass each agent the unified diff and severity rules
-2. **Diff-scoped constraint** — include in every agent prompt: "Review ONLY the diff provided. Flag pre-existing concerns as 'adjacent concern' without investigating."
+2. **Diff-scoped constraint** — include in each agent prompt: "Review only the diff provided. Flag pre-existing concerns as 'adjacent concern' without investigating. Report ALL issues you find — including low-confidence and low-severity ones — and tag each with a confidence level and a severity. Do not pre-filter or suppress findings to avoid nitpicking; the orchestrator's severity-grouping stage and the downstream review-applier do the ranking and filtering."
 3. **Diff delivery by size**: ≤30KB inline in prompt; 30–40KB write to `.claude/tmp/cr-<agent>.diff`; >40KB split at file boundaries into sub-slices with separate agent instances. Never use `/tmp/`. Clean up `.claude/tmp/cr-*.diff` after completion.
 4. **Collect outputs** and handle failures gracefully (timeout, error)
 
@@ -85,7 +85,7 @@ If no scope is provided, ask the user for one.
 
    Wait for confirmation before proceeding. The review-applier modifies files — this is not a read-only operation.
 
-2. **Spawn analyzer-review-miner in the background** — always, unconditionally, after every review:
+2. **Spawn analyzer-review-miner in the background** — after each review:
    ```
    Agent(subagent_type="analyzer-review-miner", run_in_background=true,
          prompt="Code review just completed. Mine the last 3 days of git diffs and the
@@ -98,7 +98,7 @@ If no scope is provided, ask the user for one.
 3. **Suggest dev-planning for CRITICAL findings** — if the report contains any CRITICAL findings, suggest:
    > "CRITICAL findings detected — consider running `/dev-planning code-review-{date}` to create a tracked plan."
    
-   Do NOT auto-invoke dev-planning. Let the user decide.
+   Let the user decide whether to run dev-planning — do not auto-invoke it.
    Skip this suggestion if `--dry-run` was passed.
 
 4. **Return exit code** based on highest severity:
@@ -151,7 +151,7 @@ The `build-validator` is the **authoritative source** for warnings and errors. I
 - MEDIUM/LOW compliance findings from diff-based agents are **advisory only** — flag them with "(needs verification — build reports 0 warnings)"
 - The build cannot lie; diff-based agents can miscalculate line numbers from diff context
 
-This matters most when compliance agents report violations at line numbers that don't exist in the actual file (a known diff-parsing artifact). Always cross-reference with the build result before escalating compliance findings.
+This matters most when compliance agents report violations at line numbers that don't exist in the actual file (a known diff-parsing artifact). Cross-reference with the build result before escalating compliance findings.
 
 ## Example Report Format
 
@@ -222,9 +222,9 @@ After generating the report, you can post it to a PR:
 
 See [references/known-exceptions.md](references/known-exceptions.md) for the full list of legitimate patterns that should not be flagged. Includes test conventions, threat model exceptions, sanitizer TextContent/DOM rules, and severity calibration rules.
 
-## Self-Improvement (Mandatory)
+## Self-Improvement
 
-This skill must get better with every use. After completing any code review:
+This skill improves with use. After completing a code review:
 
 1. **Capture new review categories** — If a review uncovered a class of issue not covered by existing agents, add it to the Notes section of this WORKFLOW.md with the agent best suited to catch it, or propose a new agent in `.claude/agents/`.
 2. **Refine agent prompts** — If an agent produced low-quality findings (too many false positives, missed obvious issues, or redundant with another agent), update the agent's prompt in `.claude/agents/<name>.md` directly.

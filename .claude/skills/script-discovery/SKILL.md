@@ -134,7 +134,7 @@ See [references/scoring-rubric.md](references/scoring-rubric.md) for the scoring
 
 ---
 
-## Phase 3: Report (mandatory, always runs)
+## Phase 3: Report (always runs)
 
 Produce a markdown table of ALL candidates scoring >= 5, sorted by total descending:
 

@@ -53,7 +53,7 @@ Cite `file:line` for every concrete finding. Vague claims like "the code general
 
 ## Phase 1: Orient
 
-Do not skip this. Forming opinions before understanding the system produces bad audits.
+Orient before judging — forming opinions before understanding the system produces bad audits.
 
 1. Read the README, `Directory.Packages.props`, solution file(s), and any architecture docs in `lode/` or `docs/`.
 2. Map the directory structure and identify the major projects / layers.

@@ -220,7 +220,7 @@ suppressions, verify build. Executes immediately — no approval gate.
 
 After user approves findings: create a plan (if dev-planning available and >=8 findings), execute approved fixes, build+test, report results.
 
-## Self-Improvement (Mandatory)
+## Self-Improvement
 
 After each overhaul cycle, update this SKILL.md:
 1. **Modernization patterns** — new C#/.NET feature or API replacement that worked → add to the modernization checklist.

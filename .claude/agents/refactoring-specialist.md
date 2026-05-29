@@ -24,9 +24,9 @@ for clarification. Otherwise proceed immediately.
 
 ### File Freshness Protocol
 
-When applying multi-step refactorings to the same file, **re-Read the file** before each subsequent Edit if it was modified in a previous step. Never apply a second refactoring based on a stale Read.
+When applying multi-step refactorings to the same file, re-Read the file before each subsequent Edit if it was modified in a previous step, so edits target current content rather than a stale Read.
 
-### 0. Impact Analysis (mandatory Phase 1)
+### 0. Impact Analysis (Phase 1)
 
 Before any refactoring, produce an impact report for the target symbol(s):
 

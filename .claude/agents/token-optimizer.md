@@ -113,7 +113,7 @@ recommendations for skill/agent/script improvements, and any suggested edits
 
 ---
 
-## Critical Rules
+## Rules
 
 - **Read every file before editing** — unread edits are rejected; re-read after any format/check/build step
 - **Never prompt mid-workflow** — analysis and plan creation are fully autonomous

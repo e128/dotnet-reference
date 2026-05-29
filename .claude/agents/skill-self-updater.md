@@ -154,6 +154,6 @@ Re-read the modified section. Check:
 - **One skill per invocation** — never update multiple skills in one run
 - **Always re-read before editing** — never edit from memory of a previously read file
 - **Self-referential safety** — if updating this agent's own file, verify the rules section is preserved
-- **Preserve self-improvement sections** — `## Self-Improvement` blocks in skills are sacred; keep them
+- **Preserve self-improvement sections** — keep `## Self-Improvement` blocks in skills intact
 - **No reformatting** — don't change header levels, bullet styles, or code fence language unless the fix specifically requires it
 - **Step files go in steps/** — if a new step exceeds ~30 lines, write it to `steps/` and reference it from the main SKILL.md

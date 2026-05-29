@@ -50,7 +50,7 @@ severity-grouped report with a Mermaid dependency graph.
 - 3 agents, not 10 — dimensions cluster by shared data needs
 
 **Autonomy:** All Phase 1 commands are read-only (file reads, grep, dotnet list).
-Pre-approved per CLAUDE.md auto-approval policy — never prompt during parsing.
+Pre-approved per CLAUDE.md auto-approval policy — proceed through parsing without prompting.
 
 ---
 
@@ -220,7 +220,7 @@ Print a structured report with: header (solution name, project/package counts, S
 
 ## Overlap with /dotnet-overhaul
 
-Both skills audit infrastructure config (D7 build, D8 analyzers, D9 NuGet, D4 package health). The distinction: `/solution-audit` is a read-only health check; `/dotnet-overhaul` Step 2 covers the same ground but also applies fixes. **Do not run both** — if running a full overhaul, use that instead. Use `/solution-audit` for lightweight config-only checks or CI gates.
+Both skills audit infrastructure config (D7 build, D8 analyzers, D9 NuGet, D4 package health). The distinction: `/solution-audit` is a read-only health check; `/dotnet-overhaul` Step 2 covers the same ground but also applies fixes. Run only one — if doing a full overhaul, use that; use `/solution-audit` for lightweight config-only checks or CI gates.
 
 ## Guidelines
 

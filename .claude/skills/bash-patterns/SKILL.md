@@ -237,9 +237,9 @@ bash -n scripts/my-script.sh  # syntax check only
 
 `shellcheck` is the authoritative linter. Fix all warnings before committing.
 
-## Self-Improvement (Mandatory)
+## Self-Improvement
 
-This skill must get better with every use. After writing or fixing any Bash script:
+After writing or fixing any Bash script:
 
 1. **Add new pitfalls to the quick reference** — If a new error was hit that isn't in the Pitfalls Quick Reference table, add a row immediately (Symptom | Root cause | Fix).
 2. **Update version-specific guidance** — If a Bash feature requires a specific version (e.g., associative arrays require Bash 4+), note the version requirement.

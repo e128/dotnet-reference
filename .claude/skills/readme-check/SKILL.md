@@ -75,7 +75,7 @@ For each README found under `src/` in a packable project (`<IsPackable>true</IsP
 ## Step 5: Apply fixes
 
 1. Apply all fixes using the Edit tool
-2. Do NOT stage or commit — the caller handles that (e.g., `/yeet` stages and commits as one unit)
+2. Leave staging and committing to the caller (e.g., `/yeet` stages and commits as one unit)
 
 ## Rules
 
