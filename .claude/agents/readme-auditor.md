@@ -14,26 +14,29 @@ Audit all README.md files for staleness and auto-fix drift.
 
 ## Workflow
 
-### 1. Discover READMEs
+### 1. Discover READMEs and projects
 
 ```bash
-fd README.md --type f --exclude obj --exclude bin --exclude .git
+scripts/solution-inventory.sh --json
 ```
+
+Gives the README inventory (`readmes`), the solution file, and every project with its
+`path` and `packable` flag in one call.
 
 ### 2. Audit each README
 
-**src/\*/README.md (analyzer projects):**
+**src/\*/README.md (packable projects — `projects[].packable == true`):**
 - Verify `<Version>` in the `.csproj` matches any install snippet in the README
 - Run `scripts/analyzer-stats.sh --json` to get all diagnostic IDs and code fix coverage
 - Verify every diagnostic ID appears in the rule table
 - Verify the "Code Fix" column matches fix provider coverage
 
 **scripts/README.md:**
-- Run `scripts/help.sh` and compare every script in the README against actual output
-- Verify `internal/` script table matches `ls scripts/internal/*.sh`
+- Run `scripts/readme-table-diff.sh --json` — deterministic set-diff of documented vs. on-disk scripts (public + `internal/`). Act only on a non-empty `missing_from_readme` / `extra_in_readme`
+- Read the README and verify documented flags match actual script `--help` / argument parsing
 
 **Root README.md:**
-- Cross-reference project table against the solution file
+- Cross-reference project table against `solution` + `projects[].path` from step 1
 - Cross-reference script table against `scripts/help.sh`
 - Check .NET version against the global.json SDK pin (`scripts/sdk-version.sh`) or `Directory.Build.props`
 

@@ -18,6 +18,8 @@ Every repeated operation goes through a canonical script. Never use raw commands
 | `cat global.json \| jq .sdk.version`  | `scripts/sdk-version.sh`                        |
 | Ad-hoc `rg E128 \| wc -l` chains      | `scripts/analyzer-stats.sh [--json]`            |
 | Ad-hoc `fd -e cs \| wc -l` chains     | `scripts/codebase-stats.sh [--json]`            |
+| Ad-hoc `fd -e slnx`/`fd -e csproj`/`ls src/` + `IsPackable` grep | `scripts/solution-inventory.sh [--json\|--packable\|--readmes]` |
+| Eyeball-diff `scripts/README.md` vs `help.sh` | `scripts/readme-table-diff.sh [--json]`     |
 | Ad-hoc `jq` over session JSONL        | `scripts/session-mine.sh <subcmd> [--json]`     |
 | Ad-hoc `fd`/`ls` over agents+skills   | `scripts/catalog-stats.sh [--json]`             |
 | Manual analyzer release file checks    | `scripts/internal/analyzer-release-check.sh`    |

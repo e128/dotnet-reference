@@ -39,7 +39,7 @@ If **fewer than 50** `.cs` files changed, report "README check skipped — below
 ## Step 2: Discover READMEs
 
 ```bash
-fd README.md --type f --exclude obj --exclude bin --exclude .git
+scripts/solution-inventory.sh --readmes
 ```
 
 Verify the inventory above is still complete. If a new README exists, flag it.
@@ -48,19 +48,17 @@ Verify the inventory above is still complete. If a new README exists, flag it.
 
 ### Root README.md
 1. Read `README.md`
-2. Cross-reference project tables against the solution file and `src/` directory
+2. Cross-reference project tables against `scripts/solution-inventory.sh --json` (`solution` + `projects[].path`)
 3. Cross-reference script table against `scripts/help.sh` output
 4. Check .NET version against `Directory.Build.props` or the global.json SDK pin (`scripts/sdk-version.sh`)
 5. Verify lode links resolve to existing files
 
 ### scripts/README.md
-1. Read `scripts/README.md`
-2. Run `scripts/help.sh` and compare every script listed in the README against actual output
-3. Check that flags documented match actual script `--help` or argument parsing
-4. Verify `internal/` script table matches `ls scripts/internal/*.sh`
+1. Run `scripts/readme-table-diff.sh --json` — deterministic set-diff of documented vs. on-disk scripts. `drift: false` means the script tables (public + `internal/`) are in sync; act only on a non-empty `missing_from_readme` / `extra_in_readme`.
+2. Read `scripts/README.md` and check that flags documented match actual script `--help` or argument parsing
 
 ### src/*/README.md (packable projects)
-For each README found under `src/` in a packable project (`<IsPackable>true</IsPackable>`):
+For each packable project from `scripts/solution-inventory.sh --json` (`projects[].packable == true`) that has a README:
 1. Read the README
 2. If the project contains analyzers, run `scripts/analyzer-stats.sh --json` to get all diagnostic IDs and code fix provider coverage — every rule must appear in the rule table
 3. Cross-reference the `diagnostic_ids` against fix providers from `analyzer-stats.sh` output — the "Code Fix" column must be Yes for rules that have a provider, No otherwise

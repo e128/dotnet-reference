@@ -56,13 +56,14 @@ Pre-approved per CLAUDE.md auto-approval policy — proceed through parsing with
 
 ## Phase 1: Parse & Build Structured Data
 
-### 1.1 Find the solution file
+### 1.1 Enumerate the solution and projects
 
 ```bash
-fd -e slnx -e sln --max-depth 1
+scripts/solution-inventory.sh --json
 ```
 
-Prefer `.slnx` over `.sln`. If neither found, error and stop.
+Returns the solution file, every project (`path`, `kind` = src/test, `packable`), and
+the README inventory in one call. If `solution` is empty, error and stop.
 
 ### 1.2–1.9 Parse all config sources
 
@@ -72,11 +73,8 @@ nuget.config, .globalconfig/.editorconfig, and suppression scan.
 
 ### 1.10 Scan for orphans
 
-```bash
-fd -e csproj src/ tests/
-```
-
-Compare against solution file project list. Flag any on disk but not in solution.
+Use the `projects[].path` list from `scripts/solution-inventory.sh --json` (step 1.1).
+Compare against the solution file project list. Flag any on disk but not in solution.
 
 ### 1.11 Build structured project table
 

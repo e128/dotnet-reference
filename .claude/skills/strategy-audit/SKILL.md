@@ -80,8 +80,7 @@ Run these bash commands in parallel — no dependencies between them, no agent n
 
 ```bash
 scripts/codebase-stats.sh --json
-ls src/
-fd -e csproj src/ --max-depth 2
+scripts/solution-inventory.sh --json
 ```
 
 Synthesize a concise summary (under 20 lines) covering: Languages, Framework(s), key `src/` dirs and their purpose, entry points, test project names, file count by language, key namespaces.

@@ -68,6 +68,8 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `analyzer-stats.sh`    | Analyzer rule and source file statistics                                        |
 | `catalog-stats.sh`     | Inventory all agents and skills with frontmatter fields, description lengths, and line counts |
 | `codebase-stats.sh`    | Codebase file and LOC statistics by project                                     |
+| `solution-inventory.sh`| Solution file, projects (path/kind/packable flag), and README inventory         |
+| `readme-table-diff.sh` | Detect drift between scripts/README.md and the scripts on disk                   |
 | `coverage-areas.sh`    | Test coverage heuristic by namespace/project                                    |
 | `session-health.sh`    | Session analytics: error trends, tool counts, bash commands                     |
 | `session-mine.sh`      | Mine Claude Code session transcripts for repeated patterns                      |
