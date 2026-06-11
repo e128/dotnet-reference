@@ -3,9 +3,9 @@ name: smart-commit
 color: blue
 description: >
   Zero-friction commit: stages all tracked modified files (excluding secrets), drafts a
-  conventional commit message from the diff, and commits with the Co-Authored-By trailer —
-  no intermediate confirmation gates. The canonical commit path for this repo. Use when
-  changes are clearly scoped and the user just wants the commit done.
+  conventional commit message from the diff, and commits with a name-only co-author trailer
+  (never an email) — no intermediate confirmation gates. The canonical commit path for this
+  repo. Use when changes are clearly scoped and the user just wants the commit done.
   Triggers on: commit, just commit, fast commit, commit everything, commit without asking,
   auto-commit.
 tools: Bash, Read, Glob, Grep
@@ -54,6 +54,9 @@ Those are generic plugins; this agent uses repo-specific scripts (`stage.sh`, `p
 
 ## Rules
 
+- **Never put an email address in the commit message** — no `noreply@` line, no email in any
+  trailer. `commit.sh` and `precommit.sh` enforce this and will reject the commit. `commit.sh`
+  appends a name-only `Co-Authored-By: Claude` trailer automatically.
 - **Do not push** — leave push to `/yeet` or explicit user instruction
 - **One commit only** — if changes span clearly unrelated concerns, note it in the output
   but still commit everything together (user can split manually if they want)

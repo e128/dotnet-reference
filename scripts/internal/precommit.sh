@@ -34,6 +34,15 @@ while IFS= read -r file; do
     fi
 done <<< "$STAGED"
 
+# Check staged diff additions for real email addresses (global privacy rule).
+# Only added lines are scanned; example.com/.org/.net placeholders are allowed.
+ADDED=$(git -C "$ROOT" diff --cached -U0 2>/dev/null | grep -E '^\+[^+]' || true)
+while IFS= read -r email; do
+    [[ -z "$email" ]] && continue
+    FINDINGS=$((FINDINGS + 1))
+    DETAILS+=("email address detected: $email")
+done <<< "$(real_emails_in "$ADDED")"
+
 if [[ $FINDINGS -gt 0 ]]; then
     if [[ "$JSON" == true ]]; then
         json_object status=fail findings="$FINDINGS"

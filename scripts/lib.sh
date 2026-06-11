@@ -72,6 +72,22 @@ json_object() {
     printf '}\n'
 }
 
+# ── PII / email detection ────────────────────────
+# Email addr-spec (POSIX ERE). Placeholder domains are filtered by the helpers below.
+EMAIL_REGEX='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+
+# Echo every real email found in the given text, one per line.
+# example.com/.org/.net placeholders are intentionally excluded.
+real_emails_in() {
+    grep -oE "$EMAIL_REGEX" <<<"${1:-}" 2>/dev/null \
+        | grep -viE '@example\.(com|org|net)$' || true
+}
+
+# Return 0 if the text contains a non-placeholder email, else 1.
+contains_real_email() {
+    [[ -n "$(real_emails_in "${1:-}")" ]]
+}
+
 # ── Argument parsing helpers ─────────────────────
 # Check if a flag is present in args.
 has_flag() {

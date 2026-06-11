@@ -103,7 +103,7 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
 ### 2. Stage + commit + push
 
 - **Stage** — `scripts/internal/stage.sh --include-new` (stages all modified tracked + new untracked, excluding secrets)
-- **PII scan** — `scripts/internal/precommit.sh` (checks staged files for home paths; stop if fail)
+- **PII scan** — `scripts/internal/precommit.sh` (checks staged diff for home paths and email addresses; stop if fail)
 - If lode files staged, show brief summary table (path + one-line change description)
 - **Squash** — use `ahead` from cached step 0:
     - `ahead > 1`: `git reset --soft $(git merge-base main HEAD)` then re-stage and commit as one
@@ -114,6 +114,7 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
     - If the branch had multiple distinct concerns, name both in the subject or use a multi-line body
     - Subject line must be <=72 chars; use a body for detail when > 1 major concern
     - Never truncate the subject — if the auto-generated one ends in `...`, it is wrong
+    - **No email addresses** — never put an email in the message or any trailer; `commit.sh` rejects it
 - **Commit** — `scripts/internal/commit.sh --skip-precommit "message"` (precommit already ran above)
 - **Push** — `git push` (with `-u origin <branch>` if no upstream set)
 - **Create PR** — if the current branch is not `main`, create a pull request:
@@ -121,7 +122,7 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
   gh pr create --title "<commit subject line>" --body "<body>"
   ```
     - Title: reuse the commit subject line (the `type(scope): summary` part)
-    - Body: generate a `## Summary` with 1-3 bullet points covering the changeset, a `## Test plan` with bulleted checklist, and the Claude Code footer
+    - Body: generate a `## Summary` with 1-3 bullet points covering the changeset, a `## Test plan` with bulleted checklist, and the Claude Code footer — never include an email address anywhere in the body
     - If a PR already exists for this branch, skip PR creation silently
     - Report the PR URL at the end
 
@@ -130,6 +131,7 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
 - **All pending changes ship together** — never unstage, cherry-pick, or exclude files from the commit. Everything in the working tree goes into one commit. Do not ask whether to include specific files.
 - **Fully autonomous** — no user prompts during execution
 - **Stop on failure** — PII fail, build fail, or test fail halts the pipeline
+- **No email addresses** — never in a commit message, trailer, or PR body. The PII scan blocks real emails in the staged diff and `commit.sh` rejects an email in the message; `user@example.com` placeholders are allowed
 - **Single commit per push** — squash local commits when `ahead > 1`
 - **Do NOT auto-commit or push again** after completing these steps — one-time action
 - **`--dry-run` stops after step 1** — quality check only, no side effects

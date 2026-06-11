@@ -1,6 +1,6 @@
 # Project Instructions for Claude
 
-*Last updated: 2026-04-25T00:00:00Z*
+*Last updated: 2026-06-11T00:00:00Z*
 
 ## Communication
 
@@ -75,6 +75,11 @@ When making design trade-offs, apply this priority order:
 ## Git Conventions
 
 - **Commit messages**: Imperative mood, concise summary
+- **Never include an email address in a commit message** — no exceptions. No `noreply@` line,
+  no email in any trailer. `scripts/internal/commit.sh` appends a name-only
+  `Co-Authored-By: Claude` trailer automatically. Enforced by `commit.sh` (scans the message) and
+  `scripts/internal/precommit.sh` (scans the staged diff); both reject real emails. `user@example.com`
+  placeholders are allowed.
 - **Branch naming**: `feature/`, `fix/`, `refactor/`
 - **Squash all local commits before push** — one clean commit per PR.
 

@@ -82,7 +82,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | Script                               | Purpose                                                                                    |
 | ------------------------------------ | ------------------------------------------------------------------------------------------ |
 | `internal/analyzer-release-check.sh` | Validate analyzer release files (Unshipped/Shipped) against source DiagnosticId constants |
-| `internal/commit.sh`                 | Commit helper with co-author trailer                                                       |
+| `internal/commit.sh`                 | Commit helper: blocks emails in the message, appends a name-only co-author trailer         |
 | `internal/lode.sh`                   | Legacy Claude CLI wrapper (SystemPrompt.txt)                                               |
 | `internal/overlap-detect.sh`         | Detect trigger-phrase overlap between agents and skills                                    |
 | `internal/plan-close.sh`             | Verify tasks complete, then remove plan dir                                                |
