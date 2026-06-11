@@ -101,6 +101,8 @@ For each file found, look for:
 - **Repeated data gathering** — the same commands appearing in 2+ different agents/skills (candidate for a shared script)
 - **Deterministic validation** — checks with no LLM judgment needed (comparing file lists, counting entries, parsing YAML fields)
 
+**Density is a coarse signal — judge by execution, not block count.** A high inline-bash-block count does not make a skill a good candidate. Explicitly discount or exclude *teaching/reference* skills whose fenced ` ```bash ` blocks are illustrative examples rather than commands the skill invokes (e.g. `bash-patterns`), and the `script-discovery` skill itself. Ask "is this logic the skill executes deterministically every run?" — not "how many bash blocks does it have?". The real candidate may rank low on raw density yet be the only genuinely-extractable deterministic logic.
+
 ### 1b.3 Cross-reference with existing scripts
 
 For each inline pattern found, check `scripts/help.sh` output — skip patterns already covered.

@@ -26,6 +26,7 @@ Every repeated operation goes through a canonical script. Never use raw commands
 | Manual agent discovery for reviews     | `scripts/internal/review-agents.sh [--json]`    |
 | Manual trigger-phrase overlap checks   | `scripts/internal/overlap-detect.sh [--json]`   |
 | Manual plan-age checks                 | `scripts/internal/stale-plans.sh [--days N] [--json]` |
+| Manual settings.json allow-list gap scan | `scripts/internal/settings-gap.sh [--json]`   |
 | `dotnet list ... --outdated/--vulnerable` | `scripts/dep-check.sh [--outdated] [--json]` |
 
 ## Build Budget

@@ -86,26 +86,20 @@ Also triggered when the user explicitly asks about settings sync, allowed tools,
 
 Read `.claude/settings.json`. Extract all currently allowed tool patterns.
 
-### 5b: Inventory skill and agent commands
+### 5b–5c: Compute and classify gaps (deterministic)
 
-Use the catalog stats script to inventory skill and agent commands:
+Run the gap-analysis script — it extracts every command referenced in fenced
+bash blocks across `.claude/agents/` and `.claude/skills/`, diffs them against
+the `permissions.allow` globs in `settings.json`, and classifies each uncovered
+command by the fixed safety table. No manual catalog scan or hand-classification.
 
 ```bash
-scripts/catalog-stats.sh --json
+scripts/internal/settings-gap.sh --json
 ```
 
-Build a frequency table: command → files that use it from the catalog output.
-
-### 5c: Classify gaps
-
-For each command found in skills/agents but not in the allow-list:
-
-| Safety Level   | Commands                                                    | Action       |
-| -------------- | ----------------------------------------------------------- | ------------ |
-| Always safe    | grep, find, cat, head, tail, ls, wc, git diff, git log     | Auto-add     |
-| Low risk       | scripts/*.sh (read-only flags)                              | Propose add  |
-| Review required | dotnet test, git add, git commit                           | Present      |
-| Never auto-add | rm, rmdir, git reset, git push --force, git clean           | Keep manual  |
+Each gap object has `pattern`, `used_in` (count), `files`, `safety` (safe / low /
+review / manual), and `recommendation` (Auto-add / Propose add / Present / Keep
+manual). An empty `gaps` array means every referenced command is already covered.
 
 ### 5d: Present proposals
 

@@ -91,6 +91,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/plan-path.sh`              | Resolve a plan's canonical path by partial name                                            |
 | `internal/precommit.sh`              | PII scan on staged files                                                                   |
 | `internal/review-agents.sh`          | Discover code-review-relevant agents dynamically from .claude/agents/                      |
+| `internal/settings-gap.sh`           | Diff catalog commands against settings.json allow-list; classify gaps by safety tier       |
 | `internal/stage.sh`                  | Stage modified + new files, excluding secrets                                              |
 | `internal/stale-plans.sh`            | List plan directories older than N days with no recent modifications                       |
 | `internal/version-bump.sh`           | Increment \<Version\> in a project's .csproj                                               |
