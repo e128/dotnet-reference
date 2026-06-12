@@ -1,5 +1,5 @@
 # Dependency Policy
-*Updated: 2026-05-04T20:32:42Z*
+*Updated: 2026-06-12T13:37:24Z*
 
 ## Selection Criteria
 
@@ -25,7 +25,11 @@ Before adding a new NuGet dependency, evaluate:
 
 ## Version Management
 
-All versions are managed centrally in `Directory.Packages.props` (CPM). Individual projects use `<PackageReference Include="..." />` without version attributes. Transitive pinning is enabled via `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>`. Explicit transitive pins exist for `System.Collections.Immutable` and `System.Diagnostics.DiagnosticSource` to prevent diamond-dependency drift.
+All versions are managed centrally in `Directory.Packages.props` (CPM). Individual projects use `<PackageReference Include="..." />` without version attributes. Transitive pinning is enabled via `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>`. Explicit transitive pins (version-only `PackageVersion` entries with no direct reference) live under the "Transitive pins" comments in `Directory.Packages.props` to prevent diamond-dependency drift. A pin only does its job while the package actually appears in the restore graph (`dotnet list package --include-transitive`); once it no longer does, the pin is inert and should be removed.
+
+## Pruning Unused Dependencies
+
+`/prune-deps` audits the solution for dead dependencies: orphaned `PackageVersion` entries (transitive-pin aware), unused `PackageReference` (code-usage based), and unused `ProjectReference`. It reports findings, then removes approved entries and runs one verification build. Analyzers (in `Directory.Build.props`), test SDK/runner packages, and runtime-only/DI-glue packages never surface as `using` directives — they are not unused just because no `using` references them. `/solution-audit` surfaces the same three categories as part of its broader read-only health sweep.
 
 ## Automated Updates
 

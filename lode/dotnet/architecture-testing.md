@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-05-04T20:33:09Z*
+*Updated: 2026-06-12T13:37:45Z*
 
 ## Overview
 
@@ -9,7 +9,7 @@
 
 - `TngTech.ArchUnitNET.xUnitV3` — xUnit v3 integration (includes core + assertions). Version pinned in `Directory.Packages.props`.
 
-The test project references Core, Web, and Cli so test code can resolve types from any assembly, even though only Core is loaded into the architecture model today.
+The test project references only `E128.Reference.Core` — the architecture model loads the Core assembly (`typeof(Greeter).Assembly`). To analyze additional layers (Web, Cli), add both a `ProjectReference` to those projects and their assemblies to `ArchitectureBaseline`; carrying a `ProjectReference` without loading its assembly is dead weight (`/prune-deps` flags it).
 
 ## How It Works
 
@@ -72,7 +72,7 @@ Enforces dependency direction: Models → (nothing), Repositories → Models onl
 2. Reference `ArchitectureBaseline.Instance`
 3. Define rules using `ArchRuleDefinition` fluent API
 4. Tag with `[Trait("Category", "CI")]`
-5. If analyzing additional assemblies, add them to `ArchitectureBaseline`
+5. If analyzing additional assemblies, add a `ProjectReference` to the target project **and** load its assembly in `ArchitectureBaseline`
 
 ## Key Namespaces
 
