@@ -11,8 +11,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\E128.Reference.Core\E128.Reference.Core.csproj" />
-    <ProjectReference Include="..\..\src\E128.Reference.Web\E128.Reference.Web.csproj" />
-    <ProjectReference Include="..\..\src\E128.Reference.Cli\E128.Reference.Cli.csproj" />
   </ItemGroup>
 
 </Project>

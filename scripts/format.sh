@@ -20,6 +20,10 @@ done
 SOLUTION="$(find_solution)"
 ARGS=(dotnet format "$SOLUTION")
 
+# Snapshot the set of .cs files already dirty before formatting, so we can report
+# only what formatting actually changed (not what jb merely scanned).
+CS_BEFORE="$(changed_cs_files)"
+
 if [[ "$CHECK" == true ]]; then
     ARGS+=(--verify-no-changes)
 fi
@@ -51,7 +55,13 @@ if [[ "$CHECK" == false && "$NO_JB" == false ]]; then
         else
             JB_ARGS+=("--include=**/*.cs")
         fi
-        "${JB_ARGS[@]}"
+        # Capture jb's per-file scan progress instead of streaming it — that list
+        # enumerates every file inspected, not files changed, and reads as mass churn.
+        if ! jb_output="$("${JB_ARGS[@]}" 2>&1)"; then
+            err "jb cleanup failed"
+            echo "$jb_output"
+            exit 1
+        fi
         ok "Format: jb cleanup applied"
     fi
 fi
@@ -77,5 +87,14 @@ fi
 if [[ "$CHECK" == true ]]; then
     ok "Format check passed"
 else
-    ok "Format applied"
+    # Report only .cs files formatting actually changed (after-set minus before-set).
+    CS_AFTER="$(changed_cs_files)"
+    NEWLY_CHANGED="$(comm -13 <(printf '%s\n' "$CS_BEFORE") <(printf '%s\n' "$CS_AFTER"))"
+    NEW_COUNT="$(printf '%s' "$NEWLY_CHANGED" | grep -c . || true)"
+    if [[ "$NEW_COUNT" -eq 0 ]]; then
+        ok "Format applied — no .cs files changed"
+    else
+        ok "Format applied — ${NEW_COUNT} .cs file(s) changed:"
+        printf '%s\n' "$NEWLY_CHANGED" | sed 's/^/    /'
+    fi
 fi

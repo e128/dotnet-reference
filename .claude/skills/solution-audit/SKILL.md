@@ -120,7 +120,8 @@ Spawn all in a **single message**. Use `subagent_type: "general-purpose"`.
 
 ### Agent A: Structure (D1, D2)
 
-Pass: project table, folder map, orphan list.
+Pass: project table, folder map, orphan list, and each project's source directory (for
+the D1 unused-ProjectReference usage grep).
 
 **D1 — Dependency Graph:**
 - Build directed graph from ProjectReferences
@@ -128,6 +129,11 @@ Pass: project table, folder map, orphan list.
 - src→test or src→benchmark reference → `[CRITICAL]`
 - Isolated project (0 edges) → `[LOW]`
 - Redundant transitive ref (A→B→C and A→C) → `[MEDIUM]`
+- **Unused ProjectReference** (A→B but A uses no public type from B) → `[HIGH]`.
+  Grep A's source for B's root namespace and public type names; no hit → unused.
+  **Skip** edges with `OutputItemType="Analyzer"` or `ReferenceOutputAssembly="false"`
+  (intentional build-order/analyzer refs, not symbol usage). For the removal workflow,
+  defer to `/prune-deps`.
 
 **D2 — Solution Sync:**
 - Folder assignment vs disk path mismatch → `[HIGH]`
@@ -137,15 +143,32 @@ Pass: project table, folder map, orphan list.
 
 Return adjacency list in `ADJACENCY: ... END_ADJACENCY` block for Mermaid.
 
-### Agent B: Packages (D3, D4, D9)
+### Agent B: Packages (D3, D4, D4b, D9)
 
-Pass: project table, Directory.Packages.props content, nuget.config data, SDK info.
+Pass: project table, Directory.Packages.props content (with comments, for transitive-pin
+detection), nuget.config data, SDK info, and each project's source directory (for the D4b
+unused-PackageReference usage grep). The orchestrator should run
+`dotnet list <SLN> package --include-transitive` in Phase 1 and pass the result so the
+agent can distinguish orphans from transitive pins.
 
 **D3 — CPM Compliance:**
 - `Version=` on any PackageReference in .csproj → `[CRITICAL]`
 - `VersionOverride` attribute → `[CRITICAL]`
 - Analyzer packages in .csproj instead of Directory.Build.props → `[MEDIUM]`
-- Package in Directory.Packages.props not referenced by any project → `[MEDIUM]`
+- **Orphaned central package** — `PackageVersion` referenced by no project AND not a
+  transitive pin → `[MEDIUM]`. With `CentralPackageTransitivePinningEnabled=true`,
+  version-only entries that pin a transitive dependency are legitimate — confirm via
+  `dotnet list <SLN> package --include-transitive` (or a `<!-- Transitive pin -->`
+  comment) before flagging. Don't count `PackageReference`s in Directory.Build.props as
+  "no project."
+
+**D4b — Unused PackageReference** (code-usage):
+- Direct `PackageReference` whose root namespace/types appear nowhere in the project's
+  source → `[MEDIUM]` (downgrade to `[LOW]` when the namespace is uncertain).
+- **Skip** analyzers / `PrivateAssets="all"` source-only packages, test SDK/runner
+  packages (`xunit.*`, `Microsoft.Testing.Extensions.*`), and runtime-only/DI-glue
+  packages — they never surface as `using`. Flagging them is a false positive.
+- For the removal workflow, defer to `/prune-deps`.
 
 **D4 — Package Health:**
 - Test-only package (xunit, NSubstitute) in non-test project → `[HIGH]`
@@ -215,6 +238,16 @@ Print a structured report with: header (solution name, project/package counts, S
 **Verdict:** **PASS** (no CRITICAL/HIGH) | **WARN** (HIGH but no CRITICAL) | **FAIL** (CRITICAL present)
 
 ---
+
+## Overlap with /prune-deps
+
+D3 (orphaned central packages), D1 (unused ProjectReference), and D4b (unused
+PackageReference) overlap with `/prune-deps`. The distinction: `/solution-audit` *reports*
+these alongside its other 9 dimensions as part of a broad read-only health check;
+`/prune-deps` is the focused, deeper tool — it uses the roslyn MCP for symbol-accurate
+usage, applies the full false-positive taxonomy, and **removes** confirmed-dead entries
+with a verification build. Use `/solution-audit` to surface dependency rot in a general
+sweep; use `/prune-deps` to actually clean it up.
 
 ## Overlap with /dotnet-overhaul
 

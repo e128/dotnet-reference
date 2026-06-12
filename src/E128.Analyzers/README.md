@@ -80,6 +80,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128078 | `GetAttribute("href")` on element that does not carry href                                   | No       |
 | E128079 | `CompositeDetection` with single generic ID selector lacks specificity                       | No       |
 | E128086 | `ArrayPool` buffer used as `SqliteParameter` value without `Size`                            | Yes      |
+| E128089 | Avoid bare `.Parse()` — use `TryParse` to handle invalid input                               | No       |
 
 ### Performance
 
@@ -130,6 +131,12 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128054 | Class creates temp directory without cleanup interface                     | Yes      |
 | E128062 | Test uses outdated `ReferenceAssemblies` — does not match project TFM      | Yes      |
 | E128073 | Test method missing `[Trait("Category", ...)]` attribute                   | Yes      |
+
+### Maintainability
+
+| Rule    | Title                                                                     | Code Fix |
+| ------- | ------------------------------------------------------------------------- | -------- |
+| E128090 | Avoid reflection in test methods (default: Info)                           | No       |
 
 ## What each rule catches
 
@@ -947,6 +954,30 @@ void Track() => _count++;
 // After — atomic
 private static int _count;
 void Track() => Interlocked.Increment(ref _count);
+```
+
+### E128089 &mdash; Bare .Parse() without TryParse
+
+Flags `.Parse(...)` calls on types that also expose a static `TryParse` method (e.g., `int`, `double`, `DateTime`, `Guid`, `Enum`). `Parse` throws `FormatException` on invalid input; `TryParse` lets callers handle failure without exceptions. No code fix &mdash; the failure-handling branch is context-specific.
+
+```csharp
+// Before (warns)
+var value = int.Parse(input);
+
+// After
+if (!int.TryParse(input, out var value)) { /* handle invalid input */ }
+```
+
+### E128090 &mdash; Reflection in test methods (Info)
+
+Flags `GetMethod`, `GetProperty`, and `GetField` reflection calls inside test methods. Reflection couples tests to private implementation detail; prefer testing through the public API (this repo uses `internal` + `InternalsVisibleTo` instead). Default severity: **Info**. No code fix.
+
+```csharp
+// Before (info)
+var m = typeof(Service).GetMethod("Compute", BindingFlags.NonPublic | BindingFlags.Instance);
+
+// After — exercise the public surface
+var result = new Service().Run();
 ```
 
 ## Configuration
