@@ -22,7 +22,7 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `check actions` / `outdated actions`                       | `scripts/gh-actions-update.sh`|
 | `lint yaml` / `check yaml`                                 | `scripts/lint-yaml.sh`        |
 | `lode summary` / `lode section`                            | `scripts/lode-summary.sh`     |
-| `check updates` / `outdated packages`                      | `scripts/update.sh`           |
+| `apply updates` / `update packages` / `bump deps`          | `scripts/update.sh [--apply]` |
 | `poll until` / `wait for build` / `loop until`            | `scripts/loop.sh`             |
 | `scan violations` / `check anti-patterns` / `violation scan` | `scripts/violation-scan.sh` |
 | `analyzer context` / `analyzer status`                       | `scripts/analyzer-context.sh`   |
@@ -33,5 +33,5 @@ These phrases in user messages always invoke the corresponding script or skill.
 | `session mine` / `transcript analysis` / `session patterns`  | `scripts/session-mine.sh all`   |
 | `catalog stats` / `skill count` / `agent count`             | `scripts/catalog-stats.sh`      |
 | `check releases` / `analyzer releases` / `release check`    | `scripts/internal/analyzer-release-check.sh` |
-| `dep check` / `vulnerable packages` / `outdated deps`       | `scripts/dep-check.sh --json`                |
+| `dep check` / `vulnerable packages` / `outdated packages` / `outdated deps` | `scripts/dep-check.sh --json`                |
 | `capture to lode` / `save this to lode`                      | `/lode-capture`                              |

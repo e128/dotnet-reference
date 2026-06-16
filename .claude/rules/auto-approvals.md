@@ -12,11 +12,12 @@ The following changes never require user confirmation — apply them silently:
 - All `scripts/*.sh` and `scripts/internal/*.sh` invocations
 - Spawning read-only agents
 - Writing to `.claude/tmp/`
+- Creating, updating, or deleting files inside `lode/` (deletion requires the file be git-committed with no uncommitted changes — see the Lode prime directive)
 
 The following still require explicit approval:
 
 - Any analyzer suppression (`#pragma`, `[SuppressMessage]`)
-- Deleting files or significant code blocks
+- Deleting files outside `lode/`, or deleting significant code blocks
 - Changing public API signatures
 - Any git push, PR creation, or external-facing action
 - Modifying `.claude/settings.json`

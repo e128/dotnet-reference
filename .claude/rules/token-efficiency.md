@@ -1,6 +1,6 @@
 # Token Efficiency
 
-- Never re-read files you just wrote or edited. You know the contents.
+- Avoid redundant re-reads of files you just wrote or edited — you know the contents. The re-read triggers in [read-before-edit.md](read-before-edit.md) (after `format.sh`, a sub-agent write, or context compaction) override this and are mandatory.
 - Never re-run commands to "verify" unless the outcome was uncertain.
 - Don't echo back large blocks of code or file contents unless asked.
 - Batch related edits into single operations.

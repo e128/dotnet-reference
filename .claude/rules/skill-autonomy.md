@@ -6,12 +6,12 @@ When running inside a skill or agent, NEVER prompt the user to approve: Read/Glo
 
 ## Re-read After Format (Mandatory in Agent Context)
 
-After any `format.sh` invocation, ALL previously-read file contents are invalidated. Agents MUST re-read every file they intend to edit after format runs.
+The re-read triggers are defined in [read-before-edit.md](read-before-edit.md). In agent context this is non-negotiable: after any `format.sh --changed` invocation, agents MUST re-read every file they intend to edit before editing it.
 
 **Correct pattern:**
 ```
 Read(file.cs)
-Bash(scripts/format.sh)
+Bash(scripts/format.sh --changed)
 Read(file.cs)        # re-read — mandatory after format
 Edit(file.cs, ...)   # succeeds
 ```

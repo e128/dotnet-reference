@@ -23,6 +23,8 @@
 
 ## Write Code Before Running Tests
 
+**This is about *running* tests, not *writing* them. It does NOT contradict CLAUDE.md § TDD.** TDD still authors the failing test first (with an `Assert.Fail` stub — see CLAUDE.md § TDD). This rule governs only the implementation/verify loop: once the failing test exists, write the implementation before you *run* the suite.
+
 - **Write all implementation code first**, then verify
-- Do NOT burn turns running tests against stubs or before code exists
+- Do NOT burn turns running tests against stubs or before implementation code exists
 - Trust `scripts/task.sh` and `scripts/test.sh` to handle verification

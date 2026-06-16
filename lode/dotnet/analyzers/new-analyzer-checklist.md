@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-05-17T00:00:00Z*
+*Updated: 2026-06-16T13:23:03Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 
@@ -24,6 +24,10 @@ Roslyn syntax node properties that are semantically always-present can be nullab
 - `ArgumentSyntax.Expression` — nullable in the API
 
 **Rule of thumb**: treat every Roslyn `SyntaxNode` property as potentially nullable unless the type is a non-nullable value type. Use pattern matching (`is { ExpressionBody: { } body }`) or explicit null guards.
+
+## Keep the Package README Current
+
+`src/E128.Analyzers/README.md` is the NuGet package page (`PackageReadmeFile`) — the primary documentation surface for the package, copied to nuget.org. After any analyzer change (new rule, renamed rule, changed category/severity, added/removed code fix), update the README's rule tables, "What each rule catches" sections, and code examples to match. A stale rule table makes the package look unmaintained.
 
 ## Test Infrastructure Notes
 

@@ -1,12 +1,12 @@
 # Project Instructions for Claude
 
-*Last updated: 2026-06-11T00:00:00Z*
+*Last updated: 2026-06-16T13:48:21Z*
 
 ## Communication
 
 - **Terse responses** — code over explanation unless asked
 - **No time estimates.** Never predict how long a task or feature will take.
-- **Ask before fixing** — flag issues and suggestions, wait for approval before changing
+- **Ask before fixing** — flag issues and suggestions, wait for approval before changing, **except** the low-risk changes enumerated in [Auto-Approvals](.claude/rules/auto-approvals.md), which are applied silently
 - **Use `AskUserQuestion` for all decisions.** Never ask questions inline in text output.
 - **Timestamps** — ISO 8601 UTC format everywhere (e.g., `2026-04-09T12:00:00Z`)
 - **Markdown tables must use aligned columns.** See [Markdown Formatting](.claude/rules/markdown-formatting.md).
@@ -15,7 +15,7 @@
 
 ### Tests
 
-- **Never use raw `dotnet test` directly.** Always use `scripts/test.sh` (targeted) or `scripts/test.sh --all` (full CI suite). This project uses xUnit v3 MTP — raw `dotnet test --filter` does not work. The `--filter-class` flag accepts a class name (e.g., `MidNameUnderscoreAnalyzerTests`); other test projects returning exit code 8 (zero matches) is expected.
+- **Never use raw `dotnet test` directly.** Always use `scripts/test.sh` (targeted) or `scripts/test.sh --all` (full CI suite). This project uses xUnit v3 MTP — raw `dotnet test --filter` does not work. Pass a class name as a positional argument to run targeted tests (e.g., `scripts/test.sh MidNameUnderscoreAnalyzerTests`); other test projects returning exit code 8 (zero matches) is expected.
 - **Never run `check.sh` and `build.sh` together.** `check.sh` already includes build.
 
 ### TDD
@@ -32,7 +32,7 @@ Follow TDD (Red-Green-Refactor) for new features and significant changes. New fa
 
 ### Builds
 
-- Ask before running unless explicitly requested
+- Build/test scripts run without a separate ask-gate (they are effectively read-only); `scripts/build-budget.sh` governs frequency. See [Auto-Approvals](.claude/rules/auto-approvals.md).
 - **`scripts/check.sh`** — composed verify (format → build → targeted tests). Use `--all` for full CI suite.
 - **`scripts/build.sh`** — build only (no tests). Use `--warnings` to include warnings; `--fix` to format first.
 
@@ -93,7 +93,7 @@ Prefer focused incremental changes: one change, verify, then next.
 
 Prefer `.claude/` (project-level) over `~/.claude/` (global) for all config.
 
-Always use `.claude/tmp/` instead of `/tmp`. **Never write to `/tmp`.**
+Always use `.claude/tmp/` instead of `/tmp`. **Never write to `/tmp`.** Scope: `lode/tmp/` holds lode-related scraps and session handovers only; `.claude/tmp/` holds all other working/scratch files.
 
 **Never write absolute user profile paths.** Use `~` for home-relative or repo-relative paths.
 
