@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-05-04T20:33:47Z*
+*Updated: 2026-06-18T15:14:50Z*
 
 ## Overview
 
@@ -92,8 +92,8 @@ E128099 | Design | Warning | No longer needed
 - `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content) and `RS1038`
 - Files registered as `<AdditionalFiles>` in csproj
 - Published to NuGet: https://www.nuget.org/packages/E128.Analyzers/
-- `Shipped.md` has 10 release sections (1.0.0 through 1.23.3), 67 rules total
-- `Unshipped.md` tracks pending changes only (E128066-069 — O(n²) loop performance rules not yet published)
+- `Shipped.md` lists all shipped rules across release sections (1.0.0 through 1.31.0); run `scripts/internal/analyzer-release-check.sh` for current shipped/unshipped/source ID counts
+- `Unshipped.md` tracks pending changes only; empty (just the `### New Rules` header) when all rules are shipped
 
 ### Release-to-Rule Mapping
 
@@ -111,6 +111,8 @@ E128099 | Design | Warning | No longer needed
 | 1.6.0   | E128031-053   | DI patterns, concurrency, JSON lifetime, etc. |
 | 1.8.0   | E128054       | Temp dir cleanup; E128003/004 recategorized to Design |
 | 1.23.3  | E128055-065   | Pragma, TOCTOU, readonly array, interface param, etc. |
+| 1.26.1  | E128066-075   | O(n²) loops, pool bounds, FIPS hash, init accessor, crypto RNG |
+| 1.31.0  | E128076-090   | DOM-detection reliability, ByteSize, marshal/span perf, bare Parse, test reflection (E128088 unused) |
 
 ## Sources
 
