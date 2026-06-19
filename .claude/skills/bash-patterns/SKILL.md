@@ -12,10 +12,9 @@ description: >
 
 # Bash Scripting Patterns
 
-Bash 5+ is the project's shell scripting language. Scripts live in `scripts/` and use `.sh` extension.
-All scripts must pass `shellcheck` before commit.
+Bash 5+. Scripts live in `scripts/` (`.sh`), must pass `shellcheck` before commit.
 
-Detailed implementation examples: see `references/bash-reference.md`
+Generic bash idioms (control flow, string/array ops, functions, built-ins): see `references/bash-reference.md`. This file covers only project conventions and gotchas.
 
 ## Naming Conventions
 
@@ -39,10 +38,7 @@ set -euo pipefail
 #   scripts/my-script.sh [--flag] <arg>
 ```
 
-**Always start with `set -euo pipefail`:**
-- `set -e` — exit on error
-- `set -u` — error on undefined variables
-- `set -o pipefail` — pipe failures propagate
+**Always start with `set -euo pipefail`.**
 
 ## Formatting Rules
 
@@ -106,56 +102,6 @@ exit_code=$?
 ```bash
 TMP_FILE="$(mktemp)"
 trap 'rm -f "$TMP_FILE"' EXIT
-```
-
-### String Operations
-
-```bash
-# String contains
-if [[ "$text" == *"pattern"* ]]; then echo "found"; fi
-
-# String starts with
-if [[ "$text" == "prefix"* ]]; then echo "yes"; fi
-
-# Default value
-result="${value:-default}"
-
-# String replacement
-new_text="${text//old/new}"
-```
-
-### Array Operations
-
-```bash
-# Declare array
-local -a items=()
-
-# Append
-items+=("new_item")
-
-# Length
-echo "${#items[@]}"
-
-# Iterate
-for item in "${items[@]}"; do
-  echo "$item"
-done
-
-# Check if empty
-if [[ ${#items[@]} -eq 0 ]]; then echo "empty"; fi
-```
-
-### Function Pattern
-
-```bash
-# Document every function with a comment
-# Fetches user data from the API
-fetch_user() {
-  local user_id="$1"
-  local -r endpoint="https://api.example.com/users/${user_id}"
-
-  curl -sf "$endpoint" || return 1
-}
 ```
 
 ### Prerequisites Check
@@ -223,19 +169,12 @@ source "${SCRIPT_DIR}/lib.sh"
 
 ## Test Before Commit
 
-Run shellcheck before committing — catches common errors without running the script:
+`shellcheck` is the authoritative linter — fix all warnings before committing.
 
 ```bash
 shellcheck scripts/my-script.sh
+bash -n scripts/my-script.sh   # syntax-only check
 ```
-
-Then verify it runs without errors:
-
-```bash
-bash -n scripts/my-script.sh  # syntax check only
-```
-
-`shellcheck` is the authoritative linter. Fix all warnings before committing.
 
 ## Self-Improvement
 

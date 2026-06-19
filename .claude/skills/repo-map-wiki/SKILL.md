@@ -33,23 +33,13 @@ client-side Mermaid rendering, and sortable tables. Pass `--format md` for plain
 
 ## Output Format
 
-### Tufte Dracula HTML (default, `--format html`)
+**HTML (default).** Self-contained `.html` files with the Dracula-Tufte theme — inlined
+CSS/JS, `<pre class="mermaid">` diagrams with click-to-zoom, sortable booktabs tables, and
+relative-link nav. Read [references/html-format.md](references/html-format.md) at generation
+time and follow its skeleton exactly.
 
-Self-contained `.html` files with Dracula-Tufte (muted) theme. Full spec, skeleton, CSS,
-JS, tag usage, and color roles are in [references/html-format.md](references/html-format.md).
-Read that file at generation time and follow it exactly.
-
-Key points:
-- Each file is self-contained -- no external CSS/JS/images
-- Mermaid diagrams use `<pre class="mermaid">` with click-to-zoom overlay
-- Tables use booktabs style with `<th data-col>` for sortable columns
-- Wiki navigation via `<nav class="wiki-nav">` with relative links
-- `<meta>` tags for `wiki-product`, `wiki-section`, `wiki-updated`
-
-### Markdown fallback (`--format md`)
-
-Same structure and content requirements as HTML, but output `.md` files with standard
-Mermaid fenced code blocks. Follow [references/file-conventions.md](references/file-conventions.md).
+**Markdown (`--format md`).** Same structure and content; `.md` files with standard fenced
+Mermaid blocks.
 
 ---
 
@@ -67,46 +57,15 @@ Before generating, check if the target already has a `docs/` structure:
 
 ## What This Produces
 
-A `docs/` directory with 15-20 HTML files organised by audience and depth:
+A `docs/` directory of 15–20 files across five sections: `overview/` (executive, strategy,
+product), `architecture/` (system, data-flow, storage, deployment, integration-patterns,
+security), `engineering/` (getting-started, codebase-map, testing-strategy), `guides/`
+(configuration), and `reference/` (glossary, cli-commands), plus `index.html` as the pyramid
+entry point. The per-file content requirements are in
+[references/file-conventions.md](references/file-conventions.md).
 
-```
-docs/
-├── index.html                     # Pyramid entry point -- start here
-├── overview/
-│   ├── executive.html             # C-suite / investor view
-│   ├── strategy.html              # Strategic positioning and trade-offs
-│   └── product.html               # PM / UX / business analyst view
-├── architecture/
-│   ├── system.html                # System topology, layers, communication
-│   ├── data-flow.html             # How data moves through the system
-│   ├── storage.html               # Databases, storage, ORM, schemas
-│   ├── deployment.html            # Infrastructure, CI/CD, provisioning
-│   ├── integration-patterns.html  # Service communication, messaging, events
-│   └── security.html              # Auth, encryption, compliance posture
-├── engineering/
-│   ├── getting-started.html       # Prerequisites, build, run locally
-│   ├── codebase-map.html          # All projects and their purposes
-│   └── testing-strategy.html      # Test patterns, CI quality gates
-├── guides/
-│   ├── getting-started.html       # Setup and first run (if not in engineering/)
-│   └── configuration.html         # Configuration reference
-└── reference/
-    ├── glossary.html              # Terminology and definitions
-    └── cli-commands.html          # CLI command reference
-```
-
-**Per-service docs** fold into `architecture/` or `engineering/` -- there is no separate
-`services/` directory. A major service's internal architecture goes in
-`architecture/{service}.html`; its operational details go in `engineering/{service}-ops.html`.
-
----
-
-## When to Use
-
-- A new product area's repos have been cloned and need documentation
-- Onboarding engineers to an unfamiliar codebase
-- Building a knowledge layer for an existing repo cluster
-- Refreshing stale product documentation from source truth
+**Per-service docs** fold into `architecture/{service}.html` (internal architecture) or
+`engineering/{service}-ops.html` (operations) — there is no separate `services/` directory.
 
 ---
 
@@ -186,18 +145,9 @@ Generate files in parallel batches. Each file follows the conventions in
 [references/file-conventions.md](references/file-conventions.md) (content requirements)
 and [references/html-format.md](references/html-format.md) (HTML skeleton and tag patterns).
 
-**Batch 1 (entry point):** index.html
-**Batch 2 (overview):** executive.html, strategy.html, product.html
-**Batch 3 (architecture):** system.html, data-flow.html, storage.html, deployment.html, integration-patterns.html, security.html
-**Batch 4 (engineering):** getting-started.html, codebase-map.html, testing-strategy.html
-**Batch 5 (guides + reference):** configuration.html, glossary.html, cli-commands.html
-
-**Known-good configuration for 20+ file wikis (4 parallel agents):**
-- Agent 1 — overview (3 files): executive, strategy, product
-- Agent 2 — architecture (7 files): system, data-flow, storage, deployment, integration-patterns, security, plus any service-specific pages
-- Agent 3 — engineering (5 files): getting-started, codebase-map, testing-strategy, and ops pages
-- Agent 4 — guides + reference + UX (remaining files)
-The architecture agent takes longest when it contains many Mermaid diagrams -- account for ~10-12 minutes per run.
+Generate `index.html` first, then fan out one agent per section: overview (3), architecture
+(6+ service pages), engineering (3+ ops pages), guides + reference (remaining). The
+architecture agent is the long pole — it carries the most Mermaid diagrams.
 
 For each file:
 1. Copy the canonical HTML skeleton from [references/html-format.md](references/html-format.md)
@@ -230,15 +180,8 @@ See [references/file-conventions.md](references/file-conventions.md) for per-fil
 ## Lode Integration
 
 The generated `docs/` tree is a presentation layer; `lode/` remains the authoritative
-project memory (see CLAUDE.md). After generating:
-
-- Cross-link from lode domain summaries to generated docs where useful
-  (e.g., `lode/dotnet/summary.md` can point to `docs/engineering/codebase-map.html`).
-- Do not duplicate lode content verbatim into `docs/`; summarise and link back.
-- Timestamp generated files with `scripts/ts.sh` output (ISO 8601 UTC) to match repo convention.
-- Per CLAUDE.md, knowledge belongs in `lode/`, never in `MEMORY.md`.
-
----
+memory (see CLAUDE.md). Cross-link from lode summaries to docs, summarise rather than
+duplicate lode content, and timestamp generated files with `scripts/ts.sh` (ISO 8601 UTC).
 
 ## Troubleshooting
 
@@ -246,7 +189,6 @@ See [references/troubleshooting.md](references/troubleshooting.md) for common is
 
 ## Self-Improvement
 
-At the end of a run, if the run surfaced a recurring failure, a user correction, or a
-convention gap, spawn the `skill-self-updater` agent with a short feedback payload describing
-what to change in this skill. Skip when the run was clean — do not spawn with an empty payload.
+If a run surfaces a recurring failure, user correction, or convention gap, spawn the
+`skill-self-updater` agent with a short feedback payload. Skip when the run was clean.
 

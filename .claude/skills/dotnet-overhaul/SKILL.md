@@ -52,16 +52,9 @@ Test projects identified by name containing `Test`/`Tests`, referencing xUnit/NU
 
 ## Overlap with /solution-audit
 
-Both skills audit infrastructure config (build config, analyzer config, NuGet config, package health). The distinction:
-
-| Concern               | `/solution-audit`                      | `/dotnet-overhaul`                      |
-| --------------------- | -------------------------------------- | --------------------------------------- |
-| **Purpose**           | Structural health report (read-only)   | Modernization loop (finds + fixes)      |
-| **Scope**             | 10 dimensions, all config-level        | Config (Step 2) + code (Steps 3–8)      |
-| **Output**            | Severity-grouped findings report       | Findings → approval → applied fixes     |
-| **When to use**       | Quick health check, CI gate            | Planned maintenance, onboarding new repo|
-
-**Do not run both.** If running a full overhaul, Step 2 covers everything `/solution-audit` does. Use `/solution-audit` independently for a lightweight config-only check.
+Step 2 covers everything `/solution-audit` does (build/analyzer/NuGet config, package health)
+*and* fixes it. **Do not run both** — use `/solution-audit` alone only for a lightweight,
+read-only config check or CI gate.
 
 ## The Overhaul Loop
 
@@ -99,21 +92,20 @@ Read `.claude/tmp/overhauler/progress.md`. If the file exists: recover baseline 
 
 ## Portability Layers
 
-This skill works in three tiers — core always works, enhanced uses project-specific agents if present.
+Core path (Steps 0–10) needs only `dotnet` CLI, `Explore` agents, and `.claude/tmp/` state —
+zero external dependencies. Use these when present, else fall back:
 
-### Core (always works)
-Steps 0-10 use `dotnet` CLI commands, `Explore` agents, and `.claude/tmp/` state. Zero external dependencies.
+| If present                            | Use it for                  | Else fall back to                                      |
+| ------------------------------------- | --------------------------- | ------------------------------------------------------ |
+| `build-validator` agent               | build + test                | `${CLAUDE_SKILL_DIR}/scripts/build.sh`, `test.sh`      |
+| `sme-researcher` agent                | uncertainty research        | `Explore` agent                                        |
+| `tdd-loop-optimizer` agent            | batch fix cycles            | sequential fixes                                       |
+| `mcp__ide__getDiagnostics`            | deeper post-build diagnostics | build output only                                     |
+| `/dev-planning` skill (≥8 findings)   | create a plan               | execute directly from `approved-step{N}.md`            |
 
-### Enhanced (when available)
-- **`build-validator` agent** -> if present, use for build+test; otherwise use `${CLAUDE_SKILL_DIR}/scripts/build.sh` and `test.sh`
-- **`sme-researcher` agent** -> if present, use for uncertainty; otherwise use `Explore` agent
-- **`tdd-loop-optimizer` agent** -> if present, use for batch fix cycles; otherwise apply fixes sequentially
-- **`mcp__ide__getDiagnostics`** -> if available, run on modified `.cs` files after build for deeper diagnostics; otherwise rely on build output only
-- **dev-planning** -> if `/dev-planning` skill exists and >=8 findings, create a plan; otherwise execute directly from `approved-step{N}.md`
-
-### Project-specific (optional)
-- **`${CLAUDE_SKILL_DIR}/conventions.md`** -> if present, read for coding standards, analyzer inventory, severity overrides, auto-approved fixes, and test relaxations. If absent, use sensible .NET defaults.
-- **`${CLAUDE_SKILL_DIR}/lessons/*.md`** -> if present, read for project-specific false positives and compiler edge cases. Each file covers one project/repo.
+Project-specific (optional): read `${CLAUDE_SKILL_DIR}/conventions.md` for coding standards,
+analyzer inventory, severity overrides, and auto-approved fixes (absent → sensible .NET
+defaults); read `${CLAUDE_SKILL_DIR}/lessons/*.md` for known false positives and compiler edge cases.
 
 ---
 
@@ -126,15 +118,9 @@ Detect the test framework (xUnit/NUnit/MSTest) and category convention by greppi
 - **VSTest (no MTP config):** Use `dotnet test --filter "Category=CI"` syntax.
 - **.NET 10 SDK without MTP config:** Flag as a Step 2 finding — MTP is required on .NET 10.
 
-**Record the detected convention** in `.claude/tmp/overhauler/test-convention.md`:
-```markdown
-# Test Convention
-Framework: [xUnit|NUnit|MSTest|mixed]
-Runner: [MTP|VSTest]
-Category attribute: [exact attribute found]
-Filter command: [the exact test invocation to use]
-Test count: [number of tests matching]
-```
+**Record the detected convention** to `.claude/tmp/overhauler/test-convention.md` — framework,
+runner, category attribute, exact filter command, and test count. Steps 1 and 9 read this file;
+never re-derive the filter from memory.
 
 - **Found:** Report and proceed. **Not found:** Ask user to choose: (1) add category attributes, (2) different value, (3) run unfiltered.
 
@@ -222,17 +208,10 @@ After user approves findings: create a plan (if dev-planning available and >=8 f
 
 ## Self-Improvement
 
-After each overhaul cycle, update this SKILL.md:
-1. **Modernization patterns** — new C#/.NET feature or API replacement that worked → add to the modernization checklist.
-2. **Analyzer evolution** — new Roslyn/Meziantou/xUnit rule + its fix pattern → common pitfalls section.
-3. **False positives** — code flagged but actually correct (intentional allocation, deliberate sync call) → known exceptions.
-4. **Specialist triggers** — issues a specialist caught that the main loop missed → refine trigger criteria.
-
-Pattern note format: `- [dotnet-overhaul YYYY-MM-DD] Added: <pattern/API> — before: <old> -> after: <new>`
-
-### Project-Specific Lessons
-
-If `${CLAUDE_SKILL_DIR}/lessons/` contains `.md` files, read them during Step R (Resume Check) to load project-specific false positives and compiler edge cases.
+After each cycle, fold durable learnings back in: new modernization patterns and analyzer
+fix patterns → `conventions.md`; false positives and compiler edge cases → `lessons/*.md`
+(read during Step R). Note format:
+`- [dotnet-overhaul YYYY-MM-DD] Added: <pattern/API> — before: <old> -> after: <new>`
 
 ## CLI Gotcha
 
