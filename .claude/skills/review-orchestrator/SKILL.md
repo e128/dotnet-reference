@@ -12,35 +12,16 @@ effort: high
 
 # Review Orchestrator Skill
 
-Comprehensive code review using all available agents. Discovers changed .NET files from git history, dynamically identifies code review agents, runs them in parallel, and produces a consolidated report grouped by severity.
-
-## Usage
-
-```
-# User says any of these (see keyword-shortcuts.md):
-code review days 1
-review last 7 days
-review last 5 commits
-code review commits 3
-
-# Modifiers (append to any phrase above):
-dry run              — preview which files and agents would run
-critical only        — filter report to CRITICAL findings
-high and above       — filter to HIGH+ findings
-```
-
 ## Scope Parameters
 
-The user's message must include a scope. Extract it from natural language:
+The user's message must include a scope. Extract it from natural language; if none is provided, ask for one.
 
-| Pattern in user message          | Scope                                                   |
-|----------------------------------|---------------------------------------------------------|
-| `days N` / `last N days`         | `scripts/diff.sh --json` (days-scoped discovery) |
-| `commits N` / `last N commits`   | `scripts/diff.sh --json` (commit-range discovery) |
-| `dry run` / `preview`            | Discovery only, no agents                               |
-| `critical only` / `high+`        | Filter report by min severity                           |
-
-If no scope is provided, ask the user for one.
+| Pattern in user message        | Effect                                            |
+|--------------------------------|---------------------------------------------------|
+| `days N` / `last N days`       | `scripts/diff.sh --json` (days-scoped discovery)  |
+| `commits N` / `last N commits` | `scripts/diff.sh --json` (commit-range discovery) |
+| `dry run` / `preview`          | Discovery only, no agents                         |
+| `critical only` / `high+`      | Filter report by min severity                     |
 
 ## How It Works
 
@@ -117,15 +98,10 @@ If no scope is provided, ask the user for one.
 
 ## Agent Discovery Algorithm
 
-**Include agents with keywords:** `code`, `review`, `check`, `fix`, `validate`, `compliance`, `security`, `quality`, `refactor`, `build`, `test`, `warning`, `diagnostic`, `concurrency`, `performance`
+`scripts/internal/review-agents.sh --json` (Phase 1) applies these filters — new relevant agents in `.claude/agents/` are picked up automatically, none are hardcoded:
 
-**Exclude agents with keywords:** `pipeline`, `lode`, `corpus`, `mhtml`, `markdown`, `web`, `fetch`, `download`
-
-**Example agents (not hardcoded — discovered dynamically):**
-- `refactoring-specialist` — code quality
-- `build-validator` — build + test verification
-
-New agents added to `.claude/agents/` are automatically discovered if relevant.
+- **Include keywords:** `code`, `review`, `check`, `fix`, `validate`, `compliance`, `security`, `quality`, `refactor`, `build`, `test`, `warning`, `diagnostic`, `concurrency`, `performance`
+- **Exclude keywords:** `pipeline`, `lode`, `corpus`, `mhtml`, `markdown`, `web`, `fetch`, `download`
 
 ## Project-Specific Compliance Rules
 
@@ -146,38 +122,27 @@ Analyzer code:
 
 ## Build Validator as Tiebreaker
 
-The `build-validator` is the **authoritative source** for warnings and errors. If it reports 0 warnings:
-
-- MEDIUM/LOW compliance findings from diff-based agents are **advisory only** — flag them with "(needs verification — build reports 0 warnings)"
-- The build cannot lie; diff-based agents can miscalculate line numbers from diff context
-
-This matters most when compliance agents report violations at line numbers that don't exist in the actual file (a known diff-parsing artifact). Cross-reference with the build result before escalating compliance findings.
+The `build-validator` is the **authoritative source** for warnings/errors. If it reports 0 warnings, treat MEDIUM/LOW compliance findings from diff-based agents as **advisory only** — flag them "(needs verification — build reports 0 warnings)". Diff-based agents can miscalculate line numbers from diff context (sometimes citing lines that don't exist in the file), so cross-reference with the build before escalating.
 
 ## Example Report Format
 
 ```
-═══════════════════════════════════════════════════════
-  CODE REVIEW REPORT
-═══════════════════════════════════════════════════════
+═══ CODE REVIEW REPORT ═══
 Scope: Last 5 commits | Files: 12 | Agents: 6
 Issues Found: 3 CRITICAL, 7 HIGH, 12 MEDIUM, 5 LOW
 
-───────────────────────────────────────────────────────
-  ❌ CRITICAL ISSUES (3)
-───────────────────────────────────────────────────────
+─── ❌ CRITICAL ISSUES (3) ───
 [build-validator]
   • src/MyProject/Security/AuthHelper.cs:45
     Hardcoded credentials detected — store in secure configuration
 [build-validator]
   • Build failed: 2 errors, 3 test failures
 
-═══════════════════════════════════════════════════════
-  ❌ ACTION REQUIRED — do not merge until resolved
-═══════════════════════════════════════════════════════
+═══ ❌ ACTION REQUIRED — do not merge until resolved ═══
 Exit Code: 2 (CRITICAL issues found)
 ```
 
-HIGH/MEDIUM/LOW sections follow the same pattern, grouped by agent within each severity.
+HIGH/MEDIUM/LOW sections follow the same pattern, grouped by agent within each severity. Use terminal colors and clickable paths.
 
 ## Review Rubrics
 
@@ -204,39 +169,22 @@ After generating the report, you can post it to a PR:
 
 ## Error Handling
 
-- **No git**: Show error, suggest running in git repository
-- **Shallow clone**: Warn user, attempt to work with available history
-- **No commits in range**: Show message, exit 0
-- **No .NET files changed**: Show message, exit 0
-- **No agents found**: Warn user, check `.claude/agents/` directory
-- **Agent timeout**: Include in report as "Agent timed out"
-- **Agent error**: Include in report as "Agent failed: [error]"
+- **No scope in user message** — ask (e.g., "How many days or commits should I review?")
+- **No git / shallow clone** — error or warn; work with available history
+- **No commits or no .NET files in range** — clean result, not an error; report and exit 0
+- **No agents found** — check `.claude/agents/` exists with `.md` files; a new agent is excluded if its description lacks code-review keywords
+- **Agent timeout / error** — include in report ("Agent timed out" / "Agent failed: [error]"); do not retry, other agents' results stay valid
+- **Report too large** — use `--min-severity HIGH|CRITICAL` to filter
 
-## Notes
+## Known Exceptions (codebase-specific)
 
-- Agents are discovered **dynamically** every run — no hardcoded list
-- Report is grouped by **severity**, not by agent
-- Exit codes enable CI integration (block merge on CRITICAL findings)
-
-### Known Exceptions (codebase-specific)
-
-See [references/known-exceptions.md](references/known-exceptions.md) for the full list of legitimate patterns that should not be flagged. Includes test conventions, threat model exceptions, sanitizer TextContent/DOM rules, and severity calibration rules.
+See [references/known-exceptions.md](references/known-exceptions.md) for legitimate patterns that should not be flagged: test conventions, threat model exceptions, sanitizer TextContent/DOM rules, and severity calibration rules.
 
 ## Self-Improvement
 
-This skill improves with use. After completing a code review:
+After a review, fold learnings back in:
 
-1. **Capture new review categories** — If a review uncovered a class of issue not covered by existing agents, add it to the Notes section of this WORKFLOW.md with the agent best suited to catch it, or propose a new agent in `.claude/agents/`.
-2. **Refine agent prompts** — If an agent produced low-quality findings (too many false positives, missed obvious issues, or redundant with another agent), update the agent's prompt in `.claude/agents/<name>.md` directly.
-3. **Update severity calibration** — If findings were consistently over- or under-classified, adjust the severity mapping guidance in this WORKFLOW.md.
-4. **Record codebase-specific exceptions** — If legitimate patterns in this codebase are flagged as issues (e.g., intentional `ConfigureAwait(false)` usage, acceptable suppression patterns), add them to [references/known-exceptions.md](references/known-exceptions.md), grouped by category.
-
-The goal: each review should produce higher signal-to-noise findings because previous reviews refined the agents and severity mappings.
-
-## Troubleshooting
-
-- **No scope in user message** — ask for one (e.g., "How many days or commits should I review?")
-- **No .NET files changed in range** — this is a clean result, not an error; report "No .NET files changed" and exit 0
-- **No agents discovered** — check that `.claude/agents/` exists and contains `.md` files; agents are filtered by keyword, so a new agent may be excluded if its description lacks code-review keywords
-- **Agent times out** — include in report as "Agent timed out"; do not retry; other agents' results are still valid
-- **Report is too large** — use `--min-severity HIGH` or `--min-severity CRITICAL` to filter; the full report is available without the flag
+- **New review categories** → add to a relevant agent prompt or propose a new agent in `.claude/agents/`.
+- **Low-quality agent findings** (false positives, misses, redundancy) → edit `.claude/agents/<name>.md`.
+- **Mis-calibrated severities** → adjust the severity mapping above.
+- **Wrongly-flagged legitimate patterns** → add to [references/known-exceptions.md](references/known-exceptions.md), grouped by category.

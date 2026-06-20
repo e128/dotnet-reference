@@ -14,10 +14,9 @@ argument-hint: "[--no-web] [--agents-only] [--skills-only] [--self] [--archive]"
 
 # Claude Revision
 
-Periodic health check for the Claude Code configuration. Reviews agents, skills, CLAUDE.md, and lode
-memory against the latest official guidance. Writes findings to the revision log for cross-session
-continuity — the log at `lode/infrastructure/claude-revision-log.md` is this skill's persistent memory
-(skills have no `memory:` field; lode is the only cross-session store).
+The revision log at `lode/infrastructure/claude-revision-log.md` is this skill's persistent memory
+(skills have no `memory:` field; lode is the only cross-session store). Read it at Phase 0, append to
+it at Phase 6.
 
 ## Scope Flags
 
@@ -45,9 +44,8 @@ Run `claude doctor` (60s timeout). Parse output: errors → HIGH, warnings → M
 
 ### 0c. Skill/Agent Description Budget Audit
 
-Claude Code allocates ~1% of context window (fallback 8,000 chars) for the combined skill+agent listing
-at startup. Each entry's `description` + `when_to_use` is capped at 1,536 characters — anything beyond
-is silently truncated, degrading the model's ability to route to the right skill/agent.
+Startup budget: ~1% of context window (fallback 8,000 chars) for the combined skill+agent listing.
+Each entry's `description` + `when_to_use` is capped at 1,536 chars — beyond that is silently truncated.
 
 ```bash
 scripts/catalog-stats.sh --json
@@ -205,10 +203,8 @@ Present findings, ask which to address, then append a log entry to `lode/infrast
 
 ## Guidelines
 
-- Phases 2–4: direct bash/grep, not sub-agents (context savings)
 - Don't auto-fix — present findings, wait for user direction
 - Phase 5a git check is mandatory — untracked MEMORY.md files vanish on clone
-- Phase 5b: unreferenced + native-to-Claude = HIGH removal; unreferenced + useful = MEDIUM add shortcut
 - Reference skills are complete as-is — never flag for missing workflow steps
 
 ## User Input
@@ -217,12 +213,9 @@ $ARGUMENTS
 
 ## Self-Improvement
 
-The revision log is this skill's persistent memory — append to it at Phase 6.
-
-1. **Write the Phase 6 log entry** — even if no changes were made; the timestamp prevents drift.
-2. **Record deferred items** — log declined findings under "Deferred" with severity so they resurface.
-3. **Capture new check criteria** — add new patterns to the Phases 2–5 criteria tables in this workflow.
-4. **Note guidance changes** — append new Anthropic best practices to the appropriate lode file.
+Append a Phase 6 log entry every run (even with no changes — the timestamp prevents drift). Log declined
+findings under "Deferred" with severity so they resurface. When you discover a new check pattern, add it
+to the relevant Phases 2–5 criteria table; append new Anthropic best practices to the lode.
 
 ## Troubleshooting
 

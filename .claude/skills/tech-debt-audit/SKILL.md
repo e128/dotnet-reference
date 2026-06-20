@@ -15,9 +15,7 @@ argument-hint: "[scope path] [crap | dead-code | duplicates | suppressions | sol
 
 # Tech Debt Audit
 
-A Claude Code skill that conducts a deliberate, opinionated audit of a .NET codebase and produces `plans/TECH_DEBT_AUDIT.md` with cited findings.
-
-When invoked via `/tech-debt-audit [scope]`, follow the protocol below. Everything from here through the `---` divider is the protocol Claude executes. The section after the divider is documentation for humans.
+Everything from here through the `---` divider is the protocol Claude executes; the section after it is human documentation.
 
 ## Arguments
 
@@ -32,28 +30,24 @@ When a mode argument is provided, skip Phase 1 orientation and Phase 2 full audi
 
 | Mode           | Dimension                        | What it finds                                              |
 | -------------- | -------------------------------- | ---------------------------------------------------------- |
-| `crap`         | §4 Test debt (CRAP scoring)      | High-risk methods via `CRAP = CC² × (1−cov)³ + CC`        |
+| `crap`         | §4 Test debt (CRAP scoring)      | High-risk methods (CRAP scoring)                           |
 | `dead-code`    | §1 Architectural decay           | Unused public types + orphaned NuGet packages              |
 | `duplicates`   | §1 Architectural decay           | Copy-pasted code blocks + repeated helper patterns         |
 | `suppressions` | §8 Security hygiene              | `#pragma warning disable` — proposes fixes over suppression |
 | `solid`        | §10 Code quality                 | SRP, OCP, LSP, ISP, DIP violations with refactoring suggestions |
 | `all`          | All 16 dimensions                | Same as omitting the mode argument                         |
 
-**CRAP formula:** `CRAP = CC² × (1 − cov/100)³ + CC` — use source-level cyclomatic complexity, not IL-level. See `references/crap-formula.md` in the former code-health-audit for the C#-specific counting rules.
+**CRAP formula:** `CRAP = CC² × (1 − cov/100)³ + CC` — source-level cyclomatic complexity, not IL-level. C#-specific counting rules: [references/crap-formula.md](references/crap-formula.md).
 
-**Suppression policy:** Default stance is fix, don't suppress. Move recurring test suppressions to `tests/.editorconfig`. All suppressions require explicit user approval per CLAUDE.md.
+**Suppression policy:** Default stance is fix, don't suppress. Move recurring test suppressions to `tests/.editorconfig`. All suppressions require explicit user approval per CLAUDE.md. See [references/suppression-policy.md](references/suppression-policy.md).
 
 ---
 
 ## Operating principles
 
-Find what's actually wrong. Not diplomatic. Not surface-only. Don't pattern-match to generic best practices without grounding in this specific repo. No sycophancy. No "overall the codebase is well-structured" filler.
-
-Cite `file:line` for every concrete finding. Vague claims like "the code generally..." don't count. Read code before judging it — a pattern that looks wrong in isolation may be load-bearing.
+Find what's actually wrong, grounded in this specific repo — not generic best-practices pattern-matching, not surface-only, no sycophancy or "well-structured overall" filler. Cite `file:line` for every concrete finding; vague claims don't count. Read code before judging — a pattern that looks wrong in isolation may be load-bearing.
 
 ## Phase 1: Orient
-
-Orient before judging — forming opinions before understanding the system produces bad audits.
 
 1. Read the README, `Directory.Packages.props`, solution file(s), and any architecture docs in `lode/` or `docs/`.
 2. Map the directory structure and identify the major projects / layers.
@@ -74,25 +68,25 @@ Use `rg`, `fd`, Roslyn MCP (when available), and `dotnet` CLI tools to find conc
 
 ### Core Dimensions
 
-1. **Architectural decay** — circular deps, layering violations, god files (>500 LOC) and god functions, duplicated logic across 3+ sites where an abstraction should exist, abstractions that exist but nobody uses, dead code (unused exports, unreachable branches, stale commented-out blocks).
+1. **Architectural decay** — circular deps, layering violations, god files (>500 LOC) and god functions, logic duplicated across 3+ sites, abstractions nobody uses, dead code.
 
-2. **Consistency rot** — multiple ways of doing the same thing (HTTP clients, error handling, logging, config loading, validation, date handling, serialization). Naming drift. Folder structure that no longer reflects what the code actually does.
+2. **Consistency rot** — multiple ways of doing the same thing (HTTP clients, error handling, logging, config loading, validation, date handling, serialization). Naming drift. Folder structure that no longer reflects the code.
 
-3. **Type & contract debt** — `object` / `dynamic` as type erasure. Untyped API boundaries. Missing schema validation at trust boundaries. Misuse of `string` where a strongly-typed value should exist.
+3. **Type & contract debt** — `object`/`dynamic` as type erasure, untyped API boundaries, missing schema validation at trust boundaries, `string` where a strong type belongs.
 
-4. **Test debt** — run coverage if available; identify gaps on critical paths. Tests that assert implementation rather than behavior. Skipped or flaky tests. High-churn files with no tests. Reflection usage in tests instead of `InternalsVisibleTo`.
+4. **Test debt** — coverage gaps on critical paths, tests asserting implementation not behavior, skipped/flaky tests, high-churn untested files, reflection in tests instead of `InternalsVisibleTo`.
 
-5. **Dependency & config debt** — run `tda-nuget-health.sh` for vulnerable/outdated/deprecated checks in parallel. Deprecated packages are **CRITICAL** severity regardless of version gap. Major version behind = HIGH, minor version behind = MEDIUM. Patch-only updates are informational. Also check: unused deps, duplicate deps doing the same job, CPM hygiene (missing `<clear />`, missing `PackageSourceMapping`, unpinned transitive versions), env var sprawl.
+5. **Dependency & config debt** — run `tda-nuget-health.sh` for vulnerable/outdated/deprecated in parallel. Severity: deprecated = **CRITICAL** (any gap), major behind = HIGH, minor = MEDIUM, patch = informational. Also: unused/duplicate deps, CPM hygiene (missing `<clear />`, `PackageSourceMapping`, unpinned transitive versions), env var sprawl.
 
-6. **Performance & resource hygiene** — N+1 queries, sync-over-async (`.Result`, `.GetAwaiter().GetResult()`), `async void` (non-event-handler), `new HttpClient()` instead of `IHttpClientFactory`, blocking I/O on hot paths, uncleaned handles, unnecessary serialization, missing `Span<T>`/`Memory<T>` opportunities.
+6. **Performance & resource hygiene** — N+1 queries, sync-over-async (`.Result`, `.GetAwaiter().GetResult()`), `async void` (non-handler), `new HttpClient()` over `IHttpClientFactory`, blocking I/O on hot paths, uncleaned handles, missing `Span<T>`/`Memory<T>` opportunities.
 
-7. **Error handling & observability** — swallowed exceptions, blanket catches, errors logged but not handled, inconsistent error shapes across modules, missing structured logs on critical paths. Structural observability gaps: traces without span correlation, logs with no correlation ID, metrics with unbounded label cardinality.
+7. **Error handling & observability** — swallowed exceptions, blanket catches, log-but-don't-handle, inconsistent error shapes, missing structured logs on critical paths. Structural gaps: traces without span correlation, logs with no correlation ID, metrics with unbounded label cardinality.
 
-8. **Security hygiene** — hardcoded secrets, string-concat SQL, missing input validation at trust boundaries, permissive auth or CORS, weak crypto, `DateTime.Now`/`DateTime.UtcNow` instead of injected `TimeProvider`. FIPS compliance violations (see FIPS Compliance dimension in dotnet-dimensions.md).
+8. **Security hygiene** — hardcoded secrets, string-concat SQL, missing input validation at trust boundaries, permissive auth/CORS, weak crypto, `DateTime.Now`/`UtcNow` over injected `TimeProvider`. FIPS violations (see dotnet-dimensions.md).
 
-9. **Documentation drift** — README claims that don't match reality, comments that contradict adjacent code, public APIs without XML doc comments.
+9. **Documentation drift** — README claims that don't match reality, comments contradicting adjacent code, public APIs without XML doc comments.
 
-10. **Code quality & maintainability** — cognitive complexity hotspots (penalizes nesting depth, not just branch count), deep nesting, magic numbers/strings, inconsistent error types. SATD analysis: not just TODO/FIXME count, but age distribution via `git log -S "TODO"`, author attribution, and category (design compromise vs missing test vs known bug).
+10. **Code quality & maintainability** — cognitive complexity hotspots (penalizes nesting depth, not just branch count), deep nesting, magic numbers/strings, inconsistent error types. SATD: age distribution via `git log -S "TODO"`, author attribution, category (design compromise vs missing test vs known bug) — not just a TODO/FIXME count.
 
 11. **Hotspot density** — files with both high complexity AND high change frequency. Cross-reference `tda-file-metrics.sh` intersection output with complexity scores.
 
@@ -129,11 +123,9 @@ Write to `plans/TECH_DEBT_AUDIT.md` with this structure:
 
 ## Rules
 
-- Cite `file:line` for every concrete finding.
-- If unsure whether something is debt or intentional, ask in the open questions section — don't assert.
-- Don't recommend rewrites. Recommend specific, scoped changes.
-- Don't pad. If a category has nothing material, write "Nothing material" and move on.
-- No sycophancy. Tell the user what's broken.
+- If unsure whether something is debt or intentional, ask in open questions — don't assert.
+- Recommend specific, scoped changes, not rewrites.
+- If a category has nothing material, write "Nothing material" and move on.
 
 ## Tooling
 

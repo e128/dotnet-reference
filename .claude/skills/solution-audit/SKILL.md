@@ -43,14 +43,9 @@ severity-grouped report with a Mermaid dependency graph.
   Phase 4: Print report
 ```
 
-**Design decisions:**
-- Orchestrator parses files, not agents — parse once, pass structured data to all 3
-- Orchestrator generates Mermaid — mechanical string concatenation is more reliable than LLM syntax
-- Ad-hoc general-purpose agents — these are analysis-specific with no reuse value
-- 3 agents, not 10 — dimensions cluster by shared data needs
-
-**Autonomy:** All Phase 1 commands are read-only (file reads, grep, dotnet list).
-Pre-approved per CLAUDE.md auto-approval policy — proceed through parsing without prompting.
+Orchestrator parses files (once) and generates the Mermaid; agents receive structured text
+and analyze. 3 agents (not 10) because dimensions cluster by shared data needs. All Phase 1
+commands are read-only — proceed through parsing without prompting.
 
 ---
 
@@ -116,105 +111,19 @@ src/Foo.cs:42: #pragma warning disable CA1234
 
 ## Phase 2: Spawn 3 Parallel Agents
 
-Spawn all in a **single message**. Use `subagent_type: "general-purpose"`.
+Spawn all in a **single message**. Use `subagent_type: "general-purpose"`. Each agent
+applies the severity rules for its dimensions from
+[references/checks-catalog.md](references/checks-catalog.md) (Severity Rules + Edge Cases).
 
-### Agent A: Structure (D1, D2)
+| Agent | Dimensions       | Pass to it                                                                                                  |
+| ----- | ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| A     | D1, D2           | Project table, folder map, orphan list, each project's source dir (for the D1 usage grep)                   |
+| B     | D3, D4, D4b, D9  | Project table, Directory.Packages.props (with comments), nuget.config, SDK info, source dirs (D4b grep)     |
+| C     | D5–D8, D10       | Project table, Directory.Build.props, .globalconfig, .editorconfig, suppression grep results                |
 
-Pass: project table, folder map, orphan list, and each project's source directory (for
-the D1 unused-ProjectReference usage grep).
-
-**D1 — Dependency Graph:**
-- Build directed graph from ProjectReferences
-- DFS for circular dependencies → `[CRITICAL]`
-- src→test or src→benchmark reference → `[CRITICAL]`
-- Isolated project (0 edges) → `[LOW]`
-- Redundant transitive ref (A→B→C and A→C) → `[MEDIUM]`
-- **Unused ProjectReference** (A→B but A uses no public type from B) → `[HIGH]`.
-  Grep A's source for B's root namespace and public type names; no hit → unused.
-  **Skip** edges with `OutputItemType="Analyzer"` or `ReferenceOutputAssembly="false"`
-  (intentional build-order/analyzer refs, not symbol usage). For the removal workflow,
-  defer to `/prune-deps`.
-
-**D2 — Solution Sync:**
-- Folder assignment vs disk path mismatch → `[HIGH]`
-- Orphan .csproj on disk but not in solution → `[HIGH]`
-- src library without corresponding test project → `[MEDIUM]`
-- Duplicate project entries → `[HIGH]`
-
-Return adjacency list in `ADJACENCY: ... END_ADJACENCY` block for Mermaid.
-
-### Agent B: Packages (D3, D4, D4b, D9)
-
-Pass: project table, Directory.Packages.props content (with comments, for transitive-pin
-detection), nuget.config data, SDK info, and each project's source directory (for the D4b
-unused-PackageReference usage grep). The orchestrator should run
-`dotnet list <SLN> package --include-transitive` in Phase 1 and pass the result so the
-agent can distinguish orphans from transitive pins.
-
-**D3 — CPM Compliance:**
-- `Version=` on any PackageReference in .csproj → `[CRITICAL]`
-- `VersionOverride` attribute → `[CRITICAL]`
-- Analyzer packages in .csproj instead of Directory.Build.props → `[MEDIUM]`
-- **Orphaned central package** — `PackageVersion` referenced by no project AND not a
-  transitive pin → `[MEDIUM]`. With `CentralPackageTransitivePinningEnabled=true`,
-  version-only entries that pin a transitive dependency are legitimate — confirm via
-  `dotnet list <SLN> package --include-transitive` (or a `<!-- Transitive pin -->`
-  comment) before flagging. Don't count `PackageReference`s in Directory.Build.props as
-  "no project."
-
-**D4b — Unused PackageReference** (code-usage):
-- Direct `PackageReference` whose root namespace/types appear nowhere in the project's
-  source → `[MEDIUM]` (downgrade to `[LOW]` when the namespace is uncertain).
-- **Skip** analyzers / `PrivateAssets="all"` source-only packages, test SDK/runner
-  packages (`xunit.*`, `Microsoft.Testing.Extensions.*`), and runtime-only/DI-glue
-  packages — they never surface as `using`. Flagging them is a false positive.
-- For the removal workflow, defer to `/prune-deps`.
-
-**D4 — Package Health:**
-- Test-only package (xunit, NSubstitute) in non-test project → `[HIGH]`
-- Deprecated package → `[HIGH]`
-- Known GPL/LGPL runtime dependency → `[CRITICAL]` (PrivateAssets=all downgrades to `[LOW]`)
-- SonarAnalyzer.CSharp without PrivateAssets=all → `[HIGH]` (LGPL-3.0)
-
-**D9 — NuGet Config:**
-- nuget.config missing → `[HIGH]`
-- `<packageSources>` missing `<clear />` → `[HIGH]`
-- HTTP source URL → `[CRITICAL]`
-- Multiple sources without `<packageSourceMapping>` → `[HIGH]`
-- NuGetAudit disabled → `[CRITICAL]`
-- NuGetAuditMode not "all" for net10.0+ → `[HIGH]`
-
-### Agent C: Config & Quality (D5, D6, D7, D8, D10)
-
-Pass: project table, Directory.Build.props content, .globalconfig content,
-.editorconfig content, suppression grep results.
-
-**D5 — Framework Consistency:**
-- Project TFM differs from Directory.Build.props default without justification → `[HIGH]`
-- Multi-target without clear reason → `[LOW]`
-
-**D6 — IVT & Encapsulation:**
-- IVT target doesn't match any assembly in solution → `[HIGH]`
-- Legacy `[assembly: InternalsVisibleTo]` in .cs instead of .csproj → `[MEDIUM]`
-- AssemblyName/RootNamespace vs folder name mismatch → `[LOW]`
-
-**D7 — Build Config:**
-- `EnforceCodeStyleInBuild` not true → `[HIGH]`
-- `EnableNETAnalyzers=true` AND `Microsoft.CodeAnalysis.NetAnalyzers` package both present → `[HIGH]`
-- `WarningsNotAsErrors` missing `$(WarningsNotAsErrors);` prefix → `[HIGH]`
-- `<Target>` in Directory.Build.props (should be .targets) → `[MEDIUM]`
-- `ContinuousIntegrationBuild=true` without `$(CI)` condition → `[HIGH]`
-
-**D8 — Analyzer Config:**
-- Same rule in .editorconfig and .globalconfig at different severities → `[HIGH]`
-- AnalysisMode in MSBuild AND category-level entries in .globalconfig → `[HIGH]`
-- test .globalconfig `global_level` ≤ root → `[HIGH]`
-
-**D10 — Suppression Hygiene:**
-- Broad `#pragma warning disable` (no rule IDs) → `[CRITICAL]`
-- Suppression of security rules (CA5xxx) → `[HIGH]`
-- Suppression without justification comment → `[HIGH]`
-- Suppression with justification → `[LOW]` informational
+Before spawning, run `dotnet list <SLN> package --include-transitive` and pass the result
+to Agent B so it can distinguish orphaned central packages from transitive pins. Agent A
+returns its adjacency list in an `ADJACENCY: ... END_ADJACENCY` block for Mermaid.
 
 ---
 
@@ -239,25 +148,14 @@ Print a structured report with: header (solution name, project/package counts, S
 
 ---
 
-## Overlap with /prune-deps
+## Overlap
 
-D3 (orphaned central packages), D1 (unused ProjectReference), and D4b (unused
-PackageReference) overlap with `/prune-deps`. The distinction: `/solution-audit` *reports*
-these alongside its other 9 dimensions as part of a broad read-only health check;
-`/prune-deps` is the focused, deeper tool — it uses the roslyn MCP for symbol-accurate
-usage, applies the full false-positive taxonomy, and **removes** confirmed-dead entries
-with a verification build. Use `/solution-audit` to surface dependency rot in a general
-sweep; use `/prune-deps` to actually clean it up.
-
-## Overlap with /dotnet-overhaul
-
-Both skills audit infrastructure config (D7 build, D8 analyzers, D9 NuGet, D4 package health). The distinction: `/solution-audit` is a read-only health check; `/dotnet-overhaul` Step 2 covers the same ground but also applies fixes. Run only one — if doing a full overhaul, use that; use `/solution-audit` for lightweight config-only checks or CI gates.
+`/solution-audit` only *reports* — it never fixes. For overlapping concerns, use the focused tool:
+- **D1/D3/D4b (dependency rot)** → `/prune-deps` removes confirmed-dead entries with a verification build.
+- **Config/package health** → `/dotnet-overhaul` Step 2 fixes the same ground. Run one or the other, not both.
 
 ## Guidelines
 
-- **Parse once, share everywhere** — orchestrator reads all files; agents receive text data
 - **Don't fix during audit** — produce findings; let the user decide
-- **Parallel everything** — all 3 agents spawn in a single message
-- **No external state** — no memory baseline, no tmp files; the report is the output
-- **Repo-agnostic** — works with any .NET solution; no hardcoded project names
-- **Scripts when available** — use `scripts/*.sh` if present, fall back to raw commands
+- **No external state** — no baseline, no tmp files; the report is the output
+- **Repo-agnostic** — no hardcoded project names; prefer `scripts/*.sh`, fall back to raw commands

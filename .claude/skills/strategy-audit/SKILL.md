@@ -16,16 +16,13 @@ allowed-tools: Read, Glob, Grep, Bash, Agent
 
 # Martinizing
 
-Audits a codebase through Roger Martin's strategy lens — analyzing the code itself to surface
-strategic choices, investment mismatches, and capability gaps. The name is a play on "Martin" —
-as in Roger L. Martin, whose "not stupid on its face" test is the sharpest tool in this workflow.
+Reads the **code as strategy**: what do investment levels, architecture, and capability chains
+reveal about the project's actual strategic choices? Roger Martin's "not stupid on its face" test
+is the sharpest tool here. Unlike `apply all skills` (which checks code against technical
+recommendations), this audit derives strategic intent from the code itself.
 
-For the full finding category definitions, Phase 3 agent prompt template, and Phase 4 report
-format, see [references/scoring-rubric.md](references/scoring-rubric.md).
-
-**What this skill does differently from `apply all skills`:**
-- `apply all skills` checks code against each skill's technical recommendations
-- `/strategy-audit` reads the **code as strategy** — what do investment levels, architecture, and capability chains reveal about the project's actual strategic choices?
+Finding category definitions, Phase 3 agent prompt template, and Phase 4 report format:
+[references/scoring-rubric.md](references/scoring-rubric.md).
 
 ## Usage
 
@@ -111,9 +108,8 @@ Apply the "not stupid on its face" test to each revealed differentiator to class
 [references/scoring-rubric.md](references/scoring-rubric.md) for the classification rubric.
 
 **After individual classification**, run the "playing both sides" check: do any pair of
-differentiators signal conflicting competitive positions (cost leadership signals alongside
-premium differentiation signals)? Flag as `STRATEGIC_CONFUSION` if found — pursuing both
-simultaneously produces mediocrity on both dimensions. See rubric for the signal table.
+differentiators signal conflicting positions (cost leadership alongside premium differentiation)?
+Flag as `STRATEGIC_CONFUSION` if found. See rubric for the signal table.
 
 ### Phase 3: Strategic Code Audit
 
@@ -143,12 +139,12 @@ Write the full report to `$REPORT_PATH`.
 
 ### Phase 5: Generate Implementation Plan
 
-Invoke the **dev-planning** skill with a feature name derived from the primary finding category
-(e.g., `strategy-audit-investment-alignment` or `strategy-audit-chain-repair`). Provide as the
-feature description a concise summary of the strategic profile and ranked findings from Phase 4
-so dev-planning can research the codebase with full context.
+Invoke the **dev-planning** skill (do not produce ad-hoc task lists). Feature name derived from
+the primary finding category (e.g., `strategy-audit-investment-alignment`,
+`strategy-audit-chain-repair`). Feature description = concise summary of the strategic profile and
+ranked Phase 4 findings, so dev-planning has full context.
 
-The plan phases should mirror the Phase 4 report structure:
+Plan phases mirror the Phase 4 report structure:
 1. Investment Mismatches
 2. Dead Capabilities & Broken Chains
 3. Robustness of Differentiators
@@ -158,14 +154,13 @@ The plan phases should mirror the Phase 4 report structure:
 
 ## Guidelines
 
-- **Code only** — do NOT read documentation files; derive the strategic profile from code alone
-- **Parallel everything** — Phase 3 agents run concurrently; never dump full files into main context
-- **Dead means dead** — a registered-but-never-called capability is a DEAD_CAPABILITY, not "implemented"
-- **Investment level matters** — over-engineering table stakes is as much a misalignment as under-investing differentiators
-- **Honest classification** — if a "differentiator" fails the "not stupid on its face" test, reclassify it as an operating imperative
-- **Don't fix during audit** — produce the plan; let the user decide what to implement
-- **Use dev-planning skill** — Phase 5 invokes `/dev-planning`; do not produce ad-hoc task lists
-- **AI Strategy Cascade** — when auditing codebases with AI/ML components, apply Martin's AI-specific cascade (see [references/cascade.md](references/cascade.md) section on AI Strategy Cascade). "Use AI" fails the "not stupid on its face" test — every competitor will. The strategic question is where AI augmentation creates advantage a competitor cannot easily replicate with the same off-the-shelf tools.
+- **Code only** — never read documentation files; derive the strategic profile from code alone
+- **Never dump full files into main context** — Phase 3 agents run concurrently and report back
+- **Dead means dead** — registered-but-never-called is a DEAD_CAPABILITY, not "implemented"
+- **Over-engineering table stakes** is as much a misalignment as under-investing differentiators
+- **Honest classification** — a "differentiator" that fails "not stupid on its face" is an operating imperative
+- **Don't fix during audit** — produce the plan; let the user decide
+- **AI/ML codebases** — apply Martin's AI Strategy Cascade ([references/cascade.md](references/cascade.md)). "Use AI" fails the "not stupid on its face" test; the strategic question is where AI augmentation creates advantage a competitor can't replicate with the same off-the-shelf tools.
 
 ## Troubleshooting
 
