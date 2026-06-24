@@ -79,7 +79,7 @@ public sealed class StringBuilderPoolAnalyzerTests
     {
         return VerifyAsync("""
                            using System.Text;
-                           class DefaultStringBuilderPool
+                           class StringBuilderPool
                            {
                                StringBuilder Create()
                                {

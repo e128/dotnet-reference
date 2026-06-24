@@ -92,7 +92,7 @@ public sealed class StringBuilderPoolAnalyzer : DiagnosticAnalyzer
         while (current is not null)
         {
             if (current is ClassDeclarationSyntax classDecl &&
-                string.Equals(classDecl.Identifier.Text, "DefaultStringBuilderPool", StringComparison.Ordinal))
+                string.Equals(classDecl.Identifier.Text, "StringBuilderPool", StringComparison.Ordinal))
             {
                 return true;
             }
