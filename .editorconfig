@@ -261,7 +261,10 @@ dotnet_naming_style.pascal_case.capitalization = pascal_case
 resharper_align_multiline_array_and_object_initializer = false
 resharper_align_multiline_list_pattern = true
 resharper_align_multiline_property_pattern = true
-resharper_align_multiline_switch_expression = true
+# Keep switch-expression indentation flat and un-aligned to match dotnet format IDE0055.
+# ReSharper's alignment/int-align of switch expressions produces deep-indented, column-aligned
+# arms that IDE0055 rejects — a Reformat Code run would churn every switch expression.
+resharper_align_multiline_switch_expression = false
 resharper_csharp_brace_style = next_line
 resharper_csharp_stick_comment = true
 resharper_csharp_wrap_lines = false
@@ -273,8 +276,8 @@ resharper_indent_nested_lock_stmt = true
 resharper_indent_nested_while_stmt = true
 resharper_indent_preprocessor_region = no_indent
 resharper_indent_primary_constructor_decl_pars = inside
-resharper_int_align_switch_expressions = true
-resharper_int_align_switch_sections = true
+resharper_int_align_switch_expressions = false
+resharper_int_align_switch_sections = false
 resharper_keep_existing_declaration_parens_arrangement = true
 resharper_keep_existing_expr_member_arrangement = true
 resharper_keep_existing_initializer_arrangement = true
