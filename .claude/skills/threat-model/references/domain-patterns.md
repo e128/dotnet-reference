@@ -1,11 +1,10 @@
 # Domain-Specific Threat Patterns
 
-Pre-built threat patterns keyed to this repo's projects and to generic .NET app archetypes.
-When `/threat-model` targets one of these, seed Phase 2 with the listed surfaces to avoid
-re-discovering known threats. Always confirm against the current code -- these are starting
-points, not findings.
+Pre-built threat patterns keyed to common .NET app archetypes. When `/threat-model` targets a
+project matching one of these, seed Phase 2 with the listed surfaces to avoid re-discovering
+known threats. Always confirm against the current code -- these are starting points, not findings.
 
-## E128.Reference.Web (Minimal-API Web App)
+## ASP.NET Core Web / Minimal-API App
 
 **Trust boundary profile:** Kestrel-hosted minimal API. Network-facing. Endpoints defined in
 `Program.cs`. Treat every request path as crossing the client->application boundary.
@@ -24,11 +23,11 @@ points, not findings.
 
 ### Discovery Checklist
 
-`rg "app\.Map(Get|Post|Put|Delete)" src/E128.Reference.Web -g "*.cs"` for endpoints;
+`rg "app\.Map(Get|Post|Put|Delete)" src/<web-project> -g "*.cs"` for endpoints;
 `rg "Authorize|RequireAuthorization|AddAuthentication" src/` for auth gates;
 `rg "ProblemDetails|DeveloperException|UseExceptionHandler" src/` for error handling posture.
 
-## E128.Reference.Cli (System.CommandLine CLI)
+## CLI / Console Tool (e.g. System.CommandLine)
 
 **Trust boundary profile:** Local CLI. No network listeners. Attack surface is invocation
 arguments, environment, and any files/processes it touches.
@@ -47,7 +46,7 @@ arguments, environment, and any files/processes it touches.
 `rg "Process\.Start|ProcessStartInfo" src/` for process launches;
 `rg "Path\.Combine|File\.(Read|Write|Open)|Directory\." src/` for file I/O entry points.
 
-## E128.Reference.Core (Class Library)
+## Class Library / SDK
 
 **Trust boundary profile:** No direct external entry point -- exercised by Web and CLI. Threats
 are inherited from callers; focus on whether the library validates inputs at its public API
@@ -61,7 +60,7 @@ surface and avoids leaking sensitive data through exceptions or return values.
 | In-memory repositories   | Data Store   | Tampering, no integrity guarantees            |
 | Exceptions thrown        | Data Flow    | Info disclosure if surfaced to clients        |
 
-## E128.Analyzers (Roslyn Analyzer NuGet Package)
+## Roslyn Analyzer / Build-Time NuGet Package
 
 **Trust boundary profile:** A *build-time* component. The trust boundary is the **consumer's
 compiler and IDE** -- the analyzer runs inside every consuming build, and its input is
@@ -81,11 +80,11 @@ analyzer's own robustness, not a runtime service.
 
 | Mitigation                          | Threat Covered                       | Verify with                              |
 | ----------------------------------- | ------------------------------------ | ---------------------------------------- |
-| OIDC trusted publishing to nuget.org| Package-source tampering             | `lode/infrastructure/nuget-trusted-publishing.md` |
+| OIDC trusted publishing to nuget.org| Package-source tampering             | CI publish workflow / OIDC config        |
 | `nuget.config` trusted signers      | Counterfeit dependency injection     | `nuget.config` `<trustedSigners>`        |
-| CPM + transitive pinning            | Transitive dependency drift          | `lode/dotnet/project-structure.md`       |
-| No file/network access in analyzers | EoP at build time                    | `rg "File\.|HttpClient|Socket" src/E128.Analyzers` |
-| Renovate / `dep-check.sh`           | Vulnerable dependency intake         | `scripts/dep-check.sh --vulnerable`      |
+| CPM + transitive pinning            | Transitive dependency drift          | `Directory.Packages.props`               |
+| No file/network access in analyzers | EoP at build time                    | `rg "File\.|HttpClient|Socket" src/<analyzer-project>` |
+| Dependency update bot / `dep-check.sh` | Vulnerable dependency intake      | `scripts/dep-check.sh --vulnerable`      |
 
 ## Generic .NET Archetypes (when no project matches)
 

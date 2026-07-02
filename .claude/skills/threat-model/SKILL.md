@@ -51,8 +51,8 @@ workflow and the repo-specific conventions.
 1. **Read domain lode/** -- load `lode/{domain}/summary.md` (or the nearest matching lode dir,
    e.g. `lode/dotnet/`) and scan for architecture docs, service classes, DI registrations,
    HTTP endpoints, data stores, external dependencies. Map the `domain` argument to a `src/`
-   project where one exists (`web`->`E128.Reference.Web`, `cli`->`E128.Reference.Cli`,
-   `core`->`E128.Reference.Core`, `analyzers`->`E128.Analyzers`).
+   project where one exists — discover the project list with `scripts/solution-inventory.sh --json`
+   and match the domain term (e.g. `web`, `cli`, `core`, `analyzers`) to the corresponding project.
 2. **If `--scope` provided** -- filter to the subsystem (grep lode/ and src/ for the scope term)
 3. **Identify DFD elements** (external entities, processes, data stores, data flows, trust
    boundaries). Repo-specific element types to watch for: minimal-API endpoints, EF Core
@@ -61,7 +61,7 @@ workflow and the repo-specific conventions.
    inside every consumer's compiler/IDE.
 4. **Cross-reference with code** -- use `scripts/find.sh` and `rg` against the resolved project:
    `rg "HttpClient|IHttpClientFactory" src/<project>/ -g "*.cs"` for network flows;
-   `rg "DbContext|SqliteConnection|IGreetingRepository" src/ -g "*.cs"` for data stores;
+   `rg "DbContext|SqliteConnection|IRepository|Repository" src/ -g "*.cs"` for data stores;
    `rg "MapGet|MapPost|MapPut|MapDelete|app\.Map" src/ -g "*.cs"` for minimal-API endpoints;
    `rg "DiagnosticAnalyzer|CodeFixProvider" src/ -g "*.cs"` for build-time entry points
 5. **Build element inventory** -- structured list of all elements with their type and trust boundary

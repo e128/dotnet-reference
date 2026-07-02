@@ -52,7 +52,7 @@ The user's message must include a scope. Extract it from natural language; if no
 3. **Format for terminal** (colors, indentation, clickable paths)
 4. **Add summary statistics** (files reviewed, issues by severity)
 5. **Provide actionable next steps** based on highest severity. Additionally, check whether any finding pattern matches a `new` entry in `lode/dotnet/analyzer-candidates.md` (read file if not already loaded). If a match exists, append:
-   > "Pattern '{pattern}' found in review findings — matches analyzer candidate (score N/5). Consider evaluating E128 analyzer candidacy."
+   > "Pattern '{pattern}' found in review findings — matches analyzer candidate (score N/5). Consider evaluating analyzer candidacy."
 6. **Cross-reference with deeper audits** — if findings include `#pragma warning disable`, code duplication, or high-complexity methods, append:
    > "Deeper analysis available: run `/tech-debt-audit suppressions|duplicates|crap` for a focused audit."
 7. **Save report** to `.claude/tmp/review-orchestrator-latest.md` (enables `review-applier` agent to batch-apply findings)
@@ -108,7 +108,7 @@ The user's message must include a scope. Extract it from natural language; if no
 Include these rules in compliance agent prompts (in addition to the agent's built-in checks):
 
 ```
-E128-SPECIFIC RULES (include in every compliance agent prompt):
+PROJECT-SPECIFIC RULES (include in every compliance agent prompt):
 
 Test code (rules NOT caught by analyzers — analyzer-enforced rules omitted):
   [MEDIUM] "Arrange"/"Act"/"Assert" comments in tests — house style forbids these.

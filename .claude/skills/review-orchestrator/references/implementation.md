@@ -116,7 +116,7 @@ Step-by-step implementation details for the code-review skill orchestration.
 7. **Include project-specific compliance rules** in all compliance agent prompts:
 
    ```
-   E128 PROJECT RULES:
+   PROJECT RULES:
    [HIGH] Missing [Trait("Category", "CI")] on any [Fact] or [Theory]
    [HIGH] DiagnosticDescriptor without matching AnalyzerReleases entry
    [HIGH] CodeFixProvider without corresponding Analyzer tests

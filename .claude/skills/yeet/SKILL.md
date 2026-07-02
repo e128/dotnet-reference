@@ -61,11 +61,11 @@ scripts/check.sh --no-format --all
 If exit code is non-zero → **stop and report failures.**
 
 **C) Analyzer release files (conditional):**
-Only if any staged or unstaged `.cs` file changes under `src/E128.Analyzers/`:
+Only if the repo has a Roslyn analyzer project (a `src/*Analyzers*/` project) AND any staged or unstaged `.cs` file changes under it. Resolve the analyzer project name from the changed path (or `scripts/solution-inventory.sh --json`); call it `<AnalyzerProject>` below. Skip this whole step if no analyzer project exists.
 
 **C.1) Version bump:**
 ```bash
-scripts/internal/version-bump.sh E128.Analyzers
+scripts/internal/version-bump.sh <AnalyzerProject>
 ```
 This increments the `<Version>` in the analyzer csproj so the NuGet package ships with a new version. Skip with "Analyzer version bump skipped — no analyzer source changes" if no `.cs` files changed.
 

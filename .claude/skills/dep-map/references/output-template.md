@@ -127,4 +127,4 @@ graph TB
 - If updating an existing file, rewrite it entirely — the lode captures current state, not a diff.
 - Omit empty sections entirely.
 - For repos with > 30 third-party packages, list only architecturally significant ones. Add: `> N additional packages omitted. See <relative path to manifest>.`
-- **Never embed absolute home-directory paths.** Use directory name (e.g. `dotnet-reference`) or repo-relative paths.
+- **Never embed absolute home-directory paths.** Use the repo directory name or repo-relative paths.

@@ -74,12 +74,12 @@ entry point. The per-file content requirements are in
 ### 1. Parse Arguments
 
 Extract from `$ARGUMENTS`:
-- `<product-area>` — name of the product (default: this repo, `E128.Reference`)
+- `<product-area>` — name of the product (default: the current repo)
 - `--target <path>` — where to write the docs (default: `docs/`)
-- `--repos <path>` — where the source repos live (default: `.`, this repo)
+- `--repos <path>` — where the source repos live (default: `.`, the current repo)
 - `--format <md|html>` — output format (default: `html`)
 
-If `<product-area>` is empty, default to documenting this repository (`E128.Reference`) in
+If `<product-area>` is empty, default to documenting the current repository in
 self-documentation mode (see step 3). Only ask the user to pick when `--repos` points at a
 directory containing multiple cloned repos.
 
@@ -93,7 +93,7 @@ If `--format md`: skip this step.
 
 ### 3. Investigation Phase (Parallel)
 
-**Self-documentation mode.** When product-area is `./` (or the current `E128.Reference` repo),
+**Self-documentation mode.** When product-area is `./` (or the current repo),
 skip external repo exploration. The investigation agents can read existing `lode/` knowledge
 files (start with `lode/lode-map.md`, `lode/summary.md`, `lode/terminology.md`) and any
 existing `docs/*.md` files directly -- the repo is already documented. Convert existing `.md`

@@ -23,7 +23,7 @@ Generic bash idioms (control flow, string/array ops, functions, built-ins): see 
 | Script files | kebab-case | `build-project.sh` |
 | Functions | snake_case | `function fetch_user()` |
 | Local variables | snake_case | `local user_id` |
-| Constants | SCREAMING_SNAKE_CASE | `readonly HARVEST_PATH` |
+| Constants | SCREAMING_SNAKE_CASE | `readonly OUTPUT_DIR` |
 | Environment variables | SCREAMING_SNAKE_CASE | `$APP_VERSION` |
 
 ## Script Header Template

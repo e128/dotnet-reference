@@ -61,14 +61,27 @@ Add or verify a coverage threshold enforcement step in CI.
 1. Read `.github/workflows/ci.yml` and `coverage.config.xml`
 2. Determine threshold (user-specified or default 80% line coverage)
 3. If no enforcement exists, propose a `reportgenerator` step that fails the build below threshold
-4. Wait for user approval before writing
-5. Verify `reportgenerator` is in dotnet tool manifest
+4. Use `AskUserQuestion` to get approval before writing workflow changes:
+```
+AskUserQuestion({
+  questions: [{
+    question: "Apply coverage gate changes to the CI workflow?",
+    header: "CI gate",
+    options: [
+      { label: "Apply", description: "Write changes to .github/workflows/ci.yml" },
+      { label: "Cancel", description: "No changes made" }
+    ],
+    multiSelect: false
+  }]
+})
+```
+5. Verify `reportgenerator` is in the dotnet tool manifest
 6. Apply changes + validate YAML
 
 ### Rules
 
 - Never lower an existing threshold without approval
-- Always wait for approval before writing workflow changes
+- Use `AskUserQuestion` for approval before writing workflow changes
 - If `coverage.config.xml` is missing, warn — run config-audit first
 
 ---

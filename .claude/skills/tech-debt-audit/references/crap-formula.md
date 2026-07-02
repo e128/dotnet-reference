@@ -35,7 +35,7 @@ When tooling is unavailable, estimate CRAP manually:
    Pure functions (no DI, no I/O) are easiest to add — make them `internal` and use IVT.
    Methods in the High band (CRAP > 30) with CC > 10 require refactoring, not just tests.
 
-**Coverage thresholds for this project:** ado-reports ~87.5%, harvest ~89.9%, Pug ~63.0%, DashCsv.Core ~27.8% (baselines from 2026-03-01).
+**Coverage baselines:** capture per-project line-coverage baselines before the audit (from the coverage report) so CRAP deltas are measured against known-good numbers rather than absolute thresholds.
 
 ---
 

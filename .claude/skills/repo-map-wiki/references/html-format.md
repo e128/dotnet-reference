@@ -196,7 +196,7 @@ Each Dracula accent has exactly one semantic role. Never mix these:
 ```html
 <table>
   <thead><tr><th data-col="0">Project</th><th data-col="1">Framework</th></tr></thead>
-  <tbody><tr><td>E128.Reference.Core</td><td>.NET 10</td></tr></tbody>
+  <tbody><tr><td>MyApp.Core</td><td>.NET 10</td></tr></tbody>
 </table>
 ```
 

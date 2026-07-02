@@ -33,7 +33,7 @@ Tables use `<th data-col="N">` for sortable columns (effectiveness.js handles cl
 ```html
 <table>
   <thead><tr><th data-col="0">Name</th><th data-col="1">Purpose</th></tr></thead>
-  <tbody><tr><td>E128.Reference.Core</td><td>Shared library</td></tr></tbody>
+  <tbody><tr><td>MyApp.Core</td><td>Shared library</td></tr></tbody>
 </table>
 ```
 

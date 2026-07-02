@@ -71,6 +71,8 @@ From the `rg` output: lode files describing multi-step processes with no corresp
 
 Skip Phase 1a. Statically analyze all agent and skill files for inline bash patterns that should be deterministic scripts.
 
+> **Gotcha:** the `block-raw-commands` PreToolUse hook denies any Bash command whose text contains a prohibited literal (e.g. `dotnet format`) — even inside an `echo`, comment, or `rg` pattern — so a scan that greps for routing drift can block itself. Probe via regex (`rg 'dotnet +format'`, not the bare literal) or use the Grep/Read tools instead of embedding the literal in Bash.
+
 ### 1b.1 Inventory
 
 ```bash

@@ -14,7 +14,7 @@ Compare result to baseline: same or higher count, no new failures or skips.
 ## Format Verification
 
 ```bash
-dotnet format <solution> --verify-no-changes 2>&1
+scripts/format.sh --check
 ```
 
 If files need reformatting, fix them before proceeding. Format compliance is non-negotiable.

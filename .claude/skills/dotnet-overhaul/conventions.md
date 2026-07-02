@@ -69,7 +69,7 @@ These fixes align with common auto-approval policies — apply without prompting
 |------|-----|
 | IDE0005 | Remove unused `using` statements |
 | IDE0161 | Convert to file-scoped namespace |
-| Format | Run `dotnet format --include <files>` |
+| Format | Run `scripts/format.sh --changed` |
 | Using sort | Sort `using` directives |
 
 ## Never Auto-Fix
