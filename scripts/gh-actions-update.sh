@@ -21,25 +21,28 @@ if [[ ! -d "$WORKFLOW_DIR" ]]; then
     exit 0
 fi
 
-# Known latest major versions — update when new major versions release.
+# Latest major version, queried live from GitHub (memoized per run).
+# ponytail: gh api over a hardcoded table — the table drifted and flagged
+# up-to-date pins as behind. Returns "" if gh is unavailable/offline.
+declare -A LATEST_CACHE
 get_latest_major() {
-    case "$1" in
-        actions/checkout)              echo "v6" ;;
-        actions/setup-dotnet)          echo "v5" ;;
-        actions/setup-node)            echo "v4" ;;
-        actions/setup-python)          echo "v5" ;;
-        actions/setup-java)            echo "v4" ;;
-        actions/setup-go)              echo "v5" ;;
-        actions/upload-artifact)       echo "v7" ;;
-        actions/download-artifact)     echo "v4" ;;
-        actions/cache)                 echo "v5" ;;
-        actions/github-script)         echo "v7" ;;
-        docker/setup-buildx-action)    echo "v3" ;;
-        docker/login-action)           echo "v3" ;;
-        docker/build-push-action)      echo "v6" ;;
-        docker/metadata-action)        echo "v5" ;;
-        *)                             echo "" ;;
-    esac
+    local action="$1"
+    if [[ -n "${LATEST_CACHE[$action]+x}" ]]; then
+        echo "${LATEST_CACHE[$action]}"; return
+    fi
+    local tag=""
+    command -v gh >/dev/null 2>&1 && \
+        tag=$(gh api "repos/$action/releases/latest" --jq .tag_name 2>/dev/null)
+    local major=""
+    [[ -n "$tag" ]] && major=$(echo "$tag" | sed -n 's/\(v[0-9]*\).*/\1/p')
+    LATEST_CACHE[$action]="$major"
+    echo "$major"
+}
+
+# True when major $1 is strictly older than major $2 (e.g. v6 behind v7).
+is_behind() {
+    local a="${1#v}" b="${2#v}"
+    [[ "$a" =~ ^[0-9]+$ && "$b" =~ ^[0-9]+$ ]] && (( a < b ))
 }
 
 TOTAL=0
@@ -66,14 +69,14 @@ for workflow in "$WORKFLOW_DIR"/*.yml "$WORKFLOW_DIR"/*.yaml; do
             pinned_version=$(echo "$comment" | sed -n 's/.*\(v[0-9][0-9.]*\).*/\1/p')
             pinned_major=$(echo "$pinned_version" | sed -n 's/\(v[0-9]*\).*/\1/p')
 
-            if [[ -n "$latest_major" && -n "$pinned_major" && "$pinned_major" != "$latest_major" ]]; then
+            if [[ -n "$latest_major" && -n "$pinned_major" ]] && is_behind "$pinned_major" "$latest_major"; then
                 MAJOR_BEHIND+=("$rel|$action|${pinned_version:-unknown}|$latest_major")
             fi
         else
             # Tag ref
             ref_major=$(echo "$ref" | sed -n 's/\(v[0-9]*\).*/\1/p')
 
-            if [[ -n "$latest_major" && -n "$ref_major" && "$ref_major" != "$latest_major" ]]; then
+            if [[ -n "$latest_major" && -n "$ref_major" ]] && is_behind "$ref_major" "$latest_major"; then
                 MAJOR_BEHIND+=("$rel|$action|$ref|$latest_major")
             fi
 

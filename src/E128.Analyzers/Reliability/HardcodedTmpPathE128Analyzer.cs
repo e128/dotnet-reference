@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -39,6 +40,8 @@ public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeStringLiteral, SyntaxKind.StringLiteralExpression);
     }
 
+    [SuppressMessage("Major Code Smell", "S5443:Use a directory that is not publicly writable",
+        Justification = "Literals are detection patterns this analyzer flags, not paths the code uses.")]
     private static void AnalyzeStringLiteral(SyntaxNodeAnalysisContext context)
     {
         var literalExpr = (LiteralExpressionSyntax)context.Node;
