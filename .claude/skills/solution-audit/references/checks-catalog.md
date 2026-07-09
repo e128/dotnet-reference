@@ -1,21 +1,24 @@
 # Solution Audit — Checks Catalog
 
-All 10 dimensions with severity mappings and edge cases.
+All 13 dimensions with severity mappings and edge cases.
 
 ## Overview
 
-| #  | Dimension             | Agent | Key checks                                              |
-| -- | --------------------- | ----- | ------------------------------------------------------- |
-| D1 | Dependency Graph      | A     | Circular deps, direction violations, redundant refs     |
-| D2 | Solution Sync         | A     | Orphans, folder mismatches, missing test projects       |
-| D3 | CPM Compliance        | B     | Hardcoded versions, overrides, unused central packages  |
-| D4 | Package Health        | B     | Test-only leaks, deprecated, license compliance         |
-| D5 | Framework Consistency | C     | TFM drift, multi-target without justification           |
-| D6 | IVT & Encapsulation   | C     | Stale targets, legacy syntax, naming mismatches         |
-| D7 | Build Config          | C     | Directory.Build.props correctness, analyzer setup       |
-| D8 | Analyzer Config       | C     | .globalconfig/.editorconfig consistency                 |
-| D9 | NuGet Config          | B     | nuget.config hygiene, audit properties                  |
-| D10| Suppression Hygiene   | C     | Unjustified pragmas, broad suppressions, security rules |
+| #   | Dimension             | Agent | Key checks                                              |
+| --- | --------------------- | ----- | ------------------------------------------------------- |
+| D1  | Dependency Graph      | A     | Circular deps, direction violations, redundant refs     |
+| D2  | Solution Sync         | A     | Orphans, folder mismatches, missing test projects       |
+| D3  | CPM Compliance        | B     | Hardcoded versions, overrides, unused central packages  |
+| D4  | Package Health        | B     | Test-only leaks, deprecated, license compliance         |
+| D5  | Framework Consistency | C     | TFM drift, multi-target without justification           |
+| D6  | IVT & Encapsulation   | C     | Stale targets, legacy syntax, naming mismatches         |
+| D7  | Build Config          | C     | Directory.Build.props correctness, analyzer setup       |
+| D8  | Analyzer Config       | C     | .globalconfig/.editorconfig consistency                 |
+| D9  | NuGet Config          | B     | nuget.config hygiene, audit properties                  |
+| D10 | Suppression Hygiene   | C     | Unjustified pragmas, broad suppressions, security rules |
+| D11 | Output Type & AOT     | C     | OutputType conventions, AOT chain, PublishAot on Library|
+| D12 | Public API Surface    | C     | Public types/methods missing XML doc summaries          |
+| D13 | Lock Files & Pruning  | B     | RestorePackagesWithLockFile, lock committed, pruning     |
 
 ## Severity Rules
 
@@ -67,6 +70,14 @@ All 10 dimensions with severity mappings and edge cases.
 - Multiple sources without `<packageSourceMapping>` → `[HIGH]`
 - NuGetAudit disabled → `[CRITICAL]`
 - NuGetAuditMode not "all" for net10.0+ → `[HIGH]`
+- `NU1903` (high) / `NU1904` (critical) not in WarningsAsErrors → `[HIGH]`
+
+**D13 — Lock Files & Pruning:**
+- Application (`OutputType=Exe`) without `RestorePackagesWithLockFile=true` → `[MEDIUM]`
+- `packages.lock.json` not committed for an application project → `[MEDIUM]`
+- CI restore not using `--locked-mode` → `[MEDIUM]`
+- Library with committed `packages.lock.json` → `[LOW]`
+- `RestoreEnablePackagePruning` explicitly false for net10.0+ → `[MEDIUM]`
 
 ### Agent C — Config & Quality
 
@@ -97,6 +108,17 @@ All 10 dimensions with severity mappings and edge cases.
 - Suppression without justification comment → `[HIGH]`
 - Suppression with justification → `[LOW]` informational
 
+**D11 — Output Type & AOT:**
+- Library in `src/` with `PublishAot=true` → `[HIGH]`
+- `OutputType=Exe` project in `tests/` folder → `[MEDIUM]`
+- `PublishAot=true` with a pre-release dependency (often lacks trim annotations) → `[HIGH]`
+- `OutputType` mismatch with folder convention → `[MEDIUM]`
+- `PublishAot=true` dependency missing `IsAotCompatible` → `[LOW]`
+
+**D12 — Public API Surface:**
+- Public type without an XML doc summary → `[MEDIUM]`
+- Public method without XML doc → `[LOW]`
+
 ## Edge Cases
 
 ### D1 — Dependency Graph
@@ -114,6 +136,7 @@ All 10 dimensions with severity mappings and edge cases.
 ### D4 — Package Health
 - **SonarAnalyzer.CSharp**: LGPL-3.0 but always used with `PrivateAssets="all"` — LOW not CRITICAL
 - **Analyzer packages**: never ship in output, so license is informational only
+- **License patterns** (defaults when no explicit metadata): `Microsoft.*`/`System.*` → MIT; `NuGet.*`/`xunit.*`/`Roslynator.*` → Apache-2.0; `NSubstitute` → BSD-3-Clause; `BenchmarkDotNet` → MIT; `SonarAnalyzer.*` → LGPL-3.0 (verify `PrivateAssets="all"`). Approved: MIT, Apache-2.0, BSD-2/3-Clause, ISC. GPL/LGPL/AGPL as a runtime dependency (no `PrivateAssets="all"`) → CRITICAL; unknown/polyform → HIGH.
 
 ### D6 — IVT & Encapsulation
 - **CLI tools**: kebab-case AssemblyName with PascalCase namespace is convention, not a mismatch
@@ -121,3 +144,18 @@ All 10 dimensions with severity mappings and edge cases.
 ### D7 — Build Config
 - **Analyzer projects**: may legitimately override `TargetFramework` to `netstandard2.0`
 - **`IlcFoldIdenticalMethodBodies`**: valid in props (affects all configurations)
+
+### D11 — Output Type & AOT
+- **Exe with `PublishAot=true` in `src/`**: valid for CLI tools and standalone executables — not a library violation
+- **Benchmark projects as Exe**: valid (BenchmarkDotNet requires an Exe entry point)
+- **Test projects**: the Test SDK sets `OutputType` implicitly — do not flag for a missing `OutputType`
+
+### D12 — Public API Surface
+- **Test/benchmark projects**: skip entirely — not public API even when marked `public`
+- **Generated code** (`*.g.cs`, `*.Generated.cs`, `obj/`) and `Program`/`Main` entry points: skip
+- **Extension-method classes**: are public API — should have docs
+
+### D13 — Lock Files & Pruning
+- **Library lock files**: not recommended (consumers resolve their own graph) — LOW informational
+- **First restore after enabling pruning**: a larger-than-normal lock diff is expected, not a finding
+- **`--locked-mode`**: a CI-pipeline check — the skill can only flag the absence of `RestorePackagesWithLockFile` in a project, not inspect the pipeline

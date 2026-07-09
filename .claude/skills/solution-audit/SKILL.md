@@ -1,11 +1,12 @@
 ---
 name: solution-audit
 description: >
-  Audit .NET solution health across 10 dimensions: dependency graph, solution sync,
+  Audit .NET solution health across 13 dimensions: dependency graph, solution sync,
   CPM compliance, package health, framework consistency, IVT & encapsulation, build
-  config, analyzer config, NuGet config, and suppression hygiene. Works with any
-  .NET solution (.slnx or .sln). Parses all config files once, spawns 3 parallel
-  agents, and produces a severity-grouped report with a Mermaid dependency graph.
+  config, analyzer config, NuGet config, suppression hygiene, output type & AOT,
+  public API surface, and lock files & pruning. Works with any .NET solution (.slnx
+  or .sln). Parses all config files once, spawns 3 parallel agents, and produces a
+  severity-grouped report with a Mermaid dependency graph.
   Triggers on: solution audit, audit solution, project graph, dependency audit,
   solution health, audit projects, check solution.
 argument-hint: "[--no-graph] [--min-severity LEVEL] [--dry-run]"
@@ -15,7 +16,7 @@ effort: high
 
 # Solution Audit
 
-10-dimension audit of a .NET solution's structural health. Parses project and config
+13-dimension audit of a .NET solution's structural health. Parses project and config
 files once in the orchestrator, spawns 3 parallel analysis agents, and produces a
 severity-grouped report with a Mermaid dependency graph.
 
@@ -37,14 +38,15 @@ severity-grouped report with a Mermaid dependency graph.
            + .globalconfig + .editorconfig + suppression scan
   Phase 2: Spawn 3 agents in parallel
     ├─ Agent A: Structure    (D1 dependency graph, D2 solution sync)
-    ├─ Agent B: Packages     (D3 CPM, D4 package health, D9 NuGet config)
-    └─ Agent C: Config       (D5 framework, D6 IVT, D7 build, D8 analyzers, D10 suppressions)
+    ├─ Agent B: Packages     (D3 CPM, D4 package health, D9 NuGet config, D13 lock files & pruning)
+    └─ Agent C: Config       (D5 framework, D6 IVT, D7 build, D8 analyzers, D10 suppressions,
+    │                         D11 output type & AOT, D12 public API surface)
   Phase 3: Collect results, generate Mermaid, build report
   Phase 4: Print report
 ```
 
 Orchestrator parses files (once) and generates the Mermaid; agents receive structured text
-and analyze. 3 agents (not 10) because dimensions cluster by shared data needs. All Phase 1
+and analyze. 3 agents (not 13) because dimensions cluster by shared data needs. All Phase 1
 commands are read-only — proceed through parsing without prompting.
 
 ---
@@ -115,11 +117,11 @@ Spawn all in a **single message**. Use `subagent_type: "general-purpose"`. Each 
 applies the severity rules for its dimensions from
 [references/checks-catalog.md](references/checks-catalog.md) (Severity Rules + Edge Cases).
 
-| Agent | Dimensions       | Pass to it                                                                                                  |
-| ----- | ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| A     | D1, D2           | Project table, folder map, orphan list, each project's source dir (for the D1 usage grep)                   |
-| B     | D3, D4, D4b, D9  | Project table, Directory.Packages.props (with comments), nuget.config, SDK info, source dirs (D4b grep)     |
-| C     | D5–D8, D10       | Project table, Directory.Build.props, .globalconfig, .editorconfig, suppression grep results                |
+| Agent | Dimensions          | Pass to it                                                                                                  |
+| ----- | ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| A     | D1, D2              | Project table, folder map, orphan list, each project's source dir (for the D1 usage grep)                   |
+| B     | D3, D4, D4b, D9, D13| Project table, Directory.Packages.props (with comments), nuget.config, lock files, SDK info, source dirs (D4b grep) |
+| C     | D5–D8, D10–D12      | Project table, Directory.Build.props, .globalconfig, .editorconfig, suppression grep, public-type/XML-doc grep, OutputType/AOT props |
 
 Before spawning, run `dotnet list <SLN> package --include-transitive` and pass the result
 to Agent B so it can distinguish orphaned central packages from transitive pins. Agent A
