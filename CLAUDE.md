@@ -113,35 +113,5 @@ Always use `.claude/tmp/` instead of `/tmp`. **Never write to `/tmp`.** Scope: `
 
 ### Key Scripts
 
-| Task                     | Script                                              |
-| ------------------------ | --------------------------------------------------- |
-| Build                    | `scripts/build.sh [--verbose]`                      |
-| Test                     | `scripts/test.sh [--all] [--verbose]`               |
-| Format check             | `scripts/format.sh --check`                         |
-| Full CI                  | `scripts/ci.sh`                                     |
-| Composed check           | `scripts/check.sh [--all]`                          |
-| Git status               | `scripts/status.sh [--json]`                        |
-| Diff summary             | `scripts/diff.sh [--json] [--staged]`               |
-| Branch info              | `scripts/branch.sh [--json]`                        |
-| Fail-fast gate           | `scripts/assert.sh --build-pass`                    |
-| Timestamp                | `scripts/ts.sh [FILE]`                              |
-| Script catalog           | `scripts/help.sh`                                   |
-| Task management          | `scripts/task.sh {check\|next\|progress}`           |
-| Lode timestamps          | `scripts/lode-ts.sh --changed`                      |
-| Version bump             | `scripts/internal/version-bump.sh <Project>`        |
-| Find symbol              | `scripts/find.sh --class\|--method\|--callers NAME` |
-| File outline             | `scripts/file-outline.sh PATH [--json]`             |
-| Extract source           | `scripts/code-read.sh --method\|--class NAME PATH`  |
-| Type dependencies        | `scripts/deps.sh TYPE [--callers] [--json]`         |
-| Build budget             | `scripts/build-budget.sh tick\|status\|reset`       |
-| SDK version              | `scripts/sdk-version.sh [--json]`                   |
-| Format invalidation      | `scripts/format-invalidate.sh [--json]`             |
-| Analyzer stats           | `scripts/analyzer-stats.sh [--json]`                |
-| Codebase stats           | `scripts/codebase-stats.sh [--json] [--threshold N]`|
-| Session mining           | `scripts/session-mine.sh <subcmd> [--days N] [--json]`|
-| Catalog inventory        | `scripts/catalog-stats.sh [--json] [--verbose]`       |
-| Analyzer release check   | `scripts/internal/analyzer-release-check.sh [--json]`  |
-| Review agent discovery   | `scripts/internal/review-agents.sh [--json]`           |
-| Settings allow-list gaps | `scripts/internal/settings-gap.sh [--json]`            |
-| Dependency check         | `scripts/dep-check.sh [--outdated] [--vulnerable] [--json]` |
+Run `scripts/help.sh` for the full catalog (name, usage, and flags for every `scripts/*.sh` and `scripts/internal/*.sh`).
 
