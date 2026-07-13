@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-05-17T00:00:00Z*
+*Updated: 2026-07-13T17:50:43Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 

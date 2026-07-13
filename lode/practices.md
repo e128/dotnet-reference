@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-04-17T13:23:13Z*
+*Updated: 2026-07-13T17:46:19Z*
 
 ## Design Principles
 

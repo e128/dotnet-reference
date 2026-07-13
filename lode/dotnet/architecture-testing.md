@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-06-12T13:37:45Z*
+*Updated: 2026-07-13T17:48:48Z*
 
 ## Overview
 
@@ -45,11 +45,18 @@ rule.Check(Architecture);
 
 ### Layer Dependencies (`LayerDependencyTests`)
 
-Enforces dependency direction: Models → (nothing), Repositories → Models only.
+Enforces dependency direction: Models → (nothing), Services → Models + Repositories, Repositories → Models.
 
 - Models must not depend on Services
 - Models must not depend on Repositories
 - Repositories must not depend on Services
+
+### Circular Dependencies (`CircularDependencyTests`)
+
+Guards against dependency cycles between Core layers.
+
+- Repositories must not depend back on Services
+- Models must not depend on Services or Repositories
 
 ### Naming Conventions (`NamingConventionTests`)
 

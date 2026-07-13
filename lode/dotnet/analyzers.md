@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-05-10T00:00:00Z*
+*Updated: 2026-07-13T17:50:43Z*
 
 ## Strategy: Deny by Default
 

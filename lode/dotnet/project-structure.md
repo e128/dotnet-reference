@@ -1,5 +1,5 @@
 # .NET 10 Project Structure
-*Updated: 2026-05-04T20:33:09Z*
+*Updated: 2026-07-13T17:48:48Z*
 
 ## Solution Format
 
@@ -50,10 +50,12 @@ Key properties in `Directory.Build.props`:
 
 ```json
 {
-  "sdk": { "version": "10.0.203", "rollForward": "latestMajor", "allowPrerelease": false },
+  "sdk": { "version": "<pinned in global.json>", "rollForward": "latestMajor", "allowPrerelease": false },
   "test": { "runner": "Microsoft.Testing.Platform" }
 }
 ```
+
+The exact SDK version is the source of truth in `global.json` (`scripts/sdk-version.sh`).
 
 The `test.runner` setting is **required** for `dotnet test` on .NET 10 SDK. Without it, MTP projects fail with a VSTest compatibility error.
 

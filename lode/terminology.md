@@ -1,5 +1,5 @@
 # Terminology
-*Updated: 2026-05-04T20:33:11Z*
+*Updated: 2026-07-13T17:46:19Z*
 
 - **CPM** — Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **MTP** — Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.

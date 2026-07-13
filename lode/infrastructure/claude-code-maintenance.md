@@ -1,5 +1,5 @@
 # Claude Code Maintenance
-*Updated: 2026-05-04T20:34:29Z*
+*Updated: 2026-07-13T17:47:18Z*
 
 ## Harness Structure
 
@@ -33,7 +33,7 @@ All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for
 
 ## Docker
 
-- Alpine-based images (`sdk:10.0-alpine`, `aspnet:10.0-alpine`) with hardened runtime (apk removed)
+- Noble-based images (`sdk:10.0-noble`, `aspnet:10.0-noble`), FIPS 140-2 compliant (OpenSSL 3.x FIPS provider replaces Alpine), with hardened runtime (openssl CLI purged, apt caches cleaned)
 - `docker-compose.yml` with security hardening (`read_only`, `no-new-privileges`, `cap_drop: ALL`)
 - `scripts/docker.sh` — build, run, test, stop, clean commands
 - Colima as the Docker runtime (no Docker Desktop required)

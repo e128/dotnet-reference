@@ -1,11 +1,11 @@
 # Code Generation Quality with Claude Code
-*Updated: 2026-05-04T20:34:29Z*
+*Updated: 2026-07-13T17:47:18Z*
 
 Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
 ## 1. Analyzers as Guardrails (highest leverage)
 
-Deny-by-default `.globalconfig` with 8 analyzer packages means Claude writes "close enough" code and `dotnet build` immediately reports what's wrong. `TreatWarningsAsErrors=true` means nothing slips through as a warning. The AI iterates against compiler output, not instructions it might forget.
+Deny-by-default `.globalconfig` with multiple analyzer packages means Claude writes "close enough" code and `dotnet build` immediately reports what's wrong. `TreatWarningsAsErrors=true` means nothing slips through as a warning. The AI iterates against compiler output, not instructions it might forget.
 
 ## 2. CLAUDE.md — Always-Loaded Rules
 

@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-05-04T20:33:09Z*
+*Updated: 2026-07-13T17:48:48Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -54,7 +54,7 @@ scripts/test.sh --all
 # Custom trait filter
 scripts/test.sh --trait "Category=Docker"
 
-# JSON output for automation
+# Terse output is the default (--json is a legacy no-op alias)
 scripts/test.sh --json
 ```
 

@@ -1,8 +1,8 @@
 # Scoring Rubric for Strategic Analysis
-*Updated: 2026-05-25T00:00:00Z*
+*Updated: 2026-07-13T17:49:48Z*
 
-Shared scoring rubric used by `leverage-advisor`, `token-optimizer`, and other agents
-that need to score and prioritize candidates.
+Shared scoring rubric used by `leverage-advisor` to score and prioritize
+candidates. Other agents (e.g. `token-optimizer`) define their own inline rubrics.
 
 ## Four-Dimension Rubric (0–3 per dimension, max 12)
 
@@ -24,7 +24,9 @@ When scoring items for removal (subtractions):
 | Context          | Plan threshold |
 | ---------------- | -------------- |
 | `leverage-advisor` | ≥ 7/12       |
-| `token-optimizer`  | ≥ 5/9        |
+
+`token-optimizer` scores against its own inline 3-dimension rubric (Frequency,
+Token cost, Feasibility — max 9) with a ≥ 5/9 plan threshold, not this rubric.
 
 ## Related
 

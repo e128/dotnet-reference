@@ -1,6 +1,6 @@
 # NuGet Trusted Publishing
 
-*Updated: 2026-05-04T20:34:00Z*
+*Updated: 2026-07-13T17:49:48Z*
 
 OIDC-based package publishing from GitHub Actions to nuget.org. Eliminates long-lived API keys.
 
@@ -52,7 +52,7 @@ jobs:
       id-token: write             # REQUIRED for OIDC
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@<sha>          # pin to a full-length commit SHA
 
       - name: Check if version already published
         id: check
@@ -62,7 +62,7 @@ jobs:
             "https://api.nuget.org/v3-flatcontainer/e128.analyzers/${VERSION}/...")
           # Sets outputs: version, exists (true/false)
 
-      - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+      - uses: actions/setup-dotnet@<sha>      # pin to a full-length commit SHA
         if: steps.check.outputs.exists == 'false'
         with:
           dotnet-version: '10.0.x'
@@ -108,7 +108,7 @@ Key properties that differ from a normal library package:
 
 ```xml
 <PropertyGroup>
-  <Version>1.24.2</Version>
+  <Version>1.0.0</Version>
   <IsPackable>true</IsPackable>
   <IncludeBuildOutput>false</IncludeBuildOutput>
   <DevelopmentDependency>true</DevelopmentDependency>
@@ -138,7 +138,7 @@ Key properties that differ from a normal library package:
 
 | Property                          | Why                                                        |
 | --------------------------------- | ---------------------------------------------------------- |
-| `Version`                           | Pinned in csproj (currently `1.24.2`); workflow reads via `sed` |
+| `Version`                           | Pinned in csproj; workflow reads it via `sed`              |
 | `IncludeBuildOutput=false`          | Prevents DLL in `lib/` (would be treated as library ref)   |
 | `DevelopmentDependency=true`        | Marks as dev-only; consumers get analyzer, not dependency   |
 | `SuppressDependenciesWhenPacking`   | Keeps analyzer deps out of the nupkg dependency list       |

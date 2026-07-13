@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-06-16T13:23:03Z*
+*Updated: 2026-07-13T17:50:43Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 

@@ -14,19 +14,20 @@
 | `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.Workspaces.Common`, `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
 
 All production projects also receive the following **analyzer packages** via `Directory.Build.props`
-(`PrivateAssets="all"` — compile-time only, not shipped to consumers):
+(`PrivateAssets="all"` — compile-time only, not shipped to consumers). Versions are pinned
+centrally in `Directory.Packages.props`:
 
-| Analyzer Package                                | Version          |
-| ----------------------------------------------- | ---------------- |
-| `AsyncFixer`                                    | 2.1.0            |
-| `Meziantou.Analyzer`                            | 3.0.60           |
-| `Microsoft.CodeAnalysis.CSharp.CodeStyle`       | 5.3.0            |
-| `Microsoft.VisualStudio.Threading.Analyzers`    | 17.14.15         |
-| `Roslynator.Analyzers`                          | 4.15.0           |
-| `Roslynator.CodeAnalysis.Analyzers`             | 4.15.0           |
-| `Roslynator.Formatting.Analyzers`               | 4.15.0           |
-| `SharpSource`                                   | 1.33.1           |
-| `SonarAnalyzer.CSharp`                          | 10.25.0.139117   |
+| Analyzer Package                                |
+| ----------------------------------------------- |
+| `AsyncFixer`                                    |
+| `Meziantou.Analyzer`                            |
+| `Microsoft.CodeAnalysis.CSharp.CodeStyle`       |
+| `Microsoft.VisualStudio.Threading.Analyzers`    |
+| `Roslynator.Analyzers`                          |
+| `Roslynator.CodeAnalysis.Analyzers`             |
+| `Roslynator.Formatting.Analyzers`               |
+| `SharpSource`                                   |
+| `SonarAnalyzer.CSharp`                          |
 
 ## Cross-Project Dependency Heat Map
 
@@ -42,10 +43,10 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 
 | Base image                              | Tag            | Type         |
 | --------------------------------------- | -------------- | ------------ |
-| `mcr.microsoft.com/dotnet/aspnet`       | `10.0-alpine`  | .NET runtime (production, E128.Reference.Web) |
-| `mcr.microsoft.com/dotnet/sdk`          | `10.0-alpine`  | .NET SDK (restore + build stages)             |
+| `mcr.microsoft.com/dotnet/aspnet`       | `10.0-noble`   | .NET runtime (production, E128.Reference.Web) |
+| `mcr.microsoft.com/dotnet/sdk`          | `10.0-noble`   | .NET SDK (restore + build stages)             |
 
-> Tags are pinned to a minor version (`:10.0-alpine`), not a digest. They drift with
+> Tags are pinned to a minor version (`:10.0-noble`), not a digest. They drift with
 > patch releases but do not track `:latest`. No unpinned tags.
 
 ---
@@ -54,9 +55,9 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 
 | Artifact              | Value                                      | Source                                |
 | --------------------- | ------------------------------------------ | ------------------------------------- |
-| Runtime image         | `mcr.microsoft.com/dotnet/aspnet:10.0-alpine` | `Dockerfile` (final `runtime` stage) |
-| SDK/build image       | `mcr.microsoft.com/dotnet/sdk:10.0-alpine`    | `Dockerfile` (`restore`/`build` stages) |
-| .NET SDK pin          | `10.0.203`                                 | `global.json`                         |
+| Runtime image         | `mcr.microsoft.com/dotnet/aspnet:10.0-noble`  | `Dockerfile` (final `runtime` stage) |
+| SDK/build image       | `mcr.microsoft.com/dotnet/sdk:10.0-noble`     | `Dockerfile` (`restore`/`build` stages) |
+| .NET SDK pin          | see `global.json`                          | `global.json`                         |
 | SDK rollForward       | `latestMajor` ⚠                           | `global.json` — permits any future major version |
 | Target framework      | `net10.0` (all except `E128.Analyzers`)    | `Directory.Build.props`               |
 | Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj`               |
@@ -94,7 +95,7 @@ graph TB
   end
 
   subgraph runtime["Runtime Image"]
-    img["mcr.microsoft.com/dotnet/aspnet:10.0-alpine"]
+    img["mcr.microsoft.com/dotnet/aspnet:10.0-noble"]
   end
 
   web --> core
@@ -109,10 +110,12 @@ with the Web project's DI approach).
 
 #### Key Packages
 
-| Package                                     | Version | Role                     |
-| ------------------------------------------- | ------- | ------------------------ |
-| `System.CommandLine`                        | 2.0.7   | CLI argument parsing     |
-| `Microsoft.Extensions.DependencyInjection`  | (CPM)   | DI container             |
+Versions are pinned centrally in `Directory.Packages.props`.
+
+| Package                                     | Role                     |
+| ------------------------------------------- | ------------------------ |
+| `System.CommandLine`                        | CLI argument parsing     |
+| `Microsoft.Extensions.DependencyInjection`  | DI container             |
 
 ### E128.Analyzers
 
@@ -122,12 +125,14 @@ by `publish.yml` via OIDC trusted publishing.
 
 #### Key Packages
 
-| Package                                        | Version | Role                                     |
-| ---------------------------------------------- | ------- | ---------------------------------------- |
-| `Microsoft.CodeAnalysis.CSharp`                | 5.3.0   | Roslyn syntax/semantic analysis APIs     |
-| `Microsoft.CodeAnalysis.Workspaces.Common`     | 5.3.0   | Code fix / workspace APIs                |
-| `Microsoft.CodeAnalysis.PublicApiAnalyzers`     | 3.3.4   | API tracking via PublicAPI.Shipped/Unshipped.txt (PrivateAssets=all) |
-| `PolySharp`                                    | 1.15.0  | netstandard2.0 polyfill for nullable attributes (PrivateAssets=all) |
+Versions are pinned centrally in `Directory.Packages.props`.
+
+| Package                                        | Role                                     |
+| ---------------------------------------------- | ---------------------------------------- |
+| `Microsoft.CodeAnalysis.CSharp`                | Roslyn syntax/semantic analysis APIs     |
+| `Microsoft.CodeAnalysis.Workspaces.Common`     | Code fix / workspace APIs                |
+| `Microsoft.CodeAnalysis.PublicApiAnalyzers`    | API tracking via PublicAPI.Shipped/Unshipped.txt (PrivateAssets=all) |
+| `PolySharp`                                    | netstandard2.0 polyfill for nullable attributes (PrivateAssets=all) |
 
 #### Publishing
 
@@ -140,15 +145,18 @@ by `publish.yml` via OIDC trusted publishing.
 
 ## Test Stack (test projects — excluded from production tables)
 
-| Package                                       | Version  | Role                              |
-| --------------------------------------------- | -------- | --------------------------------- |
-| `xunit.v3.mtp-v2`                             | 3.2.2    | xUnit v3 with MTP runner          |
-| `TngTech.ArchUnitNET.xUnitV3`                 | 0.13.3   | Architecture invariant tests      |
-| `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing` | 1.1.3 | Roslyn analyzer test harness      |
-| `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing` | 1.1.3  | Roslyn code fix test harness      |
-| `Microsoft.AspNetCore.Mvc.Testing`            | 10.0.7   | Integration test web host         |
-| `Microsoft.Testing.Extensions.HangDump`       | 2.2.2    | Hang detection in CI              |
-| `Microsoft.Testing.Extensions.TrxReport`      | 2.2.2    | TRX report output                 |
+Versions are pinned centrally in `Directory.Packages.props`.
+
+| Package                                          | Role                              |
+| ------------------------------------------------ | --------------------------------- |
+| `xunit.v3.mtp-v2`                                | xUnit v3 with MTP runner          |
+| `TngTech.ArchUnitNET.xUnitV3`                    | Architecture invariant tests      |
+| `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing` | Roslyn analyzer test harness      |
+| `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing`  | Roslyn code fix test harness      |
+| `Microsoft.AspNetCore.Mvc.Testing`               | Integration test web host         |
+| `Microsoft.Extensions.Diagnostics.Testing`       | Fake logger / time provider harness |
+| `Microsoft.Testing.Extensions.HangDump`          | Hang detection in CI              |
+| `Microsoft.Testing.Extensions.TrxReport`         | TRX report output                 |
 
 ---
 
@@ -161,4 +169,4 @@ severity for all deps (direct and transitive).
 
 ---
 
-*Updated: 2026-05-10T00:00:00Z*
+*Updated: 2026-07-13T17:47:04Z*
