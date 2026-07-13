@@ -69,6 +69,11 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `catalog-stats.sh`     | Inventory all agents and skills with frontmatter fields, description lengths, and line counts |
 | `codebase-stats.sh`    | Codebase file and LOC statistics by project                                     |
 | `solution-inventory.sh`| Solution file, projects (path/kind/packable flag), and README inventory         |
+| `deps-graph.sh`        | CPM inventory: PackageVersion pins, direct PackageReference, ProjectReference edges (--orphans, --json) |
+| `suppression-scan.sh`  | Scan src + tests for analyzer suppressions (#pragma warning disable, [SuppressMessage]) (--json) |
+| `nuget-heat-map.sh`    | NuGet dependency heat map: classify packages and map cross-project sharing (--json) |
+| `runtime-matrix.sh`    | Runtime pinning matrix: SDK pin, per-project target frameworks, Docker base images (--json) |
+| `diagnostics.sh`       | Parse .NET build diagnostics into structured records (--group, --code ID, --diff OLD NEW, --json) |
 | `readme-table-diff.sh` | Detect drift between scripts/README.md and the scripts on disk                   |
 | `coverage-areas.sh`    | Test coverage heuristic by namespace/project                                    |
 | `session-health.sh`    | Session analytics: error trends, tool counts, bash commands                     |
@@ -83,7 +88,9 @@ These are invoked by skills and agents only — not intended for direct use:
 | ------------------------------------ | ------------------------------------------------------------------------------------------ |
 | `internal/analyzer-release-check.sh` | Validate analyzer release files (Unshipped/Shipped) against source DiagnosticId constants |
 | `internal/commit.sh`                 | Commit helper: blocks emails in the message, appends a name-only co-author trailer         |
+| `internal/cr-diff-deliver.sh`        | Decide code-review diff delivery mode by size: inline (≤30KB), write (30-40KB), or split (>40KB) |
 | `internal/lode.sh`                   | Legacy Claude CLI wrapper (SystemPrompt.txt)                                               |
+| `internal/mechanical-diff.sh`        | Classify each changed file in the working diff as MECHANICAL (namespace rename) or SUBSTANTIVE |
 | `internal/overlap-detect.sh`         | Detect trigger-phrase overlap between agents and skills                                    |
 | `internal/plan-close.sh`             | Verify tasks complete, then remove plan dir                                                |
 | `internal/plan-context.sh`           | List active plans, roadmap items, or details                                               |
@@ -91,6 +98,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/plan-path.sh`              | Resolve a plan's canonical path by partial name                                            |
 | `internal/precommit.sh`              | PII scan on staged files                                                                   |
 | `internal/review-agents.sh`          | Discover code-review-relevant agents dynamically from .claude/agents/                      |
+| `internal/review-findings.sh`        | Locate the latest review plan and parse its checklist findings, grouped by file with severity |
 | `internal/settings-gap.sh`           | Diff catalog commands against settings.json allow-list; classify gaps by safety tier       |
 | `internal/stage.sh`                  | Stage modified + new files, excluding secrets                                              |
 | `internal/stale-plans.sh`            | List plan directories older than N days with no recent modifications                       |

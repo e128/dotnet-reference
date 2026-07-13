@@ -66,7 +66,11 @@ the README inventory in one call. If `solution` is empty, error and stop.
 
 Read `references/parse-steps.md` for detailed extraction steps covering: global.json,
 solution file, all .csproj files, Directory.Build.props, Directory.Packages.props,
-nuget.config, .globalconfig/.editorconfig, and suppression scan.
+nuget.config, and .globalconfig/.editorconfig.
+
+For the **suppression scan** (D10), use `scripts/suppression-scan.sh --json` — it emits
+`{file, line, rule, kind}` records for every `#pragma warning disable` and
+`[SuppressMessage(...)]` across src/ and tests/ in a single pass.
 
 ### 1.10 Scan for orphans
 
@@ -123,8 +127,11 @@ applies the severity rules for its dimensions from
 | B     | D3, D4, D4b, D9, D13| Project table, Directory.Packages.props (with comments), nuget.config, lock files, SDK info, source dirs (D4b grep) |
 | C     | D5–D8, D10–D12      | Project table, Directory.Build.props, .globalconfig, .editorconfig, suppression grep, public-type/XML-doc grep, OutputType/AOT props |
 
-Before spawning, run `dotnet list <SLN> package --include-transitive` and pass the result
-to Agent B so it can distinguish orphaned central packages from transitive pins. Agent A
+Before spawning, run `scripts/deps-graph.sh --orphans --json` to get candidate orphaned
+central packages (`PackageVersion` entries with no direct `PackageReference`); each carries
+a `transitive_pin` flag from its above-line comment marker. Also run
+`dotnet list <SLN> package --include-transitive`. Pass both to Agent B so it can confirm
+which orphan candidates are genuinely unused vs. deliberate transitive pins. Agent A
 returns its adjacency list in an `ADJACENCY: ... END_ADJACENCY` block for Mermaid.
 
 ---

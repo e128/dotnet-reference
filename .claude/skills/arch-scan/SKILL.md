@@ -49,11 +49,9 @@ For each source directory in the scope:
 3. Read the main entry points: `Program.cs`, `*ServiceCollectionExtensions.cs`, `*Command.cs`
 4. Read `lode/{domain}/summary.md` if it exists — for prior context
 5. Scan for dependency/infrastructure artifacts (feeds `dependency-map`, `external-integrations`, `runtime-pinning` perspectives):
-   - `Glob("src/{Project}/**/*.csproj")` — NuGet manifests
-   - `Glob("**/Directory.Packages.props")` — Central Package Management
+   - `scripts/nuget-heat-map.sh --json` — classified NuGet inventory + cross-project heat map (replaces manual `.csproj`/`Directory.Packages.props` parsing)
+   - `scripts/runtime-matrix.sh --json` — SDK pin, per-project `TargetFramework`, Docker `FROM` tags + unpinned/`:latest` flags (replaces manual `global.json`/`Dockerfile*` parsing)
    - `Glob("**/appsettings*.json")` — infrastructure config (exclude `appsettings.Test*.json`)
-   - `Glob("**/Dockerfile*")` — runtime images
-   - Read `global.json` if present — SDK version pin
 
 Build a mental model of:
 - Major components (namespaces / subdirectories)
@@ -128,9 +126,9 @@ Omit empty fields — only include fields with meaningful content. At minimum, *
 
 When generating `dependency-map`, `external-integrations`, or `runtime-pinning` perspectives, perform additional scanning per [`references/dependency-scanning.md`](references/dependency-scanning.md):
 
-- **dependency-map:** Get the canonical project list with `scripts/solution-inventory.sh --json` (filter `kind == "src"`), then parse each project's `.csproj` for `PackageReference` entries. Classify packages (Microsoft/Azure, first-party, third-party). Build per-project package tables, a cross-project dependency heat map (packages shared by 2+ projects, sorted by count), and a cross-project dependency summary. Include service integration detection (`.Api.Client` patterns).
+- **dependency-map:** Run `scripts/nuget-heat-map.sh --json` for the classified package inventory (`classification`: Microsoft/Azure, first-party E128, third-party) and the cross-project shared-dependency heat map (`packages[]` with per-package `count` + `projects`, sorted by count). Build the per-project package tables, heat map, and Mermaid diagram from that output; do service-integration detection (`.Api.Client` patterns) LLM-side. Classification/edge-case detail: [`references/dependency-scanning.md`](references/dependency-scanning.md).
 - **external-integrations:** Grep `appsettings*.json` for infrastructure patterns (SQL, Redis, RabbitMQ, etc.). Distinguish confirmed (config pattern found) vs inferred (package dep only). Add infrastructure summary table.
-- **runtime-pinning:** Collect `global.json` SDK pin, `TargetFramework` from `.csproj`, Docker `FROM` instructions, CI pipeline SDK tasks. Build a runtime version matrix. Flag unpinned images and SDK mismatches.
+- **runtime-pinning:** Run `scripts/runtime-matrix.sh --json` for the SDK pin + `rollForward`, per-project `TargetFramework` (`frameworks[]`), and Docker base-image `FROM` tags with unpinned/`:latest`/`stage-ref` status and precomputed `flags[]`. Build the runtime version matrix and prose from that output; add CI-pipeline SDK tasks LLM-side if present.
 
 ### Step 4 — Validate Each Diagram (structural self-check)
 

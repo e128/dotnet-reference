@@ -24,14 +24,19 @@ Pick the right command based on what the caller needs. **Never run more than one
 | Need | Command | When to use |
 |------|---------|-------------|
 | Full check (default) | `scripts/check.sh --all --json` | Default — use this unless told otherwise |
-| Build only | `scripts/build.sh --json` | Caller explicitly says "build only" or "no tests" |
+| Build only | `scripts/diagnostics.sh --json` | Caller explicitly says "build only" or "no tests" |
 | Tests only | `scripts/test.sh --all --json` | Caller explicitly says "tests only" |
 
-`check.sh --all` already runs format + build + tests, so running `build.sh` after `check.sh` is wasted work. If the first command fails, report the failure — do not retry with a different command or flags.
+`check.sh --all` already runs format + build + tests, so running the build again after `check.sh` is wasted work. If the first command fails, report the failure — do not retry with a different command or flags.
 
 ### 2. Parse and report
 
 Parse the JSON output. Do not run additional commands to "double check" or "verify."
+
+`scripts/diagnostics.sh --json` returns a structured array of
+`{file,line,col,severity,code,message}` records — populate the **Errors** and **Warnings**
+sections directly from those records (`severity == "error"` vs `"warning"`), no raw
+MSBuild-line parsing required. (`check.sh`/`test.sh --json` report counts and test results.)
 
 ## Output Format
 

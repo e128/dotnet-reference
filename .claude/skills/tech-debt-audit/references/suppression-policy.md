@@ -20,7 +20,7 @@ Exception: Only after explicit human approval with documented reason
 **User**: `/code-suppression-reviewer`
 
 **Claude**:
-1. Runs scanner script on repo
+1. Runs the scanner: `scripts/suppression-scan.sh --json`
 2. Generates report
 3. Analyzes findings using Microsoft Code Analysis Rules reference
 4. Proposes fixes categorized by priority

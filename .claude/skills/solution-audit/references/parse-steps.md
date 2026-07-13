@@ -60,8 +60,10 @@ Extract: `<clear />` presence, source URLs, HTTPS status, protocol version,
 
 ## 1.9 Scan for suppressions
 
-```
-Grep: pattern="#pragma warning disable", path=src/, glob=*.cs, output_mode=content
+```bash
+scripts/suppression-scan.sh --json
 ```
 
-Exclude `*.g.cs` and `obj/` paths.
+Emits `{file, line, rule, kind}` records for every `#pragma warning disable` and
+`[SuppressMessage(...)]` across src/ and tests/ in one pass (line-anchored, so
+doc-comment prose is not matched). Feed the records to Agent C for D10.

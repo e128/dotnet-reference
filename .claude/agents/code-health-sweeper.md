@@ -39,11 +39,16 @@ exact list of files needing re-read — don't re-read every Phase 1 file when fo
 
 ## Phase 0: Collect
 
-Run `scripts/check.sh --json` and group the reported diagnostics by prefix
-(CS → E128 → IDE → MA → CA → RCS → SS), sorted by fix priority. If the caller
-knows the scope, pass `--project <name>` to narrow it.
+```bash
+scripts/diagnostics.sh --group --json                 # counts grouped by prefix, in priority order
+scripts/diagnostics.sh --json > .claude/tmp/diag-before.json   # full baseline for Phase 3 diff
+```
 
-If the build is clean, report "Build clean — nothing to fix." and stop.
+`--group` returns diagnostics grouped by code prefix
+(CS → E128 → IDE → MA → CA → RCS → SS), already sorted by fix priority. Save the full
+record baseline to `.claude/tmp/diag-before.json` so Phase 3 can compute net-new diagnostics.
+
+If the baseline is empty (`[]`), report "Build clean — nothing to fix." and stop.
 Otherwise, use the grouped diagnostics to drive Phase 1 — process each group in order.
 
 ---
@@ -100,13 +105,15 @@ enforces file-state consistency and will reject edits to invalidated reads.
 ## Phase 3: Verify
 
 ```bash
-scripts/check.sh --no-format --json
+scripts/diagnostics.sh --json > .claude/tmp/diag-after.json
+scripts/diagnostics.sh --diff .claude/tmp/diag-before.json .claude/tmp/diag-after.json --json
 ```
 
-**Pass**: emit the summary report (see below) and stop.
+**Pass** (`--diff` returns `[]` and `diag-after.json` is empty): emit the summary report
+(see below) and stop.
 
-**Fail**: extract diagnostics from the JSON output. Identify which are net-new (not in the
-original Phase 0 list). Report only net-new errors — do NOT re-loop.
+**Fail**: `--diff` emits the net-new records — diagnostics present now but absent from the
+Phase 0 baseline. Report only those net-new records — do NOT re-loop.
 
 ---
 

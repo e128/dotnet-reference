@@ -69,7 +69,16 @@ Gather the raw facts. Read-only.
 ## Phase 2: Orphaned Central Packages
 
 A `PackageVersion` entry is a **candidate orphan** if no `PackageReference` (in any
-csproj or Directory.Build.props) matches its name.
+csproj or Directory.Build.props) matches its name. Get the candidate list directly:
+
+```bash
+scripts/deps-graph.sh --orphans --json
+```
+
+Each record is `{name, transitive_pin}` — `transitive_pin: true` means the entry sits
+under a `<!-- Transitive pins -->` comment marker and is almost certainly a deliberate
+pin, not dead weight. (The same script without `--orphans` emits the full
+`package_versions`, `direct_references`, and `project_edges` inventory for Phases 1 and 3.)
 
 For each candidate, classify before flagging (see `references/false-positives.md`):
 

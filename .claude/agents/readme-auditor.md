@@ -27,9 +27,7 @@ Gives the README inventory (`readmes`), the solution file, and every project wit
 
 **src/\*/README.md (packable projects — `projects[].packable == true`):**
 - Verify `<Version>` in the `.csproj` matches any install snippet in the README
-- Run `scripts/analyzer-stats.sh --json` to get all diagnostic IDs and code fix coverage
-- Verify every diagnostic ID appears in the rule table
-- Verify the "Code Fix" column matches fix provider coverage
+- Run `scripts/readme-table-diff.sh --analyzer --json` — deterministic set-diff of the rule table against analyzer source. Act only on a non-empty `missing_from_readme` / `extra_in_readme` / `code_fix_mismatches`; `drift: false` means every diagnostic ID is present and the "Code Fix" column matches actual `CodeFixProvider` coverage
 
 **scripts/README.md:**
 - Run `scripts/readme-table-diff.sh --json` — deterministic set-diff of documented vs. on-disk scripts (public + `internal/`). Act only on a non-empty `missing_from_readme` / `extra_in_readme`

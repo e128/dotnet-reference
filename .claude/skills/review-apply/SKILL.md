@@ -13,19 +13,13 @@ Batch-apply findings from the most recent `--local` review. One confirmation, on
 
 ## Phase 1: Load Findings
 
-**Tasks.md (preferred):** Find the latest review plan:
+Load parsed findings from the latest `plans/review-*` dir (`tasks.md` preferred, `context.md` fallback), grouped by file with severity:
 ```bash
-fd -t d 'review-' plans/ | sort -r
+scripts/internal/review-findings.sh --json          # add --include-low to keep LOW findings
 ```
-Read its `tasks.md` — parse each `- [ ] \`{file}:{line}\`` entry. Group by file. Skip LOW unless `--include-low`.
+Each finding has `file`, `line`, `severity`, and `text`. LOW is skipped unless `--include-low`. If the script reports `"plan":null` → "No saved review found. Run `review --local` first."
 
-If no review plan found → fall back to `context.md`:
-```
-fd -e md . plans/ -t f --regex 'review-\d{4}-\d{2}-\d{2}.*/.*context\.md' | sort -r
-```
-If neither exists → report: "No saved review found. Run `review --local` first."
-
-Parse findings grouped by severity. Skip: needs-verification, advisory-only, timed-out agents, known exceptions (see [references/known-exceptions.md](references/known-exceptions.md)).
+Additionally skip: needs-verification, advisory-only, timed-out agents, known exceptions (see [references/known-exceptions.md](references/known-exceptions.md)).
 
 ## Phase 1.5: Edit Plan
 

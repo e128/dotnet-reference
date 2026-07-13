@@ -60,10 +60,9 @@ Verify the inventory above is still complete. If a new README exists, flag it.
 ### src/*/README.md (packable projects)
 For each packable project from `scripts/solution-inventory.sh --json` (`projects[].packable == true`) that has a README:
 1. Read the README
-2. If the project contains analyzers, run `scripts/analyzer-stats.sh --json` to get all diagnostic IDs and code fix provider coverage — every rule must appear in the rule table
-3. Cross-reference the `diagnostic_ids` against fix providers from `analyzer-stats.sh` output — the "Code Fix" column must be Yes for rules that have a provider, No otherwise
-4. Check `<Version>` in the `.csproj` matches any installation snippet in the README
-5. Verify rule categories and titles match the `DiagnosticDescriptor` fields
+2. If the project contains an analyzer rule table, run `scripts/readme-table-diff.sh --analyzer --json` — deterministic set-diff of the rule table against analyzer source. `drift: false` means every diagnostic ID is present and the "Code Fix" column matches actual `CodeFixProvider` coverage; act only on a non-empty `missing_from_readme` / `extra_in_readme` / `code_fix_mismatches`
+3. Check `<Version>` in the `.csproj` matches any installation snippet in the README
+4. Verify rule categories and titles match the `DiagnosticDescriptor` fields
 
 ## Step 4: Report
 

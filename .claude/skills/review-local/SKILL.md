@@ -54,7 +54,7 @@ Run in parallel — no ordering dependency:
 - Gather change context: `scripts/diff.sh --json`
 - Discover agents dynamically: read `.claude/agents/`; filter to code-review-relevant agents (include: code, review, check, fix, validate, compliance, security, quality, refactor, build, test, warning, diagnostic, concurrency, performance — exclude: pipeline, sanitizer, lode, corpus, mhtml, markdown, web, fetch, download)
 
-From diff: filter to .NET files; detect mechanical commits (namespace rename → `MECHANICAL`, exclude); generate unified diff. Diff delivery by size: <=30KB inline; 30-40KB write to `.claude/tmp/cr-<agent>.diff`; >40KB split at file boundaries. Clean up `.claude/tmp/cr-*.diff` after completion.
+From diff: filter to .NET files; classify each changed file with `scripts/internal/mechanical-diff.sh --json` — files marked `MECHANICAL` (every changed token is a pure namespace-prefix substitution) are excluded from deep review; generate unified diff. Pick per-agent-slice diff delivery with `scripts/internal/cr-diff-deliver.sh <difffile>` — it emits `inline` / `write <path>` / `split <paths…>` by the 30KB/40KB thresholds (writing to `.claude/tmp/cr-<name>.diff` or splitting at file boundaries). Clean up `.claude/tmp/cr-*.diff` after completion.
 
 ### Phase 2: Execution
 

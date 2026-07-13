@@ -30,7 +30,7 @@ The user's message must include a scope. Extract it from natural language; if no
 1. **Parse arguments** from user input
 2. **Gather change context** — run `scripts/diff.sh --json` for working-tree intelligence (staged/unstaged files, affected projects, test coverage hints, and commit-range changed files).
 3. **Filter to .NET files**: `.cs`, `.csproj`, `.slnx`, `.props`
-4. **Detect mechanical commits** — if all changes in the diff are pure namespace renames (every `+`/`-` line is identical except for a namespace prefix substitution), mark those files as `MECHANICAL` and exclude them from deep agent review. Add a one-line note to the report: "N files excluded: namespace rename only." This prevents a single mechanical refactor from inflating the diff 10-20x and wasting agent budget.
+4. **Detect mechanical files** — run `scripts/internal/mechanical-diff.sh --json`; files classified `MECHANICAL` (every changed token is a pure namespace-prefix substitution) are excluded from deep agent review. Add a one-line note to the report: "N files excluded: namespace rename only." This prevents a single mechanical refactor from inflating the diff 10-20x and wasting agent budget.
 5. **Generate unified diff** for the review window — this is the primary input for all agents
 6. **Discover agents dynamically**:
    ```bash
@@ -42,7 +42,7 @@ The user's message must include a scope. Extract it from natural language; if no
 
 1. **Spawn agents in parallel** — pass each agent the unified diff and severity rules
 2. **Diff-scoped constraint** — include in each agent prompt: "Review only the diff provided. Flag pre-existing concerns as 'adjacent concern' without investigating. Report ALL issues you find — including low-confidence and low-severity ones — and tag each with a confidence level and a severity. Do not pre-filter or suppress findings to avoid nitpicking; the orchestrator's severity-grouping stage and the downstream review-applier do the ranking and filtering."
-3. **Diff delivery by size**: ≤30KB inline in prompt; 30–40KB write to `.claude/tmp/cr-<agent>.diff`; >40KB split at file boundaries into sub-slices with separate agent instances. Never use `/tmp/`. Clean up `.claude/tmp/cr-*.diff` after completion.
+3. **Diff delivery** — run `scripts/internal/cr-diff-deliver.sh <difffile>` per agent slice; it emits the mode (`inline` / `write <path>` / `split <paths…>`) by the 30KB/40KB thresholds, writing to `.claude/tmp/cr-<name>.diff` or splitting at file boundaries into sub-slices for separate agent instances. Never use `/tmp/`. Clean up `.claude/tmp/cr-*.diff` after completion.
 4. **Collect outputs** and handle failures gracefully (timeout, error)
 
 ### Phase 3: Report Generation

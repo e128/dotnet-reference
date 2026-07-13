@@ -37,7 +37,7 @@ Issue all of the following in the same turn — they are independent reads:
 
 **Session data** — Gather session stats, tool counts, bash command categories, and topics for the analysis window via `scripts/session-health.sh` subcommands (stats, tool-counts, bash-commands --category, topics) with `--days 7 --json`. Also run `scripts/session-mine.sh all --days 7 --json` for tool frequencies, repeated commands, most-read files, and agent spawn patterns.
 
-**Skill/command invocations** — Extract slash-command frequencies from `~/.claude/history.jsonl` (grep display names, sort/uniq, top 20).
+**Skill/command invocations** — Run `scripts/session-mine.sh slash-freq --days 7 --json` for slash-command / skill invocation frequencies (display names, top 20).
 
 **Git activity** — `scripts/diff.sh --json` (includes commits summary and affected_files with churn counts).
 
@@ -79,8 +79,8 @@ Analyze the gathered data for:
   - Cross-reference catalog entries against invocation data from Phase 1
   - If `.claude/agents/catalog-pruner.md` exists and 5+ dead weight candidates found: recommend running catalog-pruner
 - Agent/skill invocations that are immediately followed by the same manual work (ineffective automation)
-- **Duplicate CI runs**: consecutive `check.sh --all`, `ci.sh`, or `build.sh` calls with no file edits between them — flag as "redundant CI" and recommend `--skip-tests` on `/yeet` when the prior phase verify already passed
-- **Fallback chains**: a `test.sh` failure followed by raw `dotnet test` attempts — flag as "test runner fallback" and recommend fixing `test.sh` output instead of working around it
+- **Duplicate CI runs**: run `scripts/session-mine.sh redundant-ci --days 7 --json` to find consecutive `check.sh --all`, `ci.sh`, or `build.sh` calls with no file edits between them — flag as "redundant CI" and recommend `--skip-tests` on `/yeet` when the prior phase verify already passed
+- **Fallback chains**: run `scripts/session-mine.sh runner-fallback --days 7 --json` to find a `test.sh` failure followed by raw `dotnet test` attempts — flag as "test runner fallback" and recommend fixing `test.sh` output instead of working around it
 
 ### 2.4 Hook effectiveness tracking
 

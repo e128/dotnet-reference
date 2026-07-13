@@ -29,15 +29,19 @@ Ship it. Quality gate + commit + push in one autonomous pass.
 Run all in a single parallel message:
 
 ```
-A) scripts/status.sh --json        (working-tree status)
-B) scripts/branch.sh --json        (branch info, ahead/behind counts)
+A) scripts/status.sh --json               (working-tree status)
+B) scripts/status.sh --classify --json    (classification + cs_changed + analyzers_or_scripts_changed)
+C) scripts/branch.sh --json               (branch info, ahead/behind counts)
 ```
 
-**Derive from status JSON:**
-- Classification: all `.md`/`.json`/`.yml`/`.yaml`/`.txt` = `docs-only`; any `.cs`/`.csproj` = `code`; else `mixed`
-- If `docs-only` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "Docs/config-only change — skipping build+test"
-- Cache: `cs_changed`, `ahead`, `has_changes`, `analyzers_or_scripts_changed`
-- Set `analyzers_or_scripts_changed = true` if any changed file path starts with `src/*Analyzers*/` or `scripts/`
+**Read directly from `status.sh --classify --json` (B):** it emits
+`{classification, cs_changed, analyzers_or_scripts_changed}` — no manual derivation.
+- `classification` is one of `clean` / `docs-only` / `code` / `mixed`
+- `analyzers_or_scripts_changed` is already computed (any changed path under `src/*Analyzers*/` or `scripts/`)
+
+**Then:**
+- If `classification == docs-only` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "Docs/config-only change — skipping build+test"
+- Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B); `ahead` (from C, `scripts/branch.sh`); `has_changes` (from A)
 
 ### 1. Format + build + test
 

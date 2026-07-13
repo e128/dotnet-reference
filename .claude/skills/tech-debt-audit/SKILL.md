@@ -82,7 +82,7 @@ Use `rg`, `fd`, Roslyn MCP (when available), and `dotnet` CLI tools to find conc
 
 7. **Error handling & observability** — swallowed exceptions, blanket catches, log-but-don't-handle, inconsistent error shapes, missing structured logs on critical paths. Structural gaps: traces without span correlation, logs with no correlation ID, metrics with unbounded label cardinality.
 
-8. **Security hygiene** — hardcoded secrets, string-concat SQL, missing input validation at trust boundaries, permissive auth/CORS, weak crypto, `DateTime.Now`/`UtcNow` over injected `TimeProvider`. FIPS violations (see dotnet-dimensions.md).
+8. **Security hygiene** — hardcoded secrets, string-concat SQL, missing input validation at trust boundaries, permissive auth/CORS, weak crypto, `DateTime.Now`/`UtcNow` over injected `TimeProvider`. FIPS violations (see dotnet-dimensions.md). For the suppression inventory (also the `suppressions` focused mode), run `scripts/suppression-scan.sh --json` — one pass over src/ + tests/ emitting `{file, line, rule, kind}` for every `#pragma warning disable` and `[SuppressMessage(...)]`; then propose fixes over suppression per [references/suppression-policy.md](references/suppression-policy.md).
 
 9. **Documentation drift** — README claims that don't match reality, comments contradicting adjacent code, public APIs without XML doc comments.
 

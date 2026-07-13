@@ -89,7 +89,7 @@ Also read any existing scope lode files for service names and architecture facts
 For each repo discovered, run sub-steps in parallel within each repo.
 See [`references/manifest-parsing.md`](references/manifest-parsing.md) for full per-language parsing instructions:
 - **3a** Detect language and locate manifests
-- **3b** Parse NuGet (.csproj)
+- **3b** Parse NuGet (.csproj). **When the scanned repo is the current .NET git repo** (has a `.slnx` / `src/`+`tests/` layout), run `scripts/nuget-heat-map.sh --json` instead of manual parsing — it returns the classified inventory (`classification`: Microsoft / first-party E128 / third-party) and the cross-project heat map (`packages[]` with `count` + `projects`). Fall back to manual `.csproj`/`Directory.Packages.props` parsing for other repos.
 - **3c** Parse Maven (pom.xml)
 - **3d** Parse npm/yarn (package.json)
 - **3e** Parse Go modules (go.mod)
@@ -97,7 +97,7 @@ See [`references/manifest-parsing.md`](references/manifest-parsing.md) for full 
 - **3g** Parse Python (requirements.txt / pyproject.toml)
 - **3h** Detect infrastructure from config files
 - **3i** Build Mermaid service-layer diagram
-- **3j** Detect runtime versions and Docker images
+- **3j** Detect runtime versions and Docker images. **For the current .NET git repo**, run `scripts/runtime-matrix.sh --json` — it returns the SDK pin + `rollForward`, per-project `TargetFramework` (`frameworks[]`), and Docker base-image `FROM` tags with unpinned/`:latest`/`stage-ref` status and precomputed `flags[]`. Fall back to manual parsing for other repos and for non-.NET runtimes (Node `.nvmrc`, Java, Go, etc.).
 
 For classification rules, see [`references/dependency-classification.md`](references/dependency-classification.md).
 For unusual repo structures, see [`references/edge-cases.md`](references/edge-cases.md).

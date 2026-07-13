@@ -39,15 +39,16 @@ source of `file_not_read` errors.
 ## Phase 1: Collect Violations
 
 ```bash
-scripts/build.sh --json
+scripts/diagnostics.sh --code IDE1006 --json
 ```
 
-Parse the `errors` array. Keep entries where `code == "IDE1006"` or `message` contains
-"Naming rule violation". Extract the symbol name from the trailing parens: `('SymbolName')`.
+This builds, filters to `IDE1006`, extracts the offending symbol from the trailing
+`('SymbolName')`, and dedupes by symbol. Each record carries `{file,line,col,code,message,symbol}`
+— use the `.symbol` field directly; no manual parens-parsing needed.
 
-If zero IDE1006 violations: report "No IDE1006 violations — build is clean." and stop.
+If the array is empty: report "No IDE1006 violations — build is clean." and stop.
 
-Group and deduplicate by symbol name (IDE1006 fires only at the declaration). Process in
+Records are already deduplicated by symbol (IDE1006 fires only at the declaration). Process in
 declaration order, innermost scope last.
 
 ## Phase 2: Rename Each Symbol

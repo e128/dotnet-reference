@@ -28,6 +28,17 @@ Every repeated operation goes through a canonical script. Never use raw commands
 | Manual plan-age checks                 | `scripts/internal/stale-plans.sh [--days N] [--json]` |
 | Manual settings.json allow-list gap scan | `scripts/internal/settings-gap.sh [--json]`   |
 | `dotnet list ... --outdated/--vulnerable` | `scripts/dep-check.sh [--outdated] [--json]` |
+| Parsing raw MSBuild `File.cs(l,c): error CODE` lines | `scripts/diagnostics.sh [--group\|--code ID\|--diff a b] [--json]` |
+| Eyeballing analyzer README rule table vs source | `scripts/readme-table-diff.sh --analyzer [--json]` |
+| Ad-hoc `PackageReference` classify + cross-project heat map | `scripts/nuget-heat-map.sh [--json]` |
+| Ad-hoc SDK/`TargetFramework`/Docker `FROM` pin scan | `scripts/runtime-matrix.sh [--json]` |
+| Ad-hoc `#pragma warning disable`/`[SuppressMessage]` grep | `scripts/suppression-scan.sh [--json]` |
+| Ad-hoc `PackageVersion` orphan / ProjectReference edge set-diff | `scripts/deps-graph.sh [--orphans] [--json]` |
+| Hand-classifying a changeset (docs-only/code/mixed) | `scripts/status.sh --classify [--json]` |
+| Ad-hoc slash-command freq / redundant-CI / runner-fallback JSONL scans | `scripts/session-mine.sh slash-freq\|redundant-ci\|runner-fallback [--json]` |
+| Classifying diff files mechanical vs substantive | `scripts/internal/mechanical-diff.sh [--json]` |
+| Sizing/splitting a review diff for delivery | `scripts/internal/cr-diff-deliver.sh <difffile>` |
+| Locating + parsing the latest review plan's findings | `scripts/internal/review-findings.sh [--include-low] [--json]` |
 
 ## Build Budget
 

@@ -56,15 +56,28 @@ fi
 if [[ "$CLASSIFY" == true ]]; then
     ALL_FILES=$({ echo "$STAGED"; echo "$UNSTAGED"; } | grep -v '^$' | sort -u)
     if [[ -z "$ALL_FILES" ]]; then
-        echo "clean"
-    elif echo "$ALL_FILES" | grep -qv '\.md$\|\.txt$'; then
+        CLASS="clean"
+    elif echo "$ALL_FILES" | grep -qvE '\.(md|txt|json|yml|yaml)$'; then
         if echo "$ALL_FILES" | grep -q '\.cs$\|\.csproj$\|\.slnx$'; then
-            echo "code"
+            CLASS="code"
         else
-            echo "mixed"
+            CLASS="mixed"
         fi
     else
-        echo "docs-only"
+        CLASS="docs-only"
+    fi
+
+    if [[ "$JSON" == true ]]; then
+        CS_CHANGED=$(echo "$ALL_FILES" | grep -c '\.cs$' || true)
+        if echo "$ALL_FILES" | grep -qE '(^src/[^/]*Analyzers[^/]*/)|(^scripts/)'; then
+            ANALYZERS_OR_SCRIPTS=true
+        else
+            ANALYZERS_OR_SCRIPTS=false
+        fi
+        printf '{"classification":"%s","cs_changed":%d,"analyzers_or_scripts_changed":%s}\n' \
+            "$CLASS" "$CS_CHANGED" "$ANALYZERS_OR_SCRIPTS"
+    else
+        echo "$CLASS"
     fi
     exit 0
 fi
