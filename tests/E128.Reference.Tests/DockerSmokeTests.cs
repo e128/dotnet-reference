@@ -127,7 +127,7 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
             process.StartInfo = new ProcessStartInfo
             {
                 FileName = "docker",
-                Arguments = "info",
+                ArgumentList = { "info" },
                 WorkingDirectory = RepoRoot,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -157,12 +157,16 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
         process.StartInfo = new ProcessStartInfo
         {
             FileName = "docker",
-            Arguments = arguments,
             WorkingDirectory = RepoRoot,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
         };
+        foreach (var token in arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            process.StartInfo.ArgumentList.Add(token);
+        }
+
         process.Start();
         var stderr = await process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

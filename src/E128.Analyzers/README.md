@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.32.2" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.33.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -109,6 +109,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | ------- | ------------------------------------------------------------------------- | -------- |
 | E128071 | Use a FIPS-approved hash algorithm                                        | Yes      |
 | E128075 | Use `RandomNumberGenerator` instead of `Random` in crypto context         | Yes      |
+| E128091 | Use `ArgumentList` instead of a built `Arguments` string on `ProcessStartInfo` | Yes  |
 
 ### Style
 
@@ -885,6 +886,28 @@ var token = Random.Shared.Next(100000, 999999).ToString();
 
 // After
 var token = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+```
+
+### E128091 &mdash; ProcessStartInfo.Arguments built string
+
+Flags a `ProcessStartInfo` object initializer where `Arguments` is assigned a non-empty string (literal, interpolated, identifier, or otherwise) and `ArgumentList` isn't populated in the same initializer. A hand-built `Arguments` string needs its own shell-style quoting/escaping; `ArgumentList` passes each argument through untouched, avoiding injection risk from unescaped or mis-escaped values.
+
+A fix is offered only when the assigned expression is a plain string literal or a single interpolated string with a whitespace/quote-splittable shape — arbitrary concatenation, method calls, and identifiers still get the diagnostic but no automatic fix.
+
+```csharp
+// Before (warns)
+var startInfo = new ProcessStartInfo
+{
+    FileName = "tool",
+    Arguments = $"-x \"{value}\""
+};
+
+// After
+var startInfo = new ProcessStartInfo
+{
+    FileName = "tool",
+    ArgumentList = { "-x", value }
+};
 ```
 
 ### E128083 &mdash; ImmutableArray.Create with ToArray copies the array
