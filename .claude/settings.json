@@ -60,13 +60,6 @@
       "Edit(.claude/agent-memory/**)",
       "Edit(lode/**)",
       "Edit(plans/**)",
-      "Write(.claude/tmp/**)",
-      "Write(.claude/hooks/**)",
-      "Write(.claude/rules/**)",
-      "Write(.claude/skills/**)",
-      "Write(.claude/agents/**)",
-      "Write(.claude/agent-memory/**)",
-      "Write(plans/weekly-digest.md)",
       "mcp__ide__getDiagnostics",
       "Skill(dev-planning)"
     ]

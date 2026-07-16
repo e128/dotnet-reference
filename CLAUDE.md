@@ -1,6 +1,6 @@
 # Project Instructions for Claude
 
-*Last updated: 2026-06-16T13:48:21Z*
+*Last updated: 2026-07-16T13:48:06Z*
 
 ## Communication
 
@@ -76,12 +76,18 @@ When making design trade-offs, apply this priority order:
 
 - **Commit messages**: Imperative mood, concise summary
 - **Never include an email address in a commit message** — no exceptions. No `noreply@` line,
-  no email in any trailer. `scripts/internal/commit.sh` appends a name-only
-  `Co-Authored-By: Claude` trailer automatically. Enforced by `commit.sh` (scans the message) and
+  no email in any trailer. Enforced by `commit.sh` (scans the message) and
   `scripts/internal/precommit.sh` (scans the staged diff); both reject real emails. `user@example.com`
   placeholders are allowed.
 - **Branch naming**: `feature/`, `fix/`, `refactor/`
 - **Squash all local commits before push** — one clean commit per PR.
+- **Concurrent sessions on the same branch are expected.** Staged changes or added/removed files
+  that another session left behind are normal working state, not stray or accidental — never
+  `git stash`/`reset`/`clean` them away without checking first. Before staging or committing, run
+  `scripts/status.sh` to see the full working tree, not just what this session touched.
+- **Commit and push as one bundle.** When shipping, include all sessions' changes together in a
+  single commit rather than splitting by session. Attribute correctly: use `git log` / `scripts/branch.sh`
+  to confirm the actual author identity in play.
 
 ## General Behavior
 
