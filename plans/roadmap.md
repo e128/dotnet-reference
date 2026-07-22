@@ -3,9 +3,6 @@
 
 ## Active
 
-### Pugworks Integration: E128083–E128085
-NuGet version bump, `.globalconfig` severity entries, and violation fixes for ~4 E128085 instances in `NeoOutputWriter.cs`, `NeoCommand.cs`, `CommitReportSummary.cs`.
-
 ## Backlog
 
 ### `--filter-class` MTP Root Cause Investigation

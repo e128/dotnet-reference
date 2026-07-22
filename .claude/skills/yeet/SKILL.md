@@ -31,7 +31,7 @@ Run all in a single parallel message:
 ```
 A) scripts/status.sh --json               (working-tree status)
 B) scripts/status.sh --classify --json    (classification + cs_changed + analyzers_or_scripts_changed)
-C) scripts/branch.sh --json               (branch info, ahead/behind counts)
+C) scripts/branch.sh --json               (branch info, ahead/unpushed counts)
 ```
 
 **Read directly from `status.sh --classify --json` (B):** it emits
@@ -41,7 +41,9 @@ C) scripts/branch.sh --json               (branch info, ahead/behind counts)
 
 **Then:**
 - If `classification == docs-only` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "Docs/config-only change — skipping build+test"
-- Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B); `ahead` (from C, `scripts/branch.sh`); `has_changes` (from A)
+- Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B); `ahead`, `unpushed`, `upstream` (from C, `scripts/branch.sh`); `has_changes` (from A)
+
+**`unpushed` (from C) is not optional to check.** A branch can have a clean working tree and still carry local commits the remote has never seen (no upstream configured, or commits made after the last push). `unpushed > 0` always means step 2's push (and PR creation) must run, even when there is nothing new to commit.
 
 ### 1. Format + build + test
 
@@ -55,7 +57,9 @@ Runs on the entire solution. This catches violations introduced by prior commits
 
 If format produces changes and the working tree was previously clean, those changes become the commit.
 
-After format, re-check working tree state. If still no changes (format found nothing, and `has_changes` was false) → "Nothing to yeet — working tree is clean." **Stop.**
+After format, re-check working tree state. If still no changes (format found nothing, and `has_changes` was false):
+- If `unpushed == 0` → "Nothing to yeet — working tree is clean, nothing unpushed." **Stop.**
+- If `unpushed > 0` → nothing to commit, but local commits are missing from the remote. Skip build+test/analyzer/README steps (no `.cs` or script changes to verify) and go straight to step 2's **push-only path**.
 
 **B) Build + test (conditional):**
 Skip if `--skip-tests` (explicit or auto-detected docs-only).
@@ -106,6 +110,11 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
 
 ### 2. Stage + commit + push
 
+**Push-only path** — no working-tree changes (`has_changes` false and format made none) but `unpushed > 0`:
+- `ahead <= 1`: nothing to stage or squash — the single existing commit is already push-ready. Skip straight to **Push** and **Create PR** below.
+- `ahead > 1`: the "single commit per push" rule still applies even with no new changes — squash the existing unpushed commits into one before pushing. Run `git reset --soft $(git merge-base main HEAD)`, then re-stage everything (`scripts/internal/stage.sh --include-new`), run the PII scan, craft a commit message from the full squashed diff, and commit — same as the squash sub-step in the normal path below — then continue to **Push** and **Create PR**.
+
+**Normal path** — there are new working-tree changes to commit:
 - **Stage** — `scripts/internal/stage.sh --include-new` (stages all modified tracked + new untracked, excluding secrets)
 - **PII scan** — `scripts/internal/precommit.sh` (checks staged diff for home paths and email addresses; stop if fail)
 - If lode files staged, show brief summary table (path + one-line change description)
@@ -120,7 +129,9 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
     - Never truncate the subject — if the auto-generated one ends in `...`, it is wrong
     - **No email addresses** — never put an email in the message or any trailer; `commit.sh` rejects it
 - **Commit** — `scripts/internal/commit.sh --skip-precommit "message"` (precommit already ran above)
-- **Push** — `git push` (with `-u origin <branch>` if no upstream set)
+
+**Both paths converge here:**
+- **Push** — `git push` (with `-u origin <branch>` if no upstream set). This step is mandatory whenever `unpushed > 0`, whether or not a new commit was just made.
 - **Create PR** — if the current branch is not `main`, create a pull request:
   ```bash
   gh pr create --title "<commit subject line>" --body "<body>"
@@ -137,6 +148,7 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
 - **Stop on failure** — PII fail, build fail, or test fail halts the pipeline
 - **No email addresses** — never in a commit message, trailer, or PR body. The PII scan blocks real emails in the staged diff and `commit.sh` rejects an email in the message; `user@example.com` placeholders are allowed
 - **Single commit per push** — squash local commits when `ahead > 1`
+- **Unpushed local commits always ship** — a clean working tree is not a reason to stop if `unpushed > 0`. Check `scripts/branch.sh --json` unconditionally; never rely on working-tree state alone to decide whether a push is needed.
 - **Do NOT auto-commit or push again** after completing these steps — one-time action
 - **`--dry-run` stops after step 1** — quality check only, no side effects
 - **Format is unconditional** — `scripts/format.sh` runs on every yeet; no flag, classification, or condition skips it.
