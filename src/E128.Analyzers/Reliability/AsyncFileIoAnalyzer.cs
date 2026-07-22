@@ -74,35 +74,11 @@ public sealed class AsyncFileIoAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (IsInsideAsyncContext(invocation))
+        if (AsyncContextSyntaxHelper.IsInsideAsyncContext(invocation))
         {
             return;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), method.Name, asyncSiblingName));
-    }
-
-    private static bool IsInsideAsyncContext(SyntaxNode node)
-    {
-        foreach (var ancestor in node.Ancestors())
-        {
-            bool? isAsync = ancestor switch
-            {
-                MethodDeclarationSyntax m => m.Modifiers.Any(SyntaxKind.AsyncKeyword),
-                LocalFunctionStatementSyntax lf => lf.Modifiers.Any(SyntaxKind.AsyncKeyword),
-                ConstructorDeclarationSyntax => false,
-                ParenthesizedLambdaExpressionSyntax lambda => lambda.AsyncKeyword != default,
-                SimpleLambdaExpressionSyntax lambda => lambda.AsyncKeyword != default,
-                AnonymousMethodExpressionSyntax anon => anon.AsyncKeyword != default,
-                _ => null
-            };
-
-            if (isAsync is { } found)
-            {
-                return found;
-            }
-        }
-
-        return false;
     }
 }

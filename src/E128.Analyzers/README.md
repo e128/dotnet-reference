@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.34.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.36.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -81,6 +81,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128079 | `CompositeDetection` with single generic ID selector lacks specificity                       | No       |
 | E128086 | `ArrayPool` buffer used as `SqliteParameter` value without `Size`                            | Yes      |
 | E128089 | Avoid bare `.Parse()` — use `TryParse` to handle invalid input                               | No       |
+| E128092 | Use async `File.*Async` overload instead of sync method                                      | Yes      |
+| E128093 | Use async `DbConnection`/`DbCommand` `*Async` overload instead of sync method                | Yes      |
 
 ### Performance
 
@@ -1001,6 +1003,44 @@ var m = typeof(Service).GetMethod("Compute", BindingFlags.NonPublic | BindingFla
 
 // After — exercise the public surface
 var result = new Service().Run();
+```
+
+### E128092 &mdash; Sync File I/O with an async sibling
+
+Flags a synchronous `System.IO.File.*` call (`ReadAllText`, `WriteAllBytes`, etc.) that has an `Async` sibling, when the containing method/local function/lambda is not already `async`. CA1849/VSTHRD103 only fire inside an already-async method; this rule also catches the fully-synchronous case, where those analyzers give no signal at all.
+
+```csharp
+// Before (warns)
+void Save(string path, string text)
+{
+    File.WriteAllText(path, text);
+}
+
+// After
+async Task Save(string path, string text)
+{
+    await File.WriteAllTextAsync(path, text);
+}
+```
+
+### E128093 &mdash; Sync DbConnection/DbCommand call with an async sibling
+
+Flags a synchronous `DbConnection`/`DbCommand` call (`Open`, `ExecuteReader`, `ExecuteNonQuery`, `ExecuteScalar`, etc.) that has an `Async` sibling, when the containing method is not already `async`. Resolves the sibling through the base-type chain, so it also fires on provider subclasses that override the sync method but inherit the async one unchanged (e.g. `Microsoft.Data.Sqlite`'s `SqliteConnection`/`SqliteCommand`).
+
+```csharp
+// Before (warns)
+void Insert(SqliteConnection connection, FileInsertData data)
+{
+    using var command = connection.CreateCommand();
+    command.ExecuteNonQuery();
+}
+
+// After
+async Task Insert(SqliteConnection connection, FileInsertData data)
+{
+    using var command = connection.CreateCommand();
+    await command.ExecuteNonQueryAsync();
+}
 ```
 
 ## Configuration

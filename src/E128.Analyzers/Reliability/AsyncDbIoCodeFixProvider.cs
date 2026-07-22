@@ -8,12 +8,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace E128.Analyzers.Reliability;
 
-[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AsyncFileIoCodeFixProvider))]
+[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AsyncDbIoCodeFixProvider))]
 [Shared]
-public sealed class AsyncFileIoCodeFixProvider : CodeFixProvider
+public sealed class AsyncDbIoCodeFixProvider : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
-        [AsyncFileIoAnalyzer.DiagnosticId];
+        [AsyncDbIoAnalyzer.DiagnosticId];
 
     public override FixAllProvider GetFixAllProvider()
     {
@@ -40,7 +40,7 @@ public sealed class AsyncFileIoCodeFixProvider : CodeFixProvider
             CodeAction.Create(
                 "Await the async overload",
                 ct => AsyncSiblingCodeFixHelper.ApplyFixAsync(context.Document, invocation, ct),
-                nameof(AsyncFileIoCodeFixProvider)),
+                nameof(AsyncDbIoCodeFixProvider)),
             diagnostic);
     }
 }
