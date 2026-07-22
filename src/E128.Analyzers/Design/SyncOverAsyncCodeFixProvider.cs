@@ -118,7 +118,7 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
         return false;
     }
 
-    private static SyntaxNode PromoteContainingMethod(
+    internal static SyntaxNode PromoteContainingMethod(
         SyntaxNode root,
         AwaitExpressionSyntax awaitExpression)
     {

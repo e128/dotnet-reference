@@ -22,6 +22,16 @@ CURRENT="$(git -C "$ROOT" branch --show-current 2>/dev/null || echo detached)"
 # Ahead count
 AHEAD=$(git -C "$ROOT" rev-list --count "$BASE..HEAD" 2>/dev/null || echo 0)
 
+# Unpushed count: commits on HEAD not on the upstream tracking branch.
+# No upstream configured means the branch has never been pushed, so every
+# commit ahead of base is unpushed.
+UPSTREAM=$(git -C "$ROOT" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
+if [[ -n "$UPSTREAM" ]]; then
+    UNPUSHED=$(git -C "$ROOT" rev-list --count "$UPSTREAM..HEAD" 2>/dev/null || echo 0)
+else
+    UNPUSHED=$AHEAD
+fi
+
 if [[ "$FILES_ONLY" == true ]]; then
     git -C "$ROOT" diff --name-only "$BASE...HEAD" 2>/dev/null | sort -u
     exit 0
@@ -29,13 +39,23 @@ fi
 
 if [[ "$JSON" == true ]]; then
     CHANGED=$(git -C "$ROOT" diff --name-only "$BASE...HEAD" 2>/dev/null | wc -l | tr -d ' ')
-    printf '{"branch":"%s","base":"%s","ahead":%d,"changed_files":%d}\n' \
-        "$CURRENT" "$BASE" "$AHEAD" "$CHANGED"
+    printf '{"branch":"%s","base":"%s","ahead":%d,"changed_files":%d,"upstream":"%s","unpushed":%d}\n' \
+        "$CURRENT" "$BASE" "$AHEAD" "$CHANGED" "$UPSTREAM" "$UNPUSHED"
 elif [[ "$HUMAN" == true ]]; then
     printf "%s is %d commit(s) ahead of %s\n" "$CURRENT" "$AHEAD" "$BASE"
+    if [[ -n "$UPSTREAM" ]]; then
+        printf "%d commit(s) unpushed to %s\n" "$UNPUSHED" "$UPSTREAM"
+    else
+        printf "no upstream configured — %d commit(s) unpushed\n" "$UNPUSHED"
+    fi
 else
     printf "${BOLD}Branch:${RESET} %s (base: %s)\n" "$CURRENT" "$BASE"
     printf "${BOLD}Ahead:${RESET} %d commit(s)\n" "$AHEAD"
+    if [[ -n "$UPSTREAM" ]]; then
+        printf "${BOLD}Unpushed:${RESET} %d commit(s) (upstream: %s)\n" "$UNPUSHED" "$UPSTREAM"
+    else
+        printf "${BOLD}Unpushed:${RESET} %d commit(s) (no upstream configured)\n" "$UNPUSHED"
+    fi
     if [[ $AHEAD -gt 0 ]]; then
         echo
         printf "${BOLD}Commits:${RESET}\n"
