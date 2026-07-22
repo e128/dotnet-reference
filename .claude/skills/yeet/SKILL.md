@@ -59,7 +59,7 @@ If format produces changes and the working tree was previously clean, those chan
 
 After format, re-check working tree state. If still no changes (format found nothing, and `has_changes` was false):
 - If `unpushed == 0` → "Nothing to yeet — working tree is clean, nothing unpushed." **Stop.**
-- If `unpushed > 0` → nothing to commit, but local commits are missing from the remote. Skip build+test/analyzer/README steps (no `.cs` or script changes to verify) and go straight to step 2's **push-only path**.
+- If `unpushed > 0` → there's nothing new to stage, but the unpushed commits themselves can contain `.cs`/analyzer/script changes the remote has never been checked against — a clean working tree does NOT mean "nothing to verify." Re-derive `cs_changed`/`analyzers_or_scripts_changed` from `scripts/branch.sh --files` (diff against `main`, not the working tree) and run steps B/C/D below against that file list before continuing to step 2's **push-only path**.
 
 **B) Build + test (conditional):**
 Skip if `--skip-tests` (explicit or auto-detected docs-only).
