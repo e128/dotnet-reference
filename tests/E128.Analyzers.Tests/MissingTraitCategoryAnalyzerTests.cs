@@ -103,7 +103,7 @@ public sealed class MissingTraitCategoryAnalyzerTests
                            public sealed class MyTests
                            {
                                [Fact]
-                               [Trait("Category", "Docker")]
+                               [Trait("Category", "Podman")]
                                public void Should_Work() { }
                            }
                            """);

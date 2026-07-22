@@ -1,5 +1,5 @@
 # Claude Code Maintenance
-*Updated: 2026-07-13T17:47:18Z*
+*Updated: 2026-07-22T00:20:07Z*
 
 ## Harness Structure
 
@@ -31,13 +31,13 @@ The Claude Code harness for this repo consists of:
 
 All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for shared functions. Scripts that support `--json` must produce valid JSON output. `scripts/help.sh` auto-discovers all scripts by reading the second line of each `.sh` file.
 
-## Docker
+## Podman
 
-- Noble-based images (`sdk:10.0-noble`, `aspnet:10.0-noble`), FIPS 140-2 compliant (OpenSSL 3.x FIPS provider replaces Alpine), with hardened runtime (openssl CLI purged, apt caches cleaned)
-- `docker-compose.yml` with security hardening (`read_only`, `no-new-privileges`, `cap_drop: ALL`)
-- `scripts/docker.sh` — build, run, test, stop, clean commands
-- Colima as the Docker runtime (no Docker Desktop required)
-- `DockerSmokeTests` detects daemon availability via `docker info` and skips gracefully when daemon is unavailable (no test failures)
+- Noble-based images (`sdk:10.0-noble`, `aspnet:10.0-noble`), runtime installs only `curl` (healthcheck) and cleans apt caches — no FIPS provider (not available via apt on stock Ubuntu Noble; see [podman.md](podman.md))
+- `compose.yaml` with security hardening (`read_only`, `no-new-privileges`, `cap_drop: ALL`)
+- `scripts/podman.sh` — build, run, test, stop, clean commands
+- `podman machine` as the container VM runtime on macOS (rootless, no daemon)
+- `PodmanSmokeTests` detects Podman availability via `podman info` and skips gracefully when unavailable (no test failures)
 
 ## Prerequisites
 
@@ -45,5 +45,5 @@ All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for
 - `fd` — used by scripts for file discovery
 - `jq` — used for JSON parsing in scripts
 - `bash` 5+ — required for associative arrays and modern features
-- `colima` — Docker runtime for macOS (start with `colima start`)
+- `podman` — container runtime; on macOS run `podman machine init && podman machine start` once after install
 - `jb` (JetBrains ReSharper CLI) — used by `scripts/format.sh` for semantic cleanup before `dotnet format`; gracefully skipped if absent; install with `dotnet tool install -g JetBrains.ReSharper.GlobalTools`

@@ -10,5 +10,4 @@
 - **ArchUnitNET** — Architecture testing library for .NET. Used in `tests/Architecture.Tests/` to enforce layer dependencies, naming conventions, and sealed-class policies.
 - **Trusted Publishing** — OIDC-based NuGet publishing. The `publish.yml` workflow authenticates to NuGet via OIDC rather than long-lived API keys.
 - **Renovate** — Dependency management bot. Configured in `renovate.json` to group updates, auto-merge patch/minor, and flag majors for review.
-- **BuildKit** — Docker's modern build subsystem. Currently disabled (`DOCKER_BUILDKIT=0`) in `scripts/docker.sh` for compatibility.
 - **Kestrel** — ASP.NET Core's cross-platform web server.

@@ -1,6 +1,6 @@
 # Deployment & Delivery — E128.Reference
 
-> **One sentence:** Two GitHub Actions workflows drive delivery — `ci.yml` runs format+build+test on every push/PR, and `publish.yml` OIDC-trusted-publishes the analyzer package to nuget.org when its source changes; the web service ships as a multi-stage Alpine container.
+> **One sentence:** Two GitHub Actions workflows drive delivery — `ci.yml` runs format+build+test on every push/PR, and `publish.yml` OIDC-trusted-publishes the analyzer package to nuget.org when its source changes; the web service ships as a multi-stage Noble container built with Podman.
 
 *Updated: 2026-05-29T19:02:39Z*
 
@@ -20,7 +20,7 @@ graph TB
   gate -->|new| pack["dotnet pack E128.Analyzers"]
   pack --> push["OIDC → dotnet nuget push"]
   push --> ngorg["nuget.org"]
-  docker["Dockerfile (multi-stage Alpine)"] --> img["E128.Reference.Web image"]
+  docker["Dockerfile (multi-stage Noble)"] --> img["E128.Reference.Web image"]
 ```
 
 ## IaC Modules
@@ -29,11 +29,11 @@ No cloud IaC (Terraform/Bicep/ARM) is present. "Infrastructure as code" here is:
 
 | Artifact                  | Purpose                                                        |
 | ------------------------- | -------------------------------------------------------------- |
-| `Dockerfile`              | Multi-stage Alpine build of the web service                    |
+| `Dockerfile`              | Multi-stage Noble build of the web service                     |
 | `.github/workflows/ci.yml`| Format + build + test gate                                     |
 | `.github/workflows/publish.yml` | Analyzer pack + OIDC push                                |
 | `renovate.json`           | Automated dependency updates (group, auto-merge patch/minor)   |
-| `scripts/docker.sh`       | Local Docker build/run/test (uses `DOCKER_BUILDKIT=0`)         |
+| `scripts/podman.sh`       | Local Podman build/run/test                                    |
 
 ## CI/CD Pipeline
 

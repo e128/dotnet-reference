@@ -48,11 +48,11 @@ scripts/test.sh
 # Specific test class
 scripts/test.sh GreeterTests
 
-# All tests including Docker and Manual
+# All tests including Podman and Manual
 scripts/test.sh --all
 
 # Custom trait filter
-scripts/test.sh --trait "Category=Docker"
+scripts/test.sh --trait "Category=Podman"
 
 # Terse output is the default (--json is a legacy no-op alias)
 scripts/test.sh --json
@@ -73,7 +73,7 @@ Use `[Trait("Category", "...")]` to organize tests:
 | Category   | Purpose                                      | Runs in CI |
 | ---------- | -------------------------------------------- | ---------- |
 | `CI`       | Fast, deterministic, no external deps        | Yes        |
-| `Docker`   | Requires Docker daemon, builds/tests images  | No         |
+| `Podman`   | Requires Podman, builds/tests images         | No         |
 | `Manual`   | Requires manual setup or external services   | No         |
 
 ## Integration Testing

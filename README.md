@@ -7,7 +7,7 @@
 
 ## Summary
 
-A .NET 10 reference repository demonstrating modern conventions for web, CLI, and Docker applications.
+A .NET 10 reference repository demonstrating modern conventions for web, CLI, and containerized applications.
 Features strict deny-by-default code analysis with third-party Roslyn analyzers, custom E128.Analyzers (NuGet-packable), ArchUnitNET architecture tests, xUnit v3 on the Microsoft Testing Platform, and Central Package Management with transitive pinning.
 Automated dependency updates via Renovate and NuGet trusted publishing via GitHub Actions OIDC.
 Includes a complete Claude Code development harness with bash scripts, contextual rules, skills, and agents.
@@ -25,9 +25,9 @@ scripts/test.sh
 # Full CI pipeline (format + build + test)
 scripts/ci.sh
 
-# Docker
-scripts/docker.sh build
-scripts/docker.sh test
+# Podman
+scripts/podman.sh build
+scripts/podman.sh test
 ```
 
 ## What's Included
@@ -38,11 +38,11 @@ scripts/docker.sh test
 | **E128.Reference.Cli**   | System.CommandLine CLI with `--name` option                         |
 | **E128.Reference.Core**  | Shared library (Greeter service, models, repositories, services)    |
 | **E128.Analyzers**       | Custom Roslyn analyzers (E128001–E128091) with code fixes, NuGet-packable |
-| **E128.Reference.Tests** | xUnit v3 + MTP with CI, Docker, and Manual test categories          |
+| **E128.Reference.Tests** | xUnit v3 + MTP with CI, Podman, and Manual test categories          |
 | **Architecture.Tests**   | ArchUnitNET structural invariant tests (layers, naming, sealed)     |
 | **E128.Analyzers.Tests** | Analyzer and code fix unit tests                                    |
-| **Docker**               | Hardened Alpine multi-stage Dockerfile + docker-compose.yml         |
-| **Bash scripts**         | Build, test, format, CI, Docker, lode management ([catalog](scripts/README.md)) |
+| **Podman**               | Hardened Noble multi-stage Dockerfile + compose.yaml                |
+| **Bash scripts**         | Build, test, format, CI, Podman, lode management ([catalog](scripts/README.md)) |
 | **Claude Code harness**  | CLAUDE.md, rules, hooks, skills, agents (see `.claude/`)            |
 | **CI/CD**                | GitHub Actions CI + NuGet trusted publishing                        |
 | **Renovate**             | Automated dependency updates with grouped PRs and security bypass   |
@@ -59,7 +59,7 @@ scripts/docker.sh test
 | ripgrep (rg) | 14+     | `brew install ripgrep`       | `sudo apt install ripgrep`       | `winget install BurntSushi.ripgrep.MSVC` |
 | fd           | 9+      | `brew install fd`            | `sudo apt install fd-find`       | `winget install sharkdp.fd`      |
 | jq           | 1.7+    | `brew install jq`            | `sudo apt install jq`            | `winget install jqlang.jq`       |
-| Docker       | 24+     | Docker Desktop or `colima`   | `sudo apt install docker.io`     | Docker Desktop                   |
+| Podman       | 4+      | `brew install podman`        | `sudo apt install podman`        | `winget install RedHat.Podman`   |
 
 [dotnet-install]: https://learn.microsoft.com/en-us/dotnet/core/install/linux
 [lode-toolkit]: https://fjzeit.github.io/lode
@@ -77,6 +77,8 @@ scripts/docker.sh test
 > **Note (macOS):** The default `/bin/bash` on macOS is 3.2 (2007). Install bash 5+ via Homebrew and ensure `/opt/homebrew/bin/bash` is in your `$PATH` before `/bin/bash`.
 
 > **Note (Ubuntu):** The `fd` package is named `fd-find`. The binary is `fdfind`. Create an alias: `ln -s $(which fdfind) ~/.local/bin/fd`.
+
+> **Note (macOS/Podman):** Podman needs a Linux VM on macOS (unlike Docker Desktop, which bundles one transparently). After install: `podman machine init && podman machine start`.
 
 ## Project Structure
 
@@ -98,7 +100,7 @@ scripts/docker.sh test
 ├── Directory.Build.targets   # Conditional targets (test project config)
 ├── Directory.Packages.props  # Central package versions
 ├── Dockerfile                # Multi-stage web app image
-├── docker-compose.yml        # Container orchestration
+├── compose.yaml              # Container orchestration
 ├── E128.Reference.slnx       # Solution file
 ├── global.json               # SDK version + MTP test runner config
 ├── lode/                     # Project knowledge documentation
@@ -152,7 +154,7 @@ scripts/test.sh
 # Run specific test class
 scripts/test.sh GreeterTests
 
-# Run all tests including Docker and Manual
+# Run all tests including Podman and Manual
 scripts/test.sh --all
 
 # Verbose output (human-readable)
@@ -161,23 +163,23 @@ scripts/test.sh --verbose
 
 Test categories:
 - `[Trait("Category", "CI")]` — runs in CI pipeline, must be fast and deterministic
-- `[Trait("Category", "Docker")]` — builds and tests the Docker image, requires Docker daemon
+- `[Trait("Category", "Podman")]` — builds and tests the container image, requires Podman
 - `[Trait("Category", "Manual")]` — requires external dependencies or manual setup
 
-## Docker
+## Podman
 
 ```bash
-# Build, run, and test (scripts/docker.sh)
-scripts/docker.sh build
-scripts/docker.sh run
-scripts/docker.sh test
-scripts/docker.sh stop
+# Build, run, and test (scripts/podman.sh)
+scripts/podman.sh build
+scripts/podman.sh run
+scripts/podman.sh test
+scripts/podman.sh stop
 
-# Or use docker-compose directly
-docker compose up -d
+# Or use podman compose directly
+podman compose up -d
 curl http://localhost:8080/health
 # → {"status":"healthy"}
-docker compose down
+podman compose down
 ```
 
 ## CI/CD

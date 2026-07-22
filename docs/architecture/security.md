@@ -2,7 +2,7 @@
 
 > **One sentence:** Security here is build-time and supply-chain first — deny-by-default analysis, analyzer-enforced safe patterns (FIPS hashing, crypto-grade randomness, TOCTOU avoidance), OIDC publishing with no stored secrets, and pinned dependencies — since the reference apps themselves carry no auth surface.
 
-*Updated: 2026-05-29T19:02:39Z*
+*Updated: 2026-07-22T00:20:07Z*
 
 ---
 
@@ -47,7 +47,7 @@ The analyzer suite is itself a security control. Key security/reliability rules:
 
 | Rule    | Protects against                                                      |
 | ------- | --------------------------------------------------------------------- |
-| E128071 | Non-FIPS hash algorithms (MD5, SHA1, DES, RC2, 3DES, HMAC-MD5/SHA1)   |
+| E128071 | Non-FIPS hash algorithms (MD5, SHA1, DES, RC2, 3DES, HMAC-MD5/SHA1), including legacy concrete subclasses like `MD5CryptoServiceProvider` |
 | E128075 | `System.Random` in crypto contexts → use `RandomNumberGenerator`      |
 | E128011 | `[GeneratedRegex]` without timeout → catastrophic backtracking / ReDoS|
 | E128013/E128014 | Overlapping / nested regex quantifiers → exponential backtracking |
@@ -57,6 +57,8 @@ The analyzer suite is itself a security control. Key security/reliability rules:
 | E128041 | `JsonDocument.RootElement` escaping `using` scope → use-after-free    |
 | E128039/E128051 | Catch filters swallowing `OperationCanceledException`          |
 | E128086 | `ArrayPool` buffer as SQLite param without `.Size` → garbage in BLOB  |
+
+**Scope note:** E128071/E128075 are compile-time algorithm-selection checks — they steer code toward FIPS-approved algorithms and cryptographic RNG. They are not a FIPS 140-2 validated cryptographic module: that would require the container OS itself to run against a certified FIPS provider, which the stock Ubuntu Noble image doesn't ship (Ubuntu's FIPS OpenSSL module is gated behind an Ubuntu Pro subscription). See [podman.md](../../lode/infrastructure/podman.md) for detail.
 
 ## Supply-Chain Security
 

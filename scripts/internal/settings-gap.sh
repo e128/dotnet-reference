@@ -31,7 +31,7 @@ Options:
 Safety tiers:
   safe      grep/find/cat/head/tail/ls/wc/git diff/git log ...   Auto-add
   low       scripts/*.sh, fd, rg, jq, bash -n, shellcheck         Propose add
-  review    dotnet test, git add, git commit, curl, gh, docker    Present
+  review    dotnet test, git add, git commit, curl, gh, podman    Present
   manual    rm, rmdir, git reset, git push, git clean, mv         Keep manual
 EOF
             exit 0 ;;
@@ -91,7 +91,7 @@ classify() {
             echo "safe|Auto-add" ;;
         scripts/*|fd|rg|jq|"bash -n"|shellcheck|mkdir|cp)
             echo "low|Propose add" ;;
-        "dotnet test"|"dotnet build"|"git add"|"git commit"|dotnet|curl|gh|docker|chmod|xargs)
+        "dotnet test"|"dotnet build"|"git add"|"git commit"|dotnet|curl|gh|podman|chmod|xargs)
             echo "review|Present" ;;
         rm|rmdir|mv|"git reset"|"git push"|"git clean"|"git checkout"|"git rebase")
             echo "manual|Keep manual" ;;

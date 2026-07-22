@@ -35,7 +35,7 @@
 
 ## dotnet-reference/
 
-- [dep-map.md](dotnet-reference/dep-map.md) — NuGet deps, Docker runtime images, SDK pins + project structure for all 4 production projects
+- [dep-map.md](dotnet-reference/dep-map.md) — NuGet deps, container runtime images, SDK pins + project structure for all 4 production projects
 
 ## infrastructure/
 
@@ -43,7 +43,7 @@
 - [claude-code-upstream.md](infrastructure/claude-code-upstream.md) — Claude Code upstream reference: versions, agent/skill frontmatter fields
 - [code-generation-quality.md](infrastructure/code-generation-quality.md) — Mechanisms that drive better AI code generation, ranked by impact
 - [claude-revision-log.md](infrastructure/claude-revision-log.md) — Revision log: dated entries from `/claude-revision` runs
-- [docker.md](infrastructure/docker.md) — Docker build commands, buildx `-t`/`--load` issue, smoke test patterns
+- [podman.md](infrastructure/podman.md) — Podman build commands, Dockerfile structure, smoke test patterns
 - [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md) — OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging
 - [agent-patterns.md](infrastructure/agent-patterns.md) — Shared agent patterns: plan convention, budget exhaustion, reflection loop
 - [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md) — Simplification-agent heuristic definitions (H1-H6)

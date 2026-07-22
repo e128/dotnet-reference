@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# Docker build, run, and test for E128.Reference.Web.
-# Usage: docker.sh [build|run|test|stop|clean] [--no-cache]
+# Podman build, run, and test for E128.Reference.Web.
+# Usage: podman.sh [build|run|test|stop|clean] [--no-cache]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
-
-export DOCKER_BUILDKIT=0
 
 IMAGE="e128-reference-web"
 CONTAINER="e128-reference-web-dev"
@@ -23,34 +21,34 @@ wait_healthy() {
         sleep 1
     done
     err "Container did not become healthy within 30s"
-    docker logs "$CONTAINER" 2>&1 | tail -10
+    podman logs "$CONTAINER" 2>&1 | tail -10
     return 1
 }
 
 case "$CMD" in
     build)
         info "Building $IMAGE..."
-        docker build $NO_CACHE -t "$IMAGE" .
+        podman build $NO_CACHE -t "$IMAGE" .
         ok "Image built: $IMAGE"
         ;;
 
     run)
-        docker rm -f "$CONTAINER" 2>/dev/null || true
+        podman rm -f "$CONTAINER" 2>/dev/null || true
         info "Starting $CONTAINER on port $PORT..."
-        docker run -d --name "$CONTAINER" -p "$PORT:8080" "$IMAGE"
+        podman run -d --name "$CONTAINER" -p "$PORT:8080" "$IMAGE"
         wait_healthy || exit 1
         ;;
 
     test)
         info "Building image..."
-        docker build -t "$IMAGE" .
+        podman build -t "$IMAGE" .
 
-        docker rm -f "$CONTAINER" 2>/dev/null || true
+        podman rm -f "$CONTAINER" 2>/dev/null || true
         info "Starting container..."
-        docker run -d --name "$CONTAINER" -p "$PORT:8080" "$IMAGE"
+        podman run -d --name "$CONTAINER" -p "$PORT:8080" "$IMAGE"
 
         if ! wait_healthy; then
-            docker rm -f "$CONTAINER" 2>/dev/null
+            podman rm -f "$CONTAINER" 2>/dev/null
             exit 1
         fi
 
@@ -77,7 +75,7 @@ case "$CMD" in
         fi
 
         # Cleanup
-        docker rm -f "$CONTAINER" 2>/dev/null
+        podman rm -f "$CONTAINER" 2>/dev/null
 
         echo ""
         if [[ $FAIL -eq 0 ]]; then
@@ -89,16 +87,16 @@ case "$CMD" in
         ;;
 
     stop)
-        docker rm -f "$CONTAINER" 2>/dev/null && ok "Stopped $CONTAINER" || warn "Not running"
+        podman rm -f "$CONTAINER" 2>/dev/null && ok "Stopped $CONTAINER" || warn "Not running"
         ;;
 
     clean)
-        docker rm -f "$CONTAINER" 2>/dev/null || true
-        docker rmi -f "$IMAGE" 2>/dev/null && ok "Removed image $IMAGE" || warn "Image not found"
+        podman rm -f "$CONTAINER" 2>/dev/null || true
+        podman rmi -f "$IMAGE" 2>/dev/null && ok "Removed image $IMAGE" || warn "Image not found"
         ;;
 
     *)
-        err "Usage: docker.sh [build|run|test|stop|clean] [--no-cache]"
+        err "Usage: podman.sh [build|run|test|stop|clean] [--no-cache]"
         exit 1
         ;;
 esac

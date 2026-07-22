@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.33.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.34.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -818,7 +818,7 @@ var buf = ArrayPool<char>.Shared.Rent(Math.Min(length, maxCapacity));
 
 ### E128071 &mdash; FIPS-approved hash algorithm
 
-Flags use of non-FIPS algorithms (`MD5`, `SHA1`, `DES`, `RC2`, `TripleDES`, `HMACMD5`, `HMACSHA1`) in production code. Detects both factory methods (`.Create()`, `.HashData()`) and constructors (`new HMACMD5(key)`). FIPS 140-2 compliance requires SHA-256 or stronger.
+Flags use of non-FIPS algorithms (`MD5`, `SHA1`, `DES`, `RC2`, `TripleDES`, `HMACMD5`, `HMACSHA1`) in production code. Detects factory methods (`.Create()`, `.HashData()`) and constructors, including legacy concrete subclasses that bypass the base type name (`new MD5CryptoServiceProvider()`, `new SHA1Managed()`, etc.) via base-type-chain matching. FIPS 140-2 compliance requires SHA-256 or stronger.
 
 ```csharp
 // Before (warns)
@@ -845,7 +845,7 @@ var hash = SHA256.HashData(data);
 
 ### E128073 &mdash; Missing [Trait("Category", ...)]
 
-Flags xUnit test methods that are missing a `[Trait("Category", "...")]` attribute. The MTP runner in this repo uses category traits to filter CI, Docker, and Manual test runs; methods without a category are silently excluded from all filtered runs.
+Flags xUnit test methods that are missing a `[Trait("Category", "...")]` attribute. The MTP runner in this repo uses category traits to filter CI, Podman, and Manual test runs; methods without a category are silently excluded from all filtered runs.
 
 ```csharp
 // Before (warns)

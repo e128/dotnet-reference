@@ -36,7 +36,7 @@ CMD=(dotnet test --solution "$SOLUTION" --no-build)
 MTP_ARGS=()
 
 if [[ "$ALL" == true ]]; then
-    # No filter — run everything including Docker and Manual
+    # No filter — run everything including Podman and Manual
     :
 elif [[ ${#CLASSES[@]} -gt 0 ]]; then
     # Filter to specific test class(es) — MTP supports repeated --filter-class

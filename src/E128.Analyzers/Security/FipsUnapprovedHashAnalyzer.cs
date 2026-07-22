@@ -96,14 +96,8 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var typeName = constructor.ContainingType?.Name;
-        if (typeName is null || !UnapprovedTypes.Contains(typeName))
-        {
-            return;
-        }
-
-        var containingNamespace = constructor.ContainingType?.ContainingNamespace?.ToDisplayString();
-        if (!string.Equals(containingNamespace, "System.Security.Cryptography", StringComparison.Ordinal))
+        var constructedTypeName = constructor.ContainingType?.Name;
+        if (constructedTypeName is null || !DerivesFromUnapprovedAlgorithm(constructor.ContainingType))
         {
             return;
         }
@@ -111,6 +105,27 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(
             Rule,
             creation.GetLocation(),
-            $"new {typeName}()"));
+            $"new {constructedTypeName}()"));
+    }
+
+    /// <summary>
+    ///     Walks the base-type chain so legacy concrete subclasses (e.g. <c>MD5CryptoServiceProvider</c>,
+    ///     <c>SHA1Managed</c>) are caught even though their own type name isn't in <see cref="UnapprovedTypes" />.
+    /// </summary>
+    private static bool DerivesFromUnapprovedAlgorithm(ITypeSymbol? type)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            if (UnapprovedTypes.Contains(current.Name)
+                && string.Equals(
+                    current.ContainingNamespace?.ToDisplayString(),
+                    "System.Security.Cryptography",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

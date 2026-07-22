@@ -25,7 +25,7 @@ public sealed class MissingTraitCategoryAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         true,
         "Every [Fact] and [Theory] method should have a [Trait(\"Category\", \"...\")] attribute " +
-        "so the test runner can filter by category (CI, Docker, Manual).");
+        "so the test runner can filter by category (CI, Podman, Manual).");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

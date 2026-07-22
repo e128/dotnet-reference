@@ -4,25 +4,25 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 
 ## Core Workflow
 
-| Script                | Purpose                                                   | Key flags                         |
-| --------------------- | --------------------------------------------------------- | --------------------------------- |
-| `build.sh`            | Build the solution or a specific project                  | `--verbose`, `--project`          |
-| `test.sh`             | Run tests (defaults to CI category)                       | `--all`, `--verbose`, `--trait`   |
-| `format.sh`           | Run jb cleanupcode then dotnet format                     | `--check`, `--changed`, `--no-jb` |
-| `check.sh`            | Composed: format + build + test                           | `--all`, `--no-format`            |
-| `ci.sh`               | Full CI pipeline                                          | `--skip-format`, `--skip-test`    |
-| `docker.sh`           | Docker build/run/test/stop/clean                          | `--no-cache`                      |
-| `verify-and-ship.sh`  | Verify, commit, and push (format → check → commit → push) | —                                 |
+| Script               | Purpose                                                   | Key flags                                                                         |
+| -------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `build.sh`           | Build the solution or a specific project                  | `--verbose`, `--project`, `--warnings`, `--fix`                                   |
+| `test.sh`            | Run tests (defaults to CI category)                       | `--all`, `--verbose`, `--dry-run`, `--trait`                                      |
+| `format.sh`          | Run jb cleanupcode then dotnet format                     | `--check`, `--changed`, `--no-jb`                                                 |
+| `check.sh`           | Composed: format + build + test                           | `--all`, `--no-format`, `--json`                                                  |
+| `ci.sh`              | Full CI pipeline                                          | `--targeted`, `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test` |
+| `podman.sh`          | Podman build/run/test/stop/clean                          | `--no-cache`                                                                      |
+| `verify-and-ship.sh` | Verify, commit, and push (format → check → commit → push) | `--json`, `--squash`, `--no-version-bump`                                         |
 
 ## Git & Status
 
-| Script              | Purpose                                                                 | Key flags                              |
-| ------------------- | ----------------------------------------------------------------------- | -------------------------------------- |
-| `status.sh`         | Git status with structured output                                       | `--json`                               |
-| `diff.sh`           | Diff summary                                                            | `--json`, `--files`, `--staged`        |
-| `branch.sh`         | Branch info vs base                                                     | `--json`, `--human`                    |
-| `assert.sh`         | Fail-fast pre-commit gates                                              | `--build-pass`, `--clean-working-tree` |
-| `git-forensics.nu`  | Git history forensics (churn, contributors, bugs, velocity, firefights) | `--since`, `--top`, `--json`           |
+| Script             | Purpose                                                                 | Key flags                                                                          |
+| ------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `status.sh`        | Git status with structured output                                       | `--json`, `--files`, `--cs-only`, `--classify`, `--history`                        |
+| `diff.sh`          | Diff summary                                                            | `--json`, `--files`, `--staged`, `--full`                                          |
+| `branch.sh`        | Branch info vs base                                                     | `--json`, `--human`, `--base`, `--files`                                           |
+| `assert.sh`        | Fail-fast pre-commit gates                                              | `--build-pass`, `--clean-working-tree`, `--test-pass`, `--plan-complete`, `--json` |
+| `git-forensics.nu` | Git history forensics (churn, contributors, bugs, velocity, firefights) | `--since`, `--top`, `--json`                                                       |
 
 ## Utilities
 
@@ -42,23 +42,23 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 
 ## Lode & Plans
 
-| Script              | Purpose                                                          |
-| ------------------- | ---------------------------------------------------------------- |
-| `lode-ts.sh`        | Update timestamps on lode files                                  |
-| `lode-summary.sh`   | Find and display lode content by section                         |
-| `lode-guard.sh`     | Lode file size guard: check line count before appending          |
-| `task.sh`           | Task management: check/next/progress                             |
-| `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected    |
+| Script              | Purpose                                                                 |
+| ------------------- | ----------------------------------------------------------------------- |
+| `lode-ts.sh`        | Update timestamps on lode files                                         |
+| `lode-summary.sh`   | Find and display lode content by section                                |
+| `lode-guard.sh`     | Lode file size guard: check line count before appending                 |
+| `task.sh`           | Task management: check/next/progress                                    |
+| `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected           |
 | `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default glm-5:cloud) |
 
 ## Code Navigation & Analysis
 
-| Script               | Purpose                                                        | Key flags                                       |
-| -------------------- | -------------------------------------------------------------- | ----------------------------------------------- |
+| Script               | Purpose                                                        | Key flags                                                        |
+| -------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `find.sh`            | Deterministic symbol lookup (class/method/callers/refs/file)   | `--class`, `--method`, `--callers`, `--refs`, `--file`, `--json` |
-| `file-outline.sh`    | File structure outline with line ranges for targeted reading   | `--json`, `--method`, `--section`               |
-| `code-read.sh`       | Extract method/class/section source by name                    | `--method`, `--class`, `--section`, `--line`, `--json` |
-| `deps.sh`            | Type dependency graph (callers, callees, interfaces)           | `--callers`, `--callees`, `--interfaces`, `--json` |
+| `file-outline.sh`    | File structure outline with line ranges for targeted reading   | `--json`, `--method`, `--section`                                |
+| `code-read.sh`       | Extract method/class/section source by name                    | `--method`, `--class`, `--section`, `--line`, `--json`           |
+| `deps.sh`            | Type dependency graph (callers, callees, interfaces)           | `--callers`, `--callees`, `--interfaces`, `--json`               |
 
 ## Coverage & Analysis
 

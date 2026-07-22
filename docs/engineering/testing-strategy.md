@@ -77,7 +77,7 @@ var response = await client.GetAsync("/health");
 | Category | Purpose                                  | Runs in CI |
 | -------- | ---------------------------------------- | ---------- |
 | `CI`     | Fast, deterministic, no external deps    | Yes        |
-| `Docker` | Requires Docker daemon                    | No         |
+| `Podman` | Requires Podman                           | No         |
 | `Manual` | Requires manual/external setup            | No         |
 
 ## Test Coverage — Honest Assessment

@@ -22,7 +22,7 @@ Discover everything with `scripts/help.sh`. Below are the most-used scripts.
 | --------------------- | --------------------------------------------------- | --------------------------------------- |
 | Build                 | `scripts/build.sh [--verbose] [--project NAME]`     | Terse JSON; `--verbose` for full log    |
 | Test (CI trait)       | `scripts/test.sh [ClassName]`                       | Targeted by class; MTP runner           |
-| Test (full suite)     | `scripts/test.sh --all`                             | Includes Docker/Manual                  |
+| Test (full suite)     | `scripts/test.sh --all`                             | Includes Podman/Manual                  |
 | Format (apply)        | `scripts/format.sh --changed`                       | `jb cleanupcode` + `dotnet format`      |
 | Format (check)        | `scripts/format.sh --check`                         | Verify-only (skips `jb`)                |
 | Composed verify       | `scripts/check.sh [--all] [--no-format]`            | format → build → tests                  |
@@ -41,7 +41,7 @@ Discover everything with `scripts/help.sh`. Below are the most-used scripts.
 | Extract source        | `scripts/code-read.sh --method\|--class NAME PATH`  | One symbol's source                     |
 | Type deps             | `scripts/deps.sh TYPE [--callers] [--json]`         | Dependency graph                        |
 | Dependency check      | `scripts/dep-check.sh [--outdated] [--vulnerable] [--json]` | NuGet health                    |
-| Docker                | `scripts/docker.sh`                                 | Build/run/test web container            |
+| Podman                | `scripts/podman.sh`                                 | Build/run/test web container            |
 | Violation scan        | `scripts/violation-scan.sh`                         | Anti-pattern scan                       |
 | Ship                  | `/yeet` (skill)                                     | Preflight + commit + push               |
 
@@ -100,5 +100,5 @@ scripts/dep-check.sh --outdated --vulnerable --json
 
 **7. Build and test the container**
 ```bash
-scripts/docker.sh
+scripts/podman.sh
 ```

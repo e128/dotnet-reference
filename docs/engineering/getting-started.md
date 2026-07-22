@@ -15,7 +15,7 @@
 | `fd`                          | Required — fast file finder                               |
 | `jq`                          | Required — parses script JSON output                      |
 | `bash`                        | 5+ (associative arrays, modern features)                  |
-| Docker                        | Optional — only for the web-service container path        |
+| Podman                        | Optional — only for the web-service container path        |
 | `jb` (JetBrains CLI tools)    | Optional — `dotnet tool install -g JetBrains.ReSharper.GlobalTools`; format gracefully skips if absent |
 | `shellcheck`                  | Optional — lints `scripts/*.sh`                           |
 
@@ -39,7 +39,7 @@ scripts/build.sh                 # build the whole solution (add --verbose for f
 scripts/build.sh --project Web   # build a single project
 scripts/test.sh                  # CI-trait tests (fast)
 scripts/test.sh GreeterTests     # one test class (targeted)
-scripts/test.sh --all            # full suite incl. Docker/Manual
+scripts/test.sh --all            # full suite incl. Podman/Manual
 scripts/check.sh                 # composed: format → build → targeted tests
 scripts/ci.sh                    # full CI: format + build + test
 ```
@@ -49,7 +49,7 @@ Run the web service and CLI:
 ```bash
 dotnet run --project src/E128.Reference.Web   # GET / , POST/GET /greetings , /health
 dotnet run --project src/E128.Reference.Cli   # System.CommandLine root
-scripts/docker.sh                              # build/run/test the web container
+scripts/podman.sh                              # build/run/test the web container
 ```
 
 ## Architecture Quick Reference

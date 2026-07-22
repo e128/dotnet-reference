@@ -11,7 +11,7 @@ using Xunit;
 
 namespace E128.Reference.Tests;
 
-public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
+public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
 {
     private const string ImageName = "e128-reference-web-test";
     private const string ContainerName = "e128-reference-web-smoke";
@@ -20,28 +20,28 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
     private static readonly string RepoRoot = FindRepoRoot();
 
     private readonly HttpClient _client = new() { BaseAddress = new Uri($"http://localhost:{HostPort}") };
-    private bool _dockerAvailable;
+    private bool _podmanAvailable;
 
     public async ValueTask InitializeAsync()
     {
-        _dockerAvailable = await IsDockerAvailableAsync();
-        if (!_dockerAvailable)
+        _podmanAvailable = await IsPodmanAvailableAsync();
+        if (!_podmanAvailable)
         {
             return;
         }
 
-        await RunDockerAsync($"build --tag {ImageName} .");
-        await RunDockerAsync($"run -d --name {ContainerName} -p {HostPort}:8080 {ImageName}");
+        await RunPodmanAsync($"build --tag {ImageName} .");
+        await RunPodmanAsync($"run -d --name {ContainerName} -p {HostPort}:8080 {ImageName}");
         await WaitForHealthy();
     }
 
     public async ValueTask DisposeAsync()
     {
         _client.Dispose();
-        if (_dockerAvailable)
+        if (_podmanAvailable)
         {
-            await RunDockerAsync($"rm -f {ContainerName}", false);
-            await RunDockerAsync($"rmi -f {ImageName}", false);
+            await RunPodmanAsync($"rm -f {ContainerName}", false);
+            await RunPodmanAsync($"rmi -f {ImageName}", false);
         }
     }
 
@@ -51,12 +51,12 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
-    [Trait("Category", "Docker")]
+    [Trait("Category", "Podman")]
     public async Task Root_ReturnsGreeting()
     {
-        if (!_dockerAvailable)
+        if (!_podmanAvailable)
         {
-            Assert.Skip("Docker daemon not available");
+            Assert.Skip("Podman not available");
         }
 
         var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
@@ -68,12 +68,12 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
-    [Trait("Category", "Docker")]
+    [Trait("Category", "Podman")]
     public async Task Health_ReturnsHealthy()
     {
-        if (!_dockerAvailable)
+        if (!_podmanAvailable)
         {
-            Assert.Skip("Docker daemon not available");
+            Assert.Skip("Podman not available");
         }
 
         var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
@@ -119,14 +119,14 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
         throw new TimeoutException("Container did not become healthy within 30 seconds");
     }
 
-    private static async Task<bool> IsDockerAvailableAsync()
+    private static async Task<bool> IsPodmanAvailableAsync()
     {
         try
         {
             using var process = new Process();
             process.StartInfo = new ProcessStartInfo
             {
-                FileName = "docker",
+                FileName = "podman",
                 ArgumentList = { "info" },
                 WorkingDirectory = RepoRoot,
                 RedirectStandardOutput = true,
@@ -148,15 +148,15 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
     }
 
     /// <summary>
-    ///     Runs a docker command with the repo root as the working directory.
+    ///     Runs a podman command with the repo root as the working directory.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    private static async Task RunDockerAsync(string arguments, bool throwOnError = true)
+    private static async Task RunPodmanAsync(string arguments, bool throwOnError = true)
     {
         using var process = new Process();
         process.StartInfo = new ProcessStartInfo
         {
-            FileName = "docker",
+            FileName = "podman",
             WorkingDirectory = RepoRoot,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -174,7 +174,7 @@ public sealed class DockerSmokeTests : IAsyncLifetime, IDisposable
         if (throwOnError && process.ExitCode != 0)
         {
             throw new InvalidOperationException(
-                $"'docker {arguments}' failed (exit {process.ExitCode.ToString(CultureInfo.InvariantCulture)}): {stderr}");
+                $"'podman {arguments}' failed (exit {process.ExitCode.ToString(CultureInfo.InvariantCulture)}): {stderr}");
         }
     }
 

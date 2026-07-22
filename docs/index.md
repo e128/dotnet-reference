@@ -44,7 +44,7 @@ E128.Reference is a single-repository, multi-project .NET 10 solution. Three sma
 - **Deny-by-default analysis** — `.globalconfig` sets every diagnostic to `error`; relaxations are explicit and justified.
 - **Modern test platform** — xUnit v3 with MTP (no VSTest), category-trait filtering, ArchUnitNET IL-level architecture tests, Roslyn analyzer/code-fix test harnesses.
 - **Central Package Management** — all versions pinned in `Directory.Packages.props`, transitive pinning on, NuGet audit at `low`.
-- **Hardened containerization** — multi-stage Alpine Dockerfile for the web service.
+- **Hardened containerization** — multi-stage Noble Dockerfile, built and run via Podman.
 - **Automated delivery** — CI on `ubuntu-24.04`; OIDC trusted publishing to nuget.org with a version-exists gate.
 - **AI development harness** — deterministic bash scripts, Claude Code rules, skills, and agents.
 
@@ -69,7 +69,7 @@ graph TB
   subgraph delivery["Delivery"]
     ci["GitHub Actions CI<br/>format + build + test"]
     pub["publish.yml<br/>OIDC → nuget.org"]
-    docker["Dockerfile<br/>Alpine multi-stage"]
+    docker["Dockerfile<br/>Noble multi-stage"]
   end
 
   web --> core
@@ -106,7 +106,7 @@ docs/
 │   ├── system.md                  # Component topology and layers
 │   ├── data-flow.md               # Request + greeting data flow
 │   ├── storage.md                 # State model (in-memory) and analyzer metadata
-│   ├── deployment.md              # CI/CD, Docker, OIDC publishing
+│   ├── deployment.md              # CI/CD, Podman, OIDC publishing
 │   ├── integration-patterns.md    # The E128.Analyzers rule catalog
 │   └── security.md                # Auth, secrets, analyzer-enforced safety
 ├── engineering/

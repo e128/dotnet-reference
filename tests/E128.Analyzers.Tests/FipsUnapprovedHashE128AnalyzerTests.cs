@@ -152,6 +152,114 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NewMD5CryptoServiceProvider_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               #pragma warning disable SYSLIB0021
+                               void M()
+                               {
+                                   using var h = {|E128071:new MD5CryptoServiceProvider()|};
+                               }
+                               #pragma warning restore SYSLIB0021
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewSHA1CryptoServiceProvider_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               #pragma warning disable SYSLIB0021
+                               void M()
+                               {
+                                   using var h = {|E128071:new SHA1CryptoServiceProvider()|};
+                               }
+                               #pragma warning restore SYSLIB0021
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewSHA1Managed_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               #pragma warning disable SYSLIB0021
+                               void M()
+                               {
+                                   using var h = {|E128071:new SHA1Managed()|};
+                               }
+                               #pragma warning restore SYSLIB0021
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewDESCryptoServiceProvider_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               #pragma warning disable SYSLIB0021
+                               void M()
+                               {
+                                   using var h = {|E128071:new DESCryptoServiceProvider()|};
+                               }
+                               #pragma warning restore SYSLIB0021
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewTripleDESCryptoServiceProvider_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               #pragma warning disable SYSLIB0021
+                               void M()
+                               {
+                                   using var h = {|E128071:new TripleDESCryptoServiceProvider()|};
+                               }
+                               #pragma warning restore SYSLIB0021
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewRC2CryptoServiceProvider_Reports_E128071()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               #pragma warning disable SYSLIB0021
+                               void M()
+                               {
+                                   using var h = {|E128071:new RC2CryptoServiceProvider()|};
+                               }
+                               #pragma warning restore SYSLIB0021
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task SHA256Create_NoDiagnostic()
     {
         return VerifyAsync("""
