@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.36.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.36.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -83,6 +83,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128089 | Avoid bare `.Parse()` — use `TryParse` to handle invalid input                               | No       |
 | E128092 | Use async `File.*Async` overload instead of sync method                                      | Yes      |
 | E128093 | Use async `DbConnection`/`DbCommand` `*Async` overload instead of sync method                | Yes      |
+| E128096 | Detect synchronous call to async local function via `.Result` or `.Wait()`                   | Yes      |
 
 ### Performance
 

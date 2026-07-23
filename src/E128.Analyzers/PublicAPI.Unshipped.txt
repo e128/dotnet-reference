@@ -25,3 +25,7 @@ E128.Analyzers.Reliability.BareParseAnalyzer
 E128.Analyzers.Reliability.BareParseAnalyzer.BareParseAnalyzer() -> void
 E128.Analyzers.Maintainability.TestMethodReflectionAnalyzer
 E128.Analyzers.Maintainability.TestMethodReflectionAnalyzer.TestMethodReflectionAnalyzer() -> void
+E128.Analyzers.Reliability.SyncLocalFunctionCallAnalyzer
+E128.Analyzers.Reliability.SyncLocalFunctionCallAnalyzer.SyncLocalFunctionCallAnalyzer() -> void
+E128.Analyzers.Reliability.SyncLocalFunctionCallCodeFixProvider
+E128.Analyzers.Reliability.SyncLocalFunctionCallCodeFixProvider.SyncLocalFunctionCallCodeFixProvider() -> void
