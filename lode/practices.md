@@ -23,6 +23,10 @@
 
 ## AI Assistant Preferences
 
+Canonical home for these preferences. CLAUDE.md keeps only the
+high-frequency reminders (TDD, concurrent sessions, no time estimates).
+See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
+
 - Terse responses — code over explanation unless asked
 - ISO 8601 UTC timestamps everywhere: `2026-04-09T12:00:00Z`
 - No time estimates
