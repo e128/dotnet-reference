@@ -1,3 +1,4 @@
+using System;
 using E128.Analyzers.Reliability;
 using Xunit;
 
@@ -14,6 +15,6 @@ public sealed class E128056FileInfoToctouCodeFixTests
     public void FileInfoToctou_CodeFixProvider_IsRegistered()
     {
         var provider = new FileInfoToctouCodeFixProvider();
-        Assert.Contains("E128056", provider.FixableDiagnosticIds);
+        Assert.Contains("E128056", provider.FixableDiagnosticIds, StringComparer.Ordinal);
     }
 }

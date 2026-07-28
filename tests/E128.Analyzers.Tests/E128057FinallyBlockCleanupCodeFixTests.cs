@@ -1,3 +1,4 @@
+using System;
 using E128.Analyzers.Reliability;
 using Xunit;
 
@@ -14,6 +15,6 @@ public sealed class E128057FinallyBlockCleanupCodeFixTests
     public void FinallyCleanup_CodeFixProvider_IsRegistered()
     {
         var provider = new FinallyBlockCleanupCodeFixProvider();
-        Assert.Contains("E128057", provider.FixableDiagnosticIds);
+        Assert.Contains("E128057", provider.FixableDiagnosticIds, StringComparer.Ordinal);
     }
 }

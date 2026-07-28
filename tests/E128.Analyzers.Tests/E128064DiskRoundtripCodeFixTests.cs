@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
 using Microsoft.CodeAnalysis.CSharp.Testing;
@@ -24,7 +25,7 @@ public sealed class E128064DiskRoundtripCodeFixTests
     public void DiskRoundtrip_CodeFixProvider_IsRegistered()
     {
         var provider = new DiskRoundtripCodeFixProvider();
-        Assert.Contains("E128064", provider.FixableDiagnosticIds);
+        Assert.Contains("E128064", provider.FixableDiagnosticIds, StringComparer.Ordinal);
     }
 
     [Fact]

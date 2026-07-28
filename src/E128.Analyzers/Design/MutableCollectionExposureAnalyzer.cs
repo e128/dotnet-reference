@@ -88,7 +88,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
 
     private static ImmutableDictionary<INamedTypeSymbol, string> BuildTypeMap(Compilation compilation)
     {
-        var builder = ImmutableDictionary.CreateBuilder<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
+        var builder = ImmutableDictionary.CreateBuilder<INamedTypeSymbol, string>(SymbolEqualityComparer.Default, StringComparer.Ordinal);
 
         foreach (var (metadataName, displayTemplate) in MutableTypeEntries)
         {

@@ -1,3 +1,4 @@
+using System;
 using E128.Analyzers.Design;
 using Xunit;
 
@@ -14,6 +15,6 @@ public sealed class E128059UnusedInterfaceParamCodeFixTests
     public void UnusedInterfaceParam_CodeFixProvider_IsRegistered()
     {
         var provider = new UnusedInterfaceParamCodeFixProvider();
-        Assert.Contains("E128059", provider.FixableDiagnosticIds);
+        Assert.Contains("E128059", provider.FixableDiagnosticIds, StringComparer.Ordinal);
     }
 }

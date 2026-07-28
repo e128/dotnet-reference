@@ -47,13 +47,12 @@ C) scripts/branch.sh --json               (branch info, ahead/unpushed counts)
 
 ### 1. Format + build + test
 
-**A) Format (unconditional — never skip):**
+**A) Format (conditional):**
+Only if `cs_changed > 0`:
 ```bash
-scripts/format.sh
+scripts/format.sh --changed
 ```
-Run this on every yeet, regardless of classification (`docs-only`, `code`, `mixed`), flags (`--skip-tests`, `--dry-run`), or working tree state. Reaching step 1 without running `scripts/format.sh` is a bug.
-
-Runs on the entire solution. This catches violations introduced by prior commits that local format missed (e.g., analyzer-backed style rules that require restore).
+Skip with "Format skipped — no .cs files changed" if zero. Scoped to changed files only — a full-solution format pass (unscoped `scripts/format.sh`) picks up jb-cleanup findings in unrelated files never touched by this change and turns an unrelated pre-existing warning into a blocked ship. Full-solution format is a deliberate, separate action, not part of every yeet.
 
 If format produces changes and the working tree was previously clean, those changes become the commit.
 
@@ -151,11 +150,12 @@ Skip with "README check skipped — no analyzer or script changes" if neither pa
 - **Unpushed local commits always ship** — a clean working tree is not a reason to stop if `unpushed > 0`. Check `scripts/branch.sh --json` unconditionally; never rely on working-tree state alone to decide whether a push is needed.
 - **Do NOT auto-commit or push again** after completing these steps — one-time action
 - **`--dry-run` stops after step 1** — quality check only, no side effects
-- **Format is unconditional** — `scripts/format.sh` runs on every yeet; no flag, classification, or condition skips it.
-- **Re-read gate** — after format runs (step 1A), all `.cs` file contents are stale. Do NOT Edit any `.cs` file after step 1 without re-reading first.
+- **Format is scoped to changed files** — `scripts/format.sh --changed` runs only when `.cs` files changed; skipped on docs-only/config-only changes.
+- **Re-read gate** — if format ran (step 1A), all `.cs` file contents are stale. Do NOT Edit any `.cs` file after step 1 without re-reading first.
 
 ## Troubleshooting
 
 - **PII scan finds home directory paths** — replace with relative paths or env-var substitution
 - **Format changes files unexpectedly** — expected after editorconfig updates; review diff, re-run build
 - **Build passes but tests fail** — do not commit; fix tests first
+- **Full-solution format/jb-cleanup needed** — run `scripts/format.sh` (unscoped) manually as a separate action; not part of yeet

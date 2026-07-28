@@ -12,7 +12,7 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `check.sh`           | Composed: format + build + test                           | `--all`, `--no-format`, `--json`                                                  |
 | `ci.sh`              | Full CI pipeline                                          | `--targeted`, `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test` |
 | `podman.sh`          | Podman build/run/test/stop/clean                          | `--no-cache`                                                                      |
-| `verify-and-ship.sh` | Verify, commit, and push (format → check → commit → push) | `--json`, `--squash`, `--no-version-bump`                                         |
+| `verify-and-ship.sh` | Verify, commit, and push (format → version-bump → stage → precommit → commit → push) | `--message`/`-m` (required), `--json`, `--squash`, `--no-version-bump` |
 
 ## Git & Status
 
