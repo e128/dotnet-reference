@@ -2,16 +2,17 @@
 
 ## Prompt Suppression
 
-When running inside a skill or agent, NEVER prompt the user to approve: Read/Glob/Grep tool calls, writes to `.claude/tmp/`, or shell commands that only read state (grep, find, cat, head, ls, wc, git diff, git log, scripts/*.sh). These are always safe.
+Inside a skill or an agent, never prompt the user to approve any of these:
 
-## Re-read After Format (Mandatory in Agent Context)
+- Read, Glob, or Grep tool calls
+- Writes to `.claude/tmp/`
+- Shell commands that only read state: `rg`, `fd`, `cat`, `head`, `ls`, `wc`,
+  `git diff`, `git log`, and any `scripts/*.sh` call
 
-The re-read triggers are defined in [read-before-edit.md](read-before-edit.md). In agent context this is non-negotiable: after any `format.sh --changed` invocation, agents MUST re-read every file they intend to edit before editing it.
+These calls are always safe.
 
-**Correct pattern:**
-```
-Read(file.cs)
-Bash(scripts/format.sh --changed)
-Read(file.cs)        # re-read — mandatory after format
-Edit(file.cs, ...)   # succeeds
-```
+## Re-read After Format
+
+[read-before-edit.md](read-before-edit.md) defines the re-read triggers. In
+agent context the triggers are non-negotiable. After any `format.sh --changed`
+call, re-read every file you intend to edit, then edit it.

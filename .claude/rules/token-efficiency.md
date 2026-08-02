@@ -1,30 +1,12 @@
 # Token Efficiency
 
-- Avoid redundant re-reads of files you just wrote or edited — you know the contents. The re-read triggers in [read-before-edit.md](read-before-edit.md) (after `format.sh`, a sub-agent write, or context compaction) override this and are mandatory.
-- Never re-run commands to "verify" unless the outcome was uncertain.
-- Don't echo back large blocks of code or file contents unless asked.
-- Batch related edits into single operations.
-- If a task needs 1 tool call, don't use 3.
-- **Use `scripts/build.sh` instead of raw `dotnet build`.** Output is terse JSON by default; use `--verbose` for full MSBuild log.
-- **Use `scripts/test.sh` instead of raw `dotnet test`.** Output is terse JSON by default; use `--verbose` for full output.
-- **Use `scripts/status.sh --json` instead of raw `git status`.**
-- **Use `scripts/diff.sh --json` instead of multiple `git diff` / `git log` calls.** Use `--staged` for staged-only view instead of raw `git diff --cached`.
-- **Use `scripts/check.sh` instead of running format + build + test separately.**
-- **Use `scripts/ci.sh` for full CI runs.** Combines format + build + test.
-- **Use `scripts/context.sh` at session start.** Combines status + diff + plans.
-- **Use `scripts/task.sh` instead of Read → Edit → Read on tasks.md files.**
-- **Use `scripts/ts.sh` instead of raw `date -u`.**
-- **Use `scripts/branch.sh` instead of `git rev-list --count`.**
-- **Use `scripts/help.sh` to discover available scripts.**
-- **Use `/yeet` (via Skill tool) instead of raw `git push`.** `/yeet` runs preflight + commit + push.
-- **Use `scripts/analyzer-context.sh --json` instead of reading analyzer metadata files individually.** Replaces 6+ reads (csproj, Unshipped, Shipped, PublicAPI, README, rg DiagnosticId) with one call.
-- **Use `scripts/lode-guard.sh <file>` instead of manual `wc -l` before lode writes.**
-- **Use `scripts/analyzer-stats.sh --json` instead of ad-hoc `rg E128 | wc -l` chains.** Counts diagnostic IDs, analyzer classes, fix providers, PublicAPI entries, and source metrics.
-- **Use `scripts/codebase-stats.sh --json` instead of ad-hoc `fd -e cs | wc -l` chains.** Counts files and LOC by project, lists largest files.
-- **Use `scripts/session-mine.sh <subcommand> --json` instead of ad-hoc `jq` pipelines over JSONL transcripts.** Subcommands: `tool-freq`, `repeated-commands`, `most-read`, `agent-spawns`, `all`.
-- **Use `scripts/catalog-stats.sh --json` instead of ad-hoc `fd`/`ls` over `.claude/agents/` and `.claude/skills/`.** Returns frontmatter fields, description lengths, keyword membership, and line counts.
-- **Use `scripts/internal/analyzer-release-check.sh --json` instead of manual DiagnosticId scanning and release file comparison.**
-- **Use `scripts/internal/review-agents.sh --json` instead of manually reading `.claude/agents/` and filtering by keywords.**
-- **Use `scripts/internal/settings-gap.sh --json` instead of manually scanning the catalog for commands and hand-classifying them against the settings.json allow-list.**
-- **Use `scripts/dep-check.sh --json` instead of raw `dotnet list ... --outdated/--vulnerable`.**
-- Do not summarize what you just did unless the result is ambiguous.
+- Route every repeated command through a script. See
+  [deterministic-scripts.md](deterministic-scripts.md).
+- Never re-read a file you just wrote or edited. You know the contents. The
+  re-read triggers in [read-before-edit.md](read-before-edit.md) override this
+  rule and are mandatory.
+- Never re-run a command to verify it, unless the outcome was uncertain.
+- Never echo a large block of code or file content back, unless the user asks.
+- Batch related edits into one operation.
+- Use one tool call when one is enough.
+- Never summarize what you just did, unless the result is ambiguous.

@@ -1,26 +1,29 @@
 # .NET Testing
 
-Defect-prevention rules for test code. Kept negative-form because each
+Defect-prevention rules for test code. Each rule is negative-form because it
 blocks a real bug class.
 
 ## Never Use Reflection in Tests by Default
 
-Use `internal` + `[InternalsVisibleTo]` to expose test-only surface.
-Reflection-based test access is fragile, breaks under renaming, and
+Expose test-only surface with `internal` plus `[InternalsVisibleTo]`.
+Reflection-based test access is fragile. It breaks under renaming and it
 bypasses the type system's access checks.
 
-When reflection is genuinely required (e.g., testing a sealed method
-that cannot be made `internal`), document why in a comment.
+When reflection is genuinely required, explain why in a comment. One example
+is a sealed method that cannot become `internal`.
 
-## Before Modifying `TargetFramework`
+## Never Run Raw `dotnet test`
 
-Run `dotnet --list-sdks` and confirm the target SDK is installed locally
-before changing `<TargetFramework>` in a `.csproj`. CI runs on
-`ubuntu-24.04` with a pinned SDK; a target not installed locally will
-silently fail at build time in unexpected ways.
+The stack is xUnit v3 on MTP. Raw `dotnet test --filter` does not work. Run
+`scripts/test.sh ClassName` or `scripts/test.sh --all`.
 
-## Cross-Reference
+## Before You Change `<TargetFramework>`
 
-- [quality-gates.md](quality-gates.md) — format gate, analyzer suppressions
-- [deterministic-scripts.md](deterministic-scripts.md) — `scripts/test.sh` for
-  running tests (xUnit v3 MTP; raw `dotnet test --filter` does not work)
+Run `dotnet --list-sdks` and confirm the target SDK is installed locally. CI
+runs on `ubuntu-24.04` with a pinned SDK. A target that is missing locally
+fails at build time in unexpected ways.
+
+## See Also
+
+- [quality-gates.md](quality-gates.md)
+- [deterministic-scripts.md](deterministic-scripts.md)

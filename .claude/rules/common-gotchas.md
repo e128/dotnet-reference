@@ -1,35 +1,30 @@
 # Common Gotchas
 
-Small repository-specific gotchas that previously lived in standalone files.
-Each is a real defect class, not a stylistic preference.
+Small repository-specific gotchas. Each one is a real defect class, not a
+style preference.
 
 ## Markdown Tables
 
-Markdown tables must use aligned columns. Pad every cell with trailing
-spaces so all columns are the same width. Separator rows use dashes that
-match their column width exactly.
+Align every markdown table column. Pad each cell with trailing spaces so all
+columns share one width. Match each separator row's dashes to its column width.
 
-## Glob Before Read on Uncertain Paths
+## Glob Before Read on an Uncertain Path
 
-If a path might be a directory, use Glob or `ls` to verify it's a file
-before calling Read. The Read tool errors with `EISDIR` on directories.
+When a path might be a directory, verify it is a file first. Use Glob or `ls`.
+The Read tool fails with `EISDIR` on a directory.
 
-Also apply to any dynamically-constructed path. Verify it exists before
-reading.
+Apply the same check to any dynamically-constructed path.
 
 ## No Inline Python
 
-Never invoke `python3` directly in Bash.
+Never invoke `python3` from Bash.
 
-- For URL fetching: use the `WebFetch` tool
-- For JSON parsing: use `jq` or read the output directly
-- For local data processing: use bash scripts or dedicated `scripts/*.sh`
+- To fetch a URL, use the `WebFetch` tool.
+- To parse JSON, use `jq` or read the output directly.
+- To process local data, use a bash script or a `scripts/*.sh` entry.
 
 ## Terminal Output
 
-Ensure Unicode 15.0 and color font rendering support in all terminal output.
-When writing code that emits text to the console:
-
-- Use UTF-8 encoding (the .NET default). Never downgrade to ASCII.
-- Emoji and multi-byte characters are valid in CLI output.
-- Do not assume the terminal lacks color emoji support.
+Emit UTF-8 with Unicode 15.0 and color font support. The .NET default is
+UTF-8. Never downgrade to ASCII. Emoji and multi-byte characters are valid in
+CLI output. Do not assume the terminal lacks color emoji support.

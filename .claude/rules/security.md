@@ -1,30 +1,23 @@
 # Security
 
-Defect-prevention rules for security-relevant defaults. Kept
-negative-form because they block real bug classes.
+Defect-prevention rules for security-relevant defaults. Each rule is
+negative-form because it blocks a real bug class.
 
-## Never Hardcode Security-Relevant Defaults
+## Never Hardcode a Security-Relevant Default
 
-Use options classes with safe defaults injected via DI. Examples that
-must not hardcode:
+Inject the value through an options class with a safe default. Never hardcode
+any of these:
 
-- Cryptographic keys, secrets, connection strings
-- Allowed origins, CORS allowlists
-- Authentication/authorization policy values
+- Cryptographic keys, secrets, or connection strings
+- Allowed origins and CORS allowlists
+- Authentication or authorization policy values
 - File paths outside the application root
 
-If a value must be configurable, expose it through a strongly-typed
-options class bound to configuration.
-
-## Cross-Reference: .NET Anti-Patterns with Security Impact
-
-See [dotnet-anti-patterns.md](dotnet-anti-patterns.md):
-
-- `new HttpClient()` — socket exhaustion, DNS staleness, no handler pipeline
-- Hardcoded URLs or secrets in source
-- `async void` outside event handlers — unobservable exceptions
+Expose every configurable value through a strongly-typed options class bound
+to configuration.
 
 ## See Also
 
+- [dotnet-anti-patterns.md](dotnet-anti-patterns.md) — .NET defects with
+  security impact
 - [quality-gates.md](quality-gates.md) — analyzer suppressions, null-forgiving
-- [dotnet-anti-patterns.md](dotnet-anti-patterns.md) — broader .NET defect list

@@ -1,21 +1,23 @@
 # Shell Script Validation
 
-After writing or editing any `.sh` file, validate syntax before considering the task complete:
+Validate syntax after you write or edit any `.sh` file. Do this before you call
+the task complete:
 
 ```bash
 bash -n <file.sh>
 ```
 
-If `shellcheck` is installed, also run:
+When `shellcheck` is installed, also run:
 
 ```bash
 shellcheck <file.sh>
 ```
 
-This catches parse errors immediately instead of discovering them on first run.
+This catches a parse error immediately, not on the first run.
 
-**When creating a new `scripts/*.sh` file**, also verify it appears in `help.sh` output:
+**After you create a new `scripts/*.sh` file**, confirm it appears in the help
+output:
 
 ```bash
-scripts/help.sh | grep <script-name>
+scripts/help.sh | rg <script-name>
 ```

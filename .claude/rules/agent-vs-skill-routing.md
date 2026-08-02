@@ -2,29 +2,37 @@
 
 ## The Core Distinction
 
-- **Skills** (names starting with `/`) → invoke via the `Skill` tool
-- **Agents** (names ending in `-agent`) → invoke via the `Agent` tool with `subagent_type`
+- A **skill** has a name that starts with `/`. Invoke it with the `Skill` tool.
+- An **agent** has a name that ends in `-agent`. Invoke it with the `Agent`
+  tool and set `subagent_type`.
 
-**Never use the `Skill` tool to invoke an agent.**
+**Never invoke an agent with the `Skill` tool.**
 
-## Agent & Skill Frontmatter Conventions
+## Frontmatter Conventions
 
-**No `model:` field in agents or skills.** All agents and skills inherit the session model. Explicitly setting a model pins it to a specific version and bypasses model selection in the UI — this creates upgrade friction and split behavior. Omit the field entirely; inheritance is correct.
+**Never set `model:` in an agent or a skill.** All inherit the session model.
+An explicit model pins a version and bypasses model selection in the UI. That
+creates upgrade friction and split behavior. Omit the field.
 
-**No `effort:` field unless the task genuinely requires non-default effort.** Most agents should inherit.
+**Never set `effort:` unless the task genuinely requires non-default effort.**
+Most agents inherit.
 
-## Canonical Paths (repo-specific agents supersede generic plugins)
+## Canonical Paths
 
-| Action      | Use                  | Not                                          |
-| ----------- | -------------------- | -------------------------------------------- |
-| Commit      | `smart-commit` agent | `devex:commit`, `commit-commands:commit`     |
-| Ship (push) | `/yeet` skill        | raw `git push`                               |
-| Lode write  | `/lode-capture` skill| `lode-sync` agent (for batch sync only)      |
+A repo-specific agent supersedes a generic plugin.
 
-## Write Code Before Running Tests
+| Action      | Use                   | Not                                       |
+| ----------- | --------------------- | ----------------------------------------- |
+| Commit      | `smart-commit` agent  | `devex:commit`, `commit-commands:commit`  |
+| Ship (push) | `/yeet` skill         | raw `git push`                            |
+| Lode write  | `/lode-capture` skill | `lode-sync` agent, which batch-syncs only |
 
-**This is about *running* tests, not *writing* them. It does NOT contradict CLAUDE.md § TDD.** TDD still authors the failing test first (with an `Assert.Fail` stub — see CLAUDE.md § TDD). This rule governs only the implementation/verify loop: once the failing test exists, write the implementation before you *run* the suite.
+## Write Code Before You Run Tests
 
-- **Write all implementation code first**, then verify
-- Do NOT burn turns running tests against stubs or before implementation code exists
-- Trust `scripts/task.sh` and `scripts/test.sh` to handle verification
+This rule governs when you **run** tests, not when you **write** them. It does
+not contradict CLAUDE.md § TDD. TDD still authors the failing test first, with
+an `Assert.Fail` stub. This rule governs the implementation loop only.
+
+- Write all the implementation code first. Then verify.
+- Never burn a turn running tests against a stub.
+- Trust `scripts/task.sh` and `scripts/test.sh` to verify.

@@ -1,12 +1,14 @@
 # Claude Code Maintenance
-*Updated: 2026-07-22T00:20:07Z*
+*Updated: 2026-08-02T00:00:00Z*
 
 ## Harness Structure
 
 The Claude Code harness for this repo consists of:
 
 - `CLAUDE.md` — always-loaded instructions (keep under 200 lines)
-- `.claude/rules/*.md` — contextually-loaded domain rules
+- `.claude/rules/*.md` — domain rules. Claude Code 2.1.220 loads **every** rule
+  file into every context window, not just filename-matched ones. Treat the
+  whole directory as always-loaded budget.
 - `.claude/hooks/` — core guardrail hooks
 - `.claude/settings.json` — permissions and hook configuration
 - `.claude/skills/` — skill directories (see `ls .claude/skills/`)
@@ -26,6 +28,26 @@ The Claude Code harness for this repo consists of:
 - Universal rules → `CLAUDE.md` (keep under 200 lines)
 - Domain-specific rules → `.claude/rules/{domain}.md` (keep under 50 lines each)
 - Knowledge → `lode/` (not CLAUDE.md or rules)
+
+## Rule File Ownership
+
+Each instruction has exactly one owning file. Never restate it elsewhere —
+link instead.
+
+| Content                                      | Owner                                |
+| -------------------------------------------- | ------------------------------------- |
+| `command → script` routing and script flags  | `deterministic-scripts.md`            |
+| User-phrase triggers                         | `keyword-shortcuts.md`                |
+| Context-economy behavior                     | `token-efficiency.md`                 |
+| Re-read triggers                             | `read-before-edit.md`                 |
+| Prose and doc style (STE)                    | `writing-style.md`                    |
+
+`deterministic-scripts.md` exceeds the 50-line guideline by design. It holds
+one routing table for every script. Splitting it would recreate the
+triple-duplication it replaced.
+
+All rule files are written in Simplified Technical English. See
+`.claude/rules/writing-style.md`.
 
 ## Script Conventions
 

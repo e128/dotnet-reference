@@ -1,13 +1,14 @@
 # Read Before Edit
 
-Always Read a file before using Edit or Write on it — **unless** you have already viewed its contents via `Bash`.
+Read a file before you call Edit or Write on it. The one exception is a file
+whose contents you already viewed through `Bash`.
 
-After `dotnet format`, linter hooks, or context compaction, re-Read files before editing — contents may have changed.
+**Re-read triggers (mandatory).** Each event below invalidates file contents
+you read earlier. Re-read the file before you edit it:
 
-**Re-read triggers (mandatory):** Any of these events invalidates previously-read file contents:
 - `format.sh` or `dotnet format` ran
 - `check.sh` ran and produced format fixes
-- Any sub-agent wrote to a file
+- A sub-agent wrote to the file
 - Context compaction occurred
 
-When in doubt after any script completes: re-Read before Edit.
+When a script finishes and you are in doubt, re-read before you edit.

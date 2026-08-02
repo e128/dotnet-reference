@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-07-13T17:46:19Z*
+*Updated: 2026-08-02T00:00:00Z*
 
 ## Design Principles
 
@@ -32,6 +32,10 @@ See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
 - No time estimates
 - Numbered menus for choices, never open-ended questions
 - All decisions via `AskUserQuestion` tool, not inline text
+- Written artifacts follow Simplified Technical English (STE). Scope, word
+  rules, sentence limits, and the self-lint checklist live in
+  `.claude/rules/writing-style.md`. STE governs docs, READMEs, PR bodies,
+  error messages, comments, and lode files — not code or chat prose.
 
 ## Development Methodology
 

@@ -1,49 +1,74 @@
 # Project Instructions for Claude
 
-*Last updated: 2026-07-25*
+*Last updated: 2026-08-02*
 
-High-frequency rules only. Detail lives in `.claude/rules/`, `lode/`,
-and skills — load them on demand via filename match or progressive
-disclosure.
+High-frequency rules only. Detail lives in `.claude/rules/`, `lode/`, and
+skills. Load detail on demand.
 
 ## Communication
 
-- Terse responses — code over explanation unless asked
-- No time estimates
-- Decisions go through `AskUserQuestion`, never inline text
-- ISO 8601 UTC timestamps everywhere (e.g., `2026-04-09T12:00:00Z`)
+- Write terse responses. Give code, not explanation, unless the user asks.
+- Never give a time estimate.
+- Put every decision through `AskUserQuestion`. Never ask inline.
+- Write every timestamp in ISO 8601 UTC (`2026-04-09T12:00:00Z`).
+- Write every artifact in Simplified Technical English. See
+  [writing-style.md](.claude/rules/writing-style.md).
 
 Full AI assistant preferences: [lode/practices.md](lode/practices.md).
 
 ## Workflow
 
-- **Tests** — never raw `dotnet test`; use `scripts/test.sh ClassName` or `--all`. xUnit v3 MTP. See [deterministic-scripts.md](.claude/rules/deterministic-scripts.md).
-- **TDD** — Red-Green-Refactor. RED phase stubs use `Assert.Fail(message)`, never `Assert.True(false)` or `NotImplementedException`. See [quality-gates.md](.claude/rules/quality-gates.md).
-- **Build** — `scripts/check.sh` is the single format+build+test gate. Build/test scripts run without an ask-gate.
-- **Lode** is the authoritative memory store. All project knowledge goes to `lode/`, never `MEMORY.md`. See [lode/lode-map.md](lode/lode-map.md).
+- **Tests** — never run raw `dotnet test`. Run `scripts/test.sh ClassName` or
+  `scripts/test.sh --all`. The stack is xUnit v3 on MTP. See
+  [deterministic-scripts.md](.claude/rules/deterministic-scripts.md).
+- **TDD** — follow Red-Green-Refactor. A RED-phase stub calls
+  `Assert.Fail(message)`. Never use `Assert.True(false)` or
+  `NotImplementedException`. See [quality-gates.md](.claude/rules/quality-gates.md).
+- **Build** — `scripts/check.sh` is the single format, build, and test gate.
+  Build and test scripts run without an ask-gate.
+- **Lode** — `lode/` is the authoritative memory store. Write all project
+  knowledge to `lode/`, never to `MEMORY.md`. See
+  [lode/lode-map.md](lode/lode-map.md).
 
 ## .NET Development
 
-- **Implicit usings disabled** (`<ImplicitUsings>disable</ImplicitUsings>`). Every `.cs` file has explicit `using` directives.
-- **Sealed by default** — all non-abstract classes are sealed (enforced by E128005 + ArchUnitNET).
-- **Design principles** — Immutability > Memory > CPU > Parallelism. Full guidance: [lode/practices.md](lode/practices.md) and [lode/coding-standards/solid.md](lode/coding-standards/solid.md).
-- **Anti-patterns, security, testing** — see [dotnet-anti-patterns.md](.claude/rules/dotnet-anti-patterns.md), [security.md](.claude/rules/security.md), [dotnet-testing.md](.claude/rules/dotnet-testing.md).
+- **Implicit usings are disabled** (`<ImplicitUsings>disable</ImplicitUsings>`).
+  Give every `.cs` file explicit `using` directives.
+- **Seal by default.** Every non-abstract class is sealed. E128005 and
+  ArchUnitNET enforce this.
+- **Design order** — Immutability > Memory > CPU > Parallelism. See
+  [lode/practices.md](lode/practices.md) and
+  [lode/coding-standards/solid.md](lode/coding-standards/solid.md).
+- **Anti-patterns, security, testing** — see
+  [dotnet-anti-patterns.md](.claude/rules/dotnet-anti-patterns.md),
+  [security.md](.claude/rules/security.md),
+  [dotnet-testing.md](.claude/rules/dotnet-testing.md).
 
 ## Git Conventions
 
-- **Commit messages**: imperative mood, concise summary
-- **Never include an email address in a commit message** — no `noreply@`, no email in any trailer. Enforced by `commit.sh` and `scripts/internal/precommit.sh`. `user@example.com` placeholders are allowed.
-- **Branch naming**: `feature/`, `fix/`, `refactor/`
-- **Squash all local commits before push** — one clean commit per PR
-- **Concurrent sessions on the same branch are expected.** Staged or added/removed files that another session left behind are normal working state, not stray. Never `git stash`/`reset`/`clean` them without checking first. Run `scripts/status.sh` before staging.
-- **Commit and push as one bundle.** When shipping, include all sessions' changes together in one commit, not split by session. Use `git log` to confirm author identity.
+- Write commit messages in the imperative mood with a concise summary.
+- **Never put an email address in a commit message.** No `noreply@` address.
+  No email in any trailer. `commit.sh` and `scripts/internal/precommit.sh`
+  enforce this. A `user@example.com` placeholder is allowed.
+- Name branches `feature/`, `fix/`, or `refactor/`.
+- **Squash all local commits before you push.** Ship one clean commit per PR.
+- **Expect concurrent sessions on the same branch.** Files that another session
+  staged, added, or removed are normal working state, not stray files. Never run
+  `git stash`, `git reset`, or `git clean` on them without asking first. Run
+  `scripts/status.sh` before you stage.
+- **Commit and push as one bundle.** Include every session's changes in one
+  commit. Run `git log` to confirm the author identity.
 
 ## General Behavior
 
-- Prefer focused incremental changes: one change, verify, then next
-- When friction repeats (2+ times), fix the root cause immediately
-- Prefer `.claude/` (project-level) over `~/.claude/` (global) for all config
-- Use `.claude/tmp/` for working/scratch files. **Never write to `/tmp`.** Lode scraps go in `lode/tmp/`
-- Never write absolute user profile paths — use `~` or repo-relative paths
-- Agents and skills must not specify `model:`. All inherit the session model. See [agent-vs-skill-routing.md](.claude/rules/agent-vs-skill-routing.md)
-- Use canonical scripts for repeated operations. See [deterministic-scripts.md](.claude/rules/deterministic-scripts.md) and `scripts/help.sh`
+- Make one focused change, verify it, then make the next.
+- Fix the root cause the second time a friction point repeats.
+- Put config in `.claude/` (project level), not `~/.claude/` (global).
+- Write working files to `.claude/tmp/`. **Never write to `/tmp`.** Lode scraps
+  go in `lode/tmp/`.
+- Never write an absolute user profile path. Use `~` or a repo-relative path.
+- Never set `model:` in an agent or a skill. All inherit the session model. See
+  [agent-vs-skill-routing.md](.claude/rules/agent-vs-skill-routing.md).
+- Route every repeated operation through a canonical script. See
+  [deterministic-scripts.md](.claude/rules/deterministic-scripts.md) and
+  `scripts/help.sh`.

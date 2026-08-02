@@ -1,16 +1,25 @@
 # Quality Gates
 
-**Format gate.** `dotnet format` must pass before any commit. Always use `scripts/format.sh` (apply) or `scripts/format.sh --check` (verify). Generate format-compliant C# on the first write.
+**Format gate.** `dotnet format` must pass before any commit. Run
+`scripts/format.sh` to apply fixes. Run `scripts/format.sh --check` to verify.
+Generate format-compliant C# on the first write.
 
-**`check.sh` is the single format gate.** `scripts/check.sh` runs `format.sh --check` as its first step — no need to pre-format and pass `--no-format`. If the format step fails, run `scripts/format.sh --changed` to apply fixes, then re-run `check.sh`.
+**`check.sh` is the single format gate.** `scripts/check.sh` runs
+`format.sh --check` as its first step. Do not pre-format and pass
+`--no-format`. When the format step fails, run `scripts/format.sh --changed`,
+then re-run `check.sh`.
 
-**Analyzer suppressions.** Never use `#pragma warning disable`, `[SuppressMessage]`, or editorconfig severity downgrades without prompting the user via `AskUserQuestion`.
+**Analyzer suppressions.** Never use `#pragma warning disable`,
+`[SuppressMessage]`, or an editorconfig severity downgrade without first
+prompting the user through `AskUserQuestion`.
 
-**Null-forgiving operator.** Never use `!` to silence CS8600-CS8604.
+**Null-forgiving operator.** Never use `!` to silence CS8600 through CS8604.
 
-**Fix the class, not the instance.** When fixing a diagnostic pattern, search the entire affected file for the same pattern before committing.
+**Fix the class, not the instance.** When you fix a diagnostic pattern, search
+the whole file for the same pattern before you commit.
 
-**`[GeneratedRegex]` must use partial properties, not partial methods.** (MA0190)
+**`[GeneratedRegex]` uses a partial property, not a partial method** (MA0190).
+
 ```csharp
 // CORRECT
 [GeneratedRegex(@"...", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
