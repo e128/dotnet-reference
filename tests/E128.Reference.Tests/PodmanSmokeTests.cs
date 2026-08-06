@@ -134,7 +134,17 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
                 UseShellExecute = false
             };
             process.Start();
-            await process.WaitForExitAsync();
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            try
+            {
+                await process.WaitForExitAsync(timeoutCts.Token);
+            }
+            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+            {
+                process.Kill(true);
+                return false;
+            }
+
             return process.ExitCode == 0;
         }
         catch (Win32Exception)
@@ -169,7 +179,16 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
 
         process.Start();
         var stderr = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        try
+        {
+            await process.WaitForExitAsync(timeoutCts.Token);
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        {
+            process.Kill(true);
+            throw new InvalidOperationException($"'podman {arguments}' timed out after 2 minutes");
+        }
 
         if (throwOnError && process.ExitCode != 0)
         {

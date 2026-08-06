@@ -1,48 +1,125 @@
+using System.Threading.Tasks;
+using E128.Analyzers.Reliability;
+using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UntimedProcessExitAnalyzerTests
 {
-    [Fact]
-    [Trait("Category", "CI")]
-    public void Reports_NoArgWaitForExit()
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
-        Assert.Fail("AC-5: Process.WaitForExit() with no arguments must be flagged");
+        var test = new CSharpAnalyzerTest<UntimedProcessExitAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+        test.ExpectedDiagnostics.AddRange(expected);
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void NoReport_TimeboxedWaitForExit()
+    public Task Reports_NoArgWaitForExit()
     {
-        Assert.Fail("AC-6: Process.WaitForExit(int) with a timeout argument must not be flagged");
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   {|E128099:process.WaitForExit()|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void Reports_NoArgAsyncWaitForExit()
+    public Task NoReport_TimeboxedWaitForExit()
     {
-        Assert.Fail("AC-7: Process.WaitForExitAsync() with no arguments must be flagged");
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   process.WaitForExit(5000);
+                               }
+                           }
+                           """);
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void Reports_ParameterCancellationToken()
+    public Task Reports_NoArgAsyncWaitForExit()
     {
-        Assert.Fail("AC-8: WaitForExitAsync(ct) with a parameter or CancellationToken.None must be flagged");
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M(Process process)
+                               {
+                                   await {|E128099:process.WaitForExitAsync()|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void NoReport_TimeoutCtsToken()
+    public Task Reports_ParameterCancellationToken()
     {
-        Assert.Fail("AC-9: WaitForExitAsync(cts.Token) with an in-method CancellationTokenSource must not be flagged");
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           using System.Threading;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M(Process process, CancellationToken cancellationToken)
+                               {
+                                   await {|E128099:process.WaitForExitAsync(cancellationToken)|};
+                               }
+                           }
+                           """);
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void NoReport_TimeSpanOverload()
+    public Task NoReport_TimeoutCtsToken()
     {
-        Assert.Fail("AC-10: WaitForExitAsync(TimeSpan, ct) must not be flagged");
+        return VerifyAsync("""
+                           using System;
+                           using System.Diagnostics;
+                           using System.Threading;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M(Process process)
+                               {
+                                   using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                                   await process.WaitForExitAsync(cts.Token);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoReport_TimeSpanOverload()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   process.WaitForExit(TimeSpan.FromSeconds(30));
+                               }
+                           }
+                           """);
     }
 }
