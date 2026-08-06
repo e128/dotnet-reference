@@ -1,34 +1,111 @@
+using System.Threading.Tasks;
+using E128.Analyzers.Reliability;
+using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class OceWhenTokenFilterAnalyzerTests
 {
-    [Fact]
-    [Trait("Category", "CI")]
-    public void Reports_NegatedTokenFilter()
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
-        Assert.Fail("AC-11: catch (OperationCanceledException) when (!token.IsCancellationRequested) must be flagged");
+        var test = new CSharpAnalyzerTest<OceWhenTokenFilterAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+        test.ExpectedDiagnostics.AddRange(expected);
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void NoReport_PositiveTokenIdiom()
+    public Task Reports_NegatedTokenFilter()
     {
-        Assert.Fail("AC-12: catch (OperationCanceledException) when (token.IsCancellationRequested) must not be flagged");
+        return VerifyAsync("""
+                           using System;
+                           using System.Threading;
+                           class C
+                           {
+                               void M(CancellationToken token)
+                               {
+                                   try
+                                   {
+                                   }
+                                   {|E128100:catch (OperationCanceledException) when (!token.IsCancellationRequested)|}
+                                   {
+                                       throw;
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void NoReport_UnfilteredCatch()
+    public Task NoReport_PositiveTokenIdiom()
     {
-        Assert.Fail("AC-13: catch (OperationCanceledException) with no filter must not be flagged");
+        return VerifyAsync("""
+                           using System;
+                           using System.Threading;
+                           class C
+                           {
+                               void M(CancellationToken token)
+                               {
+                                   try
+                                   {
+                                   }
+                                   catch (OperationCanceledException) when (token.IsCancellationRequested)
+                                   {
+                                       throw;
+                                   }
+                               }
+                           }
+                           """);
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void NoReport_UnrelatedFilter()
+    public Task NoReport_UnfilteredCatch()
     {
-        Assert.Fail("AC-14: a filter that does not reference IsCancellationRequested must not be flagged");
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   try
+                                   {
+                                   }
+                                   catch (OperationCanceledException)
+                                   {
+                                       throw;
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoReport_UnrelatedFilter()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               void M(bool flag)
+                               {
+                                   try
+                                   {
+                                   }
+                                   catch (OperationCanceledException) when (!flag)
+                                   {
+                                       throw;
+                                   }
+                               }
+                           }
+                           """);
     }
 }
