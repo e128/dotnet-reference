@@ -9,7 +9,9 @@ skills. Load detail on demand.
 
 - Write terse responses. Give code, not explanation, unless the user asks.
 - Never give a time estimate.
-- Put every decision through `AskUserQuestion`. Never ask inline.
+- Ask a question only when a decision is materially ambiguous, risky, or needs
+  approval. Otherwise pick the sensible default and say what you picked. When
+  you do ask, use `AskUserQuestion`. Never ask inline.
 - Write every timestamp in ISO 8601 UTC (`2026-04-09T12:00:00Z`).
 - Write every artifact in Simplified Technical English. See
   [writing-style.md](.claude/rules/writing-style.md).
@@ -29,6 +31,27 @@ Full AI assistant preferences: [lode/practices.md](lode/practices.md).
 - **Lode** — `lode/` is the authoritative memory store. Write all project
   knowledge to `lode/`, never to `MEMORY.md`. See
   [lode/lode-map.md](lode/lode-map.md).
+
+## Agent Operating Rules
+
+- When explaining something to the user, use the Visualize skill.
+- Be concise, direct, and candid. Challenge a weak assumption. Separate a
+  verified fact from an uncertainty.
+- Ground research in authoritative, current sources. Link important evidence.
+- Ask a question only when a decision is materially ambiguous, risky, or needs
+  approval. See § Communication.
+- Keep the original goal and constraints. Finish authorized work end to end.
+  Verify the actual result before you claim completion.
+- Use a relevant skill. Spawn a subagent only for genuinely independent work,
+  then synthesize the findings.
+- Keep a change focused and simple. Avoid an unrelated edit, an unnecessary
+  abstraction, and a low-signal test.
+- Test observable behavior. Review a substantial change. Validate user-facing
+  work in the real interface when applicable.
+- Keep unrelated work. Never take a destructive, production, or external action
+  beyond what the user authorized.
+- Report a meaningful blocker, the outcome, and the evidence. Skip noisy
+  progress reports.
 
 ## .NET Development
 
