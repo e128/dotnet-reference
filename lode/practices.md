@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-08-02T00:00:00Z*
+*Updated: 2026-08-10T13:54:48Z*
 
 ## Design Principles
 
@@ -30,8 +30,10 @@ See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
 - Terse responses — code over explanation unless asked
 - ISO 8601 UTC timestamps everywhere: `2026-04-09T12:00:00Z`
 - No time estimates
-- Numbered menus for choices, never open-ended questions
-- All decisions via `AskUserQuestion` tool, not inline text
+- Ask a question only when a decision is materially ambiguous, risky, or needs
+  approval. Otherwise pick the sensible default and state the choice.
+- Every question uses the `AskUserQuestion` tool, never inline text. Give
+  discrete options, never an open-ended question.
 - Written artifacts follow Simplified Technical English (STE). Scope, word
   rules, sentence limits, and the self-lint checklist live in
   `.claude/rules/writing-style.md`. STE governs docs, READMEs, PR bodies,
