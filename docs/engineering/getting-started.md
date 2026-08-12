@@ -10,7 +10,7 @@
 
 | Tool                          | Version / note                                            |
 | ----------------------------- | --------------------------------------------------------- |
-| .NET SDK                      | `10.0.203` (pinned in `global.json`)                      |
+| .NET SDK                      | `10.0.400` (pinned in `global.json`)                      |
 | `rg` (ripgrep)                | Required — fast search used by scripts                    |
 | `fd`                          | Required — fast file finder                               |
 | `jq`                          | Required — parses script JSON output                      |
@@ -57,7 +57,7 @@ scripts/podman.sh                              # build/run/test the web containe
 ```
 ├── Directory.Build.props / .targets   # shared MSBuild props + test/analyzer wiring
 ├── Directory.Packages.props           # CPM version pins
-├── global.json                        # SDK 10.0.203 + MTP runner
+├── global.json                        # SDK 10.0.400 + MTP runner
 ├── .globalconfig / .editorconfig      # severities / style
 ├── src/
 │   ├── E128.Reference.Core/           # domain library (Greeter, models, services, repos)

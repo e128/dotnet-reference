@@ -42,7 +42,7 @@ The repository contains four small "application" pieces and one large "tooling" 
 | ------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
 | Standards drift from current .NET guidance        | Medium     | Renovate auto-updates dependencies; analyzers track latest Roslyn          |
 | Analyzer change breaks consumer builds            | Medium     | PublicAPI tracking, full test suite, version-gated publish                 |
-| SDK rolls to an untested major version            | Low        | `global.json` pins `10.0.203` (note: `rollForward: latestMajor` is broad)  |
+| SDK rolls to an untested major version            | Low        | `global.json` pins `10.0.400` (note: `rollForward: latestMajor` is broad)  |
 | Secrets leak via publishing pipeline              | Low        | OIDC trusted publishing — no stored NuGet API keys                         |
 | Over-strict analysis blocks legitimate code       | Medium     | Per-rule severity overrides + documented test-project relaxations          |
 
