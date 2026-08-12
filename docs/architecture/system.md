@@ -14,7 +14,7 @@ graph TB
     props["Directory.Build.props<br/>TFM, analysis, analyzer packages"]
     targets["Directory.Build.targets<br/>test config + analyzer ProjectReference"]
     pkgs["Directory.Packages.props<br/>CPM version pins"]
-    gj["global.json<br/>SDK 10.0.203 + MTP runner"]
+    gj["global.json<br/>SDK 10.0.400 + MTP runner"]
     gc[".globalconfig<br/>deny-by-default severities"]
     ec[".editorconfig<br/>style + formatting"]
   end
@@ -57,7 +57,7 @@ The repository root holds all cross-cutting configuration. Every project inherit
 | `Directory.Build.props`   | TFM, language version, nullable, analysis level/mode, analyzer packages   |
 | `Directory.Build.targets` | `IsTestProject` config (MTP, `OutputType=Exe`); analyzer `ProjectReference` |
 | `Directory.Packages.props`| Central Package Management version pins                                   |
-| `global.json`             | SDK pin (`10.0.203`) and MTP test runner selection                        |
+| `global.json`             | SDK pin (`10.0.400`) and MTP test runner selection                        |
 | `.globalconfig`           | Analyzer diagnostic severities (blanket `error`)                          |
 | `.editorconfig`           | Code style, formatting, naming, inline severity hints                     |
 
