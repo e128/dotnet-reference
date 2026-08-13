@@ -296,8 +296,12 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
         }
 
         var identifier = sb.Length > 0 ? sb.ToString() : "value";
-        var lowerFirst = char.ToLowerInvariant(identifier[0])
-                         + (identifier.Length > 1 ? identifier.Substring(1) : string.Empty);
+        var lowerFirst = char.ToLowerInvariant(identifier[0]).ToString();
+        if (identifier.Length > 1)
+        {
+            lowerFirst += identifier.Substring(1);
+        }
+
         return "_" + lowerFirst + "Values";
     }
 

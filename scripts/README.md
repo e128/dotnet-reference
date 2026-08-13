@@ -49,7 +49,7 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `lode-guard.sh`     | Lode file size guard: check line count before appending                 |
 | `task.sh`           | Task management: check/next/progress                                    |
 | `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected           |
-| `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default glm-5:cloud) |
+| `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4-flash:0731-cloud) |
 
 ## Code Navigation & Analysis
 

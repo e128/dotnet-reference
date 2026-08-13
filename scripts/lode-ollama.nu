@@ -6,5 +6,5 @@
 use lode-ollama-lib.nu *
 
 def main [...args: string] {
-    lode-run "minimax-m3:cloud" ...$args
+    lode-run "deepseek-v4-flash:0731-cloud" ...$args
 }
