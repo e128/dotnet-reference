@@ -10,6 +10,7 @@
 # Source code
 src/ @e128
 tests/ @e128
+plans/ @e128
 
 # Infrastructure / scripting
 scripts/ @e128
