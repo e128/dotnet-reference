@@ -84,6 +84,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128092 | Use async `File.*Async` overload instead of sync method                                      | Yes      |
 | E128093 | Use async `DbConnection`/`DbCommand` `*Async` overload instead of sync method                | Yes      |
 | E128096 | Detect synchronous call to async local function via `.Result` or `.Wait()`                   | Yes      |
+| E128099 | Wait for process exit with a provable timeout                                                | Yes      |
+| E128100 | Catch filter reads negated token state on `OperationCanceledException`                       | Yes      |
+| E128101 | Verify process output file exists before use                                                 | Yes      |
 
 ### Performance
 
@@ -105,6 +108,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128083 | Use `ImmutableCollectionsMarshal.AsImmutableArray` instead of `ImmutableArray.Create/CreateRange` with `ToArray`  | Yes      |
 | E128084 | Use `CollectionsMarshal.AsSpan` with `Slice` instead of `List.GetRange`                                           | Yes      |
 | E128085 | Use `foreach` + `AddRange` instead of `SelectMany.ToList`                                                         | Yes      |
+| E128098 | Collapse chained or looped `string.Replace` calls into a single pass                                              | Yes      |
 
 ### Security
 
@@ -127,6 +131,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128055 | Unbalanced `#pragma warning disable` without matching restore             | Yes      |
 | E128063 | Mid-name underscore in private static member (IDE1006 rename artifact) (default: Error) | Yes      |
 | E128065 | `#pragma warning disable` with multiple IDs — use one pragma per ID                     | Yes      |
+| E128094 | `#pragma warning disable` before file-scoped namespace (default: Error)   | Yes      |
 
 ### Testing
 
@@ -135,12 +140,14 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128054 | Class creates temp directory without cleanup interface                     | Yes      |
 | E128062 | Test uses outdated `ReferenceAssemblies` — does not match project TFM      | Yes      |
 | E128073 | Test method missing `[Trait("Category", ...)]` attribute                   | Yes      |
+| E128097 | Comment inside test code                                                  | Yes      |
 
 ### Maintainability
 
 | Rule    | Title                                                                     | Code Fix |
 | ------- | ------------------------------------------------------------------------- | -------- |
 | E128090 | Avoid reflection in test methods (default: Info)                           | No       |
+| E128088 | Switch over an enum does not case every member                            | No       |
 
 ## What each rule catches
 

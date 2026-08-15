@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-08-10T13:54:48Z*
+*Updated: 2026-08-15T17:15:32Z*
 
 ## Design Principles
 
@@ -37,7 +37,18 @@ See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
 - Written artifacts follow Simplified Technical English (STE). Scope, word
   rules, sentence limits, and the self-lint checklist live in
   `.claude/rules/writing-style.md`. STE governs docs, READMEs, PR bodies,
-  error messages, comments, and lode files — not code or chat prose.
+  error messages, comments, and lode files. STE does not govern code or chat
+  prose.
+- Never use a dash as a pause in a written artifact. The ban covers the em
+  dash, the en dash, the horizontal bar, the minus sign, the ASCII `--`
+  stand-in, and every HTML entity form of each. Use a colon, a comma,
+  parentheses, or two sentences. A `--flag` is a flag. A hyphen inside a
+  range stays.
+- The lode-write subset of these rules also ships in
+  `prompts/SystemPrompt.txt`. That copy reaches any harness, including
+  OpenCode and Ollama, which never load `.claude/rules/`. No tool lints the
+  dash ban. The rule applies to lines you write in the current turn. Never
+  bulk-rewrite an untouched file to apply it.
 
 ## Development Methodology
 

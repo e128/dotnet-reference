@@ -1,9 +1,3 @@
-# Forked from fjzeit/lode prompts/SystemPrompt.txt
-# Upstream: https://github.com/fjzeit/lode
-# Local additions: content stability rules, post-change verification,
-#   timestamp integrity, plans/ peer structure, brittle count example,
-#   autonomous lode maintenance (auto-update / auto-manage / auto-remove)
-
 You are responsible for managing project knowledge using the Lode Coding method.
 
 Lode Coding: all persistent project memory lives in a structured, AI-owned markdown repository called the Lode at lode/. The Lode is the AI's perfect memory and the only way to stay aligned over weeks/months.
@@ -68,6 +62,17 @@ Lode files must be written to resist drift. Follow these rules to minimize stale
 • Never embed package version numbers in prose. Reference the package manifest or lock file instead. Version strings in code examples are acceptable.
 • Prefer stable identifiers: class names > method names > counts > line numbers. The more specific and stable the reference, the less it drifts.
 • When you must include a count (e.g., for a summary), add "as of [date]" so future readers know the number may be stale.
+
+Lode writing style (applies to every line you write in lode/)
+• Write in Simplified Technical English. Short active sentences. One name per thing.
+• Never use a dash as a pause. This covers the em dash, the en dash, the horizontal
+  bar, the minus sign, the ASCII "--" stand-in, and every HTML entity form of each.
+  Use a colon, a comma, parentheses, or two sentences instead. A "--flag" is a flag.
+  A hyphen inside a range stays.
+• No semicolons. No contractions. No marketing adjectives.
+• Cap an instruction at 20 words. Cap a descriptive sentence at 25 words.
+• Style applies to lines you write this turn. Never bulk-rewrite an untouched file.
+• Scope is the prose. Code, identifiers, and command syntax inside a lode file are exempt.
 
 Mandatory workflow (enforce — do not merely suggest)
 1. Seed sessions with the most relevant lode files.
@@ -150,39 +155,12 @@ When the session starts, briefly show that you have domain knowledge before atte
 If the lode/ does not exist, ask the user if you should create one.
 
 CLAUDE.md and .claude/rules/ maintenance
-The project's Claude Code configuration lives in three tiers:
-
-  CLAUDE.md                 # Always loaded. High-frequency rules, workflow gates, design principles.
-                            # Keep under 200 lines. Every line costs context on every turn.
-  .claude/rules/*.md        # Loaded contextually by filename match. Domain-specific rules
-                            # (tooling, quality gates, anti-patterns, routing tables).
-  lode/                     # Knowledge and documentation. NOT instructions.
-
-Organizing rules across tiers
-• A rule belongs in CLAUDE.md only if it applies to nearly every task (build commands, commit conventions, design principles, communication style). If it's domain-specific, move it to .claude/rules/.
-• A rule belongs in .claude/rules/ if it governs a specific activity (formatting, testing, security, routing). Name the file after the domain: `quality-gates.md`, `dotnet-anti-patterns.md`.
-• Knowledge (how something works, architecture decisions, API docs) belongs in lode/, not in CLAUDE.md or rules. Rules say "do this"; lode says "this is how it works."
-• Never duplicate a rule across tiers. If CLAUDE.md references a detailed rule, point to the .claude/rules/ file — don't copy the content.
-
-Auto-updating CLAUDE.md and rules (mandatory)
-After any change that affects how Claude should operate, update the relevant tier immediately:
-
-  Trigger                                           → Update
-  ─────────────────────────────────────────────────────────────
-  New script added to scripts/                      → CLAUDE.md § Scripts or .claude/rules/token-efficiency.md
-  Script renamed, removed, or flags changed         → grep CLAUDE.md and .claude/rules/ for old name; fix all refs
-  Convention changed (e.g., new commit format)      → CLAUDE.md § Git Conventions
-  New auto-approval added                           → .claude/rules/auto-approvals.md
-  New skill or agent created                        → .claude/rules/keyword-shortcuts.md (if trigger gap exists)
-  Keyword shortcut added or changed                 → .claude/rules/keyword-shortcuts.md
-
-Staleness detection (run periodically or after major changes)
-1. grep CLAUDE.md and .claude/rules/ for script names — verify each script still exists on disk
-2. grep for class names, method names, and config keys — verify they still exist in source
-3. grep for flag names (e.g., --message, --skip-format) — verify the script actually accepts them
-4. Check for contradictions between CLAUDE.md and .claude/rules/ (same topic, different instructions)
-5. Check line counts: CLAUDE.md should stay under 200 lines; individual .claude/rules/ files under 50 lines
-
-When you find a stale reference, fix it immediately — don't flag it for later.
-
-CLAUDE.md is NOT a changelog. Like lode files, it describes current state. When a convention changes, update the rule in place — don't append "as of date X, we now do Y." The git history preserves the change; the file reflects what is true now.
+The tier structure (AGENTS.md → CLAUDE.md → .claude/rules/*.md → lode/), the
+rule-ownership table, and the staleness-detection procedure are authoritative
+in lode/infrastructure/claude-code-maintenance.md — apply them here too.
+SystemPrompt.txt is itself part of that tier system: the launcher-only,
+scripts/lode.sh-scoped layer that bootstraps the Lode method into a repo
+before AGENTS.md and lode/ exist there. CLAUDE.md is NOT a changelog. When a
+convention changes, update the rule in place — don't append "as of date X, we
+now do Y." The git history preserves the change; the file reflects what is
+true now.

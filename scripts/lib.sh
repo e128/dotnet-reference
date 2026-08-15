@@ -74,7 +74,11 @@ json_object() {
 
 # ── PII / email detection ────────────────────────
 # Email addr-spec (POSIX ERE). Placeholder domains are filtered by the helpers below.
-EMAIL_REGEX='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+# The local part must start with an alphanumeric character. That rule stops a
+# diff marker from acting as the whole local part, so a scan of `git diff` output
+# no longer reads the added line `+@AGENTS.md` as the address `+@AGENTS.md`.
+# A real address still matches, because the match starts after the marker.
+EMAIL_REGEX='[A-Za-z0-9][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
 
 # Echo every real email found in the given text, one per line.
 # example.com/.org/.net placeholders are intentionally excluded.
