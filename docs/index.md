@@ -1,6 +1,6 @@
 # E128.Reference — Documentation Wiki
 
-> **One sentence:** A .NET 10 reference repository that demonstrates modern conventions end-to-end — minimal-API web service, System.CommandLine CLI, a NuGet-packable Roslyn analyzer suite, deny-by-default code analysis, xUnit v3 + MTP testing, ArchUnitNET structural tests, and a Claude Code automation harness.
+> **One sentence:** A .NET 10 reference repository that demonstrates modern conventions end-to-end — minimal-API web service, System.CommandLine CLI, the published E128.Analyzers Roslyn analyzer package, deny-by-default code analysis, xUnit v3 + MTP testing, ArchUnitNET structural tests, and a Claude Code automation harness.
 
 *Updated: 2026-05-29T19:02:39Z*
 
@@ -40,7 +40,7 @@ E128.Reference is a single-repository, multi-project .NET 10 solution. Three sma
 ### Level 3 — Key Capabilities
 
 - **Reference application stack** — minimal-API web service (Kestrel) + System.CommandLine CLI sharing a common `Core` library wired through DI.
-- **E128.Analyzers** — a NuGet-packable Roslyn analyzer + code-fix suite spanning Design, Reliability, Performance, Security, Style, and Testing categories.
+- **E128.Analyzers** — the published NuGet package (this repo is its source), a Roslyn analyzer + code-fix suite spanning Design, Reliability, Performance, Security, Style, and Testing categories.
 - **Deny-by-default analysis** — `.globalconfig` sets every diagnostic to `error`; relaxations are explicit and justified.
 - **Modern test platform** — xUnit v3 with MTP (no VSTest), category-trait filtering, ArchUnitNET IL-level architecture tests, Roslyn analyzer/code-fix test harnesses.
 - **Central Package Management** — all versions pinned in `Directory.Packages.props`, transitive pinning on, NuGet audit at `low`.

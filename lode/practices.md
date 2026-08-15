@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-08-15T17:15:32Z*
+*Updated: 2026-08-15T19:16:12Z*
 
 ## Design Principles
 
@@ -45,9 +45,9 @@ See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
   parentheses, or two sentences. A `--flag` is a flag. A hyphen inside a
   range stays.
 - The lode-write subset of these rules also ships in
-  `prompts/SystemPrompt.txt`. That copy reaches any harness, including
-  OpenCode and Ollama, which never load `.claude/rules/`. No tool lints the
-  dash ban. The rule applies to lines you write in the current turn. Never
+  `prompts/SystemPrompt.txt`, together with a style self-lint. That copy
+  reaches any harness, including OpenCode and Ollama, which never load
+  `.claude/rules/`. No tool lints the dash ban. The rule applies to lines you write in the current turn. Never
   bulk-rewrite an untouched file to apply it.
 
 ## Development Methodology
