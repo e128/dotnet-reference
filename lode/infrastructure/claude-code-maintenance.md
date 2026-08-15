@@ -1,5 +1,5 @@
 # Claude Code Maintenance
-*Updated: 2026-08-15T17:15:32Z*
+*Updated: 2026-08-15T19:16:12Z*
 
 ## Harness Portability Capability Map
 
@@ -72,13 +72,20 @@ Link instead.
 | Re-read triggers                             | `read-before-edit.md`                 |
 | Prose and doc style (STE)                    | `writing-style.md`                    |
 | Lode-write style (cross-harness copy)        | `prompts/SystemPrompt.txt`            |
+| Lode file conventions and privacy floor      | `prompts/SystemPrompt.txt`            |
 
 The last row is a deliberate exception to the one-owner rule.
 `writing-style.md` owns the full STE definition, and Claude Code is the only
 harness that loads it. `prompts/SystemPrompt.txt` carries the lode-write
-subset (STE plus the dash ban) so the rule reaches OpenCode and Ollama
-sessions. Do not delete that copy as duplication. Keep the two in agreement
-when either one changes.
+subset (STE, the dash ban, and the style self-lint) so the rule reaches
+OpenCode and Ollama sessions. Do not delete that copy as duplication. Keep the
+two in agreement when either one changes.
+
+`prompts/SystemPrompt.txt` owns the lode file conventions: the H1 title on line
+1, the italic `Updated` header line in ISO 8601 UTC on line 2, the `lode-map.md` entry
+form, and the privacy floor (no absolute home path, no email address, no
+secret, no real full name). These rules must reach every harness, so they live
+in the injected prompt, not in a Claude-only rule file.
 
 `deterministic-scripts.md` exceeds the 50-line guideline by design. It holds
 one routing table for every script. Splitting it would recreate the

@@ -1,17 +1,37 @@
-# E128.Reference — .NET 10 Reference Repository
+# E128.Reference: source repository for the E128.Analyzers NuGet package
 
 [![CI](https://github.com/e128/dotnet-reference/actions/workflows/ci.yml/badge.svg)](https://github.com/e128/dotnet-reference/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/E128.Analyzers?logo=nuget&label=E128.Analyzers)](https://www.nuget.org/packages/E128.Analyzers/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 
+## E128.Analyzers
+
+This repository is the source for [**E128.Analyzers**](https://www.nuget.org/packages/E128.Analyzers/).
+The package holds Roslyn analyzers and code fixes. The rules enforce opinionated .NET conventions at compile time.
+
+```bash
+dotnet add package E128.Analyzers
+```
+
+- Source: [`src/E128.Analyzers/`](src/E128.Analyzers/). The [README](src/E128.Analyzers/README.md) lists every rule.
+- Tests: [`tests/E128.Analyzers.Tests/`](tests/E128.Analyzers.Tests/)
+- Release notes: [`AnalyzerReleases.Shipped.md`](src/E128.Analyzers/AnalyzerReleases.Shipped.md)
+- Publishing: `.github/workflows/publish.yml` pushes the package to nuget.org on each merge to `main` that changes `src/E128.Analyzers/`
+
+Report an analyzer defect, or ask for a new rule, in the [issues](https://github.com/e128/dotnet-reference/issues) of this repository.
+
 ## Summary
 
-A .NET 10 reference repository demonstrating modern conventions for web, CLI, and containerized applications.
-Features strict deny-by-default code analysis with third-party Roslyn analyzers, custom E128.Analyzers (NuGet-packable), ArchUnitNET architecture tests, xUnit v3 on the Microsoft Testing Platform, and Central Package Management with transitive pinning.
-Automated dependency updates via Renovate and NuGet trusted publishing via GitHub Actions OIDC.
-Includes a complete Claude Code development harness with bash scripts, contextual rules, skills, and agents.
-Uses the [Lode Coding Toolkit][lode-toolkit] for structured, AI-owned project documentation.
+The rest of the repository is a .NET 10 reference application. It runs the analyzers on its own code.
+It shows modern conventions for web, CLI, and container applications.
+The build uses deny-by-default code analysis with third-party Roslyn analyzers.
+Tests run on xUnit v3 with the Microsoft Testing Platform. ArchUnitNET tests check structural invariants.
+Central Package Management pins transitive versions. Renovate updates dependencies.
+GitHub Actions publishes the package with OIDC trusted publishing.
+
+The repository also includes a Claude Code development harness with bash scripts, rules, skills, and agents.
+It uses the [Lode Coding Toolkit][lode-toolkit] for structured project documentation.
 
 ## Quick Start
 
@@ -19,10 +39,10 @@ Uses the [Lode Coding Toolkit][lode-toolkit] for structured, AI-owned project do
 # Build
 scripts/build.sh
 
-# Test (CI category only — default)
+# Test (default: the CI category only)
 scripts/test.sh
 
-# Full CI pipeline (format + build + test)
+# Full CI pipeline (format, build, and test)
 scripts/ci.sh
 
 # Podman
@@ -30,23 +50,23 @@ scripts/podman.sh build
 scripts/podman.sh test
 ```
 
-## What's Included
+## What Is Included
 
-| Component                | Description                                                         |
-| ------------------------ | ------------------------------------------------------------------- |
-| **E128.Reference.Web**   | Minimal API web app with Kestrel, health endpoint                   |
-| **E128.Reference.Cli**   | System.CommandLine CLI with `--name` option                         |
-| **E128.Reference.Core**  | Shared library (Greeter service, models, repositories, services)    |
-| **E128.Analyzers**       | Custom Roslyn analyzers (E128001–E128096) with code fixes, NuGet-packable |
-| **E128.Reference.Tests** | xUnit v3 + MTP with CI, Podman, and Manual test categories          |
-| **Architecture.Tests**   | ArchUnitNET structural invariant tests (layers, naming, sealed)     |
-| **E128.Analyzers.Tests** | Analyzer and code fix unit tests                                    |
-| **Podman**               | Hardened Noble multi-stage Dockerfile + compose.yaml                |
-| **Bash scripts**         | Build, test, format, CI, Podman, lode management ([catalog](scripts/README.md)) |
-| **Claude Code harness**  | CLAUDE.md, rules, hooks, skills, agents (see `.claude/`)            |
-| **CI/CD**                | GitHub Actions CI + NuGet trusted publishing                        |
-| **Renovate**             | Automated dependency updates with grouped PRs and security bypass   |
-| **Lode**                 | Structured documentation via [Lode Coding Toolkit][lode-toolkit]    |
+| Component                | Description                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| **E128.Reference.Web**   | Minimal API web app with Kestrel and a health endpoint                         |
+| **E128.Reference.Cli**   | System.CommandLine CLI with a `--name` option                                  |
+| **E128.Reference.Core**  | Shared library (Greeter service, models, repositories, services)               |
+| **E128.Analyzers**       | Roslyn analyzers (E128001 to E128096) with code fixes, published to nuget.org  |
+| **E128.Reference.Tests** | xUnit v3 and MTP with the CI, Podman, and Manual test categories               |
+| **Architecture.Tests**   | ArchUnitNET structural invariant tests (layers, naming, sealed)                |
+| **E128.Analyzers.Tests** | Analyzer and code fix unit tests                                               |
+| **Podman**               | Hardened Noble multi-stage Dockerfile and compose.yaml                         |
+| **Bash scripts**         | Build, test, format, CI, Podman, and lode tasks ([catalog](scripts/README.md)) |
+| **Claude Code harness**  | CLAUDE.md, rules, hooks, skills, and agents (see `.claude/`)                   |
+| **CI/CD**                | GitHub Actions CI and NuGet trusted publishing                                 |
+| **Renovate**             | Automatic dependency updates with grouped PRs and a security bypass            |
+| **Lode**                 | Structured documentation with the [Lode Coding Toolkit][lode-toolkit]          |
 
 ## Prerequisites
 
@@ -66,19 +86,19 @@ scripts/podman.sh test
 
 ### Optional
 
-| Tool               | Purpose                         | Install                                              |
-| ------------------ | ------------------------------- | ---------------------------------------------------- |
-| shellcheck         | Bash script linter              | `brew install shellcheck`                            |
-| dotnet-outdated    | NuGet update checker            | `dotnet tool install -g dotnet-outdated-tool`        |
+| Tool               | Purpose                             | Install                                                  |
+| ------------------ | ----------------------------------- | -------------------------------------------------------- |
+| shellcheck         | Bash script linter                  | `brew install shellcheck`                                |
+| dotnet-outdated    | NuGet update checker                | `dotnet tool install -g dotnet-outdated-tool`            |
 | jb (ReSharper CLI) | Semantic code cleanup (`format.sh`) | `dotnet tool install -g JetBrains.ReSharper.GlobalTools` |
 
-> **Note (jb):** `scripts/format.sh` runs `jb cleanupcode` before `dotnet format` when `jb` is on `$PATH`. If not installed, the step is skipped automatically. `--check` mode always skips `jb` (no verify-only equivalent exists).
+> **Note (jb):** `scripts/format.sh` runs `jb cleanupcode` before `dotnet format` when `jb` is on `$PATH`. If `jb` is not installed, the script skips that step. The `--check` mode always skips `jb`, because `jb` has no verify-only mode.
 
-> **Note (macOS):** The default `/bin/bash` on macOS is 3.2 (2007). Install bash 5+ via Homebrew and ensure `/opt/homebrew/bin/bash` is in your `$PATH` before `/bin/bash`.
+> **Note (macOS):** The default `/bin/bash` on macOS is version 3.2 from 2007. Install bash 5 or later with Homebrew. Put `/opt/homebrew/bin/bash` before `/bin/bash` in `$PATH`.
 
 > **Note (Ubuntu):** The `fd` package is named `fd-find`. The binary is `fdfind`. Create an alias: `ln -s $(which fdfind) ~/.local/bin/fd`.
 
-> **Note (macOS/Podman):** Podman needs a Linux VM on macOS (unlike Docker Desktop, which bundles one transparently). After install: `podman machine init && podman machine start`.
+> **Note (macOS and Podman):** Podman needs a Linux VM on macOS. Docker Desktop bundles a VM, Podman does not. After install, run `podman machine init && podman machine start`.
 
 ## Project Structure
 
@@ -86,7 +106,7 @@ scripts/podman.sh test
 .
 ├── .claude/                  # Claude Code harness
 │   ├── agents/               # Agent definitions
-│   ├── hooks/                # Session/guardrail hooks
+│   ├── hooks/                # Session and guardrail hooks
 │   ├── rules/                # Contextual rule files
 │   ├── settings.json         # Permissions and hook config
 │   ├── skills/               # Skill directories
@@ -102,14 +122,14 @@ scripts/podman.sh test
 ├── Dockerfile                # Multi-stage web app image
 ├── compose.yaml              # Container orchestration
 ├── E128.Reference.slnx       # Solution file
-├── global.json               # SDK version + MTP test runner config
+├── global.json               # SDK version and MTP test runner config
 ├── lode/                     # Project knowledge documentation
-├── nuget.config              # Single source + source mapping
+├── nuget.config              # Single source and source mapping
 ├── plans/                    # Structured planning documents
 ├── renovate.json             # Renovate dependency update config
 ├── scripts/                  # Bash development scripts ([catalog](scripts/README.md))
 ├── src/
-│   ├── E128.Analyzers/       # Custom Roslyn analyzers (NuGet package)
+│   ├── E128.Analyzers/       # Roslyn analyzers (published NuGet package)
 │   ├── E128.Reference.Core/  # Shared library
 │   ├── E128.Reference.Web/   # ASP.NET Core minimal API
 │   └── E128.Reference.Cli/   # System.CommandLine CLI
@@ -118,43 +138,43 @@ scripts/podman.sh test
     ├── E128.Analyzers.Tests/     # Analyzer unit tests
     ├── E128.Reference.Cli.Tests/ # CLI unit tests
     ├── E128.Reference.Core.Tests/# Core library unit tests
-    └── E128.Reference.Tests/     # Web integration tests (xUnit v3 + MTP)
+    └── E128.Reference.Tests/     # Web integration tests (xUnit v3 and MTP)
 ```
 
 ## Analyzer Configuration
 
-This repo uses a **deny-by-default** analyzer strategy:
+This repository uses a **deny-by-default** analyzer strategy:
 
-- `dotnet_analyzer_diagnostic.severity = error` — every diagnostic is an error unless explicitly overridden
-- Third-party analyzer packages (see [`Directory.Packages.props`](./Directory.Packages.props)) provide ~1000+ rules
-- ~60 rules explicitly disabled or set to `suggestion` (documented in `.globalconfig`)
-- Test projects have a separate `tests/.globalconfig` at `global_level = 101` for test-appropriate overrides
+- `dotnet_analyzer_diagnostic.severity = error` makes each diagnostic an error unless a rule overrides it
+- Third-party analyzer packages (see [`Directory.Packages.props`](./Directory.Packages.props)) add more than 1000 rules
+- About 60 rules are disabled or set to `suggestion`. The `.globalconfig` file documents each one.
+- Test projects use a separate `tests/.globalconfig` at `global_level = 101` for test overrides
 
 ### Analyzer Packages
 
 | Package                                     | Focus                    |
 | ------------------------------------------- | ------------------------ |
-| AsyncFixer                                  | Async/await patterns     |
+| AsyncFixer                                  | Async and await patterns |
 | Meziantou.Analyzer                          | General best practices   |
 | Microsoft.VisualStudio.Threading.Analyzers  | Threading correctness    |
-| Roslynator.Analyzers                        | Code style + quality     |
+| Roslynator.Analyzers                        | Code style and quality   |
 | Roslynator.CodeAnalysis.Analyzers           | Advanced code analysis   |
 | Roslynator.Formatting.Analyzers             | Formatting consistency   |
 | SharpSource                                 | Common pitfalls          |
-| SonarAnalyzer.CSharp                        | Security + reliability   |
+| SonarAnalyzer.CSharp                        | Security and reliability |
 
 ## Testing
 
-Tests use **xUnit v3** with the **Microsoft Testing Platform** (MTP) runner:
+Tests run on **xUnit v3** with the **Microsoft Testing Platform** (MTP) runner:
 
 ```bash
 # Run CI tests (default category)
 scripts/test.sh
 
-# Run specific test class
+# Run one test class
 scripts/test.sh GreeterTests
 
-# Run all tests including Podman and Manual
+# Run all tests, including Podman and Manual
 scripts/test.sh --all
 
 # Verbose output (human-readable)
@@ -162,9 +182,9 @@ scripts/test.sh --verbose
 ```
 
 Test categories:
-- `[Trait("Category", "CI")]` — runs in CI pipeline, must be fast and deterministic
-- `[Trait("Category", "Podman")]` — builds and tests the container image, requires Podman
-- `[Trait("Category", "Manual")]` — requires external dependencies or manual setup
+- `[Trait("Category", "CI")]`: runs in the CI pipeline. Each test must be fast and deterministic.
+- `[Trait("Category", "Podman")]`: builds and tests the container image. Podman must be installed.
+- `[Trait("Category", "Manual")]`: needs an external dependency or a manual setup step.
 
 ## Podman
 
@@ -184,34 +204,37 @@ podman compose down
 
 ## CI/CD
 
-**GitHub Actions** (`.github/workflows/ci.yml`) runs:
+**GitHub Actions** (`.github/workflows/ci.yml`) runs three steps:
 
 1. Format check (`dotnet format --verify-no-changes`)
 2. Release build
-3. CI-category tests only
+3. CI-category tests
 
-**NuGet publishing** (`.github/workflows/publish.yml`) — triggers on push to `main` when `src/E128.Analyzers/` changes. Uses OIDC trusted publishing (no API keys). Skips if the version already exists on nuget.org.
+**NuGet publishing** (`.github/workflows/publish.yml`) starts on a push to `main` that changes `src/E128.Analyzers/`. The workflow uses OIDC trusted publishing, so it needs no API key. It skips the push when the version already exists on nuget.org.
 
 ## dotnet-overhaul Skill
 
-The [`dotnet-overhaul`](.claude/skills/dotnet-overhaul/) skill is a portable, opinionated .NET code overhaul loop that can be copied into any .NET repo and run with Claude Code. It systematically modernizes language usage, enforces strict code analysis, reviews performance/concurrency/security, and verifies all tests pass.
+The [`dotnet-overhaul`](.claude/skills/dotnet-overhaul/) skill is a portable .NET code overhaul loop.
+Copy it into any .NET repository and run it with Claude Code.
+The skill modernizes language usage and enforces strict code analysis.
+It also reviews performance, concurrency, and security, and it verifies that all tests pass.
 
-**Opinionated.** The skill enforces specific conventions (deny-by-default analyzers, immutability, MTP test runner, strict code analysis). Review and edit `conventions.md` after copying to match your project's preferences.
+**Opinionated.** The skill enforces set conventions: deny-by-default analyzers, immutability, the MTP test runner, and strict code analysis. Edit `conventions.md` after you copy the skill to match the preferences of your project.
 
-**Iterative.** For initial large overhauls, run the skill multiple times — approve a subset of findings per run, commit, then run again. Once the codebase is clean, run periodically to catch drift from new code, updated analyzers, or TFM upgrades.
+**Iterative.** For a first large overhaul, run the skill several times. Approve a subset of findings per run, commit, then run again. After the codebase is clean, run the skill periodically to catch drift from new code, updated analyzers, or a TFM upgrade.
 
 ### Install
 
 ```bash
-# From inside your target repo
+# Run this from inside your target repository
 cp -r /path/to/dotnet-reference/.claude/skills/dotnet-overhaul .claude/skills/
 ```
 
-The skill includes its own scripts, pattern files, and conventions template. No other files from this repo are required.
+The skill includes its own scripts, pattern files, and conventions template. It needs no other file from this repository.
 
 ### Run
 
-Create a branch first — the skill makes many changes across the codebase:
+Create a branch first, because the skill changes many files across the codebase:
 
 ```bash
 git checkout -b refactor/dotnet-overhaul
@@ -223,18 +246,19 @@ git checkout -b refactor/dotnet-overhaul
 
 ### Customize
 
-After copying, optionally edit these files in `.claude/skills/dotnet-overhaul/`:
+After you copy the skill, you can edit these files in `.claude/skills/dotnet-overhaul/`:
 
-| File                | Purpose                                                  |
-| ------------------- | -------------------------------------------------------- |
-| `conventions.md`    | Project-specific coding standards, analyzer overrides, auto-approved fixes, test relaxations |
-| `lessons/*.md`      | Known false positives and compiler edge cases discovered during overhaul runs |
+| File             | Purpose                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| `conventions.md` | Project coding standards, analyzer overrides, auto-approved fixes, and test relaxations     |
+| `lessons/*.md`   | Known false positives and compiler edge cases found during overhaul runs                    |
 
-The skill auto-detects the test framework, solution format, and analyzer configuration. External agents (`build-validator`, `sme-researcher`, `tdd-loop-optimizer`) are optional enhancements — the skill works without them.
+The skill detects the test framework, the solution format, and the analyzer configuration.
+The external agents (`build-validator`, `sme-researcher`, `tdd-loop-optimizer`) are optional. The skill works without them.
 
 ## Contributing
 
-Issues and pull requests are welcome. For large changes, open an issue first to discuss the approach.
+Issues and pull requests are welcome. For a large change, open an issue first to discuss the approach.
 
 ## License
 
