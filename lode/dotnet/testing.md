@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-07-13T17:48:48Z*
+*Updated: 2026-08-16T12:38:23Z*
 
 ## Microsoft Testing Platform (MTP)
 

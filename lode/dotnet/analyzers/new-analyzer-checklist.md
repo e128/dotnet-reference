@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-07-13T17:50:43Z*
+*Updated: 2026-08-16T12:37:10Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 
@@ -31,7 +31,7 @@ Roslyn syntax node properties that are semantically always-present can be nullab
 
 ## Test Infrastructure Notes
 
-- `CSharpAnalyzerVerifier` / `CSharpCodeFixVerifier` from `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing` are the standard test harness
+- `CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>` and `CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>` from `Microsoft.CodeAnalysis.CSharp.Testing` are the standard test harness. Most test files build a `test.RunAsync()` call directly, not the static `CSharpAnalyzerVerifier` helper.
 - Test `ReferenceAssemblies` default to the SDK version configured in `tests/.globalconfig` via `e128_minimum_framework_version`
 - xUnit v3 MTP runner requires `scripts/test.sh` — raw `dotnet test --filter` does not work
 

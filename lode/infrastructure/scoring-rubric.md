@@ -1,5 +1,5 @@
 # Scoring Rubric for Strategic Analysis
-*Updated: 2026-07-13T17:49:48Z*
+*Updated: 2026-08-16T12:37:37Z*
 
 Shared scoring rubric used by `leverage-advisor` to score and prioritize
 candidates. Other agents (e.g. `token-optimizer`) define their own inline rubrics.

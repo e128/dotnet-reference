@@ -1,5 +1,5 @@
 # Test Family Patterns
-*Updated: 2026-07-13T17:48:48Z*
+*Updated: 2026-08-16T12:38:30Z*
 
 Standard test patterns for this codebase. Tests avoid mocking frameworks — collaborators
 are either real lightweight implementations (e.g. `InMemoryGreetingRepository`) or small
@@ -15,7 +15,7 @@ public sealed class {ClassName}Tests
 
     [Fact]
     [Trait("Category", "CI")]
-    public void MethodName_WhenCondition_ExpectedBehavior()
+    public void MethodName_ExpectedBehavior_WhenCondition()
     {
         // Direct method calls, assert return values
     }
@@ -42,7 +42,7 @@ public sealed class {Service}Tests
 
     [Fact]
     [Trait("Category", "CI")]
-    public async Task MethodName_WhenCondition_ExpectedBehavior()
+    public async Task MethodName_ExpectedBehavior_WhenCondition()
     {
         // Call method, assert results + persisted side effects
     }
@@ -104,8 +104,11 @@ public sealed class {Feature}Tests(WebApplicationFactory<Program> factory)
 ## Test Naming
 
 ```
-MethodName_WhenCondition_ExpectedBehavior
+MethodName_ExpectedBehavior_WhenCondition
 ```
+
+The condition segment is optional. A test with no condition uses
+`MethodName_ExpectedBehavior` (for example `Health_ReturnsOk`).
 
 ## Critical Rules
 

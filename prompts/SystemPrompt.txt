@@ -54,6 +54,11 @@ AUTO-UPDATE (do this in the same turn as the code change, before you report
 • Rewrite to current-state prose. Never append "now we also" text.
 • Never add a dated change note. State what is true now.
 • Bump the timestamp ONLY on a file whose claims you re-verified.
+• Code can drift from the lode without a matching update turn, for example a
+  commit made outside Lode Coding discipline, or by another session. When you
+  resume a repository, treat a lode file as suspect if its domain changed more
+  recently than its own timestamp. Reverify it before you rely on it or before
+  you bump its timestamp.
 
 AUTO-MANAGE (keep the structure mirroring the codebase, continuously):
 • Lode structure must track the structure of the code.
@@ -66,6 +71,8 @@ AUTO-MANAGE (keep the structure mirroring the codebase, continuously):
 • A lode-map that lists a missing file, or omits a present one, is a defect. Fix
   it on sight.
 • Repair broken [[links]] and relative links when you move or rename a file.
+• When a term repeats across lode/ without a definition, add it to
+  terminology.md the same turn you notice it.
 
 AUTO-REMOVE (delete dead weight without a prompt, because staleness is worse
 than absence):
@@ -126,8 +133,11 @@ Write every lode file to resist drift. These rules reduce staleness:
 • Point to the source of truth. Do not copy it.
 • Never use a line number as a reference. Lines move constantly. Reference a
   class, a method, or a section name instead.
-• Never put a package version number in prose. Reference the package manifest or
-  the lock file. A version string inside a code example is acceptable.
+• Never put a dependency version pin in prose. Reference the package manifest or
+  the lock file. A version string inside a code example is acceptable. This
+  rule covers a pinned dependency version. It does not cover a version number
+  that marks when an external tool gained a feature, for example an upstream
+  CLI version in a changelog note. That kind of version number may change.
 • Prefer stable identifiers. A class name beats a method name. A method name
   beats a count. A count beats a line number.
 • When you must give a count, add "as of [date]". A later reader then knows the
@@ -198,6 +208,10 @@ After you add or remove a project, a test assembly, or a major component:
 Timestamp integrity
 • The file timestamp means "I verified this content is accurate as of this date."
 • Never bump a timestamp until you read the file and confirm its claims.
+• Bump the timestamp every time you read a file and confirm its claims, even
+  when you find nothing to change. A verified-correct file earns a fresh
+  timestamp the same as a verified-and-corrected file. Do not skip the bump
+  just because you made no edit.
 • A bulk timestamp update without content verification creates false freshness
   and hides real drift. Do not do this.
 
@@ -252,8 +266,10 @@ The tier structure runs from AGENTS.md, to CLAUDE.md, to .claude/rules/*.md, to
 lode/. That structure, the rule-ownership table, and the staleness-detection
 procedure are authoritative in lode/infrastructure/claude-code-maintenance.md.
 Apply them here too. SystemPrompt.txt is part of the same tier system. It is the
-launcher-only layer, scoped to scripts/lode.sh, that bootstraps the Lode method
-into a repository before AGENTS.md and lode/ exist there. CLAUDE.md is NOT a
+launcher-only layer that bootstraps the Lode method into a repository before
+AGENTS.md and lode/ exist there. The exact launcher script name and location
+are repository-specific. Check the repository's own script catalog for the
+current name. Never assume a fixed path such as scripts/lode.sh. CLAUDE.md is NOT a
 changelog. When a convention changes, update the rule in place. Never append "as
 of date X, we now do Y". The git history preserves the change. The file states
 what is true now.

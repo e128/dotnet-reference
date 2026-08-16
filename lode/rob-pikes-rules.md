@@ -1,5 +1,5 @@
 # Rob Pike's 5 Rules of Programming
-*Updated: 2026-07-13T17:46:19Z*
+*Updated: 2026-08-16T12:40:40Z*
 
 1. **You can't tell where a program is going to spend its time.** Bottlenecks occur in surprising places, so don't try to second-guess and put in a speed hack until you've proven that's where the bottleneck is.
 

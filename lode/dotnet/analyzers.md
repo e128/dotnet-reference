@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-07-13T17:50:43Z*
+*Updated: 2026-08-16T12:37:07Z*
 
 ## Strategy: Deny by Default
 
@@ -101,7 +101,7 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 
 `src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"` — applied to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
-Rules span categories: Design, Reliability, Performance, Style, Testing, and FileSystem. Most rules ship with a code fix; a few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128051` Broad HttpClient catch) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
+Rules span categories: Design, Reliability, Performance, Style, Testing, and FileSystem. Most rules ship with a code fix; a few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
 
 Key rules by category (not exhaustive):
 

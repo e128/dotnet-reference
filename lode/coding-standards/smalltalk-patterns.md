@@ -1,5 +1,5 @@
 # Smalltalk Best Practice Patterns (Applied to C#)
-*Updated: 2026-07-13T17:50:43Z*
+*Updated: 2026-08-16T12:36:13Z*
 
 Key patterns from Kent Beck's Smalltalk Best Practice Patterns, adapted for C#/.NET:
 

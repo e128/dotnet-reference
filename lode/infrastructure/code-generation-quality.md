@@ -1,5 +1,5 @@
 # Code Generation Quality with Claude Code
-*Updated: 2026-07-13T17:47:18Z*
+*Updated: 2026-08-16T12:38:57Z*
 
 Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
@@ -7,20 +7,22 @@ Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
 Deny-by-default `.globalconfig` with multiple analyzer packages means Claude writes "close enough" code and `dotnet build` immediately reports what's wrong. `TreatWarningsAsErrors=true` means nothing slips through as a warning. The AI iterates against compiler output, not instructions it might forget.
 
-## 2. CLAUDE.md — Always-Loaded Rules
+## 2. CLAUDE.md and AGENTS.md: Always-Loaded Rules
 
-Under 200 lines, loaded every turn. High-frequency rules that prevent the most common AI mistakes:
-- "Never use raw `dotnet test`" — prevents broken commands
-- "Implicit usings disabled" — forces explicit `using` directives
-- "Assert.Fail for stubs" — consistent TDD pattern
-- "Never use `!` to silence nullability" — prevents the most common bad fix
+CLAUDE.md is 34 lines and imports AGENTS.md, the portable cross-harness
+rule file. Both load every turn. AGENTS.md holds the high-frequency rules
+that prevent the most common AI mistakes.
+- "Never run raw `dotnet test`": prevents broken commands.
+- "Implicit usings disabled": forces explicit `using` directives.
+- "Assert.Fail for stubs": consistent TDD pattern.
+- "Never use `!` to silence nullability": prevents the most common bad fix.
 
 ## 3. Contextual Rules (`.claude/rules/`)
 
 Loaded only when relevant. Most impactful:
 - `dotnet-anti-patterns.md` — 4 rules preventing top .NET mistakes (`DateTime.Now`, `new HttpClient()`, `async void`, sync-over-async)
 - `quality-gates.md` — format before check, no analyzer suppressions
-- `read-before-edit.md` + `reread-triggers.md` — prevents editing stale file contents after format
+- `read-before-edit.md`: prevents editing stale file contents after format. It defines the re-read triggers.
 - `token-efficiency.md` — "use scripts, not raw commands" reduces wasted turns
 
 ## 4. Scripts as Correct Commands

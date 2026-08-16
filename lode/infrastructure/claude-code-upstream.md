@@ -1,5 +1,5 @@
 # Claude Code Upstream Reference
-*Updated: 2026-07-13T17:50:43Z*
+*Updated: 2026-08-16T12:38:30Z*
 
 Baseline snapshot of official Claude Code guidance. Used for periodic config health checks.
 

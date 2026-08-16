@@ -1,5 +1,5 @@
 # Podman
-*Updated: 2026-07-22T00:03:25Z*
+*Updated: 2026-08-16T12:36:24Z*
 
 ## Why Podman
 
@@ -29,7 +29,7 @@ No FIPS 140-2 setup: the stock Ubuntu Noble `openssl` apt package ships no FIPS 
 
 ## `.dockerignore`
 
-Excludes build output, Git metadata, IDE files, `.claude/`, docs (`lode/`, `plans/`, `prompts/`, `*.md` except `README.md`), test and benchmark projects, `src/E128.Analyzers/`, scripts, CI config, secrets, and OS artifacts. Only `src/E128.Reference.Core/` and `src/E128.Reference.Web/` reach the build context. Podman checks `.containerignore` first, then falls back to `.dockerignore` — no rename needed.
+Excludes build output, Git metadata, IDE files, `.claude/`, docs (`lode/`, `plans/`, `prompts/`, `*.md` except `README.md`), test and benchmark projects, `src/E128.Analyzers/`, scripts, CI config, secrets, and OS artifacts. `src/E128.Reference.Core/`, `src/E128.Reference.Web/`, and `src/E128.Reference.Cli/` all reach the build context, since `.dockerignore` does not exclude the Cli project. The Dockerfile publishes only `E128.Reference.Web`. Podman checks `.containerignore` first. It falls back to `.dockerignore`. No rename is needed.
 
 ## macOS Setup
 

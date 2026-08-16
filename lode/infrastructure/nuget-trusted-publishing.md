@@ -1,6 +1,6 @@
 # NuGet Trusted Publishing
 
-*Updated: 2026-07-13T17:49:48Z*
+*Updated: 2026-08-16T12:38:26Z*
 
 OIDC-based package publishing from GitHub Actions to nuget.org. Eliminates long-lived API keys.
 

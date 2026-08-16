@@ -1,5 +1,5 @@
 # Dependency Policy
-*Updated: 2026-07-13T17:46:19Z*
+*Updated: 2026-08-16T12:36:32Z*
 
 ## Selection Criteria
 
@@ -25,7 +25,7 @@ Before adding a new NuGet dependency, evaluate:
 
 ## Version Management
 
-All versions are managed centrally in `Directory.Packages.props` (CPM). Individual projects use `<PackageReference Include="..." />` without version attributes. Transitive pinning is enabled via `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>`. Explicit transitive pins (version-only `PackageVersion` entries with no direct reference) live under the "Transitive pins" comments in `Directory.Packages.props` to prevent diamond-dependency drift. A pin only does its job while the package actually appears in the restore graph (`dotnet list package --include-transitive`); once it no longer does, the pin is inert and should be removed.
+All versions are managed centrally in `Directory.Packages.props` (CPM). Individual projects use `<PackageReference Include="..." />` without version attributes. `Directory.Packages.props` sets `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>` to enable CPM. `Directory.Build.props` sets `<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>` to pin transitive versions. Explicit transitive pins (version-only `PackageVersion` entries with no direct reference) live under the "Transitive pins" comments in `Directory.Packages.props`. This prevents diamond-dependency drift. A pin only does its job while the package appears in the restore graph. Check with `dotnet list package --include-transitive`. Once a package no longer appears, its pin is inert. Remove it.
 
 ## Pruning Unused Dependencies
 

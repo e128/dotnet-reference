@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-07-13T17:50:43Z*
+*Updated: 2026-08-16T12:37:35Z*
 
 ## Overview
 
@@ -92,7 +92,7 @@ E128099 | Design | Warning | No longer needed
 - `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content) and `RS1038`
 - Files registered as `<AdditionalFiles>` in csproj
 - Published to NuGet: https://www.nuget.org/packages/E128.Analyzers/
-- `Shipped.md` lists all shipped rules across release sections (1.0.0 through 1.31.0); run `scripts/internal/analyzer-release-check.sh` for current shipped/unshipped/source ID counts
+- `Shipped.md` lists all shipped rules across release sections (1.0.0 through 1.39.0); run `scripts/internal/analyzer-release-check.sh` for current shipped/unshipped/source ID counts
 - `Unshipped.md` tracks pending changes only; empty (just the `### New Rules` header) when all rules are shipped
 
 ### Release-to-Rule Mapping
@@ -112,7 +112,10 @@ E128099 | Design | Warning | No longer needed
 | 1.8.0   | E128054       | Temp dir cleanup; E128003/004 recategorized to Design |
 | 1.23.3  | E128055-065   | Pragma, TOCTOU, readonly array, interface param, etc. |
 | 1.26.1  | E128066-075   | O(n²) loops, pool bounds, FIPS hash, init accessor, crypto RNG |
-| 1.31.0  | E128076-090   | DOM-detection reliability, ByteSize, marshal/span perf, bare Parse, test reflection (E128088 unused) |
+| 1.31.0  | E128076-090   | DOM-detection reliability, ByteSize, marshal/span perf, bare Parse, test reflection (E128088 shipped later, in 1.39.0) |
+| 1.35.0  | E128091-092   | ProcessStartInfo argument list, async File overload |
+| 1.38.0  | E128093, 096, 098-100 | Async DB overload, sync call to async local function, chained string Replace, process exit timeout, catch filter on cancellation |
+| 1.39.0  | E128094, 097, 088 | Pragma before namespace, xUnit comment placement, enum switch exhaustiveness |
 
 ## Sources
 

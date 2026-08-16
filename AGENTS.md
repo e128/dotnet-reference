@@ -40,8 +40,9 @@ of what is portable versus Claude-only.
   file the same turn code, config, or structure changes. Never defer.
   Remove lode content the same turn the feature it describes disappears.
   The full Lode Coding methodology lives in `prompts/SystemPrompt.txt`. On
-  Claude Code, `scripts/lode.sh` (or the `.nu`/`.ps1` variant) launches a
-  session with that file injected as the system prompt. On a harness
+  Claude Code, `scripts/lode.nu` (or the `.ps1` variant, or the legacy
+  `scripts/internal/lode.sh`) launches a session with that file injected as
+  the system prompt. On a harness
   without a system-prompt-injection flag, read `prompts/SystemPrompt.txt`
   directly at session start. Its rules apply regardless of launch method.
 

@@ -1,5 +1,5 @@
 # Agent Patterns
-*Updated: 2026-07-13T17:50:43Z*
+*Updated: 2026-08-16T12:37:10Z*
 
 Shared behavioral patterns referenced by multiple agents. Agents should reference
 this file rather than inlining these patterns.
