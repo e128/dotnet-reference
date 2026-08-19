@@ -61,13 +61,13 @@ IFS=$'\t' read -r MODEL MODEL_ID DIR PCT WIN_SIZE TOK_TOTAL CACHE_PCT VERSION DU
 BRANCH=$(git -c core.useBuiltinFSMonitor=false branch --show-current 2>/dev/null || echo "")
 
 # CI status (cached 30s to avoid API spam)
-CI_CACHE="/tmp/.claude-ci-status"
+CI_CACHE="$(git rev-parse --show-toplevel 2>/dev/null || echo .)/.claude/tmp/.claude-ci-status"
 CI_TTL=30
 CI_ICON=""
 if [ -f "$CI_CACHE" ] && [ "$(( $(date +%s) - $(stat -f%m "$CI_CACHE" 2>/dev/null || echo 0) ))" -lt "$CI_TTL" ]; then
   CI_ICON=$(cat "$CI_CACHE")
 else
-  CI_RAW=$(gh api repos/e128/pugworks/actions/runs --jq '.workflow_runs[0] | (.status + ":" + (.conclusion // ""))' 2>/dev/null || echo "")
+  CI_RAW=$(gh api repos/e128/dotnet-reference/actions/runs --jq '.workflow_runs[0] | (.status + ":" + (.conclusion // ""))' 2>/dev/null || echo "")
   case "$CI_RAW" in
     completed:success)   CI_ICON="\033[38;5;45m● CI pass\033[0m" ;;
     completed:failure)   CI_ICON="\033[38;5;202m● CI fail\033[0m" ;;

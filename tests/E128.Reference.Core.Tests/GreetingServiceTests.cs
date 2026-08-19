@@ -63,8 +63,8 @@ public sealed class GreetingServiceTests
         await _service.GreetAsync(new GreetingRequest("Test"));
 
         var saved = await _repository.GetRecentAsync(1);
-        Assert.Single(saved);
-        Assert.Equal("Hello, Test!", saved[0].Message);
+        var single = Assert.Single(saved);
+        Assert.Equal("Hello, Test!", single.Message);
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider

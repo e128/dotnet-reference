@@ -38,8 +38,8 @@ public sealed class InMemoryGreetingRepositoryTests
         await _repository.SaveAsync(greeting);
 
         var result = await _repository.GetRecentAsync(10);
-        Assert.Single(result);
-        Assert.Equal(greeting, result[0]);
+        var single = Assert.Single(result);
+        Assert.Equal(greeting, single);
     }
 
     [Fact]
