@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-08-16T12:40:40Z*
+*Updated: 2026-08-22T17:35:38Z*
 
 ## Generated Docs
 
@@ -48,3 +48,4 @@
 - [agent-patterns.md](infrastructure/agent-patterns.md) — Shared agent patterns: plan convention, budget exhaustion, reflection loop
 - [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md) — Simplification-agent heuristic definitions (H1-H6)
 - [scoring-rubric.md](infrastructure/scoring-rubric.md) — Shared four-dimension scoring rubric for strategic analysis agents
+- [opencode-ollama-setup.md](infrastructure/opencode-ollama-setup.md) — One-time local opencode provider config for the Ollama-backed lode launcher

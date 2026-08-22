@@ -1,6 +1,6 @@
 # Project Instructions for Claude
 
-*Last updated: 2026-08-15*
+*Last updated: 2026-08-22*
 
 @AGENTS.md
 
@@ -28,6 +28,20 @@ Detail lives in `.claude/rules/`, `lode/`, and skills. Load detail on demand.
 - Never set `model:` in an agent or a skill. All inherit the session
   model. See
   [agent-vs-skill-routing.md](.claude/rules/agent-vs-skill-routing.md).
+
+## Configuration Tiers
+
+Three loaded tiers plus a wrapper: `AGENTS.md` (portable, harness-agnostic
+core) → `CLAUDE.md` and `.claude/rules/*.md` (always loaded, Claude-Code-only
+overlay) → `lode/` (knowledge, not instructions). `prompts/SystemPrompt.txt`
+wraps all three. See
+[claude-code-maintenance.md](lode/infrastructure/claude-code-maintenance.md)
+§ Adding Rules and § Rule File Ownership for where a new instruction lands.
+
+**Which-home test.** Ask: would this rule hold for any coding agent working
+in this repo, or only for Claude Code's own tool, hook, skill, or subagent
+mechanics? Portable answer → `AGENTS.md`. Claude-Code-mechanics answer →
+`CLAUDE.md` or `.claude/rules/`.
 
 Full AI assistant preferences: [lode/practices.md](lode/practices.md).
 Capability map (what is portable versus Claude-only):

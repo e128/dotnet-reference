@@ -1,5 +1,5 @@
 # Claude Code Maintenance
-*Updated: 2026-08-15T19:16:12Z*
+*Updated: 2026-08-22T17:36:07Z*
 
 ## Harness Portability Capability Map
 
@@ -16,7 +16,7 @@ equivalent on another harness.
 | `lode/`                         | Yes                         | Plain markdown project memory. No harness-specific format          |
 | `prompts/SystemPrompt.txt`      | Yes (content), no (launch)  | The Lode Coding methodology. Content applies on any harness. The `--append-system-prompt` injection mechanism is Claude CLI only |
 | `scripts/lode.sh`, `lode.nu`, `lode.ps1`, `lode-ollama.nu` | No | Claude CLI wrappers that inject `prompts/SystemPrompt.txt`. On another harness, read that file directly at session start instead |
-| `scripts/lode-opencode.nu`, `lode-opencode-lib.nu` | Partial | OpenCode wrapper: launches `opencode` against an Ollama backend with `prompts/SystemPrompt.txt` injected as the opening message (OpenCode has no persistent system-prompt flag) |
+| `scripts/lode-opencode.nu`, `lode-opencode-lib.nu` | Partial | OpenCode wrapper: launches `opencode` against an Ollama backend with `prompts/SystemPrompt.txt` injected as the opening message (OpenCode has no persistent system-prompt flag). One-time local provider config: [opencode-ollama-setup.md](opencode-ollama-setup.md) |
 | `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md`, adds Claude-only rules |
 | `.claude/rules/*.md`            | No                          | Claude Code 2.1.220 loads every rule file into every context window, not just filename-matched ones. Treat the whole directory as always-loaded budget |
 | `.claude/hooks/`                | No                          | Claude Code guardrail hooks. No equivalent automation hook system on another harness |
