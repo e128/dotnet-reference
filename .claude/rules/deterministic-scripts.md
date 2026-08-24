@@ -41,6 +41,7 @@ terse JSON by default. Pass `--verbose` for the full log.
 | ad-hoc `jq` over session JSONL                                   | `scripts/session-mine.sh <subcmd> [--json]`                     |
 | ad-hoc `jq` over JSONL for error trends and tool counts          | `scripts/session-health.sh [<subcmd>] [--json]`                 |
 | ad-hoc `fd` or `ls` over `.claude/agents/` and `.claude/skills/` | `scripts/catalog-stats.sh [--json]`                             |
+| hand-editing the opencode agent mirror                              | `scripts/internal/opencode-agents.sh [sync\|--json]`            |
 | `dotnet list ... --outdated\|--vulnerable`                       | `scripts/dep-check.sh [--outdated] [--json]`                    |
 | parsing raw MSBuild `File.cs(l,c): error CODE` lines             | `scripts/diagnostics.sh [--group\|--code ID\|--diff a b]`       |
 | ad-hoc `PackageReference` classify or cross-project heat map     | `scripts/nuget-heat-map.sh [--json]`                            |

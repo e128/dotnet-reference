@@ -31,9 +31,10 @@ of what is portable versus Claude-only.
 - **Route every repeated operation through a script in `scripts/`.** Never
   run the raw command when a script exists. Run `scripts/help.sh` for the
   full list. The full routing table lives in
-  `.claude/rules/deterministic-scripts.md`. Claude Code loads that file
-  automatically. On another harness, open it directly, the table still
-  applies since it only names bash scripts.
+  `.claude/rules/deterministic-scripts.md`. Both supported harnesses load
+  it: Claude Code auto-loads `.claude/rules/*.md`, and opencode loads them
+  through `instructions` in `opencode.json`. On any other harness, open the
+  file directly. The table still applies since it only names bash scripts.
 - **Lode** — `lode/` is the authoritative project memory, not this file or
   any harness config. Read `lode/lode-map.md`, `lode/terminology.md`, and
   `lode/summary.md` at the start of a session. Update the matching lode
@@ -110,9 +111,21 @@ of what is portable versus Claude-only.
 
 ## What This File Does Not Cover
 
-Claude Code loads three more layers that have no equivalent on another
-harness: `.claude/rules/*.md` (always-loaded domain rules), `.claude/skills/`
-and `.claude/agents/` (Claude-only skills and subagents), and
-`.claude/hooks/` (Claude-only automation hooks). On another harness,
-`scripts/`, `lode/`, and this file are the full toolkit. See
+The domain rules in `.claude/rules/*.md` are cross-harness now. Claude Code
+auto-loads that directory. opencode loads it through `instructions` in
+`opencode.json`. Skills in `.claude/skills/` are cross-harness too:
+opencode reads project-level `.claude/skills/*/SKILL.md` natively.
+
+Two layers stay single-harness:
+
+- Claude-only: `.claude/hooks/` (guardrail automation),
+  `.claude/settings.json` (permissions), `CLAUDE.md`, and plugins
+- opencode-only: `opencode.json` (instruction wiring plus a permission
+  mirror of the approval policy)
+
+Agent definitions are shared too. `.claude/agents/*.md` is the source of
+truth. A generated mirror in `.opencode/agents/` adapts it for opencode
+(frontmatter fields and tool names differ per harness). Regenerate with
+`scripts/internal/opencode-agents.sh sync`. `/yeet` runs this whenever agent
+files change. Never edit the mirror by hand. See
 `lode/infrastructure/claude-code-maintenance.md` for the capability map.

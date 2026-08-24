@@ -92,6 +92,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/cr-diff-deliver.sh`        | Decide code-review diff delivery mode by size: inline (≤30KB), write (30-40KB), or split (>40KB) |
 | `internal/lode.sh`                   | Legacy Claude CLI wrapper (SystemPrompt.txt)                                               |
 | `internal/mechanical-diff.sh`        | Classify each changed file in the working diff as MECHANICAL (namespace rename) or SUBSTANTIVE |
+| `internal/opencode-agents.sh`        | Sync Claude Code agent definitions into the opencode mirror (.opencode/agents/)           |
 | `internal/overlap-detect.sh`         | Detect trigger-phrase overlap between agents and skills                                    |
 | `internal/plan-close.sh`             | Verify tasks complete, then remove plan dir                                                |
 | `internal/plan-context.sh`           | List active plans, roadmap items, or details                                               |

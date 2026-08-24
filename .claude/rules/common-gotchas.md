@@ -19,7 +19,7 @@ Apply the same check to any dynamically-constructed path.
 
 Never invoke `python3` from Bash.
 
-- To fetch a URL, use the `WebFetch` tool.
+- To fetch a URL, use the fetch tool.
 - To parse JSON, use `jq` or read the output directly.
 - To process local data, use a bash script or a `scripts/*.sh` entry.
 
@@ -28,3 +28,10 @@ Never invoke `python3` from Bash.
 Emit UTF-8 with Unicode 15.0 and color font support. The .NET default is
 UTF-8. Never downgrade to ASCII. Emoji and multi-byte characters are valid in
 CLI output. Do not assume the terminal lacks color emoji support.
+
+## Working Files
+
+Write scratch files to `.claude/tmp/`. Never write to `/tmp`. Lode scraps go
+in `lode/tmp/`.
+
+Never write an absolute user profile path. Use `~` or a repo-relative path.

@@ -10,8 +10,8 @@ Generate format-compliant C# on the first write.
 then re-run `check.sh`.
 
 **Analyzer suppressions.** Never use `#pragma warning disable`,
-`[SuppressMessage]`, or an editorconfig severity downgrade without first
-prompting the user through `AskUserQuestion`.
+`[SuppressMessage]`, or an editorconfig severity downgrade without asking the
+user first.
 
 **Null-forgiving operator.** Never use `!` to silence CS8600 through CS8604.
 

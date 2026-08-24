@@ -4,7 +4,7 @@
 
 Inside a skill or an agent, never prompt the user to approve any of these:
 
-- Read, Glob, or Grep tool calls
+- Read, glob, or grep tool calls
 - Writes to `.claude/tmp/`
 - Shell commands that only read state: `rg`, `fd`, `cat`, `head`, `ls`, `wc`,
   `git diff`, `git log`, and any `scripts/*.sh` call

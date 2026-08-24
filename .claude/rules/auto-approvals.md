@@ -1,5 +1,11 @@
 # Auto-Approvals
 
+This file states the approval policy. Each harness enforces it in its own
+config. Keep the configs in agreement when this policy changes:
+
+- Claude Code: allow-list entries in `.claude/settings.json`
+- opencode: `permission` block in `opencode.json`
+
 Apply these changes silently. They never require user confirmation:
 
 - Removing an unused `using` statement (IDE0005)

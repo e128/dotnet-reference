@@ -1,7 +1,7 @@
 # Read Before Edit
 
-Read a file before you call Edit or Write on it. The one exception is a file
-whose contents you already viewed through `Bash`.
+Read a file before you edit or overwrite it. The one exception is a file
+whose contents you already viewed through shell output.
 
 **Re-read triggers (mandatory).** Each event below invalidates file contents
 you read earlier. Re-read the file before you edit it:

@@ -3,7 +3,7 @@
 Write every artifact in Simplified Technical English, after ASD-STE100.
 
 **Applies to:** docs, READMEs, PR bodies, commit bodies, error messages, code
-comments, `lode/` files, `CLAUDE.md`, and these rule files.
+comments, `lode/` files, `AGENTS.md`, and these rule files.
 
 **Does not apply to:** code, identifiers, command syntax, CLI output, or chat
 prose. Session style modes govern chat. STE governs written artifacts.

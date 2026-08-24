@@ -105,6 +105,20 @@ If the agent produces edits, they become part of this commit. No separate commit
 
 Skip with "README check skipped — no analyzer or script changes" if neither path is touched.
 
+**E) opencode agent mirror (conditional):**
+Only if any staged or unstaged changes touch `.claude/agents/` OR `.opencode/agents/`:
+
+```bash
+scripts/internal/opencode-agents.sh sync --json
+```
+
+This regenerates the `.opencode/agents/` mirror from the source definitions in
+`.claude/agents/` so both harnesses run the same agents. Report the generated count.
+The regenerated files become part of this commit. Never hand-edit files under
+`.opencode/agents/`; edit `.claude/agents/` and let the script regenerate.
+
+Skip with "Agent mirror skipped — no agent definition changes" when neither path is touched.
+
 **If `--dry-run`**: report quality gate results and **stop here.** Do not continue to step 2.
 
 ### 2. Stage + commit + push
