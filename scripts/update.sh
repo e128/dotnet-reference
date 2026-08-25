@@ -40,8 +40,9 @@ if [[ "$ACTIONS" == true ]]; then
     WORKFLOW_DIR="$ROOT/.github/workflows"
     if [[ -d "$WORKFLOW_DIR" ]]; then
         # Extract uses: lines and show current versions
-        rg "uses:" "$WORKFLOW_DIR" --no-heading 2>/dev/null | while IFS= read -r line; do
-            action=$(echo "$line" | grep -oP 'uses: \K\S+' || true)
+        rg -o 'uses:\s*\S+' "$WORKFLOW_DIR" --no-heading --no-filename 2>/dev/null | while IFS= read -r line; do
+            action="${line#uses:}"
+            action="${action# }"
             if [[ -n "$action" ]]; then
                 printf "  %s\n" "$action"
             fi

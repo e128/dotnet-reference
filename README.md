@@ -57,7 +57,7 @@ scripts/podman.sh test
 | **E128.Reference.Web**   | Minimal API web app with Kestrel and a health endpoint                         |
 | **E128.Reference.Cli**   | System.CommandLine CLI with a `--name` option                                  |
 | **E128.Reference.Core**  | Shared library (Greeter service, models, repositories, services)               |
-| **E128.Analyzers**       | Roslyn analyzers (E128001 to E128096) with code fixes, published to nuget.org  |
+| **E128.Analyzers**       | Roslyn analyzers (E128001 to E128101) with code fixes, published to nuget.org  |
 | **E128.Reference.Tests** | xUnit v3 and MTP with the CI, Podman, and Manual test categories               |
 | **Architecture.Tests**   | ArchUnitNET structural invariant tests (layers, naming, sealed)                |
 | **E128.Analyzers.Tests** | Analyzer and code fix unit tests                                               |
