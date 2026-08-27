@@ -6,7 +6,8 @@ Write every artifact in Simplified Technical English, after ASD-STE100.
 comments, `lode/` files, `AGENTS.md`, and these rule files.
 
 **Does not apply to:** code, identifiers, command syntax, CLI output, or chat
-prose. Session style modes govern chat. STE governs written artifacts.
+prose. Session style modes govern chat. The chat style rules live in
+`lode/practices.md` (Chat Style).
 
 ## Words
 

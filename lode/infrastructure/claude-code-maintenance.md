@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-08-24T15:55:44Z*
+*Updated: 2026-08-27T14:48:30Z*
 
 ## Harness Portability Capability Map
 
@@ -76,6 +76,23 @@ The Claude Code harness for this repo consists of:
 - New or changed agent → edit `.claude/agents/*.md`, then run
   `scripts/internal/opencode-agents.sh sync`. `/yeet` runs it automatically.
 - Knowledge → `lode/` (not AGENTS.md, CLAUDE.md, or rules)
+
+### The Which-Home Test
+
+Ask: would this rule hold for any coding agent, or only for Claude Code
+mechanics?
+
+- Portable answer → `AGENTS.md` or `.claude/rules/`.
+- Claude-mechanics answer → `CLAUDE.md`.
+
+## Configuration Tiers
+
+Three loaded layers plus a wrapper:
+
+1. `AGENTS.md`, the portable core. Both harnesses load it.
+2. `.claude/rules/*.md`, shared domain rules. Both harnesses load them.
+3. `CLAUDE.md` plus `lode/`. Claude-only overlay, and knowledge.
+4. `prompts/SystemPrompt.txt` wraps all three in lode-launcher sessions.
 
 ## Rule File Ownership
 

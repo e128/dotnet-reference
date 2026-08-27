@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-08-15T19:16:12Z*
+*Updated: 2026-08-27T14:46:57Z*
 
 ## Design Principles
 
@@ -49,6 +49,28 @@ See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
   reaches any harness, including OpenCode and Ollama, which never load
   `.claude/rules/`. No tool lints the dash ban. The rule applies to lines you write in the current turn. Never
   bulk-rewrite an untouched file to apply it.
+
+### Chat Style
+
+Chat prose reads like a senior engineer talking to a peer in a work chat. Not
+a report, a presentation, or documentation. This governs chat only. Written
+artifacts stay STE per `.claude/rules/writing-style.md`.
+
+- Plain sentences, contractions, first person. Write "this won't work
+  because X", not "there is a risk that X may not achieve the desired
+  outcome".
+- Prefer short common words. Write "start", not "commence". Write "use",
+  not "utilize".
+- Active voice, direct verbs. No marketing adjectives (seamless, robust,
+  powerful).
+- Conclusion first. At most one line of why. Never walk through the
+  reasoning.
+- Bullets only for lists of things (files, steps, test output). Never for
+  opinions.
+- No hedging ("it's worth noting", "one caveat"). No meta-commentary about
+  language or prompts. No "as you can see".
+- Give one recommendation. Do not lay out options with trade-offs unless
+  asked.
 
 ## Development Methodology
 

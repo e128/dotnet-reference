@@ -40,7 +40,7 @@ C) scripts/branch.sh --json               (branch info, ahead/unpushed counts)
 - `analyzers_or_scripts_changed` is already computed (any changed path under `src/*Analyzers*/` or `scripts/`)
 
 **Then:**
-- If `classification == docs-only` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "Docs/config-only change — skipping build+test"
+- If `cs_changed == 0` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "No .cs files changed — skipping build+test". Build+test covers .NET only, so any change set with zero `.cs` files (docs, config, scripts, lode) cannot change its outcome. Classification alone is not the trigger: a `mixed` set with no `.cs` files still skips.
 - Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B); `ahead`, `unpushed`, `upstream` (from C, `scripts/branch.sh`); `has_changes` (from A)
 
 **`unpushed` (from C) is not optional to check.** A branch can have a clean working tree and still carry local commits the remote has never seen (no upstream configured, or commits made after the last push). `unpushed > 0` always means step 2's push (and PR creation) must run, even when there is nothing new to commit.
@@ -61,7 +61,7 @@ After format, re-check working tree state. If still no changes (format found not
 - If `unpushed > 0` → there's nothing new to stage, but the unpushed commits themselves can contain `.cs`/analyzer/script changes the remote has never been checked against — a clean working tree does NOT mean "nothing to verify." Re-derive `cs_changed`/`analyzers_or_scripts_changed` from `scripts/branch.sh --files` (diff against `main`, not the working tree) and run steps B/C/D below against that file list before continuing to step 2's **push-only path**.
 
 **B) Build + test (conditional):**
-Skip if `--skip-tests` (explicit or auto-detected docs-only).
+Skip if `--skip-tests` (explicit, or auto-enabled because `cs_changed == 0`).
 ```bash
 scripts/check.sh --no-format --all
 ```

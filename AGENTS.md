@@ -10,6 +10,10 @@ of what is portable versus Claude-only.
 ## Communication
 
 - Write terse responses. Give code, not explanation, unless asked.
+- Write chat prose like a senior engineer talking to a peer in a work chat:
+  plain sentences, contractions, first person, conclusion first, one
+  recommendation, no hedging. Full rules: `lode/practices.md` (Chat Style).
+  This applies to chat only. Written artifacts stay STE per the next rule.
 - Never give a time estimate.
 - Ask a question only when a decision is materially ambiguous, risky, or
   needs approval. Otherwise pick the sensible default and state the choice.
