@@ -49,12 +49,12 @@ UNSTAGED_COUNT=$(echo -n "$UNSTAGED" | grep -c '.' || true)
 UNTRACKED_COUNT=$(echo -n "$UNTRACKED" | grep -c '.' || true)
 
 if [[ "$FILES_ONLY" == true ]]; then
-    { echo "$STAGED"; echo "$UNSTAGED"; echo "$UNTRACKED"; } | grep -v '^$' | sort -u
+    { echo "$STAGED"; echo "$UNSTAGED"; echo "$UNTRACKED"; } | sed -e '/^$/d' | sort -u
     exit 0
 fi
 
 if [[ "$CLASSIFY" == true ]]; then
-    ALL_FILES=$({ echo "$STAGED"; echo "$UNSTAGED"; echo "$UNTRACKED"; } | grep -v '^$' | sort -u)
+    ALL_FILES=$({ echo "$STAGED"; echo "$UNSTAGED"; echo "$UNTRACKED"; } | sed -e '/^$/d' | sort -u)
     if [[ -z "$ALL_FILES" ]]; then
         CLASS="clean"
     elif echo "$ALL_FILES" | grep -qvE '\.(md|txt|json|yml|yaml)$'; then
