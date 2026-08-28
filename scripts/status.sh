@@ -54,7 +54,7 @@ if [[ "$FILES_ONLY" == true ]]; then
 fi
 
 if [[ "$CLASSIFY" == true ]]; then
-    ALL_FILES=$({ echo "$STAGED"; echo "$UNSTAGED"; } | grep -v '^$' | sort -u)
+    ALL_FILES=$({ echo "$STAGED"; echo "$UNSTAGED"; echo "$UNTRACKED"; } | grep -v '^$' | sort -u)
     if [[ -z "$ALL_FILES" ]]; then
         CLASS="clean"
     elif echo "$ALL_FILES" | grep -qvE '\.(md|txt|json|yml|yaml)$'; then

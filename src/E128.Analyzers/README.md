@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.40.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.40.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -109,6 +109,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128084 | Use `CollectionsMarshal.AsSpan` with `Slice` instead of `List.GetRange`                                           | Yes      |
 | E128085 | Use `foreach` + `AddRange` instead of `SelectMany.ToList`                                                         | Yes      |
 | E128098 | Collapse chained or looped `string.Replace` calls into a single pass                                              | Yes      |
+| E128102 | Use `SearchValues<char>` for `IndexOfAny` scans                                                                   | Yes      |
 
 ### Security
 
@@ -1030,6 +1031,22 @@ async Task Save(string path, string text)
     await File.WriteAllTextAsync(path, text);
 }
 ```
+
+### E128102 &mdash; Use `SearchValues<char>` for `IndexOfAny` scans
+
+Flags `string.IndexOfAny` and `string.LastIndexOfAny`. These scan char by char without SIMD. Use a cached `SearchValues<char>` with the span `IndexOfAny` overload, which scans 16 to 32 bytes per instruction on AVX2, AVX-512, and ARM Neon.
+
+```csharp
+// Before (warns)
+var i = path.IndexOfAny(new[] { '/', '\\' });
+
+// After
+private static readonly SearchValues<char> PathChars = SearchValues.Create("/\\");
+
+var i = path.AsSpan().IndexOfAny(PathChars);
+```
+
+The code fix hoists a `SearchValues<char>` field into the containing type and rewrites the call to the span overload. The span overload keeps the int index semantics. It offers no fix when the argument is not a char array with literal elements.
 
 ### E128093 &mdash; Sync DbConnection/DbCommand call with an async sibling
 
