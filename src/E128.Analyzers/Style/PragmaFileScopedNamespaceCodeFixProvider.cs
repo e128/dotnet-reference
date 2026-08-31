@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     Code fix for E128094: relocates a <c>#pragma warning disable</c> directive from
+///     Code fix for E128094: relocates a <c lang="csharp">#pragma warning disable</c> directive from
 ///     above a file-scoped namespace declaration to the first token after it.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(PragmaFileScopedNamespaceCodeFixProvider))]

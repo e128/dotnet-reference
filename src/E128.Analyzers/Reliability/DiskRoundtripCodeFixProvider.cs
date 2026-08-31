@@ -15,8 +15,8 @@ namespace E128.Analyzers.Reliability;
 /// <summary>
 ///     Code fix for E128064: replaces the flagged read expression with the in-memory source
 ///     value captured by the matching write. Handles same-kind replacement (text→text, bytes→bytes)
-///     and cross-kind conversion (text↔bytes via <c>Encoding.UTF8</c>). If the read was awaited,
-///     the whole <c>await ...</c> expression is replaced so the surrounding statement remains valid.
+///     and cross-kind conversion (text↔bytes via <c lang="csharp">Encoding.UTF8</c>). If the read was awaited,
+///     the whole <c lang="csharp">await ...</c> expression is replaced so the surrounding statement remains valid.
 ///     Not registered when the write has no recoverable source expression (multi-write streams).
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DiskRoundtripCodeFixProvider))]

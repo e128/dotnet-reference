@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     E128024: Detects non-XML-doc <c>//</c> comments immediately preceding method or
-///     local function declarations. Use <c>/// &lt;summary&gt;</c> XML doc comments or nothing.
+///     E128024: Detects non-XML-doc <c lang="csharp">//</c> comments immediately preceding method or
+///     local function declarations. Use <c lang="csharp">/// &lt;summary&gt;</c> XML doc comments or nothing.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class NonXmlDocCommentE128Analyzer : DiagnosticAnalyzer

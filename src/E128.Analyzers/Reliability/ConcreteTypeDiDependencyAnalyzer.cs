@@ -13,8 +13,8 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     E128035: Detects constructor parameters of concrete types that are only registered in DI
-///     via their interface (e.g., <c>AddSingleton&lt;IFoo, T&gt;()</c>) but lack a direct
-///     registration (<c>AddSingleton&lt;T&gt;()</c>). This causes <c>InvalidOperationException</c>
+///     via their interface (e.g., <c lang="csharp">AddSingleton&lt;IFoo, T&gt;()</c>) but lack a direct
+///     registration (<c lang="csharp">AddSingleton&lt;T&gt;()</c>). This causes <c lang="csharp">InvalidOperationException</c>
 ///     at runtime when another service depends on the concrete type directly.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

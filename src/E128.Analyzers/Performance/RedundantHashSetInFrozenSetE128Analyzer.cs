@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Performance;
 
 /// <summary>
-///     E128026: Flags <c>new HashSet&lt;T&gt;(...).ToFrozenSet(...)</c> — the intermediate HashSet allocation
-///     is unnecessary. The collection can be passed directly to <c>ToFrozenSet()</c>.
+///     E128026: Flags <c lang="csharp">new HashSet&lt;T&gt;(...).ToFrozenSet(...)</c> — the intermediate HashSet allocation
+///     is unnecessary. The collection can be passed directly to <c lang="csharp">ToFrozenSet()</c>.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer

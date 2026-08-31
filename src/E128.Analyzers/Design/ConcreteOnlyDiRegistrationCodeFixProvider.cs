@@ -14,8 +14,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128032: rewrites <c>Add{Lifetime}&lt;TImpl&gt;()</c> to
-///     <c>Add{Lifetime}&lt;IFoo, TImpl&gt;()</c>. When the concrete type implements
+///     Code fix for E128032: rewrites <c lang="csharp">Add{Lifetime}&lt;TImpl&gt;()</c> to
+///     <c lang="csharp">Add{Lifetime}&lt;IFoo, TImpl&gt;()</c>. When the concrete type implements
 ///     multiple non-marker interfaces, one <see cref="CodeAction" /> is offered per interface.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConcreteOnlyDiRegistrationCodeFixProvider))]

@@ -7,10 +7,10 @@ using Microsoft.CodeAnalysis.Operations;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128060: Detects methods and properties that return a <c>Dictionary&lt;K,V&gt;</c> directly
-///     as <c>IReadOnlyDictionary&lt;K,V&gt;</c>, exposing the internal mutable dictionary through the
-///     read-only interface. The caller can cast it back to <c>Dictionary&lt;K,V&gt;</c> and mutate it.
-///     Use <c>.AsReadOnly()</c> (requires .NET 9+) or wrap in a <c>ReadOnlyDictionary&lt;K,V&gt;</c>
+///     E128060: Detects methods and properties that return a <c lang="csharp">Dictionary&lt;K,V&gt;</c> directly
+///     as <c lang="csharp">IReadOnlyDictionary&lt;K,V&gt;</c>, exposing the internal mutable dictionary through the
+///     read-only interface. The caller can cast it back to <c lang="csharp">Dictionary&lt;K,V&gt;</c> and mutate it.
+///     Use <c lang="csharp">.AsReadOnly()</c> (requires .NET 9+) or wrap in a <c lang="csharp">ReadOnlyDictionary&lt;K,V&gt;</c>
 ///     instead.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

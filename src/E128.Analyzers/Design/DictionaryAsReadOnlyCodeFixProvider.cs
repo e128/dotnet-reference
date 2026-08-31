@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128060: appends <c>.AsReadOnly()</c> to the return expression
-///     so the caller receives a <c>ReadOnlyDictionary&lt;K,V&gt;</c> wrapper rather than
+///     Code fix for E128060: appends <c lang="csharp">.AsReadOnly()</c> to the return expression
+///     so the caller receives a <c lang="csharp">ReadOnlyDictionary&lt;K,V&gt;</c> wrapper rather than
 ///     the raw mutable dictionary.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DictionaryAsReadOnlyCodeFixProvider))]

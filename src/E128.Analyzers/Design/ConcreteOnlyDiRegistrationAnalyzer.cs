@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128032: Flags <c>services.AddSingleton&lt;MyService&gt;()</c> when <c>MyService</c>
+///     E128032: Flags <c lang="csharp">services.AddSingleton&lt;MyService&gt;()</c> when <c lang="csharp">MyService</c>
 ///     implements a non-marker interface. Concrete-only DI registrations prevent interface-based
 ///     resolution, making the service untestable and tightly coupled.
 /// </summary>
@@ -150,7 +150,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
 
     /// <summary>
     ///     Returns true if the block contains a forwarding registration like
-    ///     <c>services.AddSingleton&lt;IFoo&gt;(sp =&gt; sp.GetRequiredService&lt;ConcreteType&gt;())</c>.
+    ///     <c lang="csharp">services.AddSingleton&lt;IFoo&gt;(sp =&gt; sp.GetRequiredService&lt;ConcreteType&gt;())</c>.
     /// </summary>
     private static bool HasForwardingRegistration(SyntaxNode scope, string concreteTypeName)
     {
@@ -159,7 +159,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     Returns true if the scope contains <c>AddHttpClient&lt;ConcreteType&gt;()</c>.
+    ///     Returns true if the scope contains <c lang="csharp">AddHttpClient&lt;ConcreteType&gt;()</c>.
     /// </summary>
     private static bool HasTypedHttpClientRegistration(SyntaxNode scope, string concreteTypeName)
     {

@@ -13,7 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128061: replaces <c>static readonly T[]</c> with <c>ImmutableArray&lt;T&gt;</c>
+///     Code fix for E128061: replaces <c lang="csharp">static readonly T[]</c> with <c lang="csharp">ImmutableArray&lt;T&gt;</c>
 ///     and converts the initializer to a collection expression.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MutableStaticReadonlyArrayCodeFixProvider))]

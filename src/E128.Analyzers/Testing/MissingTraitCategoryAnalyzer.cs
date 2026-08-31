@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-///     E128073: Flags test methods (<c>[Fact]</c> or <c>[Theory]</c>) that lack a
-///     <c>[Trait("Category", "...")]</c> attribute. Without a category trait, the test
+///     E128073: Flags test methods (<c lang="csharp">[Fact]</c> or <c lang="csharp">[Theory]</c>) that lack a
+///     <c lang="csharp">[Trait("Category", "...")]</c> attribute. Without a category trait, the test
 ///     may be silently excluded from filtered CI runs.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

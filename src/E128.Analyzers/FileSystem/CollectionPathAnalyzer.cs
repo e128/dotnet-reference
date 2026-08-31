@@ -10,8 +10,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.FileSystem;
 
 /// <summary>
-///     E128053: Flags parameters typed as a collection of strings (e.g., <c>IReadOnlyList&lt;string&gt;</c>)
-///     whose name suggests file system paths. Use <c>FileInfo</c> or <c>DirectoryInfo</c> as the
+///     E128053: Flags parameters typed as a collection of strings (e.g., <c lang="csharp">IReadOnlyList&lt;string&gt;</c>)
+///     whose name suggests file system paths. Use <c lang="csharp">FileInfo</c> or <c lang="csharp">DirectoryInfo</c> as the
 ///     element type instead of <see langword="string" />.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

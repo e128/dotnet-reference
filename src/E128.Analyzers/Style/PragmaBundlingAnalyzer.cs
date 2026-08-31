@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     E128065: Detects <c>#pragma warning disable</c> directives that list more than one
+///     E128065: Detects <c lang="csharp">#pragma warning disable</c> directives that list more than one
 ///     diagnostic ID. Each ID requires independent justification; bundling hides weak
 ///     reasoning and makes suppression audits harder. Companion to E128055.
 /// </summary>

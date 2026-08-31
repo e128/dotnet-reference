@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     Code fix for E128065: splits a bundled <c>#pragma warning disable ID1, ID2</c>
+///     Code fix for E128065: splits a bundled <c lang="csharp">#pragma warning disable ID1, ID2</c>
 ///     into separate single-ID pragmas so each can carry its own justification comment.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(PragmaBundlingCodeFixProvider))]

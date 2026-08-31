@@ -9,8 +9,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     E128055: Detects <c>#pragma warning disable</c> directives that are never matched
-///     by a corresponding <c>#pragma warning restore</c>, leaving suppressions unbounded.
+///     E128055: Detects <c lang="csharp">#pragma warning disable</c> directives that are never matched
+///     by a corresponding <c lang="csharp">#pragma warning restore</c>, leaving suppressions unbounded.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer

@@ -10,8 +10,8 @@ using Microsoft.CodeAnalysis.Text;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-///     E128097: Detects <c>//</c> and <c>///</c> comments inside a type that declares at
-///     least one xUnit <c>[Fact]</c> or <c>[Theory]</c> method. CLAUDE.md § C# Language
+///     E128097: Detects <c lang="csharp">//</c> and <c lang="csharp">///</c> comments inside a type that declares at
+///     least one xUnit <c lang="csharp">[Fact]</c> or <c lang="csharp">[Theory]</c> method. CLAUDE.md § C# Language
 ///     Rules bans comments in test code — well-named test methods and assertions already
 ///     say what they check.
 /// </summary>

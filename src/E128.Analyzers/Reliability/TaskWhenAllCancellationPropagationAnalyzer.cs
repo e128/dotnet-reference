@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128038: Flags <c>Task.WhenAll(collection.Select(async x => await httpClient.Method(url)))</c>
+///     E128038: Flags <c lang="csharp">Task.WhenAll(collection.Select(async x => await httpClient.Method(url)))</c>
 ///     where the enclosing async method has a <see cref="System.Threading.CancellationToken" /> parameter
 ///     but that token is not forwarded to the HttpClient or Playwright method inside the lambda.
 /// </summary>

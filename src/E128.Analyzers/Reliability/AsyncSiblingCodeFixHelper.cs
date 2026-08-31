@@ -11,8 +11,8 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     Shared rewrite for every "blocking-call-with-async-sibling" code fix (E128092, E128093,
-///     ...): rename the member to its <c>Async</c> sibling, wrap it in <c>await</c>, and promote
-///     the containing method to <c>async Task</c>/<c>async Task&lt;T&gt;</c> if needed.
+///     ...): rename the member to its <c lang="csharp">Async</c> sibling, wrap it in <c lang="csharp">await</c>, and promote
+///     the containing method to <c lang="csharp">async Task</c>/<c lang="csharp">async Task&lt;T&gt;</c> if needed.
 /// </summary>
 internal static class AsyncSiblingCodeFixHelper
 {

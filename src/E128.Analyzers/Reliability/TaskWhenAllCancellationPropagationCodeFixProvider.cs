@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     Code fix for E128038: appends the enclosing method's <c>CancellationToken</c> parameter
+///     Code fix for E128038: appends the enclosing method's <c lang="csharp">CancellationToken</c> parameter
 ///     to HttpClient/Playwright method calls inside the async lambda that are missing it.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TaskWhenAllCancellationPropagationCodeFixProvider))]

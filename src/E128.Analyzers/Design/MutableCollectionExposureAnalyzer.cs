@@ -9,9 +9,9 @@ namespace E128.Analyzers.Design;
 
 /// <summary>
 ///     E128052: Flags public/internal methods and properties that expose mutable collection types
-///     (<c>List&lt;T&gt;</c>, <c>Dictionary&lt;TKey,TValue&gt;</c>, <c>HashSet&lt;T&gt;</c>, etc.)
-///     where immutable interfaces (<c>IReadOnlyList&lt;T&gt;</c>, <c>IReadOnlyDictionary&lt;TKey,TValue&gt;</c>,
-///     <c>IReadOnlySet&lt;T&gt;</c>) would be sufficient.
+///     (<c lang="csharp">List&lt;T&gt;</c>, <c lang="csharp">Dictionary&lt;TKey,TValue&gt;</c>, <c lang="csharp">HashSet&lt;T&gt;</c>, etc.)
+///     where immutable interfaces (<c lang="csharp">IReadOnlyList&lt;T&gt;</c>, <c lang="csharp">IReadOnlyDictionary&lt;TKey,TValue&gt;</c>,
+///     <c lang="csharp">IReadOnlySet&lt;T&gt;</c>) would be sufficient.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer

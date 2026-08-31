@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128057: Detects cleanup calls (<c>File.Delete</c>, <c>Directory.Delete</c>) inside
+///     E128057: Detects cleanup calls (<c lang="csharp">File.Delete</c>, <c lang="csharp">Directory.Delete</c>) inside
 ///     <see langword="finally" /> blocks that are not wrapped in their own <see langword="try" />/<see langword="catch" />
 ///     .
 ///     If a cleanup throws, it masks the original exception from the enclosing <see langword="try" />.

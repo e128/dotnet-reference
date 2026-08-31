@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     Code fix for E128033: replaces the <c>init</c> accessor keyword with <c>set</c>
+///     Code fix for E128033: replaces the <c lang="csharp">init</c> accessor keyword with <c lang="csharp">set</c>
 ///     so the configuration binder can populate the property at runtime.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(OptionsBindInitCodeFixProvider))]

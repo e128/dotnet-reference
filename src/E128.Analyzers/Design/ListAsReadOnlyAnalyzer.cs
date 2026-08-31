@@ -7,11 +7,11 @@ using Microsoft.CodeAnalysis.Operations;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128058: Detects methods that return a <c>List&lt;T&gt;</c> field directly as
-///     <c>IReadOnlyList&lt;T&gt;</c> or <c>IReadOnlyCollection&lt;T&gt;</c>, exposing the
+///     E128058: Detects methods that return a <c lang="csharp">List&lt;T&gt;</c> field directly as
+///     <c lang="csharp">IReadOnlyList&lt;T&gt;</c> or <c lang="csharp">IReadOnlyCollection&lt;T&gt;</c>, exposing the
 ///     internal mutable list through the read-only interface. The caller can cast it back to
-///     <c>List&lt;T&gt;</c> and mutate it. Use <c>.AsReadOnly()</c> or wrap in a
-///     <c>ReadOnlyCollection&lt;T&gt;</c> instead.
+///     <c lang="csharp">List&lt;T&gt;</c> and mutate it. Use <c lang="csharp">.AsReadOnly()</c> or wrap in a
+///     <c lang="csharp">ReadOnlyCollection&lt;T&gt;</c> instead.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ListAsReadOnlyAnalyzer : DiagnosticAnalyzer

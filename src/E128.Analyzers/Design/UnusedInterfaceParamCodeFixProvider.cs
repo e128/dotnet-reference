@@ -13,8 +13,8 @@ using Microsoft.CodeAnalysis.Rename;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128059: renames the unused parameter to <c>_</c> or prefixes it with
-///     an underscore (<c>_paramName</c>) to signal intentional discard.
+///     Code fix for E128059: renames the unused parameter to <c lang="csharp">_</c> or prefixes it with
+///     an underscore (<c lang="csharp">_paramName</c>) to signal intentional discard.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnusedInterfaceParamCodeFixProvider))]
 [Shared]

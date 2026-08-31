@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-///     Code fix for E128054: adds <c>IAsyncLifetime</c> to the class and generates
-///     <c>InitializeAsync</c> (returns <c>Task.CompletedTask</c>) and <c>DisposeAsync</c>
-///     (calls <c>Directory.Delete</c> on the temp path).
+///     Code fix for E128054: adds <c lang="csharp">IAsyncLifetime</c> to the class and generates
+///     <c lang="csharp">InitializeAsync</c> (returns <c lang="csharp">Task.CompletedTask</c>) and <c lang="csharp">DisposeAsync</c>
+///     (calls <c lang="csharp">Directory.Delete</c> on the temp path).
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TempDirCleanupCodeFixProvider))]
 [Shared]

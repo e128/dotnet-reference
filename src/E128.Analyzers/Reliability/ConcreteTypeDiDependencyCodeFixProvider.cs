@@ -13,8 +13,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     Code fix for E128035: replaces <c>AddSingleton&lt;IFoo, TImpl&gt;()</c> with
-///     <c>AddSingleton&lt;TImpl&gt;()</c> + <c>AddSingleton&lt;IFoo&gt;(sp =&gt; sp.GetRequiredService&lt;TImpl&gt;())</c>
+///     Code fix for E128035: replaces <c lang="csharp">AddSingleton&lt;IFoo, TImpl&gt;()</c> with
+///     <c lang="csharp">AddSingleton&lt;TImpl&gt;()</c> + <c lang="csharp">AddSingleton&lt;IFoo&gt;(sp =&gt; sp.GetRequiredService&lt;TImpl&gt;())</c>
 ///     .
 ///     This ensures the concrete type is directly resolvable from the DI container.
 /// </summary>

@@ -10,9 +10,9 @@ using Microsoft.CodeAnalysis.Text;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128051: Flags <see langword="async" /> methods that call an <c>HttpClient</c> method
-///     and contain a broad <c>catch (Exception)</c> clause without a preceding
-///     <c>catch (OperationCanceledException)</c> in the same try block.
+///     E128051: Flags <see langword="async" /> methods that call an <c lang="csharp">HttpClient</c> method
+///     and contain a broad <c lang="csharp">catch (Exception)</c> clause without a preceding
+///     <c lang="csharp">catch (OperationCanceledException)</c> in the same try block.
 ///     Swallowing cancellation silently breaks cooperative cancellation.
 /// </summary>
 /// <remarks>

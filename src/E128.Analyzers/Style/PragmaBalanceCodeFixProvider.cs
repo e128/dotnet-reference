@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     Code fix for E128055: inserts a matching <c>#pragma warning restore X</c>
+///     Code fix for E128055: inserts a matching <c lang="csharp">#pragma warning restore X</c>
 ///     at the end of the file so the suppression scope is bounded.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(PragmaBalanceCodeFixProvider))]

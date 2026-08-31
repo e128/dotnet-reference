@@ -15,7 +15,7 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     Code fix for E128028: converts sync I/O calls to their async equivalents,
-///     adds <c>async</c> modifier, inserts <c>await</c>, and removes <c>Task.FromResult</c> wrapper.
+///     adds <c lang="csharp">async</c> modifier, inserts <c lang="csharp">await</c>, and removes <c lang="csharp">Task.FromResult</c> wrapper.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TaskFromResultSyncIoCodeFixProvider))]
 [Shared]

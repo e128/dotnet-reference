@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     Code fix for E128040: replaces literal 0 with <c>Environment.ProcessorCount</c>.
+///     Code fix for E128040: replaces literal 0 with <c lang="csharp">Environment.ProcessorCount</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConcurrencyLimitCodeFixProvider))]
 [Shared]

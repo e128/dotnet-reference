@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     E128047: Flags <c>#pragma warning disable</c> directives that lack a justification comment.
+///     E128047: Flags <c lang="csharp">#pragma warning disable</c> directives that lack a justification comment.
 ///     Every suppression must explain why it is necessary.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

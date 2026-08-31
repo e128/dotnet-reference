@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128049: removes the <c>[DynamicallyAccessedMembers]</c> attribute.
+///     Code fix for E128049: removes the <c lang="csharp">[DynamicallyAccessedMembers]</c> attribute.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DynamicallyAccessedMembersGuardCodeFixProvider))]
 [Shared]

@@ -9,8 +9,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     E128094: Detects a <c>#pragma warning disable</c> directive placed above a
-///     file-scoped namespace declaration (<c>namespace X;</c>). IDE0079 removes the
+///     E128094: Detects a <c lang="csharp">#pragma warning disable</c> directive placed above a
+///     file-scoped namespace declaration (<c lang="csharp">namespace X;</c>). IDE0079 removes the
 ///     directive during format when it sits outside the namespace it was meant to
 ///     scope, so the suppression silently stops working.
 /// </summary>

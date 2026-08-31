@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Performance;
 
 /// <summary>
-///     E128027: Flags <c>static readonly HashSet&lt;T&gt;</c> and <c>static readonly Dictionary&lt;TKey, TValue&gt;</c>
-///     fields that should use <c>FrozenSet&lt;T&gt;</c> / <c>FrozenDictionary&lt;TKey, TValue&gt;</c> for
+///     E128027: Flags <c lang="csharp">static readonly HashSet&lt;T&gt;</c> and <c lang="csharp">static readonly Dictionary&lt;TKey, TValue&gt;</c>
+///     fields that should use <c lang="csharp">FrozenSet&lt;T&gt;</c> / <c lang="csharp">FrozenDictionary&lt;TKey, TValue&gt;</c> for
 ///     optimized read performance on process-lifetime collections.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

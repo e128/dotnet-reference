@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128058: appends <c>.AsReadOnly()</c> to the return expression
-///     so the caller receives a <c>ReadOnlyCollection&lt;T&gt;</c> wrapper rather than
+///     Code fix for E128058: appends <c lang="csharp">.AsReadOnly()</c> to the return expression
+///     so the caller receives a <c lang="csharp">ReadOnlyCollection&lt;T&gt;</c> wrapper rather than
 ///     the raw mutable list.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ListAsReadOnlyCodeFixProvider))]

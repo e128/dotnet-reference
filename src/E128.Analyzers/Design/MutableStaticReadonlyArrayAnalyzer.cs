@@ -9,8 +9,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128061: Flags <c>private static readonly T[]</c> and <c>internal static readonly T[]</c> fields
-///     where <c>ImmutableArray&lt;T&gt;</c> should be used instead. Arrays are reference types — the
+///     E128061: Flags <c lang="csharp">private static readonly T[]</c> and <c lang="csharp">internal static readonly T[]</c> fields
+///     where <c lang="csharp">ImmutableArray&lt;T&gt;</c> should be used instead. Arrays are reference types — the
 ///     <see langword="readonly" /> modifier prevents reassigning the field but callers can still mutate content
 ///     via the indexer.
 /// </summary>

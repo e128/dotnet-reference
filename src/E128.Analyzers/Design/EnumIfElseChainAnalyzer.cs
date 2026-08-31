@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128048: Flags <c>if/else-if</c> chains (3+ branches) that compare against enum values.
+///     E128048: Flags <c lang="csharp">if/else-if</c> chains (3+ branches) that compare against enum values.
 ///     Use a <see langword="switch" /> statement or expression instead — it provides exhaustiveness
 ///     checking via IDE0072/SS018 and is more maintainable.
 /// </summary>

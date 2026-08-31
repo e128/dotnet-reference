@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128074: Flags properties in <c>readonly struct</c> declarations that have only a
-///     <c>get</c> accessor without <c>init</c>. Without <c>init</c>, the immutability
+///     E128074: Flags properties in <c lang="csharp">readonly struct</c> declarations that have only a
+///     <c lang="csharp">get</c> accessor without <c lang="csharp">init</c>. Without <c lang="csharp">init</c>, the immutability
 ///     contract is implicit rather than explicit at the language level.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

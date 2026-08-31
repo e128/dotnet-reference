@@ -11,7 +11,7 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     E128056: Detects TOCTOU (Time-Of-Check Time-Of-Use) races where code checks
-///     <c>FileInfo.Exists</c> and then immediately reads the file without a try/catch guard.
+///     <c lang="csharp">FileInfo.Exists</c> and then immediately reads the file without a try/catch guard.
 ///     Between the check and the read, another process can delete or replace the file.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

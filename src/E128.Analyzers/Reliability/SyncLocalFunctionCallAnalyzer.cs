@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128096: Detects a synchronous call to an <c>async</c> local function
-///     via <c>.Result</c> or <c>.Wait()</c>. Complements VSTHRD002, which
+///     E128096: Detects a synchronous call to an <c lang="csharp">async</c> local function
+///     via <c lang="csharp">.Result</c> or <c lang="csharp">.Wait()</c>. Complements VSTHRD002, which
 ///     targets method declarations but not local functions.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

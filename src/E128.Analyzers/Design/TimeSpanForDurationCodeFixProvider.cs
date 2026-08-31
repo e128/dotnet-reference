@@ -13,7 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128050: replaces the numeric type (int, long, float, double) with <c>TimeSpan</c>.
+///     Code fix for E128050: replaces the numeric type (int, long, float, double) with <c lang="csharp">TimeSpan</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TimeSpanForDurationCodeFixProvider))]
 [Shared]

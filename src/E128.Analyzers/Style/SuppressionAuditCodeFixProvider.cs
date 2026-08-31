@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     Code fix for E128047: appends <c>// Justification: </c> after the <c>#pragma warning disable</c> directive.
+///     Code fix for E128047: appends <c lang="csharp">// Justification: </c> after the <c lang="csharp">#pragma warning disable</c> directive.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SuppressionAuditCodeFixProvider))]
 [Shared]

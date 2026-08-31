@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128072: adds <c>init</c> accessor to get-only properties in readonly structs.
+///     Code fix for E128072: adds <c lang="csharp">init</c> accessor to get-only properties in readonly structs.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ReadonlyStructInitPropertyCodeFixProvider))]
 [Shared]

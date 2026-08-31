@@ -13,8 +13,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     Code fix for E128031: rewrites <c>AddSingleton(sp => new T())</c> to
-///     <c>AddSingleton&lt;IFoo, T&gt;()</c> when the concrete type implements a non-marker interface.
+///     Code fix for E128031: rewrites <c lang="csharp">AddSingleton(sp => new T())</c> to
+///     <c lang="csharp">AddSingleton&lt;IFoo, T&gt;()</c> when the concrete type implements a non-marker interface.
 ///     Offers one code action per non-marker interface the type implements.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DisposableSingletonFactoryCodeFixProvider))]

@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     E128025: Detects <c>Guid.NewGuid()</c> usage inside string interpolation
-///     combined with <c>Path.Combine</c> or <c>Path.GetTempPath()</c> context.
-///     Project standard is <c>Path.GetRandomFileName()</c>.
+///     E128025: Detects <c lang="csharp">Guid.NewGuid()</c> usage inside string interpolation
+///     combined with <c lang="csharp">Path.Combine</c> or <c lang="csharp">Path.GetTempPath()</c> context.
+///     Project standard is <c lang="csharp">Path.GetRandomFileName()</c>.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class GuidNewGuidTempPathE128Analyzer : DiagnosticAnalyzer

@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     Code fix for E128039: adds <c>OperationCanceledException</c> to the catch filter's
-///     exclusion list. For <c>catch (Exception ex) when (ex is not FooException)</c>, produces
-///     <c>catch (Exception ex) when (ex is not FooException and not OperationCanceledException)</c>.
+///     Code fix for E128039: adds <c lang="csharp">OperationCanceledException</c> to the catch filter's
+///     exclusion list. For <c lang="csharp">catch (Exception ex) when (ex is not FooException)</c>, produces
+///     <c lang="csharp">catch (Exception ex) when (ex is not FooException and not OperationCanceledException)</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(CatchFilterOceCodeFixProvider))]
 [Shared]

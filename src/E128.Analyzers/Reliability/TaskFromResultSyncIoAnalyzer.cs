@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128028: Flags methods that return <c>Task.FromResult</c> / <c>ValueTask.FromResult</c>
+///     E128028: Flags methods that return <c lang="csharp">Task.FromResult</c> / <c lang="csharp">ValueTask.FromResult</c>
 ///     while also calling synchronous I/O methods that have async equivalents.
-///     The fix is to convert the method to <c>async</c> and use the async I/O APIs.
+///     The fix is to convert the method to <c lang="csharp">async</c> and use the async I/O APIs.
 /// </summary>
 /// <remarks>
 ///     Legitimate patterns are NOT flagged:
@@ -21,7 +21,7 @@ namespace E128.Analyzers.Reliability;
 ///     - Null-object implementations (no I/O at all)
 ///     - CPU-bound work (pure computation wrapped for interface compatibility)
 ///     - Sync-only library calls (no async alternative exists)
-///     - Methods that already use <c>await</c>
+///     - Methods that already use <c lang="csharp">await</c>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer

@@ -9,10 +9,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128033: Detects Options classes passed to <c>.Bind(config.GetSection(...))</c>
-///     that have <c>init</c>-only property accessors instead of <c>set</c>.
-///     The Microsoft.Extensions.Configuration binder requires mutable <c>set</c> properties
-///     to populate options from appsettings — <c>init</c> breaks silently at runtime.
+///     E128033: Detects Options classes passed to <c lang="csharp">.Bind(config.GetSection(...))</c>
+///     that have <c lang="csharp">init</c>-only property accessors instead of <c lang="csharp">set</c>.
+///     The Microsoft.Extensions.Configuration binder requires mutable <c lang="csharp">set</c> properties
+///     to populate options from appsettings — <c lang="csharp">init</c> breaks silently at runtime.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer

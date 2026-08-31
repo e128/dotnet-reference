@@ -14,7 +14,7 @@ namespace E128.Analyzers.FileSystem;
 
 /// <summary>
 ///     Code fix for E128053: replaces the <see langword="string" /> type argument in collection parameters
-///     with <c>FileInfo</c> or <c>DirectoryInfo</c>.
+///     with <c lang="csharp">FileInfo</c> or <c lang="csharp">DirectoryInfo</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(CollectionPathCodeFixProvider))]
 [Shared]

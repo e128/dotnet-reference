@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128044: Flags types that implement <c>IAsyncDisposable</c> but not <c>IDisposable</c>.
+///     E128044: Flags types that implement <c lang="csharp">IAsyncDisposable</c> but not <c lang="csharp">IDisposable</c>.
 ///     Consumers using synchronous <see langword="using" /> will silently skip disposal.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

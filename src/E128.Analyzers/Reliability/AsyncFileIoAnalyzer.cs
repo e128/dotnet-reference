@@ -9,9 +9,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128092: Detects a synchronous <c>System.IO.File</c> call (<c>ReadAllText</c>,
-///     <c>WriteAllBytes</c>, etc.) with an <c>Async</c> sibling, fired whenever the containing
-///     method/local function/lambda is NOT already <c>async</c>. Complements CA1849/VSTHRD103,
+///     E128092: Detects a synchronous <c lang="csharp">System.IO.File</c> call (<c lang="csharp">ReadAllText</c>,
+///     <c lang="csharp">WriteAllBytes</c>, etc.) with an <c lang="csharp">Async</c> sibling, fired whenever the containing
+///     method/local function/lambda is NOT already <c lang="csharp">async</c>. Complements CA1849/VSTHRD103,
 ///     which only fire inside an already-async method -- a wholly synchronous method gets no
 ///     signal from those rules at all.
 /// </summary>

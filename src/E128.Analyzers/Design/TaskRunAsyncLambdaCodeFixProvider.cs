@@ -10,9 +10,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128036: removes the <c>Task.Run</c> wrapper and keeps the inner async expression.
-///     <c>Task.Run(async () => await DoWorkAsync())</c> becomes <c>DoWorkAsync()</c>.
-///     <c>Task.Run(async () => { await A(); await B(); })</c> is not auto-fixable (block body).
+///     Code fix for E128036: removes the <c lang="csharp">Task.Run</c> wrapper and keeps the inner async expression.
+///     <c lang="csharp">Task.Run(async () => await DoWorkAsync())</c> becomes <c lang="csharp">DoWorkAsync()</c>.
+///     <c lang="csharp">Task.Run(async () => { await A(); await B(); })</c> is not auto-fixable (block body).
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TaskRunAsyncLambdaCodeFixProvider))]
 [Shared]

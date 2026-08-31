@@ -10,8 +10,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     Reports <c>Task.WhenAll</c> calls whose argument is a LINQ <c>.Select(async ...)</c>
-///     without a <c>SemaphoreSlim.WaitAsync()</c> throttle in the async lambda body.
+///     Reports <c lang="csharp">Task.WhenAll</c> calls whose argument is a LINQ <c lang="csharp">.Select(async ...)</c>
+///     without a <c lang="csharp">SemaphoreSlim.WaitAsync()</c> throttle in the async lambda body.
 ///     Unbounded fan-out can exhaust resources (memory, connections, thread pool) when the
 ///     collection is large.
 /// </summary>

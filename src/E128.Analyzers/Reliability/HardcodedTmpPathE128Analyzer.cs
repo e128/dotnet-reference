@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128023: Flags hardcoded <c>"/tmp"</c> or <c>"/tmp/..."</c> string literals.
+///     E128023: Flags hardcoded <c lang="csharp">"/tmp"</c> or <c lang="csharp">"/tmp/..."</c> string literals.
 ///     Cross-platform code must use the temp directory API instead.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

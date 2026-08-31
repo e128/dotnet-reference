@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128049: Flags usage of <c>[DynamicallyAccessedMembers]</c>.
-///     The attribute is correct only for types registered via <c>AddHttpClient&lt;T&gt;()</c>
+///     E128049: Flags usage of <c lang="csharp">[DynamicallyAccessedMembers]</c>.
+///     The attribute is correct only for types registered via <c lang="csharp">AddHttpClient&lt;T&gt;()</c>
 ///     or JSON-serialized discriminated union nested types. Everywhere else it masks real bugs.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

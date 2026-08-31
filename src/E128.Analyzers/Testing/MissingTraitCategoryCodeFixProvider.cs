@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-///     Code fix for E128071: adds <c>[Trait("Category", "CI")]</c> to the test method.
+///     Code fix for E128071: adds <c lang="csharp">[Trait("Category", "CI")]</c> to the test method.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MissingTraitCategoryCodeFixProvider))]
 [Shared]

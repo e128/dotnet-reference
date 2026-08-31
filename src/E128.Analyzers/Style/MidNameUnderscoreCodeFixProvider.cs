@@ -12,7 +12,7 @@ namespace E128.Analyzers.Style;
 
 /// <summary>
 ///     Code fix for E128063: renames private static members with mid-name underscores by removing
-///     the underscore and PascalCasing the segments (e.g., <c>Nots_supported</c> → <c>NotsSupported</c>).
+///     the underscore and PascalCasing the segments (e.g., <c lang="csharp">Nots_supported</c> → <c lang="csharp">NotsSupported</c>).
 ///     Uses Renamer.RenameSymbolAsync for safe project-wide renaming.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MidNameUnderscoreCodeFixProvider))]
@@ -71,8 +71,8 @@ public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
 
     /// <summary>
     ///     Removes mid-name underscores and PascalCases each segment.
-    ///     Preserves legitimate prefixes: <c>s_foo_bar</c> → <c>s_fooBar</c> (only the mid-name
-    ///     underscore after the prefix is fixed), <c>Nots_supported</c> → <c>NotsSupported</c>.
+    ///     Preserves legitimate prefixes: <c lang="csharp">s_foo_bar</c> → <c lang="csharp">s_fooBar</c> (only the mid-name
+    ///     underscore after the prefix is fixed), <c lang="csharp">Nots_supported</c> → <c lang="csharp">NotsSupported</c>.
     /// </summary>
     internal static string ComputeFixedName(string name)
     {

@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Reports <c>.ConfigureAwait(false)</c> calls in executable application code
+///     Reports <c lang="csharp">.ConfigureAwait(false)</c> calls in executable application code
 ///     (console apps, Worker Service hosts). These hosts have no SynchronizationContext,
-///     so <c>ConfigureAwait(false)</c> is unnecessary noise.
+///     so <c lang="csharp">ConfigureAwait(false)</c> is unnecessary noise.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConfigureAwaitFalseE128Analyzer : DiagnosticAnalyzer

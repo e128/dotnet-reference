@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128039: Flags filtered catch blocks (<c>catch (Exception ex) when (ex is not ...)</c>)
+///     E128039: Flags filtered catch blocks (<c lang="csharp">catch (Exception ex) when (ex is not ...)</c>)
 ///     that do not exclude <see cref="OperationCanceledException" /> (or its subclass
 ///     <see cref="System.Threading.Tasks.TaskCanceledException" />). Swallowing cancellation
 ///     silently breaks cooperative cancellation.

@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     E128043: Flags every use of the null-forgiving operator (<c>!</c>).
+///     E128043: Flags every use of the null-forgiving operator (<c lang="csharp">!</c>).
 ///     The operator suppresses nullable analysis warnings without actually ensuring
 ///     the value is non-null, hiding potential NullReferenceExceptions.
 /// </summary>

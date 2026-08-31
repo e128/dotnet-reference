@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128044: adds <c>: IDisposable</c> to the type declaration
-///     and implements a <c>Dispose()</c> method stub.
+///     Code fix for E128044: adds <c lang="csharp">: IDisposable</c> to the type declaration
+///     and implements a <c lang="csharp">Dispose()</c> method stub.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AsyncDisposableWithoutDisposableCodeFixProvider))]
 [Shared]

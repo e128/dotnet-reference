@@ -14,9 +14,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Performance;
 
 /// <summary>
-///     Code fix for E128027: transforms <c>static readonly HashSet&lt;T&gt;</c> / <c>Dictionary&lt;K,V&gt;</c>
-///     to <c>FrozenSet&lt;T&gt;</c> / <c>FrozenDictionary&lt;K,V&gt;</c> by wrapping the initializer
-///     with <c>.ToFrozenSet()</c> or <c>.ToFrozenDictionary()</c>.
+///     Code fix for E128027: transforms <c lang="csharp">static readonly HashSet&lt;T&gt;</c> / <c lang="csharp">Dictionary&lt;K,V&gt;</c>
+///     to <c lang="csharp">FrozenSet&lt;T&gt;</c> / <c lang="csharp">FrozenDictionary&lt;K,V&gt;</c> by wrapping the initializer
+///     with <c lang="csharp">.ToFrozenSet()</c> or <c lang="csharp">.ToFrozenDictionary()</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StaticReadonlyFrozenCollectionCodeFixProvider))]
 [Shared]
@@ -162,7 +162,7 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
     }
 
     /// <summary>
-    ///     Converts implicit <c>new()</c> to explicit <c>new HashSet&lt;T&gt;()</c> so the
+    ///     Converts implicit <c lang="csharp">new()</c> to explicit <c lang="csharp">new HashSet&lt;T&gt;()</c> so the
     ///     initializer compiles when the field type changes to FrozenSet/FrozenDictionary.
     /// </summary>
     private static ExpressionSyntax MakeExplicitInitializer(ExpressionSyntax initializer, INamedTypeSymbol fieldType)

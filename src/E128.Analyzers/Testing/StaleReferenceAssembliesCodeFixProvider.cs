@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-///     Code fix for E128062: replaces outdated <c>ReferenceAssemblies.Net.Net80</c> / <c>Net90</c>
+///     Code fix for E128062: replaces outdated <c lang="csharp">ReferenceAssemblies.Net.Net80</c> / <c lang="csharp">Net90</c>
 ///     with the minimum version matching the project target framework.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StaleReferenceAssembliesCodeFixProvider))]

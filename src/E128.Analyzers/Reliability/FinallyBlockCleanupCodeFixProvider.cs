@@ -12,7 +12,7 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     Code fix for E128057: wraps the flagged cleanup call's containing statement
-///     in a <c>try { } catch (System.Exception) { }</c> block within the finally clause.
+///     in a <c lang="csharp">try { } catch (System.Exception) { }</c> block within the finally clause.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FinallyBlockCleanupCodeFixProvider))]
 [Shared]

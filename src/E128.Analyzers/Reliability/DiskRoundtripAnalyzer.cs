@@ -10,11 +10,11 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     E128064: Detects writing a value to disk and immediately reading it back in the same method.
-///     Covers the full <c>System.IO.*</c> surface — static <c>File.*</c> value-level APIs, stream
-///     factories (<c>File.Create</c>, <c>File.CreateText</c>, …), explicit constructors
-///     (<c>new FileStream</c>, <c>new StreamWriter</c>, <c>new StreamReader</c>, <c>new BinaryWriter/Reader</c>),
-///     and <c>FileInfo</c> instance methods (<c>Create</c>, <c>OpenWrite</c>, <c>CreateText</c>, <c>AppendText</c>,
-///     <c>OpenRead</c>, <c>OpenText</c>) — both sync and async.
+///     Covers the full <c lang="csharp">System.IO.*</c> surface — static <c lang="csharp">File.*</c> value-level APIs, stream
+///     factories (<c lang="csharp">File.Create</c>, <c lang="csharp">File.CreateText</c>, …), explicit constructors
+///     (<c lang="csharp">new FileStream</c>, <c lang="csharp">new StreamWriter</c>, <c lang="csharp">new StreamReader</c>, <c lang="csharp">new BinaryWriter/Reader</c>),
+///     and <c lang="csharp">FileInfo</c> instance methods (<c lang="csharp">Create</c>, <c lang="csharp">OpenWrite</c>, <c lang="csharp">CreateText</c>, <c lang="csharp">AppendText</c>,
+///     <c lang="csharp">OpenRead</c>, <c lang="csharp">OpenText</c>) — both sync and async.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer

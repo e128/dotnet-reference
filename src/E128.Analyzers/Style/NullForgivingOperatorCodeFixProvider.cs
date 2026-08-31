@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     Code fix for E128043: removes the null-forgiving operator (<c>!</c>),
+///     Code fix for E128043: removes the null-forgiving operator (<c lang="csharp">!</c>),
 ///     leaving the inner expression intact.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(NullForgivingOperatorCodeFixProvider))]

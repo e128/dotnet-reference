@@ -9,9 +9,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-///     E128054: Flags classes that call <c>Path.GetTempPath()</c> in a field initializer,
-///     property initializer, or constructor without implementing <c>IDisposable</c>,
-///     <c>IAsyncDisposable</c>, or xUnit's <c>IAsyncLifetime</c>.
+///     E128054: Flags classes that call <c lang="csharp">Path.GetTempPath()</c> in a field initializer,
+///     property initializer, or constructor without implementing <c lang="csharp">IDisposable</c>,
+///     <c lang="csharp">IAsyncDisposable</c>, or xUnit's <c lang="csharp">IAsyncLifetime</c>.
 ///     Temp directories allocated at class level leak without a cleanup interface.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

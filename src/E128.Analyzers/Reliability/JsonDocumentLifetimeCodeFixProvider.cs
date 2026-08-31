@@ -8,8 +8,8 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     Intentional no-op code fix for E128041. Restructuring a <see langword="using" /> scope around
-///     <c>JsonDocument.Parse()</c> is a non-trivial refactoring that requires understanding
-///     the full data flow of <c>RootElement</c> — inserting <c>.Clone()</c> in the right
+///     <c lang="csharp">JsonDocument.Parse()</c> is a non-trivial refactoring that requires understanding
+///     the full data flow of <c lang="csharp">RootElement</c> — inserting <c lang="csharp">.Clone()</c> in the right
 ///     place, restructuring control flow, and potentially changing method signatures. This
 ///     is beyond what a mechanical code fix can safely do. The analyzer flags the issue;
 ///     the developer must restructure manually.

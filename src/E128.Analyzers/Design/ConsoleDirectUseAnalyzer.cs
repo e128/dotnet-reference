@@ -8,12 +8,12 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128045: Flags direct usage of <c>System.Console</c> members.
-///     Use <c>ILogger</c> (services) or <c>ITerminalWriter</c>/<c>ITerminalPrompt</c> (CLI) instead.
+///     E128045: Flags direct usage of <c lang="csharp">System.Console</c> members.
+///     Use <c lang="csharp">ILogger</c> (services) or <c lang="csharp">ITerminalWriter</c>/<c lang="csharp">ITerminalPrompt</c> (CLI) instead.
 /// </summary>
 /// <remarks>
 ///     No code fix is provided — the replacement depends on whether the consuming code
-///     is a service (use <c>ILogger</c>) or a CLI tool (use <c>ITerminalPrompt</c>).
+///     is a service (use <c lang="csharp">ILogger</c>) or a CLI tool (use <c lang="csharp">ITerminalPrompt</c>).
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConsoleDirectUseAnalyzer : DiagnosticAnalyzer

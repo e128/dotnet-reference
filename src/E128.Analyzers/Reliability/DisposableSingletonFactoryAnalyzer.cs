@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128031: Flags <c>services.AddSingleton(sp => ...)</c> factory-lambda registrations
+///     E128031: Flags <c lang="csharp">services.AddSingleton(sp => ...)</c> factory-lambda registrations
 ///     where the return type implements <see cref="IDisposable" />.
 ///     The DI container does not auto-dispose factory-registered singletons in all host configurations.
 /// </summary>

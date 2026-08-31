@@ -109,8 +109,8 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     Walks the base-type chain so legacy concrete subclasses (e.g. <c>MD5CryptoServiceProvider</c>,
-    ///     <c>SHA1Managed</c>) are caught even though their own type name isn't in <see cref="UnapprovedTypes" />.
+    ///     Walks the base-type chain so legacy concrete subclasses (e.g. <c lang="csharp">MD5CryptoServiceProvider</c>,
+    ///     <c lang="csharp">SHA1Managed</c>) are caught even though their own type name isn't in <see cref="UnapprovedTypes" />.
     /// </summary>
     private static bool DerivesFromUnapprovedAlgorithm(ITypeSymbol? type)
     {

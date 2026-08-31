@@ -43,7 +43,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     Handles <c>new SemaphoreSlim(N)</c> — first constructor arg must be positive.
+    ///     Handles <c lang="csharp">new SemaphoreSlim(N)</c> — first constructor arg must be positive.
     /// </summary>
     private static void AnalyzeObjectCreation(SyntaxNodeAnalysisContext context)
     {
@@ -108,7 +108,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     Handles <c>MaxDegreeOfParallelism = N</c> property assignment — must be positive or -1.
+    ///     Handles <c lang="csharp">MaxDegreeOfParallelism = N</c> property assignment — must be positive or -1.
     /// </summary>
     private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
     {
@@ -153,7 +153,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     Handles <c>Channel.CreateBounded&lt;T&gt;(N)</c> — capacity must be positive.
+    ///     Handles <c lang="csharp">Channel.CreateBounded&lt;T&gt;(N)</c> — capacity must be positive.
     /// </summary>
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {

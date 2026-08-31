@@ -7,15 +7,15 @@ namespace E128.Analyzers.Style;
 
 /// <summary>
 ///     E128063: Flags private static members with a mid-name underscore — e.g.,
-///     <c>Nots_supportedExtensions</c>, <c>Creates_enrichmentJsonOptions</c>, <c>Spectres_terminal</c>.
+///     <c lang="csharp">Nots_supportedExtensions</c>, <c lang="csharp">Creates_enrichmentJsonOptions</c>, <c lang="csharp">Spectres_terminal</c>.
 ///     These patterns are artifacts of IDE1006 batch-rename operations that mangle identifiers
 ///     by inserting an underscore at the word boundary instead of adjusting capitalization.
 ///     <para>
 ///         Excluded patterns:
 ///         <list type="bullet">
-///             <item>Leading underscore prefix: <c>_foo</c></item>
-///             <item>Hungarian prefix: <c>s_foo</c>, <c>m_foo</c>, <c>t_foo</c></item>
-///             <item>Double-underscore operators: <c>op_Addition</c>, <c>__foo</c></item>
+///             <item>Leading underscore prefix: <c lang="csharp">_foo</c></item>
+///             <item>Hungarian prefix: <c lang="csharp">s_foo</c>, <c lang="csharp">m_foo</c>, <c lang="csharp">t_foo</c></item>
+///             <item>Double-underscore operators: <c lang="csharp">op_Addition</c>, <c lang="csharp">__foo</c></item>
 ///             <item>Const fields (SC0219 / IDE0051 already cover const naming)</item>
 ///         </list>
 ///     </para>

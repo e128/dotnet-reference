@@ -9,11 +9,11 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128093: Detects a synchronous <c>DbConnection</c>/<c>DbCommand</c> call (<c>Open</c>,
-///     <c>ExecuteReader</c>, <c>ExecuteNonQuery</c>, <c>ExecuteScalar</c>, etc. -- including on
-///     provider subclasses such as <c>SqliteConnection</c>/<c>SqliteCommand</c>) with an
-///     <c>Async</c> sibling, fired whenever the containing method/local function/lambda is NOT
-///     already <c>async</c>. Same shape as E128092 for <c>System.IO.File</c>.
+///     E128093: Detects a synchronous <c lang="csharp">DbConnection</c>/<c lang="csharp">DbCommand</c> call (<c lang="csharp">Open</c>,
+///     <c lang="csharp">ExecuteReader</c>, <c lang="csharp">ExecuteNonQuery</c>, <c lang="csharp">ExecuteScalar</c>, etc. -- including on
+///     provider subclasses such as <c lang="csharp">SqliteConnection</c>/<c lang="csharp">SqliteCommand</c>) with an
+///     <c lang="csharp">Async</c> sibling, fired whenever the containing method/local function/lambda is NOT
+///     already <c lang="csharp">async</c>. Same shape as E128092 for <c lang="csharp">System.IO.File</c>.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer

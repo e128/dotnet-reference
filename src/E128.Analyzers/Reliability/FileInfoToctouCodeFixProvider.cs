@@ -12,7 +12,7 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     Code fix for E128056: wraps the flagged file-read call's containing statement
-///     in a <c>try { } catch (System.IO.IOException) { return default; }</c> block.
+///     in a <c lang="csharp">try { } catch (System.IO.IOException) { return default; }</c> block.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FileInfoToctouCodeFixProvider))]
 [Shared]

@@ -10,9 +10,9 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128034: Detects <c>new T(...)</c> inside a constructor when T is a type also
-///     registered via <c>services.AddSingleton&lt;T&gt;()</c>, <c>AddScoped&lt;T&gt;()</c>,
-///     <c>AddTransient&lt;T&gt;()</c>, or <c>AddHttpClient&lt;T&gt;()</c> in the same compilation.
+///     E128034: Detects <c lang="csharp">new T(...)</c> inside a constructor when T is a type also
+///     registered via <c lang="csharp">services.AddSingleton&lt;T&gt;()</c>, <c lang="csharp">AddScoped&lt;T&gt;()</c>,
+///     <c lang="csharp">AddTransient&lt;T&gt;()</c>, or <c lang="csharp">AddHttpClient&lt;T&gt;()</c> in the same compilation.
 ///     Inline construction of DI-owned types defeats testability.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

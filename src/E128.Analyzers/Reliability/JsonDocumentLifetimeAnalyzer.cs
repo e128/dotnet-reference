@@ -9,10 +9,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128041: Reports <c>JsonDocument.Parse()</c> calls where <c>RootElement</c> is accessed
+///     E128041: Reports <c lang="csharp">JsonDocument.Parse()</c> calls where <c lang="csharp">RootElement</c> is accessed
 ///     and the element escapes the enclosing <see langword="using" /> scope (via return or out-parameter),
-///     or the <c>JsonDocument</c> is not in a <see langword="using" /> scope at all.
-///     <c>JsonDocument</c> owns pooled memory — accessing <c>RootElement</c> after the document
+///     or the <c lang="csharp">JsonDocument</c> is not in a <see langword="using" /> scope at all.
+///     <c lang="csharp">JsonDocument</c> owns pooled memory — accessing <c lang="csharp">RootElement</c> after the document
 ///     is disposed or finalized reads from returned-to-pool buffers.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
