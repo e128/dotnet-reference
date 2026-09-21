@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-08-27T14:48:30Z*
+*Updated: 2026-09-21T17:06:43Z*
 
 ## Harness Portability Capability Map
 
@@ -8,6 +8,15 @@ Codex CLI, Cursor, Aider, or another tool) can read `AGENTS.md`, `scripts/`,
 and `lode/` and get the full working toolkit. `CLAUDE.md` imports
 `AGENTS.md` with `@AGENTS.md` and adds only the layer below it, which has no
 equivalent on another harness.
+
+Claude Code 2.1.277 added native `AGENTS.md` support. When a folder has no
+`CLAUDE.md`, Claude Code reads `AGENTS.md` directly with no import needed.
+When `CLAUDE.md` is present, as in this repo, Claude Code still prioritizes
+it. This repo keeps `CLAUDE.md` for its Claude-only overlay (the Visualize
+skill mandate, the `AskUserQuestion` mandate, the `.claude/` config location
+rule, and the hooks pointer), not to trigger a fallback load. Those four
+rules have no home in `AGENTS.md`, since another harness does not carry
+those tools.
 
 Two supported harnesses load the same instruction set in this repo:
 
