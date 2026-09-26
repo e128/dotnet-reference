@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-08-27T14:46:57Z*
+*Updated: 2026-09-26T16:11:39Z*
 
 ## Design Principles
 
@@ -7,6 +7,10 @@
 - **SOLID principles.** Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion. Balance with YAGNI.
 - **Sealed by default.** All non-abstract classes must be sealed. Enforced by custom analyzer E128005 and ArchUnitNET architecture tests (`SealedClassTests`).
 - **Design trade-off priority.** When trade-offs arise: Immutability > Memory efficiency (`Span<T>`, `Memory<T>`) > CPU efficiency > Parallelism.
+- **No backward compatibility.** Remove the obsolete path in the same change that replaces it. Never add a compatibility layer, a fallback, or a migration. This repository has no external consumers.
+- **Simplest implementation.** Build the smallest thing that fully meets the current requirement. No speculative abstraction, no interface with one implementation, no configuration for a value that never changes, no indirection.
+- **Long-term decisions.** Make an architectural decision for the long term. Never ship a stopgap for replacement later.
+- **C# defaults on first write.** Use `ImmutableArray<T>` with collection expressions, and `FrozenSet`, for fixed collections. Give every enum member an explicit value. Prefer a BCL type over a hand-rolled equivalent.
 - **Rob Pike's 5 Rules.** See [Rob Pike's Rules](rob-pikes-rules.md).
 
 ## Code Style Choices
@@ -19,7 +23,7 @@
 - `using` directives outside namespace, sorted with System first
 - Implicit usings disabled — every `.cs` file has explicit `using` directives
 - Primary constructors disabled (`csharp_style_prefer_primary_constructors = false`)
-- Collection expressions disabled (`dotnet_style_prefer_collection_expression = never`)
+- Collection expressions preferred (`dotnet_style_prefer_collection_expression = true`), aligned with the E128061 code fix output
 
 ## AI Assistant Preferences
 

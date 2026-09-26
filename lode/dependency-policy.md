@@ -1,5 +1,5 @@
 # Dependency Policy
-*Updated: 2026-08-16T12:36:32Z*
+*Updated: 2026-09-26T16:11:39Z*
 
 ## Selection Criteria
 
@@ -10,6 +10,7 @@ Before adding a new NuGet dependency, evaluate:
 3. **Size** — prefer small, focused packages over large frameworks.
 4. **Transitive impact** — check what the package pulls in. Avoid packages with heavy transitive chains.
 5. **Alternatives** — is this in the BCL already? Can we write 20 lines instead of adding a dependency?
+6. **Capability check** — do not assume a library lacks a capability without checking its documentation and types.
 
 ## Package Categories
 
