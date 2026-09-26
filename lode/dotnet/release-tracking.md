@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-08-16T12:37:35Z*
+*Updated: 2026-09-26T18:18:27Z*
 
 ## Overview
 
@@ -92,8 +92,8 @@ E128099 | Design | Warning | No longer needed
 - `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content) and `RS1038`
 - Files registered as `<AdditionalFiles>` in csproj
 - Published to NuGet: https://www.nuget.org/packages/E128.Analyzers/
-- `Shipped.md` lists all shipped rules across release sections (1.0.0 through 1.39.0); run `scripts/internal/analyzer-release-check.sh` for current shipped/unshipped/source ID counts
-- `Unshipped.md` tracks pending changes only; empty (just the `### New Rules` header) when all rules are shipped
+- `Shipped.md` lists all shipped rules across release sections; run `scripts/internal/analyzer-release-check.sh` for current shipped/unshipped/source ID counts
+- `Unshipped.md` tracks pending changes only; it holds the `### New Rules` header and an empty table when every rule is shipped
 
 ### Release-to-Rule Mapping
 
@@ -116,6 +116,8 @@ E128099 | Design | Warning | No longer needed
 | 1.35.0  | E128091-092   | ProcessStartInfo argument list, async File overload |
 | 1.38.0  | E128093, 096, 098-100 | Async DB overload, sync call to async local function, chained string Replace, process exit timeout, catch filter on cancellation |
 | 1.39.0  | E128094, 097, 088 | Pragma before namespace, xUnit comment placement, enum switch exhaustiveness |
+| 1.40.0-1.40.3 | E128101, E128102 | Patch bumps on feature commits. Both rules shipped inside the assembly but stayed listed in `Unshipped.md` until 1.41.0 |
+| 1.41.0  | E128101-106 | Six rules moved from `Unshipped.md` to a new `Release 1.41.0` section |
 
 ## Sources
 
