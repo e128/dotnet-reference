@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-08-28T15:58:16Z*
+*Updated: 2026-09-26T15:14:40Z*
 
 ## Strategy: Deny by Default
 
@@ -74,6 +74,7 @@ Aligned with Meziantou's [comparison table](https://github.com/meziantou/Meziant
 | Rule    | Guardrail                                                                   |
 | ------- | --------------------------------------------------------------------------- |
 | MA0036  | Make class static (distinct from CA1822 which only covers methods)          |
+| MA0054  | Embed the caught exception as the inner exception on rethrow                |
 | MA0110  | Use `[GeneratedRegex]` source generator over `new Regex(...)`               |
 | MA0186  | `Equals(object?)` override must use `[NotNullWhen(true)]` on the parameter  |
 | MA0191  | Do not use the null-forgiving operator (aligns with custom `E128043`)       |

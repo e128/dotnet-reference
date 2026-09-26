@@ -184,10 +184,10 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
         {
             await process.WaitForExitAsync(timeoutCts.Token);
         }
-        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
         {
             process.Kill(true);
-            throw new InvalidOperationException($"'podman {arguments}' timed out after 2 minutes");
+            throw new InvalidOperationException($"'podman {arguments}' timed out after 2 minutes", ex);
         }
 
         if (throwOnError && process.ExitCode != 0)
