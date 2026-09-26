@@ -6,3 +6,4 @@ E128101 | Reliability | Warning  | Verify process output file exists after WaitF
 E128102 | Performance | Warning  | Use SearchValues<char> for IndexOfAny scans
 E128103 | Reliability | Warning  | Resolve a service type that has no registration in the compilation
 E128104 | Testing     | Warning  | Assert call whose operands are all literals
+E128105 | Testing     | Warning  | Test method calls an out-of-repo resolver without a skip guard
