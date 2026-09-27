@@ -23,13 +23,22 @@ done
 
 [[ -z "$CSPROJ" ]] && { err "No .csproj found for $PROJECT"; exit 1; }
 
-# Check if any .cs files changed in the project directory (recursive)
+# Check if any .cs files changed in the project directory (recursive). The commit that last
+# touched the csproj is the commit that last bumped the version, so .cs changes committed since
+# then count too. Without that range the guard reads only the working tree and skips the bump
+# when the source change already landed in an earlier commit.
 PROJECT_DIR=$(dirname "$CSPROJ")
 CS_MODIFIED=$(git diff --name-only -- "$PROJECT_DIR/" | { grep '\.cs$' || true; } | head -1)
 CS_STAGED=$(git diff --cached --name-only -- "$PROJECT_DIR/" | { grep '\.cs$' || true; } | head -1)
 UNTRACKED=$(git ls-files --others --exclude-standard -- "$PROJECT_DIR/" | { grep '\.cs$' || true; } | head -1)
 
-if [[ -z "$CS_MODIFIED" && -z "$CS_STAGED" && -z "$UNTRACKED" ]]; then
+LAST_BUMP=$(git log -1 --format=%H -- "$CSPROJ")
+CS_SINCE_BUMP=""
+if [[ -n "$LAST_BUMP" ]]; then
+    CS_SINCE_BUMP=$(git diff --name-only "$LAST_BUMP..HEAD" -- "$PROJECT_DIR/" | { grep '\.cs$' || true; } | head -1)
+fi
+
+if [[ -z "$CS_MODIFIED" && -z "$CS_STAGED" && -z "$UNTRACKED" && -z "$CS_SINCE_BUMP" ]]; then
     dim "No .cs changes in $PROJECT — skipping version bump"
     exit 0
 fi
