@@ -62,6 +62,10 @@ dotnet_diagnostic.E128005.severity = none
 
 # E128062: which TFM is "current"
 e128_minimum_framework_version = 100
+
+# E128103: service types whose Add* registration lives in another assembly
+# Entries are comma-separated simple type names, for example ITerminal, IPreferenceStore
+e128_registered_services = ITerminal, IPreferenceStore
 ```
 
 ### ConfigureAwait scoping (CA2007 + E128022)
