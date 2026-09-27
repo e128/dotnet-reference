@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -14,10 +15,18 @@ namespace E128.Analyzers.Reliability;
 ///     <c lang="csharp">Add*</c> or <c lang="csharp">TryAdd*</c> registration for that type exists in the same
 ///     compilation. The container throws <c lang="csharp">InvalidOperationException</c> at runtime for such a resolve.
 /// </summary>
+/// <remarks>
+///     The option <c lang="csharp">e128_registered_services</c> holds comma-separated simple type names. A name in
+///     the option counts as registered, so a service whose <c lang="csharp">Add*</c> registration lives in another
+///     assembly does not report. Framework types that only a non-generic extension registers, such as
+///     <c lang="csharp">HttpClient</c> and <c lang="csharp">HybridCache</c>, need no option entry.
+/// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128103";
+
+    private const string RegisteredServicesOptionKey = "e128_registered_services";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -36,13 +45,24 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         "GetRequiredService",
         "GetService");
 
+    // HttpClient, HybridCache, IServer, and TracerProvider arrive through non-generic extensions such as
+    // AddHttpClient("name") and AddHybridCache(). Those extensions carry no type argument, so the registration
+    // collector cannot observe them and the names must be listed here.
     private static readonly ImmutableHashSet<string> FrameworkProvidedServices = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "ILogger",
+        "ILoggerFactory",
         "IOptions",
         "IOptionsSnapshot",
         "IOptionsMonitor",
         "IHttpClientFactory",
+        "HttpClient",
+        "HybridCache",
+        "IServer",
+        "TracerProvider",
+        "IChatCompletionService",
+        "ITextEmbeddingService",
+        "IImageEmbeddingService",
         "IServiceProvider",
         "IConfiguration",
         "IHostEnvironment",
@@ -69,6 +89,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         var registeredServices = new ConcurrentBag<string>();
         var resolveCandidates = new ConcurrentBag<(Location Location, string TypeName)>();
         var parameterCandidates = new ConcurrentBag<(Location Location, string TypeName, string ContainingTypeName)>();
+        var configuredServices = ReadConfiguredServices(context.Options.AnalyzerConfigOptionsProvider);
 
         context.RegisterSyntaxNodeAction(
             ctx => CollectRegistrations(ctx, registeredServices),
@@ -86,7 +107,8 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             ctx,
             registeredServices,
             resolveCandidates,
-            parameterCandidates));
+            parameterCandidates,
+            configuredServices));
     }
 
     private static void CollectRegistrations(
@@ -140,6 +162,11 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        if (IsInsideRegistrationFactory(invocation))
+        {
+            return;
+        }
+
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
             is IMethodSymbol { TypeArguments.Length: 1 } method
             && method.TypeArguments[0].Name.Length > 0)
@@ -183,13 +210,14 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         CompilationAnalysisContext context,
         ConcurrentBag<string> registeredServices,
         ConcurrentBag<(Location Location, string TypeName)> resolveCandidates,
-        ConcurrentBag<(Location Location, string TypeName, string ContainingTypeName)> parameterCandidates)
+        ConcurrentBag<(Location Location, string TypeName, string ContainingTypeName)> parameterCandidates,
+        ImmutableHashSet<string> configuredServices)
     {
         var registered = ImmutableHashSet.CreateRange(StringComparer.Ordinal, registeredServices);
 
         foreach (var (location, typeName) in resolveCandidates)
         {
-            if (IsUnregistered(typeName, registered))
+            if (IsUnregistered(typeName, registered, configuredServices))
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, location, typeName));
             }
@@ -197,16 +225,50 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
         foreach (var (location, typeName, containingTypeName) in parameterCandidates)
         {
-            if (registered.Contains(containingTypeName) && IsUnregistered(typeName, registered))
+            if (registered.Contains(containingTypeName)
+                && IsUnregistered(typeName, registered, configuredServices))
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, location, typeName));
             }
         }
     }
 
-    private static bool IsUnregistered(string typeName, ImmutableHashSet<string> registered)
+    private static bool IsUnregistered(
+        string typeName,
+        ImmutableHashSet<string> registered,
+        ImmutableHashSet<string> configuredServices)
     {
-        return !registered.Contains(typeName) && !FrameworkProvidedServices.Contains(typeName);
+        return !registered.Contains(typeName)
+               && !configuredServices.Contains(typeName)
+               && !FrameworkProvidedServices.Contains(typeName);
+    }
+
+    private static ImmutableHashSet<string> ReadConfiguredServices(AnalyzerConfigOptionsProvider provider)
+    {
+        var options = provider.GlobalOptions;
+
+        if (!options.TryGetValue(RegisteredServicesOptionKey, out var rawValue)
+            || string.IsNullOrWhiteSpace(rawValue))
+        {
+            return [];
+        }
+
+        var entries = rawValue
+            .Split(',')
+            .Select(entry => entry.Trim())
+            .Where(entry => entry.Length > 0);
+
+        return ImmutableHashSet.CreateRange(StringComparer.Ordinal, entries);
+    }
+
+    private static bool IsInsideRegistrationFactory(SyntaxNode node)
+    {
+        var enclosing = node.Ancestors().OfType<AnonymousFunctionExpressionSyntax>().FirstOrDefault();
+
+        return enclosing is not null
+               && enclosing.Parent is ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax invocation }
+               && GetInvokedMethodName(invocation) is { } methodName
+               && IsRegistrationMethod(methodName);
     }
 
     private static string? GetInvokedMethodName(InvocationExpressionSyntax invocation)

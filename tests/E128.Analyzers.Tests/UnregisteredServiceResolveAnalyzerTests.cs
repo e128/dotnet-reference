@@ -22,6 +22,22 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
         return test.RunAsync();
     }
 
+    private static Task VerifyWithRegisteredServicesAsync(
+        string registeredServices,
+        string code,
+        params DiagnosticResult[] expected)
+    {
+        var test = new CSharpAnalyzerTest<UnregisteredServiceResolveAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = Net100WithDi
+        };
+        test.TestState.AnalyzerConfigFiles.Add(
+            ("/.editorconfig", "is_global = true\ne128_registered_services = " + registeredServices));
+        test.ExpectedDiagnostics.AddRange(expected);
+        return test.RunAsync();
+    }
+
     #region Fires
 
     [Fact]
@@ -202,4 +218,136 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     }
 
     #endregion Does Not Fire
+
+    #region Acceptance Contract
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsResolve_WhenServiceIsUnregisteredAndAbsentFromOption()
+    {
+        return VerifyWithRegisteredServicesAsync(
+            "IWidget",
+            """
+            using System;
+            using Microsoft.Extensions.DependencyInjection;
+            interface IShape { }
+            class Consumer
+            {
+                void Resolve(IServiceProvider provider)
+                {
+                    var shape = {|E128103:provider.GetRequiredService<IShape>()|};
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenServiceIsListedInTheOption()
+    {
+        return VerifyWithRegisteredServicesAsync(
+            "IShape",
+            """
+            using System;
+            using Microsoft.Extensions.DependencyInjection;
+            interface IShape { }
+            class Consumer
+            {
+                void Resolve(IServiceProvider provider)
+                {
+                    var shape = provider.GetRequiredService<IShape>();
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenServiceIsFrameworkProvidedWithoutAGenericRegistration()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Microsoft.Extensions.DependencyInjection;
+                           namespace Stubs
+                           {
+                               interface ILoggerFactory { }
+                               interface HttpClient { }
+                               interface HybridCache { }
+                               interface IServer { }
+                               interface TracerProvider { }
+                               interface IChatCompletionService { }
+                               interface ITextEmbeddingService { }
+                               interface IImageEmbeddingService { }
+                           }
+                           class Consumer
+                           {
+                               void Resolve(IServiceProvider provider)
+                               {
+                                   var loggerFactory = provider.GetRequiredService<Stubs.ILoggerFactory>();
+                                   var client = provider.GetRequiredService<Stubs.HttpClient>();
+                                   var cache = provider.GetRequiredService<Stubs.HybridCache>();
+                                   var server = provider.GetRequiredService<Stubs.IServer>();
+                                   var tracer = provider.GetRequiredService<Stubs.TracerProvider>();
+                                   var chat = provider.GetRequiredService<Stubs.IChatCompletionService>();
+                                   var text = provider.GetRequiredService<Stubs.ITextEmbeddingService>();
+                                   var image = provider.GetRequiredService<Stubs.IImageEmbeddingService>();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenResolveSitsInsideRegistrationFactory()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IShape { }
+                           interface IUnregistered { }
+                           class Consumer
+                           {
+                               void Resolve(IServiceProvider provider)
+                               {
+                                   var shape = {|E128103:provider.GetRequiredService<IUnregistered>()|};
+                               }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<IShape>(sp =>
+                                   {
+                                       var unused = sp.GetRequiredService<IUnregistered>();
+                                       return new Shape();
+                                   });
+                               }
+                           }
+                           class Shape : IShape { }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenOptionEntriesCarryPadding()
+    {
+        return VerifyWithRegisteredServicesAsync(
+            "  IShape ,  IWidget  ",
+            """
+            using System;
+            using Microsoft.Extensions.DependencyInjection;
+            interface IShape { }
+            interface IWidget { }
+            class Consumer
+            {
+                void Resolve(IServiceProvider provider)
+                {
+                    var shape = provider.GetRequiredService<IShape>();
+                    var widget = provider.GetRequiredService<IWidget>();
+                }
+            }
+            """);
+    }
+
+    #endregion Acceptance Contract
 }
