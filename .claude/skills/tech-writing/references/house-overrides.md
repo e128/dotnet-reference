@@ -1,6 +1,6 @@
 # House Overrides to Google Style
 
-Google Developer Style is the base standard for prose in this repository. The rules below win where they differ from it. This repository's STE rule (`.claude/rules/writing-style.md`) wins over both.
+Google Developer Style is the base standard for prose in this repository. The rules below win where they differ from it. This repository's writing rule (`.claude/rules/writing-style.md`) wins over both.
 
 ## Where House Rules Win
 
@@ -15,7 +15,7 @@ Google Developer Style is the base standard for prose in this repository. The ru
 | Phone number hyphens        | Use nonbreaking hyphen entities              | Use plain hyphens, because the dash scan flags the entity.                                                                      |
 | Timestamps                  | Format varies                                | UTC ISO 8601, such as `2026-05-05T22:00:00Z`.                                                                                   |
 
-## Where Repo STE Wins Over Google
+## Where Repo Rules Win Over Google
 
 | Topic            | Google Says                                  | Repo Rule                                                                 |
 | ---------------- | -------------------------------------------- | ------------------------------------------------------------------------- |

@@ -1,6 +1,6 @@
 ---
 name: tech-writing
-description: Write and review prose (docs, READMEs, PR bodies, commit bodies, release notes, error messages, code comments, runbooks, never code) to Google Developer Style plus house overrides and the repo STE rule. Use before writing or editing any non-code text. Triggers include "write docs", "write a README", "PR description", "make this clearer", "tighten this", "edit this prose", "tech writing", and "review my writing".
+description: Write and review prose (docs, READMEs, PR bodies, commit bodies, release notes, error messages, code comments, runbooks, never code) to Google Developer Style plus house overrides and the repo writing rules. Use before writing or editing any non-code text. Triggers include "write docs", "write a README", "PR description", "make this clearer", "tighten this", "edit this prose", "tech writing", and "review my writing".
 ---
 
 # tech-writing
@@ -9,7 +9,7 @@ Write any prose artifact to [Google Developer Style](https://developers.google.c
 
 Order of authority:
 
-1. `.claude/rules/writing-style.md` (STE) and `AGENTS.md`.
+1. `.claude/rules/writing-style.md` and `AGENTS.md`.
 2. `references/house-overrides.md`.
 3. Google, through the topic notes.
 
@@ -22,7 +22,7 @@ Order of authority:
 - **State the fact. Do not grade it.** Order and placement rank a list.
 - **Docs state current state**, not edit history. A decision log, an incident record, and a dated snapshot are the exceptions.
 - **Timestamps are UTC ISO 8601**, such as `2026-05-05T22:00:00Z`.
-- **Repo STE rules win over Google:** no contractions, no semicolons, instructions of 20 words or fewer, descriptive sentences of 25 words or fewer, one name per thing.
+- **Repo writing rules win over Google:** no contractions, no semicolons, instructions of 20 words or fewer, descriptive sentences of 25 words or fewer, one name per thing.
 
 ## Core Rules from Google
 

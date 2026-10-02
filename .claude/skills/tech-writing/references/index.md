@@ -2,7 +2,7 @@
 
 These topic notes capture Google developer documentation guidance that forms the cross-project writing standard. Each note lists the Google pages it covers.
 
-Use the notes as practical guidance, and apply them with the house overrides, which win on any conflict. The repository STE rule wins over both.
+Use the notes as practical guidance, and apply them with the house overrides, which win on any conflict. The repository writing rule wins over both.
 
 ## Claims and Reader Needs
 
@@ -28,7 +28,7 @@ Use the notes as practical guidance, and apply them with the house overrides, wh
 
 ## Rules by Section of the Google Guide
 
-- **[House Overrides to Google Style](house-overrides.md)**: Where house rules and repo STE win: dashes, heading case, contractions, semicolons, sentence caps.
+- **[House Overrides to Google Style](house-overrides.md)**: Where house rules and repo rules win: dashes, heading case, contractions, semicolons, sentence caps.
 - **[Word Choice and Product Names](word-choice.md)**: Words to replace, words to cut, and product-name rules.
 - **[Language and Grammar Rules](language-mechanics.md)**: Abbreviations, articles, capitalization, person, tense and plurals.
 - **[Punctuation Rules](punctuation.md)**: Commas, colons, hyphens, quotes, periods, ellipses and slashes.

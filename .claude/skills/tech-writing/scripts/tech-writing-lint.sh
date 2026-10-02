@@ -3,9 +3,9 @@
 #
 # Checks prose against Google Developer Style plus the house overrides:
 #   DASH       em dash, en dash, horizontal bar, minus sign, " -- ", and entity spellings
-#   SENTENCE   sentence over 25 words (repo STE descriptive cap)
-#   CONTRACT   contraction (repo STE bans them)
-#   SEMICOLON  semicolon (repo STE bans them)
+#   SENTENCE   sentence over 25 words (repo descriptive cap)
+#   CONTRACT   contraction (repo rule bans them)
+#   SEMICOLON  semicolon (repo rule bans them)
 #   WORD       banned word choices ("allows you to", "i.e.", "e.g.", "etc.", "and/or",
 #              "click here", "please", "simply", "the user")
 #   TIME       time-anchored words (currently, now, soon, eventually, ...)
@@ -13,7 +13,7 @@
 #   PASSIVE?   heuristic only: regular past participle followed by "by"
 #
 # Scope: plain text and markdown. Fenced code blocks, inline code spans and HTML
-# tags are stripped first. Judgment calls stay with the writer. The repo STE rule
+# tags are stripped first. Judgment calls stay with the writer. The repo writing rule
 # (.claude/rules/writing-style.md) adds the contraction and semicolon checks.
 #
 # Usage:
