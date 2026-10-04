@@ -773,4 +773,69 @@ public sealed class LowValueTestAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LiteralEcho_ReportsNothing_WhenAssertionReadsALibraryAccessor()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public interface IElement
+                           {
+                               string GetAttribute(string name);
+                           }
+
+                           public sealed class Element : IElement
+                           {
+                               public string GetAttribute(string name) => name;
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ReturnTheSource()
+                               {
+                                   IElement element = new Element();
+                                   Assert.Equal("image.png", element.GetAttribute("src"));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DuplicateCoverage_ReportsNothing_WhenTestsShareOnlyALibraryAccessor()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public interface IReader
+                           {
+                               string Read(string key);
+                           }
+
+                           public sealed class Reader : IReader
+                           {
+                               public string Read(string key) => key;
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ReadTheName()
+                               {
+                                   IReader reader = new Reader();
+                                   Assert.Equal("alpha", reader.Read("name"));
+                               }
+
+                               [Fact]
+                               public void Should_ReadTheValue()
+                               {
+                                   IReader reader = new Reader();
+                                   Assert.Equal("alpha", reader.Read("name"));
+                               }
+                           }
+                           """);
+    }
 }

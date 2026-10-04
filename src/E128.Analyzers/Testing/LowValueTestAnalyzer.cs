@@ -236,6 +236,14 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool IsProductionCodeCall(IMethodSymbol method)
     {
+        // A call on an interface is a library or seam accessor, not the concrete code under test. A DOM
+        // read such as IDocument.QuerySelector("img") carries no behavior, so it must not seed a
+        // duplicate key or count as the call an assertion echoes.
+        if (method.ContainingType?.TypeKind == TypeKind.Interface)
+        {
+            return false;
+        }
+
         var ns = method.ContainingNamespace?.ToDisplayString() ?? string.Empty;
 
         return !ns.StartsWith("System", StringComparison.Ordinal)
@@ -330,7 +338,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         foreach (var assertion in facts.Assertions)
         {
             if (!HasToStringInvocation(assertion.Invocation)
-                && ComparesLiteralWithLiteralOnlyCall(assertion.Invocation))
+                && ComparesLiteralWithLiteralOnlyCall(facts, assertion.Invocation))
             {
                 return true;
             }
@@ -717,7 +725,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static bool ComparesLiteralWithLiteralOnlyCall(InvocationExpressionSyntax assertion)
+    private static bool ComparesLiteralWithLiteralOnlyCall(TestFacts facts, InvocationExpressionSyntax assertion)
     {
         var hasLiteral = false;
         var hasEchoedCall = false;
@@ -725,8 +733,12 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         foreach (var argument in assertion.ArgumentList.Arguments)
         {
             // The literal that the test echoes sits in its own argument. A literal inside the call
-            // under test is an input, not an expected value, so it does not count.
-            if (argument.Expression is InvocationExpressionSyntax call && IsAllLiteralArguments(call))
+            // under test is an input, not an expected value, so it does not count. A library accessor
+            // such as IDocument.QuerySelector("img") is not the call under test and does not echo.
+            if (argument.Expression is InvocationExpressionSyntax call
+                && IsAllLiteralArguments(call)
+                && facts.Model.GetSymbolInfo(call, facts.CancellationToken).Symbol is IMethodSymbol called
+                && IsProductionCodeCall(called))
             {
                 hasEchoedCall = true;
                 continue;
