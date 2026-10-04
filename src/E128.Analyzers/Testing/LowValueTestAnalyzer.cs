@@ -35,6 +35,14 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         "IReadOnlyDictionary`2",
         "IDictionary");
 
+    private static readonly ImmutableHashSet<string> LoggerTokens = ImmutableHashSet.Create(
+        StringComparer.OrdinalIgnoreCase,
+        "log",
+        "logs",
+        "logger",
+        "loggers",
+        "logging");
+
     private static readonly DiagnosticDescriptor SuggestionRule = new(
         SuggestionDiagnosticId,
         "Test matches one low-value test condition",
@@ -55,7 +63,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         "A short test that asserts on several implementation details fails on every honest refactor. " +
         "Delete the test, or assert observable behavior instead.");
 
-    private static readonly ImmutableArray<Func<TestFacts, ConditionHit?>> Detectors =
+    private static readonly ImmutableArray<Func<TestFacts, bool>> Detectors =
     [
         BareSize,
         NameMirror,
@@ -121,7 +129,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
         foreach (var detector in Detectors)
         {
-            if (detector(facts) is not null)
+            if (detector(facts))
             {
                 hitCount++;
             }
@@ -190,12 +198,19 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
             facts.Assertions.Select(assertion => assertion.Symbol.Name).OrderBy(name => name, StringComparer.Ordinal));
         var builder = ImmutableArray.CreateBuilder<string>();
 
+        // A method that repeats the same call twice covers the same ground twice, but that is not the
+        // cross-method duplication this condition counts. Keep one key per distinct call site.
         foreach (var call in calls)
         {
             var arguments = string.Join(
                 ",",
                 call.Invocation.ArgumentList.Arguments.Select(argument => argument.Expression.ToString()));
-            builder.Add($"{testClass.ToDisplayString()}|{call.Symbol.ToDisplayString()}|{arguments}|{assertions}");
+            var key = $"{testClass.ToDisplayString()}|{call.Symbol.ToDisplayString()}|{arguments}|{assertions}";
+
+            if (!builder.Contains(key))
+            {
+                builder.Add(key);
+            }
         }
 
         return builder.ToImmutable();
@@ -217,21 +232,17 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return !calls.IsEmpty;
     }
 
-    private static ConditionHit? BareSize(TestFacts facts)
+    private static bool BareSize(TestFacts facts)
     {
         // A short test that also calls production observes something real. Only a short test that
         // exercises nothing but its own literals has no boundary to sit on.
-        var matches = !IsNullOnly(facts)
-                      && facts.Statements == BareSizeStatementCount
-                      && facts.Assertions.Length == 1
-                      && facts.ProductionCalls.IsEmpty;
-
-        return matches
-            ? new ConditionHit(ConditionKind.BareSize, facts.Method.Identifier.GetLocation())
-            : null;
+        return !IsNullOnly(facts)
+               && facts.Statements == BareSizeStatementCount
+               && facts.Assertions.Length == 1
+               && facts.ProductionCalls.IsEmpty;
     }
 
-    private static ConditionHit? NameMirror(TestFacts facts)
+    private static bool NameMirror(TestFacts facts)
     {
         string? mirrored = null;
 
@@ -243,13 +254,13 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
             }
             else if (!string.Equals(mirrored, call.Symbol.Name, StringComparison.Ordinal))
             {
-                return null;
+                return false;
             }
         }
 
         if (mirrored is null)
         {
-            return null;
+            return false;
         }
 
         // The name mirrors the call only when it carries the method name and almost nothing else. A
@@ -269,23 +280,17 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        return mirrors && otherTokens <= NameMirrorOtherTokenLimit
-            ? new ConditionHit(ConditionKind.NameMirror, facts.Method.Identifier.GetLocation())
-            : null;
+        return mirrors && otherTokens <= NameMirrorOtherTokenLimit;
     }
 
-    private static ConditionHit? NoAssertion(TestFacts facts)
+    private static bool NoAssertion(TestFacts facts)
     {
         // A thrown assertion reports through the call itself, so a call named Check counts as an
         // assertion even though no Assert member appears in the body. Fluent rule libraries use it.
-        var matches = !facts.ContainsAwait
-                      && facts.Assertions.Length == 0
-                      && facts.ProductionCalls.Length > 0
-                      && !CallsCheckStyleAssertion(facts);
-
-        return matches
-            ? new ConditionHit(ConditionKind.NoAssertion, facts.Method.Identifier.GetLocation())
-            : null;
+        return !facts.ContainsAwait
+               && facts.Assertions.Length == 0
+               && facts.ProductionCalls.Length > 0
+               && !CallsCheckStyleAssertion(facts);
     }
 
     private static bool CallsCheckStyleAssertion(TestFacts facts)
@@ -301,98 +306,101 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static ConditionHit? SingleRowTheory(TestFacts facts)
+    private static bool SingleRowTheory(TestFacts facts)
     {
         var attribute = XunitTestHelper.GetFactOrTheoryAttribute(facts.Method);
-        var matches = attribute is not null
-                      && IsTheoryName(attribute.Name.ToString())
-                      && XunitTestHelper.CountDataRows(facts.Method) == 1;
 
-        return matches
-            ? new ConditionHit(ConditionKind.SingleRowTheory, facts.Method.Identifier.GetLocation())
-            : null;
+        return attribute is not null
+               && IsTheoryName(attribute.Name.ToString())
+               && XunitTestHelper.CountDataRows(facts.Method) == 1;
     }
 
-    private static ConditionHit? LiteralEcho(TestFacts facts)
+    private static bool LiteralEcho(TestFacts facts)
     {
         foreach (var assertion in facts.Assertions)
         {
-            if (HasToStringInvocation(assertion.Invocation)
-                || !ComparesLiteralWithLiteralOnlyCall(assertion.Invocation))
+            if (!HasToStringInvocation(assertion.Invocation)
+                && ComparesLiteralWithLiteralOnlyCall(assertion.Invocation))
             {
-                continue;
+                return true;
             }
-
-            return new ConditionHit(ConditionKind.LiteralEcho, facts.Method.Identifier.GetLocation());
         }
 
-        return null;
+        return false;
     }
 
-    private static ConditionHit? ExceptionMessageLock(TestFacts facts)
+    private static bool ExceptionMessageLock(TestFacts facts)
     {
         foreach (var assertion in facts.Assertions)
         {
-            if (HasToStringInvocation(assertion.Invocation)
-                || !PinsExceptionMessage(facts, assertion.Invocation))
+            if (!HasToStringInvocation(assertion.Invocation)
+                && PinsExceptionMessage(facts, assertion.Invocation))
             {
-                continue;
+                return true;
             }
-
-            return new ConditionHit(ConditionKind.ExceptionMessageLock, facts.Method.Identifier.GetLocation());
         }
 
-        return null;
+        return false;
     }
 
-    private static ConditionHit? MockVerifyOnly(TestFacts facts)
+    private static bool MockVerifyOnly(TestFacts facts)
     {
         if (facts.Assertions.Length != 1)
         {
-            return null;
+            return false;
         }
 
         var assertion = facts.Assertions[0];
-        var matches = IsVerificationName(assertion.Symbol.Name) && HasLambdaArgument(assertion.Invocation);
 
-        return matches
-            ? new ConditionHit(ConditionKind.MockVerifyOnly, facts.Method.Identifier.GetLocation())
-            : null;
+        return IsVerificationName(assertion.Symbol.Name) && HasLambdaArgument(assertion.Invocation);
     }
 
-    private static ConditionHit? LogAssert(TestFacts facts)
+    private static bool LogAssert(TestFacts facts)
     {
         if (facts.Assertions.Length != 1)
         {
-            return null;
+            return false;
         }
 
         var assertion = facts.Assertions[0];
         var receiver = ReceiverName(assertion.Invocation);
-        var matches = IsVerificationName(assertion.Symbol.Name)
-                      && !HasLambdaArgument(assertion.Invocation)
-                      && receiver is not null
-                      && receiver.IndexOf("log", StringComparison.OrdinalIgnoreCase) >= 0;
 
-        return matches
-            ? new ConditionHit(ConditionKind.LogAssert, facts.Method.Identifier.GetLocation())
-            : null;
+        return IsVerificationName(assertion.Symbol.Name)
+               && !HasLambdaArgument(assertion.Invocation)
+               && receiver is not null
+               && IsLoggerName(receiver);
     }
 
-    private static ConditionHit? ConstructorPassthrough(TestFacts facts)
+    private static bool IsLoggerName(string name)
+    {
+        // A substring test accepts dialog and catalog. Match a whole name token instead.
+        foreach (var token in TokenizeName(name))
+        {
+            if (LoggerTokens.Contains(token)
+                || token.EndsWith("Log", StringComparison.Ordinal)
+                || token.EndsWith("Logger", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ConstructorPassthrough(TestFacts facts)
     {
         foreach (var assertion in facts.Assertions)
         {
             if (HasLiteralConstructedRead(facts, assertion.Invocation))
             {
-                return new ConditionHit(ConditionKind.ConstructorPassthrough, facts.Method.Identifier.GetLocation());
+                return true;
             }
         }
 
-        return null;
+        return false;
     }
 
-    private static ConditionHit? InternalsReachIn(TestFacts facts)
+    private static bool InternalsReachIn(TestFacts facts)
     {
         foreach (var assertion in facts.Assertions)
         {
@@ -400,32 +408,32 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
             {
                 if (node is MemberAccessExpressionSyntax member && ReadsInternalMember(facts, member))
                 {
-                    return new ConditionHit(ConditionKind.InternalsReachIn, facts.Method.Identifier.GetLocation());
+                    return true;
                 }
             }
         }
 
-        return null;
+        return false;
     }
 
-    private static ConditionHit? SelfFulfillingExpected(TestFacts facts)
+    private static bool SelfFulfillingExpected(TestFacts facts)
     {
         foreach (var assertion in facts.Assertions)
         {
             if (SharesExpectedReceiver(facts, assertion))
             {
-                return new ConditionHit(ConditionKind.SelfFulfillingExpected, facts.Method.Identifier.GetLocation());
+                return true;
             }
         }
 
-        return null;
+        return false;
     }
 
-    private static ConditionHit? MagicConstantEcho(TestFacts facts)
+    private static bool MagicConstantEcho(TestFacts facts)
     {
         if (facts.ProductionCalls.IsEmpty)
         {
-            return null;
+            return false;
         }
 
         foreach (var assertion in facts.Assertions)
@@ -435,12 +443,12 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
                 if (node is LiteralExpressionSyntax literal
                     && ProductionBodyContainsLiteral(facts, literal.Token.Text))
                 {
-                    return new ConditionHit(ConditionKind.MagicConstantEcho, facts.Method.Identifier.GetLocation());
+                    return true;
                 }
             }
         }
 
-        return null;
+        return false;
     }
 
     private static bool ProductionBodyContainsLiteral(TestFacts facts, string text)
@@ -487,17 +495,17 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static ConditionHit? OrderLock(TestFacts facts)
+    private static bool OrderLock(TestFacts facts)
     {
         foreach (var assertion in facts.Assertions)
         {
             if (PinsExactOrderOnUnorderedResult(facts, assertion))
             {
-                return new ConditionHit(ConditionKind.OrderLock, facts.Method.Identifier.GetLocation());
+                return true;
             }
         }
 
-        return null;
+        return false;
     }
 
     private static bool PinsExactOrderOnUnorderedResult(TestFacts facts, AssertionFact assertion)
@@ -543,51 +551,86 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool HasLiteralConstructedRead(TestFacts facts, InvocationExpressionSyntax assertion)
     {
-        var hasLiteral = false;
-        var hasConstructedRead = false;
+        var nodes = AssertionNodes(assertion);
+        var literals = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (var node in AssertionNodes(assertion))
+        foreach (var node in nodes)
         {
-            if (node is LiteralExpressionSyntax)
+            if (node is LiteralExpressionSyntax literal)
             {
-                hasLiteral = true;
-            }
-            else if (node is MemberAccessExpressionSyntax member && ReadsConstructedObject(facts, member))
-            {
-                hasConstructedRead = true;
+                literals.Add(literal.Token.Text);
             }
         }
 
-        return hasLiteral && hasConstructedRead;
-    }
-
-    private static bool ReadsConstructedObject(TestFacts facts, MemberAccessExpressionSyntax member)
-    {
-        if (facts.Model.GetOperation(member, facts.CancellationToken) is not IPropertyReferenceOperation property)
+        if (literals.Count == 0)
         {
             return false;
         }
 
-        if (property.Instance is IObjectCreationOperation)
+        // The test echoes a value that it passed into the constructor. A literal that the constructor
+        // never received asserts something else, so it does not match.
+        foreach (var node in nodes)
         {
-            return true;
-        }
-
-        if (property.Instance is not ILocalReferenceOperation local)
-        {
-            return false;
-        }
-
-        foreach (var reference in local.Local.DeclaringSyntaxReferences)
-        {
-            if (reference.GetSyntax(facts.CancellationToken)
-                is VariableDeclaratorSyntax { Initializer.Value: ObjectCreationExpressionSyntax })
+            if (node is MemberAccessExpressionSyntax member
+                && ConstructedInstance(facts, member) is { } creation
+                && CreationCarriesLiteral(creation, literals))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool CreationCarriesLiteral(
+        ObjectCreationExpressionSyntax creation,
+        HashSet<string> literals)
+    {
+        if (creation.ArgumentList is null)
+        {
+            return false;
+        }
+
+        foreach (var argument in creation.ArgumentList.Arguments)
+        {
+            if (argument.Expression is LiteralExpressionSyntax literal && literals.Contains(literal.Token.Text))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static ObjectCreationExpressionSyntax? ConstructedInstance(
+        TestFacts facts,
+        MemberAccessExpressionSyntax member)
+    {
+        if (facts.Model.GetOperation(member, facts.CancellationToken) is not IPropertyReferenceOperation property)
+        {
+            return null;
+        }
+
+        if (property.Instance is IObjectCreationOperation creation)
+        {
+            return creation.Syntax as ObjectCreationExpressionSyntax;
+        }
+
+        if (property.Instance is not ILocalReferenceOperation local)
+        {
+            return null;
+        }
+
+        foreach (var reference in local.Local.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax(facts.CancellationToken)
+                is VariableDeclaratorSyntax { Initializer.Value: ObjectCreationExpressionSyntax fromLocal })
+            {
+                return fromLocal;
+            }
+        }
+
+        return null;
     }
 
     private static bool ReadsInternalMember(TestFacts facts, MemberAccessExpressionSyntax member)
@@ -597,25 +640,41 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return symbol is IPropertySymbol or IFieldSymbol
                && symbol.DeclaredAccessibility == Accessibility.Internal
                && symbol.ContainingAssembly is { } assembly
-               && HasInternalsVisibleTo(assembly);
+               && GrantsInternalsTo(assembly, facts.Symbol.ContainingAssembly.Name);
     }
 
-    private static bool HasInternalsVisibleTo(IAssemblySymbol assembly)
+    private static bool GrantsInternalsTo(IAssemblySymbol assembly, string friendAssemblyName)
     {
         foreach (var attribute in assembly.GetAttributes())
         {
-            if (attribute.AttributeClass is { } attributeClass
-                && string.Equals(attributeClass.Name, "InternalsVisibleToAttribute", StringComparison.Ordinal)
-                && string.Equals(
+            if (attribute.AttributeClass is not { } attributeClass
+                || !string.Equals(attributeClass.Name, "InternalsVisibleToAttribute", StringComparison.Ordinal)
+                || !string.Equals(
                     attributeClass.ContainingNamespace.ToDisplayString(),
                     "System.Runtime.CompilerServices",
                     StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            // The friend name must be the test assembly. Access granted to another assembly does not
+            // make this internal member reachable from the test.
+            if (attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string target
+                && string.Equals(FriendAssemblyName(target), friendAssemblyName, StringComparison.Ordinal))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static string FriendAssemblyName(string target)
+    {
+        // The attribute value can carry the public key after the assembly name.
+        var comma = target.IndexOf(',');
+        return comma < 0 ? target.Trim() : target.Substring(0, comma).Trim();
     }
 
     private static bool SharesExpectedReceiver(TestFacts facts, AssertionFact assertion)
@@ -653,15 +712,23 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         var hasLiteral = false;
         var hasEchoedCall = false;
 
-        foreach (var node in AssertionNodes(assertion))
+        foreach (var argument in assertion.ArgumentList.Arguments)
         {
-            if (node is LiteralExpressionSyntax)
-            {
-                hasLiteral = true;
-            }
-            else if (node is InvocationExpressionSyntax call && IsAllLiteralArguments(call))
+            // The literal that the test echoes sits in its own argument. A literal inside the call
+            // under test is an input, not an expected value, so it does not count.
+            if (argument.Expression is InvocationExpressionSyntax call && IsAllLiteralArguments(call))
             {
                 hasEchoedCall = true;
+                continue;
+            }
+
+            foreach (var node in argument.Expression.DescendantNodesAndSelf(IsNotLambda))
+            {
+                if (node is LiteralExpressionSyntax)
+                {
+                    hasLiteral = true;
+                    break;
+                }
             }
         }
 

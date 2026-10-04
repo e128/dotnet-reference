@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-09-26T18:18:27Z*
+*Updated: 2026-10-04T12:44:27Z*
 
 ## Overview
 
@@ -118,6 +118,7 @@ E128099 | Design | Warning | No longer needed
 | 1.39.0  | E128094, 097, 088 | Pragma before namespace, xUnit comment placement, enum switch exhaustiveness |
 | 1.40.0-1.40.3 | E128101, E128102 | Patch bumps on feature commits. Both rules shipped inside the assembly but stayed listed in `Unshipped.md` until 1.41.0 |
 | 1.41.0  | E128101-106 | Six rules moved from `Unshipped.md` to a new `Release 1.41.0` section |
+| 1.41.3  | E128107-108 | Low-value test conditions moved from `Unshipped.md` to a new `Release 1.41.3` section |
 
 ## Sources
 

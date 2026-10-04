@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-08-16T12:39:04Z*
+*Updated: 2026-10-04T12:43:02Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 
@@ -48,7 +48,22 @@ When the original code already has `using` directives, the new one is merged int
 | Add using + replace expression   | E128066 (ToHashSet)     | Must handle blank line in tests        |
 | Rename symbol                    | E128063, IDE1006        | Requires SequentialRenameFixAllProvider |
 | Remove node                      | E128022 (ConfigureAwait)| Remove a method call from a chain      |
+| Delete member                    | E128107, E128108        | Removes a whole test method            |
 | Wrap in method call              | E128070 (Math.Min)      | Context-specific — often no auto fix   |
+
+## Removing a Member Node
+
+`RemoveNode(node, SyntaxRemoveOptions.KeepNoTrivia)` drops the trivia of the removed node. The
+line break that ended the previous token stays. That result is correct for the common case.
+
+A blank line between the removed member and the closing brace survives the removal. Trim that
+line only when the leading trivia of the closing brace holds whitespace and line breaks alone.
+Keep the whitespace, and drop the line breaks. Never clear the whole trivia list.
+
+Clearing the whole list moves the closing brace to column 0 when the type is nested. It also
+joins a trailing comment and the brace onto one line, which comments the brace out.
+
+`LowValueTestCodeFixProvider` follows this rule.
 
 ## Related
 

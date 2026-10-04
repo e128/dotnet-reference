@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-09-26T15:14:40Z*
+*Updated: 2026-10-04T12:43:02Z*
 
 ## Strategy: Deny by Default
 
@@ -112,7 +112,7 @@ Key rules by category (not exhaustive):
 | Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard  |
 | Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation, O(n²) loop patterns, `SearchValues<char>` over `string.IndexOfAny` (E128102) |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
-| Testing     | Temp directory cleanup, stale ReferenceAssemblies                                                  |
+| Testing     | Temp directory cleanup, stale ReferenceAssemblies, low-value test conditions E128107/E128108       |
 
 ### E128061 — Static readonly array → ImmutableArray
 
