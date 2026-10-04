@@ -195,7 +195,9 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
         var assertions = string.Join(
             "|",
-            facts.Assertions.Select(assertion => assertion.Symbol.Name).OrderBy(name => name, StringComparer.Ordinal));
+            facts.Assertions
+                .Select(AssertionSignature)
+                .OrderBy(name => name, StringComparer.Ordinal));
         var builder = ImmutableArray.CreateBuilder<string>();
 
         // A method that repeats the same call twice covers the same ground twice, but that is not the
@@ -214,6 +216,18 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         }
 
         return builder.ToImmutable();
+    }
+
+    private static string AssertionSignature(AssertionFact assertion)
+    {
+        // The assertion name alone collapses tests that share a setup call but check different results:
+        // `Assert.Equal(1, lookup.Count)` and `Assert.Equal(1, lookup["a"])` both name `Equal`. Carry the
+        // argument text so only an assertion that repeats verbatim counts as duplicate coverage.
+        var arguments = string.Join(
+            ",",
+            assertion.Invocation.ArgumentList.Arguments.Select(argument => argument.Expression.ToString()));
+
+        return $"{assertion.Symbol.Name}({arguments})";
     }
 
     private static bool HasLiteralProductionCall(TestFacts facts, out ImmutableArray<ProductionCallFact> calls)
@@ -727,34 +741,73 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool ComparesLiteralWithLiteralOnlyCall(TestFacts facts, InvocationExpressionSyntax assertion)
     {
-        var hasLiteral = false;
-        var hasEchoedCall = false;
+        var literals = new HashSet<string>(StringComparer.Ordinal);
+        var calls = new List<InvocationExpressionSyntax>();
 
         foreach (var argument in assertion.ArgumentList.Arguments)
         {
             // The literal that the test echoes sits in its own argument. A literal inside the call
             // under test is an input, not an expected value, so it does not count. A library accessor
             // such as IDocument.QuerySelector("img") is not the call under test and does not echo.
-            if (argument.Expression is InvocationExpressionSyntax call
-                && IsAllLiteralArguments(call)
-                && facts.Model.GetSymbolInfo(call, facts.CancellationToken).Symbol is IMethodSymbol called
-                && IsProductionCodeCall(called))
+            if (IsLiteralOnlyProductionCall(facts, argument.Expression, out var call))
             {
-                hasEchoedCall = true;
+                calls.Add(call!);
                 continue;
             }
 
             foreach (var node in argument.Expression.DescendantNodesAndSelf(IsNotLambda))
             {
-                if (node is LiteralExpressionSyntax)
+                if (node is LiteralExpressionSyntax literal)
                 {
-                    hasLiteral = true;
-                    break;
+                    literals.Add(literal.Token.Text);
                 }
             }
         }
 
-        return hasLiteral && hasEchoedCall;
+        if (literals.Count == 0)
+        {
+            return false;
+        }
+
+        // An echo repeats an input back as the expected value, so `Assert.Equal("abc", Normalize("abc"))`
+        // has no behavior between the input and the assertion. A literal that differs from every input,
+        // such as `Assert.Equal("user_domain.com", SanitizeKey("user@domain.com"))`, states a result the
+        // code computed. That is a real assertion, not an echo.
+        foreach (var call in calls)
+        {
+            if (CallCarriesLiteral(call, literals))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsLiteralOnlyProductionCall(
+        TestFacts facts,
+        ExpressionSyntax expression,
+        out InvocationExpressionSyntax? call)
+    {
+        call = expression as InvocationExpressionSyntax;
+
+        return call is not null
+               && IsAllLiteralArguments(call)
+               && facts.Model.GetSymbolInfo(call, facts.CancellationToken).Symbol is IMethodSymbol called
+               && IsProductionCodeCall(called);
+    }
+
+    private static bool CallCarriesLiteral(InvocationExpressionSyntax call, HashSet<string> literals)
+    {
+        foreach (var argument in call.ArgumentList.Arguments)
+        {
+            if (argument.Expression is LiteralExpressionSyntax literal && literals.Contains(literal.Token.Text))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool PinsExceptionMessage(TestFacts facts, InvocationExpressionSyntax assertion)

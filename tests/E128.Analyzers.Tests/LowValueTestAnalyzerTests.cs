@@ -197,15 +197,15 @@ public sealed class LowValueTestAnalyzerTests
 
                            public static class Calculator
                            {
-                               public static int Add(int left, int right) => left + right;
+                               public static int Echo(int value) => value;
                            }
 
                            public sealed class Subject
                            {
                                [Fact]
-                               public void {|E128107:Should_SumTwoValues|}()
+                               public void {|E128107:Should_ReturnTheInputValue|}()
                                {
-                                   Assert.Equal(3, Calculator.Add(1, 2));
+                                   Assert.Equal(1, Calculator.Echo(1));
                                }
                            }
                            """);
@@ -220,15 +220,15 @@ public sealed class LowValueTestAnalyzerTests
 
                            public static class Calculator
                            {
-                               public static int Add(int left, int right) => left + right;
+                               public static int Echo(int value) => value;
                            }
 
                            public sealed class Subject
                            {
                                [Fact]
-                               public void {|E128108:Should_Add|}()
+                               public void {|E128108:Should_Echo|}()
                                {
-                                   Assert.Equal(3, Calculator.Add(1, 2));
+                                   Assert.Equal(1, Calculator.Echo(1));
                                }
                            }
                            """);
@@ -834,6 +834,88 @@ public sealed class LowValueTestAnalyzerTests
                                {
                                    IReader reader = new Reader();
                                    Assert.Equal("alpha", reader.Read("name"));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LiteralEcho_Reports_WhenExpectedLiteralRepeatsTheCallInput()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void {|E128107:Should_ReturnTheName|}()
+                               {
+                                   Assert.Equal("abc", Subject.Normalize("abc"));
+                               }
+
+                               public static string Normalize(string value) => value.ToUpperInvariant();
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LiteralEcho_ReportsNothing_WhenExpectedLiteralDiffersFromTheCallInput()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public static class KeyNormalizer
+                           {
+                               public static string Sanitize(string value) => value.Replace("@", "_");
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ReplaceTheAtSign()
+                               {
+                                   Assert.Equal("user_domain.com", KeyNormalizer.Sanitize("user@domain.com"));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DuplicateCoverage_ReportsNothing_WhenTestsCheckDifferentResultsOfTheSameCall()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public sealed class Builder
+                           {
+                               public int Count => 0;
+
+                               public int this[string key] => 0;
+
+                               public void Add(string key, int value)
+                               {
+                               }
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_CountTheEntries()
+                               {
+                                   var builder = new Builder();
+                                   builder.Add("a", 1);
+                                   Assert.Equal(1, builder.Count);
+                               }
+
+                               [Fact]
+                               public void Should_ReadTheEntry()
+                               {
+                                   var builder = new Builder();
+                                   builder.Add("a", 1);
+                                   Assert.Equal(1, builder["a"]);
                                }
                            }
                            """);

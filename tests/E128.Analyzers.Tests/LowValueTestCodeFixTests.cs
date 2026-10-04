@@ -47,7 +47,7 @@ public sealed class LowValueTestCodeFixTests
 
             public static class Calculator
             {
-                public static int Add(int left, int right) => left + right;
+                public static int Echo(int value) => value;
             }
 
             public sealed class Subject
@@ -57,7 +57,7 @@ public sealed class LowValueTestCodeFixTests
                 [Fact]
                 public void {|E128107:Should_SumTwoValues|}()
                 {
-                    Assert.Equal(3, Calculator.Add(1, 2));
+                    Assert.Equal(1, Calculator.Echo(1));
                 }
             }
             """,
@@ -66,7 +66,7 @@ public sealed class LowValueTestCodeFixTests
 
             public static class Calculator
             {
-                public static int Add(int left, int right) => left + right;
+                public static int Echo(int value) => value;
             }
 
             public sealed class Subject
@@ -86,7 +86,7 @@ public sealed class LowValueTestCodeFixTests
 
             public static class Calculator
             {
-                public static int Add(int left, int right) => left + right;
+                public static int Echo(int value) => value;
             }
 
             public sealed class Subject
@@ -96,7 +96,7 @@ public sealed class LowValueTestCodeFixTests
                 [Xunit.Fact]
                 public void {|E128107:Should_SumTwoValues|}()
                 {
-                    Assert.Equal(3, Calculator.Add(1, 2));
+                    Assert.Equal(1, Calculator.Echo(1));
                 }
             }
             """,
@@ -105,7 +105,7 @@ public sealed class LowValueTestCodeFixTests
 
             public static class Calculator
             {
-                public static int Add(int left, int right) => left + right;
+                public static int Echo(int value) => value;
             }
 
             public sealed class Subject
@@ -125,7 +125,7 @@ public sealed class LowValueTestCodeFixTests
 
             public static class Calculator
             {
-                public static int Add(int left, int right) => left + right;
+                public static int Echo(int value) => value;
             }
 
             public sealed class Outer
@@ -137,7 +137,7 @@ public sealed class LowValueTestCodeFixTests
                     [Fact]
                     public void {|E128107:Should_SumTwoValues|}()
                     {
-                        Assert.Equal(3, Calculator.Add(1, 2));
+                        Assert.Equal(1, Calculator.Echo(1));
                     }
                 }
             }
@@ -147,7 +147,7 @@ public sealed class LowValueTestCodeFixTests
 
             public static class Calculator
             {
-                public static int Add(int left, int right) => left + right;
+                public static int Echo(int value) => value;
             }
 
             public sealed class Outer
