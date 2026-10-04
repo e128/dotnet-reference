@@ -2,6 +2,17 @@
 # Shared library for E128.Reference bash scripts.
 # Source this file: source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# macOS ships Bash 3.2 at /bin/bash. The scripts use Bash 4+ features such as mapfile. When the
+# current interpreter is older, re-exec under Homebrew Bash so the caller's PATH order does not
+# decide which Bash runs. A missing Homebrew Bash falls through and the script reports its own error.
+if [[ "${BASH_VERSINFO[0]:-0}" -lt 4 ]]; then
+    for candidate in "${HOMEBREW_PREFIX:-/opt/homebrew}/bin/bash" /opt/homebrew/bin/bash /usr/local/bin/bash; do
+        if [[ -x "$candidate" ]]; then
+            exec "$candidate" "$0" "$@"
+        fi
+    done
+fi
+
 set -euo pipefail
 
 # ── Colors ───────────────────────────────────────

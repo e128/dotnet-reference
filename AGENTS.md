@@ -112,6 +112,11 @@ of what is portable versus Claude-only.
 - Write no inline Python. Fetch a URL with a proper fetch capability,
   parse JSON with `jq`, and process local data with a `scripts/*.sh`
   entry.
+- macOS ships Bash 3.2 at `/bin/bash`, and the `scripts/*.sh` tools use
+  Bash 4+ features such as `mapfile`. `scripts/lib.sh` re-execs under
+  Homebrew Bash when the interpreter is older. Run the scripts by their
+  own path, and do not force `/bin/bash` or a login shell that resolves
+  the system Bash first.
 
 ## What This File Does Not Cover
 

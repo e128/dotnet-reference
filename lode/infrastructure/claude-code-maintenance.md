@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-09-21T17:06:43Z*
+*Updated: 2026-10-04T14:46:58Z*
 
 ## Harness Portability Capability Map
 
@@ -140,7 +140,7 @@ All rule files are written in Simplified Technical English. See
 
 ## Script Conventions
 
-All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for shared functions. Scripts that support `--json` must produce valid JSON output. `scripts/help.sh` auto-discovers all scripts by reading the second line of each `.sh` file.
+All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for shared functions. `lib.sh` re-execs under Homebrew Bash when the interpreter is older than Bash 4, so macOS `/bin/bash` 3.2 does not matter to the caller's PATH order. Scripts that support `--json` must produce valid JSON output. `scripts/help.sh` auto-discovers all scripts by reading the second line of each `.sh` file.
 
 ## Podman
 
@@ -155,6 +155,6 @@ All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for
 - `rg` (ripgrep) — used by agents, skills, and scripts for fast search
 - `fd` — used by scripts for file discovery
 - `jq` — used for JSON parsing in scripts
-- `bash` 5+ — required for associative arrays and modern features
+- `bash` 5+ (Homebrew Bash on macOS) — required for associative arrays and modern features
 - `podman` — container runtime; on macOS run `podman machine init && podman machine start` once after install
 - `jb` (JetBrains ReSharper CLI) — used by `scripts/format.sh` for semantic cleanup before `dotnet format`; gracefully skipped if absent; install with `dotnet tool install -g JetBrains.ReSharper.GlobalTools`
