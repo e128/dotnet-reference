@@ -46,7 +46,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor SuggestionRule = new(
         SuggestionDiagnosticId,
         "Test matches one low-value test condition",
-        "Test '{0}' matches one low-value test condition and may lock in an implementation detail",
+        "Test '{0}' matches the low-value condition {1} and may lock in an implementation detail",
         "Testing",
         DiagnosticSeverity.Info,
         true,
@@ -56,28 +56,32 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor WarningRule = new(
         WarningDiagnosticId,
         "Test matches several low-value test conditions",
-        "Test '{0}' matches several low-value test conditions and locks in implementation details",
+        "Test '{0}' matches the low-value conditions {1} and locks in implementation details",
         "Testing",
         DiagnosticSeverity.Warning,
         true,
         "A short test that asserts on several implementation details fails on every honest refactor. " +
         "Delete the test, or assert observable behavior instead.");
 
-    private static readonly ImmutableArray<Func<TestFacts, bool>> Detectors =
+    private const string DuplicateCoverageCondition = "DuplicateCoverage";
+
+    // The condition names travel into the diagnostic message. A report that says only "one low-value
+    // condition" leaves the reader to guess which detector fired, so the name is part of the contract.
+    private static readonly ImmutableArray<(string Name, Func<TestFacts, bool> Match)> Detectors =
     [
-        BareSize,
-        NameMirror,
-        NoAssertion,
-        SingleRowTheory,
-        LiteralEcho,
-        ExceptionMessageLock,
-        MockVerifyOnly,
-        LogAssert,
-        ConstructorPassthrough,
-        InternalsReachIn,
-        SelfFulfillingExpected,
-        MagicConstantEcho,
-        OrderLock
+        (nameof(BareSize), BareSize),
+        (nameof(NameMirror), NameMirror),
+        (nameof(NoAssertion), NoAssertion),
+        (nameof(SingleRowTheory), SingleRowTheory),
+        (nameof(LiteralEcho), LiteralEcho),
+        (nameof(ExceptionMessageLock), ExceptionMessageLock),
+        (nameof(MockVerifyOnly), MockVerifyOnly),
+        (nameof(LogAssert), LogAssert),
+        (nameof(ConstructorPassthrough), ConstructorPassthrough),
+        (nameof(InternalsReachIn), InternalsReachIn),
+        (nameof(SelfFulfillingExpected), SelfFulfillingExpected),
+        (nameof(MagicConstantEcho), MagicConstantEcho),
+        (nameof(OrderLock), OrderLock)
     ];
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
@@ -125,24 +129,28 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         }
 
         var facts = TestFacts.Create(declaration, method, context.SemanticModel, context.CancellationToken);
-        var hitCount = 0;
+        var conditions = ImmutableArray.CreateBuilder<string>();
 
-        foreach (var detector in Detectors)
+        foreach (var (name, match) in Detectors)
         {
-            if (detector(facts))
+            if (match(facts))
             {
-                hitCount++;
+                conditions.Add(name);
             }
         }
 
         var duplicateKeys = DuplicateKeys(facts);
 
-        if (hitCount == 0 && duplicateKeys.IsEmpty)
+        if (conditions.Count == 0 && duplicateKeys.IsEmpty)
         {
             return;
         }
 
-        entries.Add(new MethodEntry(declaration.Identifier.GetLocation(), method.Name, hitCount, duplicateKeys));
+        entries.Add(new MethodEntry(
+            declaration.Identifier.GetLocation(),
+            method.Name,
+            conditions.ToImmutable(),
+            duplicateKeys));
     }
 
     private static void ReportDiagnostics(CompilationAnalysisContext context, ConcurrentBag<MethodEntry> entries)
@@ -160,24 +168,25 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
         foreach (var entry in entries)
         {
-            var hitCount = entry.HitCount;
+            var conditions = entry.Conditions;
 
             foreach (var key in entry.DuplicateKeys)
             {
                 if (keyCounts[key] >= 2)
                 {
-                    hitCount++;
+                    conditions = conditions.Add(DuplicateCoverageCondition);
                     break;
                 }
             }
 
-            if (hitCount == 0)
+            if (conditions.IsEmpty)
             {
                 continue;
             }
 
-            var rule = hitCount >= 2 ? WarningRule : SuggestionRule;
-            context.ReportDiagnostic(Diagnostic.Create(rule, entry.Location, entry.MethodName));
+            var rule = conditions.Length >= 2 ? WarningRule : SuggestionRule;
+            var names = string.Join(", ", conditions.OrderBy(name => name, StringComparer.Ordinal));
+            context.ReportDiagnostic(Diagnostic.Create(rule, entry.Location, entry.MethodName, names));
         }
     }
 
