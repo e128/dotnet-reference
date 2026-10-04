@@ -94,6 +94,15 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        // A materializer sits between the fan-out and the WhenAll in
+        // Task.WhenAll(items.Select(...).ToArray()). The fan-out is unchanged, so the rule looks
+        // through the materializer instead of giving up on the shape.
+        if (candidate.Expression is MemberAccessExpressionSyntax { Expression: { } receiver }
+            && IsMaterializer(candidate))
+        {
+            return TryGetSelectInvocation(receiver, out selectInvocation);
+        }
+
         if (candidate.Expression is MemberAccessExpressionSyntax memberAccess
             && string.Equals(memberAccess.Name.Identifier.ValueText, "Select", StringComparison.Ordinal))
         {
@@ -102,6 +111,13 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool IsMaterializer(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax memberAccess
+               && (string.Equals(memberAccess.Name.Identifier.ValueText, "ToArray", StringComparison.Ordinal)
+                   || string.Equals(memberAccess.Name.Identifier.ValueText, "ToList", StringComparison.Ordinal));
     }
 
     private static bool HasAsyncLambda(InvocationExpressionSyntax selectInvocation)

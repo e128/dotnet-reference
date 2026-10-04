@@ -252,7 +252,17 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
 
     private static bool IsSameText(ExpressionSyntax expression, ISymbol symbol)
     {
-        return string.Equals(expression.ToString(), symbol.Name, StringComparison.Ordinal);
+        // Compare the final name segment, so `rows`, `this.rows`, and `state.rows` all match the symbol
+        // named rows. Comparing the printed expression to the symbol name drops a qualifier and lets a
+        // present length guard go unrecognized.
+        var name = expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
+
+        return name is not null && string.Equals(name, symbol.Name, StringComparison.Ordinal);
     }
 
     private static bool IsIdentifier(ExpressionSyntax expression, string name)

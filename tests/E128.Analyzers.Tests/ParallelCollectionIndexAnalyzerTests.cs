@@ -121,6 +121,28 @@ public sealed class ParallelCollectionIndexAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task ParallelCollectionIndexAnalyzer_ReportsNothing_WhenTheLengthGuardUsesAQualifiedReceiver()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+
+                           public class Subject
+                           {
+                               private readonly List<string> _rows = new List<string>();
+
+                               public void Verify(List<string> columns)
+                               {
+                                   for (var i = 0; i < columns.Count; i++)
+                                   {
+                                       var row = this._rows.Count > i ? this._rows[i] : string.Empty;
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ParallelCollectionIndexAnalyzer_ReportsNothing_WhenTheForLoopIteratesTheIndexedCollection()
     {
         return VerifyAsync("""

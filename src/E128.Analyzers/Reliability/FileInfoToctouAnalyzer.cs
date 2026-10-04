@@ -90,13 +90,28 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
     {
         var result = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (var node in method.DescendantNodes())
+        foreach (var memberAccess in method.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
         {
-            if (node is MemberAccessExpressionSyntax memberAccess
-                && string.Equals(memberAccess.Name.Identifier.ValueText, "Exists", StringComparison.Ordinal)
-                && memberAccess.Expression is IdentifierNameSyntax identifier)
+            if (!string.Equals(memberAccess.Name.Identifier.ValueText, "Exists", StringComparison.Ordinal))
             {
-                result.Add(identifier.Identifier.ValueText);
+                continue;
+            }
+
+            // File.Exists(path) guards the path, so the key is the path argument. fileInfo.Exists is a
+            // property read that guards the instance, so the receiver names the guarded thing.
+            // Recording the receiver of File.Exists stores "File", which no read path ever matches.
+            var key = memberAccess.Parent is InvocationExpressionSyntax invocation
+                ? ExtractFirstArgIdentifier(invocation)
+                : null;
+
+            if (key is null && memberAccess.Expression is IdentifierNameSyntax receiver)
+            {
+                key = receiver.Identifier.ValueText;
+            }
+
+            if (key is not null)
+            {
+                result.Add(key);
             }
         }
 

@@ -145,9 +145,28 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
         }
 
         var updatedStatement = newRoot.FindNode(containingStatement.Span).FirstAncestorOrSelf<StatementSyntax>();
-        if (updatedStatement?.Parent is not BlockSyntax block)
+        if (updatedStatement is null)
         {
             return document.WithSyntaxRoot(newRoot);
+        }
+
+        // A braceless embedded statement, such as the body of `if (x) return cmd.ExecuteScalar();`, has
+        // no block to hold the declaration. Wrapping it keeps the declaration beside the statement
+        // that reads it. Returning the rewritten tree alone would leave `result` undefined.
+        if (updatedStatement.Parent is not BlockSyntax block)
+        {
+            if (updatedStatement.Parent is null)
+            {
+                return document.WithSyntaxRoot(newRoot);
+            }
+
+            var wrapper = SyntaxFactory.Block(
+                resultDecl
+                    .WithLeadingTrivia(updatedStatement.GetLeadingTrivia())
+                    .WithTrailingTrivia(SyntaxFactory.LineFeed),
+                updatedStatement.WithoutLeadingTrivia());
+
+            return document.WithSyntaxRoot(newRoot.ReplaceNode(updatedStatement, wrapper));
         }
 
         var index = block.Statements.IndexOf(updatedStatement);

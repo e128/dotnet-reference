@@ -72,4 +72,59 @@ public sealed class EnumIfElseChainE128CodeFixTests
 
         return VerifyFixAsync(source, fixedCode);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReversedComparisonChain_UsesTheVariableAsSwitchSubject()
+    {
+        const string source = """
+                              enum Color { Red, Green, Blue }
+
+                              class C
+                              {
+                                  int M(Color c)
+                                  {
+                                      {|E128048:if (Color.Red == c)
+                                      {
+                                          return 1;
+                                      }
+                                      else if (Color.Green == c)
+                                      {
+                                          return 2;
+                                      }
+                                      else if (Color.Blue == c)
+                                      {
+                                          return 3;
+                                      }|}
+                                      return 0;
+                                  }
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 enum Color { Red, Green, Blue }
+
+                                 class C
+                                 {
+                                     int M(Color c)
+                                     {
+                                         switch (c)
+                                         {
+                                             case Color.Red:
+                                                 return 1;
+                                                 break;
+                                             case Color.Green:
+                                                 return 2;
+                                                 break;
+                                             case Color.Blue:
+                                                 return 3;
+                                                 break;
+                                         }
+                                         return 0;
+                                     }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
 }

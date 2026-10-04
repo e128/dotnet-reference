@@ -21,6 +21,12 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
 {
+    private static readonly SymbolDisplayFormat TypeNameFormat = new(
+        globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DisposableSingletonFactoryAnalyzer.DiagnosticId];
 
@@ -114,11 +120,13 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        // A bare Name drops the type arguments and the namespace. `Repository` alone, for
+        // Repository<Order>, does not compile, so the written name carries both.
         var newTypeArgs = SyntaxFactory.TypeArgumentList(
             SyntaxFactory.SeparatedList(
                 [
-                    SyntaxFactory.ParseTypeName(targetInterface.Name),
-                    SyntaxFactory.ParseTypeName(concreteType.Name)
+                    SyntaxFactory.ParseTypeName(targetInterface.ToDisplayString(TypeNameFormat)),
+                    SyntaxFactory.ParseTypeName(concreteType.ToDisplayString(TypeNameFormat))
                 ]));
 
         var newName = SyntaxFactory.GenericName(

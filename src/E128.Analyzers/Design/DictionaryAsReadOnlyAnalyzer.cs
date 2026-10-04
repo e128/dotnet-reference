@@ -64,6 +64,14 @@ public sealed class DictionaryAsReadOnlyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // The risk is that the caller downcasts the returned reference and then mutates state the type
+        // still owns. A dictionary the method just built has no other reference, so there is nothing to
+        // protect and no downcast to guard against.
+        if (returnedValue is not (IFieldReferenceOperation or IPropertyReferenceOperation))
+        {
+            return;
+        }
+
         // The declared return type of the containing method or property.
         // Unwrap Task<T> and ValueTask<T> so this fires on async methods too.
         var expectedReturn = GetContainingReturnType(context.ContainingSymbol);

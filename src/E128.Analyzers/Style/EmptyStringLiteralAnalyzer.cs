@@ -72,10 +72,16 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
     //   - const field: private const string K = ""
     //   - const local: const string c = ""
     //   - default parameter value: void M(string s = "")
+    //   - switch case label: case "": (also covers a when-guarded pattern label)
     private static bool IsConstContext(SyntaxNode node)
     {
         foreach (var ancestor in node.Ancestors())
         {
+            if (ancestor is CaseSwitchLabelSyntax or CasePatternSwitchLabelSyntax)
+            {
+                return true;
+            }
+
             if (ancestor is VariableDeclarationSyntax decl)
             {
                 var parent = decl.Parent;

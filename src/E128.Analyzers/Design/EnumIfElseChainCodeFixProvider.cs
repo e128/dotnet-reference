@@ -62,13 +62,19 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var switchExpression = ExtractSwitchExpression(ifStatement);
+        var model = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (model is null)
+        {
+            return document;
+        }
+
+        var switchExpression = ExtractSwitchExpression(ifStatement, model, cancellationToken);
         if (switchExpression is null)
         {
             return document;
         }
 
-        var sections = BuildSwitchSections(ifStatement);
+        var sections = BuildSwitchSections(ifStatement, model, cancellationToken);
         if (sections is null)
         {
             return document;
@@ -83,14 +89,17 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
         return document.WithSyntaxRoot(newRoot);
     }
 
-    private static List<SwitchSectionSyntax>? BuildSwitchSections(IfStatementSyntax ifStatement)
+    private static List<SwitchSectionSyntax>? BuildSwitchSections(
+        IfStatementSyntax ifStatement,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
         var sections = new List<SwitchSectionSyntax>();
         var current = ifStatement;
 
         while (current is not null)
         {
-            var caseLabel = ExtractCaseLabel(current.Condition);
+            var caseLabel = ExtractCaseLabel(current.Condition, model, cancellationToken);
             if (caseLabel is null)
             {
                 return null;
@@ -139,21 +148,44 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
             SyntaxFactory.List(statements));
     }
 
-    private static ExpressionSyntax? ExtractSwitchExpression(IfStatementSyntax ifStatement)
+    private static ExpressionSyntax? ExtractSwitchExpression(
+        IfStatementSyntax ifStatement,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
-        // The switch expression is the variable side (not the enum constant).
-        // For `x == MyEnum.Value`, the variable is the left side.
-        return ifStatement.Condition is BinaryExpressionSyntax binary ? binary.Left : null;
+        // The switch expression is the variable side, so it is the operand that is not the enum
+        // constant. Taking the left operand by position puts the constant in the subject of a reversed
+        // comparison, `Color.Red == x`, which makes every case label unreachable.
+        return ifStatement.Condition is not BinaryExpressionSyntax binary
+            ? null
+            : IsEnumConstant(binary.Left, model, cancellationToken)
+                ? binary.Right
+                : binary.Left;
     }
 
-    private static ExpressionSyntax? ExtractCaseLabel(ExpressionSyntax condition)
+    private static ExpressionSyntax? ExtractCaseLabel(
+        ExpressionSyntax condition,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
+        // The label is the enum constant, whichever side of the comparison it sits on.
         return condition is not BinaryExpressionSyntax binary
             ? null
-            : binary.Right is MemberAccessExpressionSyntax
-                ? binary.Right
-                : binary.Left is MemberAccessExpressionSyntax
-                    ? binary.Left
+            : IsEnumConstant(binary.Left, model, cancellationToken)
+                ? binary.Left
+                : IsEnumConstant(binary.Right, model, cancellationToken)
+                    ? binary.Right
                     : null;
+    }
+
+    private static bool IsEnumConstant(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        // Both operands carry the enum type when a variable is compared against a member, so the type
+        // alone cannot tell them apart. The member is a compile-time constant and the variable is not.
+        return model.GetConstantValue(expression, cancellationToken).HasValue
+               && model.GetTypeInfo(expression, cancellationToken).Type is { TypeKind: TypeKind.Enum };
     }
 }

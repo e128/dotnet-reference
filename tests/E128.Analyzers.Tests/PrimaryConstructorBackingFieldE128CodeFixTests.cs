@@ -41,6 +41,36 @@ public sealed class PrimaryConstructorBackingFieldE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task BackingField_ReadIntoALocal_IsReplaced()
+    {
+        return VerifyFixAsync(
+            """
+            class C(string name)
+            {
+                private readonly string {|E128017:_name|} = name;
+
+                string Describe()
+                {
+                    var local = _name;
+                    return local;
+                }
+            }
+            """,
+            """
+            class C(string name)
+            {
+
+                string Describe()
+                {
+                    var local = name;
+                    return local;
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task BackingField_MultipleReferences_AllReplaced()
     {
         return VerifyFixAsync(

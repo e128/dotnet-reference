@@ -10,10 +10,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128103: Reports a service type resolved through <c lang="csharp">GetRequiredService&lt;T&gt;()</c>,
-///     <c lang="csharp">GetService&lt;T&gt;()</c>, or a constructor parameter of a DI-registered type when no
-///     <c lang="csharp">Add*</c> or <c lang="csharp">TryAdd*</c> registration for that type exists in the same
-///     compilation. The container throws <c lang="csharp">InvalidOperationException</c> at runtime for such a resolve.
+///     E128103: Reports a service type resolved through <c lang="csharp">GetRequiredService&lt;T&gt;()</c>
+///     or a constructor parameter of a DI-registered type when no <c lang="csharp">Add*</c> or
+///     <c lang="csharp">TryAdd*</c> registration for that type exists in the same compilation. The container
+///     throws <c lang="csharp">InvalidOperationException</c> at runtime for such a resolve.
 /// </summary>
 /// <remarks>
 ///     The option <c lang="csharp">e128_registered_services</c> holds comma-separated simple type names. A name in
@@ -35,15 +35,17 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         "Reliability",
         DiagnosticSeverity.Warning,
         true,
-        "A service type resolved through GetRequiredService<T>(), GetService<T>(), or a constructor " +
-        "parameter of a DI-registered type must have an Add* or TryAdd* registration in the same " +
-        "compilation. Without one the DI container throws InvalidOperationException at runtime.",
+        "A service type resolved through GetRequiredService<T>() or a constructor parameter of a " +
+        "DI-registered type must have an Add* or TryAdd* registration in the same compilation. Without " +
+        "one the DI container throws InvalidOperationException at runtime.",
         customTags: WellKnownDiagnosticTags.CompilationEnd);
 
+    // GetService<T>() is deliberately absent. It returns null on a miss rather than throwing, and a
+    // null probe is a legitimate way to ask whether a service exists, so the rule would be wrong on
+    // both the failure mode and the call site.
     private static readonly ImmutableHashSet<string> ResolveMethodNames = ImmutableHashSet.Create(
         StringComparer.Ordinal,
-        "GetRequiredService",
-        "GetService");
+        "GetRequiredService");
 
     // HttpClient, HybridCache, IServer, and TracerProvider arrive through non-generic extensions such as
     // AddHttpClient("name") and AddHybridCache(). Those extensions carry no type argument, so the registration

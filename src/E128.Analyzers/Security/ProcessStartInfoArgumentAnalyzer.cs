@@ -34,6 +34,67 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ObjectCreationExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeAssignment, SyntaxKind.SimpleAssignmentExpression);
+    }
+
+    /// <summary>
+    ///   Handles the statement form, <c lang="csharp">psi.Arguments = value;</c>, which carries the same
+    ///   hazard as the initializer form. Reading only the object initializer leaves this form
+    ///   unreported, and it is the form a caller reaches for when the value is built at run time.
+    /// </summary>
+    private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
+    {
+        var assignment = (AssignmentExpressionSyntax)context.Node;
+
+        if (assignment.Left is not MemberAccessExpressionSyntax memberAccess
+            || !string.Equals(memberAccess.Name.Identifier.ValueText, "Arguments", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var receiverType = context.SemanticModel
+            .GetTypeInfo(memberAccess.Expression, context.CancellationToken)
+            .Type;
+
+        if (receiverType is null || !IsProcessStartInfoType(receiverType))
+        {
+            return;
+        }
+
+        if (IsEmptyStringValue(context, assignment.Right))
+        {
+            return;
+        }
+
+        if (AssignsArgumentList(context, memberAccess.Expression))
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation()));
+    }
+
+    private static bool AssignsArgumentList(SyntaxNodeAnalysisContext context, ExpressionSyntax receiver)
+    {
+        var target = receiver.ToString();
+        var scope = context.Node.FirstAncestorOrSelf<MemberDeclarationSyntax>();
+
+        if (scope is null)
+        {
+            return false;
+        }
+
+        foreach (var node in scope.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        {
+            if (node.Left is MemberAccessExpressionSyntax memberAccess
+                && string.Equals(memberAccess.Name.Identifier.ValueText, "ArgumentList", StringComparison.Ordinal)
+                && string.Equals(memberAccess.Expression.ToString(), target, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void Analyze(SyntaxNodeAnalysisContext context)
@@ -68,8 +129,12 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
     {
         var type = context.SemanticModel.GetTypeInfo(creation, context.CancellationToken).Type;
 
-        return type is not null
-               && string.Equals(type.Name, "ProcessStartInfo", StringComparison.Ordinal)
+        return type is not null && IsProcessStartInfoType(type);
+    }
+
+    private static bool IsProcessStartInfoType(ITypeSymbol type)
+    {
+        return string.Equals(type.Name, "ProcessStartInfo", StringComparison.Ordinal)
                && string.Equals(type.ContainingNamespace?.ToDisplayString(), "System.Diagnostics", StringComparison.Ordinal);
     }
 

@@ -81,6 +81,59 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_ArgumentsAssignedAfterConstruction()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(string value)
+                               {
+                                   var startInfo = new ProcessStartInfo { FileName = "tool" };
+                                   {|E128091:startInfo.Arguments = $"-x \"{value}\""|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoReport_WhenArgumentsAssignedOnAnUnrelatedType()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class Wrapper { public string Arguments { get; set; } = string.Empty; }
+
+                           class C
+                           {
+                               void M(string value)
+                               {
+                                   var wrapper = new Wrapper();
+                                   wrapper.Arguments = $"-x \"{value}\"";
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoReport_WhenArgumentsAssignedWithAnEmptyString()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var startInfo = new ProcessStartInfo { FileName = "tool" };
+                                   startInfo.Arguments = string.Empty;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_BareIdentifierArguments_RealRegressionShape()
     {
         return VerifyAsync("""

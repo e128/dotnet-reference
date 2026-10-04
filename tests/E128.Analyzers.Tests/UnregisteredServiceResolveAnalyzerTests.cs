@@ -68,24 +68,6 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task UnregisteredServiceResolveAnalyzer_ReportsResolve_WhenGetServiceIsUsed()
-    {
-        return VerifyAsync("""
-                           using System;
-                           using Microsoft.Extensions.DependencyInjection;
-                           interface IShape { }
-                           class Consumer
-                           {
-                               void Resolve(IServiceProvider provider)
-                               {
-                                   var shape = {|E128103:provider.GetService<IShape>()|};
-                               }
-                           }
-                           """);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsConstructorParameter_WhenRegisteredTypeDependsOnUnregisteredService()
     {
         return VerifyAsync("""
@@ -108,6 +90,24 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     #endregion Fires
 
     #region Does Not Fire
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenGetServiceIsUsed()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Microsoft.Extensions.DependencyInjection;
+                           interface IShape { }
+                           class Consumer
+                           {
+                               void Resolve(IServiceProvider provider)
+                               {
+                                   var shape = provider.GetService<IShape>();
+                               }
+                           }
+                           """);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

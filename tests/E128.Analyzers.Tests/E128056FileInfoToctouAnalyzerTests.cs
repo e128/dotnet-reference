@@ -39,6 +39,40 @@ public sealed class E128056FileInfoToctouAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task FileInfoToctou_Reports_WhenStaticExistsCheckFollowedByReadOfTheSamePath()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class Loader
+                           {
+                               string Load(string path)
+                               {
+                                   if (!File.Exists(path)) return string.Empty;
+                                   return {|E128056:File.ReadAllText(path)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FileInfoToctou_NoReport_WhenTheExistsCheckGuardsADifferentPath()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class Loader
+                           {
+                               string Load(string first, string second)
+                               {
+                                   if (!File.Exists(first)) return string.Empty;
+                                   return File.ReadAllText(second);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task FileInfoToctou_NoReport_WhenReadIsGuardedWithTryCatch()
     {
         return VerifyAsync("""

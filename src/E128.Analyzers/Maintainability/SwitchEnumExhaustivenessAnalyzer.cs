@@ -74,9 +74,9 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
-                if (label is CasePatternSwitchLabelSyntax { Pattern: ConstantPatternSyntax constantPattern })
+                if (label is CasePatternSwitchLabelSyntax patternLabel)
                 {
-                    AddCasedMemberName(context.SemanticModel, constantPattern.Expression, casedNames, context.CancellationToken);
+                    AddPatternMembers(context.SemanticModel, patternLabel.Pattern, casedNames, context.CancellationToken);
                 }
             }
         }
@@ -101,13 +101,38 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            if (arm.Pattern is ConstantPatternSyntax constantPattern)
-            {
-                AddCasedMemberName(context.SemanticModel, constantPattern.Expression, casedNames, context.CancellationToken);
-            }
+            AddPatternMembers(context.SemanticModel, arm.Pattern, casedNames, context.CancellationToken);
         }
 
         ReportIfIncomplete(context, switchExpression.SwitchKeyword, enumType, casedNames);
+    }
+
+    /// <summary>
+    ///   Records every enum member a pattern covers. A combined label such as
+    ///   <c lang="csharp">case Color.Red or Color.Green:</c> is a binary pattern, so it covers both of
+    ///   its operands. Counting only a bare constant pattern reports a complete switch as one that
+    ///   falls through.
+    /// </summary>
+    private static void AddPatternMembers(
+        SemanticModel model,
+        PatternSyntax pattern,
+        HashSet<string> casedNames,
+        CancellationToken cancellationToken)
+    {
+        switch (pattern)
+        {
+            case ConstantPatternSyntax constant:
+                AddCasedMemberName(model, constant.Expression, casedNames, cancellationToken);
+                return;
+
+            case BinaryPatternSyntax binary when binary.OperatorToken.IsKind(SyntaxKind.OrKeyword):
+                AddPatternMembers(model, binary.Left, casedNames, cancellationToken);
+                AddPatternMembers(model, binary.Right, casedNames, cancellationToken);
+                return;
+
+            default:
+                return;
+        }
     }
 
     private static INamedTypeSymbol? GetEnumType(SemanticModel model, ExpressionSyntax expression, CancellationToken cancellationToken)

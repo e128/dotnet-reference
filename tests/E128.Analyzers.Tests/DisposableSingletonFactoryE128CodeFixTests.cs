@@ -60,4 +60,51 @@ public sealed class DisposableSingletonFactoryE128CodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_WritesTheNamespacedGenericInterface_WhenTheServiceIsGeneric()
+    {
+        return VerifyFixAsync(
+            """
+            using System;
+            using Microsoft.Extensions.DependencyInjection;
+
+            namespace MyApp
+            {
+                interface IMyService<T> { }
+                class MyService<T> : IMyService<T>, IDisposable
+                {
+                    public void Dispose() { }
+                }
+                class Startup
+                {
+                    void Configure(IServiceCollection services)
+                    {
+                        services.AddSingleton({|E128031:sp => new MyService<string>()|});
+                    }
+                }
+            }
+            """,
+            """
+            using System;
+            using Microsoft.Extensions.DependencyInjection;
+
+            namespace MyApp
+            {
+                interface IMyService<T> { }
+                class MyService<T> : IMyService<T>, IDisposable
+                {
+                    public void Dispose() { }
+                }
+                class Startup
+                {
+                    void Configure(IServiceCollection services)
+                    {
+                        services.AddSingleton<MyApp.IMyService<string>, MyApp.MyService<string>>();
+                    }
+                }
+            }
+            """);
+    }
 }

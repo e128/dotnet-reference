@@ -35,19 +35,6 @@ public sealed class E128060DictionaryAsReadOnlyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task DictionaryAsReadOnly_Reports_WhenNewDictionaryReturnedFromMethod()
-    {
-        return VerifyAsync("""
-                           using System.Collections.Generic;
-                           class Cache
-                           {
-                               public IReadOnlyDictionary<string, int> Build() => {|E128060:new Dictionary<string, int>()|};
-                           }
-                           """);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
     public Task DictionaryAsReadOnly_Reports_WhenReturnedFromAsyncMethod()
     {
         return VerifyAsync("""
@@ -75,6 +62,19 @@ public sealed class E128060DictionaryAsReadOnlyAnalyzerTests
                            {
                                private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
                                public Dictionary<string, int> Items => _dict;
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DictionaryAsReadOnly_NoReport_WhenNewDictionaryReturnedFromMethod()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class Cache
+                           {
+                               public IReadOnlyDictionary<string, int> Build() => new Dictionary<string, int>();
                            }
                            """);
     }

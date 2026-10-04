@@ -38,6 +38,13 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var token = root.FindToken(diagnostic.Location.SourceSpan.Start);
 
+        // A parameter default is a compile-time constant, and ByteSize.FromBytes is a method call, so
+        // the rewritten parameter gives CS1736. The developer has to pick the unit, so no fix is offered.
+        if (FindAncestor<ParameterSyntax>(token) is { Default: not null })
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Change type to ByteSize",

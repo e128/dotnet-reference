@@ -74,4 +74,17 @@ public sealed class E128058ListAsReadOnlyAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ListAsReadOnly_NoReport_WhenNewListReturnedFromMethod()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class Catalog
+                           {
+                               public IReadOnlyList<string> Build() => new List<string>();
+                           }
+                           """);
+    }
 }

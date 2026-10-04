@@ -135,11 +135,6 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
                 continue;
             }
 
-            if (IsFieldInitializer(id))
-            {
-                continue;
-            }
-
             var symbol = semanticModel.GetSymbolInfo(id, cancellationToken).Symbol;
             if (symbol is not IFieldSymbol referencedField
                 || !SymbolEqualityComparer.Default.Equals(referencedField, fieldSymbol))
@@ -159,11 +154,6 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
         }
 
         return nodes;
-    }
-
-    private static bool IsFieldInitializer(IdentifierNameSyntax identifier)
-    {
-        return identifier.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax };
     }
 
     private static SyntaxNode RemoveFieldDeclaration(

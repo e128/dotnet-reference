@@ -64,6 +64,14 @@ public sealed class ListAsReadOnlyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // The risk is that the caller downcasts the returned reference and then mutates state the type
+        // still owns. A list the method just built has no other reference, so there is nothing to
+        // protect and no downcast to guard against.
+        if (returnedValue is not (IFieldReferenceOperation or IPropertyReferenceOperation))
+        {
+            return;
+        }
+
         // The declared return type of the containing method or property
         var expectedReturn = GetContainingReturnType(context.ContainingSymbol);
         if (expectedReturn is null || !IsReadOnlyListInterface(expectedReturn))

@@ -89,9 +89,12 @@ public sealed class ReadonlyStructInitPropertyAnalyzer : DiagnosticAnalyzer
         var hasGet = false;
         foreach (var accessor in accessorList.Accessors)
         {
+            // Only an auto-implemented getter gains a backing store that init can write. A computed
+            // getter reads something else, so an added init writes a synthesized field the getter
+            // ignores. The value then silently reads back as default.
             if (accessor.IsKind(SyntaxKind.GetAccessorDeclaration))
             {
-                hasGet = true;
+                hasGet = accessor.Body is null && accessor.ExpressionBody is null;
             }
             else if (accessor.IsKind(SyntaxKind.InitAccessorDeclaration)
                      || accessor.IsKind(SyntaxKind.SetAccessorDeclaration))

@@ -97,6 +97,34 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NoReport_WhenGetAccessorHasABody()
+    {
+        return VerifyAsync("""
+                           public readonly struct Wrapper
+                           {
+                               private readonly int _value;
+                               public int Value { get { return _value; } }
+                               public Wrapper(int value) => _value = value;
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoReport_WhenGetAccessorHasAnExpressionBody()
+    {
+        return VerifyAsync("""
+                           public readonly struct Wrapper
+                           {
+                               private readonly int _value;
+                               public int Value { get => _value; }
+                               public Wrapper(int value) => _value = value;
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_OnlyGetOnlyProperties_MixedWithInit()
     {
         return VerifyAsync("""

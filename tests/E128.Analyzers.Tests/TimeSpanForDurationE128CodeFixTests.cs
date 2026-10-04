@@ -63,4 +63,27 @@ public sealed class TimeSpanForDurationE128CodeFixTests
 
         return VerifyFixAsync(source, fixedCode);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ParameterWithDefaultValue_KeepsTheSource()
+    {
+        const string source = """
+                              using System;
+                              public class Service
+                              {
+                                  public void Run(double {|E128050:DelayMs|} = 0) { }
+                              }
+                              """;
+
+        // No fix is offered, so the fixed state keeps the diagnostic. The marker states that
+        // expectation instead of asserting the diagnostic disappears.
+        return VerifyFixAsync(source, """
+                                       using System;
+                                       public class Service
+                                       {
+                                           public void Run(double {|E128050:DelayMs|} = 0) { }
+                                       }
+                                       """);
+    }
 }

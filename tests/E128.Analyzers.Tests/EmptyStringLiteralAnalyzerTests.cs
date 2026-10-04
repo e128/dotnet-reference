@@ -85,6 +85,27 @@ public sealed class EmptyStringLiteralAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task SwitchCaseLabel_NoFire()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               int M(string s)
+                               {
+                                   switch (s)
+                                   {
+                                       case "":
+                                           return 0;
+                                       default:
+                                           return 1;
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NonEmptyLiteral_NoFire()
     {
         return VerifyAsync("""
