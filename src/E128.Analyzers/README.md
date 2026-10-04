@@ -690,9 +690,19 @@ try
 {
     content = File.ReadAllText(file.FullName);
 }
-catch (FileNotFoundException) { }
+catch (IOException) { }
 ```
 
+Catch `IOException`, not `FileNotFoundException`. An absent parent directory raises
+`DirectoryNotFoundException`, which `FileNotFoundException` does not cover.
+
+```csharp
+// Wrong: misses the absent-directory case
+try { content = File.ReadAllText(path); } catch (FileNotFoundException) { }
+
+// Right: both types derive from IOException
+try { content = File.ReadAllText(path); } catch (IOException) { }
+```
 ### E128057 &mdash; Unprotected cleanup in finally block
 
 Flags cleanup calls (`File.Delete`, `Directory.Delete`, `Dispose`, etc.) in `finally` blocks that are not wrapped in their own `try/catch`. An exception thrown during cleanup will replace the original exception, making the root cause invisible.
