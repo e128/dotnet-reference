@@ -1,10 +1,12 @@
 using System.Collections.Immutable;
 using System.Composition;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
@@ -89,14 +91,37 @@ public sealed class LowValueTestCodeFixProvider : CodeFixProvider
 
     private static SyntaxNode TrimTrailingMember(SyntaxNode root, MethodDeclarationSyntax method)
     {
-        // A plain removal of the last member leaves the blank line that separated it from the member
-        // above. Trim that line in the same rewrite.
         var type = (TypeDeclarationSyntax)method.Parent!;
-        var withoutMethod = type.RemoveNode(method, SyntaxRemoveOptions.KeepNoTrivia)!;
 
         return root.ReplaceNode(
             type,
-            withoutMethod.WithCloseBraceToken(
-                withoutMethod.CloseBraceToken.WithLeadingTrivia(default(SyntaxTriviaList))));
+            WithoutBlankLine(type.RemoveNode(method, SyntaxRemoveOptions.KeepNoTrivia)!));
+    }
+
+    private static TypeDeclarationSyntax WithoutBlankLine(TypeDeclarationSyntax type)
+    {
+        // Removing the last member leaves the blank line that separated it from the member above.
+        // Drop that line, and keep the indentation of the closing brace. Keep the trivia untouched
+        // when it holds anything else, such as a comment or a directive.
+        var leading = type.CloseBraceToken.LeadingTrivia;
+
+        return IsBlankOrIndent(leading)
+            ? type.WithCloseBraceToken(
+                type.CloseBraceToken.WithLeadingTrivia(
+                    SyntaxFactory.TriviaList(leading.Where(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)))))
+            : type;
+    }
+
+    private static bool IsBlankOrIndent(SyntaxTriviaList trivia)
+    {
+        foreach (var item in trivia)
+        {
+            if (!item.IsKind(SyntaxKind.WhitespaceTrivia) && !item.IsKind(SyntaxKind.EndOfLineTrivia))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

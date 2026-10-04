@@ -78,6 +78,90 @@ public sealed class LowValueTestCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task CodeFix_RemovesMethod_WhenAttributeIsQualified()
+    {
+        return VerifyAsync(
+            """
+            using Xunit;
+
+            public static class Calculator
+            {
+                public static int Add(int left, int right) => left + right;
+            }
+
+            public sealed class Subject
+            {
+                public static int Zero() => 0;
+
+                [Xunit.Fact]
+                public void {|E128107:Should_SumTwoValues|}()
+                {
+                    Assert.Equal(3, Calculator.Add(1, 2));
+                }
+            }
+            """,
+            """
+            using Xunit;
+
+            public static class Calculator
+            {
+                public static int Add(int left, int right) => left + right;
+            }
+
+            public sealed class Subject
+            {
+                public static int Zero() => 0;
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_KeepsClosingBraceIndentation_WhenTypeIsNested()
+    {
+        return VerifyAsync(
+            """
+            using Xunit;
+
+            public static class Calculator
+            {
+                public static int Add(int left, int right) => left + right;
+            }
+
+            public sealed class Outer
+            {
+                public sealed class Subject
+                {
+                    public static int Zero() => 0;
+
+                    [Fact]
+                    public void {|E128107:Should_SumTwoValues|}()
+                    {
+                        Assert.Equal(3, Calculator.Add(1, 2));
+                    }
+                }
+            }
+            """,
+            """
+            using Xunit;
+
+            public static class Calculator
+            {
+                public static int Add(int left, int right) => left + right;
+            }
+
+            public sealed class Outer
+            {
+                public sealed class Subject
+                {
+                    public static int Zero() => 0;
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public async Task CodeFix_RegistersNoAction_WhenNodeIsNotATestMethod()
     {
         const string code = """

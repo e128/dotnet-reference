@@ -29,7 +29,7 @@ internal static class XunitTestHelper
         {
             foreach (var attribute in attributeList.Attributes)
             {
-                if (IsFactOrTheoryName(attribute.Name.ToString()))
+                if (IsFactOrTheoryName(SimpleName(attribute.Name)))
                 {
                     return attribute;
                 }
@@ -47,7 +47,7 @@ internal static class XunitTestHelper
         {
             foreach (var attribute in attributeList.Attributes)
             {
-                if (IsInlineDataName(attribute.Name.ToString()))
+                if (IsInlineDataName(SimpleName(attribute.Name)))
                 {
                     count++;
                 }
@@ -55,6 +55,18 @@ internal static class XunitTestHelper
         }
 
         return count;
+    }
+
+    // An attribute name can be written plain, qualified, or alias-qualified. Read the last segment
+    // of the name so every spelling matches.
+    private static string SimpleName(NameSyntax name)
+    {
+        return name switch
+        {
+            QualifiedNameSyntax qualified => SimpleName(qualified.Right),
+            AliasQualifiedNameSyntax alias => SimpleName(alias.Name),
+            _ => name.ToString()
+        };
     }
 
     private static bool IsFactOrTheoryAttribute(AttributeData attribute)

@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.40.3" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.41.3" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -87,6 +87,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128099 | Wait for process exit with a provable timeout                                                | Yes      |
 | E128100 | Catch filter reads negated token state on `OperationCanceledException`                       | Yes      |
 | E128101 | Verify process output file exists before use                                                 | Yes      |
+| E128103 | DI resolve without a registration in the compilation                                         | No       |
 
 ### Performance
 
@@ -110,6 +111,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128085 | Use `foreach` + `AddRange` instead of `SelectMany.ToList`                                                         | Yes      |
 | E128098 | Collapse chained or looped `string.Replace` calls into a single pass                                              | Yes      |
 | E128102 | Use `SearchValues<char>` for `IndexOfAny` scans                                                                   | Yes      |
+| E128106 | Index a collection with a bound taken from a different collection                                                 | No       |
 
 ### Security
 
@@ -138,10 +140,14 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 | Rule    | Title                                                                     | Code Fix |
 | ------- | ------------------------------------------------------------------------- | -------- |
-| E128054 | Class creates temp directory without cleanup interface                     | Yes      |
-| E128062 | Test uses outdated `ReferenceAssemblies` — does not match project TFM      | Yes      |
-| E128073 | Test method missing `[Trait("Category", ...)]` attribute                   | Yes      |
+| E128054 | Class creates temp directory without cleanup interface                    | Yes      |
+| E128062 | Test uses outdated `ReferenceAssemblies` — does not match project TFM     | Yes      |
+| E128073 | Test method missing `[Trait("Category", ...)]` attribute                  | Yes      |
 | E128097 | Comment inside test code                                                  | Yes      |
+| E128107 | Test matches one low-value test condition                                 | Yes      |
+| E128108 | Test matches two or more low-value test conditions                        | Yes      |
+| E128104 | Assertion with literal operands                                           | No       |
+| E128105 | Test method calls an out-of-repo resolver without a skip guard            | No       |
 
 ### Maintainability
 
@@ -1067,6 +1073,32 @@ async Task Insert(SqliteConnection connection, FileInsertData data)
     await command.ExecuteNonQueryAsync();
 }
 ```
+
+### E128107 and E128108 &mdash; Low-value test conditions
+
+Flags an xUnit `[Fact]` or `[Theory]` method whose shape locks an implementation detail in place.
+Such a test fails on every honest refactor. One condition reports E128107 at info. Two or more
+report E128108 at warning. The code fix deletes the whole test method.
+
+The conditions:
+
+- `BareSize`: three statements, one assertion, and no production call
+- `NameMirror`: the test name repeats the called method name and almost nothing else
+- `NoAssertion`: the body calls production code and asserts nothing
+- `SingleRowTheory`: a `[Theory]` with one `[InlineData]` row
+- `LiteralEcho`: the assertion compares a literal with a call whose arguments are all literals
+- `ExceptionMessageLock`: the assertion pins an exception message string
+- `MockVerifyOnly`: the only assertion is a `Verify` call with a lambda
+- `LogAssert`: the only assertion is a `Verify` call on a logger
+- `ConstructorPassthrough`: the assertion reads a member back off an object built from the same literal
+- `InternalsReachIn`: the assertion reads an `internal` member of an assembly that grants `InternalsVisibleTo` to the test assembly
+- `SelfFulfillingExpected`: the expected value and the actual value come from the same receiver
+- `MagicConstantEcho`: the expected literal also appears as a returned value in the production body
+- `OrderLock`: `Assert.Equal` pins the order of a set or dictionary result
+- `DuplicateCoverage`: another test in the same class calls the same method with the same literal arguments
+
+The root `.globalconfig` down-ranks both rules to suggestion. The code fix deletes the test method,
+so an unattended `dotnet format` run must not remove a test without review.
 
 ## Configuration
 

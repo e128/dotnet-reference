@@ -390,7 +390,7 @@ public sealed class LowValueTestAnalyzerTests
                            using System.Runtime.CompilerServices;
                            using Xunit;
 
-                           [assembly: InternalsVisibleTo("E128.Analyzers.Tests")]
+                           [assembly: InternalsVisibleTo("TestProject")]
 
                            public static class InternalPolicy
                            {
@@ -589,6 +589,57 @@ public sealed class LowValueTestAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task LiteralEcho_ReportsNothing_WhenLiteralSitsInsideTheEchoedCall()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public static class Calculator
+                           {
+                               public static int Add(int left, int right) => left + right;
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ReturnTheComputedSum()
+                               {
+                                   var left = 1;
+                                   var right = 2;
+                                   var expected = left + right;
+                                   Assert.Equal(expected, Calculator.Add(1, 2));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DuplicateCoverage_ReportsNothing_WhenOneTestRepeatsTheSameCall()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public static class Calculator
+                           {
+                               public static int Add(int left, int right) => left + right;
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ReturnTheSameSum()
+                               {
+                                   var first = Calculator.Add(1, 2);
+                                   var second = Calculator.Add(1, 2);
+                                   Assert.Equal(first, second);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task MagicConstantEcho_ReportsNothing_WhenEchoedLiteralIsNotReturned()
     {
         return VerifyAsync("""
@@ -611,6 +662,80 @@ public sealed class LowValueTestAnalyzerTests
                                {
                                    string? requested = null;
                                    Assert.Equal("World", Limits.Resolve(requested));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LogAssert_ReportsNothing_WhenReceiverNameMerelyContainsLog()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public sealed class DialogProbe
+                           {
+                               public void Verify(string value)
+                               {
+                                   _ = value;
+                               }
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ConfirmTheAnswer()
+                               {
+                                   var dialog = new DialogProbe();
+
+                                   dialog.Verify("alpha");
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConstructorPassthrough_ReportsNothing_WhenConstructorTakesNoMatchingLiteral()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using Xunit;
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_StartEmpty()
+                               {
+                                   var items = new List<int>();
+                                   Assert.Equal(0, items.Count);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task InternalsReachIn_ReportsNothing_WhenInternalsVisibleToNamesAnotherAssembly()
+    {
+        return VerifyAsync("""
+                           using System.Runtime.CompilerServices;
+                           using Xunit;
+
+                           [assembly: InternalsVisibleTo("Other.Tests")]
+
+                           public static class InternalPolicy
+                           {
+                               internal static int Limit => 5;
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ReadInternalLimit()
+                               {
+                                   Assert.Equal(5, InternalPolicy.Limit);
                                }
                            }
                            """);
