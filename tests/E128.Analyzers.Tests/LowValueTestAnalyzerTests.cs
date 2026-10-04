@@ -640,6 +640,39 @@ public sealed class LowValueTestAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task DuplicateCoverage_ReportsNothing_WhenTestsShareOnlyASeedingCall()
+    {
+        return VerifyAsync("""
+                           using System.Linq;
+                           using Xunit;
+
+                           public static class Parser
+                           {
+                               public static int SplitCode(int width) => width;
+                               public static int SplitQuote(int width) => width;
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void SplitCodeBlock()
+                               {
+                                   var width = Enumerable.Range(1, 100).Sum();
+                                   Assert.True(Parser.SplitCode(width) > 1);
+                               }
+
+                               [Fact]
+                               public void SplitQuoteBlock()
+                               {
+                                   var width = Enumerable.Range(1, 100).Sum();
+                                   Assert.True(Parser.SplitQuote(width) > 1);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task MagicConstantEcho_ReportsNothing_WhenEchoedLiteralIsNotReturned()
     {
         return VerifyAsync("""

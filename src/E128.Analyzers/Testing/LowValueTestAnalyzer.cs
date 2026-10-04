@@ -222,7 +222,9 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
         foreach (var call in facts.ProductionCalls)
         {
-            if (IsAllLiteralArguments(call.Invocation))
+            // A standard-library call seeds test input, it does not carry the behavior under test. Two
+            // tests that seed the same range but exercise different production paths are not duplicates.
+            if (IsAllLiteralArguments(call.Invocation) && IsProductionCodeCall(call.Symbol))
             {
                 builder.Add(call);
             }
@@ -230,6 +232,14 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
         calls = builder.ToImmutable();
         return !calls.IsEmpty;
+    }
+
+    private static bool IsProductionCodeCall(IMethodSymbol method)
+    {
+        var ns = method.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+
+        return !ns.StartsWith("System", StringComparison.Ordinal)
+               && !ns.StartsWith("Microsoft", StringComparison.Ordinal);
     }
 
     private static bool BareSize(TestFacts facts)
