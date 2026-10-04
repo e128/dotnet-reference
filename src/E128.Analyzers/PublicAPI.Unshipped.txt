@@ -29,3 +29,7 @@ E128.Analyzers.Reliability.SyncLocalFunctionCallAnalyzer
 E128.Analyzers.Reliability.SyncLocalFunctionCallAnalyzer.SyncLocalFunctionCallAnalyzer() -> void
 E128.Analyzers.Reliability.SyncLocalFunctionCallCodeFixProvider
 E128.Analyzers.Reliability.SyncLocalFunctionCallCodeFixProvider.SyncLocalFunctionCallCodeFixProvider() -> void
+E128.Analyzers.Testing.LowValueTestAnalyzer
+E128.Analyzers.Testing.LowValueTestAnalyzer.LowValueTestAnalyzer() -> void
+E128.Analyzers.Testing.LowValueTestCodeFixProvider
+E128.Analyzers.Testing.LowValueTestCodeFixProvider.LowValueTestCodeFixProvider() -> void

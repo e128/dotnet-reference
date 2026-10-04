@@ -15,6 +15,11 @@ roslynator_compiler_diagnostic_fixes.enabled = true
 # All analyzer diagnostics are errors by default.
 # Only rules that deviate from error are listed below as overrides.
 
+# E128107/E128108: low-value test rules, kept at suggestion. A promoted severity lets format.sh
+# auto-apply the delete fix and remove tests without review.
+dotnet_diagnostic.E128107.severity = suggestion
+dotnet_diagnostic.E128108.severity = suggestion
+
 dotnet_analyzer_diagnostic.severity = error
 dotnet_analyzer_diagnostic.category-roslynator.severity = error
 dotnet_analyzer_diagnostic.category-xUnit.severity = error
