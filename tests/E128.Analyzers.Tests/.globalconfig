@@ -1,0 +1,9 @@
+is_global = true
+
+# Overrides tests/.globalconfig (level 101) for this project only.
+global_level = 102
+
+# E128107/E128108: the low-value test analyzer must not flag this project's own test methods,
+# which exist to exercise the analyzer.
+dotnet_diagnostic.E128107.severity = none
+dotnet_diagnostic.E128108.severity = none
