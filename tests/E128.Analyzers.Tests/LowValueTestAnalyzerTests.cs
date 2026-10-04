@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -21,6 +23,17 @@ public sealed class LowValueTestAnalyzerTests
             TestCode = code,
             ReferenceAssemblies = Net100WithXunit
         };
+        test.SolutionTransforms.Add((solution, projectId) =>
+        {
+            var project = solution.GetProject(projectId)!;
+            var options = (CSharpCompilationOptions)project.CompilationOptions!;
+            return solution.WithProjectCompilationOptions(
+                projectId,
+                options.WithSpecificDiagnosticOptions(
+                    options.SpecificDiagnosticOptions
+                        .SetItem("E128107", ReportDiagnostic.Info)
+                        .SetItem("E128108", ReportDiagnostic.Warn)));
+        });
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
     }
@@ -916,6 +929,145 @@ public sealed class LowValueTestAnalyzerTests
                                    var builder = new Builder();
                                    builder.Add("a", 1);
                                    Assert.Equal(1, builder["a"]);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MagicConstantEcho_ReportsNothing_WhenLiteralComesFromATestClassHelper()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public sealed class ReportWriter
+                           {
+                               public string Write(string team) => $"<h1>{team}</h1>";
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_PutTheTeamNameInTheTitle()
+                               {
+                                   var model = CreateModel();
+                                   var html = new ReportWriter().Write(model);
+
+                                   Assert.Contains("Falcons", html);
+                               }
+
+                               private static string CreateModel() => "Falcons";
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LiteralEcho_ReportsNothing_WhenExpectedArgumentInvokesProduction()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           using Xunit;
+
+                           public sealed class Comparer
+                           {
+                               public static int Hash(string value) => value.Length;
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_HashBothFormsTheSameWay()
+                               {
+                                   Assert.Equal(Comparer.Hash((string)(object)"test"), Comparer.Hash("test"));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LiteralEcho_ReportsNothing_WhenARealAssertionAccompaniesTheEcho()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public static class TagCanonicalizer
+                           {
+                               public static string Canonicalize(string value) => value;
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_StayIdempotentForACanonicalTag()
+                               {
+                                   Assert.Equal("chronograph", TagCanonicalizer.Canonicalize("chronograph"));
+                                   Assert.Equal("chronograph", TagCanonicalizer.Canonicalize("chrono display"));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task BareSize_ReportsNothing_WhenBodyReadsAProductionProperty()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+
+                           public sealed class Pool
+                           {
+                               public static Pool Shared { get; } = new Pool();
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ReturnTheSameInstance()
+                               {
+                                   var first = Pool.Shared;
+                                   var second = Pool.Shared;
+
+                                   Assert.Same(first, second);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoAssertion_ReportsNothing_WhenBodyCallsATestClassHelper()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           using Xunit;
+
+                           public static class Corpus
+                           {
+                               public static void Validate(string root)
+                               {
+                                   if (root.Length == 0)
+                                   {
+                                       throw new ArgumentException("empty", nameof(root));
+                                   }
+                               }
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_AcceptAnExistingRoot()
+                               {
+                                   AssertDoesNotThrow("/corpus");
+                               }
+
+                               private static void AssertDoesNotThrow(string root)
+                               {
+                                   Corpus.Validate(root);
                                }
                            }
                            """);

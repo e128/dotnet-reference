@@ -20,6 +20,7 @@ internal sealed class TestFacts
         int statements,
         ImmutableArray<ProductionCallFact> productionCalls,
         bool containsAwait,
+        bool hasHelperCall,
         SemanticModel model,
         CancellationToken cancellationToken)
     {
@@ -29,6 +30,7 @@ internal sealed class TestFacts
         Statements = statements;
         ProductionCalls = productionCalls;
         ContainsAwait = containsAwait;
+        HasHelperCall = hasHelperCall;
         Model = model;
         CancellationToken = cancellationToken;
     }
@@ -45,6 +47,12 @@ internal sealed class TestFacts
 
     internal bool ContainsAwait { get; }
 
+    /// <summary>
+    ///     Whether the body calls a method declared in the test class itself. Such a call is test
+    ///     scaffolding: it may build a fixture, and it may assert, but its body is not the code under test.
+    /// </summary>
+    internal bool HasHelperCall { get; }
+
     internal SemanticModel Model { get; }
 
     internal CancellationToken CancellationToken { get; }
@@ -58,6 +66,8 @@ internal sealed class TestFacts
         var assertions = ImmutableArray.CreateBuilder<AssertionFact>();
         var productionCalls = ImmutableArray.CreateBuilder<ProductionCallFact>();
         var containsAwait = false;
+        var hasHelperCall = false;
+        var testClass = symbol.ContainingType;
 
         foreach (var node in method.DescendantNodes())
         {
@@ -77,6 +87,15 @@ internal sealed class TestFacts
             {
                 assertions.Add(new AssertionFact(invocation, called));
             }
+            else if (testClass is not null
+                     && SymbolEqualityComparer.Default.Equals(called.ContainingType, testClass))
+            {
+                // A method declared in the test class is a fixture or a local assertion helper. Its body
+                // is scaffolding, so it seeds no duplicate key and it echoes no production literal. The
+                // call still counts as an observation, because a helper such as AssertRanksPresentVsAbsent
+                // carries the assertions the test method itself would otherwise repeat inline.
+                hasHelperCall = true;
+            }
             else
             {
                 productionCalls.Add(new ProductionCallFact(invocation, called));
@@ -90,14 +109,15 @@ internal sealed class TestFacts
             method.Body?.Statements.Count ?? 1,
             productionCalls.ToImmutable(),
             containsAwait,
+            hasHelperCall,
             semanticModel,
             cancellationToken);
     }
 
-    private static bool IsAssertion(IMethodSymbol method)
+    internal static bool IsAssertion(ISymbol symbol)
     {
-        return method.Name.StartsWith("Verify", StringComparison.Ordinal)
-               || (method.ContainingType is { } containingType
+        return symbol.Name.StartsWith("Verify", StringComparison.Ordinal)
+               || (symbol.ContainingType is { } containingType
                    && string.Equals(containingType.Name, "Assert", StringComparison.Ordinal)
                    && string.Equals(
                        containingType.ContainingNamespace.ToDisplayString(),

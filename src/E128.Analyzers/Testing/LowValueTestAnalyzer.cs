@@ -43,13 +43,16 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         "loggers",
         "logging");
 
+    // Both rules are disabled by default. One condition still flags an ordinary unit test that asserts
+    // on an internal member, on an exception message, or on a value the test itself seeded. A project
+    // that wants the report opts in with dotnet_diagnostic.E128107.severity, or the sibling id.
     private static readonly DiagnosticDescriptor SuggestionRule = new(
         SuggestionDiagnosticId,
         "Test matches one low-value test condition",
         "Test '{0}' matches the low-value condition {1} and may lock in an implementation detail",
         "Testing",
         DiagnosticSeverity.Info,
-        true,
+        false,
         "A short test that asserts on an implementation detail fails on every honest refactor. " +
         "Delete the test, or assert observable behavior instead.");
 
@@ -59,7 +62,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         "Test '{0}' matches the low-value conditions {1} and locks in implementation details",
         "Testing",
         DiagnosticSeverity.Warning,
-        true,
+        false,
         "A short test that asserts on several implementation details fails on every honest refactor. " +
         "Delete the test, or assert observable behavior instead.");
 
@@ -276,11 +279,34 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
     private static bool BareSize(TestFacts facts)
     {
         // A short test that also calls production observes something real. Only a short test that
-        // exercises nothing but its own literals has no boundary to sit on.
+        // exercises nothing but its own literals has no boundary to sit on. A property read is not a
+        // call, so `Assert.Same(Pool.Shared, Pool.Shared)` reaches production without an invocation.
         return !IsNullOnly(facts)
                && facts.Statements == BareSizeStatementCount
                && facts.Assertions.Length == 1
-               && facts.ProductionCalls.IsEmpty;
+               && facts.ProductionCalls.IsEmpty
+               && !ReadsProductionMember(facts);
+    }
+
+    private static bool ReadsProductionMember(TestFacts facts)
+    {
+        var testClass = facts.Symbol.ContainingType;
+
+        foreach (var member in facts.Method.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
+        {
+            var symbol = facts.Model.GetSymbolInfo(member, facts.CancellationToken).Symbol;
+
+            // The test class holds fixtures and local helpers. Every other type is the code under test,
+            // and a read of it reaches a boundary even when the read is a property rather than a call.
+            if (symbol is { ContainingType: { } owner }
+                && !SymbolEqualityComparer.Default.Equals(owner, testClass)
+                && !TestFacts.IsAssertion(symbol))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool NameMirror(TestFacts facts)
@@ -328,7 +354,9 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
     {
         // A thrown assertion reports through the call itself, so a call named Check counts as an
         // assertion even though no Assert member appears in the body. Fluent rule libraries use it.
+        // A helper declared in the test class asserts on the caller's behalf, so its body is not read here.
         return !facts.ContainsAwait
+               && !facts.HasHelperCall
                && facts.Assertions.Length == 0
                && facts.ProductionCalls.Length > 0
                && !CallsCheckStyleAssertion(facts);
@@ -358,30 +386,45 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool LiteralEcho(TestFacts facts)
     {
-        foreach (var assertion in facts.Assertions)
-        {
-            if (!HasToStringInvocation(assertion.Invocation)
-                && ComparesLiteralWithLiteralOnlyCall(facts, assertion.Invocation))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return EveryAssertionMatches(
+            facts,
+            invocation => !HasToStringInvocation(invocation)
+                          && ComparesLiteralWithLiteralOnlyCall(facts, invocation));
     }
 
     private static bool ExceptionMessageLock(TestFacts facts)
     {
+        return EveryAssertionMatches(
+            facts,
+            invocation => !HasToStringInvocation(invocation)
+                          && PinsExceptionMessage(facts, invocation));
+    }
+
+    private static bool EveryAssertionMatches(
+        TestFacts facts,
+        Func<InvocationExpressionSyntax, bool> match)
+    {
+        // One observable assertion gives the test its value. A test that mixes an echo with a real
+        // check is not low value, so every examined assertion must match before the condition reports.
+        // An exception capture only sets up the assertion that follows it, so it does not compete.
+        var examined = false;
+
         foreach (var assertion in facts.Assertions)
         {
-            if (!HasToStringInvocation(assertion.Invocation)
-                && PinsExceptionMessage(facts, assertion.Invocation))
+            if (HasLambdaArgument(assertion.Invocation))
             {
-                return true;
+                continue;
+            }
+
+            examined = true;
+
+            if (!match(assertion.Invocation))
+            {
+                return false;
             }
         }
 
-        return false;
+        return examined;
     }
 
     private static bool MockVerifyOnly(TestFacts facts)
@@ -430,27 +473,21 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool ConstructorPassthrough(TestFacts facts)
     {
-        foreach (var assertion in facts.Assertions)
-        {
-            if (HasLiteralConstructedRead(facts, assertion.Invocation))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return EveryAssertionMatches(facts, invocation => HasLiteralConstructedRead(facts, invocation));
     }
 
     private static bool InternalsReachIn(TestFacts facts)
     {
-        foreach (var assertion in facts.Assertions)
+        return EveryAssertionMatches(facts, invocation => ReadsInternalMemberIn(facts, invocation));
+    }
+
+    private static bool ReadsInternalMemberIn(TestFacts facts, InvocationExpressionSyntax assertion)
+    {
+        foreach (var node in AssertionNodes(assertion))
         {
-            foreach (var node in AssertionNodes(assertion.Invocation))
+            if (node is MemberAccessExpressionSyntax member && ReadsInternalMember(facts, member))
             {
-                if (node is MemberAccessExpressionSyntax member && ReadsInternalMember(facts, member))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
@@ -472,20 +509,18 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool MagicConstantEcho(TestFacts facts)
     {
-        if (facts.ProductionCalls.IsEmpty)
-        {
-            return false;
-        }
+        return !facts.ProductionCalls.IsEmpty
+               && EveryAssertionMatches(facts, invocation => EchoesProductionLiteral(facts, invocation));
+    }
 
-        foreach (var assertion in facts.Assertions)
+    private static bool EchoesProductionLiteral(TestFacts facts, InvocationExpressionSyntax assertion)
+    {
+        foreach (var node in AssertionNodes(assertion))
         {
-            foreach (var node in AssertionNodes(assertion.Invocation))
+            if (node is LiteralExpressionSyntax literal
+                && ProductionBodyContainsLiteral(facts, literal.Token.Text))
             {
-                if (node is LiteralExpressionSyntax literal
-                    && ProductionBodyContainsLiteral(facts, literal.Token.Text))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
@@ -764,6 +799,14 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
+            // An argument that invokes production code states a computed value, not an echoed literal.
+            // `Assert.Equal(Hash((object)"x"), Hash("x"))` compares two calls, and the literal is only
+            // the shared input.
+            if (ContainsInvocation(facts, argument.Expression))
+            {
+                continue;
+            }
+
             foreach (var node in argument.Expression.DescendantNodesAndSelf(IsNotLambda))
             {
                 if (node is LiteralExpressionSyntax literal)
@@ -785,6 +828,20 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         foreach (var call in calls)
         {
             if (CallCarriesLiteral(call, literals))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsInvocation(TestFacts facts, ExpressionSyntax expression)
+    {
+        foreach (var node in expression.DescendantNodesAndSelf(IsNotLambda))
+        {
+            if (node is InvocationExpressionSyntax invocation
+                && facts.Model.GetSymbolInfo(invocation, facts.CancellationToken).Symbol is IMethodSymbol)
             {
                 return true;
             }
