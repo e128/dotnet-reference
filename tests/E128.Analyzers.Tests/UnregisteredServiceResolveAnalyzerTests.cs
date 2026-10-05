@@ -223,6 +223,38 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsResolve_WhenRegisteredTypeSharesShortNameAcrossNamespaces()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Microsoft.Extensions.DependencyInjection;
+                           namespace Alpha
+                           {
+                               class Shape { }
+                           }
+                           namespace Beta
+                           {
+                               class Shape { }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddSingleton<Alpha.Shape>();
+                               }
+                           }
+                           class Consumer
+                           {
+                               void Resolve(IServiceProvider provider)
+                               {
+                                   var shape = {|E128103:provider.GetRequiredService<Beta.Shape>()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsResolve_WhenServiceIsUnregisteredAndAbsentFromOption()
     {
         return VerifyWithRegisteredServicesAsync(

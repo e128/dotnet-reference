@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -88,13 +89,14 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
     {
         // The collectors live in this closure, so each compilation gets its own state and the
         // analyzer host can never leak registrations from one compilation into the next.
-        var registeredServices = new ConcurrentBag<string>();
-        var resolveCandidates = new ConcurrentBag<(Location Location, string TypeName)>();
-        var parameterCandidates = new ConcurrentBag<(Location Location, string TypeName, string ContainingTypeName)>();
+        var registeredServices = new ConcurrentBag<INamedTypeSymbol>();
+        var registeredOpenGenerics = new ConcurrentBag<string>();
+        var resolveCandidates = new ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)>();
+        var parameterCandidates = new ConcurrentBag<(Location Location, INamedTypeSymbol ParameterType, INamedTypeSymbol ContainingType)>();
         var configuredServices = ReadConfiguredServices(context.Options.AnalyzerConfigOptionsProvider);
 
         context.RegisterSyntaxNodeAction(
-            ctx => CollectRegistrations(ctx, registeredServices),
+            ctx => CollectRegistrations(ctx, registeredServices, registeredOpenGenerics),
             SyntaxKind.InvocationExpression);
 
         context.RegisterSyntaxNodeAction(
@@ -108,6 +110,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationEndAction(ctx => ReportUnregisteredResolves(
             ctx,
             registeredServices,
+            registeredOpenGenerics,
             resolveCandidates,
             parameterCandidates,
             configuredServices));
@@ -115,7 +118,8 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
     private static void CollectRegistrations(
         SyntaxNodeAnalysisContext context,
-        ConcurrentBag<string> registeredServices)
+        ConcurrentBag<INamedTypeSymbol> registeredServices,
+        ConcurrentBag<string> registeredOpenGenerics)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
         var methodName = GetInvokedMethodName(invocation);
@@ -131,30 +135,33 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // Two types that share a short name across namespaces are distinct services, so the
+        // registration set is keyed on the symbol rather than on the name.
         foreach (var typeArgument in method.TypeArguments)
         {
-            if (typeArgument.Name.Length > 0)
+            if (typeArgument is INamedTypeSymbol { Name.Length: > 0 } registeredType)
             {
-                registeredServices.Add(typeArgument.Name);
+                registeredServices.Add(registeredType);
             }
         }
 
         // A registration overload taking Type arguments carries open generics, as in
-        // AddSingleton(typeof(IRepo<>), typeof(Repo<>)). The unbound name is the service name.
+        // AddSingleton(typeof(IRepo<>), typeof(Repo<>)). An unbound generic cannot equal a
+        // constructed resolve such as IRepo<Thing>, so this path stays name-keyed.
         foreach (var argument in invocation.ArgumentList.Arguments)
         {
             if (argument.Expression is TypeOfExpressionSyntax typeOf
                 && context.SemanticModel.GetTypeInfo(typeOf.Type, context.CancellationToken).Type
-                    is INamedTypeSymbol registeredType)
+                    is INamedTypeSymbol registeredOpenGeneric)
             {
-                registeredServices.Add(registeredType.Name);
+                registeredOpenGenerics.Add(registeredOpenGeneric.Name);
             }
         }
     }
 
     private static void CollectResolves(
         SyntaxNodeAnalysisContext context,
-        ConcurrentBag<(Location Location, string TypeName)> resolveCandidates)
+        ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)> resolveCandidates)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
         var methodName = GetInvokedMethodName(invocation);
@@ -171,20 +178,26 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
             is IMethodSymbol { TypeArguments.Length: 1 } method
-            && method.TypeArguments[0].Name.Length > 0)
+            && method.TypeArguments[0] is INamedTypeSymbol { Name.Length: > 0 } serviceType)
         {
-            resolveCandidates.Add((invocation.GetLocation(), method.TypeArguments[0].Name));
+            resolveCandidates.Add((invocation.GetLocation(), serviceType));
         }
     }
 
     private static void CollectConstructorParameters(
         SyntaxNodeAnalysisContext context,
-        ConcurrentBag<(Location Location, string TypeName, string ContainingTypeName)> parameterCandidates)
+        ConcurrentBag<(Location Location, INamedTypeSymbol ParameterType, INamedTypeSymbol ContainingType)> parameterCandidates)
     {
         var constructor = (ConstructorDeclarationSyntax)context.Node;
 
         if (constructor.ParameterList is null
             || constructor.Parent is not TypeDeclarationSyntax containingType)
+        {
+            return;
+        }
+
+        if (context.SemanticModel.GetDeclaredSymbol(containingType, context.CancellationToken)
+            is not INamedTypeSymbol containingTypeSymbol)
         {
             return;
         }
@@ -202,47 +215,59 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             {
                 parameterCandidates.Add((
                     parameter.GetLocation(),
-                    parameterType.Name,
-                    containingType.Identifier.Text));
+                    parameterType,
+                    containingTypeSymbol));
             }
         }
     }
 
     private static void ReportUnregisteredResolves(
         CompilationAnalysisContext context,
-        ConcurrentBag<string> registeredServices,
-        ConcurrentBag<(Location Location, string TypeName)> resolveCandidates,
-        ConcurrentBag<(Location Location, string TypeName, string ContainingTypeName)> parameterCandidates,
+        ConcurrentBag<INamedTypeSymbol> registeredServices,
+        ConcurrentBag<string> registeredOpenGenerics,
+        ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)> resolveCandidates,
+        ConcurrentBag<(Location Location, INamedTypeSymbol ParameterType, INamedTypeSymbol ContainingType)> parameterCandidates,
         ImmutableHashSet<string> configuredServices)
     {
-        var registered = ImmutableHashSet.CreateRange(StringComparer.Ordinal, registeredServices);
-
-        foreach (var (location, typeName) in resolveCandidates)
+        var registered = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        foreach (var type in registeredServices)
         {
-            if (IsUnregistered(typeName, registered, configuredServices))
+            registered.Add(type);
+        }
+
+        var openGenerics = ImmutableHashSet.CreateRange(StringComparer.Ordinal, registeredOpenGenerics);
+
+        foreach (var (location, serviceType) in resolveCandidates)
+        {
+            if (IsUnregistered(serviceType, registered, openGenerics, configuredServices))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, location, typeName));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, location, serviceType.Name));
             }
         }
 
-        foreach (var (location, typeName, containingTypeName) in parameterCandidates)
+        foreach (var (location, parameterType, containingType) in parameterCandidates)
         {
-            if (registered.Contains(containingTypeName)
-                && IsUnregistered(typeName, registered, configuredServices))
+            if (registered.Contains(containingType)
+                && IsUnregistered(parameterType, registered, openGenerics, configuredServices))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, location, typeName));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, location, parameterType.Name));
             }
         }
     }
 
     private static bool IsUnregistered(
-        string typeName,
-        ImmutableHashSet<string> registered,
+        INamedTypeSymbol serviceType,
+        HashSet<INamedTypeSymbol> registered,
+        ImmutableHashSet<string> registeredOpenGenerics,
         ImmutableHashSet<string> configuredServices)
     {
-        return !registered.Contains(typeName)
-               && !configuredServices.Contains(typeName)
-               && !FrameworkProvidedServices.Contains(typeName);
+        // The registration set is symbol-keyed. The open-generic, configured, and framework checks
+        // stay name-based: an unbound generic has no constructed symbol, the option arrives as text,
+        // and the allowlist holds plain names.
+        return !registered.Contains(serviceType)
+               && !registeredOpenGenerics.Contains(serviceType.Name)
+               && !configuredServices.Contains(serviceType.Name)
+               && !FrameworkProvidedServices.Contains(serviceType.Name);
     }
 
     private static ImmutableHashSet<string> ReadConfiguredServices(AnalyzerConfigOptionsProvider provider)
