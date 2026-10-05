@@ -194,69 +194,43 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static ImmutableArray<string> DuplicateKeys(TestFacts facts)
     {
-        if (facts.Symbol.ContainingType is not { } testClass || facts.Assertions.IsEmpty)
+        if (facts.Symbol.ContainingType is not { } testClass
+            || facts.Assertions.IsEmpty
+            || !HasLiteralProductionCall(facts))
         {
             return [];
         }
 
-        if (!HasLiteralProductionCall(facts, out var calls))
-        {
-            return [];
-        }
-
-        var assertions = string.Join(
-            "|",
-            facts.Assertions
-                .Select(AssertionSignature)
-                .OrderBy(name => name, StringComparer.Ordinal));
-        var builder = ImmutableArray.CreateBuilder<string>();
-
-        // A method that repeats the same call twice covers the same ground twice, but that is not the
-        // cross-method duplication this condition counts. Keep one key per distinct call site.
-        foreach (var call in calls)
-        {
-            var arguments = string.Join(
-                ",",
-                call.Invocation.ArgumentList.Arguments.Select(argument => argument.Expression.ToString()));
-            var key = $"{testClass.ToDisplayString()}|{call.Symbol.ToDisplayString()}|{arguments}|{assertions}";
-
-            if (!builder.Contains(key))
-            {
-                builder.Add(key);
-            }
-        }
-
-        return builder.ToImmutable();
+        // Two tests cover the same ground only when their bodies match token for token. A key built from
+        // the literal-argument call alone collides tests that differ in their setup or in the method under
+        // test. The body signature reads both, so only a copy-paste pair shares a key.
+        return [$"{testClass.ToDisplayString()}|{BodySignature(facts.Method)}"];
     }
 
-    private static string AssertionSignature(AssertionFact assertion)
+    private static string BodySignature(MethodDeclarationSyntax method)
     {
-        // The assertion name alone collapses tests that share a setup call but check different results:
-        // `Assert.Equal(1, lookup.Count)` and `Assert.Equal(1, lookup["a"])` both name `Equal`. Carry the
-        // argument text so only an assertion that repeats verbatim counts as duplicate coverage.
-        var arguments = string.Join(
-            ",",
-            assertion.Invocation.ArgumentList.Arguments.Select(argument => argument.Expression.ToString()));
+        // Tokens carry the code without its trivia, so reindenting or recommenting a body does not change
+        // the signature. The method name and its attributes sit outside the body and do not enter the key.
+        var tokens = method.Body is { } body
+            ? body.DescendantTokens()
+            : method.ExpressionBody?.DescendantTokens() ?? [];
 
-        return $"{assertion.Symbol.Name}({arguments})";
+        return string.Join(" ", tokens.Select(token => token.Text));
     }
 
-    private static bool HasLiteralProductionCall(TestFacts facts, out ImmutableArray<ProductionCallFact> calls)
+    private static bool HasLiteralProductionCall(TestFacts facts)
     {
-        var builder = ImmutableArray.CreateBuilder<ProductionCallFact>();
-
         foreach (var call in facts.ProductionCalls)
         {
             // A standard-library call seeds test input, it does not carry the behavior under test. Two
             // tests that seed the same range but exercise different production paths are not duplicates.
             if (IsAllLiteralArguments(call.Invocation) && IsProductionCodeCall(call.Symbol))
             {
-                builder.Add(call);
+                return true;
             }
         }
 
-        calls = builder.ToImmutable();
-        return !calls.IsEmpty;
+        return false;
     }
 
     private static bool IsProductionCodeCall(IMethodSymbol method)
@@ -358,7 +332,24 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
                && !facts.HasHelperCall
                && facts.Assertions.Length == 0
                && facts.ProductionCalls.Length > 0
+               && !CallsVoidProduction(facts)
                && !CallsCheckStyleAssertion(facts);
+    }
+
+    private static bool CallsVoidProduction(TestFacts facts)
+    {
+        // A void method has no return value to assert on, so the throw is the only observable. A test
+        // that calls a void validator and asserts nothing passes when the validator stays silent, which
+        // is the contract of the happy path, not a missing assertion.
+        foreach (var call in facts.ProductionCalls)
+        {
+            if (call.Symbol.ReturnsVoid)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool CallsCheckStyleAssertion(TestFacts facts)
@@ -477,15 +468,26 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool SelfFulfillingExpected(TestFacts facts)
     {
+        // A receiver-only comparison cannot tell `ranks["A"]` from `ranks["B"]`, so it reports a real
+        // relational invariant as circular. The two operands must match expression for expression.
         foreach (var assertion in facts.Assertions)
         {
-            if (SharesExpectedReceiver(facts, assertion))
+            if (ComparesSameExpression(assertion))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool ComparesSameExpression(AssertionFact assertion)
+    {
+        var arguments = assertion.Invocation.ArgumentList.Arguments;
+
+        return string.Equals(assertion.Symbol.Name, "Equal", StringComparison.Ordinal)
+               && arguments.Count >= 2
+               && SyntaxFactory.AreEquivalent(arguments[0].Expression, arguments[1].Expression);
     }
 
     private static bool MagicConstantEcho(TestFacts facts)
@@ -688,36 +690,6 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         }
 
         return null;
-    }
-
-    private static bool SharesExpectedReceiver(TestFacts facts, AssertionFact assertion)
-    {
-        var arguments = assertion.Invocation.ArgumentList.Arguments;
-
-        if (!string.Equals(assertion.Symbol.Name, "Equal", StringComparison.Ordinal) || arguments.Count < 2)
-        {
-            return false;
-        }
-
-        var expected = ReceiverSymbol(facts.Model.GetOperation(arguments[0].Expression, facts.CancellationToken));
-        var actual = ReceiverSymbol(facts.Model.GetOperation(arguments[1].Expression, facts.CancellationToken));
-
-        return expected is not null && SymbolEqualityComparer.Default.Equals(expected, actual);
-    }
-
-    private static ISymbol? ReceiverSymbol(IOperation? operation)
-    {
-        return operation switch
-        {
-            IInvocationOperation invocation => ReceiverSymbol(invocation.Instance),
-            IPropertyReferenceOperation property => ReceiverSymbol(property.Instance),
-            IFieldReferenceOperation field => ReceiverSymbol(field.Instance),
-            IArrayElementReferenceOperation element => ReceiverSymbol(element.ArrayReference),
-            IConversionOperation conversion => ReceiverSymbol(conversion.Operand),
-            ILocalReferenceOperation local => local.Local,
-            IParameterReferenceOperation parameter => parameter.Parameter,
-            _ => null
-        };
     }
 
     private static bool ComparesLiteralWithLiteralOnlyCall(TestFacts facts, InvocationExpressionSyntax assertion)
