@@ -19,7 +19,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>1.41.11</Version>
+    <Version>1.41.12</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
