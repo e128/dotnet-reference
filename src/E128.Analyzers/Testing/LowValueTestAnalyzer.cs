@@ -81,7 +81,6 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         (nameof(MockVerifyOnly), MockVerifyOnly),
         (nameof(LogAssert), LogAssert),
         (nameof(ConstructorPassthrough), ConstructorPassthrough),
-        (nameof(InternalsReachIn), InternalsReachIn),
         (nameof(SelfFulfillingExpected), SelfFulfillingExpected),
         (nameof(MagicConstantEcho), MagicConstantEcho),
         (nameof(OrderLock), OrderLock)
@@ -476,24 +475,6 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return EveryAssertionMatches(facts, invocation => HasLiteralConstructedRead(facts, invocation));
     }
 
-    private static bool InternalsReachIn(TestFacts facts)
-    {
-        return EveryAssertionMatches(facts, invocation => ReadsInternalMemberIn(facts, invocation));
-    }
-
-    private static bool ReadsInternalMemberIn(TestFacts facts, InvocationExpressionSyntax assertion)
-    {
-        foreach (var node in AssertionNodes(assertion))
-        {
-            if (node is MemberAccessExpressionSyntax member && ReadsInternalMember(facts, member))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static bool SelfFulfillingExpected(TestFacts facts)
     {
         foreach (var assertion in facts.Assertions)
@@ -709,50 +690,6 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static bool ReadsInternalMember(TestFacts facts, MemberAccessExpressionSyntax member)
-    {
-        var symbol = facts.Model.GetSymbolInfo(member, facts.CancellationToken).Symbol;
-
-        return symbol is IPropertySymbol or IFieldSymbol
-               && symbol.DeclaredAccessibility == Accessibility.Internal
-               && symbol.ContainingAssembly is { } assembly
-               && GrantsInternalsTo(assembly, facts.Symbol.ContainingAssembly.Name);
-    }
-
-    private static bool GrantsInternalsTo(IAssemblySymbol assembly, string friendAssemblyName)
-    {
-        foreach (var attribute in assembly.GetAttributes())
-        {
-            if (attribute.AttributeClass is not { } attributeClass
-                || !string.Equals(attributeClass.Name, "InternalsVisibleToAttribute", StringComparison.Ordinal)
-                || !string.Equals(
-                    attributeClass.ContainingNamespace.ToDisplayString(),
-                    "System.Runtime.CompilerServices",
-                    StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            // The friend name must be the test assembly. Access granted to another assembly does not
-            // make this internal member reachable from the test.
-            if (attribute.ConstructorArguments.Length > 0
-                && attribute.ConstructorArguments[0].Value is string target
-                && string.Equals(FriendAssemblyName(target), friendAssemblyName, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string FriendAssemblyName(string target)
-    {
-        // The attribute value can carry the public key after the assembly name.
-        var comma = target.IndexOf(',');
-        return comma < 0 ? target.Trim() : target.Substring(0, comma).Trim();
-    }
-
     private static bool SharesExpectedReceiver(TestFacts facts, AssertionFact assertion)
     {
         var arguments = assertion.Invocation.ArgumentList.Arguments;
@@ -878,6 +815,14 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool PinsExceptionMessage(TestFacts facts, InvocationExpressionSyntax assertion)
     {
+        // Only an exact-equality pin locks the whole message. A substring check with Assert.Contains
+        // pins a documented hint, which is the contract, so it does not report.
+        if (assertion.Expression is not MemberAccessExpressionSyntax access
+            || !string.Equals(access.Name.Identifier.ValueText, "Equal", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
         var hasLiteral = false;
         var hasExceptionMessage = false;
 

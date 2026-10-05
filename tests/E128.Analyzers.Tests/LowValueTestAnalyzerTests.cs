@@ -283,6 +283,42 @@ public sealed class LowValueTestAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task ExceptionMessageLock_ReportsNothing_WhenAssertionContainsASubstringOfTheMessage()
+    {
+        // A substring check pins a documented hint, which is the contract, not a leak. Only an exact
+        // equality check locks the whole message.
+        return VerifyAsync("""
+                           using System;
+                           using Xunit;
+
+                           public sealed class Parser
+                           {
+                               public void Parse(string value)
+                               {
+                                   if (value.Length == 0)
+                                   {
+                                       throw new InvalidOperationException("Set BRAVE_API_KEY before parsing");
+                                   }
+                               }
+                           }
+
+                           public sealed class Subject
+                           {
+                               [Fact]
+                               public void Should_ReportTheMissingKey()
+                               {
+                                   var parser = new Parser();
+
+                                   var exception = Assert.Throws<InvalidOperationException>(() => parser.Parse(""));
+
+                                   Assert.Contains("BRAVE_API_KEY", exception.Message, StringComparison.Ordinal);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task MockVerifyOnly_ReportsSuggestion_WhenSoleAssertionIsVerifyWithLambda()
     {
         return VerifyAsync("""
@@ -390,32 +426,6 @@ public sealed class LowValueTestAnalyzerTests
                                {
                                    var parser = new Parser(3);
                                    Assert.Equal(3, parser.Limit);
-                               }
-                           }
-                           """);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task InternalsReachIn_ReportsSuggestion_WhenAssertionReadsInternalMember()
-    {
-        return VerifyAsync("""
-                           using System.Runtime.CompilerServices;
-                           using Xunit;
-
-                           [assembly: InternalsVisibleTo("TestProject")]
-
-                           public static class InternalPolicy
-                           {
-                               internal static int Limit => 5;
-                           }
-
-                           public sealed class Subject
-                           {
-                               [Fact]
-                               public void {|E128107:Should_ReadInternalLimit|}()
-                               {
-                                   Assert.Equal(5, InternalPolicy.Limit);
                                }
                            }
                            """);
@@ -756,32 +766,6 @@ public sealed class LowValueTestAnalyzerTests
                                {
                                    var items = new List<int>();
                                    Assert.Equal(0, items.Count);
-                               }
-                           }
-                           """);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task InternalsReachIn_ReportsNothing_WhenInternalsVisibleToNamesAnotherAssembly()
-    {
-        return VerifyAsync("""
-                           using System.Runtime.CompilerServices;
-                           using Xunit;
-
-                           [assembly: InternalsVisibleTo("Other.Tests")]
-
-                           public static class InternalPolicy
-                           {
-                               internal static int Limit => 5;
-                           }
-
-                           public sealed class Subject
-                           {
-                               [Fact]
-                               public void Should_ReadInternalLimit()
-                               {
-                                   Assert.Equal(5, InternalPolicy.Limit);
                                }
                            }
                            """);
