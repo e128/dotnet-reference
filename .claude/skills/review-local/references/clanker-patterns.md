@@ -1,11 +1,11 @@
-# Clanker Discipline — Pattern Examples
+# Clanker Discipline: Pattern Examples
 
 Detailed before/after code examples for each state & mutation discipline rule.
 Referenced from [review-rubrics.md](review-rubrics.md) § State & Mutation Discipline.
 
 ---
 
-## 1. Derive, don't store — Examples
+## 1. Derive, do not store, Examples
 
 ### Before: cached flags
 
@@ -43,7 +43,7 @@ The answer is now computed from events that already exist.
 
 ### When NOT to derive
 
-- The domain genuinely has a state machine with ordered transitions. A checkout step is not a cached conclusion; it IS the state.
+- The domain genuinely has a state machine with ordered transitions. A checkout step is not a cached conclusion. It IS the state.
 - A field contains temporal or external data that cannot be rederived (timestamps from async processes, API responses needed downstream).
 - The derivation would be more complex than the stored value.
 
@@ -92,7 +92,7 @@ No mocking or timing reproduction. The bug is in the events or in the pure funct
 
 ---
 
-## 2. Make wrong states impossible — Examples
+## 2. Make wrong states impossible, Examples
 
 ### Discriminated unions over optional bags
 
@@ -165,7 +165,7 @@ If a type has a variant that is never constructed, delete it. A `status: 'open' 
 
 ---
 
-## 3. Enforce function contracts — Examples
+## 3. Enforce function contracts, Examples
 
 ### Never add side effects to a pure function
 
@@ -215,7 +215,7 @@ function handlePaymentCaptured(state: AppState, payload: PaymentPayload, receive
 
 ### Pick a mutation contract
 
-If a function mutates its input, return `void`. If it returns a value, clone first. Never mutate the input and return the same reference — callers cannot tell whether to use the return value or the original.
+If a function mutates its input, return `void`. If it returns a value, clone first. Never mutate the input and return the same reference, callers cannot tell whether to use the return value or the original.
 
 ```ts
 // Bad: mutates AND returns the same object
@@ -237,7 +237,7 @@ function withPendingAction(state: AppState, action: string): AppState {
 
 ---
 
-## 4. Data over procedure — Examples
+## 4. Data over procedure, Examples
 
 ### Before: if-chain
 
@@ -279,4 +279,4 @@ Easier to scan, extend, and test. An agent adding a new step adds a data entry, 
 
 ### When NOT to convert
 
-If branches have different control flow — not just different return values — keep them as code. A table maps inputs to outputs; it cannot express "call X then conditionally call Y."
+If branches have different control flow: not just different return values, keep them as code. A table maps inputs to outputs. It cannot express "call X then conditionally call Y."

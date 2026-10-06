@@ -45,12 +45,12 @@ Extension method dead-code false positives:
 
 **Post-rename verification protocol:** After any rename that touches directories, projects, or
 domain names, the reviewer should verify:
-1. `rg -i "OldName" .claude/ lode/ scripts/` — catches agent/skill/config references
-2. `rg -i "OldName" tests/ -g "*.cs"` — catches test fixture anchors
+1. `rg -i "OldName" .claude/ lode/ scripts/`: catches agent/skill/config references
+2. `rg -i "OldName" tests/ -g "*.cs"`: catches test fixture anchors
 3. Domain routing tables (arch-scan, keyword-shortcuts) updated
 4. Lode domain directories and lode-map entries updated
 
 **Activation heuristic:** Include this rubric when: diff touches 3+ files under `.claude/`,
-`lode/`, or `scripts/`; commit message contains "rename", "migrate", "move", or "consolidate";
-diff includes deletions paired with additions of similarly-named files; PR is labeled as merge
+`lode/`, or `scripts/`. Commit message contains "rename", "migrate", "move", or "consolidate", 
+diff includes deletions paired with additions of similarly-named files, PR is labeled as merge
 resolution or multi-session work.

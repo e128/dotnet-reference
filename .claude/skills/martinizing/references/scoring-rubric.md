@@ -1,33 +1,33 @@
-# Martinizing — Scoring Rubric & Finding Catalog
+# Martinizing: Scoring Rubric & Finding Catalog
 
 Detailed finding categories, the capability classification rubric, Phase 3 agent prompt template,
 and the full Phase 4 report format. Loaded on demand from the main `martinizing` skill.
 
 ## Finding Categories
 
-| Category | Definition | Priority |
-|----------|-----------|----------|
-| `INVESTMENT_MISMATCH` | Over-engineered table stakes, or under-invested differentiators | Highest |
-| `DEAD_CAPABILITY` | Code that's defined/registered but never called from active pipelines | High |
-| `CHAIN_BREAK` | Capability chain has a broken link -- output of one subsystem doesn't reach the next | High |
-| `ROBUSTNESS` | Error handling, silent failures, missing exception catches in differentiators | Medium |
-| `OVER_ENGINEERED` | Unnecessary complexity in areas that don't create advantage | Medium |
-| `ARCHITECTURE` | God class, unclear responsibilities, tight coupling | Medium |
-| `CLARITY` | Dead code, redundant calls, confusing structure | Low |
-| `DEPENDENCY_LEVERAGE` | Major dependency fails the outsourcing test -- hold-up risk, future competitor risk, or mission-critical capability delegated to an outside party | High |
-| `STRATEGIC_CONFUSION` | Differentiator set signals conflicting competitive positions (cost leadership and premium differentiation simultaneously) -- pursuing both produces mediocrity on both dimensions | High |
-| `BARNACLE` | Accumulated infrastructure, patterns, or conventions that now contradict or create drag on the HTW choice -- may have been justified previously but now fights the current strategy | Medium |
-| `KEYSTONE_GAP` | The keystone capability (the one others depend on) is the least-invested in the system -- structural vulnerability where the entire capability chain depends on an under-built foundation | Highest |
-| `ASPIRATIONAL_STRATEGY` | A WTP/HTW combination exists in planning artifacts but the WWHTBT conditions are clearly unmet (near-zero implementation, missing foundational capabilities) -- the strategy is a bet that hasn't been placed yet | High |
+| Category                | Definition                                                                                                                                                                                                       | Priority |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `INVESTMENT_MISMATCH`   | Over-engineered table stakes, or under-invested differentiators                                                                                                                                                  | Highest  |
+| `DEAD_CAPABILITY`       | Code that is defined/registered but never called from active pipelines                                                                                                                                           | High     |
+| `CHAIN_BREAK`           | Capability chain has a broken link, output of one subsystem does not reach the next                                                                                                                              | High     |
+| `ROBUSTNESS`            | Error handling, silent failures, missing exception catches in differentiators                                                                                                                                    | Medium   |
+| `OVER_ENGINEERED`       | Unnecessary complexity in areas that do not create advantage                                                                                                                                                     | Medium   |
+| `ARCHITECTURE`          | God class, unclear responsibilities, tight coupling                                                                                                                                                              | Medium   |
+| `CLARITY`               | Dead code, redundant calls, confusing structure                                                                                                                                                                  | Low      |
+| `DEPENDENCY_LEVERAGE`   | Major dependency fails the outsourcing test, hold-up risk, future competitor risk, or mission-critical capability delegated to an outside party                                                                  | High     |
+| `STRATEGIC_CONFUSION`   | Differentiator set signals conflicting competitive positions (cost leadership and premium differentiation simultaneously), pursuing both produces mediocrity on both dimensions                                  | High     |
+| `BARNACLE`              | Accumulated infrastructure, patterns, or conventions that now contradict or create drag on the HTW choice, may have been justified previously but now fights the current strategy                                | Medium   |
+| `KEYSTONE_GAP`          | The keystone capability (the one others depend on) is the least-invested in the system, structural vulnerability where the entire capability chain depends on an under-built foundation                          | Highest  |
+| `ASPIRATIONAL_STRATEGY` | A WTP/HTW combination exists in planning artifacts but the WWHTBT conditions are clearly unmet (near-zero implementation, missing foundational capabilities), the strategy is a bet that has not been placed yet | High     |
 
 ## Phase 2a: Capability Classification Rubric
 
 Apply the "not stupid on its face" test to each revealed differentiator:
 
-| Capability | Opposite viable? | Classification |
-|---|---|---|
-| [capability] | Yes -- a competitor could reasonably skip this | **Strategic differentiator** |
-| [capability] | No -- every serious competitor must do this | **Operating imperative** (quality threshold) |
+| Capability   | Opposite viable?                             | Classification                               |
+| ------------ | -------------------------------------------- | -------------------------------------------- |
+| [capability] | Yes, a competitor could reasonably skip this | **Strategic differentiator**                 |
+| [capability] | No, every serious competitor must do this    | **Operating imperative** (quality threshold) |
 
 This classification drives investment-level expectations in Phase 3:
 - Differentiators should have deep, well-tested implementations
@@ -44,9 +44,9 @@ After classifying all capabilities individually, review the aggregate profile fo
 | Differentiation | Rich domain models, deep capability investment, premium abstractions, layered architecture | Value/premium position |
 
 If the aggregate profile contains strong signals from **both** columns, flag `STRATEGIC_CONFUSION`.
-The two positions require fundamentally different disciplines; simultaneous pursuit produces
+The two positions require fundamentally different disciplines. Simultaneous pursuit produces
 mediocrity on both. Note: some projects legitimately pursue **cost-effective differentiation**
-(differentiated value at disciplined cost) — this is not confusion. The flag is for cases where the
+(differentiated value at disciplined cost): this is not confusion. The flag is for cases where the
 signals actively contradict each other (e.g., ultra-minimal core *and* elaborate abstraction
 frameworks of equal investment).
 
@@ -176,17 +176,17 @@ The Sears pattern: store-level P&L structures that penalized online-strategy beh
 |----|---------|----------|--------|----------|
 ```
 
-## Strategy Choice Cascade — Audit Framework
+## Strategy Choice Cascade: Audit Framework
 
 The cascade is the primary structuring framework for this audit. Each question maps to code evidence:
 
-| # | Cascade Question | Code Evidence | Phase 2 Mapping |
-|---|---|---|---|
-| 1 | **Winning Aspiration** -- purpose, guiding aspirations | Entry points, CLI verbs, pipeline output -- what the code enables users to *achieve* | → Desired customer action |
-| 2 | **Where to Play** -- geographies, segments, channels, product categories, value chain stages | WTP dimensions, dependency choices, what the code explicitly does NOT do | → WTP dimensions, Non-goals |
-| 3 | **How to Win** -- value proposition, competitive advantage | Investment concentration, unique implementations, revealed differentiators vs table stakes | → Differentiators, Table stakes |
-| 4 | **Capabilities** -- reinforcing activities, specific configuration | Capability chain integrity, dead capabilities, reinforcing system test, dependency leverage | → Chain, Dead caps, Dependencies |
-| 5 | **Management Systems** -- systems, structures, measures | CI/CD, test infrastructure, build conventions, metrics, conventions that support or contradict HTW | → Barnacle analysis |
+| # | Cascade Question                                                                           | Code Evidence                                                                                      | Phase 2 Mapping                  |
+| - | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | -------------------------------- |
+| 1 | **Winning Aspiration**, purpose, guiding aspirations                                       | Entry points, CLI verbs, pipeline output, what the code enables users to *achieve*                 | → Desired customer action        |
+| 2 | **Where to Play**, geographies, segments, channels, product categories, value chain stages | WTP dimensions, dependency choices, what the code explicitly does NOT do                           | → WTP dimensions, Non-goals      |
+| 3 | **How to Win**, value proposition, competitive advantage                                   | Investment concentration, unique implementations, revealed differentiators vs table stakes         | → Differentiators, Table stakes  |
+| 4 | **Capabilities**, reinforcing activities, specific configuration                           | Capability chain integrity, dead capabilities, reinforcing system test, dependency leverage        | → Chain, Dead caps, Dependencies |
+| 5 | **Management Systems**, systems, structures, measures                                      | CI/CD, test infrastructure, build conventions, metrics, conventions that support or contradict HTW | → Barnacle analysis              |
 
 ### Cascading Coherence Test
 
@@ -199,11 +199,11 @@ Each choice must be **coherent with and constrained by** the choice above it. Af
 
 Flag `STRATEGIC_CONFUSION` when answers at adjacent levels contradict each other.
 
-**Toggle, don't sequence** — the dashed feedback arrows in the cascade mean lower-level realities inform upper choices. A capability gap (Q4) may force revision of where to play (Q2).
+**Toggle, do not sequence**, the dashed feedback arrows in the cascade mean lower-level realities inform upper choices. A capability gap (Q4) may force revision of where to play (Q2).
 
 ### Key Tests
 
-- **"Not stupid on its face"** — a capability is strategic only if a reasonable competitor could choose the opposite
-- **Operating imperatives** — important but not advantage-creating; every competitor should choose them
-- **Reinforcing system** — individual capabilities can be copied; the interlocking system cannot
-- **Desired customer action** — strategy must compel the one thing you don't control: the customer
+- **"Not stupid on its face"**: a capability is strategic only if a reasonable competitor could choose the opposite
+- **Operating imperatives**: important but not advantage-creating. Every competitor should choose them
+- **Reinforcing system**: individual capabilities can be copied. The interlocking system cannot
+- **Desired customer action**: strategy must compel the one thing you do not control: the customer

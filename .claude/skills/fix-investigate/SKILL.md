@@ -4,8 +4,8 @@ description: >
   Investigate failing tests or CI divergence. Deep single-test root-cause analysis,
   or local-vs-CI pattern matching.
 when_to_use: >
-  investigate failing test, why is this test failing, debug this test,
-  test debugging, test broken, works locally not CI, CI failed but local passes,
+  investigate failing test, why is this test failing, investigate test failure,
+  why does this test fail, test debugging, test broken, works locally not CI, CI failed but local passes,
   fix CI divergence, CI divergence.
 argument-hint: "[test name | CI error output | 'CI divergence']"
 ---
@@ -53,18 +53,18 @@ From `$ARGUMENTS` or conversation, identify the test class or method name.
 
 Run these simultaneously:
 
-1. `scripts/test.sh {TestName}` — capture assertion message, stack trace
-2. Read test file — locate by `{TestClass}Tests.cs` in `tests/`
-3. Read source under test — from test method, identify the SUT in `src/`
+1. `scripts/test.sh {TestName}`: capture assertion message, stack trace
+2. Read test file: locate by `{TestClass}Tests.cs` in `tests/`
+3. Read source under test: from test method, identify the SUT in `src/`
 
 **Categorize the failure:**
 
 | Category               | Indicators                                              |
 |------------------------|---------------------------------------------------------|
-| Assertion mismatch     | Expected X but got Y; test logic or implementation drift |
+| Assertion mismatch     | Expected X but got Y. Test logic or implementation drift |
 | Null reference / setup | NRE, missing mock setup, incorrect fixture              |
-| Flaky / race condition | Passes sometimes; async, timers, shared state           |
-| Missing implementation | NotImplementedException, method doesn't exist           |
+| Flaky / race condition | Passes sometimes. Async, timers, shared state           |
+| Missing implementation | NotImplementedException, method does not exist           |
 | Environment / config   | Missing file, wrong path, env variable not set          |
 
 **Check sibling tests** in the same class for shared root cause.
@@ -84,7 +84,7 @@ After user-approved fix: `scripts/test.sh {TestClass}`
 ## Common Pitfalls
 
 ### CS0535 cascade
-When implementing interface stubs for CS0535, expression-bodied members don't
+When implementing interface stubs for CS0535, expression-bodied members do not
 allow parameter references. Use block-bodied methods. Unused nullable params
 need `GC.KeepAlive(param)`, non-nullable ref params need
 `ArgumentNullException.ThrowIfNull(param)`.

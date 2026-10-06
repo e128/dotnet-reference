@@ -3,11 +3,9 @@ name: debug-test
 description: >
   End-to-end investigation of a single failing unit test. Accepts a test name or
   pasted xUnit output, runs the test in isolation, reads the test and source files,
-  categorizes the failure, and proposes a targeted fix. Distinct from fix-ci which
-  handles batch CI output; this skill goes deep on one test at a time.
-  Triggers on: debug this test, investigate failing test, why is this test failing,
-  fix failing test, test debugging, debug test, investigate test failure, test fails,
-  single test debug, test broken, why does this test fail.
+  categorizes the failure, and proposes a targeted fix. Distinct from /fix which
+  handles batch CI output, this skill goes deep on one test at a time.
+  Triggers on: debug this test, debug test, fix failing test, test fails, single test debug.
 argument-hint: "<test-name or pasted xUnit output>"
 allowed-tools: Read, Glob, Grep, Bash, Agent
 ---
@@ -33,11 +31,11 @@ Capture: the assertion failure message, exception type, stack trace (first 5 fra
 
 ## Step 3: Locate and read test file
 
-Locate the file by test class name (try `{TestClass}Tests.cs` and `{TestClass}Test.cs` in `tests/`). Read the full test method that failed, plus the `[SetUp]`/constructor and any shared fixtures used by the test class.
+Locate the file by test class name (try `{TestClass}Tests.cs` and `{TestClass}Test.cs` in `tests/`). Read the full test method that failed, plus the constructor or `IAsyncLifetime` and any shared fixtures used by the test class.
 
 ## Step 4: Locate and read source under test
 
-From the test method, identify the system under test and locate its source file in `src/` (`scripts/find.sh --class {ClassName}`). Focus on the method(s) called by the failing test — extract just those with `scripts/code-read.sh --method {Name} {path}`, or map the file first with `scripts/file-outline.sh {path}`. Do not read the entire file unless the class is small.
+From the test method, identify the system under test and locate its source file in `src/` (`scripts/find.sh --class {ClassName}`). Focus on the method(s) called by the failing test, extract just those with `scripts/code-read.sh --method {Name} {path}`, or map the file first with `scripts/file-outline.sh {path}`. Do not read the entire file unless the class is small.
 
 ## Step 5: Categorize the failure
 
@@ -45,10 +43,10 @@ Determine which category best fits:
 
 | Category | Indicators |
 |----------|-----------|
-| **Assertion mismatch** | Expected X but got Y; test logic or implementation drift |
+| **Assertion mismatch** | Expected X but got Y. Test logic or implementation drift |
 | **Null reference / missing setup** | NullReferenceException, missing mock setup, incorrect fixture |
-| **Flaky / race condition** | Passes locally sometimes; involves async, timers, shared state |
-| **Missing implementation** | NotImplementedException, method doesn't exist, interface not wired |
+| **Flaky / race condition** | Passes locally sometimes. Involves async, timers, shared state |
+| **Missing implementation** | NotImplementedException, method does not exist, interface not wired |
 | **Environment / config** | Missing file, wrong path, env variable not set, connection string |
 
 ## Step 6: Check sibling tests
@@ -77,12 +75,12 @@ Output:
 scripts/test.sh --json {TestClass}
 ```
 
-Do NOT apply the fix without user confirmation — present it and wait.
+Do NOT apply the fix without user confirmation, present it and wait.
 
 ## Notes
 
-- For CI batch failures (many tests), use `/fix-ci` instead
+- For CI batch failures (many tests), use `/fix` instead
 - For flaky async tests, refer to concurrency patterns in `.claude/skills/dotnet-overhaul/steps/step6-patterns.md`
-- Always check sibling tests — the "fix the class not the instance" rule applies here too
-- If the test was previously passing (use `scripts/diff.sh --json` to review recent commits), check recent
+- Always check sibling tests: the "fix the class not the instance" rule applies here too
+- If the test was previously passing (use `scripts/branch.sh --json` to review recent commits), check recent
   commits to find the regression-introducing change

@@ -7,7 +7,7 @@ argument-hint: "[--include-low]"
 user-invocable: true
 ---
 
-# Review — Apply Mode
+# Review: Apply Mode
 
 Batch-apply findings from the most recent `--local` review. One confirmation, one test run.
 
@@ -33,7 +33,7 @@ Display confirmation table. Auto-apply CRITICAL + HIGH + MEDIUM. Skip LOW unless
 
 Read all affected files first (parallel Reads), then apply all edits. Group findings by file, apply all in one Edit per file. Hold the test run until every fix is applied.
 
-**Cascade stop rule:** If >5 test failures in files outside the edit plan, stop and report the cascade. Don't chase it.
+**Cascade stop rule:** If >5 test failures in files outside the edit plan, stop and report the cascade. Do not chase it.
 
 **AskUserQuestion before:** public method/interface changes, >10 line deletions, test expectation changes.
 
@@ -59,9 +59,9 @@ Not applied (manual review needed): ...
 ## Rules
 
 - Read every file before editing. Re-read after format.
-- One batch, one test run — run tests only after all fixes land.
-- Skip LOW by default; skip "needs verification" findings.
-- Lode is out of scope — leave lode untouched by review findings.
+- One batch, one test run, run tests only after all fixes land.
+- Skip LOW by default. Skip "needs verification" findings.
+- Lode is out of scope: leave lode untouched by review findings.
 - Tool-call budget: >100 calls → stop and report progress.
 
 ## References

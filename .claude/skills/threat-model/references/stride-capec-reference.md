@@ -17,7 +17,7 @@ canonical mitigations, STRIDE-to-CAPEC mechanism bridge, and DREAD-lite scoring 
 ## Per-Element Applicability Matrix
 
 Not all STRIDE categories apply to all DFD element types. This matrix filters
-false positives -- don't ask "can someone spoof a database?"
+false positives, do not ask "can someone spoof a database?"
 
 | Element Type    | Spoofing | Tampering | Repudiation | Info Disclosure | DoS | EoP |
 | --------------- | -------- | --------- | ----------- | --------------- | --- | --- |
@@ -39,7 +39,7 @@ false positives -- don't ask "can someone spoof a database?"
 
 ## Existing-Mitigation Discovery (.NET)
 
-This repo has no fixed security-primitive catalog -- discover what already exists before
+This repo has no fixed security-primitive catalog, discover what already exists before
 scoring. When a threat maps to a mitigation found below, mark it MITIGATED and reference the
 implementation. Run these greps against `src/` (or the resolved domain project):
 
@@ -80,9 +80,9 @@ stack and element type.
 CAPEC organizes 559 attack patterns across three axes:
 
 **Abstraction levels:**
-- **Meta** -- technology-agnostic attack class (architecture review)
-- **Standard** -- specific attack technique (design/implementation review)
-- **Detailed** -- platform-specific variant (pen testing)
+- **Meta**, technology-agnostic attack class (architecture review)
+- **Standard**, specific attack technique (design/implementation review)
+- **Detailed**, platform-specific variant (pen testing)
 
 **Domains of Attack:** Software, Hardware, Communications, Supply Chain, Social Engineering,
 Physical Security.
@@ -124,20 +124,20 @@ Common patterns for .NET web APIs, CLI tools, libraries, and build-time (analyze
 
 **Priority bands:**
 
-| Score  | Priority | Action                                          |
-| ------ | -------- | ----------------------------------------------- |
-| 18-27  | CRITICAL | Immediate remediation; block release            |
-| 9-17   | HIGH     | Plan remediation within current sprint          |
-| 4-8    | MEDIUM   | Track on roadmap; fix opportunistically         |
-| 1-3    | LOW      | Accept risk or defer; document in threat register |
+| Score | Priority | Action                                            |
+| ----- | -------- | ------------------------------------------------- |
+| 18-27 | CRITICAL | Immediate remediation. Block release              |
+| 9-17  | HIGH     | Plan remediation within current sprint            |
+| 4-8   | MEDIUM   | Track on roadmap. Fix opportunistically           |
+| 1-3   | LOW      | Accept risk or defer. Document in threat register |
 
 **Context adjustments by deployment shape:**
 - Local-only tools (no network listeners): Exploitability ceiling is 2 (requires local access)
 - CLI tools without auth: Spoofing/EoP threats cap at MEDIUM unless the tool processes
   untrusted input from the network or launches external processes
-- Network-facing web APIs / services: full scoring applies -- unauthenticated request paths are
+- Network-facing web APIs / services: full scoring applies, unauthenticated request paths are
   the primary attack surface
-- Tools that fetch or process untrusted external content: full scoring applies -- the external
+- Tools that fetch or process untrusted external content: full scoring applies, the external
   content IS the attack surface
 - Build-time components (Roslyn analyzers, source generators, MSBuild tasks): the trust boundary
   is the *consumer's* build/IDE. Exploitability is HIGH if the package is published, since

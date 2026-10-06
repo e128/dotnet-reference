@@ -21,14 +21,13 @@ Update the timestamp via `scripts/ts.sh`.
 
 ## 5c. Update token-efficiency rules
 
-Add the new script to `.claude/rules/token-efficiency.md` ("use instead of raw
-commands" bullets) and, if it replaces a routed raw command, add a row to
+If the script replaces a routed raw command, add a row to
 `.claude/rules/deterministic-scripts.md`.
 
-## 5d. Register in CLAUDE.md key scripts table
+## 5d. Register in the routing table
 
-If the script is a top-level (non-internal) tool, add a row to the
-**Key Scripts** table in `CLAUDE.md`.
+If the script is a top-level (non-internal) tool, add a row to the table in
+`.claude/rules/deterministic-scripts.md`. Keep `scripts/README.md` in step.
 
 ## 5e. Update affected agents/skills (--scan-skills mode only)
 
@@ -47,7 +46,7 @@ Phase 1b.4:
 ```bash
 bash -n scripts/{name}.sh
 shellcheck scripts/{name}.sh 2>/dev/null || true
-scripts/help.sh | grep {name}        # verify it appears in the catalog
+scripts/help.sh | rg {name}        # verify it appears in the catalog
 ```
 
 Smoke-test each script with `--help` and with live data.

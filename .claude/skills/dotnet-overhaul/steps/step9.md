@@ -8,7 +8,7 @@ cat .claude/tmp/overhauler/baseline.md
 ## CI Tests
 
 Read `.claude/tmp/overhauler/test-convention.md` for the detected filter command.
-If `build-validator` agent is available, spawn it — otherwise run the filter command from the convention file.
+If `build-validator` agent is available, spawn it, otherwise run the filter command from the convention file.
 Compare result to baseline: same or higher count, no new failures or skips.
 
 ## Format Verification

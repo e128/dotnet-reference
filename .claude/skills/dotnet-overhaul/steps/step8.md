@@ -1,6 +1,6 @@
 # Step 8: Cleanup & Organization
 
-**Executes immediately after Steps 3–7 fixes are complete. No findings table, no approval gate.**
+**Executes immediately after Steps 3-7 fixes are complete. No findings table, no approval gate.**
 These are mechanical, non-behavioral changes. Report what was changed at the end.
 
 ---
@@ -23,9 +23,9 @@ Read `Directory.Packages.props` and reorganize:
      <PackageVersion Include="xunit" Version="2.9.0" />
    </ItemGroup>
    ```
-3. **Remove duplicate entries** — if the same package appears twice, keep the higher version
-4. **Remove orphaned entries** — packages not referenced by any `.csproj` in the solution
-5. **Consistent formatting** — align `Version` attributes, consistent quote style, no trailing whitespace
+3. **Remove duplicate entries**: if the same package appears twice, keep the higher version
+4. **Remove orphaned entries**: packages not referenced by any `.csproj` in the solution
+5. **Consistent formatting**: align `Version` attributes, consistent quote style, no trailing whitespace
 
 ---
 
@@ -52,14 +52,14 @@ The overhaul may have fixed issues that originally motivated a suppression.
    - Grep for the pattern the rule detects
    - If the overhaul fixed all instances → **remove the suppression**
    - If instances remain but were intentionally deferred → **leave it** and add: `# Deferred: [finding ID]`
-3. Flag blanket category suppressions (`dotnet_analyzer_diagnostic.category-*.severity = none`) —
-   almost always too broad; replace with individual rule suppressions
-4. Remove duplicate rules (same ID with conflicting severity in different sections — keep most specific)
+3. Flag blanket category suppressions (`dotnet_analyzer_diagnostic.category-*.severity = none`):
+   almost always too broad. Replace with individual rule suppressions
+4. Remove duplicate rules (same ID with conflicting severity in different sections, keep most specific)
 
 **Child `.editorconfig` files (test projects):**
 These expected suppressions should NOT be removed:
 
-| Rule | Why it's suppressed in tests |
+| Rule | Why it is suppressed in tests |
 |------|------------------------------|
 | CA1707 | Underscores in test method names |
 | CA1515 | Public test classes (test runners require public) |
@@ -70,9 +70,9 @@ These expected suppressions should NOT be removed:
 | CA1034 | Nested public types for test organization |
 
 However, check test `.editorconfig` files for suppressions beyond this expected set:
-- Rules unrelated to test conventions — may be hiding real issues in test helper code
+- Rules unrelated to test conventions: may be hiding real issues in test helper code
 - Blanket `dotnet_analyzer_diagnostic.severity = none` in test projects (too broad)
-- Suppressions for rules the overhaul already fixed — remove if no longer needed
+- Suppressions for rules the overhaul already fixed, remove if no longer needed
 
 **Report changes:** List each suppression removed or narrowed with the reason.
 
@@ -81,8 +81,8 @@ However, check test `.editorconfig` files for suppressions beyond this expected 
 ## 8d. Verify Build
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/build.sh <solution> --json
+scripts/build.sh
 ```
 
-These are formatting-only changes — the build must still pass. If it doesn't, revert the specific
+These are formatting-only changes: the build must still pass. If it does not, revert the specific
 cleanup change that broke it and report the issue.

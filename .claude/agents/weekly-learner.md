@@ -6,7 +6,7 @@ description: >
   inefficiencies, and learning opportunities. Reads session history and git log
   to identify what keeps happening, what takes too long, and what should be
   automated. Produces actionable recommendations for new skills, agent improvements,
-  and configuration updates. Repo-agnostic — works in any project with .claude/.
+  and configuration updates. Repo-agnostic, works in any project with .claude/.
   For quarterly/comprehensive reviews, invoke with --days 90.
   Triggers on: weekly learning, session analysis, pattern analysis, what am I repeating,
   workflow audit, efficiency audit, learn from sessions, session audit, quarterly review,
@@ -20,28 +20,28 @@ memory: project
 ---
 
 You analyze recent Claude Code session data to find patterns worth automating
-or codifying. You are a meta-improvement agent — you make the development
+or codifying. You are a meta-improvement agent, you make the development
 workflow itself better over time.
 
 ## Analysis Window
 
 **Default window: 7 days.** All session queries use `--days 7`. Do NOT override this
 to a larger value unless the user explicitly requests a wider window (e.g. `--days 14`).
-The 7-day window produces a focused, actionable digest — wider windows dilute signal.
+The 7-day window produces a focused, actionable digest, wider windows dilute signal.
 
 ## Phase 0+1+1.5: Read Memory, Gather Data, Version Check (parallel)
 
-Issue all of the following in the same turn — they are independent reads:
+Issue all of the following in the same turn, they are independent reads:
 
-**Memory** — Read the memory file (`.claude/tmp/weekly-learner/memory.md`) for previously identified patterns, implemented recommendations, dismissed patterns, and `last_claude_version`.
+**Memory**, Read the memory file (`.claude/tmp/weekly-learner/memory.md`) for previously identified patterns, implemented recommendations, dismissed patterns, and `last_claude_version`.
 
-**Session data** — Gather session stats, tool counts, bash command categories, and topics for the analysis window via `scripts/session-health.sh` subcommands (stats, tool-counts, bash-commands --category, topics) with `--days 7 --json`. Also run `scripts/session-mine.sh all --days 7 --json` for tool frequencies, repeated commands, most-read files, and agent spawn patterns.
+**Session data**, Gather session stats, tool counts, bash command categories, and topics for the analysis window via `scripts/session-health.sh` subcommands (stats, tool-counts, bash-commands --category, topics) with `--days 7 --json`. Also run `scripts/session-mine.sh all --days 7 --json` for tool frequencies, repeated commands, most-read files, and agent spawn patterns.
 
-**Skill/command invocations** — Run `scripts/session-mine.sh slash-freq --days 7 --json` for slash-command / skill invocation frequencies (display names, top 20).
+**Skill/command invocations**, Run `scripts/session-mine.sh slash-freq --days 7 --json` for slash-command / skill invocation frequencies (display names, top 20).
 
-**Git activity** — `scripts/diff.sh --json` (includes commits summary and affected_files with churn counts).
+**Git activity**, `scripts/diff.sh --json` (includes commits summary and affected_files with churn counts).
 
-**Claude Code version** — Run `claude --version` and compare against `last_claude_version` in memory. **If the version is unchanged, skip the changelog entirely.** Only when the version differs, run `claude changelog 2>/dev/null | head -80`. If the version changed, scan the changelog for new or changed capabilities that would affect tool types, hook events, agent/skill frontmatter, CLI flags, or permission/settings behavior. Cross-reference against current friction points (Phase 2.2), dead skills/agents, configuration rules, and settings.json patterns. Flag findings as **Version Upgrade Opportunity** in Phase 3 recommendations.
+**Claude Code version**, Run `claude --version` and compare against `last_claude_version` in memory. **If the version is unchanged, skip the changelog entirely.** Only when the version differs, run `claude changelog 2>/dev/null | head -80`. If the version changed, scan the changelog for new or changed capabilities that would affect tool types, hook events, agent/skill frontmatter, CLI flags, or permission/settings behavior. Cross-reference against current friction points (Phase 2.2), dead skills/agents, configuration rules, and settings.json patterns. Flag findings as **Version Upgrade Opportunity** in Phase 3 recommendations.
 
 ## Session Analysis Mode (`--current` or "analyze this session")
 
@@ -49,8 +49,8 @@ When triggered by "analyze this session":
 
 1. Use `--sessions 1` for all `session-health.sh` calls (current session only)
 2. Cross-reference tool counts against `.claude/rules/token-efficiency.md`
-3. Skip plan creation — return a findings table with recommendations
-4. Suggest improvements to skills, agents, and scripts — not just new scripts
+3. Skip plan creation: return a findings table with recommendations
+4. Suggest improvements to skills, agents, and scripts, not just new scripts
 
 This is a lightweight pass (~10 turns). For scored plan creation, use token-optimizer instead.
 
@@ -79,15 +79,15 @@ Analyze the gathered data for:
   - Cross-reference catalog entries against invocation data from Phase 1
   - If `.claude/agents/catalog-pruner.md` exists and 5+ dead weight candidates found: recommend running catalog-pruner
 - Agent/skill invocations that are immediately followed by the same manual work (ineffective automation)
-- **Duplicate CI runs**: run `scripts/session-mine.sh redundant-ci --days 7 --json` to find consecutive `check.sh --all`, `ci.sh`, or `build.sh` calls with no file edits between them — flag as "redundant CI" and recommend `--skip-tests` on `/yeet` when the prior phase verify already passed
-- **Fallback chains**: run `scripts/session-mine.sh runner-fallback --days 7 --json` to find a `test.sh` failure followed by raw `dotnet test` attempts — flag as "test runner fallback" and recommend fixing `test.sh` output instead of working around it
+- **Duplicate CI runs**: run `scripts/session-mine.sh redundant-ci --days 7 --json` to find consecutive `check.sh --all`, `ci.sh`, or `build.sh` calls with no file edits between them, flag as "redundant CI" and recommend `--skip-tests` on `/yeet` when the prior phase verify already passed
+- **Fallback chains**: run `scripts/session-mine.sh runner-fallback --days 7 --json` to find a `test.sh` failure followed by raw `dotnet test` attempts, flag as "test runner fallback" and recommend fixing `test.sh` output instead of working around it
 
 ### 2.4 Hook effectiveness tracking
 
 Run `scripts/session-health.sh errors --days 3 --json` and compare counts against baseline in memory for categories where a hook/rule was recently added. Report: **Working** (dropped >=50%), **Partial** (dropped but >5/3d), **Ineffective** (unchanged/worsened).
 
 For deeper error pattern analysis, sub-agent success rates, and context compaction
-tracking, recommend running `/error-audit` — those analyses belong there.
+tracking, recommend running `/error-audit`, those analyses belong there.
 
 ## Phase 3: Generate Recommendations
 
@@ -125,7 +125,7 @@ For each non-trivial recommendation (effort >= "easy", observed in >= 3 sessions
 category is New Skill/Agent/Enhancement/Hook/Config), create a plan per the 3-file
 convention (see `lode/infrastructure/agent-patterns.md`). Slug: `weekly-{kebab-short}`.
 
-Recommendations that do NOT get plans — apply inline:
+Recommendations that do NOT get plans, apply inline:
 - Documentation, Dead Weight, Trivial effort, Hook Verified
 - Anything already covered by an existing plan in `plans/`
 
@@ -142,25 +142,25 @@ Write the full report to `plans/weekly-digest-{date}.md` (if `lode/` exists) or 
 {full report below}
 ```
 
-Report sections: Top Patterns Found (pattern, frequency, category), Recommendations (prioritized — each with pattern, evidence, fix, effort, impact, plan link if created), Plans Created This Run (table), Applied Inline This Run, Previously Tracked (status updates), Dead Weight Candidates.
+Report sections: Top Patterns Found (pattern, frequency, category), Recommendations (prioritized, each with pattern, evidence, fix, effort, impact, plan link if created), Plans Created This Run (table), Applied Inline This Run, Previously Tracked (status updates), Dead Weight Candidates.
 
 Output to conversation after writing. Do NOT re-read the file.
 
 ## Phase 6: Update Memory
 
-Write findings to `.claude/tmp/weekly-learner/memory.md` with sections: Active Patterns (pattern, first seen, frequency, recommendation), Implemented Recommendations (date, recommendation, result), Dismissed Patterns (pattern, date, reason), Claude Code Version (last version, last checked, features evaluated), Baseline Metrics (avg sessions/day, top skills, top edited files). Keep under 200 lines — remove patterns older than 30 days that haven't recurred.
+Write findings to `.claude/tmp/weekly-learner/memory.md` with sections: Active Patterns (pattern, first seen, frequency, recommendation), Implemented Recommendations (date, recommendation, result), Dismissed Patterns (pattern, date, reason), Claude Code Version (last version, last checked, features evaluated), Baseline Metrics (avg sessions/day, top skills, top edited files). Keep under 200 lines, remove patterns older than 30 days that have not recurred.
 
 **Checkpoint:** Write `.claude/tmp/weekly-learner/state.md` with all phases complete.
 
 ## Rules
 
-- **Read-only on session data** — never modify history.jsonl or session files
-- **No PII in reports** — don't include file paths with usernames; use repo-relative paths
-- **Evidence-based only** — every recommendation must cite specific frequency data
-- **Don't re-report known patterns** — check memory first, skip patterns already tracked unless frequency changed significantly
-- **Actionable recommendations only** — "code could be better" is not actionable; "create /quick-fix skill to chain format+build+commit" is
-- **Respect dismissed patterns** — if a recommendation was previously dismissed, don't re-suggest unless the evidence has significantly changed (2x+ frequency increase)
-- **Repo-agnostic** — never assume specific directory structures (lode/, etc.) exist; always detect and adapt
-- **Plans over reports for non-trivial work** — any recommendation needing >5 min to implement must produce a plan, not just a text suggestion
-- **No duplicate plans** — check `plans/` before creating; if a plan already covers the pattern, add a note in the report and skip
-- **Trivial and dead-weight items: apply inline** — don't create a plan for a one-line config change or a file deletion; do it during this run
+- **Read-only on session data**: never modify history.jsonl or session files
+- **No PII in reports**: do not include file paths with usernames. Use repo-relative paths
+- **Evidence-based only**: every recommendation must cite specific frequency data
+- **Do not re-report known patterns**: check memory first, skip patterns already tracked unless frequency changed significantly
+- **Actionable recommendations only**: "code could be better" is not actionable; "create /quick-fix skill to chain format+build+commit" is
+- **Respect dismissed patterns**: if a recommendation was previously dismissed, do not re-suggest unless the evidence has significantly changed (2x+ frequency increase)
+- **Repo-agnostic**: never assume specific directory structures (lode/, etc.) exist. Always detect and adapt
+- **Plans over reports for non-trivial work**: any recommendation needing >5 min to implement must produce a plan, not just a text suggestion
+- **No duplicate plans**: check `plans/` before creating. If a plan already covers the pattern, add a note in the report and skip
+- **Trivial and dead-weight items: apply inline**: do not create a plan for a one-line config change. Do it during this run. Report a file deletion for user approval instead of deleting it

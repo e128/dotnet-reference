@@ -16,7 +16,7 @@ Count the approved findings. This file is the single source of truth for resumpt
 
 Fewer than 8 findings: skip plan creation and execute directly from `approved-step{N}.md`.
 
-8 or more findings — **if dev-planning is available**, create a structured plan:
+8 or more findings: **if dev-planning is available**, create a structured plan:
 ```
 plans/overhaul-step{N}-{name}/
 ├── overhaul-step{N}-{name}-plan.md     ← approved findings as tasks (file:line + fix)
@@ -28,17 +28,17 @@ plans/overhaul-step{N}-{name}/
 
 **2. Execute all phases immediately:**
 1. For each approved finding: Read → apply minimal fix → Edit
-2. **Spawn `build-validator` agent** — do not run `dotnet build` or `dotnet test` directly in main context; use the agent which returns only errors, warnings, and test failures
-3. Mark tasks complete as you go; update context.md with final state
+2. **Spawn `build-validator` agent**: do not run `dotnet build` or `dotnet test` directly in main context. Use the agent which returns only errors, warnings, and test failures
+3. Mark tasks complete as you go. Update context.md with final state
 
 **3. Report and continue:** Findings fixed / build result / test count vs baseline.
 Fix any failures before proceeding to the next step.
 
 **Fix rules:**
-- Fix only what's approved — don't refactor surrounding code
-- One logical change per finding; if a fix introduces a new warning, fix it too
+- Fix only what is approved: do not refactor surrounding code
+- One logical change per finding. If a fix introduces a new warning, fix it too
 - No git commits or pushes until Step 10
-- **Tests:** Only change existing tests for refactoring reasons (renamed method, moved class, changed signature). Never change assertions to make a failing test pass — if a test fails, the production fix is wrong
+- **Tests:** Only change existing tests for refactoring reasons (renamed method, moved class, changed signature). Never change assertions to make a failing test pass, if a test fails, the production fix is wrong
 - **New tests:** Must be in the CI category so they appear in `--filter-trait "Category=CI"` runs
 - **Unsure?** Ask `sme-researcher` before applying a fix
 
@@ -46,8 +46,8 @@ Fix any failures before proceeding to the next step.
 
 | Prefix | Step |
 |--------|------|
-| `MI` | Modernize — Infrastructure (Step 3) |
-| `M` | Modernize — Language (Step 3) |
+| `MI` | Modernize: Infrastructure (Step 3)  |
+| `M` | Modernize: Language (Step 3)  |
 | `CC` | Cross-cutting (Step 4) |
 | `P` | Performance (Step 5) |
 | `T` | Concurrency/Threading (Step 6) |

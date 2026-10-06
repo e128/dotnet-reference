@@ -12,10 +12,10 @@
 
 ## Notes
 
-- Agents are discovered **dynamically** every run — no hardcoded list
+- Agents are discovered **dynamically** every run: no hardcoded list
 - Report is grouped by **severity**, not by agent
 - Exit codes enable CI integration (block merge on CRITICAL findings)
 
 ### Known Exceptions (codebase-specific)
 
-See [known-exceptions.md](known-exceptions.md) for the full list of legitimate patterns that should not be flagged. Includes test conventions, threat model exceptions, sanitizer TextContent/DOM rules, and severity calibration rules.
+See [known-exceptions.md](../../review-apply/references/known-exceptions.md) for the full list of legitimate patterns that should not be flagged. Includes test conventions and Roslyn navigator expectations.

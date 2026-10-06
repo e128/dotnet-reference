@@ -1,4 +1,4 @@
-# Performance Review — Grep Patterns & Checklist
+# Performance Review: Grep Patterns & Checklist
 
 Reference file for Step 5 of dotnet-overhaul. Contains anti-pattern grep patterns
 and analysis checklist previously embedded in the `dotnet-performance-analyst` agent.
@@ -69,6 +69,6 @@ that should not be flagged.
 
 ### Common anti-patterns to flag
 
-- `File.ReadAllBytesAsync` on files that may exceed 10 MB — LOH pressure
-- `Path.GetFullPath(directoryInfo.FullName)` — redundant; `DirectoryInfo.FullName` is already normalized
-- `FileInfo(resolvedPath)` constructed just to call `.Length` when already expensive — prefer caching
+- `File.ReadAllBytesAsync` on files that may exceed 10 MB, LOH pressure
+- `Path.GetFullPath(directoryInfo.FullName)`: redundant, `DirectoryInfo.FullName` is already normalized
+- `FileInfo(resolvedPath)` constructed just to call `.Length` when already expensive, prefer caching

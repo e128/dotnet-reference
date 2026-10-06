@@ -1,7 +1,7 @@
 ---
 name: yeet
 description: >
-  Ship it — formats, builds, tests, commits, and pushes.
+  Ship it, formats, builds, tests, commits, and pushes.
   Accepts --skip-tests flag to skip build+test when caller already verified them.
   Triggers on: ship it, yeet, push it, commit and push, deploy this, we're done,
   preflight, preflight check, quality check, pre-commit check, ready to commit.
@@ -14,11 +14,11 @@ Ship it. Quality gate + commit + push in one autonomous pass.
 
 ## Modes
 
-| Invocation            | Behavior                                        |
-| --------------------- | ----------------------------------------------- |
-| `/yeet`               | Full: PII + format + build+test + commit + push |
-| `/yeet --skip-tests`  | Fast path: PII + format only; skips build+test  |
-| `/yeet --dry-run`     | Quality gate only — no commit or push           |
+| Invocation           | Behavior                                        |
+| -------------------- | ----------------------------------------------- |
+| `/yeet`              | Full: PII + format + build+test + commit + push |
+| `/yeet --skip-tests` | Fast path: PII + format only. Skips build+test  |
+| `/yeet --dry-run`    | Quality gate only: no commit or push            |
 
 `--dry-run` replaces the retired `/preflight` skill.
 
@@ -35,13 +35,13 @@ C) scripts/branch.sh --json               (branch info, ahead/unpushed counts)
 ```
 
 **Read directly from `status.sh --classify --json` (B):** it emits
-`{classification, cs_changed, analyzers_or_scripts_changed}` — no manual derivation.
+`{classification, cs_changed, analyzers_or_scripts_changed}`: no manual derivation.
 - `classification` is one of `clean` / `docs-only` / `code` / `mixed`
 - `analyzers_or_scripts_changed` is already computed (any changed path under `src/*Analyzers*/` or `scripts/`)
 
 **Then:**
-- If `cs_changed == 0` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "No .cs files changed — skipping build+test". Build+test covers .NET only, so any change set with zero `.cs` files (docs, config, scripts, lode) cannot change its outcome. Classification alone is not the trigger: a `mixed` set with no `.cs` files still skips.
-- Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B); `ahead`, `unpushed`, `upstream` (from C, `scripts/branch.sh`); `has_changes` (from A)
+- If `cs_changed == 0` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "No .cs files changed, skipping build+test". Build+test covers .NET only, so any change set with zero `.cs` files (docs, config, scripts, lode) cannot change its outcome. Classification alone is not the trigger: a `mixed` set with no `.cs` files still skips.
+- Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B), `ahead`, `unpushed`, `upstream` (from C, `scripts/branch.sh`), `has_changes` (from A: `staged + unstaged + untracked > 0`)
 
 **`unpushed` (from C) is not optional to check.** A branch can have a clean working tree and still carry local commits the remote has never seen (no upstream configured, or commits made after the last push). `unpushed > 0` always means step 2's push (and PR creation) must run, even when there is nothing new to commit.
 
@@ -52,29 +52,30 @@ Only if `cs_changed > 0`:
 ```bash
 scripts/format.sh --changed
 ```
-Skip with "Format skipped — no .cs files changed" if zero. Scoped to changed files only — a full-solution format pass (unscoped `scripts/format.sh`) picks up jb-cleanup findings in unrelated files never touched by this change and turns an unrelated pre-existing warning into a blocked ship. Full-solution format is a deliberate, separate action, not part of every yeet.
+Skip with "Format skipped: no .cs files changed" if zero. Scoped to changed files only, a full-solution format pass (unscoped `scripts/format.sh`) picks up jb-cleanup findings in unrelated files never touched by this change and turns an unrelated pre-existing warning into a blocked ship. Full-solution format is a deliberate, separate action, not part of every yeet.
 
 If format produces changes and the working tree was previously clean, those changes become the commit.
 
 After format, re-check working tree state. If still no changes (format found nothing, and `has_changes` was false):
-- If `unpushed == 0` → "Nothing to yeet — working tree is clean, nothing unpushed." **Stop.**
-- If `unpushed > 0` → there's nothing new to stage, but the unpushed commits themselves can contain `.cs`/analyzer/script changes the remote has never been checked against — a clean working tree does NOT mean "nothing to verify." Re-derive `cs_changed`/`analyzers_or_scripts_changed` from `scripts/branch.sh --files` (diff against `main`, not the working tree) and run steps B/C/D below against that file list before continuing to step 2's **push-only path**.
+- If `unpushed == 0` → "Nothing to yeet: working tree is clean, nothing unpushed." **Stop.**
+- If `unpushed > 0` → there is nothing new to stage, but the unpushed commits themselves can contain `.cs`/analyzer/script changes the remote has never been checked against, a clean working tree does NOT mean "nothing to verify." Re-derive `cs_changed`/`analyzers_or_scripts_changed` from `scripts/branch.sh --files` (diff against `main`, not the working tree) and run step B below against that file list before continuing to step 2's **push-only path**. Do not run steps C, D, or E here: they edit files, and a clean tree has no commit to hold those edits. Run `scripts/internal/analyzer-release-check.sh --json` read-only. If it reports issues, stop and tell the user.
 
 **B) Build + test (conditional):**
 Skip if `--skip-tests` (explicit, or auto-enabled because `cs_changed == 0`).
 ```bash
-scripts/check.sh --no-format --all
+scripts/check.sh --all
 ```
+Step A already formatted the changed files, so the format check inside `check.sh` passes. Never pass `--no-format` (`.claude/rules/quality-gates.md`).
 If exit code is non-zero → **stop and report failures.**
 
 **C) Analyzer release files (conditional):**
-Only if the repo has a Roslyn analyzer project (a `src/*Analyzers*/` project) AND any staged or unstaged `.cs` file changes under it. Resolve the analyzer project name from the changed path (or `scripts/solution-inventory.sh --json`); call it `<AnalyzerProject>` below. Skip this whole step if no analyzer project exists.
+Only if the repo has a Roslyn analyzer project (a `src/*Analyzers*/` project) AND any staged or unstaged `.cs` file changes under it. Resolve the analyzer project name from the changed path (or `scripts/solution-inventory.sh --json`). Call it `<AnalyzerProject>` below. Skip this whole step if no analyzer project exists.
 
 **C.1) Version bump:**
 ```bash
 scripts/internal/version-bump.sh <AnalyzerProject>
 ```
-This increments the `<Version>` in the analyzer csproj so the NuGet package ships with a new version. Skip with "Analyzer version bump skipped — no analyzer source changes" if no `.cs` files changed.
+This increments the `<Version>` in the analyzer csproj so the NuGet package ships with a new version. Skip with "Analyzer version bump skipped, no analyzer source changes" if no `.cs` files changed.
 
 If the version was bumped, re-read the csproj before any subsequent edits.
 
@@ -103,7 +104,7 @@ Agent(subagent_type="readme-auditor",
 
 If the agent produces edits, they become part of this commit. No separate commit.
 
-Skip with "README check skipped — no analyzer or script changes" if neither path is touched.
+Skip with "README check skipped: no analyzer or script changes" if neither path is touched.
 
 **E) opencode agent mirror (conditional):**
 Only if any staged or unstaged changes touch `.claude/agents/` OR `.opencode/agents/`:
@@ -115,61 +116,61 @@ scripts/internal/opencode-agents.sh sync --json
 This regenerates the `.opencode/agents/` mirror from the source definitions in
 `.claude/agents/` so both harnesses run the same agents. Report the generated count.
 The regenerated files become part of this commit. Never hand-edit files under
-`.opencode/agents/`; edit `.claude/agents/` and let the script regenerate.
+`.opencode/agents/`. Edit `.claude/agents/` and let the script regenerate.
 
-Skip with "Agent mirror skipped — no agent definition changes" when neither path is touched.
+Skip with "Agent mirror skipped: no agent definition changes" when neither path is touched.
 
-**If `--dry-run`**: report quality gate results and **stop here.** Do not continue to step 2.
+**If `--dry-run`**: nothing may write a file. Use `scripts/format.sh --check` in step A. Skip C.1 (version bump), D (README edits), and E (mirror sync). Run C.2 read-only and report each issue as "would fix". Run `scripts/internal/opencode-agents.sh check` for E. Report the gate results and **stop here.** Do not continue to step 2.
 
 ### 2. Stage + commit + push
 
-**Push-only path** — no working-tree changes (`has_changes` false and format made none) but `unpushed > 0`:
-- `ahead <= 1`: nothing to stage or squash — the single existing commit is already push-ready. Skip straight to **Push** and **Create PR** below.
-- `ahead > 1`: the "single commit per push" rule still applies even with no new changes — squash the existing unpushed commits into one before pushing. Run `git reset --soft $(git merge-base main HEAD)`, then re-stage everything (`scripts/internal/stage.sh --include-new`), run the PII scan, craft a commit message from the full squashed diff, and commit — same as the squash sub-step in the normal path below — then continue to **Push** and **Create PR**.
+**Push-only path**: no working-tree changes (`has_changes` false and format made none) but `unpushed > 0`:
+- `ahead <= 1`: nothing to stage or squash, the single existing commit is already push-ready. Skip straight to **Push** and **Create PR** below.
+- `unpushed > 1`: the "single commit per push" rule still applies even with no new changes, squash the unpushed commits into one before pushing. Run `git reset --soft HEAD~<unpushed>`, which leaves commits the remote already has untouched. Then re-stage everything (`scripts/internal/stage.sh --include-new`), run the PII scan, craft a commit message from the full squashed diff, and commit, same as the squash sub-step in the normal path below, then continue to **Push** and **Create PR**.
 
-**Normal path** — there are new working-tree changes to commit:
-- **Stage** — `scripts/internal/stage.sh --include-new` (stages all modified tracked + new untracked, excluding secrets)
-- **PII scan** — `scripts/internal/precommit.sh` (checks staged diff for home paths and email addresses; stop if fail)
+**Normal path**: there are new working-tree changes to commit:
+- **Stage**: `scripts/internal/stage.sh --include-new` (stages all modified tracked + new untracked, excluding secrets)
+- **PII scan**: `scripts/internal/precommit.sh` (checks staged diff for home paths and email addresses, stop if fail)
 - If lode files staged, show brief summary table (path + one-line change description)
-- **Squash** — use `ahead` from cached step 0:
-    - `ahead > 1`: `git reset --soft $(git merge-base main HEAD)` then re-stage and commit as one
+- **Squash**: use `unpushed` from cached step 0:
+    - `unpushed > 1`: `git reset --soft HEAD~<unpushed>` then re-stage and commit as one
     - 1 or 0: proceed normally
-- **Craft commit message** — always generate a fresh message from the actual diff, never reuse a prior commit message:
+- **Craft commit message**: always generate a fresh message from the actual diff, never reuse a prior commit message:
     - Run `scripts/diff.sh --staged --json` to inspect staged stats
     - Synthesize a **conventional commit** summary: `type(scope): imperative summary` covering the full changeset
     - If the branch had multiple distinct concerns, name both in the subject or use a multi-line body
-    - Subject line must be <=72 chars; use a body for detail when > 1 major concern
-    - Never truncate the subject — if the auto-generated one ends in `...`, it is wrong
-    - **No email addresses** — never put an email in the message or any trailer; `commit.sh` rejects it
-- **Commit** — `scripts/internal/commit.sh --skip-precommit "message"` (precommit already ran above)
+    - Subject line must be <=72 chars. Use a body for detail when > 1 major concern
+    - Never truncate the subject: if the auto-generated one ends in `...`, it is wrong
+    - **No email addresses**: never put an email in the message or any trailer, `commit.sh` rejects it
+- **Commit**: `scripts/internal/commit.sh --skip-precommit "message"` (precommit already ran above)
 
 **Both paths converge here:**
-- **Push** — `git push` (with `-u origin <branch>` if no upstream set). This step is mandatory whenever `unpushed > 0`, whether or not a new commit was just made.
-- **Create PR** — if the current branch is not `main`, create a pull request:
+- **Push**: `git push` (with `-u origin <branch>` if no upstream set). This step is mandatory whenever `unpushed > 0`, whether or not a new commit was just made.
+- **Create PR**: if the current branch is not `main`, create a pull request:
   ```bash
   gh pr create --title "<commit subject line>" --body "<body>"
   ```
     - Title: reuse the commit subject line (the `type(scope): summary` part)
-    - Body: generate a `## Summary` with 1-3 bullet points covering the changeset, a `## Test plan` with bulleted checklist, and the Claude Code footer — never include an email address anywhere in the body
+    - Body: generate a `## Summary` with 1-3 bullet points covering the changeset, a `## Test plan` with bulleted checklist, and the Claude Code footer, never include an email address anywhere in the body
     - If a PR already exists for this branch, skip PR creation silently
     - Report the PR URL at the end
 
 ## Rules
 
-- **All pending changes ship together** — never unstage, cherry-pick, or exclude files from the commit. Everything in the working tree goes into one commit. Do not ask whether to include specific files.
-- **Fully autonomous** — no user prompts during execution
-- **Stop on failure** — PII fail, build fail, or test fail halts the pipeline
-- **No email addresses** — never in a commit message, trailer, or PR body. The PII scan blocks real emails in the staged diff and `commit.sh` rejects an email in the message; `user@example.com` placeholders are allowed
-- **Single commit per push** — squash local commits when `ahead > 1`
-- **Unpushed local commits always ship** — a clean working tree is not a reason to stop if `unpushed > 0`. Check `scripts/branch.sh --json` unconditionally; never rely on working-tree state alone to decide whether a push is needed.
-- **Do NOT auto-commit or push again** after completing these steps — one-time action
-- **`--dry-run` stops after step 1** — quality check only, no side effects
-- **Format is scoped to changed files** — `scripts/format.sh --changed` runs only when `.cs` files changed; skipped on docs-only/config-only changes.
-- **Re-read gate** — if format ran (step 1A), all `.cs` file contents are stale. Do NOT Edit any `.cs` file after step 1 without re-reading first.
+- **All pending changes ship together**: never unstage, cherry-pick, or exclude files from the commit. Everything in the working tree goes into one commit. Do not ask whether to include specific files.
+- **Fully autonomous**: no user prompts during execution. Invoking `/yeet` is the user's approval for the push and the PR (`.claude/rules/auto-approvals.md`).
+- **Stop on failure**: PII fail, build fail, or test fail halts the pipeline
+- **No email addresses**: never in a commit message, trailer, or PR body. The PII scan blocks real emails in the staged diff and `commit.sh` rejects an email in the message, `user@example.com` placeholders are allowed
+- **Single commit per push**: squash local commits when `ahead > 1`
+- **Unpushed local commits always ship**: a clean working tree is not a reason to stop if `unpushed > 0`. Check `scripts/branch.sh --json` unconditionally. Never rely on working-tree state alone to decide whether a push is needed.
+- **Do NOT auto-commit or push again** after completing these steps, one-time action
+- **`--dry-run` stops after step 1**: quality check only, no file writes
+- **Format is scoped to changed files**: `scripts/format.sh --changed` runs only when `.cs` files changed. Skipped on docs-only/config-only changes.
+- **Re-read gate**: if format ran (step 1A), all `.cs` file contents are stale. Do NOT Edit any `.cs` file after step 1 without re-reading first.
 
 ## Troubleshooting
 
-- **PII scan finds home directory paths** — replace with relative paths or env-var substitution
-- **Format changes files unexpectedly** — expected after editorconfig updates; review diff, re-run build
-- **Build passes but tests fail** — do not commit; fix tests first
-- **Full-solution format/jb-cleanup needed** — run `scripts/format.sh` (unscoped) manually as a separate action; not part of yeet
+- **PII scan finds home directory paths**: replace with relative paths or env-var substitution
+- **Format changes files unexpectedly**: expected after editorconfig updates. Review diff, re-run build
+- **Build passes but tests fail**: do not commit. Fix tests first
+- **Full-solution format/jb-cleanup needed**: run `scripts/format.sh` (unscoped) manually as a separate action. Not part of yeet

@@ -8,12 +8,12 @@ argument-hint: "[--full] [days N | commits N] [--perf] [--test-quality] [dry run
 user-invocable: true
 ---
 
-# Review — Local Mode
+# Review: Local Mode
 
 Comprehensive code review using orchestrated agents. Discovers changed .NET files from git history, dynamically identifies code review agents, runs them in parallel, and produces a consolidated report grouped by severity.
 
 **Standard mode (default):** Day-to-day review, fast turnaround, diff-scoped agent review only.
-**Full mode (`--full`):** Pre-ship review, maximum coverage — adds solution-wide Roslyn semantic analysis (antipatterns + circular dependencies).
+**Full mode (`--full`):** Pre-ship review, maximum coverage, adds solution-wide Roslyn semantic analysis (antipatterns + circular dependencies).
 
 ## Usage
 
@@ -30,8 +30,8 @@ critical only                 # Filter to CRITICAL
 
 | Pattern in user message          | Scope                                           |
 |----------------------------------|-------------------------------------------------|
-| `days N` / `last N days`         | `scripts/diff.sh --json` (days-scoped)          |
-| `commits N` / `last N commits`   | `scripts/diff.sh --json` (commit-range)         |
+| `days N` / `last N days`         | `scripts/diff.sh --days N --files`              |
+| `commits N` / `last N commits`   | `scripts/diff.sh --commits N --files`           |
 | `dry run` / `preview`            | Discovery only, no agents                       |
 | `critical only` / `high+`        | Filter report by min severity                   |
 | `--perf`                         | Spawn a performance-focused review agent on diff scope |
@@ -49,26 +49,26 @@ If no scope is provided, ask for one.
 
 ### Phase 1: Discovery
 
-Run in parallel — no ordering dependency:
+Run in parallel: no ordering dependency:
 - Parse arguments from user input
-- Gather change context: `scripts/diff.sh --json`
-- Discover agents dynamically: read `.claude/agents/`; filter to code-review-relevant agents (include: code, review, check, fix, validate, compliance, security, quality, refactor, build, test, warning, diagnostic, concurrency, performance — exclude: pipeline, sanitizer, lode, corpus, mhtml, markdown, web, fetch, download)
+- Gather change context: `scripts/diff.sh --json`, with `--days N` or `--commits N` when the scope names one
+- Discover agents dynamically: read `.claude/agents/`. Filter to code-review-relevant agents (include: code, review, check, fix, validate, compliance, security, quality, refactor, build, test, warning, diagnostic, concurrency, performance, exclude: pipeline, sanitizer, lode, corpus, mhtml, markdown, web, fetch, download)
 
-From diff: filter to .NET files; classify each changed file with `scripts/internal/mechanical-diff.sh --json` — files marked `MECHANICAL` (every changed token is a pure namespace-prefix substitution) are excluded from deep review; generate unified diff. Pick per-agent-slice diff delivery with `scripts/internal/cr-diff-deliver.sh <difffile>` — it emits `inline` / `write <path>` / `split <paths…>` by the 30KB/40KB thresholds (writing to `.claude/tmp/cr-<name>.diff` or splitting at file boundaries). Clean up `.claude/tmp/cr-*.diff` after completion.
+From diff: filter to .NET files. Classify each changed file with `scripts/internal/mechanical-diff.sh --json`, files marked `MECHANICAL` (every changed token is a pure namespace-prefix substitution) are excluded from deep review. Generate unified diff. Pick per-agent-slice diff delivery with `scripts/internal/cr-diff-deliver.sh <difffile>`, it emits `inline` / `write <path>` / `split <paths…>` by the 30KB/40KB thresholds (writing to `.claude/tmp/cr-<name>.diff` or splitting at file boundaries). Clean up `.claude/tmp/cr-*.diff` after completion.
 
 ### Phase 2: Execution
 
 **Vector 1: Code-Review Agents (always runs)**
-Spawn agents in parallel — pass each the unified diff and severity rules. Include: "Review only the diff provided. Flag pre-existing concerns as 'adjacent concern' without investigating." Handle timeouts/errors gracefully.
+Spawn agents in parallel: pass each the unified diff and severity rules. Include: "Review only the diff provided. Flag pre-existing concerns as 'adjacent concern' without investigating." Handle timeouts/errors gracefully.
 
 **Vector 2: Roslyn Navigator (--full only)**
 Run MCP calls in main context (session-only):
 1. `mcp__cwm-roslyn-navigator__detect_antipatterns` with the solution file
 2. `mcp__cwm-roslyn-navigator__detect_circular_dependencies` with the solution file
 
-Severity mapping: Circular (cross-project) → HIGH; Circular (namespace) → MEDIUM; Antipatterns → MEDIUM; Generated code → SKIP; Informational → LOW.
+Severity mapping: Circular (cross-project) → HIGH, Circular (namespace) → MEDIUM, Antipatterns → MEDIUM, Generated code → SKIP, Informational → LOW.
 
-Graceful degradation: if MCP unavailable, note "Roslyn navigator: MCP server not running — skipped".
+Graceful degradation: if MCP unavailable, note "Roslyn navigator: MCP server not running, skipped".
 
 ### Phase 3: Plan Generation
 

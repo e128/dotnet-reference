@@ -1,12 +1,12 @@
 # Step 3: Modernize
 
-Two areas: **Project Infrastructure** and **Language Usage**. Launch all 6 agents in a single parallel message — infrastructure and language analysis are independent reads and have no data dependencies between them.
+Two areas: **Project Infrastructure** and **Language Usage**. Launch all 6 agents in a single parallel message, infrastructure and language analysis are independent reads and have no data dependencies between them.
 
 ---
 
 ## Project Infrastructure
 
-**Agent 0 — TFM & packages:**
+**Agent 0 (TFM & packages):**
 ```
 FIRST: check if project targets latest stable .NET:
 - Run `dotnet --list-sdks` and `dotnet --list-runtimes`.
@@ -38,7 +38,7 @@ Packages requiring migration (not just removal):
   WindowsAzure.Storage → Azure.Storage.* (check sme-researcher for current replacement)
 ```
 
-**Agent 0b — Dockerfile review:**
+**Agent 0b (Dockerfile review):**
 ```
 Glob for all Dockerfiles: **/Dockerfile*, **/docker-compose*.yml
 
@@ -79,10 +79,10 @@ For each Dockerfile:
 - INFO: Intentionally pinned packages or justified Dockerfile divergences
 
 **Package rules:**
-- For major version bumps: accumulate all of them, then send a **single batched `sme-researcher` query** — "Check breaking changes for: PackageA v2→v3, PackageB v6→v7, ..." — rather than one call per package
-- `dotnet build` after package updates; regenerate lock files if present (`--force-evaluate`)
+- For major version bumps: accumulate all of them, then send a **single batched `sme-researcher` query**, "Check breaking changes for: PackageA v2→v3, PackageB v6→v7, ...", rather than one call per package
+- `scripts/build.sh` after package updates. Regenerate lock files if present (`--force-evaluate`)
 - For deprecated packages, run `dotnet list <solution-file> package --include-transitive` after removal
-  to verify they weren't re-introduced by transitive dependencies
+  to verify they were not re-introduced by transitive dependencies
 
 ---
 
@@ -90,7 +90,7 @@ For each Dockerfile:
 
 Launch 5 `Explore` agents in parallel:
 
-**Agent 1 — Immutability conversions:**
+**Agent 1 (Immutability conversions):**
 ```
 Search for mutable types and collections that should be immutable:
 
@@ -120,14 +120,14 @@ Do NOT flag:
 - ViewModels/DTOs that frameworks mutate via reflection
 ```
 
-**Agent 2 — Primary constructors & expression bodies:**
+**Agent 2 (Primary constructors & expression bodies):**
 ```
 Search for classes with simple constructors that assign parameters to fields.
 Search for single-line method bodies that could use expression-bodied syntax.
 Search for `record` candidates not caught by Agent 1 (data types with value equality).
 ```
 
-**Agent 3 — Collection expressions & pattern matching:**
+**Agent 3 (Collection expressions & pattern matching):**
 ```
 Search for `new List<T> { ... }`, `new[] { ... }`, `Array.Empty<T>()` → collection expressions [].
 Search for `x == null` / `x != null` → `is null` / `is not null`.
@@ -135,7 +135,7 @@ Search for nested if/else chains → switch expressions or pattern matching.
 Search for `as` + null check → `is` pattern.
 ```
 
-**Agent 4 — Modern API replacements:**
+**Agent 4 (Modern API replacements):**
 ```
 Search for `String.IsNullOrEmpty` / `IsNullOrWhiteSpace` where `is [not] null or []` fits.
 Search for `.Count() == 0` / `.Count() > 0` / `.Any()` on types with `.Count` or `.Length`.
@@ -145,7 +145,7 @@ Search for `DateTime.Now` where `DateTime.UtcNow` or `TimeProvider` is more corr
 Search for `""` empty string literals → `string.Empty`.
 ```
 
-**Agent 5 — using/disposal, nullability & xUnit v3 migration:**
+**Agent 5 (using/disposal, nullability & xUnit v3 migration):**
 ```
 Search for `IDisposable`/`IAsyncDisposable` objects created without `using` statements.
 Search for `#nullable disable` or missing nullable annotations on public APIs.
@@ -173,6 +173,6 @@ Search for `IAsyncLifetime` implementations returning `Task` instead of `ValueTa
 - LOW: Pure style modernization (primary constructors, expression bodies, collection expressions)
 - INFO: Acknowledged intentional patterns
 
-**Package additions:** If immutability conversions require `System.Collections.Immutable` and it's not
+**Package additions:** If immutability conversions require `System.Collections.Immutable` and it is not
 already referenced, add it to `Directory.Packages.props` and the relevant `.csproj`. `FrozenSet<T>` and
 `FrozenDictionary<TK,TV>` are in-box for .NET 8+ (no additional package needed).

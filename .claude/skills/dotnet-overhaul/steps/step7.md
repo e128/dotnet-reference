@@ -6,7 +6,7 @@ Two parallel parts: code security (Explore agent with patterns) + supply chain (
 
 ## Code Security
 
-Launch an `Explore` agent (haiku) with patterns from `step7-patterns.md`:
+Launch an `Explore` agent with patterns from `step7-patterns.md`:
 
 ```
 Read ${CLAUDE_SKILL_DIR}/steps/step7-patterns.md for grep patterns and checklist.
@@ -31,7 +31,7 @@ XML processing, and error information disclosure. Maps all findings to CA rules.
 
 ## Supply Chain
 
-Launch a separate `Explore` agent (haiku) in parallel:
+Launch a separate `Explore` agent in parallel:
 
 ```
 Glob GitHub Actions workflow files: .github/workflows/*.yml, .github/workflows/*.yaml
@@ -80,15 +80,15 @@ Merge specialist output and supply chain results into one table. **ID prefix: `S
 | S3 | API key hardcoded in AppSettings.cs:12 (CA5390) | HIGH | Secrets |
 | S4 | Path.Combine with user input, no traversal check at ImportService.cs:78 (CA3003) | HIGH | Path traversal |
 | S5 | MD5 used for password hashing in IdentityManager.cs:33 (CA5351) | HIGH | Weak crypto |
-| S6 | `actions/checkout@v4` in ci.yml:12 — not pinned to commit SHA | HIGH | Supply chain |
-| S7 | `coverallsapp/github-action@v2` in ci.yml:45 — not pinned to commit SHA | HIGH | Supply chain |
+| S6 | `actions/checkout@v4` in ci.yml:12: not pinned to commit SHA  | HIGH | Supply chain |
+| S7 | `coverallsapp/github-action@v2` in ci.yml:45: not pinned to commit SHA  | HIGH | Supply chain |
 | S8 | Dockerfile FROM `dotnet/sdk:10.0` without digest pin | MEDIUM | Supply chain |
 
 **Severity:**
 - CRITICAL: Remote code execution, authentication bypass, data breach (specialist output)
-- HIGH: Exploitable under realistic conditions; GitHub Actions using mutable tags (supply chain)
-- MEDIUM: Defense-in-depth gap — overly permissive config, Dockerfile FROM without digest
-- LOW: Hardening opportunity — HTTP for internal calls, verbose error messages
+- HIGH: Exploitable under realistic conditions, GitHub Actions using mutable tags (supply chain)
+- MEDIUM: Defense-in-depth gap: overly permissive config, Dockerfile FROM without digest
+- LOW: Hardening opportunity: HTTP for internal calls, verbose error messages
 - INFO: Acknowledged risk with documented mitigation
 
 Present the merged table. Wait for approval. Then Fix Cycle.

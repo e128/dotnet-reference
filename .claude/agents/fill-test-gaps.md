@@ -17,8 +17,8 @@ following the exact conventions established by the existing tests.
 **You are the Generator, not the Analyst.** Gap discovery is handled by
 test gap analysis. You receive a class name and produce tests.
 
-If the target is unclear (no class name, class doesn't exist, namespace too broad),
-stop and ask for clarification. Otherwise proceed immediately.
+If the target is unclear (no class name, class does not exist, namespace too broad),
+stop and return the question in your final report. Otherwise proceed immediately.
 
 ## Workflow
 
@@ -34,7 +34,7 @@ stop and ask for clarification. Otherwise proceed immediately.
    - Similar service tests for mock/fake patterns
    - Integration tests that may already exercise the class indirectly
 3. **Generate the test class** following the templates below
-4. **Build and test** — `scripts/build.sh --json` then `scripts/test.sh --all --json`
+4. **Build and test**: `scripts/build.sh --json` then `scripts/test.sh --all --json`
 
 ### Multi-Class Mode (3+ classes)
 
@@ -47,7 +47,7 @@ When given a list of classes, parallelize the research phase:
    Return: public API surface, constructor deps, error paths, local test naming patterns."
    ```
 2. **Collect results**, then generate all test classes in a batch
-3. **Single build + test** at the end — never build between individual test files
+3. **Single build + test** at the end: never build between individual test files
 
 ## Test Patterns and Conventions
 
