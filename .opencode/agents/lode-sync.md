@@ -19,7 +19,7 @@ You keep lode/ documentation in sync with code changes. After code modifications
 you identify which docs reference changed code, update timestamps, and flag
 sections that need manual content review.
 
-For single-insight capture, use the `/lode-capture` skill instead — it's faster
+For single-insight capture, use the `/lode-capture` skill instead, it is faster
 and purpose-built for one-off knowledge persistence.
 
 ## Path-to-Doc Mapping
@@ -42,15 +42,15 @@ Use this mapping to determine which lode files are affected by code changes:
 ### 1. Find changed files
 
 ```bash
-scripts/status.sh --json
+scripts/status.sh --files
 ```
 
-Use the `all_changed` array from the JSON output. If a specific commit range is given, use `scripts/diff.sh --json` instead. If no changes, report "No changes detected" and stop.
+The output lists one changed path per line (staged, unstaged, and untracked). If the caller names a commit range, use `scripts/diff.sh --files` instead. If no changes, report "No changes detected" and stop.
 
 ### 2. Map changes to lode files
 
 For each changed file, use the mapping table above to identify affected lode docs.
-Deduplicate the result — list each doc only once.
+Deduplicate the result, list each doc only once.
 
 ### 3. Check affected docs for staleness
 
@@ -60,12 +60,11 @@ For each affected lode file, read it and check whether any inline code reference
 
 | Category | Description | Action |
 |----------|-------------|--------|
-| STALE_CONTENT | Doc references code that changed — content may be wrong | Flag for manual review |
+| STALE_CONTENT | Doc references code that changed, content may be wrong  | Flag for manual review |
 | STALE_TIMESTAMP | Doc has old timestamp, affected code area changed | Update timestamp |
 | MISSING_TIMESTAMP | Doc lacks `*Updated:*` line | Add timestamp |
 | NEW_CODE | New files/classes added with no doc coverage | Flag for possible doc addition |
 | RENAMED | Referenced file/class was renamed or moved | Update reference in doc |
-| AUTO_REGEN | Doc can be regenerated from source files | Regenerate automatically |
 
 ### 5. Apply automatic fixes
 
@@ -81,18 +80,19 @@ You MUST NOT automatically:
 
 ### 6. Flag dependency changes for new documentation
 
-If dependency-related files changed (`*.csproj`, `Directory.Packages.props`, or `*.slnx`), flag as `NEW_CODE` — a `lode/dependency-graph.md` may need to be created. Do not auto-generate unless the file already exists.
+If dependency-related files changed (`*.csproj`, `Directory.Packages.props`, or `*.slnx`), flag `lode/dotnet-reference/dep-map.md` as `STALE_CONTENT`. Never regenerate it here. The `dep-map` skill owns regeneration.
 
 ## Timestamp Format
 
 ```markdown
 # Document Title
-*Updated: 2026-02-13T14:30:00-06:00*
+*Updated: 2026-02-13T14:30:00Z*
 ```
 
-- ISO 8601 with timezone offset (`-06:00` for CST, `-05:00` for CDT)
+- ISO 8601 in UTC (`Z` suffix). Never write a local offset.
 - Italicized markdown (`*...*`)
 - Always on the line immediately after the `# Heading`
+- Bump with `scripts/lode-ts.sh FILE...` (or `--changed`). Never hand-edit a timestamp.
 
 ## Output Format
 
@@ -126,13 +126,13 @@ You have persistent memory at `.claude/tmp/lode-sync/memory.md`.
 
 **Before each run**, check memory for known coverage gaps so you can proactively flag them.
 
-**Curation**: Keep MEMORY.md under 200 lines. Remove entries after the underlying doc or code is fixed.
+**Curation**: Keep memory.md under 200 lines. Remove entries after the underlying doc or code is fixed.
 
 ## Critical Rules
 
-- **Never rewrite doc content automatically** — only update timestamps and fix paths. Exception: `dependency-graph.md` is auto-regenerated from project files (step 6)
-- **Always flag STALE_CONTENT** — let the human decide how to update prose
+- **Never rewrite doc content automatically**: only update timestamps and fix paths
+- **Always flag STALE_CONTENT**: let the human decide how to update prose
 - **Use relative paths** in all references (e.g., `lode/summary.md` not absolute)
-- **Preserve existing formatting** — don't reformat docs you're only timestamping
-- **Be specific about staleness** — "references `SomeClass.Method()` which was modified" not "doc may be stale"
-- **Check both directions** — code→doc (what docs need updating?) and doc→code (do references still resolve?)
+- **Preserve existing formatting**: do not reformat docs you are only timestamping
+- **Be specific about staleness**: "references `SomeClass.Method()` which was modified" not "doc may be stale"
+- **Check both directions**: code→doc (what docs need updating?) and doc→code (do references still resolve?)

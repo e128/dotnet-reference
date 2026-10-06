@@ -1,6 +1,6 @@
 # Step 2: Solution Infrastructure
 
-**Mandatory — executes immediately. No findings table, no approval gate.**
+**Mandatory: executes immediately. No findings table, no approval gate.**
 
 After all sub-steps: report what was done (or that everything was already in place), confirm build
 and tests pass, and proceed to Step 3.
@@ -13,8 +13,8 @@ Glob for `.sln` files. If found:
 1. Convert: `dotnet sln migrate`
 2. Verify `.slnx` was created and contains all projects
 3. Delete the old `.sln` file
-4. `${CLAUDE_SKILL_DIR}/scripts/build.sh <solution> --json` — confirm solution loads and compiles
-5. `${CLAUDE_SKILL_DIR}/scripts/test.sh <solution> --json` — confirm no regressions
+4. `scripts/build.sh`: confirm solution loads and compiles
+5. `scripts/test.sh --all`: confirm no regressions
 
 If `.slnx` already exists: report and skip to 2b.
 
@@ -33,8 +33,8 @@ Glob for `Directory.Packages.props` at the solution root.
 6. If the project uses lock files (`packages.lock.json`): `dotnet restore --force-evaluate`
 
 **If already exists:** Verify these hardening properties are set (add if missing):
-- `CentralPackageTransitivePinningEnabled=true` — prevents transitive version drift
-- `CentralPackageVersionOverrideEnabled=false` — prevents per-project version overrides
+- `CentralPackageTransitivePinningEnabled=true`: prevents transitive version drift
+- `CentralPackageVersionOverrideEnabled=false`: prevents per-project version overrides
 
 Then skip to 2c.
 
@@ -44,13 +44,13 @@ Then skip to 2c.
 
 Check that the Microsoft Testing Platform is correctly configured for .NET 10:
 
-**global.json** — must contain:
+**global.json**: must contain:
 ```json
 { "test": { "runner": "Microsoft.Testing.Platform" } }
 ```
 Without this, `dotnet test` fails on .NET 10 SDK with a VSTest compatibility error.
 
-**Directory.Build.targets** — must contain (conditioned on `IsTestProject`):
+**Directory.Build.targets**: must contain (conditioned on `IsTestProject`):
 ```xml
 <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
   <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
@@ -58,9 +58,9 @@ Without this, `dotnet test` fails on .NET 10 SDK with a VSTest compatibility err
   <OutputType>Exe</OutputType>
 </PropertyGroup>
 ```
-This must be in `.targets` (not `.props`) because `IsTestProject` is set in the `.csproj` and isn't available during `.props` evaluation.
+This must be in `.targets` (not `.props`) because `IsTestProject` is set in the `.csproj` and is not available during `.props` evaluation.
 
-**Test .csproj files** — should only need `<IsTestProject>true</IsTestProject>`. If they also have `<OutputType>Exe</OutputType>` or MTP properties, remove the redundancy (inherited from targets).
+**Test .csproj files**: should only need `<IsTestProject>true</IsTestProject>`. If they also have `<OutputType>Exe</OutputType>` or MTP properties, remove the redundancy (inherited from targets).
 
 If `Directory.Build.targets` does not exist, create it with the above content.
 
@@ -71,9 +71,9 @@ If `Directory.Build.targets` does not exist, create it with the above content.
 Check `nuget.config` at the solution root:
 
 **Required** (add if missing):
-- `<clear />` in `<packageSources>` — removes implicit default sources
+- `<clear />` in `<packageSources>`: removes implicit default sources
 - Explicit `nuget.org` source with `protocolVersion="3"`
-- `<packageSourceMapping>` — restricts which packages come from which source
+- `<packageSourceMapping>`: restricts which packages come from which source
 
 **Recommended** (flag if missing):
 - `<trustedSigners>` with certificate fingerprints for nuget.org
@@ -107,8 +107,8 @@ Check `Directory.Build.props` for these properties (add any missing):
 ```
 
 **Key interactions:**
-- `AnalysisLevel=latest-all` sets *which* rules are enabled; explicit `AnalysisMode<Category>` overrides its category without affecting others
-- `.editorconfig` `dotnet_analyzer_diagnostic.category-XXX.severity` only changes severity of *already-enabled* rules — it does NOT enable disabled rules; the MSBuild properties above are required for that
+- `AnalysisLevel=latest-all` sets *which* rules are enabled. Explicit `AnalysisMode<Category>` overrides its category without affecting others
+- `.editorconfig` `dotnet_analyzer_diagnostic.category-XXX.severity` only changes severity of *already-enabled* rules, it does NOT enable disabled rules. The MSBuild properties above are required for that
 - `TreatWarningsAsErrors=true` promotes all enabled-and-warned rules to errors
 
 **Root `.editorconfig`:**
@@ -130,11 +130,11 @@ dotnet_diagnostic.vsthrd111.severity = none # Add ConfigureAwait — VS extensio
 ```
 
 **After changes:**
-1. `dotnet build` — expect new errors from previously unenforced rules; these are pre-existing issues, not regressions
-2. If new errors: **fix inline first** — these are real pre-existing issues now surfaced; if <= 10 errors and each is fixable in under 2 minutes, fix them now; only fall back to temporary suppressions if >10 errors or if a fix requires architectural decisions; track each suppression as a finding to resolve in Steps 3-8
+1. `scripts/build.sh`: expect new errors from previously unenforced rules. These are pre-existing issues, not regressions
+2. If new errors: **fix inline first**, these are real pre-existing issues now surfaced. If <= 10 errors and each is fixable in under 2 minutes, fix them now. Only fall back to temporary suppressions if >10 errors or if a fix requires architectural decisions. Track each suppression as a finding to resolve in Steps 3-8
 
 **Child `.editorconfig` files** (e.g., in test projects) that suppress CA1707, CA1515, etc. for test
-conventions are expected — do not remove them.
+conventions are expected: do not remove them.
 
 ---
 
@@ -143,12 +143,12 @@ conventions are expected — do not remove them.
 Check that a `.gitignore` exists at the repository root with entries for:
 
 **Required** (add if missing):
-- `.DS_Store` — macOS Finder metadata
-- `.env` — environment files often contain secrets
+- `.DS_Store`: macOS Finder metadata
+- `.env`: environment files often contain secrets
 
 **Also verify these .NET-standard entries** (add if missing):
-- `bin/`, `obj/` — build output directories
-- `*.user`, `*.suo` — Visual Studio user settings
+- `bin/`, `obj/`: build output directories
+- `*.user`, `*.suo`: Visual Studio user settings
 
 If `.gitignore` does not exist: `dotnet new gitignore`, then verify the required entries above.
 
@@ -161,7 +161,7 @@ Do not execute without user approval.
 
 Run the single consolidated verification pass for all changes made in 2b-2f:
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/check.sh <solution> --json
+scripts/check.sh
 ```
 
 - Report what was converted/enforced (or that everything was already in place)

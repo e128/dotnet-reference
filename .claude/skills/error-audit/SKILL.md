@@ -1,7 +1,7 @@
 ---
 name: error-audit
 description: >
-  Weekly error triage skill. Runs scripts/session-health.sh --json to get error counts
+  Weekly error triage skill. Runs scripts/session-health.sh errors --json to get error counts
   by category, surfaces the top-3 recurring patterns with ranked fix suggestions,
   and identifies actionable root causes (flag errors, write-before-read, parallel
   cascade failures, hook-denied patterns, etc.). When permission errors are in the
@@ -11,7 +11,7 @@ description: >
   tool errors this week, fix recurring errors, settings sync, allowed tools gap,
   tool approval friction, settings audit, add to allow-list, skills need permissions,
   sync tool permissions, settings.json gaps.
-  Not for: fixing a specific one-off error (use /fix-ci).
+  Not for: fixing a specific one-off error (use /fix).
 allowed-tools: Bash, Read, Edit, Glob, Grep
 ---
 
@@ -20,15 +20,15 @@ Surface recurring tool-error patterns and ranked fix actions.
 ## Step 1: Run session health scan
 
 ```bash
-scripts/session-health.sh --json
+scripts/session-health.sh errors --json
 ```
 
 Parse the JSON output. Key fields:
-- `total_errors` — total tool errors in the window
-- `prev_total` — baseline total (0 if no baseline saved)
-- `total_trend` — direction symbol
-- `has_baseline` — whether a saved baseline exists
-- `categories` — array of `{ name, count, prev, delta, trend }`
+- `total_errors`: total tool errors in the window
+- `prev_total`: baseline total (0 if no baseline saved)
+- `total_trend`: direction symbol
+- `has_baseline`: whether a saved baseline exists
+- `categories`: array of `{ name, count, prev, delta, trend }`
 
 ## Step 2: Rank categories
 
@@ -38,20 +38,20 @@ Sort `categories` by `count` descending. Take the top 3 (or all if fewer than 3)
 
 | Category          | Root cause                                                                  | Fix                                                                               |
 |-------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| `bash-failure`    | Bash tool exited non-zero (build fail, pre-commit block, hook block, rm error) | Read the full exit text; fix the underlying build/script/hook error            |
-| `write-before-read` | Edit/Write called before Read on the same file                            | Always Read before Write/Edit; re-read after every format/check/build step        |
+| `bash-failure`    | Bash tool exited non-zero (build fail, pre-commit block, hook block, rm error) | Read the full exit text. Fix the underlying build/script/hook error            |
+| `write-before-read` | Edit/Write called before Read on the same file                            | Always Read before Write/Edit. Re-read after every format/check/build step        |
 | `file-modified`   | Formatter/hook mutated a file between Read and Edit                         | Re-read after every format, check, or pre-commit hook run                         |
-| `parallel-cascade` | Risky call batched with safe calls; failure silently aborted siblings      | Split risky calls into their own batch                                            |
-| `path-not-found`  | Absolute or unexpanded path; file doesn't exist                             | Use repo-relative paths; verify with Glob before Bash                             |
+| `parallel-cascade` | Risky call batched with safe calls. Failure silently aborted siblings      | Split risky calls into their own batch                                            |
+| `path-not-found`  | Absolute or unexpanded path. File does not exist                             | Use repo-relative paths. Verify with Glob before Bash                             |
 | `permission-denied` | Tool not in allowed-tools list, or agent modifying its own config         | **Triggers Step 5 (settings.json gap analysis)**                                  |
-| `http-error`      | WebFetch/external API call failed (also ECONNREFUSED, TLS errors)           | Run HTTP calls alone (not batched); retry once before escalating                  |
-| `timeout`         | WebFetch or Grep timed out                                                  | Run timeout-prone calls alone; reduce scope for Grep                              |
-| `edit-not-found`  | `old_string` in Edit doesn't match current file content                     | Re-read file immediately before Edit; use larger context string                   |
+| `http-error`      | WebFetch/external API call failed (also ECONNREFUSED, TLS errors)           | Run HTTP calls alone (not batched). Retry once before escalating                  |
+| `timeout`         | WebFetch or Grep timed out                                                  | Run timeout-prone calls alone. Reduce scope for Grep                              |
+| `edit-not-found`  | `old_string` in Edit does not match current file content                     | Re-read file immediately before Edit. Use larger context string                   |
 | `file-too-large`  | File exceeds token limit                                                    | Use `limit:` and `offset:` parameters on Read                                    |
-| `eisdir`          | Tried to read a directory as a file                                         | Use Glob or `ls` to list directories; Read only file paths                        |
-| `user-rejected`   | User denied a tool use prompt                                               | Informational only — not a bug; review what prompted the denial                   |
+| `eisdir`          | Tried to read a directory as a file                                         | Use Glob or `ls` to list directories, Read only file paths                         |
+| `user-rejected`   | User denied a tool use prompt                                               | Informational only: not a bug. Review what prompted the denial                    |
 | `hook-denied`     | Pre-tool hook blocked the call                                              | **Triggers Step 5 (settings.json gap analysis)**                                  |
-| `tool-api-error`  | Wrong parameter name for a tool (e.g. `file_path` instead of `path`)       | Check tool schema; common: Grep uses `path`, not `file_path`                      |
+| `tool-api-error`  | Wrong parameter name for a tool (e.g. `file_path` instead of `path`)       | Check tool schema. Common: Grep uses `path`, not `file_path`                      |
 | `other`           | Uncategorized                                                               | Check raw error text in session logs for patterns                                 |
 
 ## Step 4: Report
@@ -86,9 +86,9 @@ Also triggered when the user explicitly asks about settings sync, allowed tools,
 
 Read `.claude/settings.json`. Extract all currently allowed tool patterns.
 
-### 5b–5c: Compute and classify gaps (deterministic)
+### 5b-5c: Compute and classify gaps (deterministic)
 
-Run the gap-analysis script — it extracts every command referenced in fenced
+Run the gap-analysis script: it extracts every command referenced in fenced
 bash blocks across `.claude/agents/` and `.claude/skills/`, diffs them against
 the `permissions.allow` globs in `settings.json`, and classifies each uncovered
 command by the fixed safety table. No manual catalog scan or hand-classification.
@@ -134,12 +134,12 @@ If `tool-api-error` is in the top 3: search session logs for `InputValidationErr
 to find which tool/parameter caused the failure. Common offender: Grep called with
 `file_path` instead of `path`.
 
-If `hook-denied` is growing: this is a **positive signal** — hooks are catching violations.
-Review what's being blocked and ensure the correct equivalents are in place.
+If `hook-denied` is growing: this is a **positive signal**, hooks are catching violations.
+Review what is being blocked and ensure the correct equivalents are in place.
 
 ## Rules
 
-- **Read-only by default** — only modifies `.claude/settings.json` in Step 5e, and only after user approval
-- **One pass** — run the scan once, report all top patterns together
-- **No baseline save** — do not run `--baseline` unless the user explicitly asks to reset the baseline
+- **Read-only by default**: only modifies `.claude/settings.json` in Step 5e, and only after user approval
+- **One pass**: run the scan once, report all top patterns together
+- **No baseline save**: do not run `--baseline` unless the user explicitly asks to reset the baseline
 - **Never add destructive commands** to settings.json without explicit user approval per command

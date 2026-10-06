@@ -6,7 +6,7 @@ description: >
   to output as a SKILL.md instead.
   Triggers on: learn about, research topic, add to lode from web, learn this, deep research.
 argument-hint: "<topic> [--skill [--global]]"
-allowed-tools: Read, Glob, Grep, Bash, Write, Agent
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 ---
 
 # Learn Skill
@@ -19,8 +19,8 @@ Orchestrates research via the `sme-researcher` agent and persists findings.
 
 - **Research time**: ~2-3 minutes maximum
 - **Sources**: Stop after 6 quality sources found
-- **Use `max_turns: 5`** on sme-researcher to limit research iterations
-- If sources found quickly, stop early — don't hunt for more
+- **Tell sme-researcher in the prompt** to stop after 5 tool turns
+- If sources found quickly, stop early, do not hunt for more
 
 ## Steps
 
@@ -52,12 +52,12 @@ Check if `lode/` exists (`Glob: lode/lode-map.md`):
 
 **Bounds:**
 - Stop after 6 quality sources (~2-3 minutes max)
-- Use `max_turns: 5` on sme-researcher to limit research iterations
+- Tell sme-researcher in the prompt to stop after 5 tool turns
 - If sources found quickly, stop early
 
-Spawn `Agent(sme-researcher, sonnet, max_turns: 5)` with prompt:
+Spawn the `sme-researcher` agent with this prompt. Limit it to 5 tool turns in the prompt text:
 
-> Research `<topic>` for use in this project. Focus on official documentation. {output-specific instructions — see below}
+> Research `<topic>` for use in this project. Focus on official documentation. {output-specific instructions, see below}
 >
 > If any related lode files exist, note them and focus on gaps not yet covered.
 
@@ -67,17 +67,17 @@ Spawn `Agent(sme-researcher, sonnet, max_turns: 5)` with prompt:
 
 **Empty response handling:** The sme-researcher agent frequently completes its
 research but returns an empty body on the first call (only agentId + usage metadata visible).
-This is normal behaviour. If the Task result contains no findings text:
-1. Automatically resume the agent using its returned `agentId`
+This is normal behaviour. If the Agent result contains no findings text:
+1. Automatically resume the agent with `SendMessage` to its returned `agentId`
 2. Prompt: "Please provide your complete synthesized findings on `<topic>`. Include all source URLs and key recommendations you researched."
-3. Do NOT ask the user — handle the resume transparently.
+3. Do NOT ask the user: handle the resume transparently.
 
 ### 4. Write draft (lode path) or skill output (--skill path)
 
 **For lode output:** Write findings to `lode/tmp/<topic-kebab-case>.md` as a draft. Follow lode file conventions (timestamp, relative links). Then show the user a summary of the draft and ask:
 
 **250-line enforcement:** Before writing, estimate content volume. If a single file would
-exceed 250 lines, split at a natural topic boundary into two focused sub-files — write both
+exceed 250 lines, split at a natural topic boundary into two focused sub-files, write both
 to `lode/tmp/` and promote both together. Never write a lode file over 250 lines.
 
 **Mermaid diagrams:** Include Mermaid diagrams only where they add genuine architectural
@@ -94,9 +94,9 @@ On user approval:
 2. Update `lode/lode-map.md` to include the new entry in both Quick Reference and Directory Structure
 3. Delete the tmp draft
 
-Never create `lode/research/` — research findings are integrated into domain-specific directories.
+Never create `lode/research/`: research findings are integrated into domain-specific directories.
 
-If the user declines, leave the draft in `lode/tmp/` for later review. Note: `lode/tmp/` is git-ignored, so drafts won't be committed.
+If the user declines, leave the draft in `lode/tmp/` for later review. Note: `lode/tmp/` is git-ignored, so drafts will not be committed.
 
 **For skill output:** Write findings directly to skill location:
 
@@ -106,7 +106,7 @@ If the user declines, leave the draft in `lode/tmp/` for later review. Note: `lo
 
 If a file already exists at that path, warn the user before overwriting.
 
-**SKILL.md format:** Load `${CLAUDE_SKILL_DIR}/assets/skill-template.md` for the output structure. Adapt sections to fit — omit empty ones, add others if warranted. Rules:
+**SKILL.md format:** Load `${CLAUDE_SKILL_DIR}/assets/skill-template.md` for the output structure. Adapt sections to fit, omit empty ones, add others if warranted. Rules:
 - `name`: max 64 chars, lowercase + numbers + hyphens only
 - Body: under 500 lines, imperative language, version-specific
 - **Never fabricate APIs or features not found in sources**
@@ -123,15 +123,15 @@ Saved to: <path>   (or: Draft in lode/tmp/<topic>.md — awaiting promotion)
 
 After completing any research session:
 
-1. **Record failed or blocked topics** — If a research topic returned no useful sources (paywalled, undocumented, too new), add a Troubleshooting note with the date and reason so future sessions don't repeat the search.
-2. **Note already-covered topics** — If the user asked to research a topic already fully in lode/, add a Troubleshooting note (topic name + lode path) so future sessions surface the existing doc immediately.
-3. **Update sme-researcher retry guidance** — If the empty-result resume pattern required more than one retry, or a different prompt formulation worked better, update the Troubleshooting section.
-4. **Log source quality patterns** — If a particular site consistently provides high or low quality content for this domain, note it in Troubleshooting so sme-researcher can be guided accordingly.
+1. **Record failed or blocked topics**: If a research topic returned no useful sources (paywalled, undocumented, too new), add a Troubleshooting note with the date and reason so future sessions do not repeat the search.
+2. **Note already-covered topics**: If the user asked to research a topic already fully in lode/, add a Troubleshooting note (topic name + lode path) so future sessions surface the existing doc immediately.
+3. **Update sme-researcher retry guidance**: If the empty-result resume pattern required more than one retry, or a different prompt formulation worked better, update the Troubleshooting section.
+4. **Log source quality patterns**: If a particular site consistently provides high or low quality content for this domain, note it in Troubleshooting so sme-researcher can be guided accordingly.
 
 ## Troubleshooting
 
-- **sme-researcher returns empty result** — this is normal; resume with the returned agentId and prompt: "Please provide your complete synthesized findings on [topic]"; do not ask the user
-- **Topic maps to an existing lode file** — read the existing file first to identify gaps; the researcher should focus on what is not yet documented, not re-document existing content
-- **Draft file would exceed 250 lines** — split at a natural topic boundary into two focused sub-files and write both to `lode/tmp/`; never write a lode file over 250 lines
-- **No lode/ directory found and no --skill flag** — prompt the user for their preferred output: create lode/, create as skill, or create as global skill
-- **--global flag used without --skill** — global output only applies to skill files; prompt for clarification or treat as `--skill --global`
+- **sme-researcher returns empty result**: this is normal. Resume with the returned agentId and prompt: "Please provide your complete synthesized findings on [topic]". Do not ask the user
+- **Topic maps to an existing lode file**, read the existing file first to identify gaps. The researcher should focus on what is not yet documented, not re-document existing content
+- **Draft file would exceed 250 lines**, split at a natural topic boundary into two focused sub-files and write both to `lode/tmp/`. Never write a lode file over 250 lines
+- **No lode/ directory found and no --skill flag**, prompt the user for their preferred output: create lode/, create as skill, or create as global skill
+- **--global flag used without --skill**: global output only applies to skill files. Prompt for clarification or treat as `--skill --global`

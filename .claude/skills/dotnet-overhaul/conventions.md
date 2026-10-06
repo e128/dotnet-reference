@@ -10,7 +10,7 @@ Delete or modify this file to match your project's conventions.
 ## Coding Standards
 
 - Use `string.Empty` instead of `""` for empty string literals
-- Never use `!` (null-forgiving operator) to silence CS8600-CS8604 — these require human judgment
+- Never use `!` (null-forgiving operator) to silence CS8600-CS8604, these require human judgment
 - Never suppress analyzer rules without explicit approval (`#pragma warning disable`, `[SuppressMessage]`)
 
 ## Immutability
@@ -29,8 +29,8 @@ Favor immutable code by default. Convert mutable types when the mutation is not 
 | Method parameter `List<T>`             | `IReadOnlyList<T>` or `IEnumerable<T>`                  |
 
 **Packages to add when needed:**
-- `System.Collections.Immutable` — `ImmutableArray<T>`, `ImmutableList<T>`, `ImmutableDictionary<TK,TV>`
-- `FrozenSet<T>` / `FrozenDictionary<TK,TV>` — in-box for .NET 8+ (no additional package)
+- `System.Collections.Immutable`: `ImmutableArray<T>`, `ImmutableList<T>`, `ImmutableDictionary<TK,TV>`
+- `FrozenSet<T>` / `FrozenDictionary<TK,TV>`: in-box for .NET 8+ (no additional package)
 
 **Do not convert:**
 - Private mutable state behind an immutable public API
@@ -63,7 +63,7 @@ Override the default severity triage by adding custom mappings:
 
 ## Auto-Approved Fixes
 
-These fixes align with common auto-approval policies — apply without prompting:
+These fixes align with common auto-approval policies, apply without prompting:
 
 | Code | Fix |
 |------|-----|
@@ -76,7 +76,7 @@ These fixes align with common auto-approval policies — apply without prompting
 
 | Code | Reason |
 |------|--------|
-| CS8600-CS8604 | Null-ref warnings require human judgment — list in findings, don't add `!` |
+| CS8600-CS8604 | Null-ref warnings require human judgment: list in findings, do not add `!` |
 | Any `#pragma` | Suppressions require explicit approval |
 
 ## Global Suppressions (Always `severity = none`)
@@ -87,8 +87,8 @@ to tests.
 
 | Rule      | Reason                                                                                |
 |-----------|---------------------------------------------------------------------------------------|
-| S4055     | Literals should not be passed as localized parameters — not applicable (no L10N)      |
-| VSTHRD111 | Add ConfigureAwait — VS extension model (JoinableTaskFactory), not relevant here      |
+| S4055     | Literals should not be passed as localized parameters, not applicable (no L10N)       |
+| VSTHRD111 | Add ConfigureAwait: VS extension model (JoinableTaskFactory), not relevant here       |
 
 ## Test Project Relaxations
 
@@ -98,6 +98,6 @@ Rules that are NOT violations in test code (files under `tests/` or `*Tests*` di
 |------|--------|
 | CA1707 | Underscores in test method names |
 | CA2007, MA0004, VSTHRD111 | No ConfigureAwait required in tests |
-| VSTHRD200 | Test methods don't need Async suffix |
+| VSTHRD200 | Test methods do not need Async suffix |
 | CA1515 | Test classes can be public |
 | MA0040, xUnit1051 | Ambient CancellationToken not required |

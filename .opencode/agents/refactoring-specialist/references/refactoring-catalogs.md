@@ -4,20 +4,20 @@
 
 When two code smells compete for attention, fix the higher-priority one first:
 
-1. **Immutability** -- is mutable state justified? `set` vs `init`, `IReadOnlyList` vs `List`, mutable fields in async types
-2. **Memory efficiency** -- unnecessary allocations, missing capacity hints, LINQ mid-chain `.ToList()`, LOH candidates
-3. **CPU efficiency** -- algorithmic complexity first (`O(n^2)` -> `O(n)`); micro-optimizations only after measurement
-4. **Parallelism** -- last resort; if a parallelism bug is found, check whether the root cause is mutable shared state (fix immutability first)
+1. **Immutability**: is mutable state justified? `set` vs `init`, `IReadOnlyList` vs `List`, mutable fields in async types
+2. **Memory efficiency**: unnecessary allocations, missing capacity hints, LINQ mid-chain `.ToList()`, LOH candidates
+3. **CPU efficiency**: algorithmic complexity first (`O(n^2)` -> `O(n)`). Micro-optimizations only after measurement
+4. **Parallelism**: last resort. If a parallelism bug is found, check whether the root cause is mutable shared state (fix immutability first)
 
 ## Code Reduction Catalog
 
-Shrink without changing unit test assertions. Flag these separately from structural refactorings -- they're low-risk batch candidates:
+Shrink without changing unit test assertions. Flag these separately from structural refactorings, they are low-risk batch candidates:
 
 - Dead private methods/fields with no callers
 - Single-use local variables that can be inlined (RCS1124)
 - Catch blocks that only rethrow (remove the try/catch)
 - `.Where(p).First()` -> `.First(p)`, `.OrderBy(...).First()` -> `.MinBy(...)`
-- Single-line private methods called in exactly one place -- inline the body
+- Single-line private methods called in exactly one place, inline the body
 - `if (x == null) return null; else return x.Foo` -> `x?.Foo`
 - Interfaces with exactly one implementation and no test doubles
 - Remove redundant local alias of parameter

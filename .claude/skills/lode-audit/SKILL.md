@@ -1,7 +1,7 @@
 ---
 name: lode-audit
 description: >
-  Audits lode/ documentation for content accuracy — checks whether each doc correctly
+  Audits lode/ documentation for content accuracy, checks whether each doc correctly
   describes the current codebase. Distinct from lode-sync (which only checks timestamps).
   Produces a staleness table with git-verified findings, then makes targeted updates only
   on the sections you approve. Use after large refactors, renames, or when the lode feels
@@ -31,7 +31,7 @@ mkdir -p .claude/tmp/lode-audit
 Initialize `state.md`:
 ```
 # Lode Audit State
-Started: {date -u +"%Y-%m-%dT%H:%M:%SZ"}
+Started: {output of scripts/ts.sh}
 ```
 
 ---
@@ -59,7 +59,7 @@ Use `scripts/lode-ts.sh --stale --json` to get a structured staleness report for
 
 Classification:
 - `commits_since > 0` -> **POTENTIALLY STALE**
-- No timestamp in file -> **NO TIMESTAMP** (not included in --stale output; check Phase 1 files.md for these)
+- No timestamp in file -> **NO TIMESTAMP** (not included in --stale output. Check Phase 1 files.md for these)
 - `commits_since == 0` -> **CURRENT**
 
 Save to `.claude/tmp/lode-audit/assessment.md`:
@@ -139,7 +139,7 @@ rm -rf .claude/tmp/lode-audit/
 
 ## Rules
 
-- **Targeted verification only** — each agent reads the relevant code for its file only.
-- **Preserve prose style** — corrections should read like the rest of the file.
-- **Never auto-approve** — Phase 3 always waits for user input before modifying any file.
-- **Commit count is a signal, not a verdict** — POTENTIALLY STALE means "check this", not "definitely wrong".
+- **Targeted verification only**: each agent reads the relevant code for its file only.
+- **Preserve prose style**: corrections should read like the rest of the file.
+- **Never auto-approve**: Phase 3 always waits for user input before modifying any file.
+- **Commit count is a signal, not a verdict**, POTENTIALLY STALE means "check this", not "definitely wrong".

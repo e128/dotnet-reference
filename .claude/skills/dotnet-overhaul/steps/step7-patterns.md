@@ -1,4 +1,4 @@
-# Security Review — Grep Patterns & Checklist
+# Security Review: Grep Patterns & Checklist
 
 Reference file for Step 7 of dotnet-overhaul. Contains anti-pattern grep patterns
 and analysis checklist previously embedded in the `dotnet-security-specialist` agent.
@@ -137,25 +137,25 @@ new\s+XmlReaderSettings.*ProhibitDtd\s*=\s*false
 
 | # | Check | Severity | CA Rules |
 |---|-------|----------|----------|
-| 1 | SQL/command injection — user input in queries or commands | CRITICAL | CA3001, CA3006 |
+| 1 | SQL/command injection: user input in queries or commands  | CRITICAL | CA3001, CA3006 |
 | 2 | BinaryFormatter or insecure deserializers | CRITICAL | CA2300-CA2315 |
 | 3 | Hardcoded credentials, connection strings, or API keys | CRITICAL | CA5390 |
 | 4 | Disabled certificate validation (callback returns true) | CRITICAL | CA5359 |
-| 5 | XSS — unencoded user input in HTML output | HIGH | CA3002 |
-| 6 | Path traversal — user input in file paths without validation | HIGH | CA3003 |
+| 5 | XSS: unencoded user input in HTML output  | HIGH | CA3002 |
+| 6 | Path traversal: user input in file paths without validation  | HIGH | CA3003 |
 | 7 | TypeNameHandling != None in JSON.NET | HIGH | CA2326-CA2330 |
 | 8 | Weak cryptographic algorithms (MD5, SHA1, DES, 3DES, RC2) | HIGH | CA5350, CA5351 |
 | 9 | System.Random for security-sensitive values | HIGH | CA5394 |
 | 10 | Deprecated TLS/SSL protocols or hardcoded protocol versions | HIGH | CA5364, CA5386, CA5397 |
 | 11 | Missing antiforgery tokens on state-changing endpoints | MEDIUM | CA3147, CA5391 |
 | 12 | Insecure cookie settings | MEDIUM | CA5382, CA5396 |
-| 13 | CORS allows any origin with credentials | MEDIUM | — |
-| 14 | Developer exception page without environment guard | MEDIUM | — |
+| 13 | CORS allows any origin with credentials | MEDIUM | - |
+| 14 | Developer exception page without environment guard | MEDIUM | - |
 | 15 | RSA key < 2048 bits or PBKDF2 iterations < 100,000 | MEDIUM | CA5379, CA5385 |
 | 16 | DTD processing enabled in XML parsing (XXE risk) | MEDIUM | CA3075-CA3077 |
 | 17 | Token validation checks disabled | MEDIUM | CA5404 |
 | 18 | LDAP/XPath/regex injection from user input | MEDIUM | CA3005, CA3008, CA3012 |
-| 19 | Missing HTTPS redirection or HSTS | LOW | — |
+| 19 | Missing HTTPS redirection or HSTS | LOW | - |
 | 20 | Information disclosure in error responses | LOW | CA3004 |
 
 ## Severity Definitions

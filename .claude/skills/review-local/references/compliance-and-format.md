@@ -16,10 +16,10 @@ Test code (rules NOT caught by analyzers — analyzer-enforced rules omitted):
 
 The `build-validator` agent (in build mode) is the **authoritative source** for warnings and errors. If it reports 0 warnings:
 
-- MEDIUM/LOW compliance findings from diff-based agents are **advisory only** — flag them with "(needs verification — build reports 0 warnings)"
-- The build cannot lie; diff-based agents can miscalculate line numbers from diff context
+- MEDIUM/LOW compliance findings from diff-based agents are **advisory only**, flag them with "(needs verification, build reports 0 warnings)"
+- The build cannot lie. Diff-based agents can miscalculate line numbers from diff context
 
-This matters most when compliance agents report violations at line numbers that don't exist in the actual file (a known diff-parsing artifact). Always cross-reference with the build result before escalating compliance findings.
+This matters most when compliance agents report violations at line numbers that do not exist in the actual file (a known diff-parsing artifact). Always cross-reference with the build result before escalating compliance findings.
 
 ## Example Report Format
 

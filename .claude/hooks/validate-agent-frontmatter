@@ -2,7 +2,7 @@
 # PreToolUse hook — validates .claude/agents/*.md frontmatter before git commit.
 #
 # Checks that staged agent files have all required YAML frontmatter fields:
-#   name, description, tools, maxTurns, memory
+#   name, description, tools, maxTurns
 #
 # Hook behavior: exit 0 always (warning only, never blocks). Claude sees the
 # output and can fix missing fields before proceeding.
@@ -25,7 +25,7 @@ if [ -z "$staged_agents" ]; then
     exit 0
 fi
 
-required_fields="name description tools maxTurns memory"
+required_fields="name description tools maxTurns"
 warnings=""
 
 while IFS= read -r agent_file; do

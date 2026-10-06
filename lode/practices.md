@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-09-26T16:11:39Z*
+*Updated: 2026-10-06T18:52:25Z*
 
 ## Design Principles
 
@@ -21,7 +21,7 @@
 - 4-space indentation
 - Allman brace style (opening brace on new line)
 - `using` directives outside namespace, sorted with System first
-- Implicit usings disabled — every `.cs` file has explicit `using` directives
+- Implicit usings disabled: every `.cs` file has explicit `using` directives
 - Primary constructors disabled (`csharp_style_prefer_primary_constructors = false`)
 - Collection expressions preferred (`dotnet_style_prefer_collection_expression = true`), aligned with the E128061 code fix output
 
@@ -31,7 +31,7 @@ Canonical home for these preferences. CLAUDE.md keeps only the
 high-frequency reminders (TDD, concurrent sessions, no time estimates).
 See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
 
-- Terse responses — code over explanation unless asked
+- Terse responses: code over explanation unless asked
 - ISO 8601 UTC timestamps everywhere: `2026-04-09T12:00:00Z`
 - No time estimates
 - Ask a question only when a decision is materially ambiguous, risky, or needs
@@ -43,6 +43,11 @@ See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
   `.claude/rules/writing-style.md`. STE governs docs, READMEs, PR bodies,
   error messages, comments, and lode files. STE does not govern code or chat
   prose.
+- Claude Code and opencode have equal support. Never add model-specific
+  content to a repo agent, skill, rule, or lode file: no model ID, no model
+  alias, no `model:` field, no model-tuned guidance. Every agent and skill
+  inherits the session model. Add a harness feature only when the other
+  harness can use it or ignore it safely.
 - Never use a dash as a pause in a written artifact. The ban covers the em
   dash, the en dash, the horizontal bar, the minus sign, the ASCII `--`
   stand-in, and every HTML entity form of each. Use a colon, a comma,
@@ -84,8 +89,8 @@ artifacts stay STE per `.claude/rules/writing-style.md`.
 ## Verification Workflow
 
 After any code change:
-1. `scripts/format.sh --changed` — runs `jb cleanupcode` (semantic cleanup) then `dotnet format`
-2. `scripts/check.sh --no-format` — build + test
+1. `scripts/format.sh --changed`: runs `jb cleanupcode` (semantic cleanup) then `dotnet format`
+2. `scripts/check.sh`: format check, build, and test. Never pass `--no-format` (`.claude/rules/quality-gates.md`).
 3. If renaming: `rg "OldName" lode/` to find stale lode references
 
 `--check` mode skips `jb` (no verify-only equivalent). Pass `--no-jb` to run dotnet format only.

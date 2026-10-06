@@ -25,7 +25,7 @@ Before the summary table, list every test file that was modified:
 - Explain *why* each change was necessary (renamed method, moved class, changed signature)
 - Every test change must trace back to a specific finding ID
 - If no tests were modified: state "No test files were modified"
-- **Never change test assertions or expected values** to make a failing test pass — the production fix is wrong
+- **Never change test assertions or expected values** to make a failing test pass, the production fix is wrong
 
 ---
 
@@ -35,29 +35,29 @@ Glob for Renovate config: `renovate.json`, `renovate.json5`, `.renovaterc`, `.re
 
 **If found**, check for stale exclusions the overhaul supersedes:
 
-1. **`ignoreDeps`** — if the overhaul updated any of these packages and tests pass, remove them.
+1. **`ignoreDeps`**: if the overhaul updated any of these packages and tests pass, remove them.
    The successful upgrade proves the update is safe.
 
-2. **`packageRules` with `enabled: false`** — if the overhaul upgraded past the excluded version,
+2. **`packageRules` with `enabled: false`**: if the overhaul upgraded past the excluded version,
    remove or update the rule. Example: if a rule skips `SomePackage >= 3.0.0` but overhaul upgraded
    to 3.2.0 with passing tests, delete that rule.
 
-3. **`packageRules` with `allowedVersions`** — if overhaul upgraded beyond the pinned range,
+3. **`packageRules` with `allowedVersions`**: if overhaul upgraded beyond the pinned range,
    update the constraint or remove it entirely.
 
-4. **`ignorePaths`** — if overhaul touched files in ignored paths, flag for review.
+4. **`ignorePaths`**: if overhaul touched files in ignored paths, flag for review.
 
-**Report each stale exclusion found**, explain why it's safe to remove (tests pass, build succeeds),
+**Report each stale exclusion found**, explain why it is safe to remove (tests pass, build succeeds),
 and apply the change to the Renovate config file.
 
 **If no Renovate config exists:** Skip silently.
-**If exclusions weren't touched by the overhaul:** Leave them in place — they may reflect known incompatibilities.
+**If exclusions were not touched by the overhaul:** Leave them in place, they may reflect known incompatibilities.
 
 ---
 
 ## Overhaul Summary
 
-**Assemble from journal files** — do not rely on memory:
+**Assemble from journal files**: do not rely on memory:
 1. Read `.claude/tmp/overhauler/progress.md` for per-step summaries and DONE/SKIPPED status
 2. Read `.claude/tmp/overhauler/baseline.md` for test baseline values
 3. Read `.claude/tmp/overhauler/findings-stepN.md` for each step's findings counts

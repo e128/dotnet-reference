@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.41.3" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.41.12" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.

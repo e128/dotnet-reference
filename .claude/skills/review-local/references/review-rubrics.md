@@ -5,7 +5,7 @@ based on the diff content (controllers → security, classes → SOLID, test fil
 
 ## Security Checklist (Controllers & Business Logic)
 
-Include when the diff touches controllers, command handlers, or business logic. Multi-tenant repo — tenant isolation is the highest-leverage check.
+Include when the diff touches controllers, command handlers, or business logic. Multi-tenant repo, tenant isolation is the highest-leverage check.
 
 ```
 SECURITY RULES (include when diff touches controllers/handlers/business logic):
@@ -28,7 +28,7 @@ SECURITY RULES (include when diff touches controllers/handlers/business logic):
 
 ## SOLID Design Review
 
-Model knows SOLID; this rubric lists **the severity calibration** + YAGNI guard, not the textbook restatement. Include when the diff introduces new classes, interfaces, or modifies class structure.
+Model knows SOLID. This rubric lists **the severity calibration** + YAGNI guard, not the textbook restatement. Include when the diff introduces new classes, interfaces, or modifies class structure.
 
 ```
 SOLID DESIGN RULES (include when diff adds/modifies classes, interfaces, or DI registrations):
@@ -75,7 +75,7 @@ PIKE'S RULES (include in every code review):
 
 ## Design Priority Order Review
 
-Apply the repo's **Design Priority Order** to every diff touching .NET classes, business logic, or data processing. Violations of higher-priority principles are more severe than violations of lower ones — a parallelism issue caused by mutable shared state is not a parallelism problem, it is an immutability problem.
+Apply the repo's **Design Priority Order** to every diff touching .NET classes, business logic, or data processing. Violations of higher-priority principles are more severe than violations of lower ones, a parallelism issue caused by mutable shared state is not a parallelism problem, it is an immutability problem.
 
 ```
 DESIGN PRIORITY ORDER (include when diff adds/modifies classes, business logic, or data processing):
@@ -160,7 +160,7 @@ TEST QUALITY RULES (include when diff touches test files):
   [LOW] Unused test infrastructure (helper methods never called)
 ```
 
-**Calibration notes:** Separate boundary tests are NOT duplicates — testing `0`, `1`, and `MaxValue` separately is correct. Test method naming is MEDIUM, not HIGH — names matter but working assertions matter more.
+**Calibration notes:** Separate boundary tests are NOT duplicates: testing `0`, `1`, and `MaxValue` separately is correct. Test method naming is MEDIUM, not HIGH, names matter but working assertions matter more.
 
 ## Code Reduction Review
 
@@ -242,9 +242,9 @@ Data over procedure:
 
 **Activation heuristic:** Include this rubric when the diff contains any of: `bool `, `boolean`, `? `, `Optional<`, `| null`, `record `, `class ` with 3+ properties, `enum `, `status`, `state`, `flags`, `options`.
 
-## Yoda Principle — Command Naming & Integration Intent
+## Yoda Principle: Command Naming & Integration Intent
 
-Apply when the diff touches command handlers, service method signatures, integration points, message contracts, or public APIs. Name things by what they **do** (business intent), not what they **check**. A command is a request to perform a business action; a query is a request to return data. Commands named like queries (`VerifyX`, `CheckX`, `ValidateX`) hide intent, invite race conditions, and obscure the domain model.
+Apply when the diff touches command handlers, service method signatures, integration points, message contracts, or public APIs. Name things by what they **do** (business intent), not what they **check**. A command is a request to perform a business action. A query is a request to return data. Commands named like queries (`VerifyX`, `CheckX`, `ValidateX`) hide intent, invite race conditions, and obscure the domain model.
 
 ```
 YODA PRINCIPLE — COMMAND NAMING (include when diff touches command handlers, service
@@ -281,13 +281,13 @@ Hidden business concept:
         checks and acts
 ```
 
-**Activation heuristic:** Include this rubric when the diff contains any of: `Verify`, `Validate`, `Check`, `Ensure` as method/class/interface name prefixes; two-step patterns (`if (IsX) { DoX() }` or `if (await VerifyX()) { await DoX() }`); command handlers or message contracts returning `bool`; service methods that call a query and then a command on the same resource.
+**Activation heuristic:** Include this rubric when the diff contains any of: `Verify`, `Validate`, `Check`, `Ensure` as method/class/interface name prefixes. Two-step patterns (`if (IsX) { DoX() }` or `if (await VerifyX()) { await DoX() }`). Command handlers or message contracts returning `bool`. Service methods that call a query and then a command on the same resource.
 
 ## Analyzer Suppression Audit
 
-**Always include this section.** Every `#pragma warning disable`, `[SuppressMessage]`, or `.editorconfig`/`.globalconfig` severity downgrade in the diff must be challenged. Suppressions are technical debt with a justification label — the label may be wrong.
+**Always include this section.** Every `#pragma warning disable`, `[SuppressMessage]`, or `.editorconfig`/`.globalconfig` severity downgrade in the diff must be challenged. Suppressions are technical debt with a justification label, the label may be wrong.
 
-**How to audit:** For each suppression in the diff, extract the diagnostic ID and justification comment, then apply the challenge questions below. A justification passes only if it explains **why the analyzer's suggested fix is impossible or inappropriate** — not just what the warning means.
+**How to audit:** For each suppression in the diff, extract the diagnostic ID and justification comment, then apply the challenge questions below. A justification passes only if it explains **why the analyzer's suggested fix is impossible or inappropriate**, not just what the warning means.
 
 ```
 SUPPRESSION AUDIT RULES (include if diff contains #pragma warning disable, [SuppressMessage],
@@ -334,4 +334,4 @@ Severity downgrades in config:
 
 ## Cross-File Consistency Review
 
-See [cross-file-consistency.md](cross-file-consistency.md) — separate file to keep this rubric under the 250-line target. Include when diff spans 3+ agent/skill/script/config files, or after renames, multi-session plans, or merge resolutions.
+See [cross-file-consistency.md](cross-file-consistency.md): separate file to keep this rubric under the 250-line target. Include when diff spans 3+ agent/skill/script/config files, or after renames, multi-session plans, or merge resolutions.

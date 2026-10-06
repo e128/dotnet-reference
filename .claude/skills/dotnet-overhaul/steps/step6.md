@@ -1,6 +1,6 @@
 # Step 6: Concurrency Review
 
-Launch an `Explore` agent (haiku) with the patterns from `step6-patterns.md`:
+Launch an `Explore` agent with the patterns from `step6-patterns.md`:
 
 ```
 Read ${CLAUDE_SKILL_DIR}/steps/step6-patterns.md for grep patterns and checklist.

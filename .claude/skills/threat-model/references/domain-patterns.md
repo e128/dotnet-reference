@@ -2,7 +2,7 @@
 
 Pre-built threat patterns keyed to common .NET app archetypes. When `/threat-model` targets a
 project matching one of these, seed Phase 2 with the listed surfaces to avoid re-discovering
-known threats. Always confirm against the current code -- these are starting points, not findings.
+known threats. Always confirm against the current code, these are starting points, not findings.
 
 ## ASP.NET Core Web / Minimal-API App
 
@@ -23,8 +23,8 @@ known threats. Always confirm against the current code -- these are starting poi
 
 ### Discovery Checklist
 
-`rg "app\.Map(Get|Post|Put|Delete)" src/<web-project> -g "*.cs"` for endpoints;
-`rg "Authorize|RequireAuthorization|AddAuthentication" src/` for auth gates;
+`rg "app\.Map(Get|Post|Put|Delete)" src/<web-project> -g "*.cs"` for endpoints, 
+`rg "Authorize|RequireAuthorization|AddAuthentication" src/` for auth gates, 
 `rg "ProblemDetails|DeveloperException|UseExceptionHandler" src/` for error handling posture.
 
 ## CLI / Console Tool (e.g. System.CommandLine)
@@ -43,13 +43,13 @@ arguments, environment, and any files/processes it touches.
 
 ### Discovery Checklist
 
-`rg "Process\.Start|ProcessStartInfo" src/` for process launches;
+`rg "Process\.Start|ProcessStartInfo" src/` for process launches, 
 `rg "Path\.Combine|File\.(Read|Write|Open)|Directory\." src/` for file I/O entry points.
 
 ## Class Library / SDK
 
-**Trust boundary profile:** No direct external entry point -- exercised by Web and CLI. Threats
-are inherited from callers; focus on whether the library validates inputs at its public API
+**Trust boundary profile:** No direct external entry point, exercised by Web and CLI. Threats
+are inherited from callers. Focus on whether the library validates inputs at its public API
 surface and avoids leaking sensitive data through exceptions or return values.
 
 ### Known Attack Surfaces
@@ -63,7 +63,7 @@ surface and avoids leaking sensitive data through exceptions or return values.
 ## Roslyn Analyzer / Build-Time NuGet Package
 
 **Trust boundary profile:** A *build-time* component. The trust boundary is the **consumer's
-compiler and IDE** -- the analyzer runs inside every consuming build, and its input is
+compiler and IDE**, the analyzer runs inside every consuming build, and its input is
 arbitrary (potentially untrusted) source code. Threats here are about the package and the
 analyzer's own robustness, not a runtime service.
 

@@ -5,7 +5,7 @@ description: >
   Opinionated .NET code overhaul loop. Establishes a test baseline, modernizes language usage,
   fixes cross-cutting design issues, runs performance, concurrency, and security reviews, and
   verifies all CI tests pass. Presents severity-rated findings for user-directed action at each step.
-  Review conventions.md before first use — preferences are configurable.
+  Review conventions.md before first use, preferences are configurable.
   Use iteratively for initial large overhauls, then periodically to catch drift.
   Triggers on: code overhaul, modernize codebase, .NET modernization, overhaul loop, overhaul pass,
   fix all warnings, language modernization, primary constructors, collection expressions, overhaul solution.
@@ -19,7 +19,7 @@ effort: high
 > **Opinionated.** Enforces specific conventions (deny-by-default analyzers, immutability, MTP runner,
 > strict code analysis). Review/edit `conventions.md` to match your project before the first run.
 >
-> **Iterative.** For large codebases, run in phases — approve a subset of findings per run, commit,
+> **Iterative.** For large codebases, run in phases, approve a subset of findings per run, commit,
 > run again. For maintained codebases, run periodically to catch drift.
 
 Systematic overhaul loop combining language modernization, design review, and specialist analysis.
@@ -36,7 +36,7 @@ Every step produces findings for user approval before any code is changed.
 
 Scope is a solution file (`.sln`/`.slnx`) or directory. Resolution order:
 1. **Solution file given** -> use directly
-2. **Directory given** -> Glob for `.slnx`, then `.sln`; if one found use it; if multiple, ask; if none, search parent directories
+2. **Directory given** -> Glob for `.slnx`, then `.sln`. If one found use it. If multiple, ask. If none, search parent directories
 3. **No scope** -> treat as `.`
 
 In-scope once solution is resolved: all `.cs` files, `.csproj` files, Dockerfiles, CI/CD workflows,
@@ -46,20 +46,20 @@ Test projects identified by name containing `Test`/`Tests`, referencing xUnit/NU
 
 ## When NOT to Use
 
-- **Solution with >500 .cs files** — run a scoped overhaul on one project directory at a time; the agent findings tables will be unmanageably large otherwise
-- **Hotfix or time-sensitive change** — this skill is for planned maintenance windows, not emergency patches
-- **Single-issue fix** — if you know exactly what needs fixing, run a targeted analysis using the pattern files in `steps/` (e.g., `step7-patterns.md` for security) instead of running the full loop
+- **Solution with >500 .cs files**: run a scoped overhaul on one project directory at a time. The agent findings tables will be unmanageably large otherwise
+- **Hotfix or time-sensitive change**: this skill is for planned maintenance windows, not emergency patches
+- **Single-issue fix**: if you know exactly what needs fixing, run a targeted analysis using the pattern files in `steps/` (e.g., `step7-patterns.md` for security) instead of running the full loop
 
 ## Overlap with /solution-audit
 
 Step 2 covers everything `/solution-audit` does (build/analyzer/NuGet config, package health)
-*and* fixes it. **Do not run both** — use `/solution-audit` alone only for a lightweight,
+*and* fixes it. **Do not run both**, use `/solution-audit` alone only for a lightweight,
 read-only config check or CI gate.
 
 ## The Overhaul Loop
 
 Each step -> findings table -> user picks what to fix -> **Fix Cycle** -> next step.
-**No git commits or pushes until Step 10.**
+**Never commit or push unless the user asks.**
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -92,12 +92,12 @@ Read `.claude/tmp/overhauler/progress.md`. If the file exists: recover baseline 
 
 ## Portability Layers
 
-Core path (Steps 0–10) needs only `dotnet` CLI, `Explore` agents, and `.claude/tmp/` state —
+Core path (Steps 0-10) needs only `dotnet` CLI, `Explore` agents, and `.claude/tmp/` state:
 zero external dependencies. Use these when present, else fall back:
 
 | If present                            | Use it for                  | Else fall back to                                      |
 | ------------------------------------- | --------------------------- | ------------------------------------------------------ |
-| `build-validator` agent               | build + test                | `${CLAUDE_SKILL_DIR}/scripts/build.sh`, `test.sh`      |
+| `build-validator` agent               | build + test                | `scripts/build.sh`, `scripts/test.sh`      |
 | `sme-researcher` agent                | uncertainty research        | `Explore` agent                                        |
 | `tdd-loop-optimizer` agent            | batch fix cycles            | sequential fixes                                       |
 | `mcp__ide__getDiagnostics`            | deeper post-build diagnostics | build output only                                     |
@@ -105,21 +105,21 @@ zero external dependencies. Use these when present, else fall back:
 
 Project-specific (optional): read `${CLAUDE_SKILL_DIR}/conventions.md` for coding standards,
 analyzer inventory, severity overrides, and auto-approved fixes (absent → sensible .NET
-defaults); read `${CLAUDE_SKILL_DIR}/lessons/*.md` for known false positives and compiler edge cases.
+defaults). Read `${CLAUDE_SKILL_DIR}/lessons/*.md` for known false positives and compiler edge cases.
 
 ---
 
-## Step 0: Precondition — Detect Test Convention
+## Step 0: Precondition: Detect Test Convention
 
 Detect the test framework (xUnit/NUnit/MSTest) and category convention by grepping test projects for `Trait`, `Category`, `TestCategory` attributes. Also check `.runsettings`, `Directory.Build.props`, and CI workflow files for existing `--filter` arguments.
 
-**Detect test runner** — check `global.json` for `"test": { "runner": "Microsoft.Testing.Platform" }`:
-- **MTP detected:** Use `dotnet test --solution <slnx> -- --filter-trait "Category=CI"` syntax. The `--` separator passes args to MTP; `--filter` (VSTest syntax) does NOT work.
-- **VSTest (no MTP config):** Use `dotnet test --filter "Category=CI"` syntax.
-- **.NET 10 SDK without MTP config:** Flag as a Step 2 finding — MTP is required on .NET 10.
+**Detect test runner**: check `global.json` for `"test": { "runner": "Microsoft.Testing.Platform" }`:
+- **MTP detected:** Use `scripts/test.sh --trait "Category=CI"`. Never run the raw test command. The VSTest `--filter` syntax does NOT work on MTP.
+- **VSTest (no MTP config):** Not supported in this repo. Flag it as a finding.
+- **.NET 10 SDK without MTP config:** Flag as a Step 2 finding, MTP is required on .NET 10.
 
-**Record the detected convention** to `.claude/tmp/overhauler/test-convention.md` — framework,
-runner, category attribute, exact filter command, and test count. Steps 1 and 9 read this file;
+**Record the detected convention** to `.claude/tmp/overhauler/test-convention.md`, framework,
+runner, category attribute, exact filter command, and test count. Steps 1 and 9 read this file.
 never re-derive the filter from memory.
 
 - **Found:** Report and proceed. **Not found:** Ask user to choose: (1) add category attributes, (2) different value, (3) run unfiltered.
@@ -128,10 +128,10 @@ never re-derive the filter from memory.
 
 ## Step 1: CI Test Baseline
 
-**CI tests:** Use the exact filter command recorded in `.claude/tmp/overhauler/test-convention.md`.
-Do not hardcode a filter — always read the convention file from Step 0.
+**CI tests:** Use the exact `scripts/test.sh` invocation recorded in `.claude/tmp/overhauler/test-convention.md`.
+Do not hardcode a filter: always read the convention file from Step 0.
 Record: total, passed, failed, skipped, pre-existing failures.
-Stop if failures — user decides whether to proceed with a broken baseline.
+Stop if failures: user decides whether to proceed with a broken baseline.
 
 **Persist baseline to disk immediately after recording:**
 Write `.claude/tmp/overhauler/baseline.md`:
@@ -139,14 +139,14 @@ Write `.claude/tmp/overhauler/baseline.md`:
 # Overhaul Baseline
 CI Tests: X passed, Y failed, Z skipped
 ```
-Step 9 reads this file for comparison — never rely on memory across steps.
+Step 9 reads this file for comparison, never rely on memory across steps.
 
 ---
 
 ## Step 2: Solution Infrastructure (Mandatory) -> read steps/step2.md
 
 Covers: .slnx conversion, Central Package Management, strict code analysis, `.gitignore` coverage.
-This step executes immediately — no findings table, no approval gate.
+This step executes immediately: no findings table, no approval gate.
 
 ---
 
@@ -190,7 +190,7 @@ Two parts: code security (patterns from `steps/step7-patterns.md`, report only) 
 ## Step 8: Cleanup & Organization -> read steps/step8.md
 
 Covers: sort `Directory.Packages.props`, sort `.editorconfig` rules, review/remove stale
-suppressions, verify build. Executes immediately — no approval gate.
+suppressions, verify build. Executes immediately: no approval gate.
 
 ---
 
@@ -209,7 +209,7 @@ After user approves findings: create a plan (if dev-planning available and >=8 f
 ## Self-Improvement
 
 After each cycle, fold durable learnings back in: new modernization patterns and analyzer
-fix patterns → `conventions.md`; false positives and compiler edge cases → `lessons/*.md`
+fix patterns → `conventions.md`. False positives and compiler edge cases → `lessons/*.md`
 (read during Step R). Note format:
 `- [dotnet-overhaul YYYY-MM-DD] Added: <pattern/API> — before: <old> -> after: <new>`
 
@@ -219,10 +219,10 @@ fix patterns → `conventions.md`; false positives and compiler edge cases → `
 
 ## Guidelines
 
-- **Parallel agents** — always launch research agents in a single message
-- **Don't fix without approval** — present findings table first; user picks what to fix
-- **Minimal fixes** — don't refactor surrounding code; just fix the finding
-- **Always build+test** — verify after every batch of fixes
-- **Acknowledge intentional patterns** — mark as INFO, not as issues
-- **Ignore `ConfigureAwait(false)`** — enforced by analyzers; not a finding for this skill
-- **Apply conventions** — if `conventions.md` exists, follow its coding standards. If absent, match the existing code style.
+- **Parallel agents**: always launch research agents in a single message
+- **Do not fix without approval**: present findings table first. User picks what to fix
+- **Minimal fixes**: do not refactor surrounding code. Just fix the finding
+- **Always build+test**: verify after every batch of fixes
+- **Acknowledge intentional patterns**: mark as INFO, not as issues
+- **Ignore `ConfigureAwait(false)`**: enforced by analyzers. Not a finding for this skill
+- **Apply conventions**: if `conventions.md` exists, follow its coding standards. If absent, match the existing code style.

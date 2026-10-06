@@ -31,24 +31,24 @@ Parse coverage output, identify lowest-covered classes, route to `fill-test-gaps
 ### Input Formats
 
 Accepts three formats (pasted as `$ARGUMENTS` or message body):
-- **Format A: Spectre Console ANSI** — `[#hex]-  NN.N%[/]  ClassName`
-- **Format B: Pipe/tab table** — `| Class | Line Coverage | Branch Coverage |`
-- **Format C: Summary text** — `ClassName  NN.N%`
+- **Format A: Spectre Console ANSI**: `[#hex]-  NN.N%[/]  ClassName`
+- **Format B: Pipe/tab table**: `| Class | Line Coverage | Branch Coverage |`
+- **Format C: Summary text**: `ClassName  NN.N%`
 
 ### Workflow
 
-1. **Parse input** — extract `(class_name, coverage_percentage)` pairs
-2. **Rank and filter** — sort ascending, remove 100% and test classes, take bottom 15
-3. **Present selection** — show ranked list, ask: "Which classes? (numbers, 'all', or 'top 5')"
-4. **Locate source files** — `scripts/find.sh --class {ClassName}`
-5. **Dispatch to fill-test-gaps** — spawn agents (up to 3 parallel) for selected classes
-6. **Summary** — report before coverage + tests generated
+1. **Parse input**: extract `(class_name, coverage_percentage)` pairs
+2. **Rank and filter**: sort ascending, remove 100% and test classes, take bottom 15
+3. **Present selection**: show ranked list, ask: "Which classes? (numbers, 'all', or 'top 5')"
+4. **Locate source files**: `scripts/find.sh --class {ClassName}`
+5. **Dispatch to fill-test-gaps**: spawn agents (up to 3 parallel) for selected classes
+6. **Summary**: report before coverage + tests generated
 
 ### Rules
 
 - Never skip the selection prompt
 - Parallel limit of 3 fill-test-gaps agents
-- This skill parses output — it does not run coverage. Direct users to run coverage tools first.
+- This skill parses output: it does not run coverage. Direct users to run coverage tools first.
 
 ---
 
@@ -58,7 +58,7 @@ Add or verify a coverage threshold enforcement step in CI.
 
 ### Steps
 
-1. Read `.github/workflows/ci.yml` and `coverage.config.xml`
+1. Read `.github/workflows/ci.yml`. Read `coverage.config.xml` if it exists
 2. Determine threshold (user-specified or default 80% line coverage)
 3. If no enforcement exists, propose a `reportgenerator` step that fails the build below threshold
 4. Use `AskUserQuestion` to get approval before writing workflow changes:
@@ -82,25 +82,25 @@ AskUserQuestion({
 
 - Never lower an existing threshold without approval
 - Use `AskUserQuestion` for approval before writing workflow changes
-- If `coverage.config.xml` is missing, warn — run config-audit first
+- If `coverage.config.xml` is missing, warn: run config-audit first
 
 ---
 
 ## Mode: Config Audit
 
-Cross-reference `coverage.config.xml` against `the solution file` to catch silent drift.
+Cross-reference `coverage.config.xml` against the project list from `scripts/solution-inventory.sh --json` to catch silent drift. If `coverage.config.xml` does not exist, report that and stop.
 
 ### Steps
 
-1. Read `coverage.config.xml` — extract `<ModulePath>` patterns in Include/Exclude
-2. Read `the solution file` — derive expected DLL names per project
+1. Read `coverage.config.xml`: extract `<ModulePath>` patterns in Include/Exclude
+2. Run `scripts/solution-inventory.sh --json`: derive expected DLL names per project
 3. Classify includes: match against src/ DLLs. Flag **dead entries** (no matching project) and **missing coverage** (no include pattern)
 4. Classify excludes: verify test/benchmark assemblies still exist
 5. Render audit report with missing/dead/valid counts
-6. If issues found, ask once: "Apply suggested fixes?" — add missing, remove dead, preserve comments
+6. If issues found, ask once: "Apply suggested fixes?", add missing, remove dead, preserve comments
 
 ### Notes
 
-- DLL name may differ from project name — check `.csproj` for `<AssemblyName>` override
+- DLL name may differ from project name, check `.csproj` for `<AssemblyName>` override
 - Only `src/` projects warrant coverage inclusion
-- Regex patterns use .NET syntax — escape dots as `\.`
+- Regex patterns use .NET syntax: escape dots as `\.`

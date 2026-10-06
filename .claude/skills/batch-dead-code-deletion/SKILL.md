@@ -31,16 +31,16 @@ For each symbol, confirm it is dead before touching it. Classify into one of:
 `TEST-ONLY` (referenced only under `tests/`), or `ANCHOR` (only reference is a
 `typeof(X).Assembly` marker in an architecture-test fixture).
 
-1. **Find the defining file(s)** — `scripts/find.sh --class {Symbol}` (or
+1. **Find the defining file(s)**: `scripts/find.sh --class {Symbol}` (or
    `rg -l "class {Symbol}|interface {Symbol}|record {Symbol}" src/`).
-2. **Count references** — `rg -w "{Symbol}" src/ tests/ -g '*.cs'`. Exclude the
+2. **Count references**: `rg -w "{Symbol}" src/ tests/ -g '*.cs'`. Exclude the
    definition site. For **extension methods**, the class name never appears at
-   call sites — grep the public *method* names instead.
-3. **Cross-check (optional)** — the `find_dead_code` Roslyn MCP tool can suggest
-   candidates, but **don't trust it alone** (~33% false-positive rate). The `rg`
+   call sites: grep the public *method* names instead.
+3. **Cross-check (optional)**: the `find_dead_code` Roslyn MCP tool can suggest
+   candidates, but **do not trust it alone** (~33% false-positive rate). The `rg`
    caller count is authoritative.
-4. **Flag multi-type files** — if the defining file declares more than one type,
-   mark it `multi_type` (edit, don't delete).
+4. **Flag multi-type files**: if the defining file declares more than one type,
+   mark it `multi_type` (edit, do not delete).
 
 ## Step 3: Execute Deletions (skip in DRY_RUN)
 
@@ -55,7 +55,7 @@ For each DEAD symbol in a `multi_type` file:
 - Edit to remove only the dead type's definition block
 - `git add` the modified file
 
-**Delete only DEAD symbols — leave ANCHOR, TEST-ONLY, and ALIVE symbols in place.**
+**Delete only DEAD symbols: leave ANCHOR, TEST-ONLY, and ALIVE symbols in place.**
 
 For ANCHOR symbols: the `typeof(X).Assembly` reference in the architecture-test
 fixture must be repointed to another public type from the same assembly before
@@ -75,7 +75,7 @@ One run covers all deletions. If the build fails:
 ## Step 5: Stage Results (skip in DRY_RUN)
 
 ```bash
-scripts/internal/stage.sh --include-new
+scripts/internal/stage.sh
 ```
 
 ## Step 6: Report
@@ -97,9 +97,9 @@ Dead-Code Deletion Report
 
 - **Delete only after classification confirmation.** Every symbol must be
   confirmed `DEAD` (zero non-definition references) before deletion.
-- **Don't trust `find_dead_code` alone.** ~33% false-positive rate — confirm with `rg`.
+- **Do not trust `find_dead_code` alone.** ~33% false-positive rate, confirm with `rg`.
 - **Extension class gotcha.** Grep the public method names, not the class name.
-- **Multi-type files: edit, don't delete.**
+- **Multi-type files: edit, do not delete.**
 - **One build run.** After all deletions, not per symbol.
-- **Stage only — don't commit.** The caller handles commits.
-- **DRY_RUN is default-safe.** No files modified; report what would happen.
+- **Stage only: do not commit.** The caller handles commits.
+- **`--dry-run` is the only mode that writes nothing.** Without the flag, the skill deletes files.

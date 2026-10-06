@@ -25,12 +25,12 @@ Gives the README inventory (`readmes`), the solution file, and every project wit
 
 ### 2. Audit each README
 
-**src/\*/README.md (packable projects — `projects[].packable == true`):**
+**src/\*/README.md (packable projects, `projects[].packable == true`):**
 - Verify `<Version>` in the `.csproj` matches any install snippet in the README
-- Run `scripts/readme-table-diff.sh --analyzer --json` — deterministic set-diff of the rule table against analyzer source. Act only on a non-empty `missing_from_readme` / `extra_in_readme` / `code_fix_mismatches`; `drift: false` means every diagnostic ID is present and the "Code Fix" column matches actual `CodeFixProvider` coverage
+- Run `scripts/readme-table-diff.sh --analyzer --json`: deterministic set-diff of the rule table against analyzer source. Act only on a non-empty `missing_from_readme` / `extra_in_readme` / `code_fix_mismatches`; `drift: false` means every diagnostic ID is present and the "Code Fix" column matches actual `CodeFixProvider` coverage
 
 **scripts/README.md:**
-- Run `scripts/readme-table-diff.sh --json` — deterministic set-diff of documented vs. on-disk scripts (public + `internal/`). Act only on a non-empty `missing_from_readme` / `extra_in_readme`
+- Run `scripts/readme-table-diff.sh --json`: deterministic set-diff of documented vs. on-disk scripts (public + `internal/`). Act only on a non-empty `missing_from_readme` / `extra_in_readme`
 - Read the README and verify documented flags match actual script `--help` / argument parsing
 
 **Root README.md:**
@@ -40,8 +40,8 @@ Gives the README inventory (`readmes`), the solution file, and every project wit
 
 ### 3. Apply fixes
 
-Apply corrections directly with Edit. Only ask for approval on structural changes
-(adding/removing entire sections).
+Apply corrections directly with Edit. Never add or remove an entire section.
+List each structural change in your final report for the caller to decide.
 
 ### 4. Report
 
@@ -54,7 +54,7 @@ README Audit: N files checked, M fixes applied
 
 ## Rules
 
-- **Use `rg` for content searches, `fd` for file discovery** — never use `grep` or `find`
-- **Auto-fix drift** — apply corrections directly for data-driven tables
-- **Don't restructure** — match each README's existing style
-- **Analyzer README is NuGet-facing** — accuracy is critical
+- **Use `rg` for content searches, `fd` for file discovery**: never use `grep` or `find`
+- **Auto-fix drift**: apply corrections directly for data-driven tables
+- **Do not restructure**: match each README's existing style
+- **Analyzer README is NuGet-facing**: accuracy is critical
