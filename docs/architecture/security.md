@@ -58,7 +58,7 @@ The analyzer suite is itself a security control. Key security/reliability rules:
 | E128039/E128051 | Catch filters swallowing `OperationCanceledException`          |
 | E128086 | `ArrayPool` buffer as SQLite param without `.Size` → garbage in BLOB  |
 
-**Scope note:** E128071/E128075 are compile-time algorithm-selection checks — they steer code toward FIPS-approved algorithms and cryptographic RNG. They are not a FIPS 140-2 validated cryptographic module: that would require the container OS itself to run against a certified FIPS provider, which the stock Ubuntu Noble image doesn't ship (Ubuntu's FIPS OpenSSL module is gated behind an Ubuntu Pro subscription). See [podman.md](../../lode/infrastructure/podman.md) for detail.
+**Scope note:** E128071/E128075 are compile-time algorithm-selection checks — they steer code toward FIPS-approved algorithms and cryptographic RNG. They are not a FIPS 140-2 validated cryptographic module: that would require the container OS itself to run against a certified FIPS provider, which the stock Ubuntu Resolute image doesn't ship (Ubuntu's FIPS OpenSSL module is gated behind an Ubuntu Pro subscription). See [podman.md](../../lode/infrastructure/podman.md) for detail.
 
 ## Supply-Chain Security
 

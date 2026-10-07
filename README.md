@@ -63,7 +63,7 @@ scripts/podman.sh test
 | **E128.Analyzers.Tests** | Analyzer and code fix unit tests                                               |
 | **E128.Reference.Cli.Tests**  | Unit tests for the CLI app                                                 |
 | **E128.Reference.Core.Tests** | Unit tests for the Greeter, GreetingService, and repositories              |
-| **Podman**               | Hardened Noble multi-stage Dockerfile and compose.yaml                         |
+| **Podman**               | Hardened Resolute multi-stage Dockerfile and compose.yaml                      |
 | **Bash scripts**         | Build, test, format, CI, Podman, and lode tasks ([catalog](scripts/README.md)) |
 | **Claude Code harness**  | CLAUDE.md, rules, hooks, skills, and agents (see `.claude/`)                   |
 | **CI/CD**                | GitHub Actions CI and NuGet trusted publishing                                 |
@@ -117,6 +117,9 @@ scripts/podman.sh test
 ├── .globalconfig             # Analyzer severities (deny-by-default)
 ├── .github/workflows/ci.yml  # GitHub Actions CI
 ├── .github/workflows/publish.yml # NuGet trusted publishing
+├── .gitleaks.toml            # Secret scan config
+├── .opencode/                # Generated opencode agent mirror
+├── AGENTS.md                 # Cross-harness AI instructions
 ├── CLAUDE.md                 # Always-loaded AI instructions
 ├── Directory.Build.props     # Shared build properties
 ├── Directory.Build.targets   # Conditional targets (test project config)
@@ -125,9 +128,12 @@ scripts/podman.sh test
 ├── compose.yaml              # Container orchestration
 ├── E128.Reference.slnx       # Solution file
 ├── global.json               # SDK version and MTP test runner config
+├── docs/                     # Architecture and guide documents
 ├── lode/                     # Project knowledge documentation
 ├── nuget.config              # Single source and source mapping
+├── opencode.json             # opencode instruction wiring and permissions
 ├── plans/                    # Structured planning documents
+├── prompts/                  # System prompt for Lode sessions
 ├── renovate.json             # Renovate dependency update config
 ├── scripts/                  # Bash development scripts ([catalog](scripts/README.md))
 ├── src/

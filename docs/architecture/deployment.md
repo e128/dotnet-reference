@@ -1,6 +1,6 @@
 # Deployment & Delivery — E128.Reference
 
-> **One sentence:** Two GitHub Actions workflows drive delivery — `ci.yml` runs format+build+test on every push/PR, and `publish.yml` OIDC-trusted-publishes the analyzer package to nuget.org when its source changes; the web service ships as a multi-stage Noble container built with Podman.
+> **One sentence:** Two GitHub Actions workflows drive delivery — `ci.yml` runs format+build+test on every push/PR, and `publish.yml` OIDC-trusted-publishes the analyzer package to nuget.org when its source changes; the web service ships as a multi-stage Resolute container built with Podman.
 
 *Updated: 2026-05-29T19:02:39Z*
 
@@ -11,8 +11,8 @@
 ```mermaid
 graph TB
   dev["Developer push / PR"] --> gh["GitHub"]
-  gh --> ci["ci.yml<br/>ubuntu-24.04"]
-  gh --> pub["publish.yml<br/>ubuntu-24.04 (release env)"]
+  gh --> ci["ci.yml<br/>ubuntu-26.04"]
+  gh --> pub["publish.yml<br/>ubuntu-26.04 (release env)"]
   ci --> fmt["dotnet format --verify-no-changes"]
   ci --> bld["dotnet build -c Release"]
   ci --> tst["dotnet test --filter-trait Category=CI"]
@@ -20,7 +20,7 @@ graph TB
   gate -->|new| pack["dotnet pack E128.Analyzers"]
   pack --> push["OIDC → dotnet nuget push"]
   push --> ngorg["nuget.org"]
-  docker["Dockerfile (multi-stage Noble)"] --> img["E128.Reference.Web image"]
+  docker["Dockerfile (multi-stage Resolute)"] --> img["E128.Reference.Web image"]
 ```
 
 ## IaC Modules
@@ -29,7 +29,7 @@ No cloud IaC (Terraform/Bicep/ARM) is present. "Infrastructure as code" here is:
 
 | Artifact                  | Purpose                                                        |
 | ------------------------- | -------------------------------------------------------------- |
-| `Dockerfile`              | Multi-stage Noble build of the web service                     |
+| `Dockerfile`              | Multi-stage Resolute build of the web service                     |
 | `.github/workflows/ci.yml`| Format + build + test gate                                     |
 | `.github/workflows/publish.yml` | Analyzer pack + OIDC push                                |
 | `renovate.json`           | Automated dependency updates (group, auto-merge patch/minor)   |
@@ -42,7 +42,7 @@ No cloud IaC (Terraform/Bicep/ARM) is present. "Infrastructure as code" here is:
 - Trunk-based on `main`; feature/fix/refactor branches; squash to one commit per PR.
 - `ci.yml` triggers on push to `main` and PRs targeting `main`.
 
-### ci.yml steps (`ubuntu-24.04`)
+### ci.yml steps (`ubuntu-26.04`)
 
 ```mermaid
 flowchart LR

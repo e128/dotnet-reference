@@ -49,7 +49,7 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `lode-guard.sh`     | Lode file size guard: check line count before appending                 |
 | `task.sh`           | Task management: check/next/progress                                    |
 | `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected           |
-| `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4-flash:0731-cloud) |
+| `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4.1-flash:cloud) |
 | `lode-opencode.nu`  | Nushell wrapper: launch opencode via Ollama backend with SystemPrompt.txt injected (default qwen3.8:27b-mlx) |
 
 ## Code Navigation & Analysis
@@ -98,7 +98,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/plan-context.sh`           | List active plans, roadmap items, or details                                               |
 | `internal/plan-gate.sh`              | Phase gate prerequisite verification                                                       |
 | `internal/plan-path.sh`              | Resolve a plan's canonical path by partial name                                            |
-| `internal/precommit.sh`              | PII scan on staged files                                                                   |
+| `internal/precommit.sh`              | PII and secret scan on staged files                                                        |
 | `internal/review-agents.sh`          | Discover code-review-relevant agents dynamically from .claude/agents/                      |
 | `internal/review-findings.sh`        | Locate the latest review plan and parse its checklist findings, grouped by file with severity |
 | `internal/settings-gap.sh`           | Diff catalog commands against settings.json allow-list; classify gaps by safety tier       |

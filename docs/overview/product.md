@@ -101,5 +101,5 @@ flowchart TD
 | ----------------- | ------------------------------------------------------------- |
 | Roslyn hosts      | Visual Studio 2022 17.8+, Rider 2024.1+, `dotnet build` CLI   |
 | Package registry  | nuget.org (`E128.Analyzers`)                                  |
-| CI                | GitHub Actions (`ubuntu-24.04`)                               |
+| CI                | GitHub Actions (`ubuntu-26.04`)                               |
 | Container runtime | Alpine .NET 10 images (web service)                           |

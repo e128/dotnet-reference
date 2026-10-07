@@ -20,7 +20,7 @@ The stack is xUnit v3 on MTP. Raw `dotnet test --filter` does not work. Run
 ## Before You Change `<TargetFramework>`
 
 Run `dotnet --list-sdks` and confirm the target SDK is installed locally. CI
-runs on `ubuntu-24.04` with a pinned SDK. A target that is missing locally
+runs on `ubuntu-26.04` with a pinned SDK. A target that is missing locally
 fails at build time in unexpected ways.
 
 ## See Also

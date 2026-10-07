@@ -43,10 +43,10 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 
 | Base image                              | Tag            | Type         |
 | --------------------------------------- | -------------- | ------------ |
-| `mcr.microsoft.com/dotnet/aspnet`       | `10.0-noble`   | .NET runtime (production, E128.Reference.Web) |
-| `mcr.microsoft.com/dotnet/sdk`          | `10.0-noble`   | .NET SDK (restore + build stages)             |
+| `mcr.microsoft.com/dotnet/aspnet`       | `10.0-resolute`   | .NET runtime (production, E128.Reference.Web) |
+| `mcr.microsoft.com/dotnet/sdk`          | `10.0-resolute`   | .NET SDK (restore + build stages)             |
 
-> Tags are pinned to a minor version (`:10.0-noble`), not a digest. They drift with
+> Tags are pinned to a minor version (`:10.0-resolute`), not a digest. They drift with
 > patch releases but do not track `:latest`. No unpinned tags.
 
 ---
@@ -55,14 +55,15 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 
 | Artifact              | Value                                      | Source                                |
 | --------------------- | ------------------------------------------ | ------------------------------------- |
-| Runtime image         | `mcr.microsoft.com/dotnet/aspnet:10.0-noble`  | `Dockerfile` (final `runtime` stage) |
-| SDK/build image       | `mcr.microsoft.com/dotnet/sdk:10.0-noble`     | `Dockerfile` (`restore`/`build` stages) |
+| Runtime image         | `mcr.microsoft.com/dotnet/aspnet:10.0-resolute`  | `Dockerfile` (final `runtime` stage) |
+| SDK/build image       | `mcr.microsoft.com/dotnet/sdk:10.0-resolute`     | `Dockerfile` (`restore`/`build` stages) |
 | .NET SDK pin          | see `global.json`                          | `global.json`                         |
 | SDK rollForward       | `latestMajor` ⚠                           | `global.json` — permits any future major version |
 | Target framework      | `net10.0` (all except `E128.Analyzers`)    | `Directory.Build.props`               |
 | Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj`               |
 | CI SDK version        | `10.0.x`                                   | `.github/workflows/ci.yml` `setup-dotnet` |
-| CI platform           | `ubuntu-24.04`                             | `.github/workflows/ci.yml`            |
+| CI platform           | `ubuntu-26.04`                             | `.github/workflows/ci.yml`            |
+| Secret scanner        | gitleaks, version and SHA-256 pinned in job `env` | `.github/workflows/ci.yml` (`secrets` job) |
 | Test runner           | Microsoft.Testing.Platform                 | `global.json`                         |
 
 > ⚠ `rollForward: "latestMajor"` in `global.json` allows the SDK to roll forward to
@@ -95,7 +96,7 @@ graph TB
   end
 
   subgraph runtime["Runtime Image"]
-    img["mcr.microsoft.com/dotnet/aspnet:10.0-noble"]
+    img["mcr.microsoft.com/dotnet/aspnet:10.0-resolute"]
   end
 
   web --> core
@@ -169,4 +170,4 @@ severity for all deps (direct and transitive).
 
 ---
 
-*Updated: 2026-08-16T12:36:28Z*
+*Updated: 2026-10-07T12:51:21Z*

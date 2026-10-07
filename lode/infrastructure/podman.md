@@ -1,5 +1,5 @@
 # Podman
-*Updated: 2026-08-16T12:36:24Z*
+*Updated: 2026-10-07T12:51:21Z*
 
 ## Why Podman
 
@@ -19,13 +19,13 @@ Hardcoded port `58080` — could conflict in parallel CI. Tests tagged `[Trait("
 
 ## Dockerfile Structure
 
-Three-stage Noble-based build (`Dockerfile` at repo root, unchanged filename — podman looks for `Containerfile` first, falls back to `Dockerfile`):
+Three-stage Resolute-based build (`Dockerfile` at repo root, unchanged filename — podman looks for `Containerfile` first, falls back to `Dockerfile`):
 
-1. **restore** — `sdk:10.0-noble`, copies build infra + csproj files, runs `dotnet restore`
+1. **restore** — `sdk:10.0-resolute`, copies build infra + csproj files, runs `dotnet restore`
 2. **build** — copies source, runs `dotnet publish --configuration Release`
-3. **runtime** — `aspnet:10.0-noble`, installs `curl` (for the healthcheck), non-root user
+3. **runtime** — `aspnet:10.0-resolute`, installs `curl` (for the healthcheck), non-root user
 
-No FIPS 140-2 setup: the stock Ubuntu Noble `openssl` apt package ships no FIPS provider module on either arm64 or amd64 — Ubuntu's certified FIPS OpenSSL module is gated behind an Ubuntu Pro subscription (`pro attach` + `pro enable fips-updates`), not available via plain `apt-get install`. A prior version of this Dockerfile ran `openssl fipsinstall` against a `find`-located `fips.so` that doesn't exist in this image, so the build always failed — this went undetected until Podman's build was first actually run locally.
+No FIPS 140-2 setup: the stock Ubuntu Resolute `openssl` apt package ships no FIPS provider module on either arm64 or amd64 — Ubuntu's certified FIPS OpenSSL module is gated behind an Ubuntu Pro subscription (`pro attach` + `pro enable fips-updates`), not available via plain `apt-get install`. A prior version of this Dockerfile ran `openssl fipsinstall` against a `find`-located `fips.so` that doesn't exist in this image, so the build always failed — this went undetected until Podman's build was first actually run locally.
 
 ## `.dockerignore`
 

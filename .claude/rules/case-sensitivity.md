@@ -1,6 +1,6 @@
 # Case-Sensitive Paths
 
-macOS is case-insensitive by default. Linux CI (`ubuntu-24.04`, ext4) is
+macOS is case-insensitive by default. Linux CI (`ubuntu-26.04`, ext4) is
 case-sensitive. **Always use the exact filesystem casing.**
 
 This rule applies to:

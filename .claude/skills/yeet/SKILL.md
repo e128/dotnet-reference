@@ -130,7 +130,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
 
 **Normal path**: there are new working-tree changes to commit:
 - **Stage**: `scripts/internal/stage.sh --include-new` (stages all modified tracked + new untracked, excluding secrets)
-- **PII scan**: `scripts/internal/precommit.sh` (checks staged diff for home paths and email addresses, stop if fail)
+- **PII scan**: `scripts/internal/precommit.sh` (checks staged diff for home paths, email addresses, and secrets via gitleaks, stop if fail)
 - If lode files staged, show brief summary table (path + one-line change description)
 - **Squash**: use `unpushed` from cached step 0:
     - `unpushed > 1`: `git reset --soft HEAD~<unpushed>` then re-stage and commit as one

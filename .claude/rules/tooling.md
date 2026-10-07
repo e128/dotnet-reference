@@ -10,5 +10,6 @@
 **Optional:**
 
 - `shellcheck` — bash script linter
+- `gitleaks` — secret scan in `scripts/internal/precommit.sh` (`brew install gitleaks`)
 - `dotnet-outdated-tool` — NuGet update checker
   (`dotnet tool install -g dotnet-outdated-tool`)

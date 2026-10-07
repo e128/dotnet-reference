@@ -1,6 +1,6 @@
 # NuGet Trusted Publishing
 
-*Updated: 2026-08-16T12:38:26Z*
+*Updated: 2026-10-07T12:51:21Z*
 
 OIDC-based package publishing from GitHub Actions to nuget.org. Eliminates long-lived API keys.
 
@@ -45,7 +45,7 @@ permissions:
 jobs:
   publish:
     name: Pack + Push E128.Analyzers
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release          # must match nuget.org policy
     permissions:
       contents: read

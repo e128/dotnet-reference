@@ -105,7 +105,7 @@ of what is portable versus Claude-only.
 
 ## Repo-Specific Gotchas
 
-- macOS is case-insensitive. Linux CI (`ubuntu-24.04`, ext4) is
+- macOS is case-insensitive. Linux CI (`ubuntu-26.04`, ext4) is
   case-sensitive. Use the exact filesystem casing in every path, `using`
   directive, and solution folder name. After a rename, search for the
   stale name.
