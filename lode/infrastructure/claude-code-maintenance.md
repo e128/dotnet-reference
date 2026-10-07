@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-10-04T14:46:58Z*
+*Updated: 2026-10-07T12:51:21Z*
 
 ## Harness Portability Capability Map
 
@@ -140,11 +140,11 @@ All rule files are written in Simplified Technical English. See
 
 ## Script Conventions
 
-All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for shared functions. `lib.sh` re-execs under Homebrew Bash when the interpreter is older than Bash 4, so macOS `/bin/bash` 3.2 does not matter to the caller's PATH order. Scripts that support `--json` must produce valid JSON output. `scripts/help.sh` auto-discovers all scripts by reading the second line of each `.sh` file.
+All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for shared functions. `lib.sh` re-execs under Homebrew Bash when the interpreter is older than Bash 4, so macOS `/bin/bash` 3.2 does not matter to the caller's PATH order. `scripts/internal/precommit.sh` scans staged files for PII and secrets (see [secret-scanning.md](secret-scanning.md)). Scripts that support `--json` must produce valid JSON output. `scripts/help.sh` auto-discovers all scripts by reading the second line of each `.sh` file.
 
 ## Podman
 
-- Noble-based images (`sdk:10.0-noble`, `aspnet:10.0-noble`), runtime installs only `curl` (healthcheck) and cleans apt caches — no FIPS provider (not available via apt on stock Ubuntu Noble; see [podman.md](podman.md))
+- Resolute-based images (`sdk:10.0-resolute`, `aspnet:10.0-resolute`), runtime installs only `curl` (healthcheck) and cleans apt caches — no FIPS provider (not available via apt on stock Ubuntu Resolute; see [podman.md](podman.md))
 - `compose.yaml` with security hardening (`read_only`, `no-new-privileges`, `cap_drop: ALL`)
 - `scripts/podman.sh` — build, run, test, stop, clean commands
 - `podman machine` as the container VM runtime on macOS (rootless, no daemon)

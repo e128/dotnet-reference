@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+# An analyzer option key name, not a credential.
+[[allowlists]]
+description = "Analyzer editorconfig option key constants"
+regexTarget = "line"
+regexes = ['''ThresholdOptionKey\s*=\s*"[a-z0-9_.]+"''']

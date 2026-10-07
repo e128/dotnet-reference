@@ -90,7 +90,7 @@ dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary  # libraries o
 
 ## Environment-Specific Overrides
 
-The reference apps carry no per-environment config (no `appsettings.{Environment}.json`, no connection strings). Environment variation lives in CI (`ci.yml` sets `DOTNET_*` flags) and the container image (Noble base image tags pinned to `10.0-noble`).
+The reference apps carry no per-environment config (no `appsettings.{Environment}.json`, no connection strings). Environment variation lives in CI (`ci.yml` sets `DOTNET_*` flags) and the container image (Resolute base image tags pinned to `10.0-resolute`).
 
 ## Secrets vs Config
 

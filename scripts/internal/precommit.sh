@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PII scan: check staged files for home paths and email addresses.
+# PII and secret scan: check staged files for home paths, email addresses, and secrets (gitleaks).
 # Usage: precommit.sh [--json]
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
@@ -42,6 +42,16 @@ while IFS= read -r email; do
     FINDINGS=$((FINDINGS + 1))
     DETAILS+=("email address detected: $email")
 done <<< "$(real_emails_in "$ADDED")"
+
+# Secret scan: gitleaks over the staged diff. Findings are redacted in output.
+if command -v gitleaks >/dev/null 2>&1; then
+    if ! LEAKS=$(cd "$ROOT" && gitleaks git --staged --no-banner --redact --exit-code 1 2>&1); then
+        FINDINGS=$((FINDINGS + 1))
+        DETAILS+=("gitleaks found a secret in the staged diff:" "$LEAKS")
+    fi
+else
+    warn "gitleaks not installed: secret scan skipped (brew install gitleaks)"
+fi
 
 if [[ $FINDINGS -gt 0 ]]; then
     if [[ "$JSON" == true ]]; then

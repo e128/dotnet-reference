@@ -6,7 +6,7 @@
 # =============================================================================
 
 # --- Stage 1: Restore ---
-FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS restore
+FROM mcr.microsoft.com/dotnet/sdk:10.0-resolute AS restore
 WORKDIR /src
 
 # Copy build infrastructure first (maximizes layer caching)
@@ -30,7 +30,7 @@ RUN dotnet publish src/E128.Reference.Web/E128.Reference.Web.csproj \
     --output /app/publish
 
 # --- Stage 3: Runtime ---
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-resolute AS runtime
 
 # curl is needed for the HEALTHCHECK below
 RUN apt-get update && \
