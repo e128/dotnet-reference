@@ -12,6 +12,7 @@
     "dependencies"
   ],
   "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
   "prConcurrentLimit": 1,
   "branchConcurrentLimit": 1,
   "vulnerabilityAlerts": {
@@ -21,12 +22,16 @@
   },
   "packageRules": [
     {
-      "description": "Security updates bypass schedule, grouping, and release age",
+      "description": "Security updates bypass schedule and grouping, never the release age",
       "matchCategories": ["security"],
       "schedule": ["at any time"],
       "groupName": null,
-      "minimumReleaseAge": "0 days",
       "automerge": true
+    },
+    {
+      "description": "Runner images (runs-on) publish no release timestamp, so age gating would block them forever",
+      "matchDatasources": ["github-runners"],
+      "minimumReleaseAge": null
     },
     {
       "description": "Major version bumps require manual review",
