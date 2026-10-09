@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-10-04T12:43:02Z*
+*Updated: 2026-10-09T15:44:52Z*
 
 ## Strategy: Deny by Default
 
@@ -63,7 +63,7 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 ## Suppression Policy
 
 - Never use `#pragma warning disable` or `[SuppressMessage]` without user approval
-- Never use the null-forgiving operator `!` — enforced as error via `MA0191` (production) and `E128043`; test projects relax both for guard-clause assertions
+- Never use the null-forgiving operator `!` — enforced as error via `E128043` (every use) and `MA0191` (only `null!` and `default!`); test projects relax both for guard-clause assertions
 - Editorconfig severity downgrades require justification
 - Test project relaxations go in `tests/.globalconfig`, not inline suppressions
 
@@ -77,7 +77,7 @@ Aligned with Meziantou's [comparison table](https://github.com/meziantou/Meziant
 | MA0054  | Embed the caught exception as the inner exception on rethrow                |
 | MA0110  | Use `[GeneratedRegex]` source generator over `new Regex(...)`               |
 | MA0186  | `Equals(object?)` override must use `[NotNullWhen(true)]` on the parameter  |
-| MA0191  | Do not use the null-forgiving operator (aligns with custom `E128043`)       |
+| MA0191  | Do not use `null!` or `default!` (E128043 covers every other use)            |
 
 ## Netstandard2.0 Nullable Polyfill (E128.Analyzers)
 
@@ -103,6 +103,8 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 `src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"` — applied to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
 Rules span categories: Design, Reliability, Performance, Style, Testing, and FileSystem. Most rules ship with a code fix; a few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
+
+Redundant E128 rules with no code fix are disabled in `.globalconfig`. See [redundant-rules.md](analyzers/redundant-rules.md).
 
 Key rules by category (not exhaustive):
 
@@ -163,7 +165,7 @@ Uses `RegisterCompilationStartAction` to pre-resolve O(1) type symbols, then `Re
 
 ### E128067 — String concatenation in loop
 
-Flags `string +=` inside loops. Each iteration allocates a new string, creating O(n²) total allocations. Registers on `SyntaxKind.AddAssignmentExpression` and checks `SpecialType.System_String`. Code fix is a placeholder (string-to-StringBuilder refactoring is too invasive for automation).
+Disabled in `.globalconfig` (see [redundant-rules.md](analyzers/redundant-rules.md)). Flags `string +=` inside loops. Each iteration allocates a new string, creating O(n²) total allocations. Registers on `SyntaxKind.AddAssignmentExpression` and checks `SpecialType.System_String`. Code fix is a placeholder (string-to-StringBuilder refactoring is too invasive for automation).
 
 ### E128068 — Sort in loop (O(n² log n))
 

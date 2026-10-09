@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-10-07T12:51:21Z*
+*Updated: 2026-10-09T15:41:57Z*
 
 ## Generated Docs
 
@@ -31,6 +31,7 @@
 ### dotnet/analyzers/
 
 - [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md) — Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
+- [redundant-rules.md](dotnet/analyzers/redundant-rules.md): E128 rules disabled because third-party analyzers cover them
 - [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md) — Code fix implementation patterns, BatchFixer vs SequentialRename, AddUsing blank line behavior
 
 ## dotnet-reference/

@@ -36,13 +36,20 @@ dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 # Rules permanently disabled — not applicable to this project.
 # Grouped by analyzer, alpha-sorted within each group.
 
+# --- E128 (own analyzers redundant with third-party rules, no code fix) ---
+# E128 rules with a code fix stay enabled even when a third-party rule overlaps.
+dotnet_diagnostic.E128008.severity = none      # Sync-over-async (covered by VSTHRD002, SS034, MA0042)
+dotnet_diagnostic.E128020.severity = none      # 'in' with mutable struct (covered by RCS1242)
+dotnet_diagnostic.E128067.severity = none      # String concat in loop (covered by S1643, SS058)
+dotnet_diagnostic.E128075.severity = none      # Random in crypto context (covered by CA5394, S2245)
+dotnet_diagnostic.E128088.severity = none      # Enum switch missing cases (covered by IDE0010, SS018, SS019)
+dotnet_diagnostic.E128096.severity = none      # .Result on async local function (covered by VSTHRD002, SS034)
 
 # --- CA (.NET Analyzers) ---
 # Favor MA rules over CA equivalents (project policy).
 dotnet_diagnostic.ca1002.severity = none       # Do not expose generic lists (covered by E128052)
 dotnet_diagnostic.ca1303.severity = none       # Do not pass literals as localized parameters
 dotnet_diagnostic.ca1416.severity = none       # Validate platform compatibility
-dotnet_diagnostic.ca1819.severity = none       # Properties should not return arrays (covered by E128052; static readonly arrays by E128061)
 dotnet_diagnostic.ca1852.severity = none       # Seal internal types (covered by MA0053)
 dotnet_diagnostic.ca2252.severity = none       # This API requires opting into preview features
 
@@ -176,7 +183,7 @@ dotnet_diagnostic.ma0159.severity = error        # Use Order instead of OrderBy
 dotnet_diagnostic.ma0184.severity = error        # Do not use interpolated string without parameters
 dotnet_diagnostic.ma0185.severity = error        # Simplify string.Create when culture invariant
 dotnet_diagnostic.ma0186.severity = error        # Equals method should use [NotNullWhen(true)] on parameter
-dotnet_diagnostic.ma0191.severity = error        # Do not use the null-forgiving operator (aligns with E128043)
+dotnet_diagnostic.ma0191.severity = error        # Do not use null!/default! (E128043 also covers every other use of the operator)
 
 # --- Roslynator (RCS) ---
 dotnet_diagnostic.rcs1021.severity = error       # Convert lambda block body to expression body
