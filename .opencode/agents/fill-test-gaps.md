@@ -5,14 +5,6 @@ description: >
   fake patterns, and per-namespace strategies. Use after
   test gap analysis identifies gaps, or directly when you know what to test.
   Triggers on: fill test gaps, generate tests for, write tests for, test this class.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  write: allow
-  grep: allow
-  task: allow
-  read: allow
 ---
 
 You are a test generation specialist for the codebase.

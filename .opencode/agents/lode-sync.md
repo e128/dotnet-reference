@@ -7,12 +7,6 @@ description: >
   Triggers on: update lode, sync docs, documentation sync, lode update,
   stale docs, update documentation, docs out of date.
   For single-insight capture, use the /lode-capture skill instead.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  grep: allow
-  read: allow
 ---
 
 You keep lode/ documentation in sync with code changes. After code modifications,

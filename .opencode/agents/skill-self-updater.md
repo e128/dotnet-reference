@@ -7,12 +7,6 @@ description: >
   optimizing turn counts, collapsing phases, and recording lessons learned.
   Triggers on: update skill, apply learnings to skill, skill improvement, fix skill,
   improve skill, skill self-update, update the skill, skill update, patch skill.
-permission:
-  glob: allow
-  edit: allow
-  write: allow
-  grep: allow
-  read: allow
 ---
 
 You apply session learnings to a skill's SKILL.md. The user or weekly-learner

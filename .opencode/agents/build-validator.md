@@ -7,12 +7,10 @@ description: >
   main context with verbose MSBuild output.
   Triggers on: build validation, verify build, check build, validate changes,
   run build, build check, does it build.
-permission:
-  glob: allow
-  bash: allow
-  grep: allow
-  read: allow
-  edit: deny
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
 ---
 
 You validate that the .NET solution builds cleanly and tests pass.

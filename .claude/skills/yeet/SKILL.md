@@ -31,8 +31,16 @@ Run all in a single parallel message:
 ```
 A) scripts/status.sh --json               (working-tree status)
 B) scripts/status.sh --classify --json    (classification + cs_changed + analyzers_or_scripts_changed)
-C) scripts/branch.sh --json               (branch info, ahead/unpushed counts)
+C) git fetch origin --quiet               (refresh origin refs)
 ```
+
+Then, after C finishes, run:
+
+```
+D) scripts/branch.sh --json               (branch info, ahead/unpushed counts)
+```
+
+D reads the refs that C just refreshed, so C must complete first.
 
 **Read directly from `status.sh --classify --json` (B):** it emits
 `{classification, cs_changed, analyzers_or_scripts_changed}`: no manual derivation.
@@ -44,6 +52,18 @@ C) scripts/branch.sh --json               (branch info, ahead/unpushed counts)
 - Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B), `ahead`, `unpushed`, `upstream` (from C, `scripts/branch.sh`), `has_changes` (from A: `staged + unstaged + untracked > 0`)
 
 **`unpushed` (from C) is not optional to check.** A branch can have a clean working tree and still carry local commits the remote has never seen (no upstream configured, or commits made after the last push). `unpushed > 0` always means step 2's push (and PR creation) must run, even when there is nothing new to commit.
+
+**Staleness guard (from D).** A branch cut from a stale local `main` produces a
+pull request that conflicts on every file both sides touched. Measure the gap:
+
+```bash
+git rev-list --count "$(git merge-base HEAD origin/main)..origin/main"
+```
+
+A count above zero means `origin/main` moved on after this branch was cut.
+Report the count and the branches that landed. Stop and ask before you ship.
+Do not rebase or force-push on your own initiative: both rewrite published
+history.
 
 ### 1. Format + build + test
 
@@ -107,7 +127,8 @@ If the agent produces edits, they become part of this commit. No separate commit
 Skip with "README check skipped: no analyzer or script changes" if neither path is touched.
 
 **E) opencode agent mirror (conditional):**
-Only if any staged or unstaged changes touch `.claude/agents/` OR `.opencode/agents/`:
+Only if any staged or unstaged changes touch `.claude/agents/` or the generated
+`.opencode/agents/` and `.opencode/agent-assets/` trees:
 
 ```bash
 scripts/internal/opencode-agents.sh sync --json
@@ -116,7 +137,8 @@ scripts/internal/opencode-agents.sh sync --json
 This regenerates the `.opencode/agents/` mirror from the source definitions in
 `.claude/agents/` so both harnesses run the same agents. Report the generated count.
 The regenerated files become part of this commit. Never hand-edit files under
-`.opencode/agents/`. Edit `.claude/agents/` and let the script regenerate.
+`.opencode/agents/` or `.opencode/agent-assets/`. Edit `.claude/agents/` and let
+the script regenerate.
 
 Skip with "Agent mirror skipped: no agent definition changes" when neither path is touched.
 

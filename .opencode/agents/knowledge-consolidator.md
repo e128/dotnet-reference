@@ -12,13 +12,6 @@ description: >
   weekly knowledge sync, knowledge consolidation, sync learnings.
   Not for: single-insight capture (use lode-sync capture mode), session debugging,
   or plan-specific retrospectives (use weekly-learner --plan-retro).
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  write: allow
-  grep: allow
-  read: allow
 ---
 
 # Knowledge Consolidator

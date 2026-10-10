@@ -16,8 +16,12 @@ export def lode-run [
         # No message: launch the real interactive TUI, primed with the lode
         # prompt as its first turn (opencode has no persistent system-prompt
         # flag -- --prompt auto-sends as the opening message, then the
-        # session stays open for interactive use).
-        ^opencode --model $"ollama/($parsed.model)" --prompt $parsed.prompt
+        # session stays open for interactive use). The top-level command has
+        # no --model flag in opencode v2, so inject the model through the
+        # config override instead.
+        with-env { OPENCODE_CONFIG_CONTENT: ({ model: $"ollama/($parsed.model)" } | to json) } {
+            ^opencode --prompt $parsed.prompt
+        }
     } else {
         let message = $"($parsed.prompt)\n\n($parsed.claude_args | str join ' ')"
         ^opencode run --model $"ollama/($parsed.model)" $message

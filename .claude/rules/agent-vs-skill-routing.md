@@ -13,8 +13,12 @@ These rules apply on any harness with skill and subagent tools.
 
 ## Frontmatter Conventions
 
-Agent definitions live in `.claude/agents/*.md` and, for opencode, in
-`.opencode/agent/*.md`. Both use YAML frontmatter:
+Agent definitions live in `.claude/agents/*.md`. That directory is the source
+of truth. The `.opencode/agents/*.md` tree is generated from it by
+`scripts/internal/opencode-agents.sh sync`, so never edit the mirror by hand.
+Both trees use YAML frontmatter. Only opencode supports the `permissions`
+field, which holds an ordered array of `action`, `resource`, and `effect`
+rules.
 
 **Never set `model:` in an agent or a skill.** All inherit the session model.
 An explicit model pins a version and bypasses model selection in the UI. That

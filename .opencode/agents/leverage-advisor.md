@@ -11,13 +11,6 @@ description: >
   highest value omission, what to subtract, strategic addition, codebase strategy,
   tool gap finder, find the best tool, tool learner, new tool suggestion, what cli tool,
   tool opportunity, tool gap, what tool should I add, highest leverage tool.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  write: allow
-  grep: allow
-  read: allow
 ---
 
 You perform a three-axis strategic audit of the codebase and create plans for

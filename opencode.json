@@ -1,18 +1,11 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": [
-    ".claude/rules/*.md"
-  ],
-  "permission": {
-    "edit": {
-      "*": "allow",
-      ".claude/settings.json": "ask"
-    },
-    "bash": {
-      "*": "allow",
-      "git push*": "ask",
-      "gh pr create*": "ask",
-      "gh release create*": "ask"
-    }
-  }
+  "permissions": [
+    { "action": "edit", "resource": "*", "effect": "allow" },
+    { "action": "edit", "resource": ".claude/settings.json", "effect": "ask" },
+    { "action": "shell", "resource": "*", "effect": "allow" },
+    { "action": "shell", "resource": "git push *", "effect": "ask" },
+    { "action": "shell", "resource": "gh pr create *", "effect": "ask" },
+    { "action": "shell", "resource": "gh release create *", "effect": "ask" }
+  ]
 }

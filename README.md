@@ -118,7 +118,7 @@ scripts/podman.sh test
 ├── .github/workflows/ci.yml  # GitHub Actions CI
 ├── .github/workflows/publish.yml # NuGet trusted publishing
 ├── .gitleaks.toml            # Secret scan config
-├── .opencode/                # Generated opencode agent mirror
+├── .opencode/                # Generated opencode agent mirror and assets
 ├── AGENTS.md                 # Cross-harness AI instructions
 ├── CLAUDE.md                 # Always-loaded AI instructions
 ├── Directory.Build.props     # Shared build properties
@@ -131,7 +131,7 @@ scripts/podman.sh test
 ├── docs/                     # Architecture and guide documents
 ├── lode/                     # Project knowledge documentation
 ├── nuget.config              # Single source and source mapping
-├── opencode.json             # opencode instruction wiring and permissions
+├── opencode.json             # opencode v2 config and permission mirror
 ├── plans/                    # Structured planning documents
 ├── prompts/                  # System prompt for Lode sessions
 ├── renovate.json             # Renovate dependency update config

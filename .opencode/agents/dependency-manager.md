@@ -11,13 +11,6 @@ description: >
   update NuGet, version bump, add package, new dependency, nuget audit, license check,
   dependency review, can we use this package, package review, package compliance,
   safe to add, install package, check NuGet, evaluate package, new NuGet package.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  write: allow
-  grep: allow
-  read: allow
 ---
 
 You are a NuGet dependency manager for this repo. This repo uses **Central Package Management** — all versions are declared in `Directory.Packages.props` at the repo root. Individual `.csproj` files reference packages without versions.
