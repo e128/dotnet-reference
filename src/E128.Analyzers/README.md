@@ -1101,7 +1101,6 @@ The conditions:
 - `MockVerifyOnly`: the only assertion is a `Verify` call with a lambda
 - `LogAssert`: the only assertion is a `Verify` call on a logger
 - `ConstructorPassthrough`: the assertion reads a member back off an object built from the same literal
-- `InternalsReachIn`: the assertion reads an `internal` member of an assembly that grants `InternalsVisibleTo` to the test assembly
 - `SelfFulfillingExpected`: the expected value and the actual value come from the same receiver
 - `MagicConstantEcho`: the expected literal also appears as a returned value in the production body
 - `OrderLock`: `Assert.Equal` pins the order of a set or dictionary result

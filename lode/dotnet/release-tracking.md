@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-10-04T12:44:27Z*
+*Updated: 2026-10-10T17:57:51Z*
 
 ## Overview
 
@@ -119,6 +119,7 @@ E128099 | Design | Warning | No longer needed
 | 1.40.0-1.40.3 | E128101, E128102 | Patch bumps on feature commits. Both rules shipped inside the assembly but stayed listed in `Unshipped.md` until 1.41.0 |
 | 1.41.0  | E128101-106 | Six rules moved from `Unshipped.md` to a new `Release 1.41.0` section |
 | 1.41.3  | E128107-108 | Low-value test conditions moved from `Unshipped.md` to a new `Release 1.41.3` section |
+| 1.41.12 | (none)      | E128107/E128108 changed: disabled by default, predicates recalibrated. Recorded as a `Changed Rules` section in `Shipped.md` |
 
 ## Sources
 
