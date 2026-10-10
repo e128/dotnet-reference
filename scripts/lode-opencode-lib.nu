@@ -4,7 +4,7 @@
 use lode-lib.nu [parse-lode-args load-system-prompt]
 
 # Launch opencode with an Ollama backend and the injected SystemPrompt.txt.
-# The model comes from the `model` key in opencode.json. This wrapper handles
+# The model comes from the `model` key in the global opencode.json. This wrapper handles
 # --append-system-prompt; all other args pass through.
 export def lode-run [...args: string] {
     let parsed = parse-lode-args (load-system-prompt) "" ...$args

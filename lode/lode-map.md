@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-10-10T14:42:33Z*
+*Updated: 2026-10-10T14:52:45Z*
 
 ## Generated Docs
 
@@ -41,6 +41,7 @@
 ## infrastructure/
 
 - [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md): Harness maintenance: Claude Code and opencode v2 capability map, discovery rules, rule ownership
+- [opencode-guardrails.md](infrastructure/opencode-guardrails.md): opencode v2 plugin hook mapping for Claude Code guardrails, permission and shell hook contracts
 - [claude-code-upstream.md](infrastructure/claude-code-upstream.md): Claude Code upstream reference: versions, agent/skill frontmatter fields
 - [code-generation-quality.md](infrastructure/code-generation-quality.md): Mechanisms that drive better AI code generation, ranked by impact
 - [claude-revision-log.md](infrastructure/claude-revision-log.md): Revision log: dated entries from `/claude-revision` runs

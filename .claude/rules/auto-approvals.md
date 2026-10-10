@@ -1,10 +1,57 @@
 # Auto-Approvals
 
-This file states the approval policy. Each harness enforces it in its own
-config. Keep the configs in agreement when this policy changes:
+This file states the approval policy. Each harness enforces the same policy in
+its own config. Keep both configs in agreement when this policy changes:
 
-- Claude Code: allow-list entries in `.claude/settings.json`
-- opencode: `permissions` array in `opencode.json`
+- Claude Code: `permissions.allow`, `permissions.ask`, and `permissions.deny`
+  in `.claude/settings.json`
+- opencode: the `permissions` array and `experimental.policies` in `opencode.json`
+
+Every action falls into one of three tiers.
+
+| Tier  | Meaning                 | Claude Code   | opencode                       |
+| ----- | ----------------------- | ------------- | ------------------------------ |
+| auto  | Runs without a prompt   | `allow`       | base policy of allow           |
+| ask   | Prompts first           | `ask`         | `effect` of `ask`              |
+| deny  | Always refused          | `deny`        | `experimental.policies`        |
+
+## Precedence
+
+Claude Code evaluates `deny`, then `ask`, then `allow`. Rule specificity never
+changes that order, so a broad deny blocks a narrower allow.
+
+opencode evaluates the `permissions` array in order, and the last matching rule
+wins. A statement in `experimental.policies` outranks the array and can only
+tighten a decision. Use a policy for the deny tier.
+
+The base posture still differs between the harnesses. Claude Code denies an
+unlisted Bash command by default. opencode allows every action by default. That
+difference is a harness mechanic, not a policy choice. The tiers below are the
+part both harnesses share.
+
+## Deny Tier
+
+These actions destroy shared history or uncommitted work.
+
+- `git push --force`
+- `git push -f`
+- `git reset --hard`
+
+## Ask Tier
+
+These actions reach outside the working copy or rewrite local history.
+
+- `git push`
+- `gh pr create`
+- `gh release create`
+- `git clean -fd`
+- `git rebase`
+- Editing `.claude/settings.json`
+
+`git push --force` also matches the `git push` ask rule. The deny rule wins on
+both harnesses, so a force push never reaches a prompt.
+
+## Auto Tier
 
 Apply these changes silently. They never require user confirmation:
 
@@ -22,10 +69,19 @@ Apply these changes silently. They never require user confirmation:
 - Creating, updating, or deleting a file inside `lode/`. Deletion requires the
   file to be git-committed with no uncommitted changes.
 
-These actions still require explicit approval:
+## Withheld Approval
+
+These actions require explicit approval and belong to neither tier above:
 
 - Any analyzer suppression (`#pragma`, `[SuppressMessage]`)
 - Deleting a file outside `lode/`, or deleting a significant code block
 - Changing a public API signature
-- Any git push, PR creation, or other external-facing action
-- Modifying `.claude/settings.json`
+
+## Guardrails
+
+`.claude/hooks/block-raw-git` and `.claude/hooks/block-raw-commands` enforce the
+deterministic script routing at execution time. The plugin
+`.opencode/plugins/e128-guardrails/index.ts` runs the same scripts on
+opencode, so both harnesses share one decision. The CI job named `harness`
+fails when the plugin names a hook script that does not exist. See
+[lode/infrastructure/opencode-guardrails.md](../../../lode/infrastructure/opencode-guardrails.md).

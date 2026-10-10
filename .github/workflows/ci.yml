@@ -41,6 +41,28 @@ jobs:
       - name: Test
         run: dotnet test --solution E128.Reference.slnx --configuration Release --no-build -- --filter-trait "Category=CI"
 
+  harness:
+    name: Agent Mirror Check
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check opencode agent mirror
+        run: bash scripts/internal/opencode-agents.sh check
+
+      - name: Check guardrail plugin hook references
+        run: |
+          set -euo pipefail
+          missing=0
+          while read -r hook; do
+            if [ ! -f ".claude/hooks/$hook" ]; then
+              echo "Missing hook: .claude/hooks/$hook"
+              missing=1
+            fi
+          done < <(grep -oE '"[a-z][a-z0-9-]*"' .opencode/plugins/e128-guardrails/index.ts \
+            | tr -d '"' | grep -E '^(block-|pre-|post-|init-|validate-|stop-|user-)' | sort -u)
+          exit "$missing"
+
   secrets:
     name: Secret Scan
     runs-on: ubuntu-26.04

@@ -118,7 +118,10 @@ scripts/podman.sh test
 ├── .github/workflows/ci.yml  # GitHub Actions CI
 ├── .github/workflows/publish.yml # NuGet trusted publishing
 ├── .gitleaks.toml            # Secret scan config
-├── .opencode/                # Generated opencode agent mirror and assets
+├── .opencode/                # opencode mirror of the Claude Code harness
+│   ├── agent-assets/         # Generated agent asset copies
+│   ├── agents/               # Generated agent definitions
+│   └── plugins/              # opencode plugins (guardrail parity with .claude/hooks)
 ├── AGENTS.md                 # Cross-harness AI instructions
 ├── CLAUDE.md                 # Always-loaded AI instructions
 ├── Directory.Build.props     # Shared build properties
@@ -131,7 +134,7 @@ scripts/podman.sh test
 ├── docs/                     # Architecture and guide documents
 ├── lode/                     # Project knowledge documentation
 ├── nuget.config              # Single source and source mapping
-├── opencode.json             # opencode v2 config and permission mirror
+├── opencode.json             # opencode v2 config, permission and policy mirror (no model pin)
 ├── plans/                    # Structured planning documents
 ├── prompts/                  # System prompt for Lode sessions
 ├── renovate.json             # Renovate dependency update config
@@ -212,11 +215,11 @@ podman compose down
 
 ## CI/CD
 
-**GitHub Actions** (`.github/workflows/ci.yml`) runs three steps:
+**GitHub Actions** (`.github/workflows/ci.yml`) runs three jobs:
 
-1. Format check (`dotnet format --verify-no-changes`)
-2. Release build
-3. CI-category tests
+1. **Format + Build + Test**: format check (`dotnet format --verify-no-changes`), release build, and CI-category tests
+2. **Agent Mirror Check**: checks that the opencode agent mirror is current, then verifies every guardrail hook referenced by the plugin exists
+3. **Secret Scan**: gitleaks scan over the full git history
 
 **NuGet publishing** (`.github/workflows/publish.yml`) starts on a push to `main` that changes `src/E128.Analyzers/`. The workflow uses OIDC trusted publishing, so it needs no API key. It skips the push when the version already exists on nuget.org.
 

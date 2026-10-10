@@ -133,8 +133,9 @@ Two layers stay single-harness:
 
 - Claude-only: `.claude/hooks/` (guardrail automation),
   `.claude/settings.json` (permissions), `CLAUDE.md`, and plugins
-- opencode-only: `opencode.json` (a `permissions` mirror of the approval
-  policy)
+- opencode-only: `opencode.json` (a `permissions` and `experimental.policies`
+  mirror of the approval policy) and `.opencode/plugins/` (guardrail parity for
+  the `.claude/hooks/` scripts)
 
 Agent definitions are shared too. `.claude/agents/*.md` is the source of
 truth. A generated mirror in `.opencode/agents/` adapts it for opencode

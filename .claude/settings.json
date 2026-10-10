@@ -60,8 +60,20 @@
       "Edit(.claude/agent-memory/**)",
       "Edit(lode/**)",
       "Edit(plans/**)",
-      "mcp__ide__getDiagnostics",
-      "Skill(dev-planning)"
+      "mcp__ide__getDiagnostics"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(gh pr create *)",
+      "Bash(gh release create *)",
+      "Bash(git clean -fd *)",
+      "Bash(git rebase *)",
+      "Edit(.claude/settings.json)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)"
     ]
   },
   "hooks": {

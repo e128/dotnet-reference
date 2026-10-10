@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-10-10T14:42:33Z*
+*Updated: 2026-10-10T14:52:45Z*
 
 ## Harness Portability Capability Map
 
@@ -37,20 +37,28 @@ Two supported harnesses load instructions in this repo:
 | `.claude/skills/`               | Yes                         | Skills (`SKILL.md`). Claude Code loads them through the skill tool. opencode reads project-level `.claude/skills/` through a compatibility path |
 | `prompts/SystemPrompt.txt`      | Yes (content), no (launch)  | The Lode Coding methodology. Content applies on any harness. The `--append-system-prompt` injection mechanism is Claude CLI only |
 | `scripts/internal/lode.sh`, `lode.nu`, `lode.ps1`, `lode-ollama.nu` | No | Claude CLI wrappers that inject `prompts/SystemPrompt.txt`. On another harness, read that file directly at session start instead |
-| `scripts/lode-opencode.nu`, `lode-opencode-lib.nu` | Partial | OpenCode wrapper: launches `opencode` with `prompts/SystemPrompt.txt` as the opening message. opencode has no persistent system prompt flag. The model comes from the `model` key in `opencode.json`. The wrapper drops a `--model` flag, because opencode reads the config key. Ollama needs no provider config, because v2 probes the local server |
+| `scripts/lode-opencode.nu`, `lode-opencode-lib.nu` | Partial | OpenCode wrapper: launches `opencode` with `prompts/SystemPrompt.txt` as the opening message. opencode has no persistent system prompt flag. The model comes from the `model` key in the global `opencode.json`. The wrapper drops a `--model` flag, because opencode reads the config key. Ollama needs no provider config, because v2 probes the local server |
 | `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md`, adds a thin Claude-only overlay |
-| `.claude/hooks/`                | No                          | Claude Code guardrail hooks. opencode has no hook system. Its enforcement lives in the `permissions` array in `opencode.json` |
+| `.claude/hooks/`                | No (file format)            | Claude Code guardrail hooks. opencode v2 has no hook file. Its plugin API provides the same interception. See [opencode-guardrails.md](opencode-guardrails.md) |
 | `.claude/settings.json`         | No                          | Claude Code permissions and hook configuration |
 | `.claude/agents/*.md`           | Yes (via mirror)            | Source of truth for subagents. Claude Code reads it directly. `opencode-agents.sh sync` generates the `.opencode/agents/` mirror with translated frontmatter |
 | `.opencode/agents/`             | No                          | Generated mirror for opencode. Never hand-edit. Regenerate with `scripts/internal/opencode-agents.sh sync` |
 | `.opencode/agent-assets/`       | No                          | Generated copies of agent asset directories. They sit outside `agents/`, because opencode v2 walks that tree recursively |
-| `opencode.json`                 | No                          | opencode v2 config. The `permissions` array mirrors the approval policy |
+| `.opencode/plugins/`            | No                          | Hand-written opencode plugins. See [opencode-guardrails.md](opencode-guardrails.md) |
+| `opencode.json`                 | No                          | opencode v2 config. The `permissions` array and `experimental.policies` mirror the approval policy. It pins no model |
 
 When onboarding another harness onto this repo, point it at `AGENTS.md`,
 `scripts/help.sh`, and the files under `.claude/rules/`. It loses subagent
 orchestration and hook automation unless it ships equivalents. Skills load on
 both supported harnesses without duplication. Claude Code auto-loads the rule
 directory. opencode reads the matching rule file on demand.
+
+## Rule Load Cost
+
+Claude Code loads every file in `.claude/rules/` into every context window. The
+directory is always-loaded budget on that harness. opencode loads none of them
+and reads on demand through the read list in `AGENTS.md`. Split a rule file when
+it grows past the point where both harnesses can hold it cheaply.
 
 ## Harness Structure
 
@@ -61,10 +69,12 @@ The Claude Code harness for this repo consists of:
 - `.claude/rules/*.md`. Domain rules shared with opencode. Claude Code 2.1.220
   loads every rule file into every context window, not only the
   filename-matched ones. Treat the whole directory as always-loaded budget.
-- `opencode.json`. The opencode v2 config. The `permissions` array mirrors
-  the approval policy.
+- `opencode.json`. The opencode v2 config. The `permissions` array and
+  `experimental.policies` mirror the approval policy.
 - `.claude/hooks/`. Core guardrail hooks.
 - `.claude/settings.json`. Permissions and hook configuration.
+- `.opencode/plugins/`. Hand-written opencode plugins. A plugin exports an
+  object with `id` and `setup`. It needs no import and no package manifest.
 - `.claude/skills/`. Skill directories. See `ls .claude/skills/`.
 - `.claude/agents/*.md`. Agent definitions. See `ls .claude/agents/`.
 - `.opencode/agents/`, `.opencode/agent-assets/`. Generated opencode mirror.
@@ -75,18 +85,40 @@ The Claude Code harness for this repo consists of:
 ## opencode v2 Discovery
 
 - opencode v2 loads `AGENTS.md` from the workspace toward the home directory.
-  The `instructions` field resolves no file, glob, or URL.
+  The `instructions` field accepts a path, a glob, or a URL but loads no entry.
+  It exists for editor tooling only.
 - opencode v2 discovers agent definitions under `.opencode/agents/`
   recursively. A markdown file without frontmatter becomes an agent, so
-  never place an asset there.
-- opencode v2 reads skills from `.opencode/skills/` and from `.claude/skills/`
-  as a compatibility path.
+  never place an asset there. `.claude/agents/` has no compatibility path, so
+  the generated mirror is required.
+- opencode v2 reads skills from `.opencode/skills/`, `.agents/skills/`, and
+  `.claude/skills/`. A skill ID comes from the file path, not from the
+  `name` field in frontmatter.
 - opencode v2 replaces the v1 `permission` map with an ordered `permissions`
   array. Two action names change: `bash` becomes `shell`, and `task` becomes
   `subagent`.
 - Every agent starts with the base policy `{ "*", "*", allow }`. Only a deny
   rule changes behavior, so the mirror emits a deny rule for a read-only
   agent.
+- opencode v2 has no hook file. A plugin under `.opencode/plugins/` registers
+  the equivalent interception. See [opencode-guardrails.md](opencode-guardrails.md).
+- opencode v2 discovers a plugin directory with no config entry. A plugin file
+  exports a plain object with `id` and `setup`.
+
+## opencode v2 Verified Facts
+
+These claims were checked against the published V2 documentation.
+
+| Claim                                                         | Result                                                                                        |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `instructions` loads files                                    | No. opencode accepts the field and loads no entry. `AGENTS.md` is the only instruction source |
+| `.claude/skills/` resolves                                    | Yes. It is a documented project compatibility path, alongside `.agents/skills/`               |
+| `.claude/agents/` resolves                                    | No. Only `.opencode/agents/` and the `agents` config field define agents                       |
+| Plugins intercept tools and permissions                       | Yes. `ctx.tool.hook` and `ctx.permission.hook` replace the Claude Code hook layer             |
+| `.claude/rules/` auto-loads                                   | No. Claude Code alone loads the directory                                                     |
+
+Regenerate any of these claims only after a documentation check. A future
+release may change the answer.
 
 ## Build Infrastructure
 
@@ -135,6 +167,7 @@ Link instead.
 | User-phrase triggers                         | `keyword-shortcuts.md`                |
 | Context-economy behavior                     | `token-efficiency.md`                 |
 | Re-read triggers                             | `read-before-edit.md`                 |
+| Approval policy and its harness mapping      | `auto-approvals.md`                   |
 | Prose and doc style (STE)                    | `writing-style.md`                    |
 | Lode-write style (cross-harness copy)        | `prompts/SystemPrompt.txt`            |
 | Lode file conventions and privacy floor      | `prompts/SystemPrompt.txt`            |
