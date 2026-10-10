@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-10-10T14:18:08Z*
+*Updated: 2026-10-10T14:42:33Z*
 
 ## Generated Docs
 
@@ -7,46 +7,46 @@
 
 ## Root Files
 
-- [summary.md](summary.md) — One-paragraph project snapshot
-- [terminology.md](terminology.md) — Domain vocabulary
-- [practices.md](practices.md) — Coding practices and AI preferences
-- [rob-pikes-rules.md](rob-pikes-rules.md) — Rob Pike's 5 Rules of Programming
-- [dependency-policy.md](dependency-policy.md) — NuGet dependency selection criteria
+- [summary.md](summary.md): One-paragraph project snapshot
+- [terminology.md](terminology.md): Domain vocabulary
+- [practices.md](practices.md): Coding practices and AI preferences
+- [rob-pikes-rules.md](rob-pikes-rules.md): Rob Pike's 5 Rules of Programming
+- [dependency-policy.md](dependency-policy.md): NuGet dependency selection criteria
 
 ## coding-standards/
 
-- [solid.md](coding-standards/solid.md) — SOLID principles applied to C#
-- [smalltalk-patterns.md](coding-standards/smalltalk-patterns.md) — Smalltalk Best Practice Patterns for C#
+- [solid.md](coding-standards/solid.md): SOLID principles applied to C#
+- [smalltalk-patterns.md](coding-standards/smalltalk-patterns.md): Smalltalk Best Practice Patterns for C#
 
 ## dotnet/
 
-- [project-structure.md](dotnet/project-structure.md) — .NET 10 solution format, CPM, build props/targets, global.json
-- [testing.md](dotnet/testing.md) — MTP, xUnit v3, test configuration, categories, conventions
-- [test-patterns.md](dotnet/test-patterns.md) — Test family patterns (A-D), fake conventions, naming rules
-- [architecture-testing.md](dotnet/architecture-testing.md) — ArchUnitNET structural invariant tests (layers, naming, sealed)
-- [analyzers.md](dotnet/analyzers.md) — Deny-by-default strategy, analyzer packages, suppression policy
-- [release-tracking.md](dotnet/release-tracking.md) — AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
-- [analyzer-candidates.md](dotnet/analyzer-candidates.md) — Candidate analyzer ideas and investigation notes
+- [project-structure.md](dotnet/project-structure.md): .NET 10 solution format, CPM, build props/targets, global.json
+- [testing.md](dotnet/testing.md): MTP, xUnit v3, test configuration, categories, conventions
+- [test-patterns.md](dotnet/test-patterns.md): Test family patterns (A-D), fake conventions, naming rules
+- [architecture-testing.md](dotnet/architecture-testing.md): ArchUnitNET structural invariant tests (layers, naming, sealed)
+- [analyzers.md](dotnet/analyzers.md): Deny-by-default strategy, analyzer packages, suppression policy
+- [release-tracking.md](dotnet/release-tracking.md): AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
+- [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes
 
 ### dotnet/analyzers/
 
-- [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md) — Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
+- [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md): Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
 - [redundant-rules.md](dotnet/analyzers/redundant-rules.md): E128 rules disabled because third-party analyzers cover them
-- [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md) — Code fix implementation patterns, BatchFixer vs SequentialRename, AddUsing blank line behavior
+- [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md): Code fix implementation patterns, BatchFixer vs SequentialRename, AddUsing blank line behavior
 
 ## dotnet-reference/
 
-- [dep-map.md](dotnet-reference/dep-map.md) — NuGet deps, container runtime images, SDK pins + project structure for all 4 production projects
+- [dep-map.md](dotnet-reference/dep-map.md): NuGet deps, container runtime images, SDK pins + project structure for all 4 production projects
 
 ## infrastructure/
 
-- [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md) — Harness maintenance: Claude Code and opencode v2 capability map, discovery rules, rule ownership
-- [claude-code-upstream.md](infrastructure/claude-code-upstream.md) — Claude Code upstream reference: versions, agent/skill frontmatter fields
-- [code-generation-quality.md](infrastructure/code-generation-quality.md) — Mechanisms that drive better AI code generation, ranked by impact
-- [claude-revision-log.md](infrastructure/claude-revision-log.md) — Revision log: dated entries from `/claude-revision` runs
-- [podman.md](infrastructure/podman.md) — Podman build commands, Dockerfile structure, smoke test patterns
-- [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md) — OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging
-- [agent-patterns.md](infrastructure/agent-patterns.md) — Shared agent patterns: plan convention, budget exhaustion, reflection loop
-- [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md) — Simplification-agent heuristic definitions (H1-H6)
-- [scoring-rubric.md](infrastructure/scoring-rubric.md) — Shared four-dimension scoring rubric for strategic analysis agents
+- [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md): Harness maintenance: Claude Code and opencode v2 capability map, discovery rules, rule ownership
+- [claude-code-upstream.md](infrastructure/claude-code-upstream.md): Claude Code upstream reference: versions, agent/skill frontmatter fields
+- [code-generation-quality.md](infrastructure/code-generation-quality.md): Mechanisms that drive better AI code generation, ranked by impact
+- [claude-revision-log.md](infrastructure/claude-revision-log.md): Revision log: dated entries from `/claude-revision` runs
+- [podman.md](infrastructure/podman.md): Podman build commands, Dockerfile structure, smoke test patterns
+- [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md): OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging
+- [agent-patterns.md](infrastructure/agent-patterns.md): Shared agent patterns: plan convention, budget exhaustion, reflection loop
+- [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md): Simplification-agent heuristic definitions (H1-H6)
+- [scoring-rubric.md](infrastructure/scoring-rubric.md): Shared four-dimension scoring rubric for strategic analysis agents
 - [secret-scanning.md](infrastructure/secret-scanning.md): gitleaks scan in precommit.sh and the CI secrets job

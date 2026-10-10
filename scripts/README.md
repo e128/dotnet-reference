@@ -50,7 +50,7 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `task.sh`           | Task management: check/next/progress                                    |
 | `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected           |
 | `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4.1-flash:cloud) |
-| `lode-opencode.nu`  | Nushell wrapper: launch opencode via Ollama backend with SystemPrompt.txt injected (default qwen3.8:27b-mlx) |
+| `lode-opencode.nu`  | Nushell wrapper: launch opencode via Ollama backend with SystemPrompt.txt injected. The model comes from the `model` key in `opencode.json` |
 
 ## Code Navigation & Analysis
 

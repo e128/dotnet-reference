@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "ollama/deepseek-v4.1-flash:cloud",
   "permissions": [
     { "action": "edit", "resource": "*", "effect": "allow" },
     { "action": "edit", "resource": ".claude/settings.json", "effect": "ask" },
