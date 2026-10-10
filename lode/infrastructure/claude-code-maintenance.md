@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-10-10T14:18:08Z*
+*Updated: 2026-10-10T14:42:33Z*
 
 ## Harness Portability Capability Map
 
@@ -37,7 +37,7 @@ Two supported harnesses load instructions in this repo:
 | `.claude/skills/`               | Yes                         | Skills (`SKILL.md`). Claude Code loads them through the skill tool. opencode reads project-level `.claude/skills/` through a compatibility path |
 | `prompts/SystemPrompt.txt`      | Yes (content), no (launch)  | The Lode Coding methodology. Content applies on any harness. The `--append-system-prompt` injection mechanism is Claude CLI only |
 | `scripts/internal/lode.sh`, `lode.nu`, `lode.ps1`, `lode-ollama.nu` | No | Claude CLI wrappers that inject `prompts/SystemPrompt.txt`. On another harness, read that file directly at session start instead |
-| `scripts/lode-opencode.nu`, `lode-opencode-lib.nu` | Partial | OpenCode wrapper: launches `opencode` with `prompts/SystemPrompt.txt` as the opening message. opencode has no persistent system prompt flag. It passes the model through `OPENCODE_CONFIG_CONTENT`, because the v2 top-level command has no `--model` flag. Ollama needs no provider config, because v2 probes the local server |
+| `scripts/lode-opencode.nu`, `lode-opencode-lib.nu` | Partial | OpenCode wrapper: launches `opencode` with `prompts/SystemPrompt.txt` as the opening message. opencode has no persistent system prompt flag. The model comes from the `model` key in `opencode.json`. The wrapper drops a `--model` flag, because opencode reads the config key. Ollama needs no provider config, because v2 probes the local server |
 | `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md`, adds a thin Claude-only overlay |
 | `.claude/hooks/`                | No                          | Claude Code guardrail hooks. opencode has no hook system. Its enforcement lives in the `permissions` array in `opencode.json` |
 | `.claude/settings.json`         | No                          | Claude Code permissions and hook configuration |

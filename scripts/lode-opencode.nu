@@ -1,10 +1,11 @@
 #!/usr/bin/env nu
 
-# Lode-enabled opencode wrapper with Ollama backend — default model: qwen3.8:27b-mlx
-# Usage: lode-opencode [--model <model>] [--append-system-prompt <text>] [...opencode args]
+# Lode-enabled opencode wrapper with an Ollama backend.
+# The model comes from the `model` key in opencode.json.
+# Usage: lode-opencode [--append-system-prompt <text>] [...opencode args]
 
 use lode-opencode-lib.nu *
 
 def main [...args: string] {
-    lode-run "qwen3.8:27b-mlx" ...$args
+    lode-run ...$args
 }
