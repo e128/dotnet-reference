@@ -10,13 +10,6 @@ description: >
   code overhauler steps when multiple approved findings need applying.
   Triggers on: batch fixes, tdd loop, optimize test cycle, fix and test,
   batch and test, reduce test runs, fix cycle optimization.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  write: allow
-  grep: allow
-  read: allow
 ---
 
 You are a TDD loop optimizer. Apply a batch of approved fixes efficiently, running the

@@ -6,12 +6,6 @@ description: >
   tables. Used by /yeet and /readme-check as a callable agent (avoids the Skill
   context-replacement issue).
   Triggers on: audit readmes, readme drift, fix readme tables.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  grep: allow
-  read: allow
 ---
 
 Audit all README.md files for staleness and auto-fix drift.

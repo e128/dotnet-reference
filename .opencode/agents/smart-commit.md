@@ -7,12 +7,10 @@ description: >
   repo. Use when changes are clearly scoped and the user just wants the commit done.
   Triggers on: commit, just commit, fast commit, commit everything, commit without asking,
   auto-commit.
-permission:
-  glob: allow
-  bash: allow
-  grep: allow
-  read: allow
-  edit: deny
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
 ---
 
 One-shot autonomous commit. No per-step gates, no "does this look right?", no per-file questions.

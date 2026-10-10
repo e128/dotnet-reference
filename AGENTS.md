@@ -35,14 +35,17 @@ of what is portable versus Claude-only.
 - **Route every repeated operation through a script in `scripts/`.** Never
   run the raw command when a script exists. Run `scripts/help.sh` for the
   full list. The full routing table lives in
-  `.claude/rules/deterministic-scripts.md`. Both supported harnesses load
-  it: Claude Code auto-loads `.claude/rules/*.md`, and opencode loads them
-  through `instructions` in `opencode.json`. On any other harness, open the
-  file directly. The table still applies since it only names bash scripts.
+  `.claude/rules/deterministic-scripts.md`. Claude Code auto-loads
+  `.claude/rules/*.md`. opencode loads neither that directory nor any file
+  glob, so read the matching rule file yourself. On any other harness, open
+  the file directly. The table still applies since it only names bash
+  scripts.
 - **Lode** — `lode/` is the authoritative project memory, not this file or
   any harness config. Read `lode/lode-map.md`, `lode/terminology.md`, and
-  `lode/summary.md` at the start of a session. Update the matching lode
-  file the same turn code, config, or structure changes. Never defer.
+  `lode/summary.md` at the start of a session. Read each
+  `.claude/rules/*.md` file that matches the work at hand. Update the
+  matching lode file the same turn code, config, or structure changes. Never
+  defer.
   Remove lode content the same turn the feature it describes disappears.
   The full Lode Coding methodology lives in `prompts/SystemPrompt.txt`. On
   Claude Code, `scripts/lode.nu` (or the `.ps1` variant, or the legacy
@@ -120,21 +123,23 @@ of what is portable versus Claude-only.
 
 ## What This File Does Not Cover
 
-The domain rules in `.claude/rules/*.md` are cross-harness now. Claude Code
-auto-loads that directory. opencode loads it through `instructions` in
-`opencode.json`. Skills in `.claude/skills/` are cross-harness too:
-opencode reads project-level `.claude/skills/*/SKILL.md` natively.
+The domain rules in `.claude/rules/*.md` are cross-harness. Claude Code
+auto-loads that directory. opencode resolves no `instructions` glob, so read
+the matching rule file yourself. Skills in `.claude/skills/` are cross-harness
+too: opencode reads project-level `.claude/skills/*/SKILL.md` through a
+compatibility path.
 
 Two layers stay single-harness:
 
 - Claude-only: `.claude/hooks/` (guardrail automation),
   `.claude/settings.json` (permissions), `CLAUDE.md`, and plugins
-- opencode-only: `opencode.json` (instruction wiring plus a permission
-  mirror of the approval policy)
+- opencode-only: `opencode.json` (a `permissions` mirror of the approval
+  policy)
 
 Agent definitions are shared too. `.claude/agents/*.md` is the source of
 truth. A generated mirror in `.opencode/agents/` adapts it for opencode
-(frontmatter fields and tool names differ per harness). Regenerate with
+(frontmatter fields differ per harness), and agent asset directories are
+copied to `.opencode/agent-assets/`. Regenerate with
 `scripts/internal/opencode-agents.sh sync`. `/yeet` runs this whenever agent
-files change. Never edit the mirror by hand. See
+files change. Never edit either generated tree by hand. See
 `lode/infrastructure/claude-code-maintenance.md` for the capability map.

@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-10-09T15:41:57Z*
+*Updated: 2026-10-10T14:18:08Z*
 
 ## Generated Docs
 
@@ -40,7 +40,7 @@
 
 ## infrastructure/
 
-- [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md) — Harness maintenance: Claude Code and opencode capability map, rule ownership
+- [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md) — Harness maintenance: Claude Code and opencode v2 capability map, discovery rules, rule ownership
 - [claude-code-upstream.md](infrastructure/claude-code-upstream.md) — Claude Code upstream reference: versions, agent/skill frontmatter fields
 - [code-generation-quality.md](infrastructure/code-generation-quality.md) — Mechanisms that drive better AI code generation, ranked by impact
 - [claude-revision-log.md](infrastructure/claude-revision-log.md) — Revision log: dated entries from `/claude-revision` runs
@@ -50,4 +50,3 @@
 - [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md) — Simplification-agent heuristic definitions (H1-H6)
 - [scoring-rubric.md](infrastructure/scoring-rubric.md) — Shared four-dimension scoring rubric for strategic analysis agents
 - [secret-scanning.md](infrastructure/secret-scanning.md): gitleaks scan in precommit.sh and the CI secrets job
-- [opencode-ollama-setup.md](infrastructure/opencode-ollama-setup.md) — One-time local opencode provider config for the Ollama-backed lode launcher

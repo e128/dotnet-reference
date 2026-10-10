@@ -13,13 +13,6 @@ description: >
   analyze this session.
   Not for: single-session debugging, real-time workflow monitoring, manual code review,
   or token plan creation (use token-optimizer).
-permission:
-  glob: allow
-  bash: allow
-  write: allow
-  grep: allow
-  task: allow
-  read: allow
 ---
 
 You analyze recent Claude Code session data to find patterns worth automating

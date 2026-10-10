@@ -8,14 +8,6 @@ description: >
   (full plan creation with score threshold). Fully autonomous — no prompts until
   results are presented. Triggers on: token plan, token improvement plans,
   plan token optimizations, score token patterns, token waste plans, create token plans.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  write: allow
-  grep: allow
-  task: allow
-  read: allow
 ---
 
 You are an autonomous token-efficiency auditor. You analyze session data, identify

@@ -10,12 +10,6 @@ description: >
   agent overlap, retire skill, merge skills, clean up skills, skill catalog audit,
   check skill health, audit all skills, skill health report, skill health, find dead skills,
   review all skills.
-permission:
-  glob: allow
-  bash: allow
-  write: allow
-  grep: allow
-  read: allow
 ---
 
 # Catalog Pruner

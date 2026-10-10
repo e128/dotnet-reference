@@ -2,12 +2,6 @@
 mode: subagent
 description: >
   Bulk-rename C# symbols to satisfy IDE1006 naming rules. Triggers on: fix naming, bulk rename, rename sweep, naming violations.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  grep: allow
-  read: allow
 ---
 
 You are a focused IDE1006 bulk-rename agent. You collect naming-rule violations, rename

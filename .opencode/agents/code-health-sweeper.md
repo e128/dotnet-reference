@@ -5,12 +5,6 @@ description: >
   Use proactively when diagnostics pile up and a single sweep is cheaper
   than per-finding triage. Triggers on: sweep code health, fix all warnings,
   fix all diagnostics, clean up warnings, batch fix, sweep diagnostics.
-permission:
-  glob: allow
-  edit: allow
-  bash: allow
-  grep: allow
-  read: allow
 ---
 
 You autonomously triage and fix all Roslyn build diagnostics in one pass. No user gates

@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Sync Claude Code agent definitions into the opencode agent mirror.
+# Sync Claude Code agent definitions into the opencode v2 agent mirror.
 # Usage: opencode-agents.sh [sync|check] [--json]
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 SRC_DIR="$REPO_ROOT/.claude/agents"
 DST_DIR="$REPO_ROOT/.opencode/agents"
+ASSETS_DIR="$REPO_ROOT/.opencode/agent-assets"
 
 MODE="check"
 JSON=false
@@ -22,38 +23,21 @@ done
 
 [[ -d "$SRC_DIR" ]] || { echo "Source directory not found: $SRC_DIR" >&2; exit 1; }
 
-# Translate a Claude Code tool name to its opencode equivalent.
-# Prints the name, or nothing when the tool has no opencode counterpart.
-translate_tool() {
-  local tool="$1"
-  case "$tool" in
-    Bash) echo "bash" ;;
-    Read) echo "read" ;;
-    Write) echo "write" ;;
-    Edit) echo "edit" ;;
-    Glob) echo "glob" ;;
-    Grep) echo "grep" ;;
-    Agent|Task) echo "task" ;;
-    WebFetch) echo "webfetch" ;;
-    WebSearch) echo "websearch" ;;
-    TodoWrite) echo "todowrite" ;;
-    mcp__*) ;; # Claude-only MCP tools have no opencode counterpart
-    *) echo "$tool" >&2 ;;
-  esac
-}
-
 # Rewrite one Claude Code agent file as an opencode subagent definition.
 # Keeps description and body verbatim. Drops Claude-only frontmatter fields.
-# Adds mode: subagent and translates the tools list into a permission map.
-# Read-only agents get an explicit edit deny.
+# Adds mode: subagent and, for a read-only agent, an edit deny rule.
+#
+# opencode gives every agent the base policy {*, *, allow} before any agent
+# rule, so a per-tool allow list adds nothing. Only a deny carries meaning.
 transform_agent() {
   local src="$1" dst="$2"
   local -a fm=()
   local -a body=()
   local -a raw_tools=()
-  local line key rest word mapped tok
+  local -a sed_args=()
+  local line key rest word tok name
+
   local in_fm=false done_fm=false has_write=false
-  local -A seen=()
 
   while IFS= read -r line; do
     if [[ "$done_fm" == false ]]; then
@@ -94,32 +78,31 @@ transform_agent() {
   for tok in "${raw_tools[@]}"; do
     tok="${tok//,/ }"
     for word in $tok; do
-      mapped="$(translate_tool "$word")"
-      if [[ -n "$mapped" && -z "${seen[$mapped]:-}" ]]; then
-        seen["$mapped"]=1
-      fi
       case "$word" in
         Write|Edit) has_write=true ;;
       esac
     done
   done
 
-  if [[ ${#seen[@]} -gt 0 || "$has_write" == false ]]; then
-    fm+=("permission:")
-    for word in "${!seen[@]}"; do
-      fm+=("  $word: allow")
-    done
-    if [[ "$has_write" == false ]]; then
-      fm+=("  edit: deny")
-    fi
+  if [[ "$has_write" == false ]]; then
+    fm+=("permissions:")
+    fm+=("  - action: edit")
+    fm+=("    resource: \"*\"")
+    fm+=("    effect: deny")
   fi
   fm+=("---")
+
+  # The mirror holds agent assets in a sibling directory, because opencode
+  # walks agents/ recursively. Repoint the in-body links at that location.
+  for name in "${ASSET_NAMES[@]}"; do
+    sed_args+=(-e "s|](${name}/|](../agent-assets/${name}/|g")
+  done
 
   mkdir -p "$(dirname "$dst")"
   {
     printf '%s\n' "${fm[@]}"
     printf '%s\n' "${body[@]}"
-  } > "$dst"
+  } | sed "${sed_args[@]}" > "$dst"
 }
 
 emit_result() {
@@ -138,31 +121,46 @@ emit_result() {
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
+TMP_AGENTS="$TMP_DIR/agents"
+TMP_ASSETS="$TMP_DIR/agent-assets"
+mkdir -p "$TMP_AGENTS" "$TMP_ASSETS"
+
 shopt -s nullglob
+ASSET_NAMES=()
+for asset_dir in "$SRC_DIR"/*/; do
+  [[ -d "$asset_dir" ]] || continue
+  ASSET_NAMES+=("$(basename "$asset_dir")")
+done
+
 GENERATED=0
 for src in "$SRC_DIR"/*.md; do
   name="$(basename "$src")"
-  transform_agent "$src" "$TMP_DIR/$name"
+  transform_agent "$src" "$TMP_AGENTS/$name"
   GENERATED=$((GENERATED + 1))
 done
 [[ "$GENERATED" -gt 0 ]] || { echo "No agent files found in $SRC_DIR" >&2; exit 1; }
 
-# Copy agent asset directories (references, templates) verbatim.
-for asset_dir in "$SRC_DIR"/*/; do
-  [[ -d "$asset_dir" ]] || continue
-  cp -R "$asset_dir" "$TMP_DIR/$(basename "$asset_dir")"
+# Copy agent asset directories (references, templates) verbatim. They live
+# outside agents/, because opencode walks that tree recursively and would
+# register every markdown file it finds as an agent.
+for name in "${ASSET_NAMES[@]}"; do
+  cp -R "$SRC_DIR/$name" "$TMP_ASSETS/$name"
 done
 
-DIFF_COUNT=0
-if [[ -d "$DST_DIR" ]]; then
-  DIFF_COUNT="$({ diff -rq "$DST_DIR" "$TMP_DIR" || true; } | wc -l | tr -d ' ')"
-else
-  DIFF_COUNT="$GENERATED"
-fi
+# Both trees form the mirror: agents/ and the sibling agent-assets/.
+report_diff() {
+  diff -rq "$DST_DIR" "$TMP_AGENTS" 2>/dev/null || true
+  diff -rq "$ASSETS_DIR" "$TMP_ASSETS" 2>/dev/null || true
+}
+
+DIFF_COUNT="$({ report_diff; } | wc -l | tr -d ' ')"
 
 if [[ "$MODE" == "sync" ]]; then
-  rm -rf "$DST_DIR"
-  cp -R "$TMP_DIR" "$DST_DIR"
+  rm -rf "$DST_DIR" "$ASSETS_DIR"
+  cp -R "$TMP_AGENTS" "$DST_DIR"
+  if [[ -n "$(ls -A "$TMP_ASSETS")" ]]; then
+    cp -R "$TMP_ASSETS" "$ASSETS_DIR"
+  fi
   emit_result "ok" "$GENERATED" 0
 else
   if [[ "$DIFF_COUNT" -eq 0 ]]; then
@@ -172,7 +170,7 @@ else
       emit_result "stale" 0 "$DIFF_COUNT"
     else
       echo "Agent mirror is stale ($DIFF_COUNT differences). Run: scripts/internal/opencode-agents.sh sync" >&2
-      diff -rq "$DST_DIR" "$TMP_DIR" || true
+      report_diff
       exit 1
     fi
   fi

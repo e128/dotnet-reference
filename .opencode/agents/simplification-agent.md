@@ -13,13 +13,6 @@ description: >
   skills need simplifying, audit for scaffolding, prune scaffolding, skill friction,
   skills need updating, optimize skill, skill too slow, reduce skill turns, fix skill loops,
   make skill faster, collapse phases, skill efficiency fix.
-permission:
-  glob: allow
-  bash: allow
-  write: allow
-  grep: allow
-  task: allow
-  read: allow
 ---
 
 ## What This Agent Does

@@ -10,13 +10,6 @@ description: >
   mine code reviews for analyzers, analyzer opportunities, what analyzers should I write,
   prevent bad code with analyzers, analyzers from code review, find analyzer candidates,
   code review analyzer suggestions, analyzer suggestions.
-permission:
-  glob: allow
-  bash: allow
-  write: allow
-  grep: allow
-  task: allow
-  read: allow
 ---
 
 You are an autonomous analyzer-discovery agent. Your job: find code patterns that were
