@@ -1,6 +1,6 @@
 # NuGet Trusted Publishing
 
-*Updated: 2026-10-07T12:51:21Z*
+*Updated: 2026-10-16T18:14:38Z*
 
 OIDC-based package publishing from GitHub Actions to nuget.org. Eliminates long-lived API keys.
 
@@ -19,7 +19,7 @@ Profile menu -> Trusted Publishing -> Create.
 | Field              | Value                          | Notes                                    |
 | ------------------ | ------------------------------ | ---------------------------------------- |
 | Policy Name        | e.g. `E128.Analyzers`         | Free-text, for your reference            |
-| Package Owner      | username or org                | Controls scope -- ALL packages for owner |
+| Package Owner      | username or org                | Controls scope: ALL packages for owner |
 | Repository Owner   | `e128`                         | GitHub org/user, case-sensitive          |
 | Repository         | `dotnet-reference`             | Repo name, case-sensitive                |
 | Workflow File      | `publish.yml`                  | Filename only, NOT `.github/workflows/`  |
@@ -30,6 +30,8 @@ Profile menu -> Trusted Publishing -> Create.
 New policies for private repos are **active 7 days**. First successful OIDC token exchange permanently activates via immutable GitHub IDs. Miss the window? Re-activate manually from the Trusted Publishing page.
 
 ## GitHub Actions Workflow
+
+The sample simplifies `.github/workflows/publish.yml`. The real workflow also sets `env` values, restores a NuGet cache, and writes a job summary.
 
 ```yaml
 name: Publish
@@ -117,7 +119,7 @@ Key properties that differ from a normal library package:
 
   <!-- Package metadata -->
   <PackageId>E128.Analyzers</PackageId>
-  <Authors>Brent Miller</Authors>
+  <Authors>Maintainer name</Authors>
   <Description>Roslyn analyzers enforcing opinionated .NET conventions at compile time.
     <!-- full description maintained in E128.Analyzers.csproj --></Description>
   <PackageTags>roslyn;analyzer;csharp;code-analysis</PackageTags>

@@ -1,21 +1,21 @@
 # SOLID Principles
-*Updated: 2026-08-16T12:35:55Z*
+*Updated: 2026-10-16T18:13:34Z*
 
 ## Single Responsibility Principle (SRP)
-A class should have only one reason to change. Each class owns one concept.
+A class has one reason to change. Each class owns one concept.
 
 ## Open/Closed Principle (OCP)
-Open for extension, closed for modification. Prefer adding new implementations over modifying existing ones.
+Open for extension, closed for modification. Add new implementations instead of modifying existing ones.
 
 ## Liskov Substitution Principle (LSP)
-Subtypes must be substitutable for their base types without altering correctness.
+A subtype must be substitutable for its base type without altering correctness.
 
 ## Interface Segregation Principle (ISP)
-No client should be forced to depend on methods it does not use. Prefer small, focused interfaces.
+No client depends on a method it does not use. Prefer small, focused interfaces.
 
 ## Dependency Inversion Principle (DIP)
-Depend on abstractions, not concretions. High-level modules should not depend on low-level modules.
+Depend on abstractions, not concretions. High-level modules do not depend on low-level modules.
 
 ## Balancing with YAGNI
 
-SOLID provides guardrails; YAGNI provides brakes. Don't create interfaces for classes with one implementation. Don't add extension points for hypothetical future requirements. Apply SOLID when the code naturally needs the flexibility, not preemptively.
+SOLID provides guardrails. YAGNI provides brakes. Do not create an interface for a class with one implementation. Do not add an extension point for a hypothetical future requirement. Apply SOLID when the code needs the flexibility.

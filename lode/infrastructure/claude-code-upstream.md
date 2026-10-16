@@ -1,17 +1,20 @@
 # Claude Code Upstream Reference
-*Updated: 2026-10-06T19:17:31Z*
+*Updated: 2026-10-16T18:14:38Z*
 
 Baseline snapshot of official Claude Code harness guidance. Config health checks use it. This file
 covers harness features only: no model names, model defaults, context-window sizes, or pricing.
 
-## Current Version: 2.1.292
+## Current Version: 2.1.301
 
-The installed version is 2.1.291. The changelog top entry is 2.1.292.
+The installed version is 2.1.301. The changelog top entry is 2.1.301.
 
 ## Harness Changes Since 2.1.155
 
 | Version | Change                                                                                                                                                                                                                                                                            |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.1.299 | `tools:` in an agent lists only the named MCP server tools: write a server name that contains `__` as `mcp__<whole name>__*`. `UserPromptSubmit` hooks run before a skill or slash command expands. A skill `UserPromptSubmit` hook first runs on the prompt after the invoking prompt. `CLAUDE_CODE_DISABLE_FILE_MENTIONS` added. |
+| 2.1.296 | `autoCompactWindow` added to subagent frontmatter and `--agents` JSON. `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` added. `--debug` names unrecognized agent frontmatter fields. |
+| 2.1.295 | `onFailure: "block"` for command and HTTP hooks blocks the action when the hook fails. A subagent preloads at most 32 skills from `skills`. |
 | 2.1.292 | Agent tool takes an `effort` parameter. A subagent with `permissionMode: auto` no longer enters auto mode when auto mode is unavailable. Agent names allow 256 characters at most. `claude plugin install --marketplace <source>` added.                                          |
 | 2.1.290 | Plugin hook event `tool.check` carries `agentId`. `claude plugin validate` lists `gatingHooks`.                                                                                                                                                                                   |
 | 2.1.289 | Subagent `AGENTS.md` in a subdirectory attaches when you @-mention a file under it.                                                                                                                                                                                               |
@@ -92,11 +95,12 @@ All fields for `.claude/agents/*.md` YAML frontmatter, as listed in the sub-agen
 | `model`           | No       | Model override or `inherit`.                                                                                                                                |
 | `permissionMode`  | No       | `default`, `acceptEdits`, `auto`, `dontAsk`, `bypassPermissions`, `plan`, or `manual` (alias for `default`). Ignored for plugin subagents.                  |
 | `maxTurns`        | No       | Maximum agentic turns. Output is partial at the limit. Needs 2.1.246 or later.                                                                              |
-| `skills`          | No       | Skills preloaded at startup (full content). Unlisted skills stay callable through the Skill tool.                                                           |
+| `skills`          | No       | Skills preloaded at startup (full content, 32 at most). Unlisted skills stay callable through the Skill tool.                                                           |
 | `mcpServers`      | No       | Server name references or inline definitions. Ignored for plugin subagents.                                                                                 |
 | `hooks`           | No       | Lifecycle hooks scoped to the subagent. `Stop` converts to `SubagentStop`. Ignored for plugin subagents.                                                    |
 | `memory`          | No       | `user`, `project`, or `local`. Paths: `~/.claude/agent-memory/<name>/`, `.claude/agent-memory/<name>/`, `.claude/agent-memory-local/<name>/`.               |
 | `background`      | No       | `true` keeps the subagent in the background even when Claude requests foreground.                                                                           |
+| `autoCompactWindow` | No     | Window size at which the subagent auto-compacts, earlier than the main conversation. Needs 2.1.296 or later.                                                |
 | `omitClaudeMd`    | No       | `true` skips user, project, and local `CLAUDE.md`. Managed policy files still load. Ignored under `--agent` or the `agent` setting. Needs 2.1.271 or later. |
 | `effort`          | No       | `low`, `medium`, `high`, `xhigh`, or `max`. Overrides the session level. Default: inherit.                                                                  |
 | `isolation`       | No       | `worktree` runs the subagent in a temporary git worktree. Claude Code removes it when no changes exist.                                                     |
@@ -184,7 +188,7 @@ directory.
 
 ## Sources
 
-- https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md (2026-10-06)
+- https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md (2026-10-16)
 - https://code.claude.com/docs/en/sub-agents (2026-10-06)
 - https://code.claude.com/docs/en/skills (2026-10-06)
 - https://github.com/anthropics/skills/commits/main/ (2026-05-28, not refetched)

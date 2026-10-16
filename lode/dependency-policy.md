@@ -1,28 +1,28 @@
 # Dependency Policy
-*Updated: 2026-09-26T16:11:39Z*
+*Updated: 2026-10-16T18:13:46Z*
 
 ## Selection Criteria
 
 Before adding a new NuGet dependency, evaluate:
 
-1. **License** — MIT, Apache 2.0, or BSD only. No GPL, no AGPL, no commercial-only.
-2. **Maintenance** — actively maintained (commits in last 6 months). Check GitHub pulse.
-3. **Size** — prefer small, focused packages over large frameworks.
-4. **Transitive impact** — check what the package pulls in. Avoid packages with heavy transitive chains.
-5. **Alternatives** — is this in the BCL already? Can we write 20 lines instead of adding a dependency?
-6. **Capability check** — do not assume a library lacks a capability without checking its documentation and types.
+1. **License**: MIT, Apache 2.0, or BSD only. No GPL, no AGPL, no commercial-only.
+2. **Maintenance**: actively maintained (commits in last 6 months). Check GitHub pulse.
+3. **Size**: prefer small, focused packages over large frameworks.
+4. **Transitive impact**: check what the package pulls in. Avoid packages with heavy transitive chains.
+5. **Alternatives**: is this in the BCL already? Can we write 20 lines instead of adding a dependency?
+6. **Capability check**: do not assume a library lacks a capability without checking its documentation and types.
 
 ## Package Categories
 
 | Category             | Policy                                                          |
 | -------------------- | --------------------------------------------------------------- |
-| Analyzers            | Always allowed — zero runtime impact                            |
+| Analyzers            | Always allowed: zero runtime impact                            |
 | Roslyn authoring     | Allowed for custom analyzer/code-fix projects (Microsoft.CodeAnalysis.*) |
 | Architecture testing | Allowed in test projects only (ArchUnitNET)                     |
 | Testing              | Allowed in test projects only                                   |
 | CLI                  | System.CommandLine for all console entry points                 |
 | Microsoft            | Preferred for BCL extensions (Microsoft.Extensions.*)           |
-| Third-party          | Requires justification — evaluate against the 5 criteria        |
+| Third-party          | Requires justification: evaluate against the six criteria        |
 
 ## Version Management
 
@@ -30,21 +30,22 @@ All versions are managed centrally in `Directory.Packages.props` (CPM). Individu
 
 ## Pruning Unused Dependencies
 
-`/prune-deps` audits the solution for dead dependencies: orphaned `PackageVersion` entries (transitive-pin aware), unused `PackageReference` (code-usage based), and unused `ProjectReference`. It reports findings, then removes approved entries and runs one verification build. Analyzers (in `Directory.Build.props`), test SDK/runner packages, and runtime-only/DI-glue packages never surface as `using` directives — they are not unused just because no `using` references them. `/solution-audit` surfaces the same three categories as part of its broader read-only health sweep.
+`/prune-deps` audits the solution for dead dependencies: orphaned `PackageVersion` entries (transitive-pin aware), unused `PackageReference` (code-usage based), and unused `ProjectReference`. It reports findings, then removes approved entries and runs one verification build. Analyzers (in `Directory.Build.props`), test SDK/runner packages, and runtime-only/DI-glue packages never surface as `using` directives. They are not unused just because no `using` references them. `/solution-audit` surfaces the same three categories as part of its broader read-only health sweep.
 
 ## Automated Updates
 
 Renovate manages dependency PRs via `renovate.json`. Key rules:
 
-- Patch and minor updates auto-merge.
+- Updates wait 3 days after release before Renovate proposes them (`minimumReleaseAge`).
+- Patch and minor updates group as `non-major` and auto-merge.
 - Major version bumps require manual review.
 - Security updates bypass schedule/grouping and auto-merge.
-- PRs limited to 1 concurrent to keep the pipeline green.
+- PRs limit to one concurrent to keep the pipeline green.
 
 ## Supply Chain Security
 
 `nuget.config` enforces a locked-down supply chain:
 
-- **Cleared sources** — `<clear />` removes inherited feeds; only `nuget.org` is configured.
-- **Trusted signers** — three NuGet.org certificate fingerprints (SHA-256) are pinned.
-- **Package source mapping** — all packages (`*`) are mapped to the `nuget.org` source, preventing feed substitution.
+- **Cleared sources**: `<clear />` removes inherited feeds, and only `nuget.org` is configured.
+- **Trusted signers**: three NuGet.org certificate fingerprints (SHA-256) are pinned.
+- **Package source mapping**: all packages (`*`) are mapped to the `nuget.org` source, preventing feed substitution.

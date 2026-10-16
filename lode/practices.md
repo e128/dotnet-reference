@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-10-06T18:52:25Z*
+*Updated: 2026-10-16T18:14:38Z*
 
 ## Design Principles
 
@@ -27,9 +27,9 @@
 
 ## AI Assistant Preferences
 
-Canonical home for these preferences. CLAUDE.md keeps only the
+Canonical home for these preferences. AGENTS.md keeps only the
 high-frequency reminders (TDD, concurrent sessions, no time estimates).
-See [CLAUDE.md](../../CLAUDE.md) for the always-loaded subset.
+See [AGENTS.md](../AGENTS.md) for the always-loaded subset.
 
 - Terse responses: code over explanation unless asked
 - ISO 8601 UTC timestamps everywhere: `2026-04-09T12:00:00Z`
