@@ -1,5 +1,5 @@
 # Redundant E128 Rules
-*Updated: 2026-10-09T15:41:53Z*
+*Updated: 2026-10-16T18:13:55Z*
 
 An E128 rule is redundant when an installed third-party rule fires on the same code. A redundant E128 rule with a code fix stays enabled, because the fix adds value. A redundant rule without a code fix gets `severity = none` in `.globalconfig` (section "E128"). The rule source stays in the project, so package consumers still receive it.
 

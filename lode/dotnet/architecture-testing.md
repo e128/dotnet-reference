@@ -1,15 +1,15 @@
 # Architecture Testing
-*Updated: 2026-08-16T12:36:50Z*
+*Updated: 2026-10-16T18:13:34Z*
 
 ## Overview
 
-`tests/Architecture.Tests/` uses [TngTech.ArchUnitNET](https://github.com/TngTech/ArchUnitNET) to enforce structural invariants at the assembly and namespace level. Tests run as part of the CI suite via xUnit v3 and analyze compiled IL using Mono.Cecil.
+`tests/Architecture.Tests/` uses [TngTech.ArchUnitNET](https://github.com/TngTech/ArchUnitNET) to enforce structural invariants at the assembly and namespace level. Tests run in the CI suite through xUnit v3 and analyze compiled IL using Mono.Cecil.
 
 ## Package
 
-- `TngTech.ArchUnitNET.xUnitV3` — xUnit v3 integration (includes core + assertions). Version pinned in `Directory.Packages.props`.
+- `TngTech.ArchUnitNET.xUnitV3`: xUnit v3 integration (includes core and assertions). Version pinned in `Directory.Packages.props`.
 
-The test project references only `E128.Reference.Core` — the architecture model loads the Core assembly (`typeof(Greeter).Assembly`). To analyze additional layers (Web, Cli), add both a `ProjectReference` to those projects and their assemblies to `ArchitectureBaseline`; carrying a `ProjectReference` without loading its assembly is dead weight (`/prune-deps` flags it).
+The test project references only `E128.Reference.Core`. The architecture model loads the Core assembly (`typeof(Greeter).Assembly`). To analyze additional layers (Web, Cli), add both a `ProjectReference` to those projects and their assemblies to `ArchitectureBaseline`. A project carrying a `ProjectReference` without a loaded assembly is dead weight (`/prune-deps` flags it).
 
 ## How It Works
 
@@ -45,7 +45,7 @@ rule.Check(Architecture);
 
 ### Layer Dependencies (`LayerDependencyTests`)
 
-Enforces dependency direction: Models → (nothing), Services → Models + Repositories, Repositories → Models.
+Enforces dependency direction: Models depend on nothing, Services depend on Models and Repositories, Repositories depend on Models.
 
 - Models must not depend on Services
 - Models must not depend on Repositories
@@ -65,7 +65,7 @@ Guards against dependency cycles between Core layers.
 
 ### Sealed Classes (`SealedClassTests`)
 
-- All non-abstract classes must be sealed (project convention for favoring immutability)
+- All non-abstract classes must be sealed (project convention for to favor immutability)
 
 ### Service Patterns (`ServicePatternTests`)
 

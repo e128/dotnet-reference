@@ -1,5 +1,5 @@
 # .NET 10 Project Structure
-*Updated: 2026-08-16T12:37:04Z*
+*Updated: 2026-10-16T18:13:32Z*
 
 ## Solution Format
 
@@ -11,7 +11,7 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 
 ```
 ├── Directory.Build.props      # Shared MSBuild PROPERTIES (TFM, analyzers, code analysis)
-├── Directory.Build.targets    # Conditional TARGETS (test project config — needs IsTestProject set first)
+├── Directory.Build.targets    # Conditional TARGETS (test project config, needs IsTestProject set first)
 ├── Directory.Packages.props   # Central Package Management version pins
 ├── global.json                # SDK version + MTP test runner
 ├── nuget.config               # Package sources, trusted signers, source mapping
@@ -36,15 +36,15 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 All package versions declared in `Directory.Packages.props`. Individual `.csproj` files use `<PackageReference Include="..." />` without `Version` attributes.
 
 Key properties in `Directory.Build.props`:
-- `ManagePackageVersionsCentrally=true` — enables CPM
-- `CentralPackageTransitivePinningEnabled=true` — prevents transitive version drift
-- `CentralPackageVersionOverrideEnabled=false` — prevents per-project overrides
+- `ManagePackageVersionsCentrally=true`, enables CPM
+- `CentralPackageTransitivePinningEnabled=true`, prevents transitive version drift
+- `CentralPackageVersionOverrideEnabled=false`, prevents per-project overrides
 
 ## Directory.Build.props vs .targets
 
 **Props** (evaluated before project files): TFM, language version, nullable, analyzers, code analysis settings, artifact paths, build performance flags, configuration-specific settings.
 
-**Targets** (evaluated after project files): Conditional logic that depends on properties set in `.csproj` — primarily `<IsTestProject>true</IsTestProject>` detection for setting `OutputType=Exe` and MTP runner properties. Also contains the E128.Analyzers `ProjectReference` — all projects except the analyzer itself (`IsRoslynComponent != true`) automatically reference it as an `OutputItemType="Analyzer"` with `ReferenceOutputAssembly="false"`. The condition also gates on the `.csproj` existing, so the solution builds cleanly if the analyzer project is removed.
+**Targets** (evaluated after project files): Conditional logic that depends on properties set in `.csproj`, primarily `<IsTestProject>true</IsTestProject>` detection for setting `OutputType=Exe` and MTP runner properties. Also contains the E128.Analyzers `ProjectReference`, all projects except the analyzer itself (`IsRoslynComponent != true`) automatically reference it as an `OutputItemType="Analyzer"` with `ReferenceOutputAssembly="false"`. The condition also gates on the `.csproj` existing, so the solution builds cleanly if the analyzer project is removed.
 
 ## global.json
 

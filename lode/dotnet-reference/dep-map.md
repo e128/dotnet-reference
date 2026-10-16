@@ -1,20 +1,20 @@
-# dotnet-reference — Dependency Map
+# dotnet-reference Dependency Map
+*Updated: 2026-10-16T18:14:38Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
-> Projects in solution: **9** | Production: **4** | Test: **5**
-> Single-repo scan — all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
+> Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
 
 ## Project Summary
 
 | Project                   | SDK              | Target          | Role                            | Direct Packages               |
 | ------------------------- | ---------------- | --------------- | ------------------------------- | ----------------------------- |
-| `E128.Reference.Core`     | `Microsoft.NET.Sdk`     | `net10.0`  | Shared library for Web + Cli    | —                             |
-| `E128.Reference.Web`      | `Microsoft.NET.Sdk.Web` | `net10.0`  | ASP.NET Core web service        | — (project ref only)          |
+| `E128.Reference.Core`     | `Microsoft.NET.Sdk`     | `net10.0`  | Shared library for Web + Cli    | None                         |
+| `E128.Reference.Web`      | `Microsoft.NET.Sdk.Web` | `net10.0`  | ASP.NET Core web service        | None (project ref only)        |
 | `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net10.0`  | Console executable              | `System.CommandLine`, `Microsoft.Extensions.DependencyInjection` |
 | `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.Workspaces.Common`, `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
 
 All production projects also receive the following **analyzer packages** via `Directory.Build.props`
-(`PrivateAssets="all"` — compile-time only, not shipped to consumers). Versions are pinned
+(`PrivateAssets="all"`, compile-time only, not shipped to consumers). Versions are pinned
 centrally in `Directory.Packages.props`:
 
 | Analyzer Package                                |
@@ -58,7 +58,7 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 | Runtime image         | `mcr.microsoft.com/dotnet/aspnet:10.0-resolute`  | `Dockerfile` (final `runtime` stage) |
 | SDK/build image       | `mcr.microsoft.com/dotnet/sdk:10.0-resolute`     | `Dockerfile` (`restore`/`build` stages) |
 | .NET SDK pin          | see `global.json`                          | `global.json`                         |
-| SDK rollForward       | `latestMajor` ⚠                           | `global.json` — permits any future major version |
+| SDK rollForward       | `latestMajor`                           | `global.json` (permits any future major version) |
 | Target framework      | `net10.0` (all except `E128.Analyzers`)    | `Directory.Build.props`               |
 | Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj`               |
 | CI SDK version        | `10.0.x`                                   | `.github/workflows/ci.yml` `setup-dotnet` |
@@ -66,7 +66,7 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 | Secret scanner        | gitleaks, version and SHA-256 pinned in job `env` | `.github/workflows/ci.yml` (`secrets` job) |
 | Test runner           | Microsoft.Testing.Platform                 | `global.json`                         |
 
-> ⚠ `rollForward: "latestMajor"` in `global.json` allows the SDK to roll forward to
+> `rollForward: "latestMajor"` in `global.json` allows the SDK to roll forward to
 > any future major version. `latestPatch` or `patch` is the safer default.
 
 ---
@@ -75,13 +75,13 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 
 ### E128.Reference.Core
 
-**Role:** Shared domain library. No direct package dependencies — inherits analyzers
+**Role:** Shared domain library. No direct package dependencies. It inherits analyzers
 from `Directory.Build.props`. Referenced by Web and Cli via project reference.
 
 ### E128.Reference.Web
 
 **Role:** ASP.NET Core web application (`Microsoft.NET.Sdk.Web`). References
-`E128.Reference.Core` via project reference — the full Core domain (Greeter,
+`E128.Reference.Core` via project reference. The full Core domain (Greeter,
 GreetingService, IGreetingRepository, InMemoryGreetingRepository) is wired into DI.
 Exposes `GET /`, `POST /greetings`, `GET /greetings`, and `/health` (via
 `AddHealthChecks` middleware). Built and shipped via the multi-stage `Dockerfile`.
@@ -144,7 +144,7 @@ Versions are pinned centrally in `Directory.Packages.props`.
 
 ---
 
-## Test Stack (test projects — excluded from production tables)
+## Test Stack (test projects, excluded from production tables)
 
 Versions are pinned centrally in `Directory.Packages.props`.
 
@@ -167,7 +167,3 @@ Versions are pinned in `Directory.Packages.props` (CPM). All projects use
 `ManagePackageVersionsCentrally=true`. Transitive pins are enabled
 (`CentralPackageTransitivePinningEnabled=true`). NuGet audit is active at `low`
 severity for all deps (direct and transitive).
-
----
-
-*Updated: 2026-10-07T12:51:21Z*

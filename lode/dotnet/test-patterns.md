@@ -1,7 +1,7 @@
 # Test Family Patterns
-*Updated: 2026-08-16T12:38:30Z*
+*Updated: 2026-10-16T18:13:32Z*
 
-Standard test patterns for this codebase. Tests avoid mocking frameworks — collaborators
+Standard test patterns for this codebase. Tests avoid mocking frameworks, collaborators
 are either real lightweight implementations (e.g. `InMemoryGreetingRepository`) or small
 hand-written test doubles (e.g. a fixed `TimeProvider`). Every test method carries
 `[Trait("Category", "CI")]`.

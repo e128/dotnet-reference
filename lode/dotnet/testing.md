@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-08-16T12:38:23Z*
+*Updated: 2026-10-16T18:13:32Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -21,19 +21,19 @@ In `Directory.Build.targets` (conditioned on `IsTestProject`):
 </PropertyGroup>
 ```
 
-Test `.csproj` files only need `<IsTestProject>true</IsTestProject>` — everything else is inherited.
+Test `.csproj` files only need `<IsTestProject>true</IsTestProject>`, everything else is inherited.
 
 ## xUnit v3
 
 ### Package Choice
 
-- `xunit.v3.mtp-v2` — MTP v2 runner (recommended for .NET 10). Direct MTP integration.
-- `xunit.v3` — includes MTP v1 runner + VSTest adapter. Needed only for IDE compatibility with older tooling.
+- `xunit.v3.mtp-v2`, MTP v2 runner (recommended for .NET 10). Direct MTP integration.
+- `xunit.v3`, includes MTP v1 runner + VSTest adapter. Needed only for IDE compatibility with older tooling.
 
 ### Key Differences from v2
 
 - `IAsyncLifetime.InitializeAsync()` returns `ValueTask` (not `Task`)
-- `IAsyncLifetime` extends `IAsyncDisposable` — `DisposeAsync()` also returns `ValueTask`
+- `IAsyncLifetime` extends `IAsyncDisposable`, `DisposeAsync()` also returns `ValueTask`
 - Test projects must be executables (`OutputType=Exe`)
 - Primary constructors supported for fixture injection
 
@@ -42,7 +42,7 @@ Test `.csproj` files only need `<IsTestProject>true</IsTestProject>` — everyth
 ### Via scripts (preferred)
 
 ```bash
-# CI tests (default — filters to Category=CI)
+# CI tests (default, filters to Category=CI)
 scripts/test.sh
 
 # Specific test class
@@ -64,7 +64,7 @@ scripts/test.sh --json
 dotnet test --solution X.slnx -- --filter-trait "Category=CI"
 ```
 
-The `--` separator passes arguments to MTP. `--filter` (VSTest syntax) does not work — use `-- --filter-trait` instead.
+The `--` separator passes arguments to MTP. `--filter` (VSTest syntax) does not work, use `-- --filter-trait` instead.
 
 ## Test Categories
 
@@ -78,7 +78,7 @@ Use `[Trait("Category", "...")]` to organize tests:
 
 ## Integration Testing
 
-`WebApplicationFactory<Program>` from `Microsoft.AspNetCore.Mvc.Testing` is the standard approach for testing minimal API apps. The Web project needs `<InternalsVisibleTo Include="TestProject" />` to expose the generated `Program` class.
+`WebApplicationFactory<Program>` from `Microsoft.AspNetCore.Mvc.Testing` is the standard approach for testing minimal API apps. The Web project declares `<InternalsVisibleTo Include="E128.Reference.Tests" />` in its `.csproj` to expose the generated `Program` class.
 
 ## Test Project Structure
 
@@ -87,8 +87,8 @@ Five test projects, all sharing `<IsTestProject>true</IsTestProject>` (inherits 
 | Project                     | Purpose                                  | Notable Packages (beyond `xunit.v3.mtp-v2`)                                                                  |
 | --------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `E128.Reference.Tests`      | Web integration tests                    | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Extensions.Diagnostics.Testing`                                |
-| `E128.Reference.Core.Tests` | Core library unit tests                  | —                                                                                                             |
-| `E128.Reference.Cli.Tests`  | CLI unit tests                           | —                                                                                                             |
+| `E128.Reference.Core.Tests` | Core library unit tests                  |,                                                                                                             |
+| `E128.Reference.Cli.Tests`  | CLI unit tests                           |,                                                                                                             |
 | `Architecture.Tests`        | ArchUnitNET structural invariant tests   | `TngTech.ArchUnitNET.xUnitV3`                                                                                 |
 | `E128.Analyzers.Tests`      | Roslyn analyzer + code fix verification  | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing`             |
 
@@ -112,8 +112,8 @@ Minimal `.csproj` template (all versions from CPM):
 
 ## Conventions
 
-- Test naming: `Method_Condition_Result` (e.g., `Greet_ReturnsGreeting_WithDefaultName`)
-- No reflection in tests — use `internal` + `InternalsVisibleTo`
+- Test naming: `MethodName_ExpectedBehavior_WhenCondition` (e.g., `GreetAsync_ReturnsGreeting_WithDefaultName`)
+- No reflection in tests, use `internal` + `InternalsVisibleTo`
 - RED phase stubs use `Assert.Fail("message")`
 - Every test method has `[Trait("Category", "CI")]` (or appropriate category)
 

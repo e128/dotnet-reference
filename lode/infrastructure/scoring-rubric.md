@@ -1,5 +1,5 @@
 # Scoring Rubric for Strategic Analysis
-*Updated: 2026-08-16T12:37:37Z*
+*Updated: 2026-10-16T18:13:46Z*
 
 Shared scoring rubric used by `leverage-advisor` to score and prioritize
 candidates. Other agents (e.g. `token-optimizer`) define their own inline rubrics.
@@ -26,9 +26,9 @@ When scoring items for removal (subtractions):
 | `leverage-advisor` | ≥ 7/12       |
 
 `token-optimizer` scores against its own inline 3-dimension rubric (Frequency,
-Token cost, Feasibility — max 9) with a ≥ 5/9 plan threshold, not this rubric.
+Token cost, Feasibility, max 9) with a ≥ 5/9 plan threshold, not this rubric.
 
 ## Related
 
-- [agent-patterns.md](agent-patterns.md) — plan creation conventions
-- [scaffolding-heuristics.md](scaffolding-heuristics.md) — H1–H6 scoring for prompt simplification
+- [agent-patterns.md](agent-patterns.md): plan creation conventions
+- [scaffolding-heuristics.md](scaffolding-heuristics.md): H1–H6 scoring for prompt simplification

@@ -1,15 +1,15 @@
 # Code Generation Quality with Claude Code
-*Updated: 2026-08-16T12:38:57Z*
+*Updated: 2026-10-16T18:13:46Z*
 
 Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
 ## 1. Analyzers as Guardrails (highest leverage)
 
-Deny-by-default `.globalconfig` with multiple analyzer packages means Claude writes "close enough" code and `dotnet build` immediately reports what's wrong. `TreatWarningsAsErrors=true` means nothing slips through as a warning. The AI iterates against compiler output, not instructions it might forget.
+Deny-by-default `.globalconfig` with multiple analyzer packages means Claude writes "close enough" code and `dotnet build` immediately reports what is wrong. `TreatWarningsAsErrors=true` means nothing slips through as a warning. The AI iterates against compiler output, not instructions it might forget.
 
 ## 2. CLAUDE.md and AGENTS.md: Always-Loaded Rules
 
-CLAUDE.md is 34 lines and imports AGENTS.md, the portable cross-harness
+CLAUDE.md is short and imports AGENTS.md, the portable cross-harness
 rule file. Both load every turn. AGENTS.md holds the high-frequency rules
 that prevent the most common AI mistakes.
 - "Never run raw `dotnet test`": prevents broken commands.
@@ -20,30 +20,30 @@ that prevent the most common AI mistakes.
 ## 3. Contextual Rules (`.claude/rules/`)
 
 Loaded only when relevant. Most impactful:
-- `dotnet-anti-patterns.md` — 4 rules preventing top .NET mistakes (`DateTime.Now`, `new HttpClient()`, `async void`, sync-over-async)
-- `quality-gates.md` — format before check, no analyzer suppressions
+- `dotnet-anti-patterns.md`: 4 rules preventing top .NET mistakes (`DateTime.Now`, `new HttpClient()`, `async void`, sync-over-async)
+- `quality-gates.md`: format before check, no analyzer suppressions
 - `read-before-edit.md`: prevents editing stale file contents after format. It defines the re-read triggers.
-- `token-efficiency.md` — "use scripts, not raw commands" reduces wasted turns
+- `token-efficiency.md`: "use scripts, not raw commands" reduces wasted turns
 
 ## 4. Scripts as Correct Commands
 
-`scripts/test.sh`, `scripts/check.sh`, `scripts/build.sh` — Claude calls one script instead of figuring out the right `dotnet test --solution ... -- --filter-trait` invocation. Scripts handle MTP syntax, solution discovery, and output parsing. Eliminates "wrong command" errors.
+`scripts/test.sh`, `scripts/check.sh`, `scripts/build.sh`: Claude calls one script instead of figuring out the right `dotnet test --solution ... -- --filter-trait` invocation. Scripts handle MTP syntax, solution discovery, and output parsing. Eliminates "wrong command" errors.
 
 ## 5. `.editorconfig` + `dotnet format`
 
-Format gate means Claude's code style doesn't matter on first write — `dotnet format` normalizes it. The `.editorconfig` covers `var` usage, brace style, namespace style, naming conventions. No style debates.
+Format gate means the code style of Claude does not matter on first write. `dotnet format` normalizes it. The `.editorconfig` covers `var` usage, brace style, namespace style, naming conventions. No style debates.
 
 ## 6. Central Build Defaults (`Directory.Build.props` / `.targets`)
 
-Claude doesn't set `TargetFramework`, `Nullable`, `OutputType`, or analyzer packages in every `.csproj` — they're inherited. New projects just need the SDK and `IsTestProject=true`. Less boilerplate = fewer places for mistakes.
+Claude does not set `TargetFramework`, `Nullable`, `OutputType`, or analyzer packages in every `.csproj`. Other projects inherit them. New projects just need the SDK and `IsTestProject=true`. Less boilerplate = fewer places for mistakes.
 
 ## 7. Skills with Step Files
 
 The `dotnet-overhaul` skill breaks complex tasks into discrete steps with explicit agent prompts. Each step file specifies what to search for, what severity to assign, and the output format. Structured decomposition prevents Claude from trying to do everything at once.
 
-## 8. Conventions File
+## 8. Approval Policy and Immutability Rules
 
-`conventions.md` explicitly states what's auto-approved vs. needs human judgment. The immutability table gives concrete conversion rules rather than vague "prefer immutability." Concrete tables outperform abstract principles for code generation.
+`.claude/rules/auto-approvals.md` states what runs without a prompt and what needs approval. The immutability table in `lode/practices.md` gives concrete conversion rules rather than vague "prefer immutability." Concrete tables outperform abstract principles for code generation.
 
 ## 9. Lode as Domain Knowledge
 
@@ -51,7 +51,7 @@ The `dotnet-overhaul` skill breaks complex tasks into discrete steps with explic
 
 ## 10. Test-Specific Analyzer Overrides
 
-`tests/.globalconfig` at `global_level=101` lets Claude write test code with underscores in names, without `ConfigureAwait`, without async suffixes — and the build still passes. Making test vs. production rules explicit prevents false failures.
+`tests/.globalconfig` at `global_level=101` lets Claude write test code with underscores in names, without `ConfigureAwait`, without async suffixes, and the build still passes. Making test vs. production rules explicit prevents false failures.
 
 ## The Pattern
 
@@ -63,13 +63,13 @@ Make the right thing automatic and the wrong thing fail loudly:
 4. Defaults are correct centrally (props/targets)
 5. Domain knowledge is pre-loaded (lode + rules)
 
-The repo is a **compiler-enforced style guide** — Claude iterates against errors, not instructions.
+The repo is a **compiler-enforced style guide**: Claude iterates against errors, not instructions.
 
 ## None of This Is Enough
 
-Even with all 10 mechanisms in place, every pass will find something new. Re-running the `dotnet-overhaul` skill catches drift from new code and updated analyzers. Periodic code reviews surface design issues that no analyzer can detect. Running a second review with a different model finds blind spots the first model normalized over. Updating analyzer packages introduces new rules that flag previously-clean code.
+Even with all these mechanisms in place, every pass will find something new. Re-running the `dotnet-overhaul` skill catches drift from new code and updated analyzers. Periodic code reviews surface design issues that no analyzer can detect. Running a second review with a different model finds blind spots the first model normalized over. Updating analyzer packages introduces new rules that flag previously-clean code.
 
-This is not a failure state — it's the intended workflow. The goal is not zero findings. The goal is a **narrowing cone of quality**: each pass raises the floor, tightens the constraints, and leaves fewer places for defects to hide. The first overhaul run on a legacy codebase may produce 50+ findings. The second run finds 10. The periodic maintenance run finds 2. The cone narrows but never closes — and that's fine.
+This is not a failure state. It is the intended workflow. The goal is not zero findings. The goal is a **narrowing cone of quality**: each pass raises the floor, tightens the constraints, and leaves fewer places for defects to hide. The first overhaul run on a legacy codebase produces many findings. The second run finds fewer. The periodic maintenance run finds few. The cone narrows but never closes, and that is fine.
 
 ## Related
 

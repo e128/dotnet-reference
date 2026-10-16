@@ -1,5 +1,5 @@
 # Rob Pike's 5 Rules of Programming
-*Updated: 2026-08-16T12:40:40Z*
+*Updated: 2026-10-16T18:13:46Z*
 
 1. **You can't tell where a program is going to spend its time.** Bottlenecks occur in surprising places, so don't try to second-guess and put in a speed hack until you've proven that's where the bottleneck is.
 
@@ -14,5 +14,5 @@
 ## Application
 
 - Default to the simplest algorithm. Only add complexity with evidence that n is large.
-- Design data structures first — algorithms follow naturally.
+- Design data structures first. Algorithms follow naturally.
 - Measure before optimizing.

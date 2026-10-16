@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-10-09T15:44:52Z*
+*Updated: 2026-10-16T18:14:05Z*
 
 ## Strategy: Deny by Default
 
@@ -19,9 +19,9 @@ Per [Microsoft guidance](https://learn.microsoft.com/en-us/dotnet/fundamentals/c
 
 **`.editorconfig` is the canonical style/formatting home.** It supports both `dotnet_style_*`/`csharp_style_*` preferences and inline severity hints (e.g., `dotnet_style_coalesce_expression = true:error`). IDEs (Visual Studio, Rider, VS Code) read it to apply settings immediately while editing. It also supports `dotnet_diagnostic.*` entries if needed, but this repo keeps diagnostic severities in `.globalconfig` for separation of concerns.
 
-**`.globalconfig` is purely for analyzer configuration.** It handles rule severity (`dotnet_diagnostic.*`) and enabling (`roslynator_analyzers.enabled_by_default`). It does NOT support editor style settings like indentation, whitespace, or formatting preferences — those must be in `.editorconfig`.
+**`.globalconfig` is purely for analyzer configuration.** It handles rule severity (`dotnet_diagnostic.*`) and enabling (`roslynator_analyzers.enabled_by_default`). It does NOT support editor style settings like indentation, whitespace, or formatting preferences. Put those in `.editorconfig`.
 
-**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` use the `:error`/`:suggestion`/`:silent` suffix directly on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). The `.globalconfig` then lists explicit `dotnet_diagnostic.IDE*` overrides only where the behavior deviates from the blanket `dotnet_analyzer_diagnostic.severity = error` — avoiding silent drift when rule IDs change.
+**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` use the `:error`/`:suggestion`/`:silent` suffix directly on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). The `.globalconfig` then lists explicit `dotnet_diagnostic.IDE*` overrides only where the behavior deviates from the blanket `dotnet_analyzer_diagnostic.severity = error`, which avoids silent drift when rule IDs change.
 
 The `tests/.globalconfig` uses `global_level = 101` to override the root `global_level = 100`.
 
@@ -63,7 +63,7 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 ## Suppression Policy
 
 - Never use `#pragma warning disable` or `[SuppressMessage]` without user approval
-- Never use the null-forgiving operator `!` — enforced as error via `E128043` (every use) and `MA0191` (only `null!` and `default!`); test projects relax both for guard-clause assertions
+- Never use the null-forgiving operator `!`: `E128043` (every use) and `MA0191` (only `null!` and `default!`) enforce this as error. Test projects relax both for guard-clause assertions
 - Editorconfig severity downgrades require justification
 - Test project relaxations go in `tests/.globalconfig`, not inline suppressions
 
@@ -100,9 +100,9 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 
 ## Custom Analyzers: E128.Analyzers
 
-`src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"` — applied to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
+`src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"`. It applies to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
-Rules span categories: Design, Reliability, Performance, Style, Testing, and FileSystem. Most rules ship with a code fix; a few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
+Rules span categories: Design, Reliability, Performance, Maintainability, Security, Style, Testing, and FileSystem. Most rules ship with a code fix; a few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
 
 Redundant E128 rules with no code fix are disabled in `.globalconfig`. See [redundant-rules.md](analyzers/redundant-rules.md).
 
@@ -114,68 +114,69 @@ Key rules by category (not exhaustive):
 | Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard  |
 | Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation, O(n²) loop patterns, `SearchValues<char>` over `string.IndexOfAny` (E128102) |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
+| Maintainability | See the README rule table                                                                      |
 | Testing     | Temp directory cleanup, stale ReferenceAssemblies, low-value test conditions E128107/E128108       |
 
-### E128061 — Static readonly array → ImmutableArray
+### E128061: Static readonly array → ImmutableArray
 
-Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types — `readonly` prevents reassignment but callers can still mutate contents via the indexer. Code fix replaces `T[]` with `ImmutableArray<T>` and unwraps `new T[]` / `new[]` initializers to collection expressions.
+Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types. The `readonly` keyword prevents reassignment but callers can still mutate contents via the indexer. Code fix replaces `T[]` with `ImmutableArray<T>` and unwraps `new T[]` / `new[]` initializers to collection expressions.
 
-### E128062 — Stale ReferenceAssemblies in tests
+### E128062: Stale ReferenceAssemblies in tests
 
 Flags `ReferenceAssemblies.Net.Net80` / `Net90` in test code when the configured minimum framework version is higher (default: 100 for net10.0). Configurable via `e128_minimum_framework_version` in `.globalconfig`. Code fix replaces outdated version with the minimum.
 
-### E128064 — Disk write-then-read round-trip
+### E128064: Disk write-then-read round-trip
 
-Flags file-I/O sequences that write to a path and then immediately read the same path back into memory within the same method body. The recoverable in-memory source should be returned instead of re-reading from disk — this eliminates both the redundant syscall and the TOCTOU race window where another process can modify the file between write and read.
+Flags file-I/O sequences that write to a path and then immediately read the same path back into memory within the same method body. The recoverable in-memory source should be returned instead of re-reading from disk. This eliminates both the redundant syscall and the TOCTOU race window where another process can modify the file between write and read.
 
 **Coverage tiers**:
-- **Tier A** — `File` static API: `WriteAllText`/`ReadAllText`, `WriteAllBytes`/`ReadAllBytes`, `WriteAllLines`/`ReadAllLines`, `AppendAllText`/`AppendAllLines`, plus every `*Async` variant
-- **Tier B** — `File.CreateText` / `File.AppendText` / `File.Create` / `File.OpenWrite` followed by `File.ReadAllText`/`ReadAllBytes` (sync or async) on the same path
-- **Tier C** — `StreamWriter`/`StreamReader` ctors, `FileStream(path, FileMode.Create|CreateNew|Truncate|Append, ...)` write intent vs. `FileStream(path, FileMode.Open, FileAccess.Read)` read intent, `BinaryWriter`/`BinaryReader` over a `FileStream`
-- **Tier D** — `FileInfo` instance methods: `CreateText`/`AppendText`/`Create`/`OpenWrite` paired with `OpenRead`/`OpenText` or `File.ReadAll*(fi.FullName)`
-- **Tier E** — Opaque write-to-disk: a local variable assigned from an awaited call whose method name matches `*ToDisk*`, `*ToFile*`, `*SaveTo*`, `*WriteTo*`, or `*DownloadTo*` (case-insensitive), followed by `File.Read*` with a path sourced from a property of that result variable (e.g., `result.HtmlFilePath.FullName` or `result.FilePath`). No code fix is offered (no in-memory source expression); the diagnostic still fires.
+- **Tier A**: `File` static API: `WriteAllText`/`ReadAllText`, `WriteAllBytes`/`ReadAllBytes`, `WriteAllLines`/`ReadAllLines`, `AppendAllText`/`AppendAllLines`, plus every `*Async` variant
+- **Tier B**: `File.CreateText` / `File.AppendText` / `File.Create` / `File.OpenWrite` followed by `File.ReadAllText`/`ReadAllBytes` (sync or async) on the same path
+- **Tier C**: `StreamWriter`/`StreamReader` ctors, `FileStream(path, FileMode.Create|CreateNew|Truncate|Append, ...)` write intent vs. `FileStream(path, FileMode.Open, FileAccess.Read)` read intent, `BinaryWriter`/`BinaryReader` over a `FileStream`
+- **Tier D**: `FileInfo` instance methods: `CreateText`/`AppendText`/`Create`/`OpenWrite` paired with `OpenRead`/`OpenText` or `File.ReadAll*(fi.FullName)`
+- **Tier E**: Opaque write-to-disk: a local variable assigned from an awaited call whose method name matches `*ToDisk*`, `*ToFile*`, `*SaveTo*`, `*WriteTo*`, or `*DownloadTo*` (case-insensitive), followed by `File.Read*` with a path sourced from a property of that result variable (e.g., `result.HtmlFilePath.FullName` or `result.FilePath`). No code fix is offered (no in-memory source expression); the diagnostic still fires.
 
 **Correlation rules**:
 - Path-key normalization (`Ident:`, `Member:`, `OpaqueWriteRoot:`, `Expr:`, `FileInfo:`) so `p`, `this.p`, `fi.FullName`, `result.FilePath`, `fetchResult.HtmlFilePath.FullName`, and `Path.Combine(...)` all match the corresponding read against the same source
-- Block-scope linear domination — the write must precede the read on the same execution path; writes inside conditional branches do not match reads outside them
+- Block-scope linear domination: the write must precede the read on the same execution path; writes inside conditional branches do not match reads outside them
 - Path reassignment between write and read (`p = other;`) disqualifies the match
-- Stream-writer variables track ctor → `.Write*(...)` calls through to disposal; multi-write disposals (`BinaryWriter`, `FileStream` with multiple `.Write` calls, `AppendAllText`) still flag but attach no `SourceExpression` — the code fix is skipped rather than producing a wrong rewrite
+- Stream-writer variables track ctor → `.Write*(...)` calls through to disposal; multi-write disposals (`BinaryWriter`, `FileStream` with multiple `.Write` calls, `AppendAllText`) still flag but attach no `SourceExpression`, so the code fix is skipped rather than producing a wrong rewrite
 
 **Code fix**: replaces the read expression (or whole `await ...` for async reads) with the captured in-memory source expression. Same-kind matches use the source directly; text↔bytes cross-kind matches wrap in `Encoding.UTF8.GetBytes(...)` / `Encoding.UTF8.GetString(...)` and auto-add `using System.Text;`. `BatchFixer` is sufficient because each fix is a local expression replacement.
 
 **Test-project exemption**: `tests/.globalconfig` sets `dotnet_diagnostic.E128064.severity = none`. Fixtures for file-I/O analyzers (E128028, E128056, E128057) legitimately round-trip through disk to exercise the analyzer under test.
 
-### E128063 — Mid-name underscore in private static member
+### E128063: Mid-name underscore in private static member
 
 Severity: **Error**. Flags private/internal static members whose name contains an underscore at index ≥ 2 (e.g., `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors. Code fix uses `SequentialRenameFixAllProvider` (not `BatchFixer`) and removes the mid-name underscore by PascalCasing each segment.
 
-### E128066 — Linear lookup in loop (O(n²))
+### E128066: Linear lookup in loop (O(n²))
 
 Flags linear-time methods (`.Contains`, `.Any`, `.IndexOf`, `.Remove`, `.Exists`, `.Find`, `.FindAll`, `.FindIndex`) on collection types inside loops (`for`, `foreach`, `while`, `do`) and LINQ lambda callbacks (`.Where`, `.Select`, `.SelectMany`, `.Any`, `.All`, `.First`, `.Count`, `.ForEach`, etc.).
 
 **Exclusions**:
 - `System.String` receivers: `string.Contains(substring)` and `string.IndexOf(substring)` are O(n) substring operations, not collection lookups. `System.String` implements `IEnumerable<char>`, which would otherwise cause false positives
-- O(1) lookup types: `ISet<T>`, `IReadOnlySet<T>`, `IDictionary<K,V>`, `IReadOnlyDictionary<K,V>`, `FrozenSet<T>`, `FrozenDictionary<K,V>`, `ImmutableHashSet<T>`, `ImmutableDictionary<K,V>` — checked via `SymbolEqualityComparer` against types resolved at `CompilationStart`
-- Constant-bound `for` loops (e.g., `for (int i = 0; i < 10; i++)`) — literal bound means total work is bounded
+- O(1) lookup types: `ISet<T>`, `IReadOnlySet<T>`, `IDictionary<K,V>`, `IReadOnlyDictionary<K,V>`, `FrozenSet<T>`, `FrozenDictionary<K,V>`, `ImmutableHashSet<T>`, `ImmutableDictionary<K,V>`, checked via `SymbolEqualityComparer` against types resolved at `CompilationStart`
+- Constant-bound `for` loops (e.g., `for (int i = 0; i < 10; i++)`): literal bound means total work is bounded
 - Also detects `.Where(...).Count()` chains (linear scan + count = O(n) per call)
 
 **Code fix**: For `.Contains` and `.Any`, inserts `var xSet = x.ToHashSet();` before the enclosing loop and rewrites the receiver. Other methods lack automatic fixes (remediation is context-specific). Ensures `using System.Linq;` is present.
 
 Uses `RegisterCompilationStartAction` to pre-resolve O(1) type symbols, then `RegisterSyntaxNodeAction` on `InvocationExpression`. Falls back to `CandidateSymbols[0]` when `GetSymbolInfo().Symbol` is null (overloaded methods).
 
-### E128067 — String concatenation in loop
+### E128067: String concatenation in loop
 
 Disabled in `.globalconfig` (see [redundant-rules.md](analyzers/redundant-rules.md)). Flags `string +=` inside loops. Each iteration allocates a new string, creating O(n²) total allocations. Registers on `SyntaxKind.AddAssignmentExpression` and checks `SpecialType.System_String`. Code fix is a placeholder (string-to-StringBuilder refactoring is too invasive for automation).
 
-### E128068 — Sort in loop (O(n² log n))
+### E128068: Sort in loop (O(n² log n))
 
-Flags `.Sort()` (on `List<T>` or `System.Array`), `.OrderBy()`, `.OrderByDescending()`, `.ThenBy()`, `.ThenByDescending()` (on `System.Linq.Enumerable`) inside loops. Sorting on every iteration is almost always a bug — sort once before the loop or use a sorted collection. No code fix (remediation is context-specific).
+Flags `.Sort()` (on `List<T>` or `System.Array`), `.OrderBy()`, `.OrderByDescending()`, `.ThenBy()`, `.ThenByDescending()` (on `System.Linq.Enumerable`) inside loops. Sorting on every iteration is almost always a bug. Sort once before the loop or use a sorted collection. No code fix (remediation is context-specific).
 
-### E128069 — List.Insert(0, ...) in loop (O(n²))
+### E128069: List.Insert(0, ...) in loop (O(n²))
 
-Flags `list.Insert(0, ...)` inside loops. Each insert at index 0 shifts all existing elements, making the overall loop O(n²). Verifies the first argument is literal `0` and the containing type is `List<T>`. No code fix — use `LinkedList<T>.AddFirst` or collect-and-reverse instead.
+Flags `list.Insert(0, ...)` inside loops. Each insert at index 0 shifts all existing elements, making the overall loop O(n²). Verifies the first argument is literal `0` and the containing type is `List<T>`. No code fix. Use `LinkedList<T>.AddFirst` or collect-and-reverse instead.
 
-### E128070 — Pool Rent() capacity guard
+### E128070: Pool Rent() capacity guard
 
 Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or any type with "Pool" in the name) where the capacity argument is not bounded. Passing `int.MaxValue` or an unbounded variable causes an OOM crash. Guard with `Math.Min(value, cap)`.
 
@@ -183,7 +184,7 @@ Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or a
 
 **Exclusions**: `Math.Min(value, cap)` as the direct argument or via a local variable. Small constant literals (e.g., `Rent(1024)`).
 
-No code fix — the cap value is context-specific.
+No code fix: the cap value is context-specific.
 
 ## Common Test Overrides
 
@@ -200,9 +201,9 @@ Rules suppressed in test projects (via `tests/.globalconfig` at `global_level=10
 | SS003     | Integer division intentional in test assertions              |
 | SS037     | Tests use fake HttpMessageHandlers                           |
 | SS059     | Sync using for MemoryStream acceptable in tests              |
-| VSTHRD200 | Test methods don't need Async suffix                         |
+| VSTHRD200 | Test methods need no Async suffix                         |
 | xunit1051 | xUnit v3 ambient CancellationToken too noisy                 |
-| MA0006    | Relaxed to suggestion — test LINQ predicates use string `==` |
+| MA0006    | Relaxed to suggestion: test LINQ predicates use string `==` |
 
 ## ConfigureAwait Scoping (CA2007 + E128022)
 
@@ -228,7 +229,7 @@ private static partial Regex MyRegex { get; }
 
 ## SequentialRenameFixAllProvider (Shared Fix-All Logic)
 
-`SequentialRenameFixAllProvider` in `E128.Analyzers.Style` is a shared `FixAllProvider` used by any code fix that renames symbols via `Renamer.RenameSymbolAsync`. It replaces `WellKnownFixAllProviders.BatchFixer`, which computes all renames from the original solution snapshot and then merges — this merge fails when multiple renames touch the same document, causing `dotnet format` to log "doesn't support Fix All in Solution".
+`SequentialRenameFixAllProvider` in `E128.Analyzers.Style` is a shared `FixAllProvider` used by any code fix that renames symbols via `Renamer.RenameSymbolAsync`. It replaces `WellKnownFixAllProviders.BatchFixer`, which computes all renames from the original solution snapshot and then merges. This merge fails when multiple renames touch the same document, causing `dotnet format` to log "doesn't support Fix All in Solution".
 
 The provider accepts a `Func<Diagnostic, string?, string?>` delegate for computing the new name, allowing reuse across different fixers:
 
@@ -240,8 +241,6 @@ Sequential application:
 2. Sorts renames back-to-front within each document to prevent span drift
 3. Applies `Renamer.RenameSymbolAsync` one at a time to the evolving solution
 4. Skips a rename if the symbol has already been renamed (name mismatch guard)
-
-`dotnet format` resolves the IDE1006 suggested name from the `SuggestedName` property embedded in Roslyn's diagnostic.
 
 ## Related
 

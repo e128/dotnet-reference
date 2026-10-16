@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-10-04T12:43:02Z*
+*Updated: 2026-10-16T18:14:38Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 
@@ -37,8 +37,8 @@ When the original code already has `using` directives, the new one is merged int
 
 ## BatchFixer vs SequentialRenameFixAllProvider
 
-- **`WellKnownFixAllProviders.BatchFixer`** — standard choice for most code fixes. Computes all fixes from the original snapshot and merges. Works well when fixes are independent local edits (expression replacements, type swaps).
-- **`SequentialRenameFixAllProvider`** — required when the fix uses `Renamer.RenameSymbolAsync`. BatchFixer fails when multiple renames touch the same document because the rename API modifies the solution globally. See `analyzers.md § SequentialRenameFixAllProvider`.
+- **`WellKnownFixAllProviders.BatchFixer`**: standard choice for most code fixes. Computes all fixes from the original snapshot and merges. Works well when fixes are independent local edits (expression replacements, type swaps).
+- **`SequentialRenameFixAllProvider`**: required when the fix uses `Renamer.RenameSymbolAsync`. BatchFixer fails when multiple renames touch the same document because the rename API modifies the solution globally. See `analyzers.md § SequentialRenameFixAllProvider`.
 
 ## Common Fix Patterns
 
@@ -49,7 +49,7 @@ When the original code already has `using` directives, the new one is merged int
 | Rename symbol                    | E128063, IDE1006        | Requires SequentialRenameFixAllProvider |
 | Remove node                      | E128022 (ConfigureAwait)| Remove a method call from a chain      |
 | Delete member                    | E128107, E128108        | Removes a whole test method            |
-| Wrap in method call              | E128070 (Math.Min)      | Context-specific — often no auto fix   |
+| Wrap in method call              | E128070 (Math.Min)      | Context-specific, often no auto fix   |
 
 ## Removing a Member Node
 
@@ -68,4 +68,4 @@ joins a trailing comment and the brace onto one line, which comments the brace o
 ## Related
 
 - [New Analyzer Checklist](new-analyzer-checklist.md)
-- [Analyzers](../analyzers.md) — main analyzer documentation
+- [Analyzers](../analyzers.md): main analyzer documentation

@@ -1,5 +1,5 @@
 # opencode v2 Guardrail Parity
-*Updated: 2026-10-10T14:53:02Z*
+*Updated: 2026-10-16T18:13:41Z*
 
 Claude Code enforces guardrails through hook scripts under `.claude/hooks/`.
 opencode v2 has no hook file. Its plugin API carries the same interception.
@@ -115,7 +115,7 @@ file `~/.config/opencode/opencode.json` holds the `model` key instead. The
 
 ## Invariants
 
-- `.claude/hooks/*.sh` stays the only copy of a guardrail decision.
+- Each script under `.claude/hooks/` stays the only copy of a guardrail decision.
 - A plugin reads the decision from the hook script or from the rule file. It
   never restates the rule in TypeScript.
 - A guardrail never edits files. It denies, asks, or injects text.
