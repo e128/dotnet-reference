@@ -1,5 +1,5 @@
 # Terminology
-*Updated: 2026-10-16T18:13:55Z*
+*Updated: 2026-10-17T13:32:18Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **MTP**: Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.
@@ -20,3 +20,4 @@
 - **FIPS**: Federal Information Processing Standards. A hash-algorithm compliance target that analyzer `E128071` enforces. The container's stock Ubuntu Resolute OpenSSL package ships no FIPS provider.
 - **gitleaks**: An open source secret scanner. `scripts/internal/precommit.sh` runs it on the staged diff, and the CI `secrets` job runs it on the full history. See `lode/infrastructure/secret-scanning.md`.
 - **Deterministic Script**: A `scripts/*.sh` wrapper that replaces an ad hoc command with a repeatable, token-free operation. See `.claude/rules/deterministic-scripts.md` for the full routing table.
+- **Shell Lint**: The `shellcheck` pass over every tracked `.sh` file. `scripts/lint-shell.sh` owns it. See `.claude/rules/shellcheck-validation.md`.

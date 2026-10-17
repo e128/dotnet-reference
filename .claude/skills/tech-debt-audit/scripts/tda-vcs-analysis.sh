@@ -8,25 +8,26 @@ TOP_N="${2:-30}"
 SCOPE="${3:-.}"
 
 echo "=== Hotspot candidates (change frequency, last ${MONTHS} months) ==="
-git log --since="${MONTHS} months ago" --name-only --pretty=format: -- "${SCOPE}" |
+CHURN=$(git log --since="${MONTHS} months ago" --name-only --pretty=format: -- "${SCOPE}" |
   grep -v '^$' |
-  sort | uniq -c | sort -rn | head -"${TOP_N}"
+  sort | uniq -c | sort -rn)
+head -"${TOP_N}" <<< "${CHURN}"
 
 echo ""
 echo "=== Co-change pairs (temporal coupling, last ${MONTHS} months) ==="
 git log --since="${MONTHS} months ago" --name-only --pretty=format:"---" -- "${SCOPE}" '*.cs' |
   awk '/^---$/{if(NR>1) for(i in files) for(j in files) if(i<j) print files[i], files[j]; delete files; next} NF{files[$0]=$0}' |
-  sort | uniq -c | sort -rn | head -20
+  sort | uniq -c | sort -rn | head -20 || true
 
 echo ""
 echo "=== SATD age attribution (oldest unresolved TODOs in .cs files) ==="
+# `|| true` absorbs the SIGPIPE that `head` sends upstream under pipefail.
 git log -S "TODO" --format="%H %ad %ae" --date=short -- "${SCOPE}" '*.cs' |
-  head -30
+  head -30 || true
 
 echo ""
 echo "=== Author concentration for top hotspot files ==="
-TOP_FILES=$(git log --since="${MONTHS} months ago" --name-only --pretty=format: -- "${SCOPE}" |
-  grep -v '^$' | sort | uniq -c | sort -rn | head -10 | awk '{print $2}')
+TOP_FILES=$(head -10 <<< "${CHURN}" | awk '{print $2}')
 
 for f in ${TOP_FILES}; do
   if [[ -f "${f}" ]]; then

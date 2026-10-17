@@ -1,6 +1,33 @@
 # Scripts
 
-Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` for a live catalog. Nushell scripts (`.nu`) require [Nushell](https://www.nushell.sh/) and are not listed by `help.sh`.
+Bash scripts (`.sh`) live in `scripts/`. Run `scripts/help.sh` for a live catalog.
+Nushell scripts (`.nu`) are not listed by `help.sh`.
+
+## Requirements
+
+| Tool         | Minimum | Current stable (2026-10) | Why this floor                                                       |
+| ------------ | ------- | ------------------------ | -------------------------------------------------------------------- |
+| `bash`       | 4.0     | 5.3                      | `mapfile` and `declare -A` need 4.0. macOS ships 3.2 at `/bin/bash`. |
+| `shellcheck` | 0.11.0  | 0.11.0                   | The lint gate runs at `-S warning`. CI pins 0.11.0 by SHA256.        |
+| Nushell      | 0.93    | 0.116.1                  | `with-env` with a record argument needs 0.93.                        |
+
+`scripts/lib.sh` re-execs under Homebrew Bash when the interpreter is older
+than 4.0. Run every script by its own path. A login shell that resolves the
+system Bash first defeats the re-exec.
+
+Bash 5.3 adds fork-free command substitution, `${ cmd; }`. Prefer it in a new
+hot loop. Keep the 4.0 floor until the repository drops the older interpreters.
+
+Nushell 0.116 keeps every `.nu` script working. Pin 0.106.1 or later to avoid
+the `with-env` list form removal in 0.94 and the `str replace` literal default
+in 0.84.
+
+`shellcheck` is required. `scripts/lint-shell.sh` runs it at warning severity
+over every `.sh` file. `scripts/check.sh`, `scripts/ci.sh`,
+`scripts/internal/precommit.sh`, and the CI `shellcheck` job all call that
+script. Never call raw `shellcheck` in a gate.
+
+Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 
 ## Core Workflow
 
@@ -9,8 +36,8 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `build.sh`           | Build the solution or a specific project                  | `--verbose`, `--project`, `--warnings`, `--fix`                                   |
 | `test.sh`            | Run tests (defaults to CI category)                       | `--all`, `--verbose`, `--dry-run`, `--trait`                                      |
 | `format.sh`          | Run jb cleanupcode then dotnet format                     | `--check`, `--changed`, `--no-jb`                                                 |
-| `check.sh`           | Composed: format + build + test                           | `--all`, `--no-format`, `--json`                                                  |
-| `ci.sh`              | Full CI pipeline                                          | `--targeted`, `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test` |
+| `check.sh`           | Composed: shell lint + format + build + test              | `--all`, `--no-format`, `--json`                                                  |
+| `ci.sh`              | Full CI pipeline                                          | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`               |
 | `podman.sh`          | Podman build/run/test/stop/clean                          | `--no-cache`                                                                      |
 | `verify-and-ship.sh` | Verify, commit, and push (format → version-bump → stage → precommit → commit → push) | `--message`/`-m` (required), `--json`, `--squash`, `--no-version-bump` |
 
@@ -36,6 +63,7 @@ Bash scripts (`.sh`) use bash 5+ and live in `scripts/`. Run `scripts/help.sh` f
 | `dep-check.sh`         | Check NuGet dependencies for outdated and vulnerable packages |
 | `gh-actions-update.sh` | Check GitHub Actions for outdated versions                    |
 | `lint-yaml.sh`         | Validate YAML syntax                                          |
+| `lint-shell.sh`        | Lint shell scripts with shellcheck                            |
 | `sdk-version.sh`       | Read SDK version from global.json                             |
 | `build-budget.sh`      | Per-session build cycle budget enforcer                       |
 | `format-invalidate.sh` | List .cs files modified by last format run                    |
@@ -98,7 +126,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/plan-context.sh`           | List active plans, roadmap items, or details                                               |
 | `internal/plan-gate.sh`              | Phase gate prerequisite verification                                                       |
 | `internal/plan-path.sh`              | Resolve a plan's canonical path by partial name                                            |
-| `internal/precommit.sh`              | PII and secret scan on staged files                                                        |
+| `internal/precommit.sh`              | Shell lint and PII and secret scan on staged files                                        |
 | `internal/review-agents.sh`          | Discover code-review-relevant agents dynamically from .claude/agents/                      |
 | `internal/review-findings.sh`        | Locate the latest review plan and parse its checklist findings, grouped by file with severity |
 | `internal/settings-gap.sh`           | Diff catalog commands against settings.json allow-list; classify gaps by safety tier       |

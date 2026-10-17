@@ -23,6 +23,7 @@ full flag list.
 | `podman build` / `podman test` / `podman run`                      | `scripts/podman.sh`                            |
 | `check actions` / `outdated actions`                               | `scripts/gh-actions-update.sh`                 |
 | `lint yaml` / `check yaml`                                         | `scripts/lint-yaml.sh`                         |
+| `lint shell` / `check shell` / `shellcheck`                        | `scripts/lint-shell.sh`                        |
 | `lode summary` / `lode section`                                    | `scripts/lode-summary.sh`                      |
 | `apply updates` / `update packages` / `bump deps`                  | `scripts/update.sh [--apply]`                  |
 | `poll until` / `wait for build` / `loop until`                     | `scripts/loop.sh`                              |

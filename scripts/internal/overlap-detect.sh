@@ -21,8 +21,6 @@ ROOT="$(find_repo_root)"
 AGENTS_DIR="$ROOT/.claude/agents"
 SKILLS_DIR="$ROOT/.claude/skills"
 
-declare -A TRIGGERS
-
 extract_triggers() {
     local file="$1"
     local name="$2"
@@ -43,7 +41,7 @@ extract_triggers() {
     done < "$file"
 
     # Normalize: lowercase, split on comma, trim whitespace, sort
-    echo "$triggers" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]' | sed '/^$/d' | sort -u
+    printf '%s\n' "$triggers" | awk -F',' '{ for (i = 1; i <= NF; i++) { t = $i; gsub(/^[ \t]+|[ \t]+$/, "", t); t = tolower(t); if (t != "") print t } }' | sort -u
 }
 
 # Collect all items with triggers
@@ -69,6 +67,12 @@ overlaps=()
 items=("${!ITEM_TRIGGERS[@]}")
 count="${#items[@]}"
 
+# Trigger counts never change, so compute them once per item.
+declare -A T_COUNT
+for k in "${items[@]}"; do
+    T_COUNT["$k"]="$(printf '%s\n' "${ITEM_TRIGGERS[$k]}" | wc -l | tr -d ' ')"
+done
+
 for ((i=0; i<count; i++)); do
     for ((j=i+1; j<count; j++)); do
         a="${items[$i]}"
@@ -78,8 +82,8 @@ for ((i=0; i<count; i++)); do
         b_triggers="${ITEM_TRIGGERS[$b]}"
 
         # Count triggers
-        a_count=$(echo "$a_triggers" | wc -l | tr -d ' ')
-        b_count=$(echo "$b_triggers" | wc -l | tr -d ' ')
+        a_count="${T_COUNT[$a]}"
+        b_count="${T_COUNT[$b]}"
 
         # Find common triggers
         common=$(comm -12 <(echo "$a_triggers") <(echo "$b_triggers") | wc -l | tr -d ' ')

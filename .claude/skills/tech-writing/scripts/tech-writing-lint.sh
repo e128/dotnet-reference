@@ -73,8 +73,8 @@ BEGIN {
 function report(ln, rule, snippet) {
   if (length(snippet) > 80) snippet = substr(snippet, 1, 77) "..."
   gsub(/"/, "\\\"", snippet)
-  if (json) printf("{\"file\":\"%s\",\"line\":%d,\"rule\":\"%s\",\"text\":\"%s\"}\n", FILENAME, ln, rule, snippet) > "/dev/stderr"
-  else printf("%s:%d: [%s] %s\n", FILENAME, ln, rule, snippet)
+  if (json) printf("{\"file\":\"%s\",\"line\":%d,\"rule\":\"%s\",\"text\":\"%s\"}\n", label, ln, rule, snippet) > "/dev/stderr"
+  else printf("%s:%d: [%s] %s\n", label, ln, rule, snippet)
 }
 '
 
@@ -82,7 +82,7 @@ exit_code=0
 for f in "${FILES[@]}"; do
   target="$f"; label="$f"
   [[ "$f" == "-" ]] && { target=/dev/stdin; label="(stdin)"; }
-  out=$(LC_ALL=C awk -v json="$JSON" "$AWK_PROG" "$target" 2>&1 | sed "s#^$target#$label#") || true
+  out=$(LC_ALL=C awk -v json="$JSON" -v label="$label" "$AWK_PROG" "$target" 2>&1) || true
   [[ -n "$out" ]] && { echo "$out"; exit_code=1; }
 done
 exit "$exit_code"

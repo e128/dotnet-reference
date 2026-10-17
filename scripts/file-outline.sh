@@ -46,7 +46,7 @@ outline_cs() {
         [[ -z "$line" ]] && continue
         local lnum="${line%%:*}"
         local text="${line#*:}"
-        text="$(echo "$text" | sed 's/^ *//')"
+        text="${text#"${text%%[! ]*}"}"
         entries="${entries}${lnum}|namespace|${text}
 "
     done <<< "$ns"
@@ -58,7 +58,7 @@ outline_cs() {
         [[ -z "$line" ]] && continue
         local lnum="${line%%:*}"
         local text="${line#*:}"
-        text="$(echo "$text" | sed 's/^ *//')"
+        text="${text#"${text%%[! ]*}"}"
         entries="${entries}${lnum}|type|${text}
 "
     done <<< "$types"
@@ -70,7 +70,7 @@ outline_cs() {
         [[ -z "$line" ]] && continue
         local lnum="${line%%:*}"
         local text="${line#*:}"
-        text="$(echo "$text" | sed 's/^ *//')"
+        text="${text#"${text%%[! ]*}"}"
         entries="${entries}${lnum}|method|${text}
 "
     done <<< "$methods"
@@ -82,7 +82,7 @@ outline_cs() {
         [[ -z "$line" ]] && continue
         local lnum="${line%%:*}"
         local text="${line#*:}"
-        text="$(echo "$text" | sed 's/^ *//')"
+        text="${text#"${text%%[! ]*}"}"
         entries="${entries}${lnum}|property|${text}
 "
     done <<< "$props"
@@ -94,7 +94,7 @@ outline_md() {
     rg --line-number '^#{1,6}\s+.+$' "$FILE" 2>/dev/null | while IFS= read -r line; do
         local lnum="${line%%:*}"
         local text="${line#*:}"
-        text="$(echo "$text" | sed 's/^ *//')"
+        text="${text#"${text%%[! ]*}"}"
         echo "${lnum}|heading|${text}"
     done
 }
@@ -108,26 +108,25 @@ esac
 
 # Apply filters
 if [[ -n "$FILTER_METHOD" ]]; then
-    ENTRIES="$(echo "$ENTRIES" | grep -i "$FILTER_METHOD" || true)"
+    ENTRIES="$(grep -i "$FILTER_METHOD" <<< "$ENTRIES" || true)"
 fi
 if [[ -n "$FILTER_SECTION" ]]; then
-    ENTRIES="$(echo "$ENTRIES" | grep -i "$FILTER_SECTION" || true)"
+    ENTRIES="$(grep -i "$FILTER_SECTION" <<< "$ENTRIES" || true)"
 fi
 
 # Output
 if $JSON; then
-    ITEMS="[]"
+    NDJSON=""
     while IFS='|' read -r lnum kind text; do
         [[ -z "$lnum" ]] && continue
-        ITEMS="$(echo "$ITEMS" | jq \
-            --argjson line "$lnum" \
-            --arg kind "$kind" \
-            --arg name "$(echo "$text" | sed 's/"/\\"/g')" \
-            --argjson total "$TOTAL" \
-            '. + [{"line": $line, "kind": $kind, "name": $name, "end_line": $total}]')"
+        # Reproduce the old double escape: quote escape, then JSON escape.
+        name="${text//\"/\\\"}"
+        name="${name//\\/\\\\}"
+        name="${name//\"/\\\"}"
+        NDJSON="${NDJSON}$(printf '{"line":%s,"kind":"%s","name":"%s","end_line":%s}\n' "$lnum" "$kind" "$name" "$TOTAL")"
     done <<< "$ENTRIES"
-    jq -n --arg file "$FILE" --arg ext "$EXT" --argjson total "$TOTAL" --argjson entries "$ITEMS" \
-        '{file: $file, extension: $ext, total_lines: $total, entries: $entries}'
+    jq -s --arg file "$FILE" --arg ext "$EXT" --argjson total "$TOTAL" \
+        '{file: $file, extension: $ext, total_lines: $total, entries: .}' <<< "$NDJSON"
 else
     COUNT=$(echo "$ENTRIES" | grep -c '.' 2>/dev/null || echo 0)
     if [[ "$COUNT" -eq 0 ]]; then

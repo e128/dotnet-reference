@@ -77,15 +77,18 @@ if [[ ${#recent_files[@]} -eq 0 ]]; then
     exit 0
 fi
 
-cat_sessions() {
-    cat "${recent_files[@]}"
-}
+# Concatenate the session files once. Every subcommand reads this file, so a
+# multi-subcommand run no longer re-reads every transcript.
+TMPDIR_MINE="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR_MINE"' EXIT
+SESSIONS_CACHE="$TMPDIR_MINE/sessions.jsonl"
+cat "${recent_files[@]}" > "$SESSIONS_CACHE"
 
 # ── Subcommand implementations ──────────────────
 
 run_tool_freq() {
     local data
-    data=$(cat_sessions | jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use") | .name' 2>/dev/null | sort | uniq -c | sort -rn | head -"$TOP")
+    data=$(jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use") | .name' "$SESSIONS_CACHE" 2>/dev/null | sort | uniq -c | sort -rn | head -"$TOP")
 
     if [[ "$JSON" == true ]]; then
         echo "$data" | awk '{print "{\"tool\":\"" $2 "\",\"count\":" $1 "}"}' | jq -s '{tool_frequency: .}'
@@ -99,7 +102,7 @@ run_tool_freq() {
 
 run_repeated_commands() {
     local data
-    data=$(cat_sessions | jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Bash") | .input.command' 2>/dev/null | grep -v '^$' | sort | uniq -c | sort -rn | head -"$TOP")
+    data=$(jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Bash") | .input.command' "$SESSIONS_CACHE" 2>/dev/null | grep -v '^$' | sort | uniq -c | sort -rn | head -"$TOP")
 
     if [[ "$JSON" == true ]]; then
         echo "$data" | awk -F'      ' '{gsub(/^ +/, "", $0); split($0, a, / +/); count=a[1]; cmd=""; for(i=2;i<=length(a);i++) cmd=cmd (i>2?" ":"") a[i]; gsub(/"/, "\\\"", cmd); print "{\"count\":" count ",\"command\":\"" cmd "\"}"}' | jq -s '{repeated_commands: .}'
@@ -113,7 +116,7 @@ run_repeated_commands() {
 
 run_most_read() {
     local data
-    data=$(cat_sessions | jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Read") | .input.file_path' 2>/dev/null | sort | uniq -c | sort -rn | head -"$TOP")
+    data=$(jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Read") | .input.file_path' "$SESSIONS_CACHE" 2>/dev/null | sort | uniq -c | sort -rn | head -"$TOP")
 
     if [[ "$JSON" == true ]]; then
         echo "$data" | awk '{print "{\"file\":\"" $2 "\",\"reads\":" $1 "}"}' | jq -s '{most_read: .}'
@@ -127,7 +130,7 @@ run_most_read() {
 
 run_agent_spawns() {
     local data
-    data=$(cat_sessions | jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Agent") | .input | "\(.subagent_type // "general") | \(.description)"' 2>/dev/null | sort | uniq -c | sort -rn | head -"$TOP")
+    data=$(jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Agent") | .input | "\(.subagent_type // "general") | \(.description)"' "$SESSIONS_CACHE" 2>/dev/null | sort | uniq -c | sort -rn | head -"$TOP")
 
     if [[ "$JSON" == true ]]; then
         echo "$data" | awk -F' *[|] *' '{gsub(/^ +/, ""); split($0, a, / +/); count=a[1]; rest=$0; sub(/^ *[0-9]+ +/, "", rest); split(rest, parts, / *[|] */); gsub(/"/, "\\\"", parts[1]); gsub(/"/, "\\\"", parts[2]); print "{\"count\":" a[1] ",\"type\":\"" parts[1] "\",\"description\":\"" parts[2] "\"}"}' | jq -s '{agent_spawns: .}'
@@ -143,10 +146,10 @@ run_slash_freq() {
     local data
     data=$( {
         # User-typed slash commands: <command-name>/foo</command-name>
-        cat_sessions | grep -oE '<command-name>[^<]*</command-name>' 2>/dev/null \
+        grep -oE '<command-name>[^<]*</command-name>' "$SESSIONS_CACHE" 2>/dev/null \
             | sed 's|</\{0,1\}command-name>||g; s|^/||'
         # Skill tool invocations
-        cat_sessions | jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Skill") | .input.skill' 2>/dev/null
+        jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Skill") | .input.skill' "$SESSIONS_CACHE" 2>/dev/null
     } | grep -v '^$' | sort | uniq -c | sort -rn | head -"$TOP")
 
     if [[ "$JSON" == true ]]; then

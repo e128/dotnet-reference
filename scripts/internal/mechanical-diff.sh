@@ -26,14 +26,25 @@ ROOT="$(find_repo_root)"
 # A namespace path is a dotted identifier: Foo.Bar or Foo.Bar.Baz (>=2 segments).
 NS_RE='^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$'
 
-# Classify a single file's working diff. Echoes MECHANICAL or SUBSTANTIVE.
+# One porcelain word-diff of the whole working tree. Each file's section starts
+# at its own "diff --git" header, so no per-file git call is needed.
+DIFF_BUF="$(git -C "$ROOT" diff --word-diff=porcelain \
+    --word-diff-regex='[A-Za-z_][A-Za-z0-9_.]*' --unified=0 2>/dev/null)"
+
+# Classify a single file's working diff. Sets CLASS to MECHANICAL or SUBSTANTIVE.
 classify_file() {
     local file="$1"
     local wd changed=false line tok
     # Word-diff isolates exactly the changed tokens; regex defines a word as an
     # identifier path so punctuation/whitespace are separators, not tokens.
-    wd="$(git -C "$ROOT" diff --word-diff=porcelain \
-        --word-diff-regex='[A-Za-z_][A-Za-z0-9_.]*' --unified=0 -- "$file" 2>/dev/null)"
+    wd="$(awk -v sec="diff --git a/$file b/$file" '
+        index($0, "diff --git ") == 1 {
+            if (found) exit
+            if ($0 == sec) found = 1
+            next
+        }
+        found { print }
+    ' <<< "$DIFF_BUF")"
 
     while IFS= read -r line; do
         case "$line" in
@@ -46,16 +57,16 @@ classify_file() {
         changed=true
         # Any changed token that is not a dotted namespace path => substantive.
         if [[ ! "$tok" =~ $NS_RE ]]; then
-            echo "SUBSTANTIVE"
+            CLASS="SUBSTANTIVE"
             return
         fi
     done <<<"$wd"
 
     if [[ "$changed" == true ]]; then
-        echo "MECHANICAL"
+        CLASS="MECHANICAL"
     else
         # No changed identifier tokens (e.g. whitespace-only) — not a rename.
-        echo "SUBSTANTIVE"
+        CLASS="SUBSTANTIVE"
     fi
 }
 
@@ -67,7 +78,8 @@ json_entries=""
 
 for file in "${FILES[@]}"; do
     [[ -z "$file" ]] && continue
-    cls="$(classify_file "$file")"
+    classify_file "$file"
+    cls="$CLASS"
     if [[ "$cls" == "MECHANICAL" ]]; then
         ((mech++)) || true
     else

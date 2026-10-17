@@ -4,10 +4,14 @@
 `scripts/format.sh` to apply fixes. Run `scripts/format.sh --check` to verify.
 Generate format-compliant C# on the first write.
 
-**`check.sh` is the single format gate.** `scripts/check.sh` runs
-`format.sh --check` as its first step. Do not pre-format and pass
+**`check.sh` is the single gate.** `scripts/check.sh` runs shell lint, then
+`format.sh --check`, then build, then test. Do not pre-format and pass
 `--no-format`. When the format step fails, run `scripts/format.sh --changed`,
 then re-run `check.sh`.
+
+**Shell gate.** `scripts/lint-shell.sh` must pass before any commit. It runs
+`shellcheck -S warning` over every tracked `.sh` file. See
+[shellcheck-validation.md](shellcheck-validation.md).
 
 **Analyzer suppressions.** Never use `#pragma warning disable`,
 `[SuppressMessage]`, or an editorconfig severity downgrade without asking the

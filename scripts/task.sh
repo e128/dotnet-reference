@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 # Task management: check/next/progress on tasks.md files.
-# Usage: task.sh check "substring" | next | progress [--plan NAME] [--phase "Phase N"]
+# Usage: task.sh check "substring" | next | progress [--plan NAME]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-SCRIPTS="$(dirname "${BASH_SOURCE[0]}")"
 ROOT="$(find_repo_root)"
-PLAN=""; PHASE=""; JSON=false
+PLAN=""; JSON=false
 ACTION="${1:-}"; shift 2>/dev/null || true
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --plan)  PLAN="$2"; shift ;;
-        --phase) PHASE="$2"; shift ;;
         --json)  JSON=true ;;
         -*)      err "Unknown flag: $1"; exit 1 ;;
         *)       [[ "$ACTION" == "check" && -z "${SUBSTR:-}" ]] && SUBSTR="$1" ;;
@@ -40,7 +38,7 @@ fi
 case "$ACTION" in
     check)
         if [[ -z "${SUBSTR:-}" ]]; then
-            err "Usage: task.sh check \"substring\" [--phase \"Phase N\"]"
+            err "Usage: task.sh check \"substring\""
             exit 1
         fi
         # Find the line and check it off
@@ -61,8 +59,17 @@ case "$ACTION" in
         LINE_NUM="${LINE%%:*}"
         TASK="${LINE#*\] }"
         if [[ "$JSON" == true ]]; then
-            # Find the phase heading above this line
-            PHASE_LINE=$(head -n "$LINE_NUM" "$TASKS_FILE" | grep -n '^## Phase' | tail -1)
+            # Find the last phase heading above this line, in memory.
+            mapfile -t _t < "$TASKS_FILE" || true
+            PHASE_LINE=""
+            for (( i = LINE_NUM - 1; i >= 0; i-- )); do
+                if [[ "${_t[i]:-}" == "## Phase"* ]]; then
+                    PHASE_LINE="$((i + 1)):${_t[i]}"
+                    break
+                fi
+            done
+            # No phase heading stops the run, as the old pipeline did.
+            [[ -n "$PHASE_LINE" ]] || exit 1
             PHASE_NAME="${PHASE_LINE#*## }"
             json_object plan="$PLAN" phase="$PHASE_NAME" task="$TASK" line="$LINE_NUM"
         else

@@ -34,8 +34,6 @@ if [[ -z "$FILE" || ! -f "$FILE" ]]; then
     exit 1
 fi
 
-TOTAL=$(wc -l < "$FILE" | tr -d ' ')
-
 # Find the start line of a symbol
 find_start_line() {
     local query="$1" mode="$2" file="$3"
@@ -45,7 +43,7 @@ find_start_line() {
         # Try definition pattern first (with access modifier)
         pattern="(public|private|protected|internal)\s+(static\s+|async\s+|virtual\s+|override\s+|abstract\s+|sealed\s+)*\S+\s+${query}\s*\("
         local def_match
-        def_match="$(rg --line-number --max-count 1 "$pattern" "$file" 2>/dev/null | head -1 || true)"
+        def_match="$(rg --line-number --max-count 1 "$pattern" "$file" 2>/dev/null || true)"
         if [[ -n "$def_match" ]]; then
             echo "${def_match%%:*}"
             return
@@ -61,7 +59,7 @@ find_start_line() {
     fi
 
     local match
-    match="$(rg --line-number --max-count 1 "$pattern" "$file" 2>/dev/null | head -1 || true)"
+    match="$(rg --line-number --max-count 1 "$pattern" "$file" 2>/dev/null || true)"
     if [[ -n "$match" ]]; then
         echo "${match%%:*}"
     else
@@ -73,11 +71,14 @@ find_start_line() {
 walk_back_sig() {
     local file="$1" match_line="$2"
     local idx=$((match_line))
+    local -a _l
+    mapfile -t _l < "$file" || true
 
     # Walk backwards over blank lines and attribute lines
     while [[ $idx -gt 1 ]]; do
         local prev
-        prev="$(sed -n "$((idx - 1))p" "$file" | sed 's/^[[:space:]]*//')"
+        prev="${_l[idx-2]:-}"
+        prev="${prev#"${prev%%[![:space:]]*}"}"
         if [[ -z "$prev" || "$prev" == \[* ]]; then
             idx=$((idx - 1))
         else

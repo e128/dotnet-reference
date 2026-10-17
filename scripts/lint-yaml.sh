@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # Validate YAML files for syntax errors and common issues.
-# Usage: lint-yaml.sh [--fix] [--json] [FILE...]
+# Usage: lint-yaml.sh [--json] [FILE...]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 ROOT="$(find_repo_root)"
-FIX=false; JSON=false
+JSON=false
 FILES=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --fix)  FIX=true ;;
         --json) JSON=true ;;
         -*)     err "Unknown flag: $1"; exit 1 ;;
         *)      FILES+=("$1") ;;
@@ -29,14 +28,20 @@ fi
 
 TOTAL=0; ERRORS=0; ERROR_DETAILS=()
 
+# Probe the YAML module once. The result cannot change during the run.
+HAS_PYYAML=false
+if command -v python3 &>/dev/null && python3 -c "import yaml" &>/dev/null; then
+    HAS_PYYAML=true
+fi
+
 for file in "${FILES[@]}"; do
     [[ "$file" != /* ]] && file="$ROOT/$file"
     [[ ! -f "$file" ]] && continue
     TOTAL=$((TOTAL + 1))
-    rel="${file#$ROOT/}"
+    rel="${file#"$ROOT"/}"
 
     # Phase 1: Basic syntax check with python yaml module (if available)
-    if command -v python3 &>/dev/null && python3 -c "import yaml" &>/dev/null; then
+    if [[ "$HAS_PYYAML" == true ]]; then
         result=$(python3 -c "
 import yaml, sys
 try:

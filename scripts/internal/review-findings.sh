@@ -100,7 +100,8 @@ if $JSON; then
     entries=""
     for row in "${rows[@]}"; do
         IFS=$'\t' read -r file lineno sev text <<<"$row"
-        esc_text="$(printf '%s' "$text" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+        esc_text="${text//\\/\\\\}"
+        esc_text="${esc_text//\"/\\\"}"
         e="$(printf '{"file":"%s","line":%s,"severity":"%s","text":"%s"}' "$file" "$lineno" "$sev" "$esc_text")"
         [[ -n "$entries" ]] && entries="$entries,"
         entries="$entries$e"

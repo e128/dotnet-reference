@@ -20,7 +20,6 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-ROOT="$(find_repo_root)"
 SOLUTION="$(find_solution)"
 
 # Build first (debug config for fast iteration)
@@ -100,4 +99,4 @@ if [[ $REAL_FAILED -eq 0 && $EXIT_CODE -eq 8 ]]; then
     exit 0
 fi
 
-exit $EXIT_CODE
+exit "$EXIT_CODE"

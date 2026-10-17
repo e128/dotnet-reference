@@ -38,13 +38,19 @@ done
 
 # ── Helpers ─────────────────────────────────────
 
+# Count each distinct line of a file, most frequent first.
+# Prints one "count<TAB>line" record per distinct line.
+count_values() {
+    awk '{ n[$0]++ } END { for (k in n) printf "%d\t%s\n", n[k], k }' "$1" | sort -rn
+}
+
 # Find project session dir matching current repo
 find_session_dir() {
     # Claude Code stores sessions at ~/.claude/projects/-<path-with-slashes-as-dashes>
     # Slashes and dots become dashes: /path/to/repo -> -path-to-repo
     # Dots in path components become dashes too.
-    local repo_path
-    repo_path="$(echo "$ROOT" | sed 's|/|-|g; s|\.|-|g')"
+    local repo_path="${ROOT//\//-}"
+    repo_path="${repo_path//./-}"
     local dir="$PROJECT_DIR/${repo_path}"
     if [[ -d "$dir" ]]; then
         echo "$dir"
@@ -67,18 +73,28 @@ collect_jsonl_files() {
     cutoff_epoch=$(date -v"-${DAYS}d" +%s 2>/dev/null || date -d "${DAYS} days ago" +%s 2>/dev/null)
 
     local files=()
+    # Modification times run parallel to `files`, so the sort below needs no
+    # second stat call and no `ls -t`.
+    local mt_epochs=()
     for f in "$session_dir"/*.jsonl; do
         [[ ! -f "$f" ]] && continue
         local mod_epoch
         mod_epoch=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null || echo 0)
         if (( mod_epoch >= cutoff_epoch )); then
             files+=("$f")
+            mt_epochs+=("$mod_epoch")
         fi
     done
 
-    # If --sessions is set, take only the N most recent
+    (( ${#files[@]} )) || return 0
+
+    # If --sessions is set, take only the N most recent by modification time.
     if (( SESSIONS > 0 )); then
-        printf '%s\n' "${files[@]}" | sort -t/ -k"$(echo "${files[0]}" | tr '/' '\n' | wc -l)" -r | head -n "$SESSIONS"
+        local i
+        for i in "${!files[@]}"; do
+            printf '%d\t%s\n' "${mt_epochs[$i]}" "${files[$i]}"
+        done | sort -rn | head -n "$SESSIONS" |
+            while IFS=$'\t' read -r _ path; do printf '%s\n' "$path"; done
     else
         printf '%s\n' "${files[@]}"
     fi
@@ -149,16 +165,16 @@ run_stats() {
     local total_tool_use=0
     local total_tool_result=0
 
-    for f in "${files[@]}"; do
-        [[ -z "$f" || ! -f "$f" ]] && continue
-        local msgs tool_uses tool_results
-        msgs=$(wc -l < "$f" | tr -d ' ')
-        tool_uses=$(grep -c '"tool_use"' "$f" 2>/dev/null || echo 0)
-        tool_results=$(grep -c '"tool_result"' "$f" 2>/dev/null || echo 0)
-        total_messages=$((total_messages + msgs))
-        total_tool_use=$((total_tool_use + tool_uses))
-        total_tool_result=$((total_tool_result + tool_results))
-    done
+    # One call per tool over the whole list, instead of four forks per file.
+    # grep and wc scan far faster than awk, so one pass each still beats one
+    # awk pass over the same bytes.
+    if (( session_count > 0 )); then
+        total_messages=$(wc -l "${files[@]}" 2>/dev/null | awk 'END { print $1 + 0 }')
+        total_tool_use=$( { grep -c '"tool_use"' "${files[@]}" 2>/dev/null || true; } \
+            | awk -F: '{ s += $NF } END { print s + 0 }')
+        total_tool_result=$( { grep -c '"tool_result"' "${files[@]}" 2>/dev/null || true; } \
+            | awk -F: '{ s += $NF } END { print s + 0 }')
+    fi
 
     if [[ "$JSON" == true ]]; then
         printf '{"sessions":%d,"days":%d,"total_messages":%d,"tool_uses":%d,"tool_results":%d}\n' \
@@ -187,32 +203,29 @@ run_tool_counts() {
     local tmpfile="$TMPDIR_SH/tool-counts"
     : > "$tmpfile"
 
-    for f in "${files[@]}"; do
-        [[ -z "$f" || ! -f "$f" ]] && continue
-        grep -o '"name":"[^"]*"' "$f" >> "$tmpfile" 2>/dev/null || true
-    done
+    # One grep over every file, not one per file.
+    (( ${#files[@]} )) && grep -ho '"name":"[^"]*"' "${files[@]}" >> "$tmpfile" 2>/dev/null || true
 
     if [[ "$JSON" == true ]]; then
         printf '{"days":%d,"tools":[' "$DAYS"
         local first=true
-        sort "$tmpfile" | uniq -c | sort -rn | while read -r count name_field; do
-            local tool_name
-            tool_name=$(echo "$name_field" | sed 's/"name":"//;s/"//')
+        while IFS=$'\t' read -r count name_field; do
+            local tool_name="${name_field#\"name\":\"}"
+            tool_name="${tool_name%\"}"
             if [[ "$first" == true ]]; then
                 first=false
             else
                 printf ','
             fi
             printf '{"name":"%s","count":%d}' "$tool_name" "$count"
-        done
+        done < <(count_values "$tmpfile")
         printf ']}\n'
     else
         printf "${BOLD}Tool counts${RESET} (%d-day window)\n" "$DAYS"
-        sort "$tmpfile" | uniq -c | sort -rn | head -20 | while read -r count name_field; do
-            local tool_name
-            tool_name=$(echo "$name_field" | sed 's/"name":"//;s/"//')
-            printf "  %4d  %s\n" "$count" "$tool_name"
-        done
+        while IFS=$'\t' read -r count name_field; do
+            local tool_name="${name_field#\"name\":\"}"
+            printf "  %4d  %s\n" "$count" "${tool_name%\"}"
+        done < <(count_values "$tmpfile" | head -20)
     fi
 }
 
@@ -231,33 +244,23 @@ run_bash_commands() {
     local tmpfile="$TMPDIR_SH/bash-commands"
     : > "$tmpfile"
 
-    for f in "${files[@]}"; do
-        [[ -z "$f" || ! -f "$f" ]] && continue
-        grep -o '"command":"[^"]*"' "$f" >> "$tmpfile" 2>/dev/null || true
-    done
+    (( ${#files[@]} )) && grep -ho '"command":"[^"]*"' "${files[@]}" >> "$tmpfile" 2>/dev/null || true
 
     if [[ "$CATEGORY" == true ]]; then
         # Categorize by first token
         local catfile="$TMPDIR_SH/bash-categories"
 
-        sed 's/"command":"//;s/".*//' "$tmpfile" | while read -r cmd; do
-            local first_token="${cmd%% *}"
-            # Normalize scripts/ paths
-            if [[ "$first_token" == scripts/* ]]; then
-                echo "$first_token"
-            elif [[ "$first_token" == bash || "$first_token" == '#' ]]; then
-                echo "$first_token"
-            else
-                echo "$first_token"
-            fi
-        done | sort | uniq -c | sort -rn > "$catfile"
+        sed 's/"command":"//;s/".*//' "$tmpfile" \
+            | awk '{ sub(/ .*/, ""); if ($0 != "") print }' \
+            | sort | uniq -c | sort -rn > "$catfile"
 
         if [[ "$JSON" == true ]]; then
             printf '{"days":%d,"categories":[' "$DAYS"
             local first=true
             while read -r count category; do
                 # Escape backslashes and quotes for valid JSON
-                category=$(echo "$category" | sed 's/\\/\\\\/g; s/"/\\"/g')
+                category="${category//\\/\\\\}"
+                category="${category//\"/\\\"}"
                 if [[ "$first" == true ]]; then
                     first=false
                 else
@@ -277,26 +280,26 @@ run_bash_commands() {
         if [[ "$JSON" == true ]]; then
             printf '{"days":%d,"commands":[' "$DAYS"
             local first=true
-            sort "$tmpfile" | uniq -c | sort -rn | head -20 | while read -r count cmd_field; do
-                local cmd
-                cmd=$(echo "$cmd_field" | sed 's/"command":"//;s/"$//')
+            while IFS=$'\t' read -r count cmd_field; do
+                local cmd="${cmd_field#\"command\":\"}"
+                cmd="${cmd%\"}"
                 if [[ "$first" == true ]]; then
                     first=false
                 else
                     printf ','
                 fi
                 # Escape inner quotes for JSON
-                cmd=$(echo "$cmd" | sed 's/\\/\\\\/g; s/"/\\"/g')
+                cmd="${cmd//\\/\\\\}"
+                cmd="${cmd//\"/\\\"}"
                 printf '{"command":"%s","count":%d}' "$cmd" "$count"
-            done
+            done < <(count_values "$tmpfile" | head -20)
             printf ']}\n'
         else
             printf "${BOLD}Top bash commands${RESET} (%d-day window)\n" "$DAYS"
-            sort "$tmpfile" | uniq -c | sort -rn | head -20 | while read -r count cmd_field; do
-                local cmd
-                cmd=$(echo "$cmd_field" | sed 's/"command":"//;s/"$//')
-                printf "  %4d  %s\n" "$count" "$cmd"
-            done
+            while IFS=$'\t' read -r count cmd_field; do
+                local cmd="${cmd_field#\"command\":\"}"
+                printf "  %4d  %s\n" "$count" "${cmd%\"}"
+            done < <(count_values "$tmpfile" | head -20)
         fi
     fi
 }
@@ -317,31 +320,28 @@ run_topics() {
     local tmpfile="$TMPDIR_SH/topics"
     : > "$tmpfile"
 
-    for f in "${files[@]}"; do
-        [[ -z "$f" || ! -f "$f" ]] && continue
-        # Skills
-        grep -o '"skill":"[^"]*"' "$f" 2>/dev/null | sed 's/"skill":"//;s/"$//' | sed 's/^/skill:/' >> "$tmpfile" || true
-        # Agent types
-        grep -o '"subagent_type":"[^"]*"' "$f" 2>/dev/null | sed 's/"subagent_type":"//;s/"$//' | sed 's/^/agent:/' >> "$tmpfile" || true
-    done
+    # One grep and one sed over every file, instead of six processes per file.
+    (( ${#files[@]} )) && grep -ho '"skill":"[^"]*"\|"subagent_type":"[^"]*"' "${files[@]}" 2>/dev/null \
+        | sed -e 's/"skill":"\([^"]*\)"/skill:\1/' -e 's/"subagent_type":"\([^"]*\)"/agent:\1/' \
+        >> "$tmpfile" || true
 
     if [[ "$JSON" == true ]]; then
         printf '{"days":%d,"topics":[' "$DAYS"
         local first=true
-        sort "$tmpfile" | uniq -c | sort -rn | while read -r count topic; do
+        while IFS=$'\t' read -r count topic; do
             if [[ "$first" == true ]]; then
                 first=false
             else
                 printf ','
             fi
             printf '{"topic":"%s","count":%d}' "$topic" "$count"
-        done
+        done < <(count_values "$tmpfile")
         printf ']}\n'
     else
         printf "${BOLD}Session topics${RESET} (%d-day window)\n" "$DAYS"
-        sort "$tmpfile" | uniq -c | sort -rn | while read -r count topic; do
+        while IFS=$'\t' read -r count topic; do
             printf "  %4d  %s\n" "$count" "$topic"
-        done
+        done < <(count_values "$tmpfile")
     fi
 }
 
@@ -360,40 +360,28 @@ run_errors() {
     local tmpfile="$TMPDIR_SH/errors"
     : > "$tmpfile"
 
-    for f in "${files[@]}"; do
-        [[ -z "$f" || ! -f "$f" ]] && continue
-        # Extract error types from tool_result with is_error
-        grep -E '"is_error":\s*true' "$f" 2>/dev/null | while read -r line; do
-            # Categorize by error pattern
-            if echo "$line" | grep -qi 'EISDIR'; then
-                echo "eisdir"
-            elif echo "$line" | grep -qi 'write.*before.*read\|must.*read.*before\|have not read'; then
-                echo "write-before-read"
-            elif echo "$line" | grep -qi 'file.*modified\|content.*changed'; then
-                echo "file-modified"
-            elif echo "$line" | grep -qi 'not found\|ENOENT\|does not exist'; then
-                echo "path-not-found"
-            elif echo "$line" | grep -qi 'permission\|EACCES'; then
-                echo "permission-denied"
-            elif echo "$line" | grep -qi 'timeout\|ETIMEDOUT'; then
-                echo "timeout"
-            elif echo "$line" | grep -qi 'old_string.*not found\|Could not find'; then
-                echo "edit-not-found"
-            elif echo "$line" | grep -qi 'too large\|too long\|exceeds'; then
-                echo "file-too-large"
-            elif echo "$line" | grep -qi 'user.*denied\|user.*rejected'; then
-                echo "user-rejected"
-            elif echo "$line" | grep -qi 'hook.*denied\|hook.*blocked\|hook.*failed'; then
-                echo "hook-denied"
-            elif echo "$line" | grep -qi 'HTTP.*error\|status.*[45][0-9][0-9]\|ECONNREFUSED'; then
-                echo "http-error"
-            elif echo "$line" | grep -qi 'exit code\|exited with\|non-zero'; then
-                echo "bash-failure"
-            else
-                echo "other"
-            fi
-        done >> "$tmpfile" || true
-    done
+    # One awk pass over every file. The previous form spawned a grep per
+    # candidate line per pattern, which dominated the whole script.
+    if (( ${#files[@]} > 0 )); then
+        awk '
+        /"is_error":[ \t]*true/ {
+            l = tolower($0)
+            if (l ~ /eisdir/) out = "eisdir"
+            else if (l ~ /write.*before.*read|must.*read.*before|have not read/) out = "write-before-read"
+            else if (l ~ /file.*modified|content.*changed/) out = "file-modified"
+            else if (l ~ /not found|enoent|does not exist/) out = "path-not-found"
+            else if (l ~ /permission|eacces/) out = "permission-denied"
+            else if (l ~ /timeout|etimedout/) out = "timeout"
+            else if (l ~ /old_string.*not found|could not find/) out = "edit-not-found"
+            else if (l ~ /too large|too long|exceeds/) out = "file-too-large"
+            else if (l ~ /user.*denied|user.*rejected/) out = "user-rejected"
+            else if (l ~ /hook.*denied|hook.*blocked|hook.*failed/) out = "hook-denied"
+            else if (l ~ /http.*error|status.*[45][0-9][0-9]|econnrefused/) out = "http-error"
+            else if (l ~ /exit code|exited with|non-zero/) out = "bash-failure"
+            else out = "other"
+            print out
+        }' "${files[@]}" >> "$tmpfile" 2>/dev/null || true
+    fi
 
     local total
     total=$(wc -l < "$tmpfile" | tr -d ' ')
@@ -426,21 +414,21 @@ run_errors() {
         printf '{"days":%d,"total_errors":%d,"prev_total":%d,"has_baseline":%s,"total_trend":"%s","categories":[' \
             "$DAYS" "$total" "$prev_total" "$has_baseline" "$trend"
         local first=true
-        sort "$tmpfile" | uniq -c | sort -rn | while read -r count category; do
+        while IFS=$'\t' read -r count category; do
             if [[ "$first" == true ]]; then
                 first=false
             else
                 printf ','
             fi
             printf '{"name":"%s","count":%d}' "$category" "$count"
-        done
+        done < <(count_values "$tmpfile")
         printf ']}\n'
     else
         printf "${BOLD}Error audit${RESET} (%d-day window)\n" "$DAYS"
         printf "  Total: %d errors  [%s]\n\n" "$total" "$trend"
-        sort "$tmpfile" | uniq -c | sort -rn | while read -r count category; do
+        while IFS=$'\t' read -r count category; do
             printf "  %4d  %s\n" "$count" "$category"
-        done
+        done < <(count_values "$tmpfile")
         if [[ "$has_baseline" == true ]]; then
             printf "\n${DIM}Baseline: %d errors${RESET}\n" "$prev_total"
         else

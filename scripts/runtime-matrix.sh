@@ -91,16 +91,14 @@ done < <(fd -i -g 'Dockerfile*' "$ROOT" --exclude obj --exclude bin --exclude .g
 # ── JSON ──
 if [[ "$JSON" == true ]]; then
     fw_json="$(for i in "${!fw_proj[@]}"; do
-        jq -n --arg project "${fw_proj[$i]}" --arg path "${fw_path[$i]}" \
-              --arg framework "${fw_tfm[$i]}" --arg source "${fw_src[$i]}" \
-              '{project: $project, path: $path, framework: $framework, source: $source}'
-    done | jq -s '.')"
+        printf '%s\t%s\t%s\t%s\n' \
+            "${fw_proj[$i]}" "${fw_path[$i]}" "${fw_tfm[$i]}" "${fw_src[$i]}"
+    done | jq -R -s 'split("\n")|map(select(length>0)|split("\t")|{project:.[0],path:.[1],framework:.[2],source:.[3]})')"
 
     dk_json="$(for i in "${!dk_file[@]}"; do
-        jq -n --arg file "${dk_file[$i]}" --arg image "${dk_image[$i]}" \
-              --arg tag "${dk_tag[$i]}" --arg stage "${dk_stage[$i]}" --arg status "${dk_status[$i]}" \
-              '{file: $file, image: $image, tag: $tag, stage: $stage, status: $status}'
-    done | jq -s '.')"
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "${dk_file[$i]}" "${dk_image[$i]}" "${dk_tag[$i]}" "${dk_stage[$i]}" "${dk_status[$i]}"
+    done | jq -R -s 'split("\n")|map(select(length>0)|split("\t")|{file:.[0],image:.[1],tag:.[2],stage:.[3],status:.[4]})')"
 
     flags_json="$(printf '%s\n' "${flags[@]}" | grep -v '^$' | jq -R '.' | jq -s '.')"
 

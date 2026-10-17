@@ -77,13 +77,9 @@ fi
 # ── JSON ──
 if [[ "$JSON" == true ]]; then
     proj_json=$(for i in "${!proj_paths[@]}"; do
-        jq -n \
-            --arg name "${proj_names[$i]}" \
-            --arg path "${proj_paths[$i]}" \
-            --arg kind "${proj_kinds[$i]}" \
-            --argjson packable "${proj_packable[$i]}" \
-            '{name: $name, path: $path, kind: $kind, packable: $packable}'
-    done | jq -s '.')
+        printf '%s\t%s\t%s\t%s\n' \
+            "${proj_names[$i]}" "${proj_paths[$i]}" "${proj_kinds[$i]}" "${proj_packable[$i]}"
+    done | jq -R -s 'split("\n")|map(select(length>0)|split("\t")|{name:.[0],path:.[1],kind:.[2],packable:(.[3]=="true")})')
 
     readme_json=$(printf '%s\n' "${readmes[@]}" | jq -R '.' | jq -s '.')
 

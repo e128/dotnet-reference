@@ -8,35 +8,38 @@ TOP_N="${2:-20}"
 SCOPE="${3:-.}"
 
 echo "=== Top ${TOP_N} largest .cs files (by line count) ==="
-fd -e cs . "${SCOPE}" --type f 2>/dev/null |
+# Strip the "./" that `fd` adds for scope ".". `git log` emits bare paths, so
+# the two lists only intersect once the prefixes agree.
+LARGEST=$(fd -e cs . "${SCOPE}" --type f 2>/dev/null |
+  sed 's#^\./##' |
   xargs wc -l 2>/dev/null |
   grep -v ' total$' |
-  sort -rn |
-  head -"${TOP_N}"
+  sort -rn)
+head -"${TOP_N}" <<< "${LARGEST}"
 
 echo ""
 echo "=== Top ${TOP_N} most-changed .cs files (last ${MONTHS} months) ==="
+# `|| true` absorbs the SIGPIPE that `head` sends to `sort` under pipefail.
 CHURN=$(git log --since="${MONTHS} months ago" --name-only --pretty=format: -- "${SCOPE}" '*.cs' |
   grep -v '^$' |
-  sort | uniq -c | sort -rn | head -"${TOP_N}")
+  sort | uniq -c | sort -rn | head -"${TOP_N}" || true)
 echo "${CHURN}"
 
 echo ""
 echo "=== Intersection: large AND high-churn (debt hotspot candidates) ==="
-LARGE_FILES=$(fd -e cs . "${SCOPE}" --type f 2>/dev/null |
-  xargs wc -l 2>/dev/null |
-  grep -v ' total$' |
-  sort -rn |
-  head -"${TOP_N}" |
-  awk '{print $2}')
+LARGE_FILES=$(head -"${TOP_N}" <<< "${LARGEST}" | awk '{print $2}')
 
-CHURN_FILES=$(echo "${CHURN}" | awk '{print $2}')
+# Change count per file, read once instead of grepping CHURN per file.
+declare -A CHURN_COUNT
+while read -r changes file; do
+  if [[ -n "${file:-}" ]]; then CHURN_COUNT["${file}"]="${changes}"; fi
+done <<< "${CHURN}"
 
 OVERLAP=""
 for f in ${LARGE_FILES}; do
-  if echo "${CHURN_FILES}" | grep -qF "${f}"; then
+  if [[ -n "${CHURN_COUNT[${f}]:-}" ]]; then
     LINES=$(wc -l < "${f}" 2>/dev/null || echo "?")
-    CHANGES=$(echo "${CHURN}" | grep -F "${f}" | awk '{print $1}')
+    CHANGES="${CHURN_COUNT[${f}]}"
     OVERLAP="${OVERLAP}  ${LINES} LOC, ${CHANGES} changes: ${f}\n"
   fi
 done

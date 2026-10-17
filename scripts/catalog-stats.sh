@@ -23,37 +23,43 @@ AGENTS_DIR="$ROOT/.claude/agents"
 SKILLS_DIR="$ROOT/.claude/skills"
 KEYWORDS_FILE="$ROOT/.claude/rules/keyword-shortcuts.md"
 
-# Parse YAML frontmatter field from a file.
-# Usage: parse_field FILE FIELD
-parse_field() {
-    local file="$1" field="$2"
-    sed -n "/^---$/,/^---$/{ /^${field}:/{ s/^${field}: *//; p; q; }; }" "$file" 2>/dev/null
-}
-
-# Parse multi-line YAML description (handles > folded style).
-parse_description() {
-    local file="$1"
-    local in_desc=false
-    local desc=""
-    while IFS= read -r line; do
-        if [[ "$line" =~ ^description: ]]; then
-            in_desc=true
-            local after="${line#description:}"
-            after="${after# }"
-            if [[ "$after" == ">"* ]]; then
-                continue
-            fi
-            desc="$after"
-            continue
-        fi
-        if $in_desc; then
-            if [[ "$line" =~ ^[a-zA-Z_-]+: ]] || [[ "$line" == "---" ]]; then
-                break
-            fi
-            desc="$desc ${line#"${line%%[![:space:]]*}"}"
-        fi
-    done < <(sed -n '/^---$/,/^---$/p' "$file" 2>/dev/null)
-    echo "$desc"
+# Read the frontmatter once: the 7 tracked fields plus the folded description.
+# Prints FIELD<TAB>VALUE lines. The --- toggle matches the old sed range.
+read_frontmatter() {
+    awk '
+        BEGIN { split("name tools maxTurns memory model isolation effort", F, " "); nf = 7 }
+        /^---$/ {
+            in_range = !in_range
+            if (in_desc && !desc_done) desc_done = 1
+            next
+        }
+        in_range {
+            for (i = 1; i <= nf; i++) {
+                f = F[i]
+                if (!(f in got) && $0 ~ ("^" f ":")) {
+                    got[f] = 1
+                    v = $0
+                    sub("^" f ": *", "", v)
+                    print f "\t" v
+                }
+            }
+        }
+        in_range && !desc_done && substr($0, 1, 12) == "description:" {
+            after = substr($0, 13)
+            if (substr(after, 1, 1) == " ") after = substr(after, 2)
+            in_desc = 1
+            if (substr(after, 1, 1) == ">") next
+            desc = after
+            next
+        }
+        in_range && in_desc && !desc_done {
+            if ($0 == "---" || $0 ~ /^[a-zA-Z_-]+:/) { desc_done = 1; next }
+            s = $0
+            sub(/^[[:space:]]+/, "", s)
+            desc = desc " " s
+        }
+        END { print "desc\t" desc }
+    ' "$1" 2>/dev/null
 }
 
 # Count meaningful lines (excludes blank, frontmatter, code fences, header-only lines).
@@ -88,39 +94,49 @@ count_meaningful() {
     echo $((total - blank - fm - fence - header))
 }
 
-# Check if a name appears in keyword-shortcuts.md
+# Check if a name appears in keyword-shortcuts.md. Read once into KW_CONTENT.
+# A catalog name holds no regex metacharacter, so a literal test is safe.
 in_keyword_table() {
     local name="$1"
-    if [[ -f "$KEYWORDS_FILE" ]]; then
-        rg -q "$name" "$KEYWORDS_FILE" 2>/dev/null && echo "true" || echo "false"
+    if [[ -n "$KW_CONTENT" && "$KW_CONTENT" == *"$name"* ]]; then
+        echo "true"
     else
         echo "false"
     fi
 }
 
+KW_CONTENT="$(cat "$KEYWORDS_FILE" 2>/dev/null || true)"
+
 # Collect entries
 json_entries=""
+declare -a text_rows=()
 
 process_file() {
     local file="$1" type="$2"
     local name total_lines meaningful_lines desc desc_len
     local tools maxturns memory model isolation effort in_kw
+    local -A fm=()
+    local k v
 
-    name="$(parse_field "$file" "name")"
+    while IFS=$'\t' read -r k v; do
+        fm["$k"]="$v"
+    done < <(read_frontmatter "$file")
+
+    name="${fm[name]:-}"
     [[ -z "$name" ]] && name="$(basename "${file%.md}")"
 
     total_lines="$(wc -l < "$file" | tr -d ' ')"
     meaningful_lines="$(count_meaningful "$file")"
 
-    desc="$(parse_description "$file")"
+    desc="${fm[desc]:-}"
     desc_len="${#desc}"
 
-    tools="$(parse_field "$file" "tools")"
-    maxturns="$(parse_field "$file" "maxTurns")"
-    memory="$(parse_field "$file" "memory")"
-    model="$(parse_field "$file" "model")"
-    isolation="$(parse_field "$file" "isolation")"
-    effort="$(parse_field "$file" "effort")"
+    tools="${fm[tools]:-}"
+    maxturns="${fm[maxTurns]:-}"
+    memory="${fm[memory]:-}"
+    model="${fm[model]:-}"
+    isolation="${fm[isolation]:-}"
+    effort="${fm[effort]:-}"
     in_kw="$(in_keyword_table "$name")"
 
     local relpath="${file#"$ROOT"/}"
@@ -149,32 +165,34 @@ process_file() {
         [[ -n "$model" ]] && flags="${flags:+$flags,}HAS_MODEL"
         [[ -z "$maxturns" && ("$tools" == *"Bash"* || "$tools" == *"Agent"*) ]] && flags="${flags:+$flags,}NO_MAXTURNS"
 
-        printf "%-30s %-7s %5d %5d %5d %-6s %-10s %s\n" \
+        local row
+        printf -v row "%-30s %-7s %5d %5d %5d %-6s %-10s %s" \
             "$name" "$type" "$total_lines" "$meaningful_lines" "$desc_len" "$in_kw" "${maxturns:-—}" "${flags:-—}"
+        text_rows+=("$row")
     fi
 }
 
 # Discover agents
+agent_count=0
 if [[ -d "$AGENTS_DIR" ]]; then
     while IFS= read -r f; do
         process_file "$f" "agent"
+        agent_count=$((agent_count + 1))
     done < <(fd -t f -g "*.md" "$AGENTS_DIR" 2>/dev/null | sort)
 fi
 
 # Discover skills
+skill_count=0
 if [[ -d "$SKILLS_DIR" ]]; then
     while IFS= read -r f; do
         process_file "$f" "skill"
+        skill_count=$((skill_count + 1))
     done < <(fd -t f -g "SKILL.md" "$SKILLS_DIR" 2>/dev/null | sort)
 fi
 
-# Count totals
-agent_count=0; skill_count=0
-if [[ -d "$AGENTS_DIR" ]]; then
-    agent_count="$(fd -t f -g "*.md" "$AGENTS_DIR" 2>/dev/null | wc -l | tr -d ' ')"
-fi
-if [[ -d "$SKILLS_DIR" ]]; then
-    skill_count="$(fd -t f -g "SKILL.md" "$SKILLS_DIR" 2>/dev/null | wc -l | tr -d ' ')"
+# First copy of the catalog rows, printed before the totals block.
+if [[ "$JSON_MODE" == false && ${#text_rows[@]} -gt 0 ]]; then
+    printf '%s\n' "${text_rows[@]}"
 fi
 
 if $JSON_MODE; then
@@ -184,16 +202,9 @@ else
         "Name" "Type" "Lines" "Mean." "Desc" "InKW" "MaxTurns" "Flags"
     printf "${DIM}%-30s %-7s %5s %5s %5s %-6s %-10s %s${RESET}\n" \
         "------------------------------" "-------" "-----" "-----" "-----" "------" "----------" "----------"
-    # Re-run to print (simpler than collecting into array for bash)
-    if [[ -d "$AGENTS_DIR" ]]; then
-        while IFS= read -r f; do
-            process_file "$f" "agent"
-        done < <(fd -t f -g "*.md" "$AGENTS_DIR" 2>/dev/null | sort)
-    fi
-    if [[ -d "$SKILLS_DIR" ]]; then
-        while IFS= read -r f; do
-            process_file "$f" "skill"
-        done < <(fd -t f -g "SKILL.md" "$SKILLS_DIR" 2>/dev/null | sort)
+    # Second copy of the catalog rows, from the one processing pass.
+    if [[ ${#text_rows[@]} -gt 0 ]]; then
+        printf '%s\n' "${text_rows[@]}"
     fi
     echo
     ok "Totals: $agent_count agents, $skill_count skills"

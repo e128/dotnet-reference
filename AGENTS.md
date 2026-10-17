@@ -31,7 +31,9 @@ of what is portable versus Claude-only.
 - **TDD** — follow Red-Green-Refactor. A RED-phase stub calls
   `Assert.Fail(message)`. Never use `Assert.True(false)` or
   `NotImplementedException`.
-- **Build** — `scripts/check.sh` is the single format, build, and test gate.
+- **Build** — `scripts/check.sh` is the single shell lint, format, build, and
+  test gate. It runs `scripts/lint-shell.sh` first. Never call raw
+  `shellcheck` in a gate.
 - **Route every repeated operation through a script in `scripts/`.** Never
   run the raw command when a script exists. Run `scripts/help.sh` for the
   full list. The full routing table lives in

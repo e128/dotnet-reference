@@ -39,7 +39,8 @@ count=0
 for file in "$AGENTS_DIR"/*.md; do
     [[ ! -f "$file" ]] && continue
 
-    name="$(basename "${file%.md}")"
+    name="${file##*/}"
+    name="${name%.md}"
 
     # Extract description from frontmatter
     desc=""
@@ -56,17 +57,17 @@ for file in "$AGENTS_DIR"/*.md; do
             [[ "$line" =~ ^[a-zA-Z_-]+: ]] || [[ "$line" == "---" ]] && break
             desc="$desc ${line#"${line%%[![:space:]]*}"}"
         fi
-    done < <(sed -n '/^---$/,/^---$/p' "$file" 2>/dev/null)
+    done < "$file"
 
-    desc_lower="$(echo "$desc" | tr '[:upper:]' '[:lower:]')"
+    desc_lower="${desc,,}"
 
     # Check include
-    if ! echo "$desc_lower" | rg -q "$INCLUDE_PATTERN" 2>/dev/null; then
+    if [[ ! "$desc_lower" =~ $INCLUDE_PATTERN ]]; then
         continue
     fi
 
     # Check exclude
-    if echo "$desc_lower" | rg -q "$EXCLUDE_PATTERN" 2>/dev/null; then
+    if [[ "$desc_lower" =~ $EXCLUDE_PATTERN ]]; then
         continue
     fi
 

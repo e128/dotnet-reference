@@ -12,7 +12,6 @@ set -euo pipefail
 [[ $# -lt 1 ]] && { err "Usage: version-bump.sh <ProjectName>"; exit 1; }
 
 PROJECT="$1"
-ROOT="$(find_repo_root)"
 CSPROJ=""
 for f in src/"$PROJECT"/"$PROJECT".csproj src/"$PROJECT"/*.csproj; do
     if [[ -f "$f" ]]; then

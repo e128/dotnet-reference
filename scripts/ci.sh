@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
-# Combined CI pipeline: format + build + test.
-# Usage: ci.sh [--targeted] [--skip-format] [--skip-build] [--skip-test] [--json]
+# Combined CI pipeline: shell lint + format + build + test.
+# Usage: ci.sh [--skip-format] [--skip-build] [--skip-test] [--json]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 SCRIPTS="$(dirname "${BASH_SOURCE[0]}")"
-JSON=true; SKIP_FORMAT=false; SKIP_BUILD=false; SKIP_TEST=false; TARGETED=false
+JSON=true; SKIP_FORMAT=false; SKIP_BUILD=false; SKIP_TEST=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --targeted)    TARGETED=true ;;
         --human)       JSON=false ;;
         --json)        JSON=true ;;
         --skip-format) SKIP_FORMAT=true ;;
@@ -22,7 +21,15 @@ done
 EXIT=0
 declare -A RESULTS
 
-# Step 1: Format
+# Step 1: Shell lint
+if "$SCRIPTS/lint-shell.sh" > /dev/null 2>&1; then
+    RESULTS[shell]="ok"
+else
+    RESULTS[shell]="fail"
+    EXIT=1
+fi
+
+# Step 2: Format
 if [[ "$SKIP_FORMAT" == false ]]; then
     if "$SCRIPTS/format.sh" --check > /dev/null 2>&1; then
         RESULTS[format]="ok"
@@ -32,7 +39,7 @@ if [[ "$SKIP_FORMAT" == false ]]; then
     fi
 fi
 
-# Step 2: Build
+# Step 3: Build
 if [[ "$SKIP_BUILD" == false ]]; then
     if "$SCRIPTS/build.sh" > /dev/null 2>&1; then
         RESULTS[build]="ok"
@@ -42,7 +49,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
     fi
 fi
 
-# Step 3: Test
+# Step 4: Test
 if [[ "$SKIP_TEST" == false ]]; then
     TEST_ARGS=(--all)
     if "$SCRIPTS/test.sh" "${TEST_ARGS[@]}" > /dev/null 2>&1; then
@@ -55,14 +62,14 @@ fi
 
 if [[ "$JSON" == true ]]; then
     printf '{"status":"%s"' "$([ $EXIT -eq 0 ] && echo ok || echo fail)"
-    for step in format build test; do
+    for step in shell format build test; do
         if [[ -n "${RESULTS[$step]+x}" ]]; then
             printf ',"%s":"%s"' "$step" "${RESULTS[$step]}"
         fi
     done
     printf '}\n'
 else
-    for step in format build test; do
+    for step in shell format build test; do
         if [[ -n "${RESULTS[$step]+x}" ]]; then
             if [[ "${RESULTS[$step]}" == "ok" ]]; then
                 ok "$step"

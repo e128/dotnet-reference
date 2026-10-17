@@ -44,8 +44,7 @@ Phase 1b.4:
 ## 5f. Final validation
 
 ```bash
-bash -n scripts/{name}.sh
-shellcheck scripts/{name}.sh 2>/dev/null || true
+scripts/lint-shell.sh scripts/{name}.sh
 scripts/help.sh | rg {name}        # verify it appears in the catalog
 ```
 

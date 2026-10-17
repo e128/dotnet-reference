@@ -32,7 +32,10 @@ fi
 if [[ -f "$CONTEXT_FILE" ]] && grep -q '## Acceptance Criteria' "$CONTEXT_FILE"; then
     # Check if acceptance contract section has checked tasks
     if grep -q '## Acceptance Contract' "$TASKS_FILE"; then
-        UNCHECKED=$(grep -A 50 '## Acceptance Contract' "$TASKS_FILE" | grep -c '^\- \[ \]' || true)
+        # Count unchecked lines in the heading and the 50 lines after it.
+        UNCHECKED=$(awk 'index($0, "## Acceptance Contract") > 0 {rem = 51}
+            rem > 0 {if ($0 ~ /^- \[ \]/) c++; rem--}
+            END {print c+0}' "$TASKS_FILE" || true)
         if [[ $UNCHECKED -gt 0 ]]; then
             if [[ "$JSON" == true ]]; then
                 json_object gate=fail reason="Acceptance Contract incomplete" missing="$UNCHECKED"

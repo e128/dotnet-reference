@@ -89,11 +89,24 @@ awk -v dir="$WORK" '
 slice=1
 cur=0
 paths=()
+parts=()
 first_slice_started=false
 
 for f in "$WORK"/f*; do
     [[ -f "$f" ]] || continue
-    fsize="$(wc -c <"$f" | tr -d ' ')"
+    parts+=("$f")
+done
+
+# One wc call for every section size. wc appends a "total" line, which is unused.
+sizes=()
+if (( ${#parts[@]} > 0 )); then
+    mapfile -t sizes < <(wc -c "${parts[@]}")
+fi
+
+i=0
+for f in "${parts[@]}"; do
+    read -r fsize _ <<< "${sizes[$i]}"
+    i=$((i + 1))
     if [[ "$first_slice_started" == true ]] && ((cur > 0)) && ((cur + fsize > SPLIT_MAX)); then
         ((slice++))
         cur=0

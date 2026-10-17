@@ -42,7 +42,7 @@ scripts/build.sh
 # Test (default: the CI category only)
 scripts/test.sh
 
-# Full CI pipeline (format, build, and test)
+# Full CI pipeline (shell lint, format, build, and test)
 scripts/ci.sh
 
 # Podman
@@ -74,14 +74,15 @@ scripts/podman.sh test
 
 ### Required
 
-| Tool         | Version | macOS                        | Ubuntu/Debian                    | Windows                          |
-| ------------ | ------- | ---------------------------- | -------------------------------- | -------------------------------- |
+| Tool         | Version | macOS                        | Ubuntu/Debian                    | Windows                                  |
+| ------------ | ------- | ---------------------------- | -------------------------------- | ---------------------------------------- |
 | .NET SDK     | 10.0+   | `brew install dotnet`        | [Microsoft docs][dotnet-install] | `winget install Microsoft.DotNet.SDK.10` |
-| bash         | 5.0+    | `brew install bash`          | Included (5.1+)                  | WSL2 recommended                 |
+| bash         | 4.0+    | `brew install bash`          | Included (5.1+)                  | WSL2 recommended                         |
+| shellcheck   | 0.11.0+ | `brew install shellcheck`    | `sudo apt install shellcheck`    | WSL2 recommended                         |
 | ripgrep (rg) | 14+     | `brew install ripgrep`       | `sudo apt install ripgrep`       | `winget install BurntSushi.ripgrep.MSVC` |
-| fd           | 9+      | `brew install fd`            | `sudo apt install fd-find`       | `winget install sharkdp.fd`      |
-| jq           | 1.7+    | `brew install jq`            | `sudo apt install jq`            | `winget install jqlang.jq`       |
-| Podman       | 4+      | `brew install podman`        | `sudo apt install podman`        | `winget install RedHat.Podman`   |
+| fd           | 9+      | `brew install fd`            | `sudo apt install fd-find`       | `winget install sharkdp.fd`              |
+| jq           | 1.7+    | `brew install jq`            | `sudo apt install jq`            | `winget install jqlang.jq`               |
+| Podman       | 4+      | `brew install podman`        | `sudo apt install podman`        | `winget install RedHat.Podman`           |
 
 [dotnet-install]: https://learn.microsoft.com/en-us/dotnet/core/install/linux
 [lode-toolkit]: https://fjzeit.github.io/lode
@@ -90,7 +91,6 @@ scripts/podman.sh test
 
 | Tool               | Purpose                             | Install                                                  |
 | ------------------ | ----------------------------------- | -------------------------------------------------------- |
-| shellcheck         | Bash script linter                  | `brew install shellcheck`                                |
 | dotnet-outdated    | NuGet update checker                | `dotnet tool install -g dotnet-outdated-tool`            |
 | jb (ReSharper CLI) | Semantic code cleanup (`format.sh`) | `dotnet tool install -g JetBrains.ReSharper.GlobalTools` |
 
@@ -215,11 +215,12 @@ podman compose down
 
 ## CI/CD
 
-**GitHub Actions** (`.github/workflows/ci.yml`) runs three jobs:
+**GitHub Actions** (`.github/workflows/ci.yml`) runs four jobs:
 
 1. **Format + Build + Test**: format check (`dotnet format --verify-no-changes`), release build, and CI-category tests
-2. **Agent Mirror Check**: checks that the opencode agent mirror is current, then verifies every guardrail hook referenced by the plugin exists
-3. **Secret Scan**: gitleaks scan over the full git history
+2. **Shell Lint**: `scripts/lint-shell.sh` runs shellcheck over every tracked shell script
+3. **Agent Mirror Check**: checks that the opencode agent mirror is current, then verifies every guardrail hook referenced by the plugin exists
+4. **Secret Scan**: gitleaks scan over the full git history
 
 **NuGet publishing** (`.github/workflows/publish.yml`) starts on a push to `main` that changes `src/E128.Analyzers/`. The workflow uses OIDC trusted publishing, so it needs no API key. It skips the push when the version already exists on nuget.org.
 

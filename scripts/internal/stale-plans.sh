@@ -29,6 +29,7 @@ if [[ ! -d "$PLANS_DIR" ]]; then
 fi
 
 CUTOFF=$(date -v-"${DAYS}"d +%s 2>/dev/null || date -d "${DAYS} days ago" +%s)
+NOW=$(date +%s)
 stale=()
 
 shopt -s nullglob
@@ -40,16 +41,12 @@ for plan_dir in "$PLANS_DIR"/*/; do
     [[ "$name" == "tmp" ]] && continue
 
     # Find most recent modification time across all files in the plan dir
-    latest=0
-    while IFS= read -r file; do
-        mtime=$(stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo 0)
-        if [[ "$mtime" -gt "$latest" ]]; then
-            latest="$mtime"
-        fi
-    done < <(find "$plan_dir" -type f 2>/dev/null)
+    latest="$({ find "$plan_dir" -type f -exec stat -f %m {} + 2>/dev/null ||
+        find "$plan_dir" -type f -exec stat -c %Y {} + 2>/dev/null; } | sort -n | tail -1)"
+    latest="${latest:-0}"
 
     if [[ "$latest" -gt 0 && "$latest" -lt "$CUTOFF" ]]; then
-        age_days=$(( ($(date +%s) - latest) / 86400 ))
+        age_days=$(( (NOW - latest) / 86400 ))
         stale+=("$name|$age_days")
     fi
 done

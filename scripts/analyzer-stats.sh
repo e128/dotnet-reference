@@ -30,8 +30,21 @@ fi
 mapfile -t diagnostic_ids < <(rg 'DiagnosticId\s*=\s*"(E128[0-9]{3})"' "$ANALYZER_DIR/" -or '$1' --no-filename 2>/dev/null | sort -u)
 id_count=${#diagnostic_ids[@]}
 
-analyzer_count=$(rg -l 'class \w+ .* DiagnosticAnalyzer' "$ANALYZER_DIR/" --type cs 2>/dev/null | wc -l | tr -d ' ')
-fixer_count=$(rg -l 'class \w+ .* CodeFixProvider' "$ANALYZER_DIR/" --type cs 2>/dev/null | wc -l | tr -d ' ')
+# One walk labels each match as analyzer or fixer, then counts files per kind.
+declare -A ANALYZER_FILES=() FIXER_FILES=()
+while IFS=$'\t' read -r _file _match; do
+    [[ -z "$_file" ]] && continue
+    case "$_match" in
+        *DiagnosticAnalyzer) ANALYZER_FILES["$_file"]=1 ;;
+        *CodeFixProvider)    FIXER_FILES["$_file"]=1 ;;
+    esac
+done < <(rg --json \
+    -e 'class \w+ .* DiagnosticAnalyzer' \
+    -e 'class \w+ .* CodeFixProvider' \
+    "$ANALYZER_DIR/" --type cs 2>/dev/null \
+    | jq -r 'select(.type=="match") | [.data.path.text, .data.submatches[0].match.text] | @tsv')
+analyzer_count=${#ANALYZER_FILES[@]}
+fixer_count=${#FIXER_FILES[@]}
 
 pub_shipped=0
 if [[ -f "$ANALYZER_DIR/PublicAPI.Shipped.txt" ]]; then
@@ -45,10 +58,16 @@ if [[ -f "$ANALYZER_DIR/PublicAPI.Unshipped.txt" ]]; then
     pub_unshipped=${pub_unshipped:-0}
 fi
 
-source_files=$(fd -e cs . "$ANALYZER_DIR" --exclude obj --exclude bin 2>/dev/null | wc -l | tr -d ' ')
-total_loc=$(fd -e cs . "$ANALYZER_DIR" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | awk '{s+=$1} END {print s+0}')
+# One wc walk feeds the file count, the LOC total, and the top-5 slice.
+declare -a cs_loc=()
+mapfile -t cs_loc < <(fd -e cs . "$ANALYZER_DIR" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | sort -rn)
+source_files=${#cs_loc[@]}
+total_loc=$(printf '%s\n' "${cs_loc[@]}" | awk '{s+=$1} END {print s+0}')
 
-mapfile -t largest < <(fd -e cs . "$ANALYZER_DIR" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | sort -rn | head -5)
+declare -a largest=()
+if [[ ${#cs_loc[@]} -gt 0 ]]; then
+    mapfile -t largest < <(printf '%s\n' "${cs_loc[@]}" | head -5)
+fi
 
 if [[ "$JSON" == true ]]; then
     ids_json=$(printf '%s\n' "${diagnostic_ids[@]}" | jq -R . | jq -s .)

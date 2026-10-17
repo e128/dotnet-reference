@@ -44,16 +44,28 @@ fi
 
 # ── Scan each project's PackageReference entries ──
 declare -A pkg_count pkg_projects
+declare -a ref_csproj=()
+declare -A csproj_owner=()
 while IFS=$'\t' read -r pname ppath _pkind; do
     [[ -z "$pname" ]] && continue
     csproj="$ROOT/$ppath"
     [[ -f "$csproj" ]] || continue
-    while IFS= read -r pkg; do
-        [[ -z "$pkg" ]] && continue
+    ref_csproj+=("$csproj")
+    csproj_owner["$csproj"]="$pname"
+done < <(bash "$SCRIPT_DIR/solution-inventory.sh" --json | jq -r '.projects[] | [.name, .path, .kind] | @tsv')
+
+# One rg pass over every csproj; sort -u dedups each file/package pair.
+if [[ ${#ref_csproj[@]} -gt 0 ]]; then
+    while IFS= read -r hit; do
+        [[ -z "$hit" ]] && continue
+        csproj="${hit%%:*}"
+        pkg="${hit#*:}"
+        pname="${csproj_owner[$csproj]:-}"
+        [[ -z "$pname" || -z "$pkg" ]] && continue
         pkg_count["$pkg"]=$(( ${pkg_count["$pkg"]:-0} + 1 ))
         pkg_projects["$pkg"]+="$pname "
-    done < <(rg -oN 'PackageReference Include="([^"]+)"' -r '$1' "$csproj" 2>/dev/null | sort -u)
-done < <(bash "$SCRIPT_DIR/solution-inventory.sh" --json | jq -r '.projects[] | [.name, .path, .kind] | @tsv')
+    done < <(rg -oN -r '$1' 'PackageReference Include="([^"]+)"' "${ref_csproj[@]}" 2>/dev/null | sort -u)
+fi
 
 # ── Classification tallies over unique referenced packages ──
 declare -A class_count=([microsoft]=0 [first-party]=0 [third-party]=0)
@@ -65,7 +77,8 @@ done
 # ── Build per-package JSON, sorted by descending count then name ──
 pkgs_json="$(
     for pkg in "${!pkg_count[@]}"; do
-        projs_json="$(echo "${pkg_projects[$pkg]}" | tr ' ' '\n' | sort -u | grep -v '^$' | jq -R '.' | jq -s '.')"
+        projs_json="$(printf '%s\n' "${pkg_projects[$pkg]}" | tr ' ' '\n' | sort -u \
+            | jq -R -s 'split("\n")|map(select(length>0))')"
         jq -n \
             --arg name "$pkg" \
             --arg version "${pkg_version[$pkg]:-}" \

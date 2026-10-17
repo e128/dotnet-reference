@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-10-16T18:13:41Z*
+*Updated: 2026-10-17T13:32:18Z*
 
 ## Harness Portability Capability Map
 
@@ -194,7 +194,28 @@ All rule files are written in Simplified Technical English. See
 
 ## Script Conventions
 
-All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for shared functions. `lib.sh` re-execs under Homebrew Bash when the interpreter is older than Bash 4, so macOS `/bin/bash` 3.2 does not matter to the caller's PATH order. `scripts/internal/precommit.sh` scans staged files for PII and secrets (see [secret-scanning.md](secret-scanning.md)). Scripts that support `--json` must produce valid JSON output. `scripts/help.sh` auto-discovers all scripts by reading the second line of each `.sh` file.
+All scripts require bash 4.0 or later and live in `scripts/`. They source
+`scripts/lib.sh` for shared functions. `lib.sh` re-execs under Homebrew Bash
+when the interpreter is older than 4.0, so macOS `/bin/bash` 3.2 does not
+matter to the caller's PATH order. The Nushell scripts in `scripts/*.nu`
+require Nushell 0.93 or later. Minimum and current versions:
+[scripts/README.md](../../scripts/README.md).
+
+`scripts/internal/precommit.sh` scans staged files for PII and secrets (see
+[secret-scanning.md](secret-scanning.md)). It also runs the shell linter over
+the staged shell files.
+
+`scripts/lint-shell.sh` is the one shell linter. It runs `shellcheck` at
+warning severity over every tracked `.sh` file. `scripts/check.sh`,
+`scripts/ci.sh`, `scripts/internal/precommit.sh`, and the CI job named
+`shellcheck` all call it. Never add a second raw `shellcheck` call to a gate.
+The tool is required, and CI pins the version by SHA256. See
+[shellcheck-validation.md](../../.claude/rules/shellcheck-validation.md).
+
+Scripts that support `--json` must produce valid JSON output.
+`scripts/help.sh` auto-discovers all scripts by reading the second line of
+each `.sh` file. For the performance rules that every script follows, see
+[script-performance.md](script-performance.md).
 
 ## Podman
 
@@ -209,6 +230,7 @@ All scripts are bash 5+ and live in `scripts/`. They source `scripts/lib.sh` for
 - `rg` (ripgrep) — used by agents, skills, and scripts for fast search
 - `fd` — used by scripts for file discovery
 - `jq` — used for JSON parsing in scripts
-- `bash` 5+ (Homebrew Bash on macOS) — required for associative arrays and modern features
+- `bash` 4.0+ (Homebrew Bash on macOS) — `mapfile` and associative arrays set the floor
+- `nu` (Nushell) 0.93+ — runs the `scripts/*.nu` wrappers
 - `podman` — container runtime; on macOS run `podman machine init && podman machine start` once after install
 - `jb` (JetBrains ReSharper CLI) — used by `scripts/format.sh` for semantic cleanup before `dotnet format`; gracefully skipped if absent; install with `dotnet tool install -g JetBrains.ReSharper.GlobalTools`

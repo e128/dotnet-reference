@@ -4,7 +4,7 @@ set -euo pipefail
 DATA=$(cat)
 
 # Extract fields via single jq call
-IFS=$'\t' read -r MODEL MODEL_ID DIR PCT WIN_SIZE TOK_TOTAL CACHE_PCT VERSION DURATION_MS ADDED REMOVED < <(
+IFS=$'\t' read -r MODEL _MODEL_ID DIR PCT WIN_SIZE TOK_TOTAL CACHE_PCT VERSION DURATION_MS ADDED REMOVED < <(
     echo "$DATA" | jq -r '[
         (.model.display_name // "Claude"),
         (try (.model.id // "unknown") catch "unknown"),

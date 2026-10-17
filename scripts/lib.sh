@@ -25,6 +25,8 @@ if [[ -t 1 ]]; then
     BOLD='\033[1m'
     RESET='\033[0m'
 else
+    # BOLD is used only by the sourcing scripts, never inside this file.
+    # shellcheck disable=SC2034
     RED='' GREEN='' YELLOW='' BLUE='' DIM='' BOLD='' RESET=''
 fi
 
@@ -77,7 +79,7 @@ json_object() {
         elif [[ "$val" == "true" || "$val" == "false" || "$val" == "null" ]]; then
             printf '"%s":%s' "$key" "$val"
         else
-            printf '"%s":"%s"' "$key" "$(echo "$val" | sed 's/"/\\"/g')"
+            printf '"%s":"%s"' "$key" "${val//\"/\\\"}"
         fi
     done
     printf '}\n'

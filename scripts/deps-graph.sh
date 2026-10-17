@@ -71,18 +71,21 @@ mapfile -t DIRECT_REFS < <(
     rg -oN --no-filename -r '$1' 'PackageReference Include="([^"]+)"' "${REF_FILES[@]}" 2>/dev/null | sort -u
 )
 
+declare -A DIRECT_SET=()
+for ref in "${DIRECT_REFS[@]}"; do
+    DIRECT_SET["$ref"]=1
+done
+
 is_referenced() {
-    local name="$1"
-    for ref in "${DIRECT_REFS[@]}"; do
-        [[ "$ref" == "$name" ]] && return 0
-    done
-    return 1
+    [[ -n "${DIRECT_SET[$1]:-}" ]]
 }
 
 # ── ProjectReference edges ──
 # from = referencing csproj basename; to = referenced csproj basename.
 declare -a EDGE_FROM=() EDGE_TO=()
 if [[ ${#CSPROJ_ABS[@]} -gt 0 ]]; then
+    # Sort the hits. ripgrep emits completed files in completion order, so an
+    # unsorted edge list differs from run to run.
     while IFS= read -r hit; do
         [[ -z "$hit" ]] && continue
         src="${hit%%:*}"
@@ -92,7 +95,8 @@ if [[ ${#CSPROJ_ABS[@]} -gt 0 ]]; then
         to="$(basename "$inc" .csproj)"
         EDGE_FROM+=("$from")
         EDGE_TO+=("$to")
-    done < <(rg -oN -r '$1' 'ProjectReference Include="([^"]+)"' "${CSPROJ_ABS[@]}" 2>/dev/null)
+    done < <(rg -oN -r '$1' 'ProjectReference Include="([^"]+)"' "${CSPROJ_ABS[@]}" 2>/dev/null |
+        LC_ALL=C sort)
 fi
 
 # ── Build orphan list ──
@@ -108,25 +112,21 @@ done
 if [[ "$JSON" == true ]]; then
     if [[ "$ORPHANS_ONLY" == true ]]; then
         orph_json=$(for i in "${!ORPH_NAMES[@]}"; do
-            jq -n --arg name "${ORPH_NAMES[$i]}" --argjson pinned "${ORPH_PINNED[$i]}" \
-                '{name: $name, transitive_pin: $pinned}'
-        done | jq -s '.')
+            printf '%s\t%s\n' "${ORPH_NAMES[$i]}" "${ORPH_PINNED[$i]}"
+        done | jq -R -s 'split("\n")|map(select(length>0)|split("\t")|{name:.[0],transitive_pin:(.[1]=="true")})')
         jq -n --argjson orphans "${orph_json:-[]}" '{orphans: $orphans}'
         exit 0
     fi
     pv_json=$(for i in "${!PV_NAMES[@]}"; do
-        jq -n --arg name "${PV_NAMES[$i]}" --arg version "${PV_VERS[$i]}" \
-            --argjson pinned "${PV_PINNED[$i]}" \
-            '{name: $name, version: $version, transitive_pin: $pinned}'
-    done | jq -s '.')
+        printf '%s\t%s\t%s\n' "${PV_NAMES[$i]}" "${PV_VERS[$i]}" "${PV_PINNED[$i]}"
+    done | jq -R -s 'split("\n")|map(select(length>0)|split("\t")|{name:.[0],version:.[1],transitive_pin:(.[2]=="true")})')
     ref_json=$(printf '%s\n' "${DIRECT_REFS[@]}" | jq -R '.' | jq -s 'map(select(length > 0))')
     edge_json=$(for i in "${!EDGE_FROM[@]}"; do
-        jq -n --arg from "${EDGE_FROM[$i]}" --arg to "${EDGE_TO[$i]}" '{from: $from, to: $to}'
-    done | jq -s '.')
+        printf '%s\t%s\n' "${EDGE_FROM[$i]}" "${EDGE_TO[$i]}"
+    done | jq -R -s 'split("\n")|map(select(length>0)|split("\t")|{from:.[0],to:.[1]})')
     orph_json=$(for i in "${!ORPH_NAMES[@]}"; do
-        jq -n --arg name "${ORPH_NAMES[$i]}" --argjson pinned "${ORPH_PINNED[$i]}" \
-            '{name: $name, transitive_pin: $pinned}'
-    done | jq -s '.')
+        printf '%s\t%s\n' "${ORPH_NAMES[$i]}" "${ORPH_PINNED[$i]}"
+    done | jq -R -s 'split("\n")|map(select(length>0)|split("\t")|{name:.[0],transitive_pin:(.[1]=="true")})')
     jq -n \
         --argjson package_versions "${pv_json:-[]}" \
         --argjson direct_references "${ref_json:-[]}" \

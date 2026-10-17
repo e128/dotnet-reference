@@ -14,6 +14,7 @@ terse JSON by default. Pass `--verbose` for the full log.
 | `dotnet build`                                                   | `scripts/build.sh [--project NAME] [--verbose]`                 |
 | `dotnet test`                                                    | `scripts/test.sh ClassName` or `--all`                          |
 | `dotnet format`                                                  | `scripts/format.sh --changed` or `--check`                      |
+| `shellcheck` on a shell script                                   | `scripts/lint-shell.sh [FILE...]`                               |
 | format, build, and test run separately                           | `scripts/check.sh`                                              |
 | a full CI run                                                    | `scripts/ci.sh`                                                 |
 | session-start orientation                                        | `scripts/context.sh`                                            |

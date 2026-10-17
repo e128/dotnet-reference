@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-10-16T18:13:41Z*
+*Updated: 2026-10-17T13:32:18Z*
 
 ## Generated Docs
 
@@ -51,3 +51,4 @@
 - [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md): Simplification-agent heuristic definitions (H1-H6)
 - [scoring-rubric.md](infrastructure/scoring-rubric.md): Shared four-dimension scoring rubric for strategic analysis agents
 - [secret-scanning.md](infrastructure/secret-scanning.md): gitleaks scan in precommit.sh and the CI secrets job
+- [script-performance.md](infrastructure/script-performance.md): Bash performance rules: fork avoidance, the subshell trap, the version floor, byte-diff and shellcheck verification

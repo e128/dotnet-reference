@@ -67,10 +67,12 @@ true false echo printf read cd pwd source test command type alias mapfile wait l
 time select in "
 
 # ── Derive a dedup/display key from a command line ─
-# Returns a validated command key, or empty if the line is not a real invocation.
-# git/dotnet -> two tokens; scripts paths -> the script path; else first token.
+# Sets KEY to a validated command key, or empty if the line is not a real
+# invocation. git/dotnet -> two tokens; scripts paths -> the script path;
+# else first token.
 derive_key() {
     local cmd="$1" t1 t2
+    KEY=""
     cmd="${cmd#bash }"; cmd="${cmd#./}"
     read -r t1 t2 _ <<< "$cmd"
     # First token must be a plausible command name (no shell metacharacters).
@@ -79,8 +81,8 @@ derive_key() {
     [[ "$SKIP_WORDS" == *" $t1 "* ]] && return 0
     case "$t1" in
         git|dotnet)
-            [[ "$t2" =~ ^[a-z][a-z-]*$ ]] && echo "$t1 $t2" || echo "$t1" ;;
-        *) echo "$t1" ;;
+            [[ "$t2" =~ ^[a-z][a-z-]*$ ]] && KEY="$t1 $t2" || KEY="$t1" ;;
+        *) KEY="$t1" ;;
     esac
 }
 
@@ -118,7 +120,8 @@ scan_file() {
 
         # No pipe-splitting: derive the leading command, glob-match the whole
         # line (so `rg "a|b" lode/` matches `rg *`), classify by command head.
-        key="$(derive_key "$line")"
+        derive_key "$line"
+        key="$KEY"
         [[ -z "$key" ]] && continue
         cmd="${line#bash }"; cmd="${cmd#./}"
         is_covered "$cmd" && continue
@@ -129,8 +132,8 @@ scan_file() {
 # Collect gap rows from all catalog files (subshell-safe via temp aggregation).
 shopt -s nullglob
 {
-    for f in "$AGENTS_DIR"/*.md; do scan_file "$f" "$(basename "$f")"; done
-    for d in "$SKILLS_DIR"/*/SKILL.md; do scan_file "$d" "$(basename "$(dirname "$d")")"; done
+    for f in "$AGENTS_DIR"/*.md; do scan_file "$f" "${f##*/}"; done
+    for d in "$SKILLS_DIR"/*/SKILL.md; do _skill_dir="${d%/SKILL.md}"; scan_file "$d" "${_skill_dir##*/}"; done
 } | sort -u > "$ROOT/.claude/tmp/.settings-gap.$$"
 
 while IFS=$'\t' read -r key base; do
@@ -156,8 +159,12 @@ if [[ "$JSON" == true ]]; then
     for key in "${GAP_KEYS[@]}"; do
         IFS='|' read -r safety rec <<< "$(classify "$key")"
         files="${KEY_FILES[$key]}"
-        count=$(echo "$files" | wc -w | tr -d ' ')
-        files_json=$(echo "$files" | tr ' ' '\n' | jq -R . | jq -cs .)
+        # Split on whitespace into an array. `set -- $files` would split too,
+        # but it also clobbers the positional parameters.
+        file_list=()
+        read -ra file_list <<< "$files" || true
+        count=${#file_list[@]}
+        files_json=$(jq -Rcs 'split("\n")[:-1]' <<< "${files// /$'\n'}")
         [[ "$first" == true ]] && first=false || printf ','
         printf '{"pattern":"%s","used_in":%s,"files":%s,"safety":"%s","recommendation":"%s"}' \
             "${key//\"/\\\"}" "$count" "$files_json" "$safety" "$rec"
@@ -174,7 +181,11 @@ else
     for key in "${GAP_KEYS[@]}"; do
         IFS='|' read -r safety rec <<< "$(classify "$key")"
         files="${KEY_FILES[$key]}"
-        count=$(echo "$files" | wc -w | tr -d ' ')
+        # Split on whitespace into an array. `set -- $files` would split too,
+        # but it also clobbers the positional parameters.
+        file_list=()
+        read -ra file_list <<< "$files" || true
+        count=${#file_list[@]}
         printf "%-28s %5s  %-8s %-12s %s\n" "$key" "$count" "$safety" "$rec" "$files"
     done
 fi

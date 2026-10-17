@@ -24,34 +24,45 @@ TS="$(iso_timestamp)"
 lode_updated() { sed -n 's/.*\*Updated: \([^*]*\)\*.*/\1/p' "$1" 2>/dev/null | head -1; }
 
 # Commits to code/config since a timestamp (signal for staleness).
-commits_since() { git -C "$ROOT" rev-list --count "--since=$1" HEAD -- src tests scripts .claude 2>/dev/null || echo 0; }
+# Cache repeated timestamps so each one costs one git call.
+declare -A _since_cache=()
+since_count=0
+commits_since() {
+    local ts="$1"
+    if [[ -n "${_since_cache[$ts]:-}" ]]; then
+        since_count="${_since_cache[$ts]}"
+        return
+    fi
+    since_count="$(git -C "$ROOT" rev-list --count "--since=$ts" HEAD -- src tests scripts .claude 2>/dev/null || echo 0)"
+    _since_cache["$ts"]="$since_count"
+}
 
 if [[ "$STALE" == true ]]; then
     now_epoch=$(date -u +%s)
     if [[ "$JSON" == true ]]; then
         first=true
         printf '['
-        fd -e md . "$ROOT/lode" 2>/dev/null | sort | while IFS= read -r file; do
+        while IFS= read -r file; do
             updated=$(lode_updated "$file")
             [[ -z "$updated" ]] && continue   # no timestamp: reported via Phase 1, not here
             rel="${file#"$ROOT"/}"
-            since=$(commits_since "$updated")
+            commits_since "$updated"; since="$since_count"
             up_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$updated" +%s 2>/dev/null || date -u -d "$updated" +%s 2>/dev/null || echo "$now_epoch")
             days=$(( (now_epoch - up_epoch) / 86400 ))
             $first || printf ','
             first=false
             printf '{"file":"%s","updated":"%s","days_ago":%d,"commits_since":%d}' "$rel" "$updated" "$days" "$since"
-        done
+        done < <(fd -e md . "$ROOT/lode" 2>/dev/null | sort)
         printf ']\n'
         exit 0
     fi
     printf "${BOLD}%-50s %-22s %s${RESET}\n" "File" "Last Updated" "Commits Since"
-    fd -e md . "$ROOT/lode" 2>/dev/null | while IFS= read -r file; do
+    while IFS= read -r file; do
         updated=$(lode_updated "$file"); [[ -z "$updated" ]] && updated="never"
         rel="${file#"$ROOT"/}"
-        if [[ "$updated" == never ]]; then since="—"; else since=$(commits_since "$updated"); fi
+        if [[ "$updated" == never ]]; then since="—"; else commits_since "$updated"; since="$since_count"; fi
         printf "%-50s %-22s %s\n" "$rel" "$updated" "$since"
-    done | sort -t$'\t' -k1
+    done < <(fd -e md . "$ROOT/lode" 2>/dev/null) | sort -t$'\t' -k1
     exit 0
 fi
 

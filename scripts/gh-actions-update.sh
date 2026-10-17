@@ -51,7 +51,7 @@ UNPINNED=()
 
 for workflow in "$WORKFLOW_DIR"/*.yml "$WORKFLOW_DIR"/*.yaml; do
     [[ ! -f "$workflow" ]] && continue
-    rel="${workflow#$ROOT/}"
+    rel="${workflow#"$ROOT"/}"
 
     while IFS= read -r line; do
         # Parse: uses: owner/repo@ref  # optional comment
@@ -89,7 +89,7 @@ if [[ "$JSON" == true ]]; then
     behind=${#MAJOR_BEHIND[@]}
     unpinned=${#UNPINNED[@]}
     printf '{"status":"%s","actions":%d,"major_behind":%d,"unpinned":%d}\n' \
-        "$([ $behind -eq 0 ] && [ $unpinned -eq 0 ] && echo ok || echo findings)" \
+        "$([[ $behind -eq 0 && $unpinned -eq 0 ]] && echo ok || echo findings)" \
         "$TOTAL" "$behind" "$unpinned"
 else
     if [[ ${#MAJOR_BEHIND[@]} -eq 0 && ${#UNPINNED[@]} -eq 0 ]]; then

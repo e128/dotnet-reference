@@ -64,7 +64,7 @@ find_interfaces() {
 
 is_definition() {
     local text="$1"
-    echo "$text" | rg -q '\b(class|record|struct|interface|enum)\s+'"$TYPE"'\b' 2>/dev/null
+    [[ "$text" =~ (^|[^[:alnum:]_])(class|record|struct|interface|enum)[[:space:]]+${TYPE}([^[:alnum:]_]|$) ]]
 }
 
 format_refs() {
@@ -73,9 +73,11 @@ format_refs() {
     while IFS= read -r rawline; do
         [[ -z "$rawline" ]] && continue
         local file line rest
-        file="$(echo "$rawline" | cut -d: -f1)"
-        line="$(echo "$rawline" | cut -d: -f2)"
-        rest="$(echo "$rawline" | cut -d: -f3- | sed 's/^ *//')"
+        file="${rawline%%:*}"
+        rest="${rawline#*:}"
+        line="${rest%%:*}"
+        rest="${rest#*:}"
+        rest="${rest#"${rest%%[! ]*}"}"
 
         if is_definition "$rest"; then
             continue
@@ -83,12 +85,14 @@ format_refs() {
 
         if $JSON; then
             local escaped
-            escaped="$(echo "$rest" | head -c 120 | sed 's/\\/\\\\/g; s/"/\\"/g')"
+            escaped="${rest:0:120}"
+            escaped="${escaped//\\/\\\\}"
+            escaped="${escaped//\"/\\\"}"
             printf '{"file":"%s","line":%s,"match":"%s","kind":"%s"}\n' \
                 "$file" "$line" "$escaped" "$kind"
         else
             local fshort="${file#"$ROOT/"}"
-            printf "  %s:%s  %s\n" "$fshort" "$line" "$(echo "$rest" | head -c 100)"
+            printf "  %s:%s  %s\n" "$fshort" "$line" "${rest:0:100}"
         fi
     done <<< "$raw"
 }
@@ -97,8 +101,11 @@ CALLERS_RAW=""
 CALLEES_RAW=""
 IFACES_RAW=""
 
-$SHOW_CALLERS && CALLERS_RAW="$(find_refs)"
-$SHOW_CALLEES && CALLEES_RAW="$(find_refs)"
+# Run find_refs once when either side needs it.
+refs_raw=""
+if $SHOW_CALLERS || $SHOW_CALLEES; then refs_raw="$(find_refs)"; fi
+$SHOW_CALLERS && CALLERS_RAW="$refs_raw" || true
+$SHOW_CALLEES && CALLEES_RAW="$refs_raw" || true
 $SHOW_IFACES && IFACES_RAW="$(find_interfaces)"
 
 if $JSON; then
@@ -108,10 +115,12 @@ if $JSON; then
     if [[ -n "$IFACES_RAW" ]]; then
         ifaces_json="$(echo "$IFACES_RAW" | while IFS= read -r rawline; do
             [[ -z "$rawline" ]] && continue
-            local_file="$(echo "$rawline" | cut -d: -f1)"
-            local_line="$(echo "$rawline" | cut -d: -f2)"
-            local_rest="$(echo "$rawline" | cut -d: -f3-)"
-            local_ifaces="$(echo "$local_rest" | sed 's/.*://' | tr ',' '\n' | sed 's/^ *//;s/ *$//' | rg '^I' 2>/dev/null | jq -R . | jq -s '.' 2>/dev/null || echo '[]')"
+            local_file="${rawline%%:*}"
+            local_line="${rawline#*:}"
+            local_line="${local_line%%:*}"
+            local_rest="${rawline#*:}"
+            local_rest="${local_rest#*:}"
+            local_ifaces="$(jq -Rn --arg s "$local_rest" '($s | split(":") | last | split(",") | map(gsub("^ +| +$";"")) | map(select(startswith("I"))))' 2>/dev/null || echo '[]')"
             printf '{"file":"%s","line":%s,"interfaces":%s}\n' "$local_file" "$local_line" "$local_ifaces"
         done | jq -s '.' 2>/dev/null || echo '[]')"
     fi
@@ -152,9 +161,10 @@ else
         echo "Implemented interfaces:"
         while IFS= read -r rawline; do
             [[ -z "$rawline" ]] && continue
-            local_file="$(echo "$rawline" | cut -d: -f1)"
-            local_line="$(echo "$rawline" | cut -d: -f2)"
-            local_rest="$(echo "$rawline" | cut -d: -f3- | sed 's/.*://')"
+            local_file="${rawline%%:*}"
+            local_line="${rawline#*:}"
+            local_line="${local_line%%:*}"
+            local_rest="${rawline##*:}"
             local_fshort="${local_file#"$ROOT/"}"
             echo "  $local_fshort:$local_line  $local_rest"
         done <<< "$IFACES_RAW"

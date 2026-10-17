@@ -154,7 +154,7 @@ mapfile -t actual < <(
     {
         fd -e sh --max-depth 1 . "$SCRIPTS_DIR" 2>/dev/null
         fd -e sh --max-depth 1 . "$SCRIPTS_DIR/internal" 2>/dev/null
-    } | xargs -n1 basename | grep -Ev '^(help|lib)\.sh$' | sort -u
+    } | sed 's#.*/##' | grep -Ev '^(help|lib)\.sh$' | sort -u
 )
 
 # Script names documented in the README — only backtick-wrapped `name.sh` tokens

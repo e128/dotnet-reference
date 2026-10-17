@@ -169,11 +169,12 @@ source "${SCRIPT_DIR}/lib.sh"
 
 ## Test Before Commit
 
-`shellcheck` is the authoritative linter — fix all warnings before committing.
+`scripts/lint-shell.sh` is the authoritative shell linter. It runs
+`shellcheck -S warning` and fails on any warning. Fix every finding before you
+commit.
 
 ```bash
-shellcheck scripts/my-script.sh
-bash -n scripts/my-script.sh   # syntax-only check
+scripts/lint-shell.sh scripts/my-script.sh
 ```
 
 ## Self-Improvement

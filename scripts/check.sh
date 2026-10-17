@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Composed verify: format → build → test.
+# Composed verify: shell lint → format → build → test.
 # Usage: check.sh [--all] [--no-format] [--json]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -20,7 +20,16 @@ STEPS=()
 RESULTS=()
 EXIT=0
 
-# Step 1: Format check
+# Step 1: Shell lint
+STEPS+=("shell")
+if "$SCRIPTS/lint-shell.sh" > /dev/null 2>&1; then
+    RESULTS+=("ok")
+else
+    RESULTS+=("fail")
+    EXIT=1
+fi
+
+# Step 2: Format check
 if [[ "$NO_FORMAT" == false ]]; then
     STEPS+=("format")
     if "$SCRIPTS/format.sh" --check > /dev/null 2>&1; then
@@ -31,7 +40,7 @@ if [[ "$NO_FORMAT" == false ]]; then
     fi
 fi
 
-# Step 2: Build
+# Step 3: Build
 STEPS+=("build")
 if "$SCRIPTS/build.sh" > /dev/null 2>&1; then
     RESULTS+=("ok")
@@ -40,7 +49,7 @@ else
     [[ $EXIT -eq 0 ]] && EXIT=1
 fi
 
-# Step 3: Test
+# Step 4: Test
 STEPS+=("test")
 TEST_ARGS=()
 [[ "$ALL" == true ]] && TEST_ARGS+=(--all)

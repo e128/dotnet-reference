@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Plan context: list active plans, roadmap items, or plan details.
 # Usage: plan-context.sh [--active-only] [--roadmap-only] [--json]
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
 ROOT="$(find_repo_root)"
 ACTIVE_ONLY=false; ROADMAP_ONLY=false; JSON=false
@@ -17,6 +17,16 @@ while [[ $# -gt 0 ]]; do
 done
 
 PLANS_DIR="$ROOT/plans"
+
+# Print "<total> <done>" for a plan's task file. A missing file counts as zero.
+# `grep -c` prints 0 and exits 1 on no match, so `|| true` keeps the 0.
+task_counts() {
+    local file="$PLANS_DIR/$1/$1-tasks.md"
+    local total done_count
+    total=$(grep -c '^\- \[' "$file" 2>/dev/null || true)
+    done_count=$(grep -c '^\- \[x\]' "$file" 2>/dev/null || true)
+    printf '%s %s\n' "${total:-0}" "${done_count:-0}"
+}
 
 if [[ "$ROADMAP_ONLY" == true ]]; then
     ROADMAP="$PLANS_DIR/roadmap.md"
@@ -48,16 +58,19 @@ fi
 
 if [[ "$JSON" == true ]]; then
     if [[ "$ACTIVE_ONLY" == true ]]; then
-        printf '%s\n' "${ACTIVE[@]}" | jq -R . | jq -s .
+        if (( ${#ACTIVE[@]} > 0 )); then
+            printf '%s\n' "${ACTIVE[@]}" | jq -R . | jq -s .
+        else
+            echo '[]'
+        fi
     else
         # Full context: plan names + progress hints
         printf '['
         first=true
         for plan in "${ACTIVE[@]}"; do
             [[ "$first" == true ]] && first=false || printf ','
-            total=$(grep -c '^\- \[' "$PLANS_DIR/$plan/$plan-tasks.md" 2>/dev/null || echo 0)
-            done_count=$(grep -c '^\- \[x\]' "$PLANS_DIR/$plan/$plan-tasks.md" 2>/dev/null || echo 0)
-            printf '{"name":"%s","total":%d,"done":%d}' "$plan" "$total" "$done_count"
+            counts=$(task_counts "$plan")
+            printf '{"name":"%s","total":%d,"done":%d}' "$plan" "${counts%% *}" "${counts##* }"
         done
         printf ']\n'
     fi
@@ -67,9 +80,8 @@ else
     else
         printf "${BOLD}Active plans:${RESET}\n"
         for plan in "${ACTIVE[@]}"; do
-            total=$(grep -c '^\- \[' "$PLANS_DIR/$plan/$plan-tasks.md" 2>/dev/null || echo 0)
-            done_count=$(grep -c '^\- \[x\]' "$PLANS_DIR/$plan/$plan-tasks.md" 2>/dev/null || echo 0)
-            printf "  %s (%d/%d tasks)\n" "$plan" "$done_count" "$total"
+            counts=$(task_counts "$plan")
+            printf "  %s (%d/%d tasks)\n" "$plan" "${counts##* }" "${counts%% *}"
         done
     fi
 fi

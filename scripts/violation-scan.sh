@@ -79,12 +79,11 @@ scan_files() {
     local regex="$1"; shift
     local dirs=("$@")
     [[ ${#dirs[@]} -eq 0 ]] && return
-    rg --type cs -l "$regex" "${dirs[@]}" 2>/dev/null \
-        | while IFS= read -r f; do
-            if rg "$regex" "$f" 2>/dev/null | rg -v "$EXCLUDE_PATTERN" -q 2>/dev/null; then
-                echo "$f"
-            fi
-        done
+    # One pass. The first colon separates the path from the line, so anchor the
+    # exclusion pattern after it. A path that holds a colon would break this.
+    rg --no-heading --with-filename -e "$regex" "${dirs[@]}" --type cs 2>/dev/null \
+        | rg -v "^[^:]*:${EXCLUDE_PATTERN#^}" \
+        | cut -d: -f1 | sort -u
 }
 
 scan_md_files() {

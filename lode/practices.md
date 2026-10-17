@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-10-16T18:14:38Z*
+*Updated: 2026-10-17T13:32:18Z*
 
 ## Design Principles
 
@@ -90,7 +90,7 @@ artifacts stay STE per `.claude/rules/writing-style.md`.
 
 After any code change:
 1. `scripts/format.sh --changed`: runs `jb cleanupcode` (semantic cleanup) then `dotnet format`
-2. `scripts/check.sh`: format check, build, and test. Never pass `--no-format` (`.claude/rules/quality-gates.md`).
+2. `scripts/check.sh`: shell lint, format check, build, and test. Never pass `--no-format` (`.claude/rules/quality-gates.md`).
 3. If renaming: `rg "OldName" lode/` to find stale lode references
 
 `--check` mode skips `jb` (no verify-only equivalent). Pass `--no-jb` to run dotnet format only.

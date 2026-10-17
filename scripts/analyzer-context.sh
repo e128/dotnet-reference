@@ -46,15 +46,45 @@ if [[ -f "$ANALYZER_DIR/AnalyzerReleases.Shipped.md" ]]; then
     shipped_count=${shipped_count:-0}
 fi
 
-mapfile -t fix_providers < <(fd 'CodeFixProvider\.cs$' "$ANALYZER_DIR" 2>/dev/null | while read -r fp; do
-    # CodeFixProviders reference analyzer classes via FixableDiagnosticIds.
-    # Extract referenced analyzer class names, then resolve their DiagnosticId.
-    rg '\[(\w+)\.DiagnosticId\]' "$fp" -or '$1' --no-filename 2>/dev/null | while read -r cls; do
-        rg "class $cls" "$ANALYZER_DIR" -l --no-filename 2>/dev/null | head -1 | while read -r analyzer_file; do
-            rg 'DiagnosticId\s*=\s*"(E128[0-9]{3})"' "$analyzer_file" -or '$1' --no-filename 2>/dev/null
+# A CodeFixProvider declares its targets through FixableDiagnosticIds, which
+# names an analyzer class. Resolve each named class to the diagnostic IDs
+# declared in that class's file. Two rg passes replace one full tree scan per
+# class name.
+mapfile -t analyzer_files < <(fd -e cs . "$ANALYZER_DIR" --type f 2>/dev/null || true)
+mapfile -t provider_files < <(fd 'CodeFixProvider\.cs$' "$ANALYZER_DIR" 2>/dev/null || true)
+
+declare -A file_class=() class_ids=() covered_ids=()
+if (( ${#analyzer_files[@]} > 0 )); then
+    # Match only a real declaration. A doc comment can hold the words
+    # "class level", and that must not win the per-file race below.
+    while IFS=: read -r src_file src_class; do
+        if [[ -n "$src_file" && -z "${file_class[$src_file]:-}" ]]; then
+            file_class["$src_file"]="$src_class"
+        fi
+    done < <(rg -Ho '\b(?:public|internal)\s+(?:(?:sealed|static|abstract|partial)\s+)*class\s+(\w+)' \
+        -r '$1' "${analyzer_files[@]}" 2>/dev/null || true)
+
+    while IFS=: read -r src_file src_id; do
+        src_class="${file_class[$src_file]:-}"
+        if [[ -n "$src_class" ]]; then
+            class_ids["$src_class"]="${class_ids[$src_class]:-}${class_ids[$src_class]:+ }${src_id}"
+        fi
+    done < <(rg -Ho 'DiagnosticId\s*=\s*"(E128[0-9]{3})"' -r '$1' "${analyzer_files[@]}" 2>/dev/null || true)
+fi
+
+if (( ${#provider_files[@]} > 0 )); then
+    while IFS=: read -r _provider_file ref_class; do
+        for ref_id in ${class_ids[$ref_class]:-}; do
+            covered_ids["$ref_id"]=1
         done
-    done
-done | sort -u)
+    done < <(rg -Ho '\[(\w+)\.DiagnosticId\]' -r '$1' "${provider_files[@]}" 2>/dev/null || true)
+fi
+
+if (( ${#covered_ids[@]} > 0 )); then
+    mapfile -t fix_providers < <(printf '%s\n' "${!covered_ids[@]}" | sort -u)
+else
+    fix_providers=()
+fi
 
 pub_unshipped=0
 if [[ -f "$ANALYZER_DIR/PublicAPI.Unshipped.txt" ]]; then

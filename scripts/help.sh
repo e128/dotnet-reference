@@ -13,11 +13,20 @@ else
     BOLD=''; DIM=''; RESET=''
 fi
 
+# Read the description from line 2 of a script. Builtins avoid one sed per file.
+script_desc() {
+    local line2=""
+    { IFS= read -r _ && IFS= read -r line2; } < "$1" 2>/dev/null || true
+    [[ "$line2" == \#* ]] || return 0
+    line2="${line2#\#}"
+    printf '%s' "${line2#"${line2%%[! ]*}"}"
+}
+
 printf "${BOLD}%-24s %s${RESET}\n" "Script" "Description"
 printf "${DIM}%-24s %s${RESET}\n" "------------------------" "-------------------------------------------"
 
 for script in "$SCRIPTS_DIR"/*.sh; do
-    name="$(basename "$script")"
+    name="${script##*/}"
 
     # Skip self and lib
     [[ "$name" == "help.sh" || "$name" == "lib.sh" ]] && continue
@@ -28,7 +37,7 @@ for script in "$SCRIPTS_DIR"/*.sh; do
     fi
 
     # Extract description from second line (after shebang)
-    desc=$(sed -n '2s/^# *//p' "$script" 2>/dev/null || echo "")
+    desc="$(script_desc "$script")"
     printf "%-24s %s\n" "$name" "$desc"
 done
 
@@ -37,7 +46,7 @@ HAS_INTERNAL=false
 shopt -s nullglob
 for script in "$SCRIPTS_DIR"/internal/*.sh; do
     [[ ! -f "$script" ]] && continue
-    name="internal/$(basename "$script")"
+    name="internal/${script##*/}"
 
     if [[ -n "$FILTER" && "$name" != *"$FILTER"* ]]; then
         continue
@@ -49,6 +58,6 @@ for script in "$SCRIPTS_DIR"/internal/*.sh; do
         HAS_INTERNAL=true
     fi
 
-    desc=$(sed -n '2s/^# *//p' "$script" 2>/dev/null || echo "")
+    desc="$(script_desc "$script")"
     printf "%-24s %s\n" "$name" "$desc"
 done

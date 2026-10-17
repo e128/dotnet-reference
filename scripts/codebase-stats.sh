@@ -24,44 +24,52 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-src_files=$(fd -e cs . "$ROOT/src" --exclude obj --exclude bin 2>/dev/null | wc -l | tr -d ' ')
-test_files=$(fd -e cs . "$ROOT/tests" --exclude obj --exclude bin 2>/dev/null | wc -l | tr -d ' ')
-src_loc=$(fd -e cs . "$ROOT/src" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | awk '{s+=$1} END {print s+0}')
-test_loc=$(fd -e cs . "$ROOT/tests" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | awk '{s+=$1} END {print s+0}')
+# One walk over src and tests feeds every count below.
+mapfile -t cs_loc < <(fd -e cs . "$ROOT/src" "$ROOT/tests" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | sort -rn)
 
-declare -A proj_files proj_loc
-while IFS= read -r dir; do
-    name=$(basename "$dir")
-    count=$(fd -e cs . "$dir" --exclude obj --exclude bin 2>/dev/null | wc -l | tr -d ' ')
-    loc=$(fd -e cs . "$dir" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | awk '{s+=$1} END {print s+0}')
-    proj_files[$name]=$count
-    proj_loc[$name]=$loc
-done < <(fd -t d --max-depth 1 . "$ROOT/src" "$ROOT/tests" 2>/dev/null)
+src_files=0; test_files=0; src_loc=0; test_loc=0
+src_prefix="$ROOT/src/"
+test_prefix="$ROOT/tests/"
+declare -A proj_files=() proj_loc=()
+for entry in "${cs_loc[@]}"; do
+    [[ -z "$entry" ]] && continue
+    read -r count file <<< "$entry"
+    case "$file" in
+        "$src_prefix"*)  src_files=$((src_files + 1));  src_loc=$((src_loc + count));  rest="${file#"$src_prefix"}" ;;
+        "$test_prefix"*) test_files=$((test_files + 1)); test_loc=$((test_loc + count)); rest="${file#"$test_prefix"}" ;;
+        *) continue ;;
+    esac
+    proj="${rest%%/*}"
+    [[ "$proj" == "$rest" ]] && continue    # file sits directly in src/ or tests/
+    proj_files["$proj"]=$(( ${proj_files["$proj"]:-0} + 1 ))
+    proj_loc["$proj"]=$(( ${proj_loc["$proj"]:-0} + count ))
+done
 
-mapfile -t large_files < <(fd -e cs . "$ROOT/src" "$ROOT/tests" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | awk -v t="$THRESHOLD" '$1 >= t' | sort -rn)
+declare -a sorted_proj=()
+if [[ ${#proj_files[@]} -gt 0 ]]; then
+    mapfile -t sorted_proj < <(printf '%s\n' "${!proj_files[@]}" | sort)
+fi
 
-mapfile -t top_files < <(fd -e cs . "$ROOT/src" "$ROOT/tests" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | sort -rn | head -10)
+declare -a large_files=()
+mapfile -t large_files < <(printf '%s\n' "${cs_loc[@]}" | awk -v t="$THRESHOLD" 'NF && $1 >= t')
+
+declare -a top_files=()
+if [[ ${#cs_loc[@]} -gt 0 ]]; then
+    mapfile -t top_files < <(printf '%s\n' "${cs_loc[@]}" | head -10)
+fi
 
 if [[ "$JSON" == true ]]; then
     proj_json="{"
     first=true
-    for name in $(echo "${!proj_files[@]}" | tr ' ' '\n' | sort); do
+    for name in "${sorted_proj[@]}"; do
         if [[ "$first" == true ]]; then first=false; else proj_json+=","; fi
         proj_json+="\"$name\":{\"files\":${proj_files[$name]},\"loc\":${proj_loc[$name]}}"
     done
     proj_json+="}"
 
-    large_json=$(for entry in "${large_files[@]}"; do
-        lines=$(echo "$entry" | awk '{print $1}')
-        file=$(echo "$entry" | awk '{print $2}')
-        printf '{"lines":%s,"file":"%s"}\n' "$lines" "$file"
-    done | jq -s '.')
+    large_json=$(printf '%s\n' "${large_files[@]}" | awk 'NF{printf "{\"lines\":%s,\"file\":\"%s\"}\n", $1, $2}' | jq -s '.')
 
-    top_json=$(for entry in "${top_files[@]}"; do
-        lines=$(echo "$entry" | awk '{print $1}')
-        file=$(echo "$entry" | awk '{print $2}')
-        printf '{"lines":%s,"file":"%s"}\n' "$lines" "$file"
-    done | jq -s '.')
+    top_json=$(printf '%s\n' "${top_files[@]}" | awk 'NF{printf "{\"lines\":%s,\"file\":\"%s\"}\n", $1, $2}' | jq -s '.')
 
     jq -n \
         --argjson src_files "$src_files" \
@@ -80,7 +88,7 @@ else
     printf "  Total:           %d files, %d LOC\n" "$((src_files + test_files))" "$((src_loc + test_loc))"
 
     printf "\n${BOLD}By project:${RESET}\n"
-    for name in $(echo "${!proj_files[@]}" | tr ' ' '\n' | sort); do
+    for name in "${sorted_proj[@]}"; do
         printf "  %-40s %4d files  %6d LOC\n" "$name" "${proj_files[$name]}" "${proj_loc[$name]}"
     done
 

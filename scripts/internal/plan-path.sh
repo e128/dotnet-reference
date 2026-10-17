@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Resolve a plan's canonical path by partial name.
 # Usage: plan-path.sh NAME
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
 if [[ $# -eq 0 ]]; then
     err "Usage: plan-path.sh <plan-name>"

@@ -159,7 +159,7 @@ See [references/build-phase.md](references/build-phase.md). No plan needed: smal
 ## Constraints
 
 - Scripts are bash (`.sh`), follow `scripts/*.sh` conventions, `source lib.sh` (use `ok`, `err`, `dim`, etc.)
-- Accept `--json` and `--help`. Pass `bash -n` and `shellcheck`
+- Accept `--json` and `--help`. Pass `scripts/lint-shell.sh`
 - Never duplicate an existing script's functionality, check `scripts/help.sh` first
 - Evidence-based only: every candidate cites specific frequency data. Never create a script for an unobserved pattern
 - Read before editing. Re-read after any `format.sh` run
