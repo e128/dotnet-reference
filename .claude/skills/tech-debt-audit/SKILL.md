@@ -24,7 +24,7 @@ Everything from here through the `---` divider is the protocol Claude executes; 
 | `[scope path]`  | No       | Limit audit to a specific directory (e.g., `src/Core`). Full repo if omitted |
 | `[mode]`        | No       | Focused mode — run only one dimension (see table below). Full audit if omitted |
 
-## Focused Modes (formerly code-health-audit)
+## Focused Modes
 
 When a mode argument is provided, skip Phase 1 orientation and Phase 2 full audit. Run only the specified dimension, produce findings in the standard output format, and write to `plans/TECH_DEBT_AUDIT.md`.
 

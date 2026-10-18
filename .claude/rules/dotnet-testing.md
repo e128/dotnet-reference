@@ -17,6 +17,9 @@ is a sealed method that cannot become `internal`.
 The stack is xUnit v3 on MTP. Raw `dotnet test --filter` does not work. Run
 `scripts/test.sh ClassName` or `scripts/test.sh --all`.
 
+Coverage collection is the one exception. It needs a runsettings file that this
+repo does not ship.
+
 ## Before You Change `<TargetFramework>`
 
 Run `dotnet --list-sdks` and confirm the target SDK is installed locally. CI

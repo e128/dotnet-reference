@@ -1,7 +1,7 @@
 # Concurrency Review: Grep Patterns & Checklist
 
 Reference file for Step 6 of dotnet-overhaul. Contains anti-pattern grep patterns
-and analysis checklist previously embedded in the `dotnet-concurrency-specialist` agent.
+and an analysis checklist.
 
 ## Anti-Pattern Grep Patterns
 

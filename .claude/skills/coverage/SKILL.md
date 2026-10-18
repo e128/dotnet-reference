@@ -1,12 +1,9 @@
 ---
 name: coverage
 description: >
-  Code coverage skills: fix low coverage, enforce thresholds in CI, or audit coverage.config.xml
-  for drift. Determines mode from user intent automatically.
-  Triggers on: coverage fix, low coverage, improve coverage, fix low coverage, coverage gate,
-  coverage threshold, enforce coverage, minimum coverage, coverage enforcement, add coverage gate,
-  audit coverage config, coverage config drift, coverage.config.xml, check coverage targets,
-  fix coverage config, stale coverage config, coverage missing project, coverage work, coverage skill.
+  Code coverage skills: fix low coverage, enforce a threshold in CI, or audit
+  coverage.config.xml for drift. Determines mode from user intent.
+  Triggers on: coverage work, coverage gate, coverage config drift.
 argument-hint: "[fix | gate | config-audit]"
 ---
 

@@ -21,7 +21,7 @@ This project uses `dotnet-coverage collect` (not Coverlet). Two limitations appl
 
 1. **No automated CRAP scores.** Cobertura format (produced by `dotnet-coverage collect`) does not include cyclomatic complexity. OpenCover format (Coverlet) is required for ReportGenerator Risk Hotspots with CRAP scores. Adding Coverlet to test projects would enable OpenCover output.
 
-2. **Profiler fails on macOS ARM64 + MTP.** `dotnet-coverage collect` cannot attach its profiler to MTP-based test processes on macOS ARM64. The profiler initializes successfully on Linux CI. See [Code Coverage lode](../../lode/dotnet/code-coverage.md#known-limitations) for details.
+2. **Profiler fails on macOS ARM64 + MTP.** `dotnet-coverage collect` cannot attach its profiler to MTP-based test processes on macOS ARM64. The profiler initializes successfully on Linux CI.
 
 ### Manual CRAP Analysis (Current Fallback)
 
@@ -181,9 +181,6 @@ Create `coverage.runsettings` in the repository root. **OpenCover format is requ
 rm -rf coverage/ TestResults/
 
 scripts/test.sh --all --json
-# Coverage collection requires raw dotnet test with runsettings — no pug wrapper yet:
-# dotnet test --settings coverage.runsettings --filter-trait "Category=CI" \
-#   --collect:"XPlat Code Coverage" --results-directory ./TestResults
 
 dotnet reportgenerator \
   -reports:"TestResults/**/coverage.opencover.xml" \

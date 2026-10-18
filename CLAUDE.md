@@ -10,7 +10,7 @@ This file adds only Claude Code mechanics. Portable content lives in
 
 ## Claude Code-Only Rules
 
-- Use the Visualize skill for explanations.
+- Explain with a diagram when prose is harder to follow. Use Mermaid diagrams.
 - Use `AskUserQuestion` for structured questions, never inline.
 - Put config in `.claude/` at project level, not `~/.claude/` at global level.
 - Guardrail hooks live in `.claude/hooks/`. opencode enforcement lives in

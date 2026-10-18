@@ -5,12 +5,9 @@ description: >
   by category, surfaces the top-3 recurring patterns with ranked fix suggestions,
   and identifies actionable root causes (flag errors, write-before-read, parallel
   cascade failures, hook-denied patterns, etc.). When permission errors are in the
-  top 3, runs a settings.json gap analysis inline (formerly allowed-tools-maintainer).
-  Triggers on: error audit, what's breaking, error report, session health,
-  what errors keep happening, why do I keep getting errors, recurring errors,
-  tool errors this week, fix recurring errors, settings sync, allowed tools gap,
-  tool approval friction, settings audit, add to allow-list, skills need permissions,
-  sync tool permissions, settings.json gaps.
+  top 3, runs a settings.json gap analysis inline.
+  Triggers on: error audit, session health, recurring errors, tool approval
+  friction, settings.json gaps.
   Not for: fixing a specific one-off error (use /fix).
 allowed-tools: Bash, Read, Edit, Glob, Grep
 ---
@@ -77,7 +74,7 @@ Top patterns:
 Baseline: [saved on date / not set — run `scripts/session-health.sh --baseline` to save one]
 ```
 
-## Step 5: Settings.json gap analysis (absorbed from allowed-tools-maintainer)
+## Step 5: Settings.json gap analysis
 
 **Triggered automatically** when `permission-denied` or `hook-denied` is in the top 3 categories.
 Also triggered when the user explicitly asks about settings sync, allowed tools, or tool approval friction.

@@ -6,8 +6,8 @@ These rules apply on any harness with skill and subagent tools.
 
 - A **skill** has a name that starts with `/`. Invoke it through the skill
   tool.
-- An **agent** has a name that ends in `-agent`. Invoke it as a subagent and
-  set `subagent_type`.
+- An **agent** is a file in `.claude/agents/`. Invoke it as a subagent and set
+  `subagent_type` to its `name`.
 
 **Never invoke an agent through the skill tool.**
 

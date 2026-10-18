@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-10-17T13:32:18Z*
+*Updated: 2026-10-18T14:56:49Z*
 
 ## Harness Portability Capability Map
 
@@ -12,8 +12,8 @@ equivalent on another harness.
 Claude Code 2.1.277 added native `AGENTS.md` support. When a folder has no
 `CLAUDE.md`, Claude Code reads `AGENTS.md` directly with no import needed.
 When `CLAUDE.md` is present, as in this repo, Claude Code still prioritizes
-it. This repo keeps `CLAUDE.md` for its Claude-only overlay (the Visualize
-skill mandate, the `AskUserQuestion` mandate, the `.claude/` config location
+it. This repo keeps `CLAUDE.md` for its Claude-only overlay (the Mermaid
+diagram rule, the `AskUserQuestion` mandate, the `.claude/` config location
 rule, and the hooks pointer), not to trigger a fallback load. Those four
 rules have no home in `AGENTS.md`, since another harness does not carry
 those tools.
