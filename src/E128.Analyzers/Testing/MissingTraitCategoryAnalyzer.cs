@@ -45,7 +45,7 @@ public sealed class MissingTraitCategoryAnalyzer : DiagnosticAnalyzer
     {
         var attribute = (AttributeSyntax)context.Node;
 
-        if (!IsFactOrTheoryAttribute(attribute, context))
+        if (!XunitTestHelper.IsFactOrTheoryAttribute(attribute, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
@@ -62,30 +62,6 @@ public sealed class MissingTraitCategoryAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, attribute.GetLocation(), method.Identifier.ValueText));
-    }
-
-    private static bool IsFactOrTheoryAttribute(AttributeSyntax attribute, SyntaxNodeAnalysisContext context)
-    {
-        var name = attribute.Name.ToString();
-        if (!string.Equals(name, "Fact", StringComparison.Ordinal)
-            && !string.Equals(name, "Theory", StringComparison.Ordinal)
-            && !string.Equals(name, "FactAttribute", StringComparison.Ordinal)
-            && !string.Equals(name, "TheoryAttribute", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var symbol = context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol;
-        return symbol is IMethodSymbol ctor
-               && ctor.ContainingType is { } containingType
-               && (string.Equals(containingType.Name, "FactAttribute", StringComparison.Ordinal)
-                   || string.Equals(containingType.Name, "TheoryAttribute", StringComparison.Ordinal))
-               && IsXunitNamespace(containingType.ContainingNamespace);
-    }
-
-    private static bool IsXunitNamespace(INamespaceSymbol? ns)
-    {
-        return ns is not null && string.Equals(ns.ToDisplayString(), "Xunit", StringComparison.Ordinal);
     }
 
     private static bool HasTraitCategoryOnMethod(MethodDeclarationSyntax method, SyntaxNodeAnalysisContext context)
@@ -128,7 +104,7 @@ public sealed class MissingTraitCategoryAnalyzer : DiagnosticAnalyzer
         if (symbol is not IMethodSymbol ctor
             || ctor.ContainingType is not { } containingType
             || !string.Equals(containingType.Name, "TraitAttribute", StringComparison.Ordinal)
-            || !IsXunitNamespace(containingType.ContainingNamespace))
+            || !XunitTestHelper.IsXunitNamespace(containingType.ContainingNamespace))
         {
             return false;
         }

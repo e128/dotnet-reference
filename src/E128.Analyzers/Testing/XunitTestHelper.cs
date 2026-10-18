@@ -1,12 +1,13 @@
 using System;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace E128.Analyzers.Testing;
 
 /// <summary>
-///     Shared detection of xUnit <c lang="csharp">[Fact]</c> and <c lang="csharp">[Theory]</c> test methods. The
-///     helper serves the low-value test analyzer. Adoption by the existing test-quality rules is deferred.
+///     Shared detection of xUnit <c lang="csharp">[Fact]</c> and <c lang="csharp">[Theory]</c> test methods for every
+///     test-quality rule.
 /// </summary>
 internal static class XunitTestHelper
 {
@@ -57,6 +58,27 @@ internal static class XunitTestHelper
         return count;
     }
 
+    internal static bool IsFactOrTheoryAttribute(AttributeData attribute)
+    {
+        return attribute.AttributeClass is { } attributeClass && IsFactOrTheoryType(attributeClass);
+    }
+
+    internal static bool IsFactOrTheoryAttribute(
+        AttributeSyntax attribute,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        return IsFactOrTheoryName(SimpleName(attribute.Name))
+               && semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol is IMethodSymbol constructor
+               && constructor.ContainingType is { } containingType
+               && IsFactOrTheoryType(containingType);
+    }
+
+    internal static bool IsXunitNamespace(INamespaceSymbol? ns)
+    {
+        return ns is not null && string.Equals(ns.ToDisplayString(), "Xunit", StringComparison.Ordinal);
+    }
+
     // An attribute name can be written plain, qualified, or alias-qualified. Read the last segment
     // of the name so every spelling matches.
     private static string SimpleName(NameSyntax name)
@@ -69,11 +91,10 @@ internal static class XunitTestHelper
         };
     }
 
-    private static bool IsFactOrTheoryAttribute(AttributeData attribute)
+    private static bool IsFactOrTheoryType(INamedTypeSymbol attributeClass)
     {
-        return attribute.AttributeClass is { } attributeClass
-               && (string.Equals(attributeClass.Name, "FactAttribute", StringComparison.Ordinal)
-                   || string.Equals(attributeClass.Name, "TheoryAttribute", StringComparison.Ordinal))
+        return (string.Equals(attributeClass.Name, "FactAttribute", StringComparison.Ordinal)
+                || string.Equals(attributeClass.Name, "TheoryAttribute", StringComparison.Ordinal))
                && IsXunitNamespace(attributeClass.ContainingNamespace);
     }
 
@@ -89,10 +110,5 @@ internal static class XunitTestHelper
     {
         return string.Equals(name, "InlineData", StringComparison.Ordinal)
                || string.Equals(name, "InlineDataAttribute", StringComparison.Ordinal);
-    }
-
-    private static bool IsXunitNamespace(INamespaceSymbol? ns)
-    {
-        return ns is not null && string.Equals(ns.ToDisplayString(), "Xunit", StringComparison.Ordinal);
     }
 }

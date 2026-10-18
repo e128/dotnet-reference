@@ -56,7 +56,7 @@ public sealed class ConstantOperandAssertionAnalyzer : DiagnosticAnalyzer
 
         if (method.ContainingType is not { } containingType
             || !string.Equals(containingType.Name, "Assert", StringComparison.Ordinal)
-            || !IsXunitNamespace(containingType.ContainingNamespace)
+            || !XunitTestHelper.IsXunitNamespace(containingType.ContainingNamespace)
             || NonOperandMembers.Contains(method.Name))
         {
             return;
@@ -80,10 +80,5 @@ public sealed class ConstantOperandAssertionAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.Syntax.GetLocation()));
-    }
-
-    private static bool IsXunitNamespace(INamespaceSymbol? ns)
-    {
-        return ns is not null && string.Equals(ns.ToDisplayString(), "Xunit", StringComparison.Ordinal);
     }
 }

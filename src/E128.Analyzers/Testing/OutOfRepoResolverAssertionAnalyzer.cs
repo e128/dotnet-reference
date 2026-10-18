@@ -69,7 +69,7 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken) is not { } method
-            || !IsXunitTestMethod(method)
+            || !XunitTestHelper.IsXunitTestMethod(method)
             || HasSkipArgument(method))
         {
             return;
@@ -160,27 +160,14 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         return SkipMembers.Contains(method.Name)
                && method.ContainingType is { } containingType
                && string.Equals(containingType.Name, "Assert", StringComparison.Ordinal)
-               && IsXunitNamespace(containingType.ContainingNamespace);
-    }
-
-    private static bool IsXunitTestMethod(IMethodSymbol method)
-    {
-        foreach (var attribute in method.GetAttributes())
-        {
-            if (IsFactOrTheoryAttribute(attribute))
-            {
-                return true;
-            }
-        }
-
-        return false;
+               && XunitTestHelper.IsXunitNamespace(containingType.ContainingNamespace);
     }
 
     private static bool HasSkipArgument(IMethodSymbol method)
     {
         foreach (var attribute in method.GetAttributes())
         {
-            if (!IsFactOrTheoryAttribute(attribute))
+            if (!XunitTestHelper.IsFactOrTheoryAttribute(attribute))
             {
                 continue;
             }
@@ -199,16 +186,4 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsFactOrTheoryAttribute(AttributeData attribute)
-    {
-        return attribute.AttributeClass is { } attributeClass
-               && (string.Equals(attributeClass.Name, "FactAttribute", StringComparison.Ordinal)
-                   || string.Equals(attributeClass.Name, "TheoryAttribute", StringComparison.Ordinal))
-               && IsXunitNamespace(attributeClass.ContainingNamespace);
-    }
-
-    private static bool IsXunitNamespace(INamespaceSymbol? ns)
-    {
-        return ns is not null && string.Equals(ns.ToDisplayString(), "Xunit", StringComparison.Ordinal);
-    }
 }
