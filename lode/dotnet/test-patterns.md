@@ -1,5 +1,5 @@
 # Test Family Patterns
-*Updated: 2026-10-16T18:13:32Z*
+*Updated: 2026-10-23T16:30:10Z*
 
 Standard test patterns for this codebase. Tests avoid mocking frameworks, collaborators
 are either real lightweight implementations (e.g. `InMemoryGreetingRepository`) or small
@@ -58,6 +58,11 @@ public sealed class {Service}Tests
 
 The reference repository (`InMemoryGreetingRepository`) holds state in memory with no
 external I/O, so no `IAsyncLifetime` setup or connection teardown is needed.
+
+The composition root registers the repository as a singleton, so a test must cover
+concurrent access. `SaveAsync_IsThreadSafe_UnderConcurrentWritersAndReaders` starts raw
+threads for several writers and one reader. Each thread collects a race exception, and
+the test asserts that the queue stays empty and the final count is exact.
 
 ```csharp
 public sealed class {Repository}Tests
