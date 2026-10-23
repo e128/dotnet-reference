@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Globalization;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using E128.Reference.Core.Models;
 using E128.Reference.Core.Repositories;
@@ -70,5 +73,67 @@ public sealed class InMemoryGreetingRepositoryTests
         var result = await _repository.GetRecentAsync(2);
 
         Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public async Task SaveAsync_IsThreadSafe_UnderConcurrentWritersAndReaders()
+    {
+        const int writerCount = 4;
+        const int perWriter = 500;
+        var errors = new ConcurrentQueue<Exception>();
+
+        Thread StartThread(Action body)
+        {
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    body();
+                }
+                catch (InvalidOperationException exception)
+                {
+                    errors.Enqueue(exception);
+                }
+                catch (IndexOutOfRangeException exception)
+                {
+                    errors.Enqueue(exception);
+                }
+            });
+            thread.Start();
+            return thread;
+        }
+
+        var writers = Enumerable.Range(0, writerCount)
+            .Select(_ => StartThread(() =>
+            {
+                for (var i = 0; i < perWriter; i++)
+                {
+                    var save = _repository.SaveAsync(new Greeting("msg", "X", BaseTime));
+                    Assert.True(save.IsCompletedSuccessfully);
+                }
+            }))
+            .ToArray();
+
+        var reader = StartThread(() =>
+        {
+            for (var i = 0; i < 200; i++)
+            {
+                var read = _repository.GetRecentAsync(10);
+                Assert.True(read.IsCompletedSuccessfully);
+            }
+        });
+
+        foreach (var writer in writers)
+        {
+            writer.Join();
+        }
+
+        reader.Join();
+
+        Assert.Empty(errors);
+
+        var all = await _repository.GetRecentAsync(int.MaxValue);
+        Assert.Equal(writerCount * perWriter, all.Count);
     }
 }

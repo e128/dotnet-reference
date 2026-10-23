@@ -1,5 +1,5 @@
 # Terminology
-*Updated: 2026-10-17T13:32:18Z*
+*Updated: 2026-10-23T14:29:50Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **MTP**: Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.
@@ -13,6 +13,7 @@
 - **OIDC**: OpenID Connect. The token protocol behind Trusted Publishing. It exchanges a short-lived token for a publish credential instead of a stored API key.
 - **Renovate**: Dependency management bot. Configured in `renovate.json` to group updates, auto-merge patch/minor, and flag majors for review.
 - **Kestrel**: ASP.NET Core's cross-platform web server.
+- **NativeAOT**: Ahead-of-time compilation with the ILC toolchain. The output is a native binary with no JIT. `Directory.Build.props` applies its defaults when a project sets `PublishAot`. See `lode/dotnet/performance.md`.
 - **TFM**: Target Framework Moniker. A string that names a project's target runtime, for example `net10.0` or `netstandard2.0`.
 - **Diagnostic ID**: The `E128xxx` number assigned to each custom analyzer rule, for example `E128064`. The `E128.Analyzers` README lists the full rule table.
 - **YAGNI**: You Aren't Gonna Need It. A principle that balances SOLID. Build an abstraction only when the code needs it now, not for a hypothetical future need.
