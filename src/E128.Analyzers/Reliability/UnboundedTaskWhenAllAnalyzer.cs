@@ -39,14 +39,25 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var taskType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+            if (taskType is null)
+            {
+                return;
+            }
+
+            compilationContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeInvocation(nodeContext, taskType),
+                SyntaxKind.InvocationExpression);
+        });
     }
 
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol taskType)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (!IsTaskWhenAll(context, invocation))
+        if (!IsTaskWhenAll(context, invocation, taskType))
         {
             return;
         }
@@ -77,12 +88,26 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
-    private static bool IsTaskWhenAll(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
+    private static bool IsTaskWhenAll(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol taskType)
     {
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
-        return symbolInfo.Symbol is IMethodSymbol method
-               && string.Equals(method.Name, "WhenAll", StringComparison.Ordinal)
-               && string.Equals(method.ContainingType?.ToDisplayString(), "System.Threading.Tasks.Task", StringComparison.Ordinal);
+        var methodName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
+
+        if (!string.Equals(methodName, "WhenAll", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
+        return symbol is IMethodSymbol method
+               && SymbolEqualityComparer.Default.Equals(method.ContainingType, taskType);
     }
 
     private static bool TryGetSelectInvocation(ExpressionSyntax expression, [NotNullWhen(true)] out InvocationExpressionSyntax? selectInvocation)

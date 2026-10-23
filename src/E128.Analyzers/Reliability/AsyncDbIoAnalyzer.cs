@@ -47,6 +47,25 @@ public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
+        // Syntactic gate first. An invocation in an async context is out of scope for this rule,
+        // so it must not pay for overload resolution.
+        if (AsyncContextSyntaxHelper.IsInsideAsyncContext(invocation))
+        {
+            return;
+        }
+
+        var syntaxName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
+
+        if (syntaxName is not null && syntaxName.EndsWith("Async", StringComparison.Ordinal))
+        {
+            return;
+        }
+
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method)
         {
             return;
@@ -69,11 +88,6 @@ public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer
         // (e.g. Microsoft.Data.Sqlite's SqliteCommand overrides ExecuteReader() but inherits
         // ExecuteReaderAsync from DbCommand without overriding it).
         if (!HasAsyncSibling(receiverType, asyncSiblingName))
-        {
-            return;
-        }
-
-        if (AsyncContextSyntaxHelper.IsInsideAsyncContext(invocation))
         {
             return;
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -94,8 +95,13 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
+            // The await and sync-I/O scans depend only on the enclosing method, not on the
+            // individual FromResult call. Cache the result per method.
+            var methodScans =
+                new ConcurrentDictionary<MethodDeclarationSyntax, (bool HasAwait, string? SyncIoCall)>();
+
             compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, taskType, valueTaskType),
+                nodeContext => AnalyzeInvocation(nodeContext, taskType, valueTaskType, methodScans),
                 SyntaxKind.InvocationExpression);
         });
     }
@@ -103,7 +109,8 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(
         SyntaxNodeAnalysisContext context,
         INamedTypeSymbol? taskType,
-        INamedTypeSymbol? valueTaskType)
+        INamedTypeSymbol? valueTaskType,
+        ConcurrentDictionary<MethodDeclarationSyntax, (bool HasAwait, string? SyncIoCall)> methodScans)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -118,13 +125,19 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (MethodContainsAwait(containingMethod))
+        var semanticModel = context.SemanticModel;
+        var cancellationToken = context.CancellationToken;
+        var (hasAwait, syncIoCall) = methodScans.GetOrAdd(containingMethod, method =>
         {
-            return;
-        }
+            if (MethodContainsAwait(method))
+            {
+                return (true, null);
+            }
 
-        var syncIoCall = FindSyncIoCallWithAsyncAlternative(containingMethod, context.SemanticModel, context.CancellationToken);
-        if (syncIoCall is null)
+            return (false, FindSyncIoCallWithAsyncAlternative(method, semanticModel, cancellationToken));
+        });
+
+        if (hasAwait || syncIoCall is not { } syncCall)
         {
             return;
         }
@@ -134,7 +147,7 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
             Rule,
             invocation.GetLocation(),
             methodName,
-            syncIoCall,
+            syncCall,
             wrapperName));
     }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -63,9 +64,25 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // One walk collects the HttpClient calls. Each try block then tests span containment
+        // instead of re-walking its own subtree.
+        var httpClientCalls = new List<InvocationExpressionSyntax>();
+        foreach (var invocation in method.Body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (IsHttpClientCall(invocation))
+            {
+                httpClientCalls.Add(invocation);
+            }
+        }
+
+        if (httpClientCalls.Count == 0)
+        {
+            return;
+        }
+
         foreach (var tryStatement in method.Body.DescendantNodes().OfType<TryStatementSyntax>())
         {
-            if (!BlockContainsHttpClientCall(tryStatement.Block))
+            if (!httpClientCalls.Exists(call => tryStatement.Block.Span.Contains(call.Span)))
             {
                 continue;
             }
@@ -94,12 +111,10 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool BlockContainsHttpClientCall(SyntaxNode block)
+    private static bool IsHttpClientCall(InvocationExpressionSyntax invocation)
     {
-        return block.DescendantNodes()
-            .OfType<InvocationExpressionSyntax>()
-            .Any(inv => inv.Expression is MemberAccessExpressionSyntax { Name: IdentifierNameSyntax name }
-                        && IsHttpClientMethod(name.Identifier.Text));
+        return invocation.Expression is MemberAccessExpressionSyntax { Name: IdentifierNameSyntax name }
+               && IsHttpClientMethod(name.Identifier.Text);
     }
 
     private static bool IsHttpClientMethod(string name)

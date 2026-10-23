@@ -133,11 +133,6 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (IsInterfaceImplementation(method))
-        {
-            return;
-        }
-
         if (method.ReturnType is not INamedTypeSymbol returnType || !returnType.IsGenericType)
         {
             return;
@@ -145,6 +140,13 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
 
         var suggestion = GetImmutableSuggestion(returnType, typeMap);
         if (suggestion is null)
+        {
+            return;
+        }
+
+        // The interface walk below scans every interface member and resolves each implementation.
+        // It runs only for a method that would otherwise report.
+        if (IsInterfaceImplementation(method))
         {
             return;
         }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -8,74 +7,6 @@ namespace E128.Analyzers.FileSystem;
 
 internal static class FileSystemPathHelpers
 {
-    internal static HashSet<string> CollectPathDerivedLocals(BlockSyntax body, string paramName)
-    {
-        var result = new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (var descendant in body.DescendantNodes())
-        {
-            if (descendant is not LocalDeclarationStatementSyntax statement)
-            {
-                continue;
-            }
-
-            foreach (var variable in statement.Declaration.Variables)
-            {
-                var rhs = variable.Initializer?.Value;
-                var localName = variable.Identifier.ValueText;
-                var isDerived = rhs is IdentifierNameSyntax id
-                                && string.Equals(id.Identifier.ValueText, paramName, StringComparison.Ordinal);
-                var isPathDerived = !isDerived
-                                    && rhs is InvocationExpressionSyntax init
-                                    && IsPathMethodCall(init)
-                                    && HasFirstArgumentNamed(init.ArgumentList, paramName);
-                if (isDerived || isPathDerived)
-                {
-                    result.Add(localName);
-                }
-            }
-        }
-
-        var toAdd = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var descendant in body.DescendantNodes())
-        {
-            if (descendant is not LocalDeclarationStatementSyntax statement)
-            {
-                continue;
-            }
-
-            foreach (var variable in statement.Declaration.Variables)
-            {
-                var localName = variable.Identifier.ValueText;
-                if (result.Contains(localName))
-                {
-                    continue;
-                }
-
-                if (variable.Initializer?.Value is InvocationExpressionSyntax init
-                    && IsPathMethodCall(init)
-                    && HasAnyFirstArgumentNamed(init.ArgumentList, result))
-                {
-                    toAdd.Add(localName);
-                }
-            }
-        }
-
-        result.UnionWith(toAdd);
-        return result;
-    }
-
-    internal static bool HasAnyFirstArgumentNamed(ArgumentListSyntax argumentList, HashSet<string> names)
-    {
-        if (!argumentList.Arguments.Any())
-        {
-            return false;
-        }
-
-        var firstArgExpr = argumentList.Arguments[0].Expression;
-        return firstArgExpr is IdentifierNameSyntax id && names.Contains(id.Identifier.ValueText);
-    }
-
     internal static bool IsPathMethodCall(InvocationExpressionSyntax invocation)
     {
         return invocation.Expression is MemberAccessExpressionSyntax
@@ -84,18 +15,6 @@ internal static class FileSystemPathHelpers
             Name: SimpleNameSyntax methodName
         }
                && IoMethodCatalog.IsPathMethod(methodName.Identifier.ValueText);
-    }
-
-    // Checks whether the identifier 'name' appears as the FIRST argument (index 0).
-    // Used for path-derivation: only a param/local at arg[0] of Path.Combine / Path.GetXxx
-    // is itself a root path; params at arg[1]+ are path segments, not standalone paths.
-    internal static bool HasFirstArgumentNamed(ArgumentListSyntax argList, string name)
-    {
-        var args = argList.Arguments;
-
-        return args.Count != 0
-               && args[0].Expression is IdentifierNameSyntax id
-               && string.Equals(id.Identifier.ValueText, name, StringComparison.Ordinal);
     }
 
     // Extracts the GenericNameSyntax for Option<T> or Argument<T> from either:

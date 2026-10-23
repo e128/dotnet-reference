@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -55,10 +56,21 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.MethodDeclaration);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            // The analyzer option is constant for a tree. Parse it once per tree instead of
+            // once per test method.
+            var allowlistCache = new ConcurrentDictionary<SyntaxTree, ImmutableHashSet<string>>();
+
+            compilationContext.RegisterSyntaxNodeAction(
+                nodeContext => Analyze(nodeContext, allowlistCache),
+                SyntaxKind.MethodDeclaration);
+        });
     }
 
-    private static void Analyze(SyntaxNodeAnalysisContext context)
+    private static void Analyze(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<SyntaxTree, ImmutableHashSet<string>> allowlistCache)
     {
         var declaration = (MethodDeclarationSyntax)context.Node;
 
@@ -75,13 +87,12 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(declaration.SyntaxTree);
-        if (!options.TryGetValue(ResolversOptionKey, out var rawValue) || string.IsNullOrWhiteSpace(rawValue))
+        var allowlist = GetAllowlist(context, declaration.SyntaxTree, allowlistCache);
+        if (allowlist.IsEmpty)
         {
             return;
         }
 
-        var allowlist = ParseAllowlist(rawValue);
         var semanticModel = context.SemanticModel;
 
         var guarded = false;
@@ -115,6 +126,21 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
 
         context.ReportDiagnostic(
             Diagnostic.Create(Rule, declaration.Identifier.GetLocation(), method.Name, resolverName));
+    }
+
+    // The analyzer option is constant for a tree, so one parse serves every test method in it.
+    private static ImmutableHashSet<string> GetAllowlist(
+        SyntaxNodeAnalysisContext context,
+        SyntaxTree tree,
+        ConcurrentDictionary<SyntaxTree, ImmutableHashSet<string>> allowlistCache)
+    {
+        return allowlistCache.GetOrAdd(tree, cachedTree =>
+        {
+            var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(cachedTree);
+            return options.TryGetValue(ResolversOptionKey, out var rawValue) && !string.IsNullOrWhiteSpace(rawValue)
+                ? ParseAllowlist(rawValue)
+                : [];
+        });
     }
 
     // A bare "Type" entry matches every member of that type, a "Type.Member" entry matches one member.

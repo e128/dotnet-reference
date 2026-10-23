@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -51,10 +52,25 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ElementAccessExpression);
+
+        // Both scans below are subtree walks whose answer depends only on the declaring lambda or
+        // loop and on the index name. Cache the answer for the lifetime of the compilation so a
+        // body with many element accesses pays for each walk once.
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var boundCache = new ConcurrentDictionary<(SyntaxNode Declaring, string Index), (bool Found, ExpressionSyntax? Source)>();
+            var guardCache = new ConcurrentDictionary<(SyntaxNode Scope, string Index, string Symbol), bool>();
+
+            compilationContext.RegisterSyntaxNodeAction(
+                nodeContext => Analyze(nodeContext, boundCache, guardCache),
+                SyntaxKind.ElementAccessExpression);
+        });
     }
 
-    private static void Analyze(SyntaxNodeAnalysisContext context)
+    private static void Analyze(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<(SyntaxNode Declaring, string Index), (bool Found, ExpressionSyntax? Source)> boundCache,
+        ConcurrentDictionary<(SyntaxNode Scope, string Index, string Symbol), bool> guardCache)
     {
         var elementAccess = (ElementAccessExpressionSyntax)context.Node;
 
@@ -67,7 +83,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
 
         var indexName = indexIdentifier.Identifier.ValueText;
 
-        if (FindBoundSource(elementAccess, indexName) is not { } boundSource)
+        if (FindBoundSource(elementAccess, indexName, boundCache) is not { } boundSource)
         {
             return;
         }
@@ -76,7 +92,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
                 is not { } indexedSymbol
             || context.SemanticModel.GetSymbolInfo(boundSource, context.CancellationToken).Symbol is not { } boundSymbol
             || SymbolEqualityComparer.Default.Equals(indexedSymbol, boundSymbol)
-            || HasLengthGuard(elementAccess, indexName, indexedSymbol))
+            || HasLengthGuard(elementAccess, indexName, indexedSymbol, guardCache))
         {
             return;
         }
@@ -90,13 +106,24 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
 
     // The collection whose length bounds the index. A lambda parameter bound by
     // Enumerable.Range(0, X.Count) and a for-loop variable bounded by X.Count are the two shapes.
-    private static ExpressionSyntax? FindBoundSource(ElementAccessExpressionSyntax elementAccess, string indexName)
+    private static ExpressionSyntax? FindBoundSource(
+        ElementAccessExpressionSyntax elementAccess,
+        string indexName,
+        ConcurrentDictionary<(SyntaxNode Declaring, string Index), (bool Found, ExpressionSyntax? Source)> cache)
     {
         foreach (var node in Ancestors(elementAccess))
         {
             if (node is AnonymousFunctionExpressionSyntax lambda && DeclaresParameter(lambda, indexName))
             {
-                return FindRangeSource(OutermostInvocation(lambda));
+                var key = (Declaring: (SyntaxNode)lambda, Index: indexName);
+                if (cache.TryGetValue(key, out var cached))
+                {
+                    return cached.Source;
+                }
+
+                var source = FindRangeSource(OutermostInvocation(lambda));
+                cache.TryAdd(key, (source is not null, source));
+                return source;
             }
 
             if (node is ForStatementSyntax loop && DeclaresVariable(loop, indexName))
@@ -158,7 +185,8 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
     private static bool HasLengthGuard(
         ElementAccessExpressionSyntax elementAccess,
         string indexName,
-        ISymbol indexedSymbol)
+        ISymbol indexedSymbol,
+        ConcurrentDictionary<(SyntaxNode Scope, string Index, string Symbol), bool> cache)
     {
         var scope = GuardScope(elementAccess, indexName);
         if (scope is null)
@@ -166,6 +194,14 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        // The scan compares only the final symbol name, so that name is part of the key.
+        return cache.GetOrAdd(
+            (scope, indexName, indexedSymbol.Name),
+            key => ScanForLengthGuard(key.Scope, key.Index, key.Symbol));
+    }
+
+    private static bool ScanForLengthGuard(SyntaxNode scope, string indexName, string symbolName)
+    {
         foreach (var binary in scope.DescendantNodesAndSelf().OfType<BinaryExpressionSyntax>())
         {
             if (!IsRelational(binary.Kind()))
@@ -173,13 +209,13 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (MentionsLengthOf(binary.Left, indexedSymbol)
+            if (MentionsLengthOf(binary.Left, symbolName)
                 && IsIdentifier(binary.Right, indexName))
             {
                 return true;
             }
 
-            if (MentionsLengthOf(binary.Right, indexedSymbol)
+            if (MentionsLengthOf(binary.Right, symbolName)
                 && IsIdentifier(binary.Left, indexName))
             {
                 return true;
@@ -242,15 +278,15 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
             : null;
     }
 
-    private static bool MentionsLengthOf(ExpressionSyntax expression, ISymbol indexedSymbol)
+    private static bool MentionsLengthOf(ExpressionSyntax expression, string symbolName)
     {
         return expression is MemberAccessExpressionSyntax memberAccess
                && CountMemberNames.Contains(memberAccess.Name.Identifier.ValueText)
                && memberAccess.Expression.ToString().Length > 0
-               && IsSameText(memberAccess.Expression, indexedSymbol);
+               && IsSameText(memberAccess.Expression, symbolName);
     }
 
-    private static bool IsSameText(ExpressionSyntax expression, ISymbol symbol)
+    private static bool IsSameText(ExpressionSyntax expression, string symbolName)
     {
         // Compare the final name segment, so `rows`, `this.rows`, and `state.rows` all match the symbol
         // named rows. Comparing the printed expression to the symbol name drops a qualifier and lets a
@@ -262,7 +298,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
             _ => null
         };
 
-        return name is not null && string.Equals(name, symbol.Name, StringComparison.Ordinal);
+        return name is not null && string.Equals(name, symbolName, StringComparison.Ordinal);
     }
 
     private static bool IsIdentifier(ExpressionSyntax expression, string name)

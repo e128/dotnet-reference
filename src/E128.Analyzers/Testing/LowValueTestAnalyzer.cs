@@ -378,21 +378,21 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
     {
         return EveryAssertionMatches(
             facts,
-            invocation => !HasToStringInvocation(invocation)
-                          && ComparesLiteralWithLiteralOnlyCall(facts, invocation));
+            assertion => !HasToStringInvocation(assertion)
+                          && ComparesLiteralWithLiteralOnlyCall(facts, assertion.Invocation));
     }
 
     private static bool ExceptionMessageLock(TestFacts facts)
     {
         return EveryAssertionMatches(
             facts,
-            invocation => !HasToStringInvocation(invocation)
-                          && PinsExceptionMessage(facts, invocation));
+            assertion => !HasToStringInvocation(assertion)
+                          && PinsExceptionMessage(facts, assertion));
     }
 
     private static bool EveryAssertionMatches(
         TestFacts facts,
-        Func<InvocationExpressionSyntax, bool> match)
+        Func<AssertionFact, bool> match)
     {
         // One observable assertion gives the test its value. A test that mixes an echo with a real
         // check is not low value, so every examined assertion must match before the condition reports.
@@ -408,7 +408,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
             examined = true;
 
-            if (!match(assertion.Invocation))
+            if (!match(assertion))
             {
                 return false;
             }
@@ -463,7 +463,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool ConstructorPassthrough(TestFacts facts)
     {
-        return EveryAssertionMatches(facts, invocation => HasLiteralConstructedRead(facts, invocation));
+        return EveryAssertionMatches(facts, assertion => HasLiteralConstructedRead(facts, assertion));
     }
 
     private static bool SelfFulfillingExpected(TestFacts facts)
@@ -493,15 +493,15 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
     private static bool MagicConstantEcho(TestFacts facts)
     {
         return !facts.ProductionCalls.IsEmpty
-               && EveryAssertionMatches(facts, invocation => EchoesProductionLiteral(facts, invocation));
+               && EveryAssertionMatches(facts, assertion => EchoesProductionLiteral(facts, assertion));
     }
 
-    private static bool EchoesProductionLiteral(TestFacts facts, InvocationExpressionSyntax assertion)
+    private static bool EchoesProductionLiteral(TestFacts facts, AssertionFact assertion)
     {
-        foreach (var node in AssertionNodes(assertion))
+        foreach (var node in assertion.Nodes)
         {
             if (node is LiteralExpressionSyntax literal
-                && ProductionBodyContainsLiteral(facts, literal.Token.Text))
+                && facts.ProductionReturnsLiteral(literal.Token.Text))
             {
                 return true;
             }
@@ -510,8 +510,12 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool ProductionBodyContainsLiteral(TestFacts facts, string text)
+    // Walk each production body once and collect every literal it returns. The echo detector
+    // queries the set per assertion literal.
+    internal static ImmutableHashSet<string> CollectReturnedProductionLiterals(TestFacts facts)
     {
+        var literals = ImmutableHashSet.CreateBuilder(StringComparer.Ordinal);
+
         foreach (var call in facts.ProductionCalls)
         {
             foreach (var reference in call.Symbol.DeclaringSyntaxReferences)
@@ -523,17 +527,15 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
 
                 foreach (var node in production.DescendantNodes())
                 {
-                    if (node is LiteralExpressionSyntax literal
-                        && IsReturnedValue(literal)
-                        && string.Equals(literal.Token.Text, text, StringComparison.Ordinal))
+                    if (node is LiteralExpressionSyntax literal && IsReturnedValue(literal))
                     {
-                        return true;
+                        literals.Add(literal.Token.Text);
                     }
                 }
             }
         }
 
-        return false;
+        return literals.ToImmutable();
     }
 
     private static bool IsReturnedValue(SyntaxNode node)
@@ -608,9 +610,9 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool HasLiteralConstructedRead(TestFacts facts, InvocationExpressionSyntax assertion)
+    private static bool HasLiteralConstructedRead(TestFacts facts, AssertionFact assertion)
     {
-        var nodes = AssertionNodes(assertion);
+        var nodes = assertion.Nodes;
         var literals = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var node in nodes)
@@ -785,11 +787,11 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool PinsExceptionMessage(TestFacts facts, InvocationExpressionSyntax assertion)
+    private static bool PinsExceptionMessage(TestFacts facts, AssertionFact assertion)
     {
         // Only an exact-equality pin locks the whole message. A substring check with Assert.Contains
         // pins a documented hint, which is the contract, so it does not report.
-        if (assertion.Expression is not MemberAccessExpressionSyntax access
+        if (assertion.Invocation.Expression is not MemberAccessExpressionSyntax access
             || !string.Equals(access.Name.Identifier.ValueText, "Equal", StringComparison.Ordinal))
         {
             return false;
@@ -798,7 +800,7 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         var hasLiteral = false;
         var hasExceptionMessage = false;
 
-        foreach (var node in AssertionNodes(assertion))
+        foreach (var node in assertion.Nodes)
         {
             if (node is LiteralExpressionSyntax)
             {
@@ -815,9 +817,9 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return hasLiteral && hasExceptionMessage;
     }
 
-    private static bool HasToStringInvocation(InvocationExpressionSyntax assertion)
+    private static bool HasToStringInvocation(AssertionFact assertion)
     {
-        foreach (var node in AssertionNodes(assertion))
+        foreach (var node in assertion.Nodes)
         {
             if (node is InvocationExpressionSyntax call
                 && call.Expression is MemberAccessExpressionSyntax member
@@ -830,16 +832,16 @@ public sealed class LowValueTestAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static List<SyntaxNode> AssertionNodes(InvocationExpressionSyntax assertion)
+    internal static ImmutableArray<SyntaxNode> CollectAssertionNodes(InvocationExpressionSyntax assertion)
     {
-        var nodes = new List<SyntaxNode>();
+        var nodes = ImmutableArray.CreateBuilder<SyntaxNode>();
 
         foreach (var argument in assertion.ArgumentList.Arguments)
         {
             nodes.AddRange(argument.Expression.DescendantNodesAndSelf(IsNotLambda));
         }
 
-        return nodes;
+        return nodes.ToImmutable();
     }
 
     private static bool IsNotLambda(SyntaxNode node)

@@ -271,30 +271,14 @@ public sealed class TextContentGuardAnalyzer : DiagnosticAnalyzer
     {
         for (var i = 0; i < operands.Count; i++)
         {
-            if (ContainsDescendantOrSelf(operands[i], target))
+            // Span containment answers the ancestry question in O(1); a subtree walk per
+            // operand made this quadratic in the size of the && chain.
+            if (operands[i].Span.Contains(target.Span))
             {
                 return i;
             }
         }
 
         return -1;
-    }
-
-    private static bool ContainsDescendantOrSelf(SyntaxNode container, SyntaxNode target)
-    {
-        if (container == target)
-        {
-            return true;
-        }
-
-        foreach (var node in container.DescendantNodes())
-        {
-            if (node == target)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

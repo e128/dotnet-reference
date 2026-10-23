@@ -59,12 +59,20 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
     {
         var method = (MethodDeclarationSyntax)context.Node;
 
+        // One walk collects both the wait calls and the file reads. The name test inside
+        // IsProcessWaitCall rejects almost every invocation before the semantic bind.
         var waitPositions = new List<int>();
+        var fileReads = new List<InvocationExpressionSyntax>();
+
         foreach (var invocation in method.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
             if (IsProcessWaitCall(context, invocation))
             {
                 waitPositions.Add(invocation.SpanStart);
+            }
+            else if (IsFileReadCall(invocation))
+            {
+                fileReads.Add(invocation);
             }
         }
 
@@ -76,9 +84,9 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
         var lastWait = waitPositions.Max();
         var checkedPositions = CollectExistsCheckPositions(method);
 
-        foreach (var invocation in method.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        foreach (var invocation in fileReads)
         {
-            if (!IsFileReadCall(invocation) || invocation.SpanStart <= lastWait)
+            if (invocation.SpanStart <= lastWait)
             {
                 continue;
             }
@@ -96,9 +104,17 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
 
     private static bool IsProcessWaitCall(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
-        return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
-               && (string.Equals(method.Name, "WaitForExit", StringComparison.Ordinal)
-                   || string.Equals(method.Name, "WaitForExitAsync", StringComparison.Ordinal))
+        var methodName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
+
+        return (string.Equals(methodName, "WaitForExit", StringComparison.Ordinal)
+                || string.Equals(methodName, "WaitForExitAsync", StringComparison.Ordinal))
+               && context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
+               && string.Equals(method.Name, methodName, StringComparison.Ordinal)
                && string.Equals(method.ContainingType?.Name, "Process", StringComparison.Ordinal)
                && string.Equals(method.ContainingType?.ContainingNamespace?.ToDisplayString(), "System.Diagnostics", StringComparison.Ordinal);
     }
