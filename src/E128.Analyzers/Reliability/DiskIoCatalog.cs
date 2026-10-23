@@ -442,10 +442,37 @@ internal static class DiskIoCatalog
             or FinallyClauseSyntax;
     }
 
-    internal static bool IsIdentifierReassignedBetween(SyntaxNode body, WriteOp write, ReadOp read)
+    /// <summary>
+    ///     Indexes every simple assignment in the body by the assigned identifier. The positions are
+    ///     in source order because <c lang="csharp">DescendantNodes</c> walks in document order.
+    /// </summary>
+    internal static Dictionary<string, List<int>> BuildAssignmentPositions(SyntaxNode body)
+    {
+        var result = new Dictionary<string, List<int>>(StringComparer.Ordinal);
+
+        foreach (var node in body.DescendantNodes())
+        {
+            if (node is AssignmentExpressionSyntax { Left: IdentifierNameSyntax left } assignment)
+            {
+                if (!result.TryGetValue(left.Identifier.ValueText, out var positions))
+                {
+                    result[left.Identifier.ValueText] = positions = [];
+                }
+
+                positions.Add(assignment.SpanStart);
+            }
+        }
+
+        return result;
+    }
+
+    internal static bool IsIdentifierReassignedBetween(
+        IReadOnlyDictionary<string, List<int>> assignmentsByIdentifier,
+        WriteOp write,
+        ReadOp read)
     {
         var ident = ExtractIdentifier(write.PathKey) ?? ExtractIdentifier(read.PathKey);
-        if (ident is null)
+        if (ident is null || !assignmentsByIdentifier.TryGetValue(ident, out var positions))
         {
             return false;
         }
@@ -453,19 +480,11 @@ internal static class DiskIoCatalog
         var writePos = write.ReportNode.SpanStart;
         var readPos = read.ReportNode.SpanStart;
 
-        foreach (var assign in body.DescendantNodes())
-        {
-            if (assign is AssignmentExpressionSyntax assignment
-                && assignment.SpanStart > writePos
-                && assignment.SpanStart < readPos
-                && assignment.Left is IdentifierNameSyntax left
-                && string.Equals(left.Identifier.ValueText, ident, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
+        // First assignment strictly after the write position.
+        var index = positions.BinarySearch(writePos);
+        index = index >= 0 ? index + 1 : ~index;
 
-        return false;
+        return index < positions.Count && positions[index] < readPos;
     }
 
     internal enum IoKind

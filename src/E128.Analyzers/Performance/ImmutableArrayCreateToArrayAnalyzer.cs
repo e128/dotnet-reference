@@ -61,17 +61,14 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol)
+        var methodName = invocation.Expression switch
         {
-            return;
-        }
+            MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
 
-        if (!SymbolEqualityComparer.Default.Equals(methodSymbol.ContainingType, immutableArrayType))
-        {
-            return;
-        }
-
-        if (methodSymbol.Name is not ("Create" or "CreateRange"))
+        if (methodName is not ("Create" or "CreateRange"))
         {
             return;
         }
@@ -97,9 +94,17 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // Bind once, after the syntax gates. Both gates reject only calls the symbol check also
+        // rejects, so the diagnostic set does not change.
+        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
+            || !SymbolEqualityComparer.Default.Equals(method.ContainingType, immutableArrayType))
+        {
+            return;
+        }
+
         context.ReportDiagnostic(Diagnostic.Create(
             Rule,
             invocation.GetLocation(),
-            $"ImmutableArray.{methodSymbol.Name}"));
+            $"ImmutableArray.{method.Name}"));
     }
 }

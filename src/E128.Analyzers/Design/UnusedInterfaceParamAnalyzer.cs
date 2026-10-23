@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -49,11 +50,8 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
     {
         var method = (IMethodSymbol)context.Symbol;
 
-        if (!IsInterfaceImplementation(method))
-        {
-            return;
-        }
-
+        // Cheap gates first. The interface-implementation walk below is the expensive one, so
+        // only methods that can actually report reach it.
         if (method.Parameters.IsEmpty)
         {
             return;
@@ -65,22 +63,48 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        if (!IsInterfaceImplementation(method))
+        {
+            return;
+        }
+
+        // One body walk collects every referenced identifier. Each parameter then costs a
+        // hash lookup instead of a fresh subtree walk.
+        var referencedNames = CollectReferencedNames(syntax);
+
         foreach (var param in method.Parameters)
         {
-            if (IsCancellationToken(param))
+            if (IsCancellationToken(param) || referencedNames.Contains(param.Name))
             {
                 continue;
             }
 
-            if (!IsParameterUsedInBody(param.Name, syntax))
+            var paramSyntax = FindParamSyntax(syntax, param.Name);
+            if (paramSyntax is not null)
             {
-                var paramSyntax = FindParamSyntax(syntax, param.Name);
-                if (paramSyntax is not null)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(Rule, paramSyntax.GetLocation(), param.Name));
-                }
+                context.ReportDiagnostic(Diagnostic.Create(Rule, paramSyntax.GetLocation(), param.Name));
             }
         }
+    }
+
+    private static HashSet<string> CollectReferencedNames(MethodDeclarationSyntax method)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        var body = (SyntaxNode?)method.Body ?? method.ExpressionBody;
+        if (body is null)
+        {
+            return names;
+        }
+
+        foreach (var node in body.DescendantNodes())
+        {
+            if (node is IdentifierNameSyntax identifier)
+            {
+                names.Add(identifier.Identifier.ValueText);
+            }
+        }
+
+        return names;
     }
 
     private static bool IsInterfaceImplementation(IMethodSymbol method)
@@ -144,26 +168,6 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
     {
         var reference = method.DeclaringSyntaxReferences.FirstOrDefault();
         return reference?.GetSyntax(cancellationToken) as MethodDeclarationSyntax;
-    }
-
-    private static bool IsParameterUsedInBody(string paramName, MethodDeclarationSyntax method)
-    {
-        var body = (SyntaxNode?)method.Body ?? method.ExpressionBody;
-        if (body is null)
-        {
-            return true;
-        }
-
-        foreach (var node in body.DescendantNodes())
-        {
-            if (node is IdentifierNameSyntax id
-                && string.Equals(id.Identifier.ValueText, paramName, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static ParameterSyntax? FindParamSyntax(MethodDeclarationSyntax method, string paramName)

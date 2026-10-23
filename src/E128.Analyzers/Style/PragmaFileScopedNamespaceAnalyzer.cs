@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -45,25 +44,36 @@ public sealed class PragmaFileScopedNamespaceAnalyzer : DiagnosticAnalyzer
     private static void Analyze(SyntaxNodeAnalysisContext context)
     {
         var namespaceDeclaration = (FileScopedNamespaceDeclarationSyntax)context.Node;
-        var root = namespaceDeclaration.SyntaxTree.GetRoot(context.CancellationToken);
+        var namespaceToken = namespaceDeclaration.GetFirstToken();
 
-        var firstPragma = root.DescendantTrivia()
-            .Where(IsDisablePragma)
-            .Select(trivia => trivia.GetStructure() as PragmaWarningDirectiveTriviaSyntax)
-            .FirstOrDefault(pragma => pragma is not null);
-
-        if (firstPragma is null || firstPragma.SpanStart >= namespaceDeclaration.SpanStart)
+        // Walk backwards from the namespace and stop at the first match. The old code walked
+        // every token in the file, including the whole body below the namespace.
+        var found = FindDisablePragma(namespaceToken.LeadingTrivia);
+        for (var token = namespaceToken.GetPreviousToken(includeZeroWidth: true);
+             found is null && token.RawKind != 0;
+             token = token.GetPreviousToken(includeZeroWidth: true))
         {
-            return;
+            found = FindDisablePragma(token.TrailingTrivia) ?? FindDisablePragma(token.LeadingTrivia);
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, firstPragma.GetLocation()));
+        if (found is { } trivia)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(Rule, trivia.GetLocation()));
+        }
     }
 
-    private static bool IsDisablePragma(SyntaxTrivia trivia)
+    private static SyntaxTrivia? FindDisablePragma(SyntaxTriviaList triviaList)
     {
-        return trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia)
-               && trivia.GetStructure() is PragmaWarningDirectiveTriviaSyntax pragma
-               && pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword);
+        foreach (var trivia in triviaList)
+        {
+            if (trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia)
+                && trivia.GetStructure() is PragmaWarningDirectiveTriviaSyntax pragma
+                && pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword))
+            {
+                return trivia;
+            }
+        }
+
+        return null;
     }
 }

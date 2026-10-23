@@ -13,6 +13,8 @@ namespace E128.Analyzers.Testing;
 /// </summary>
 internal sealed class TestFacts
 {
+    private ImmutableHashSet<string>? returnedProductionLiterals;
+
     private TestFacts(
         MethodDeclarationSyntax method,
         IMethodSymbol symbol,
@@ -56,6 +58,16 @@ internal sealed class TestFacts
     internal SemanticModel Model { get; }
 
     internal CancellationToken CancellationToken { get; }
+
+    /// <summary>
+    ///     Whether a production call in this test returns the given literal. The set is built on first
+    ///     use, so a method with no literal-echo detector pays nothing.
+    /// </summary>
+    internal bool ProductionReturnsLiteral(string text)
+    {
+        returnedProductionLiterals ??= LowValueTestAnalyzer.CollectReturnedProductionLiterals(this);
+        return returnedProductionLiterals.Contains(text);
+    }
 
     internal static TestFacts Create(
         MethodDeclarationSyntax method,

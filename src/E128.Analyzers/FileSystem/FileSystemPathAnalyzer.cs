@@ -75,121 +75,198 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeNode(SyntaxNodeAnalysisContext context)
     {
-        ParameterListSyntax paramList;
-        BlockSyntax? body;
-
-        if (context.Node is MethodDeclarationSyntax method)
-        {
-            paramList = method.ParameterList;
-            body = method.Body;
-        }
-        else if (context.Node is ConstructorDeclarationSyntax ctor)
-        {
-            paramList = ctor.ParameterList;
-            body = ctor.Body;
-        }
-        else if (context.Node is RecordDeclarationSyntax record)
-        {
-            // Primary constructor — no body to inspect; name-pattern strategy only.
-            if (record.ParameterList is null)
-            {
-                return;
-            }
-
-            paramList = record.ParameterList;
-            body = null;
-        }
-        else
+        var paramList = GetParameterList(context.Node, out var body);
+        if (paramList is null)
         {
             return;
         }
 
+        var stringParameters = new List<ParameterSyntax>();
         foreach (var param in paramList.Parameters)
         {
-            if (param.Type is not PredefinedTypeSyntax { Keyword.ValueText: "string" })
+            if (param.Type is PredefinedTypeSyntax { Keyword.ValueText: "string" })
+            {
+                stringParameters.Add(param);
+            }
+        }
+
+        if (stringParameters.Count == 0)
+        {
+            return;
+        }
+
+        // Strategy 1: name pattern. It applies only when there is no body to inspect
+        // (interface and abstract methods, empty-body stubs, record primary constructors).
+        // A non-empty body uses Strategy 2, so a display-only method with a path-like
+        // parameter name is not flagged on the name alone.
+        if (body is null || body.Statements.Count == 0)
+        {
+            ReportNamePatternMatches(context, stringParameters);
+            return;
+        }
+
+        // Strategy 2: scan the body once for both the local-root map and the System.IO call
+        // sites. Every string parameter then reuses that one scan.
+        var localRoots = CollectLocalRoots(body);
+        var sites = CollectIoSites(context, body);
+
+        foreach (var param in stringParameters)
+        {
+            var name = param.Identifier.ValueText;
+            if (FindSiteForParameter(name, localRoots, sites) is not { } useSite)
             {
                 continue;
             }
 
-            AnalyzeStringParameter(context, param, body);
+            context.ReportDiagnostic(Diagnostic.Create(Rule,
+                param.Identifier.GetLocation(),
+                PropertiesForDescription(useSite.Description),
+                name, useSite.Description, useSite.Type));
         }
     }
 
-    // Strategy 1: name pattern — fires when there is no body to inspect (interface /
-    // abstract methods, empty-body stubs, or record primary constructors). A non-empty body
-    // falls through to Strategy 2 so that display-only or non-IO methods (e.g. WriteHeader,
-    // GetFts5CountAsync) are not flagged on the basis of a path-like parameter name alone.
-    // Strategy 2: use-site walk — fires when the parameter (or a local derived from it via
-    // Path.* at arg[0]) is passed directly to a System.IO method or constructor.
-    private static void AnalyzeStringParameter(
-        SyntaxNodeAnalysisContext context,
-        ParameterSyntax param,
-        BlockSyntax? body)
+    private static ParameterListSyntax? GetParameterList(SyntaxNode node, out BlockSyntax? body)
     {
-        var name = param.Identifier.ValueText;
-
-        if (PathNamePatterns.IsPathName(name) && (body is null || !body.Statements.Any()))
+        switch (node)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule,
-                param.Identifier.GetLocation(),
-                AmbiguousProperties,
-                name, "file system path", "FileInfo' or 'DirectoryInfo"));
-            return;
-        }
-
-        if (body is null)
-        {
-            return;
-        }
-
-        // Compute path-derived locals for this specific parameter (one-hop via Path.*).
-        var pathDerivedLocals = FileSystemPathHelpers.CollectPathDerivedLocals(body, name);
-        var useSite = FindUseSiteSuggestion(context, body, name, pathDerivedLocals);
-
-        if (useSite is not null)
-        {
-            var (description, suggestedType) = useSite.Value;
-            context.ReportDiagnostic(Diagnostic.Create(Rule,
-                param.Identifier.GetLocation(),
-                PropertiesForDescription(description),
-                name, description, suggestedType));
+            case MethodDeclarationSyntax method:
+                body = method.Body;
+                return method.ParameterList;
+            case ConstructorDeclarationSyntax ctor:
+                body = ctor.Body;
+                return ctor.ParameterList;
+            case RecordDeclarationSyntax { ParameterList: { } recordParams }:
+                // A primary constructor has no body to inspect, so only the name pattern applies.
+                body = null;
+                return recordParams;
+            default:
+                body = null;
+                return null;
         }
     }
 
-    private static (string Description, string Type)? FindUseSiteSuggestion(
+    private static void ReportNamePatternMatches(
         SyntaxNodeAnalysisContext context,
-        BlockSyntax body,
-        string paramName,
-        HashSet<string> pathDerivedLocals)
+        List<ParameterSyntax> stringParameters)
     {
+        foreach (var param in stringParameters)
+        {
+            var name = param.Identifier.ValueText;
+            if (PathNamePatterns.IsPathName(name))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Rule,
+                    param.Identifier.GetLocation(),
+                    AmbiguousProperties,
+                    name, "file system path", "FileInfo' or 'DirectoryInfo"));
+            }
+        }
+    }
+
+    // Maps each local to the names it is derived from: an identifier initializer copies its
+    // source, and a Path.* call at argument 0 derives from its first argument. A second pass
+    // adds one more hop, so a local built from a derived local also counts.
+    private static Dictionary<string, HashSet<string>> CollectLocalRoots(BlockSyntax body)
+    {
+        var roots = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        var pathCalls = new List<(string Local, string Source)>();
+
         foreach (var node in body.DescendantNodes())
         {
-            if (node is InvocationExpressionSyntax invocation)
+            if (node is not LocalDeclarationStatementSyntax statement)
             {
-                var result = CheckInvocation(context, invocation, paramName, pathDerivedLocals);
-                if (result is not null)
+                continue;
+            }
+
+            foreach (var variable in statement.Declaration.Variables)
+            {
+                var localName = variable.Identifier.ValueText;
+                var rhs = variable.Initializer?.Value;
+
+                if (rhs is IdentifierNameSyntax id)
                 {
-                    return result;
+                    AddRoot(roots, localName, id.Identifier.ValueText);
+                }
+                else if (rhs is InvocationExpressionSyntax init
+                         && FileSystemPathHelpers.IsPathMethodCall(init)
+                         && init.ArgumentList.Arguments.Count > 0
+                         && init.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax source)
+                {
+                    AddRoot(roots, localName, source.Identifier.ValueText);
+                    pathCalls.Add((localName, source.Identifier.ValueText));
                 }
             }
-            else if (node is ObjectCreationExpressionSyntax creation)
+        }
+
+        foreach (var (local, source) in pathCalls)
+        {
+            if (!roots.TryGetValue(source, out var sourceRoots))
             {
-                var result = CheckObjectCreation(context, creation, paramName, pathDerivedLocals);
-                if (result is not null)
-                {
-                    return result;
-                }
+                continue;
+            }
+
+            foreach (var root in sourceRoots)
+            {
+                AddRoot(roots, local, root);
+            }
+        }
+
+        return roots;
+    }
+
+    private static void AddRoot(Dictionary<string, HashSet<string>> roots, string local, string root)
+    {
+        if (!roots.TryGetValue(local, out var set))
+        {
+            roots[local] = set = new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        set.Add(root);
+    }
+
+    private static List<(string ArgName, string Description, string Type)> CollectIoSites(
+        SyntaxNodeAnalysisContext context,
+        BlockSyntax body)
+    {
+        var sites = new List<(string ArgName, string Description, string Type)>();
+
+        foreach (var node in body.DescendantNodes())
+        {
+            var site = node switch
+            {
+                InvocationExpressionSyntax invocation => GetInvocationSite(context, invocation),
+                ObjectCreationExpressionSyntax creation => GetCreationSite(context, creation),
+                _ => null
+            };
+
+            if (site is { } found)
+            {
+                sites.Add(found);
+            }
+        }
+
+        return sites;
+    }
+
+    private static (string ArgName, string Description, string Type)? FindSiteForParameter(
+        string paramName,
+        Dictionary<string, HashSet<string>> localRoots,
+        List<(string ArgName, string Description, string Type)> sites)
+    {
+        foreach (var site in sites)
+        {
+            if (string.Equals(site.ArgName, paramName, StringComparison.Ordinal)
+                || (localRoots.TryGetValue(site.ArgName, out var roots) && roots.Contains(paramName)))
+            {
+                return site;
             }
         }
 
         return null;
     }
 
-    private static (string Description, string Type)? CheckInvocation(
+    private static (string ArgName, string Description, string Type)? GetInvocationSite(
         SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        string paramName,
-        HashSet<string> pathDerivedLocals)
+        InvocationExpressionSyntax invocation)
     {
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
@@ -220,32 +297,24 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        var argName = argId.Identifier.ValueText;
-        if (!string.Equals(argName, paramName, StringComparison.Ordinal)
-            && !pathDerivedLocals.Contains(argName))
-        {
-            return null;
-        }
-
         // Confirm via semantic model that the call is truly System.IO.
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
-        return symbolInfo.Symbol is not IMethodSymbol methodSymbol
-            ? null
-            : !string.Equals(
-                methodSymbol.ContainingType?.ContainingNamespace?.ToDisplayString(),
-                "System.IO",
-                StringComparison.Ordinal)
-                ? null
-                : info.Suggestion == SuggestedType.FileInfo
-                    ? ("file path", "FileInfo")
-                    : ("directory path", "DirectoryInfo");
+        var isSystemIo = symbolInfo.Symbol is IMethodSymbol methodSymbol
+                         && string.Equals(
+                             methodSymbol.ContainingType?.ContainingNamespace?.ToDisplayString(),
+                             "System.IO",
+                             StringComparison.Ordinal);
+
+        return isSystemIo
+            ? info.Suggestion == SuggestedType.FileInfo
+                ? (argId.Identifier.ValueText, "file path", "FileInfo")
+                : (argId.Identifier.ValueText, "directory path", "DirectoryInfo")
+            : null;
     }
 
-    private static (string Description, string Type)? CheckObjectCreation(
+    private static (string ArgName, string Description, string Type)? GetCreationSite(
         SyntaxNodeAnalysisContext context,
-        ObjectCreationExpressionSyntax creation,
-        string paramName,
-        HashSet<string> pathDerivedLocals)
+        ObjectCreationExpressionSyntax creation)
     {
         if (creation.Type is not IdentifierNameSyntax typeId)
         {
@@ -258,12 +327,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         }
 
         var argList = creation.ArgumentList;
-        if (argList is null)
-        {
-            return null;
-        }
-
-        if (argList.Arguments.Count == 0)
+        if (argList is null || argList.Arguments.Count == 0)
         {
             return null;
         }
@@ -273,25 +337,19 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        var argName = argId.Identifier.ValueText;
-        if (!string.Equals(argName, paramName, StringComparison.Ordinal)
-            && !pathDerivedLocals.Contains(argName))
-        {
-            return null;
-        }
-
         // Confirm via semantic model that the constructor is truly System.IO.
         var symbolInfo = context.SemanticModel.GetSymbolInfo(creation, context.CancellationToken);
-        return symbolInfo.Symbol is not IMethodSymbol ctorSymbol
-            ? null
-            : !string.Equals(
-                ctorSymbol.ContainingType?.ContainingNamespace?.ToDisplayString(),
-                "System.IO",
-                StringComparison.Ordinal)
-                ? null
-                : suggestion == SuggestedType.FileInfo
-                    ? ("file path", "FileInfo")
-                    : ("directory path", "DirectoryInfo");
+        var isSystemIo = symbolInfo.Symbol is IMethodSymbol ctorSymbol
+                         && string.Equals(
+                             ctorSymbol.ContainingType?.ContainingNamespace?.ToDisplayString(),
+                             "System.IO",
+                             StringComparison.Ordinal);
+
+        return isSystemIo
+            ? suggestion == SuggestedType.FileInfo
+                ? (argId.Identifier.ValueText, "file path", "FileInfo")
+                : (argId.Identifier.ValueText, "directory path", "DirectoryInfo")
+            : null;
     }
 
     private static void AnalyzeOptionCreation(SyntaxNodeAnalysisContext context)

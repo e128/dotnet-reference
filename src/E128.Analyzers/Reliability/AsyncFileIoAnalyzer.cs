@@ -47,6 +47,25 @@ public sealed class AsyncFileIoAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
+        // Both checks are syntactic. Run them before the semantic bind so that invocations in
+        // async contexts and async calls never pay for overload resolution.
+        if (AsyncContextSyntaxHelper.IsInsideAsyncContext(invocation))
+        {
+            return;
+        }
+
+        var syntaxName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
+
+        if (syntaxName is not null && syntaxName.EndsWith("Async", StringComparison.Ordinal))
+        {
+            return;
+        }
+
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method)
         {
             return;
@@ -70,11 +89,6 @@ public sealed class AsyncFileIoAnalyzer : DiagnosticAnalyzer
         // accept the sync overload's parameters plus an optional trailing CancellationToken,
         // so a name match is sufficient without walking parameter lists.
         if (!containingType.GetMembers(asyncSiblingName).OfType<IMethodSymbol>().Any())
-        {
-            return;
-        }
-
-        if (AsyncContextSyntaxHelper.IsInsideAsyncContext(invocation))
         {
             return;
         }

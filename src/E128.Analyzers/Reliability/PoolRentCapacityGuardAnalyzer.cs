@@ -134,48 +134,34 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
             var symbol = model.GetSymbolInfo(identifier).Symbol;
             if (symbol is ILocalSymbol local)
             {
-                return IsLocalAssignedFromMathMin(local, identifier, model);
+                return IsLocalAssignedFromMathMin(local, model);
             }
         }
 
         return false;
     }
 
-    private static bool IsLocalAssignedFromMathMin(
-        ILocalSymbol local,
-        IdentifierNameSyntax usage,
-        SemanticModel model)
+    private static bool IsLocalAssignedFromMathMin(ILocalSymbol local, SemanticModel model)
     {
-        var enclosingMethod = usage.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>();
-        if (enclosingMethod?.Body is null)
+        // Resolve the declaration through the symbol instead of rescanning the method body.
+        // This is O(1) and cannot match a shadowed name from another scope.
+        foreach (var reference in local.DeclaringSyntaxReferences)
         {
-            return false;
-        }
-
-        foreach (var statement in enclosingMethod.Body.Statements)
-        {
-            if (statement is not LocalDeclarationStatementSyntax localDecl)
+            if (reference.SyntaxTree != model.SyntaxTree
+                || reference.GetSyntax() is not VariableDeclaratorSyntax
+                {
+                    Initializer.Value: InvocationExpressionSyntax initInvocation
+                })
             {
                 continue;
             }
 
-            foreach (var declarator in localDecl.Declaration.Variables)
+            var initSymbol = model.GetSymbolInfo(initInvocation).Symbol;
+            if (initSymbol is IMethodSymbol initMethod
+                && string.Equals(initMethod.Name, "Min", StringComparison.Ordinal)
+                && string.Equals(initMethod.ContainingType?.Name, "Math", StringComparison.Ordinal))
             {
-                if (!string.Equals(declarator.Identifier.ValueText, local.Name, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (declarator.Initializer?.Value is InvocationExpressionSyntax initInvocation)
-                {
-                    var initSymbol = model.GetSymbolInfo(initInvocation).Symbol;
-                    if (initSymbol is IMethodSymbol initMethod
-                        && string.Equals(initMethod.Name, "Min", StringComparison.Ordinal)
-                        && string.Equals(initMethod.ContainingType?.Name, "Math", StringComparison.Ordinal))
-                    {
-                        return true;
-                    }
-                }
+                return true;
             }
         }
 

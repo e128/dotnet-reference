@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -9,6 +10,8 @@ namespace E128.Analyzers.Testing;
 /// </summary>
 internal sealed class AssertionFact
 {
+    private ImmutableArray<SyntaxNode>? nodes;
+
     internal AssertionFact(InvocationExpressionSyntax invocation, IMethodSymbol symbol)
     {
         Invocation = invocation;
@@ -18,4 +21,8 @@ internal sealed class AssertionFact
     internal InvocationExpressionSyntax Invocation { get; }
 
     internal IMethodSymbol Symbol { get; }
+
+    // Six detectors walk the same argument subtree. Materialize it once per assertion instead of
+    // once per detector.
+    internal ImmutableArray<SyntaxNode> Nodes => nodes ??= LowValueTestAnalyzer.CollectAssertionNodes(Invocation);
 }

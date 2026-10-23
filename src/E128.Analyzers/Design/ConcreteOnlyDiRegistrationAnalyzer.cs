@@ -154,8 +154,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static bool HasForwardingRegistration(SyntaxNode scope, string concreteTypeName)
     {
-        var target = "GetRequiredService<" + concreteTypeName + ">";
-        return ScopeContainsText(scope, target);
+        return ScopeContainsGenericCall(scope, "GetRequiredService", concreteTypeName);
     }
 
     /// <summary>
@@ -163,15 +162,34 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static bool HasTypedHttpClientRegistration(SyntaxNode scope, string concreteTypeName)
     {
-        var target = "AddHttpClient<" + concreteTypeName + ">";
-        return ScopeContainsText(scope, target);
+        return ScopeContainsGenericCall(scope, "AddHttpClient", concreteTypeName);
     }
 
-    private static bool ScopeContainsText(SyntaxNode scope, string target)
+    // Matches the call shape directly. The old text search rebuilt the scope text for every
+    // flagged registration, which is quadratic on a large block and allocates the whole scope.
+    private static bool ScopeContainsGenericCall(SyntaxNode scope, string methodName, string typeName)
     {
-        // For BlockSyntax, scan statements; for CompilationUnit (top-level), scan the full text.
-        var text = scope.ToString();
-        return text.IndexOf(target, StringComparison.Ordinal) >= 0;
+        foreach (var invocation in scope.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.Expression is not MemberAccessExpressionSyntax { Name: GenericNameSyntax generic })
+            {
+                continue;
+            }
+
+            if (!string.Equals(generic.Identifier.ValueText, methodName, StringComparison.Ordinal)
+                || generic.TypeArgumentList.Arguments.Count != 1
+                || generic.TypeArgumentList.Arguments[0] is not IdentifierNameSyntax typeArgument)
+            {
+                continue;
+            }
+
+            if (string.Equals(typeArgument.Identifier.ValueText, typeName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool InheritsFromDelegate(ITypeSymbol type)

@@ -77,7 +77,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        Correlate(context, body, writes, reads);
+        Correlate(context, writes, reads, DiskIoCatalog.BuildAssignmentPositions(body));
     }
 
     private static void CollectOps(
@@ -531,9 +531,9 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
 
     private static void Correlate(
         SyntaxNodeAnalysisContext context,
-        SyntaxNode body,
         List<DiskIoCatalog.WriteOp> writes,
-        List<DiskIoCatalog.ReadOp> reads)
+        List<DiskIoCatalog.ReadOp> reads,
+        IReadOnlyDictionary<string, List<int>> assignmentsByIdentifier)
     {
         foreach (var read in reads)
         {
@@ -543,7 +543,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var match = FindMatchingWrite(body, writes, read, readStmt);
+            var match = FindMatchingWrite(writes, read, readStmt, assignmentsByIdentifier);
             if (match is null)
             {
                 continue;
@@ -554,10 +554,10 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
     }
 
     private static DiskIoCatalog.WriteOp? FindMatchingWrite(
-        SyntaxNode body,
         List<DiskIoCatalog.WriteOp> writes,
         DiskIoCatalog.ReadOp read,
-        StatementSyntax readStmt)
+        StatementSyntax readStmt,
+        IReadOnlyDictionary<string, List<int>> assignmentsByIdentifier)
     {
         for (var i = writes.Count - 1; i >= 0; i--)
         {
@@ -578,7 +578,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (DiskIoCatalog.IsIdentifierReassignedBetween(body, write, read))
+            if (DiskIoCatalog.IsIdentifierReassignedBetween(assignmentsByIdentifier, write, read))
             {
                 continue;
             }

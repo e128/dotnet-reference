@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -32,11 +33,26 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
-        context.RegisterSyntaxNodeAction(AnalyzeAssignment, SyntaxKind.SimpleAssignmentExpression);
+
+        // The Size-assignment index depends only on the block. Build it once per block and share
+        // it across every candidate in that block.
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var sizeAssignments =
+                new ConcurrentDictionary<BlockSyntax, ImmutableArray<(string Receiver, int Position)>>();
+
+            compilationContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeInvocation(nodeContext, sizeAssignments),
+                SyntaxKind.InvocationExpression);
+            compilationContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeAssignment(nodeContext, sizeAssignments),
+                SyntaxKind.SimpleAssignmentExpression);
+        });
     }
 
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeInvocation(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<BlockSyntax, ImmutableArray<(string Receiver, int Position)>> sizeAssignments)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -81,7 +97,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         }
 
         var parameterVariable = GetAssignedVariable(invocation);
-        if (parameterVariable is not null && HasSizeAssignment(parameterVariable, invocation))
+        if (parameterVariable is not null && HasLaterSizeAssignment(parameterVariable, invocation, sizeAssignments))
         {
             return;
         }
@@ -89,7 +105,9 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
-    private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeAssignment(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<BlockSyntax, ImmutableArray<(string Receiver, int Position)>> sizeAssignments)
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
@@ -127,7 +145,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (HasSizeAssignmentForMemberAccess(memberAccess.Expression, assignment))
+        if (HasLaterSizeAssignment(memberAccess.Expression.ToString(), assignment, sizeAssignments))
         {
             return;
         }
@@ -163,28 +181,15 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var enclosing = identifier.FirstAncestorOrSelf<BlockSyntax>();
-        if (enclosing is null)
+        // Resolve the declaration through the symbol. The old code rescanned every statement in
+        // the enclosing block for each candidate.
+        foreach (var reference in local.DeclaringSyntaxReferences)
         {
-            return false;
-        }
-
-        foreach (var statement in enclosing.Statements)
-        {
-            if (statement is not LocalDeclarationStatementSyntax localDecl)
+            if (reference.SyntaxTree == model.SyntaxTree
+                && reference.GetSyntax() is VariableDeclaratorSyntax { Initializer.Value: { } value }
+                && IsArrayPoolRentCall(value, model))
             {
-                continue;
-            }
-
-            foreach (var declarator in localDecl.Declaration.Variables)
-            {
-                if (!string.Equals(declarator.Identifier.ValueText, local.Name, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                return declarator.Initializer is EqualsValueClauseSyntax init
-                       && IsArrayPoolRentCall(init.Value, model);
+                return true;
             }
         }
 
@@ -227,7 +232,11 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static bool HasSizeAssignment(string variableName, SyntaxNode anchor)
+    // A Size assignment counts when it sits in a statement after the anchor statement.
+    private static bool HasLaterSizeAssignment(
+        string receiver,
+        SyntaxNode anchor,
+        ConcurrentDictionary<BlockSyntax, ImmutableArray<(string Receiver, int Position)>> cache)
     {
         var block = anchor.FirstAncestorOrSelf<BlockSyntax>();
         if (block is null)
@@ -235,20 +244,13 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var passedAnchor = false;
-        foreach (var statement in block.Statements)
+        var anchorStatement = anchor.FirstAncestorOrSelf<StatementSyntax>();
+        var anchorEnd = anchorStatement?.Span.End ?? anchor.Span.End;
+
+        foreach (var (candidateReceiver, position) in GetSizeAssignments(block, cache))
         {
-            if (!passedAnchor)
-            {
-                if (statement.Span.Contains(anchor.Span))
-                {
-                    passedAnchor = true;
-                }
-
-                continue;
-            }
-
-            if (ContainsSizeAssignmentForVariable(statement, variableName))
+            if (position > anchorEnd
+                && string.Equals(candidateReceiver, receiver, StringComparison.Ordinal))
             {
                 return true;
             }
@@ -257,84 +259,24 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool ContainsSizeAssignmentForVariable(SyntaxNode node, string variableName)
+    private static ImmutableArray<(string Receiver, int Position)> GetSizeAssignments(
+        BlockSyntax block,
+        ConcurrentDictionary<BlockSyntax, ImmutableArray<(string Receiver, int Position)>> cache)
     {
-        foreach (var descendant in node.DescendantNodes())
+        return cache.GetOrAdd(block, static b =>
         {
-            if (descendant is not AssignmentExpressionSyntax assignment)
+            var builder = ImmutableArray.CreateBuilder<(string Receiver, int Position)>();
+
+            foreach (var node in b.DescendantNodes())
             {
-                continue;
-            }
-
-            if (assignment.Left is not MemberAccessExpressionSyntax memberAccess)
-            {
-                continue;
-            }
-
-            if (!string.Equals(memberAccess.Name.Identifier.ValueText, "Size", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (memberAccess.Expression is IdentifierNameSyntax id
-                && string.Equals(id.Identifier.ValueText, variableName, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool HasSizeAssignmentForMemberAccess(
-        ExpressionSyntax parameterExpression,
-        AssignmentExpressionSyntax anchor)
-    {
-        var block = anchor.FirstAncestorOrSelf<BlockSyntax>();
-        if (block is null)
-        {
-            return false;
-        }
-
-        var parameterText = parameterExpression.ToString();
-        var passedAnchor = false;
-
-        foreach (var statement in block.Statements)
-        {
-            if (!passedAnchor)
-            {
-                if (statement.Span.Contains(anchor.Span))
+                if (node is AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax memberAccess } assignment
+                    && string.Equals(memberAccess.Name.Identifier.ValueText, "Size", StringComparison.Ordinal))
                 {
-                    passedAnchor = true;
-                }
-
-                continue;
-            }
-
-            foreach (var descendant in statement.DescendantNodes())
-            {
-                if (descendant is not AssignmentExpressionSyntax assignment)
-                {
-                    continue;
-                }
-
-                if (assignment.Left is not MemberAccessExpressionSyntax memberAccess)
-                {
-                    continue;
-                }
-
-                if (!string.Equals(memberAccess.Name.Identifier.ValueText, "Size", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (string.Equals(memberAccess.Expression.ToString(), parameterText, StringComparison.Ordinal))
-                {
-                    return true;
+                    builder.Add((memberAccess.Expression.ToString(), assignment.SpanStart));
                 }
             }
-        }
 
-        return false;
+            return builder.ToImmutable();
+        });
     }
 }
