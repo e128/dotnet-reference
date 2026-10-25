@@ -35,12 +35,16 @@ public sealed class InMemoryGreetingRepository : IGreetingRepository
 
         lock (_gate)
         {
-            var take = Math.Clamp(count, 0, _greetings.Count);
+            // The JIT cannot hoist a field read across the indexer call, so bind the
+            // list and its last index once.
+            var greetings = _greetings;
+            var last = greetings.Count - 1;
+            var take = Math.Clamp(count, 0, last + 1);
             recent = new Greeting[take];
 
             for (var i = 0; i < take; i++)
             {
-                recent[i] = _greetings[_greetings.Count - 1 - i];
+                recent[i] = greetings[last - i];
             }
         }
 
