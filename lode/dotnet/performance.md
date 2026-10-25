@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-10-23T16:30:10Z*
+*Updated: 2026-10-25T02:21:36Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -133,10 +133,16 @@ often cheaper than a shared counter. `ThreadLocal<T>` with
 `trackAllValues: true` suits a bounded set of long-lived threads.
 
 Correctness comes before the split. `InMemoryGreetingRepository` is a
-singleton, so it takes its lock before a write and copies the list under the
-same lock before a read. The copy keeps the sort outside the lock. Remove the
-guard only after a different structure replaces the shared list. See
-[test-patterns.md](test-patterns.md).
+singleton, so one lock guards both the write and the read. A read walks back
+from the end of the list, so the cost follows the requested count and not the
+stored count. Remove the guard only after a different structure replaces the
+shared list. See [test-patterns.md](test-patterns.md).
+
+An earlier read sorted a full copy of the list on every call. At 50,000 stored
+greetings that read allocated 1.9 GB per second and reached 1,655 requests per
+second. The current read allocates 0.11 GB per second and reaches 7,278
+requests per second on the same harness. Treat a full sort on a read path as a
+defect until a measurement says otherwise.
 
 False sharing happens when two hot fields share a cache line. Pad the hot slot
 to the line size. An x64 or Neoverse arm64 line is 64 bytes. An Apple M-series
@@ -158,8 +164,19 @@ after a measurement.
 `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` is safe only for a JSON
 response. Never place its output in HTML or a script block.
 
+Both `CreateSlimBuilder` and the source-generated JSON metadata were measured
+on this app. Neither moved `GET /` or `GET /greetings` beyond the run-to-run
+noise of about 2 percent. Cold start moved by 4 percent, which is inside the
+same noise. Adopt either for another reason, such as AOT readiness, and not as
+a latency win.
+
 ## Verification
 
 A performance change needs a measurement before and after it. Record the
 command and both results in the pull request. See
 [testing.md](testing.md) for the test entry point.
+
+The reference app was measured on a Release publish over loopback. Load came
+from four parallel `ab` jobs at `-c 20`. Service time came from `ab -c 1`.
+Seeding used `POST /greetings`. Run a change three times and compare medians,
+because run-to-run noise reaches 2 percent.

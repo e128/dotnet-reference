@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using E128.Reference.Core.Models;
@@ -30,20 +29,21 @@ public sealed class InMemoryGreetingRepository : IGreetingRepository
 
     public Task<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken = default)
     {
-        Greeting[] snapshot;
+        // Recency follows save order. GreetingService stamps CreatedAt at save time,
+        // so save order and timestamp order agree.
+        Greeting[] recent;
 
         lock (_gate)
         {
-            snapshot = [.. _greetings];
+            var take = Math.Clamp(count, 0, _greetings.Count);
+            recent = new Greeting[take];
+
+            for (var i = 0; i < take; i++)
+            {
+                recent[i] = _greetings[_greetings.Count - 1 - i];
+            }
         }
 
-        IReadOnlyList<Greeting> result =
-        [
-            .. snapshot
-                .OrderByDescending(g => g.CreatedAt)
-                .Take(count)
-        ];
-
-        return Task.FromResult(result);
+        return Task.FromResult<IReadOnlyList<Greeting>>(recent);
     }
 }
