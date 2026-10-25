@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-10-25T02:21:36Z*
+*Updated: 2026-10-25T14:57:54Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -85,6 +85,12 @@ waits for that approval.
 - Match a known pattern with `[GeneratedRegex]` on a partial property.
 - Use the span bulk APIs (`CopyTo`, `Fill`, `SequenceEqual`, `IndexOf`)
   instead of a handwritten loop.
+- Prefer a `MemoryExtensions` method (`SequenceEqual`, `IndexOf`,
+  `IndexOfAnyExcept`, `LastIndexOf`, `CommonPrefixLength`) over a manual
+  loop. The library method is already vectorized.
+- Use `BitOperations`, `BinaryPrimitives`, `BitConverter`, and the numeric
+  helpers (`uint.Log2`, `PopCount`, `TrailingZeroCount`) for bit work. Do
+  not write the shift loop.
 - Use a static lambda in a hot path and the overload that takes state. A
   capturing lambda allocates a closure.
 - Parse and format UTF-8 bytes with the `ReadOnlySpan<byte>` overloads.
@@ -99,7 +105,12 @@ waits for that approval.
 - Prefer `[LibraryImport]` over `[DllImport]`. The generator needs
   `AllowUnsafeBlocks`, not user-written unsafe code.
 - Cache a hot field in a local inside a loop. The JIT often cannot hoist the
-  field read.
+  field read. A local also enables a bounds check removal on an array.
+- Use a `static readonly` field for immutable process-wide configuration.
+  The JIT can fold the value and remove a disabled branch.
+- Embed immutable primitive data as an RVA-backed span:
+  `static ReadOnlySpan<byte> Data => [1, 2, 3];`. The runtime stores the data
+  in metadata, so a read is a constant.
 - Use `[SuppressGCTransition]` only on a tiny native call that does no I/O,
   takes no lock, and does not throw.
 
@@ -124,6 +135,14 @@ of lowercasing both sides.
 
 A `Dictionary<string, T>` keeps fast hashing only with the default comparer,
 `StringComparer.Ordinal`, or `StringComparer.OrdinalIgnoreCase`.
+
+For ASCII data, use `System.Text.Ascii`. Its `EqualsIgnoreCase`, `ToUpper`,
+`ToLower`, and `IsValid` are vectorized and take a span.
+
+When the request body and the response body are both UTF-8, stay in UTF-8.
+Search, parse, and format a `ReadOnlySpan<byte>` directly. Use a `u8` literal,
+`SearchValues<byte>`, the byte `TryParse` and `TryFormat` overloads, and
+`Utf8.TryWrite`. Convert to a string only at the last step.
 
 ## Contention
 
@@ -157,18 +176,22 @@ after a measurement.
 - Keep the middleware count small.
 - Avoid an Information-level host log per request. Raise the level or clear
   the providers.
-- Register the source-generated JSON metadata.
+- Register the source-generated JSON metadata. `AppJsonContext` in the Web
+  project owns it, and `Program.cs` inserts its resolver at the head of the
+  resolver chain. Register a new response type in that context.
 - Reuse one `Utf8JsonWriter` through `Reset(response.BodyWriter)` for a
   handwritten response.
 
 `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` is safe only for a JSON
-response. Never place its output in HTML or a script block.
+response. Never place its output in HTML or a script block. A custom encoder
+also disables the source-generated serialization fast path. Benchmark the
+pair before a switch, because the two gains can cancel.
 
 Both `CreateSlimBuilder` and the source-generated JSON metadata were measured
 on this app. Neither moved `GET /` or `GET /greetings` beyond the run-to-run
 noise of about 2 percent. Cold start moved by 4 percent, which is inside the
-same noise. Adopt either for another reason, such as AOT readiness, and not as
-a latency win.
+same noise. The app keeps the generated context for AOT readiness and does not
+claim a latency win. `CreateSlimBuilder` is not in use.
 
 ## Verification
 

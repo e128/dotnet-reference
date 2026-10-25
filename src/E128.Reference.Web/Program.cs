@@ -5,6 +5,7 @@ using E128.Reference.Core;
 using E128.Reference.Core.Models;
 using E128.Reference.Core.Repositories;
 using E128.Reference.Core.Services;
+using E128.Reference.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,8 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IGreetingRepository, InMemoryGreetingRepository>();
 builder.Services.AddSingleton<IGreetingService, GreetingService>();
 builder.Services.AddHealthChecks();
+builder.Services.ConfigureHttpJsonOptions(static options =>
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
 
 var app = builder.Build();
 
