@@ -16,145 +16,145 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 ### Design
 
-| Rule    | Title                                                                                                 | Code Fix |
-| ------- | ----------------------------------------------------------------------------------------------------- | -------- |
-| E128001 | Use `FileInfo`/`DirectoryInfo` instead of `string` paths                                              | Yes      |
-| E128003 | Use `TimeProvider` instead of `DateTime.Now` / `DateTimeOffset.Now`                                   | Yes      |
-| E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`                                                | Yes      |
-| E128005 | Seal classes that have no subclasses                                                                  | Yes      |
-| E128007 | Avoid `async void` methods (non-event-handler)                                                        | Yes      |
-| E128008 | Avoid sync-over-async (`.Result` / `.GetAwaiter().GetResult()`)                                       | Yes      |
-| E128017 | Use primary constructor parameter directly                                                            | Yes      |
-| E128019 | Do not pass `CancellationToken` by `in` reference                                                     | Yes      |
-| E128021 | Do not use `in` modifier with ref struct parameters (default: Error)                                  | Yes      |
-| E128022 | Remove `ConfigureAwait(false)` in application code                                                    | Yes      |
-| E128030 | Do not compare `FileSystemInfo` types by reference (default: Info)                                    | Yes      |
-| E128032 | Concrete-only DI registration with available interface                                                | Yes      |
-| E128036 | `Task.Run` wrapping async lambda — unnecessary thread pool hop                                        | Yes      |
-| E128042 | `Convert.ToInt32`/`ToInt64` wrapping `ExecuteScalar` without null guard                               | Yes      |
-| E128044 | Type implements `IAsyncDisposable` but not `IDisposable`                                              | Yes      |
-| E128045 | Avoid direct `System.Console` usage                                                                   | No       |
-| E128046 | Class has excessive user-defined inheritance depth                                                    | No       |
-| E128048 | Use `switch` instead of if/else-if chain on enum values                                               | Yes      |
-| E128049 | Avoid `[DynamicallyAccessedMembers]` — suppress with justification if required                        | Yes      |
-| E128050 | Use `TimeSpan` for time-duration values to avoid unit ambiguity (default: Error)                      | Yes      |
-| E128052 | Use immutable collection interface instead of mutable concrete type (default: Info)                   | Yes      |
+| Rule    | Title                                                                                                | Code Fix |
+| ------- | ---------------------------------------------------------------------------------------------------- | -------- |
+| E128001 | Use `FileInfo`/`DirectoryInfo` instead of `string` paths                                             | Yes      |
+| E128003 | Use `TimeProvider` instead of `DateTime.Now` / `DateTimeOffset.Now`                                  | Yes      |
+| E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`                                               | Yes      |
+| E128005 | Seal classes that have no subclasses                                                                 | Yes      |
+| E128007 | Avoid `async void` methods (non-event-handler)                                                       | Yes      |
+| E128008 | Avoid sync-over-async (`.Result` / `.GetAwaiter().GetResult()`)                                      | Yes      |
+| E128017 | Use primary constructor parameter directly                                                           | Yes      |
+| E128019 | Do not pass `CancellationToken` by `in` reference                                                    | Yes      |
+| E128021 | Do not use `in` modifier with ref struct parameters (default: Error)                                 | Yes      |
+| E128022 | Remove `ConfigureAwait(false)` in application code                                                   | Yes      |
+| E128030 | Do not compare `FileSystemInfo` types by reference (default: Info)                                   | Yes      |
+| E128032 | Concrete-only DI registration with available interface                                               | Yes      |
+| E128036 | `Task.Run` wrapping async lambda — unnecessary thread pool hop                                       | Yes      |
+| E128042 | `Convert.ToInt32`/`ToInt64` wrapping `ExecuteScalar` without null guard                              | Yes      |
+| E128044 | Type implements `IAsyncDisposable` but not `IDisposable`                                             | Yes      |
+| E128045 | Avoid direct `System.Console` usage                                                                  | No       |
+| E128046 | Class has excessive user-defined inheritance depth                                                   | No       |
+| E128048 | Use `switch` instead of if/else-if chain on enum values                                              | Yes      |
+| E128049 | Avoid `[DynamicallyAccessedMembers]` — suppress with justification if required                       | Yes      |
+| E128050 | Use `TimeSpan` for time-duration values to avoid unit ambiguity (default: Error)                     | Yes      |
+| E128052 | Use immutable collection interface instead of mutable concrete type (default: Info)                  | Yes      |
 | E128053 | Use collection of `FileInfo`/`DirectoryInfo` instead of collection of `string` for file system paths | Yes      |
-| E128058 | Return `List<T>` via `.AsReadOnly()` when exposing as `IReadOnlyList<T>`                              | Yes      |
-| E128059 | Interface method parameter is unused in implementation (default: Error)                               | Yes      |
+| E128058 | Return `List<T>` via `.AsReadOnly()` when exposing as `IReadOnlyList<T>`                             | Yes      |
+| E128059 | Interface method parameter is unused in implementation (default: Error)                              | Yes      |
 | E128060 | Return `Dictionary<K,V>` via `.AsReadOnly()` when exposing as `IReadOnlyDictionary<K,V>`             | Yes      |
-| E128061 | Use `ImmutableArray<T>` for static readonly arrays                                                    | Yes      |
-| E128074 | Readonly struct property should use `init` accessor                                                   | Yes      |
-| E128080 | Use `ByteSize` for data-size values to avoid unit ambiguity (default: Error)                          | Yes      |
-| E128082 | Do not unwrap `ByteSize` via cast                                                                     | Yes      |
-| E128087 | Static numeric field should not be incremented with ++/--                                             | Yes      |
+| E128061 | Use `ImmutableArray<T>` for static readonly arrays                                                   | Yes      |
+| E128074 | Readonly struct property should use `init` accessor                                                  | Yes      |
+| E128080 | Use `ByteSize` for data-size values to avoid unit ambiguity (default: Error)                         | Yes      |
+| E128082 | Do not unwrap `ByteSize` via cast                                                                    | Yes      |
+| E128087 | Static numeric field should not be incremented with ++/--                                            | Yes      |
 
 ### Reliability
 
-| Rule    | Title                                                                                        | Code Fix |
-| ------- | -------------------------------------------------------------------------------------------- | -------- |
-| E128011 | `[GeneratedRegex]` missing `matchTimeoutMilliseconds`                                        | Yes      |
-| E128012 | `RegexOptions.Compiled` is redundant in `[GeneratedRegex]`                                   | Yes      |
-| E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers                                       | Yes      |
-| E128014 | `[GeneratedRegex]` pattern has nested quantifiers                                            | Yes      |
-| E128016 | `DateTime.Parse`/`ParseExact` missing `DateTimeStyles` parameter                             | Yes      |
-| E128020 | Do not use `in` modifier with mutable structs                                                | Yes      |
-| E128023 | Avoid hardcoded `/tmp` path                                                                  | Yes      |
-| E128028 | `Task.FromResult` wraps sync I/O that has an async alternative                               | Yes      |
-| E128031 | `AddSingleton` factory returns `IDisposable`                                                 | Yes      |
-| E128033 | Options class bound via `.Bind()` has init-only property                                     | Yes      |
-| E128034 | Constructor `new`s a DI-registered type — inject via DI instead                              | Yes      |
-| E128035 | Concrete-type DI dependency without direct registration                                      | Yes      |
-| E128037 | Unbounded `Task.WhenAll` over async `Select`                                                 | Yes      |
-| E128038 | `Task.WhenAll` async lambda missing `CancellationToken` propagation                          | Yes      |
-| E128039 | Catch filter must exclude `OperationCanceledException`                                       | Yes      |
-| E128040 | Concurrency limit must be positive                                                           | Yes      |
-| E128041 | `JsonDocument.RootElement` must not escape the document's `using` scope                      | Yes      |
-| E128051 | Broad catch in async `HttpClient` method missing `OperationCanceledException` handler        | Yes      |
-| E128056 | `FileInfo.Exists` TOCTOU race condition                                                      | Yes      |
-| E128057 | Unprotected cleanup in finally block                                                         | Yes      |
-| E128064 | Disk write-then-read round-trip — use the in-memory value instead of reading back            | Yes      |
-| E128070 | Pool `Rent()` capacity must be bounded — guard with `Math.Min`                               | No       |
-| E128076 | Materialize `QuerySelectorAll` result before iterating                                       | Yes      |
-| E128077 | `TextContent` string match requires a preceding length guard                                 | No       |
-| E128078 | `GetAttribute("href")` on element that does not carry href                                   | No       |
-| E128079 | `CompositeDetection` with single generic ID selector lacks specificity                       | No       |
-| E128086 | `ArrayPool` buffer used as `SqliteParameter` value without `Size`                            | Yes      |
-| E128089 | Avoid bare `.Parse()` — use `TryParse` to handle invalid input                               | No       |
-| E128092 | Use async `File.*Async` overload instead of sync method                                      | Yes      |
-| E128093 | Use async `DbConnection`/`DbCommand` `*Async` overload instead of sync method                | Yes      |
-| E128096 | Detect synchronous call to async local function via `.Result` or `.Wait()`                   | Yes      |
-| E128099 | Wait for process exit with a provable timeout                                                | Yes      |
-| E128100 | Catch filter reads negated token state on `OperationCanceledException`                       | Yes      |
-| E128101 | Verify process output file exists before use                                                 | Yes      |
-| E128103 | DI resolve without a registration in the compilation                                         | No       |
+| Rule    | Title                                                                                 | Code Fix |
+| ------- | ------------------------------------------------------------------------------------- | -------- |
+| E128011 | `[GeneratedRegex]` missing `matchTimeoutMilliseconds`                                 | Yes      |
+| E128012 | `RegexOptions.Compiled` is redundant in `[GeneratedRegex]`                            | Yes      |
+| E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers                                | Yes      |
+| E128014 | `[GeneratedRegex]` pattern has nested quantifiers                                     | Yes      |
+| E128016 | `DateTime.Parse`/`ParseExact` missing `DateTimeStyles` parameter                      | Yes      |
+| E128020 | Do not use `in` modifier with mutable structs                                         | Yes      |
+| E128023 | Avoid hardcoded `/tmp` path                                                           | Yes      |
+| E128028 | `Task.FromResult` wraps sync I/O that has an async alternative                        | Yes      |
+| E128031 | `AddSingleton` factory returns `IDisposable`                                          | Yes      |
+| E128033 | Options class bound via `.Bind()` has init-only property                              | Yes      |
+| E128034 | Constructor `new`s a DI-registered type — inject via DI instead                       | Yes      |
+| E128035 | Concrete-type DI dependency without direct registration                               | Yes      |
+| E128037 | Unbounded `Task.WhenAll` over async `Select`                                          | Yes      |
+| E128038 | `Task.WhenAll` async lambda missing `CancellationToken` propagation                   | Yes      |
+| E128039 | Catch filter must exclude `OperationCanceledException`                                | Yes      |
+| E128040 | Concurrency limit must be positive                                                    | Yes      |
+| E128041 | `JsonDocument.RootElement` must not escape the document's `using` scope               | Yes      |
+| E128051 | Broad catch in async `HttpClient` method missing `OperationCanceledException` handler | Yes      |
+| E128056 | `FileInfo.Exists` TOCTOU race condition                                               | Yes      |
+| E128057 | Unprotected cleanup in finally block                                                  | Yes      |
+| E128064 | Disk write-then-read round-trip — use the in-memory value instead of reading back     | Yes      |
+| E128070 | Pool `Rent()` capacity must be bounded — guard with `Math.Min`                        | No       |
+| E128076 | Materialize `QuerySelectorAll` result before iterating                                | Yes      |
+| E128077 | `TextContent` string match requires a preceding length guard                          | No       |
+| E128078 | `GetAttribute("href")` on element that does not carry href                            | No       |
+| E128079 | `CompositeDetection` with single generic ID selector lacks specificity                | No       |
+| E128086 | `ArrayPool` buffer used as `SqliteParameter` value without `Size`                     | Yes      |
+| E128089 | Avoid bare `.Parse()` — use `TryParse` to handle invalid input                        | No       |
+| E128092 | Use async `File.*Async` overload instead of sync method                               | Yes      |
+| E128093 | Use async `DbConnection`/`DbCommand` `*Async` overload instead of sync method         | Yes      |
+| E128096 | Detect synchronous call to async local function via `.Result` or `.Wait()`            | Yes      |
+| E128099 | Wait for process exit with a provable timeout                                         | Yes      |
+| E128100 | Catch filter reads negated token state on `OperationCanceledException`                | Yes      |
+| E128101 | Verify process output file exists before use                                          | Yes      |
+| E128103 | DI resolve without a registration in the compilation                                  | No       |
 
 ### Performance
 
-| Rule    | Title                                                                                                             | Code Fix |
-| ------- | ----------------------------------------------------------------------------------------------------------------- | -------- |
-| E128009 | Use `MinBy`/`MaxBy` instead of `OrderBy().First()`                                                                | Yes      |
-| E128010 | Pass `HttpCompletionOption.ResponseHeadersRead` to `HttpClient` calls                                             | Yes      |
-| E128015 | Use string interpolation instead of `string.Format`                                                               | Yes      |
-| E128018 | Use `ToArray()` instead of `ToList()` for read-only `foreach`                                                     | Yes      |
-| E128026 | Redundant `HashSet` allocation in `FrozenSet` creation                                                            | Yes      |
-| E128027 | Use `FrozenSet`/`FrozenDictionary` for static readonly collections                                                | Yes      |
-| E128029 | Replace multi-string OR-chain with `HashSet.Contains`                                                             | Yes      |
-| E128066 | Linear lookup inside loop creates O(n²) complexity                                                                | Yes      |
-| E128067 | String concatenation in loop creates O(n²) allocations                                                            | Yes      |
-| E128068 | Sort operation inside loop creates O(n² log n) complexity                                                         | No       |
-| E128069 | `List.Insert(0, ...)` in loop creates O(n²) complexity                                                            | No       |
-| E128072 | Prefer `SHA256.HashData()` over `SHA256.Create()` (default: Info)                                                 | Yes      |
-| E128081 | Use `StringBuilderPool` instead of `new StringBuilder()` (default: Info)                                          | Yes      |
-| E128083 | Use `ImmutableCollectionsMarshal.AsImmutableArray` instead of `ImmutableArray.Create/CreateRange` with `ToArray`  | Yes      |
-| E128084 | Use `CollectionsMarshal.AsSpan` with `Slice` instead of `List.GetRange`                                           | Yes      |
-| E128085 | Use `foreach` + `AddRange` instead of `SelectMany.ToList`                                                         | Yes      |
-| E128098 | Collapse chained or looped `string.Replace` calls into a single pass                                              | Yes      |
-| E128102 | Use `SearchValues<char>` for `IndexOfAny` scans                                                                   | Yes      |
-| E128106 | Index a collection with a bound taken from a different collection                                                 | No       |
+| Rule    | Title                                                                                                            | Code Fix |
+| ------- | ---------------------------------------------------------------------------------------------------------------- | -------- |
+| E128009 | Use `MinBy`/`MaxBy` instead of `OrderBy().First()`                                                               | Yes      |
+| E128010 | Pass `HttpCompletionOption.ResponseHeadersRead` to `HttpClient` calls                                            | Yes      |
+| E128015 | Use string interpolation instead of `string.Format`                                                              | Yes      |
+| E128018 | Use `ToArray()` instead of `ToList()` for read-only `foreach`                                                    | Yes      |
+| E128026 | Redundant `HashSet` allocation in `FrozenSet` creation                                                           | Yes      |
+| E128027 | Use `FrozenSet`/`FrozenDictionary` for static readonly collections                                               | Yes      |
+| E128029 | Replace multi-string OR-chain with `HashSet.Contains`                                                            | Yes      |
+| E128066 | Linear lookup inside loop creates O(n²) complexity                                                               | Yes      |
+| E128067 | String concatenation in loop creates O(n²) allocations                                                           | Yes      |
+| E128068 | Sort operation inside loop creates O(n² log n) complexity                                                        | No       |
+| E128069 | `List.Insert(0, ...)` in loop creates O(n²) complexity                                                           | No       |
+| E128072 | Prefer `SHA256.HashData()` over `SHA256.Create()` (default: Info)                                                | Yes      |
+| E128081 | Use `StringBuilderPool` instead of `new StringBuilder()` (default: Info)                                         | Yes      |
+| E128083 | Use `ImmutableCollectionsMarshal.AsImmutableArray` instead of `ImmutableArray.Create/CreateRange` with `ToArray` | Yes      |
+| E128084 | Use `CollectionsMarshal.AsSpan` with `Slice` instead of `List.GetRange`                                          | Yes      |
+| E128085 | Use `foreach` + `AddRange` instead of `SelectMany.ToList`                                                        | Yes      |
+| E128098 | Collapse chained or looped `string.Replace` calls into a single pass                                             | Yes      |
+| E128102 | Use `SearchValues<char>` for `IndexOfAny` scans                                                                  | Yes      |
+| E128106 | Index a collection with a bound taken from a different collection                                                | No       |
 
 ### Security
 
-| Rule    | Title                                                                     | Code Fix |
-| ------- | ------------------------------------------------------------------------- | -------- |
-| E128071 | Use a FIPS-approved hash algorithm                                        | Yes      |
-| E128075 | Use `RandomNumberGenerator` instead of `Random` in crypto context         | Yes      |
-| E128091 | Use `ArgumentList` instead of a built `Arguments` string on `ProcessStartInfo` | Yes  |
+| Rule    | Title                                                                          | Code Fix |
+| ------- | ------------------------------------------------------------------------------ | -------- |
+| E128071 | Use a FIPS-approved hash algorithm                                             | Yes      |
+| E128075 | Use `RandomNumberGenerator` instead of `Random` in crypto context              | Yes      |
+| E128091 | Use `ArgumentList` instead of a built `Arguments` string on `ProcessStartInfo` | Yes      |
 
 ### Style
 
-| Rule    | Title                                                                     | Code Fix |
-| ------- | ------------------------------------------------------------------------- | -------- |
-| E128002 | Use `string.Empty` instead of `""`                                        | Yes      |
-| E128006 | Use `Encoding.UTF8` instead of `Encoding.Default`                         | Yes      |
-| E128024 | Non-XML-doc comment above method declaration                              | Yes      |
-| E128025 | Use `Path.GetRandomFileName()` instead of `Guid.NewGuid()` in temp paths  | Yes      |
-| E128043 | Do not use the null-forgiving operator                                    | Yes      |
-| E128047 | `#pragma warning disable` without justification comment                   | Yes      |
-| E128055 | Unbalanced `#pragma warning disable` without matching restore             | Yes      |
+| Rule    | Title                                                                                   | Code Fix |
+| ------- | --------------------------------------------------------------------------------------- | -------- |
+| E128002 | Use `string.Empty` instead of `""`                                                      | Yes      |
+| E128006 | Use `Encoding.UTF8` instead of `Encoding.Default`                                       | Yes      |
+| E128024 | Non-XML-doc comment above method declaration                                            | Yes      |
+| E128025 | Use `Path.GetRandomFileName()` instead of `Guid.NewGuid()` in temp paths                | Yes      |
+| E128043 | Do not use the null-forgiving operator                                                  | Yes      |
+| E128047 | `#pragma warning disable` without justification comment                                 | Yes      |
+| E128055 | Unbalanced `#pragma warning disable` without matching restore                           | Yes      |
 | E128063 | Mid-name underscore in private static member (IDE1006 rename artifact) (default: Error) | Yes      |
 | E128065 | `#pragma warning disable` with multiple IDs — use one pragma per ID                     | Yes      |
-| E128094 | `#pragma warning disable` before file-scoped namespace (default: Error)   | Yes      |
+| E128094 | `#pragma warning disable` before file-scoped namespace (default: Error)                 | Yes      |
 
 ### Testing
 
-| Rule    | Title                                                                     | Code Fix |
-| ------- | ------------------------------------------------------------------------- | -------- |
-| E128054 | Class creates temp directory without cleanup interface                    | Yes      |
-| E128062 | Test uses outdated `ReferenceAssemblies` — does not match project TFM     | Yes      |
-| E128073 | Test method missing `[Trait("Category", ...)]` attribute                  | Yes      |
-| E128097 | Comment inside test code                                                  | Yes      |
-| E128107 | Test matches one low-value test condition                                 | Yes      |
-| E128108 | Test matches two or more low-value test conditions                        | Yes      |
-| E128104 | Assertion with literal operands                                           | No       |
-| E128105 | Test method calls an out-of-repo resolver without a skip guard            | No       |
+| Rule    | Title                                                                 | Code Fix |
+| ------- | --------------------------------------------------------------------- | -------- |
+| E128054 | Class creates temp directory without cleanup interface                | Yes      |
+| E128062 | Test uses outdated `ReferenceAssemblies` — does not match project TFM | Yes      |
+| E128073 | Test method missing `[Trait("Category", ...)]` attribute              | Yes      |
+| E128097 | Comment inside test code                                              | Yes      |
+| E128104 | Assertion with literal operands                                       | No       |
+| E128105 | Test method calls an out-of-repo resolver without a skip guard        | No       |
+| E128107 | Test matches one low-value test condition (off by default)            | Yes      |
+| E128108 | Test matches two or more low-value test conditions (off by default)   | Yes      |
 
 ### Maintainability
 
-| Rule    | Title                                                                     | Code Fix |
-| ------- | ------------------------------------------------------------------------- | -------- |
-| E128090 | Avoid reflection in test methods (default: Info)                           | No       |
-| E128088 | Switch over an enum does not case every member                            | No       |
+| Rule    | Title                                            | Code Fix |
+| ------- | ------------------------------------------------ | -------- |
+| E128088 | Switch over an enum does not case every member   | No       |
+| E128090 | Avoid reflection in test methods (default: Info) | No       |
 
 ## What each rule catches
 
@@ -637,7 +637,7 @@ ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
 
 ### E128064 &mdash; Disk write-then-read round-trip
 
-Flags file-I/O sequences that write to a path and then immediately read the same path back into memory in the same method body. Returning the in-memory source value avoids a needless disk round-trip and the associated race window where another process can modify the file between the write and the read. Covers `File.WriteAllText`/`ReadAllText`, `File.WriteAllBytes`/`ReadAllBytes`, `File.WriteAllLines`/`ReadAllLines`, their `Async` variants, `AppendAllText` and `AppendAllLines`, `File.CreateText`/`AppendText`/`Create`/`OpenWrite`, `StreamWriter`/`StreamReader`, `FileStream` (write intent vs. read intent), `BinaryWriter`/`BinaryReader`, the equivalent `FileInfo` instance methods, and opaque write-to-disk calls (methods whose name contains `ToDisk`, `ToFile`, `SaveTo`, `WriteTo`, or `DownloadTo`) whose result is subsequently passed to `File.Read*`. Cross-kind matches (text write → bytes read, or bytes write → text read) are wrapped by the code fix in `Encoding.UTF8.GetBytes`/`GetString`. Opaque write-to-disk matches fire the diagnostic but offer no code fix (no in-memory source to substitute). Disabled for test projects via `.globalconfig` (fixtures legitimately round-trip through disk).
+Flags file-I/O sequences that write to a path and then immediately read the same path back into memory in the same method body. Returning the in-memory source value avoids a needless disk round-trip and the associated race window where another process can modify the file between the write and the read. Covers `File.WriteAllText`/`ReadAllText`, `File.WriteAllBytes`/`ReadAllBytes`, `File.WriteAllLines`/`ReadAllLines`, their `Async` variants, `AppendAllText` and `AppendAllLines`, `File.CreateText`/`AppendText`/`Create`/`OpenWrite`, `StreamWriter`/`StreamReader`, `FileStream` (write intent vs. read intent), `BinaryWriter`/`BinaryReader`, the equivalent `FileInfo` instance methods, and opaque write-to-disk calls (methods whose name contains `ToDisk`, `ToFile`, `SaveTo`, `WriteTo`, or `DownloadTo`) whose result is subsequently passed to `File.Read*`. Cross-kind matches (text write → bytes read, or bytes write → text read) are wrapped by the code fix in `Encoding.UTF8.GetBytes`/`GetString`. Opaque write-to-disk matches fire the diagnostic but offer no code fix (no in-memory source to substitute).
 
 ```csharp
 // Before (warns)
@@ -703,6 +703,7 @@ try { content = File.ReadAllText(path); } catch (FileNotFoundException) { }
 // Right: both types derive from IOException
 try { content = File.ReadAllText(path); } catch (IOException) { }
 ```
+
 ### E128057 &mdash; Unprotected cleanup in finally block
 
 Flags cleanup calls (`File.Delete`, `Directory.Delete`, `Dispose`, etc.) in `finally` blocks that are not wrapped in their own `try/catch`. An exception thrown during cleanup will replace the original exception, making the root cause invisible.
@@ -872,7 +873,7 @@ var hash = SHA256.HashData(data);
 
 ### E128073 &mdash; Missing [Trait("Category", ...)]
 
-Flags xUnit test methods that are missing a `[Trait("Category", "...")]` attribute. The MTP runner in this repo uses category traits to filter CI, Podman, and Manual test runs; methods without a category are silently excluded from all filtered runs.
+Flags xUnit test methods that are missing a `[Trait("Category", "...")]` attribute. The test runner uses category traits to filter CI, Podman, and Manual test runs; methods without a category are silently excluded from all filtered runs.
 
 ```csharp
 // Before (warns)
@@ -1020,7 +1021,7 @@ if (!int.TryParse(input, out var value)) { /* handle invalid input */ }
 
 ### E128090 &mdash; Reflection in test methods (Info)
 
-Flags `GetMethod`, `GetProperty`, and `GetField` reflection calls inside test methods. Reflection couples tests to private implementation detail; prefer testing through the public API (this repo uses `internal` + `InternalsVisibleTo` instead). Default severity: **Info**. No code fix.
+Flags `GetMethod`, `GetProperty`, and `GetField` reflection calls inside test methods. Reflection couples tests to private implementation detail; prefer testing through the public API. Default severity: **Info**. No code fix.
 
 ```csharp
 // Before (info)
@@ -1088,7 +1089,8 @@ async Task Insert(SqliteConnection connection, FileInsertData data)
 
 Flags an xUnit `[Fact]` or `[Theory]` method whose shape locks an implementation detail in place.
 Such a test fails on every honest refactor. One condition reports E128107 at info. Two or more
-report E128108 at warning. The code fix deletes the whole test method.
+report E128108 at warning. Both rules are off by default. Opt in with `dotnet_diagnostic.E128107.severity`
+or `dotnet_diagnostic.E128108.severity`. The code fix deletes the whole test method.
 
 The conditions:
 
@@ -1106,8 +1108,8 @@ The conditions:
 - `OrderLock`: `Assert.Equal` pins the order of a set or dictionary result
 - `DuplicateCoverage`: another test in the same class calls the same method with the same literal arguments
 
-The root `.globalconfig` down-ranks both rules to suggestion. The code fix deletes the test method,
-so an unattended `dotnet format` run must not remove a test without review.
+The code fix deletes the test method, so an unattended `dotnet format` run must not remove a test
+without review.
 
 ## Configuration
 
