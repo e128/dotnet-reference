@@ -94,6 +94,9 @@ The analyzer targets `netstandard2.0` for maximum Roslyn host compatibility. As 
 | E128078 | `GetAttribute("href")` on element that lacks href                     | No  |
 | E128079 | `CompositeDetection` single generic ID selector lacks specificity     | No  |
 | E128086 | `ArrayPool` buffer as `SqliteParameter` value without `Size`          | Yes |
+| E128109 | `stackalloc` must be bounded and outside loops                         | No  |
+| E128110 | Zero a pooled buffer in `finally` before `Return`                     | No  |
+| E128111 | Pooled buffer used after `Return`                                     | No  |
 
 ### Performance
 

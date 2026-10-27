@@ -33,3 +33,7 @@ E128.Analyzers.Testing.LowValueTestAnalyzer
 E128.Analyzers.Testing.LowValueTestAnalyzer.LowValueTestAnalyzer() -> void
 E128.Analyzers.Testing.LowValueTestCodeFixProvider
 E128.Analyzers.Testing.LowValueTestCodeFixProvider.LowValueTestCodeFixProvider() -> void
+E128.Analyzers.Reliability.PooledBufferZeroingAnalyzer
+E128.Analyzers.Reliability.PooledBufferZeroingAnalyzer.PooledBufferZeroingAnalyzer() -> void
+E128.Analyzers.Reliability.StackAllocSafetyAnalyzer
+E128.Analyzers.Reliability.StackAllocSafetyAnalyzer.StackAllocSafetyAnalyzer() -> void
