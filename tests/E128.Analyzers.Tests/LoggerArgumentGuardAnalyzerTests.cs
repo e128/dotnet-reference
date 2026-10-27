@@ -123,6 +123,25 @@ public sealed class LoggerArgumentGuardAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenTheGuardIsDisjoinedWithAnotherCondition()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.Logging;
+                           class C
+                           {
+                               void M(ILogger logger, int count, bool verbose)
+                               {
+                                   if (logger.IsEnabled(LogLevel.Information) || verbose)
+                                   {
+                                       {|E128122:logger.LogInformation($"count {count}")|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_WhenTheGuardChecksAnotherLevel()
     {
         return VerifyAsync("""

@@ -17,7 +17,7 @@ public sealed class SearchValuesHoistingCodeFixTests
         {
             TestCode = source,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -53,6 +53,42 @@ public sealed class SearchValuesHoistingCodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Fix_KeepsTheDocCommentAboveTheFirstMember()
+    {
+        return VerifyFixAsync(
+            """
+            using System;
+            using System.Buffers;
+
+            class C
+            {
+                /// <summary>Checks the text.</summary>
+                bool M(ReadOnlySpan<char> text)
+                {
+                    return text.ContainsAny({|E128124:SearchValues.Create("abc")|});
+                }
+            }
+            """,
+            """
+            using System;
+            using System.Buffers;
+
+            class C
+            {
+                private static readonly System.Buffers.SearchValues<char> _mSearchValues = SearchValues.Create("abc");
+
+                /// <summary>Checks the text.</summary>
+                bool M(ReadOnlySpan<char> text)
+                {
+                    return text.ContainsAny(_mSearchValues);
+                }
+            }
+            """);
+    }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Fix_PicksAFreeFieldNameWhenTheDefaultIsTaken()

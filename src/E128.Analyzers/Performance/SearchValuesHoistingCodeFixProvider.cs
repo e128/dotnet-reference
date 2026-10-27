@@ -135,13 +135,28 @@ public sealed class SearchValuesHoistingCodeFixProvider : CodeFixProvider
             indent = "    ";
         }
 
-        var fieldWithIndent = field.WithLeadingTrivia(SyntaxFactory.Whitespace(indent));
+        // Keep the existing trivia, so a doc comment on the first member survives. Skip the
+        // line break that ends the open brace line. Set both ends of the gap explicitly, so the
+        // result has one blank line whether the synthesized field keeps elastic trivia or not.
+        var leading = firstMember.GetLeadingTrivia();
+        var index = 0;
+        var lineBreak = "\n";
 
-        var firstMemberWithBlankLine = firstMember.WithLeadingTrivia(
-            SyntaxFactory.TriviaList(
-                SyntaxFactory.LineFeed,
-                SyntaxFactory.LineFeed,
-                SyntaxFactory.Whitespace(indent)));
+        for (; index < leading.Count && leading[index].IsKind(SyntaxKind.EndOfLineTrivia); index++)
+        {
+            lineBreak = leading[index].ToString();
+        }
+
+        var fieldWithIndent = field
+            .WithLeadingTrivia(SyntaxFactory.Whitespace(indent))
+            .WithTrailingTrivia(SyntaxFactory.EndOfLine(lineBreak));
+
+        // Keep fields together and separate a field from other member kinds.
+        var gap = firstMember is FieldDeclarationSyntax
+            ? SyntaxFactory.TriviaList()
+            : SyntaxFactory.TriviaList(SyntaxFactory.EndOfLine(lineBreak));
+
+        var firstMemberWithBlankLine = firstMember.WithLeadingTrivia(gap.AddRange(leading.Skip(index)));
 
         var members = typeDeclaration.Members
             .Replace(firstMember, firstMemberWithBlankLine)

@@ -39,13 +39,14 @@ public sealed class AggressiveOptimizationAnalyzer : DiagnosticAnalyzer
     {
         var attribute = (AttributeSyntax)context.Node;
 
-        if (attribute.ArgumentList is null
-            || attribute.Name is not IdentifierNameSyntax { Identifier.ValueText: "MethodImpl" } name)
+        if (attribute.ArgumentList is null)
         {
             return;
         }
 
-        if (context.SemanticModel.GetSymbolInfo(name, context.CancellationToken).Symbol
+        // Resolve the constructor, so `MethodImpl`, `MethodImplAttribute` and a qualified
+        // name all match the same type.
+        if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
             is not IMethodSymbol { ContainingType.Name: "MethodImplAttribute" })
         {
             return;

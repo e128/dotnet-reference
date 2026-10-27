@@ -90,6 +90,27 @@ public sealed class SearchValuesHoistingAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Silent_WhenTheArgumentCallsAnInstanceMethod()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Buffers;
+                           class C
+                           {
+                               private static readonly string Chars = "abc";
+
+                               private string GetChars() => Chars;
+
+                               bool M(ReadOnlySpan<char> text)
+                               {
+                                   return text.ContainsAny(SearchValues.Create(GetChars()));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_WhenTheArgumentIsAStaticReadonlyField()
     {
         return VerifyAsync("""

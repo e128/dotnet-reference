@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-10-23T22:07:37Z*
+*Updated: 2026-10-27T23:51:06Z*
 
 ## Overview
 
@@ -121,6 +121,9 @@ E128099 | Design | Warning | No longer needed
 | 1.41.3  | E128107-108 | Low-value test conditions moved from `Unshipped.md` to a new `Release 1.41.3` section |
 | 1.41.12 | (none)      | E128107/E128108 changed: disabled by default, predicates recalibrated. Recorded as a `Changed Rules` section in `Shipped.md` |
 | 1.41.13 | (none)      | Analyzer hot-path performance only. Rule set unchanged. |
+| 1.42.0  | E128109-111 | Buffer safety rules |
+| 1.42.1  | E128112-129 | Unsafe and performance rules |
+| 1.42.2  | (none)      | Bug fixes in E128116, E128122 and E128124. `Shipped.md` gained the 1.42.0 and 1.42.1 sections at this release. |
 
 ## Sources
 
