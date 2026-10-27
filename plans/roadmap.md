@@ -1,7 +1,12 @@
 # Roadmap
-*Updated: 2026-05-17T00:00:00Z*
+*Updated: 2026-10-27T16:59:48Z*
 
 ## Active
+
+### Unsafe And Performance Analyzer Expansion
+18 new E128 rules from two published guidance documents. 13 carry a code fix
+provider. The rules are built and tested. The release is pending.
+Plan: [unsafe-perf-analyzers](unsafe-perf-analyzers/unsafe-perf-analyzers-plan.md).
 
 ## Backlog
 
