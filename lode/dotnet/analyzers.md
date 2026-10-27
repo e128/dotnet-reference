@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-10-27T16:15:56Z*
+*Updated: 2026-10-27T18:20:50Z*
 
 ## Strategy: Deny by Default
 
@@ -21,9 +21,7 @@ Per [Microsoft guidance](https://learn.microsoft.com/en-us/dotnet/fundamentals/c
 
 **`.globalconfig` is purely for analyzer configuration.** It handles rule severity (`dotnet_diagnostic.*`) and enabling (`roslynator_analyzers.enabled_by_default`). It does NOT support editor style settings like indentation, whitespace, or formatting preferences. Put those in `.editorconfig`.
 
-**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` use the `:error`/`:suggestion`/`:silent` suffix directly on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). The `.globalconfig` then lists explicit `dotnet_diagnostic.IDE*` overrides only where the behavior deviates from the blanket `dotnet_analyzer_diagnostic.severity = error`, which avoids silent drift when rule IDs change.
-
-The `tests/.globalconfig` uses `global_level = 101` to override the root `global_level = 100`.
+**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` carry the `:error`/`:suggestion`/`:silent` suffix on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). The `.globalconfig` lists explicit `dotnet_diagnostic.IDE*` overrides only where the behavior deviates from the blanket `dotnet_analyzer_diagnostic.severity = error`. That avoids silent drift when rule IDs change. The `tests/.globalconfig` uses `global_level = 101` to override the root `global_level = 100`.
 
 ## MSBuild Properties
 
@@ -102,7 +100,7 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 
 `src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"`. It applies to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
-Rules span categories: Design, Reliability, Performance, Maintainability, Security, Style, Testing, and FileSystem. Most rules ship with a code fix; a few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
+Rules span categories: Design, Reliability, Performance, Unsafe, Maintainability, Security, Style, Testing, and FileSystem. Most rules ship with a code fix. A few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard, and the diagnostic-only rules E128125 to E128129) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
 
 Redundant E128 rules with no code fix are disabled in `.globalconfig`. See [redundant-rules.md](analyzers/redundant-rules.md).
 
@@ -113,6 +111,7 @@ Key rules by category (not exhaustive):
 | Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray   |
 | Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard, stackalloc bounds, pool zeroing |
 | Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation, O(n²) loop patterns, `SearchValues<char>` over `string.IndexOfAny` (E128102) |
+| Unsafe      | `Unsafe.As` to `Unsafe.BitCast`, unaligned reads, bounds bypass, bool and int reinterpret, non-blittable `MemoryMarshal`, fixed buffers, `SkipInit`, unpinned pointers, string writes, null byref, delegate lifetime, bulk copy (E128112 to E128129) |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
 | Maintainability | See the README rule table                                                                      |
 | Testing     | Temp directory cleanup, stale ReferenceAssemblies, low-value test conditions E128107/E128108       |
@@ -186,7 +185,7 @@ Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or a
 
 No code fix: the cap value is context-specific.
 
-Rules E128109, E128110, and E128111 cover `stackalloc` limits, pooled buffer zeroing, and use after Return. See [pooled-buffer-rules.md](analyzers/pooled-buffer-rules.md).
+Rules E128109, E128110, and E128111 cover `stackalloc` limits, pooled buffer zeroing, and use after Return. See [pooled-buffer-rules.md](analyzers/pooled-buffer-rules.md). Rules E128112 to E128129 come from two published guidance documents. See [analyzer-candidates.md](analyzer-candidates.md) for the ID map and the excluded rows.
 
 ## Common Test Overrides
 

@@ -88,7 +88,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128100 | Catch filter reads negated token state on `OperationCanceledException`                | Yes      |
 | E128101 | Verify process output file exists before use                                          | Yes      |
 | E128103 | DI resolve without a registration in the compilation                                  | No       |
-| E128109 | `stackalloc` must be bounded and outside loops                                         | No       |
+| E128109 | `stackalloc` must be bounded and outside loops                                         | Yes      |
 | E128110 | Zero a pooled buffer in a `finally` block before `Return`                             | No       |
 | E128111 | Pooled buffer used after `Return`                                                     | No       |
 
@@ -115,6 +115,12 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128098 | Collapse chained or looped `string.Replace` calls into a single pass                                             | Yes      |
 | E128102 | Use `SearchValues<char>` for `IndexOfAny` scans                                                                  | Yes      |
 | E128106 | Index a collection with a bound taken from a different collection                                                | No       |
+| E128116 | Do not use `MethodImplOptions.AggressiveOptimization`                                                            | Yes      |
+| E128117 | Use `LibraryImport` instead of `DllImport`                                                                       | Yes      |
+| E128121 | Use `SequenceEqual` instead of an element-by-element loop                                                        | Yes      |
+| E128122 | Guard an expensive log argument with `IsEnabled`                                                                 | Yes      |
+| E128123 | Use `[GeneratedRegex]` for a constant pattern                                                                    | Yes      |
+| E128124 | Cache `SearchValues` in a static readonly field                                                                  | Yes      |
 
 ### Security
 
@@ -158,6 +164,23 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | ------- | ------------------------------------------------ | -------- |
 | E128088 | Switch over an enum does not case every member   | No       |
 | E128090 | Avoid reflection in test methods (default: Info) | No       |
+
+### Unsafe
+
+| Rule    | Title                                                                                                | Code Fix |
+| ------- | ---------------------------------------------------------------------------------------------------- | -------- |
+| E128112 | Use `Unsafe.BitCast` instead of `Unsafe.As`                                                          | Yes      |
+| E128113 | Use the unaligned `Unsafe` read and write methods                                                    | Yes      |
+| E128114 | Index the array instead of bypassing its bounds check                                                | Yes      |
+| E128115 | Do not reinterpret between `bool` and `int`                                                          | Yes      |
+| E128118 | Do not reinterpret bytes as a non-blittable type                                                     | Yes      |
+| E128119 | Use an inline array instead of a fixed-size buffer                                                   | Yes      |
+| E128120 | Do not skip local initialization without a measured reason                                           | Yes      |
+| E128125 | Pin the object explicitly with `fixed`                                                               | No       |
+| E128126 | Do not write to a string through a fixed pointer                                                     | No       |
+| E128127 | Do not create a null managed reference                                                               | No       |
+| E128128 | Keep the delegate alive while native code holds its function pointer                                 | No       |
+| E128129 | Do not bulk-copy a type that holds references                                                        | No       |
 
 ## What each rule catches
 
@@ -1093,7 +1116,8 @@ async Task Insert(SqliteConnection connection, FileInsertData data)
 Flags `stackalloc` inside a loop, with a constant size above 1024 bytes, or with a length that has
 no guard, or that is assigned to a pointer instead of `Span<T>`.
 Stack space is not reclaimed until the method returns. A conditional expression or an `if` statement counts as
-a guard only when its condition tests a name used in the length. `Math.Min` also counts as a guard. No code fix: the fallback buffer is context-specific.
+a guard only when its condition tests a name used in the length. `Math.Min` also counts as a guard.
+The code fix assigns the buffer to `Span<T>` when the pointer is only indexed.
 
 ```csharp
 // Before (warns)
@@ -1156,6 +1180,147 @@ The conditions:
 
 The code fix deletes the test method, so an unattended `dotnet format` run must not remove a test
 without review.
+
+### E128112: Use Unsafe.BitCast instead of Unsafe.As
+
+Flags `Unsafe.As<TFrom, TTo>(ref value)` when both types are fixed-size value types of the same size.
+`Unsafe.BitCast` checks the size and rejects a reference type.
+The rule stays silent when the result is used as a reference (assigned to, passed by `ref`, or bound to a `ref` local).
+The rule also stays silent when the target has no `Unsafe.BitCast` (before .NET 8).
+The code fix rewrites the call to `Unsafe.BitCast<TFrom, TTo>(value)`.
+
+```csharp
+// Before (warns)
+int bits = Unsafe.As<float, int>(ref value);
+
+// After
+int bits = Unsafe.BitCast<float, int>(value);
+```
+
+### E128113: Use the unaligned Unsafe read and write methods
+
+Flags `Unsafe.Read<T>` and `Unsafe.Write<T>`.
+The plain overloads assume an aligned address. A misaligned address faults or tears the value.
+The code fix renames the call to `Unsafe.ReadUnaligned` or `Unsafe.WriteUnaligned`.
+
+### E128114: Index the array instead of bypassing its bounds check
+
+Flags `Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(array), index)` on a single-dimension array.
+The pattern removes the bounds check, and the JIT already elides the check in a simple loop.
+The code fix rewrites the call to `array[index]` and adds parentheses where the array expression needs them.
+
+### E128115: Do not reinterpret between bool and int
+
+Flags `Unsafe.As<bool, int>` and `Unsafe.As<int, bool>` when the result is not used as a reference.
+A `bool` occupies one byte and an `int` occupies four bytes. The reinterpretation reads adjacent memory.
+The code fix rewrites the call to a comparison or a ternary.
+The fix normalizes the value, so any nonzero `int` becomes `true`.
+
+### E128116: Do not use MethodImplOptions.AggressiveOptimization
+
+Flags `[MethodImpl(MethodImplOptions.AggressiveOptimization)]`.
+The flag disables tiered compilation for the method.
+The code fix removes the flag and keeps the other flags.
+When `AggressiveOptimization` is the only flag, the fix removes the attribute and keeps the doc comment.
+
+### E128117: Use LibraryImport instead of DllImport
+
+Flags every `[DllImport]` on a method when the target defines `LibraryImportAttribute`.
+`LibraryImport` generates the marshalling code at compile time.
+The code fix applies only when every parameter and the return type are blittable, `AllowUnsafeBlocks` is on,
+and the attribute uses only `EntryPoint` and `SetLastError`.
+The fix renames the attribute, drops `extern`, and makes the method and the containing types `partial`.
+
+### E128118: Do not reinterpret bytes as a non-blittable type
+
+Flags `MemoryMarshal.Read<T>` and `MemoryMarshal.Cast<TFrom, TTo>` when the interpreted type is not blittable.
+A type is not blittable when it holds a reference, or when it is or contains a `bool` or a `decimal`.
+The code fix applies only to `MemoryMarshal.Read<bool>(source)`. It rewrites the call to `(source[0] != 0)`.
+
+### E128119: Use an inline array instead of a fixed-size buffer
+
+Flags a field declared with `fixed`, including a declaration with several buffers or a constant size, when the target defines `InlineArrayAttribute` and the language version is C# 12 or later.
+A fixed-size buffer has no bounds checks and no default zeroing.
+The code fix applies only to a single-declarator field that nothing references.
+It replaces the field with a nested `[InlineArray]` struct named `{Field}Buffer`.
+The nested struct takes the accessibility of the field.
+
+### E128120: Do not skip local initialization without a measured reason
+
+Flags `Unsafe.SkipInit(out local)`.
+The local keeps whatever the stack holds. The rule accepts the call only after a benchmark shows a win.
+The code fix replaces the call with `T name = default;`, or with `name = default;` for an existing local.
+
+### E128121: Use SequenceEqual instead of an element-by-element loop
+
+Flags a `for` loop that compares two arrays element by element and returns `false` on the first mismatch.
+The rule applies only when these conditions hold:
+
+- An earlier `if` returns `false` when the two `Length` values differ.
+- The loop bound is the `Length` of one of the two arrays.
+- The element type is an integral type, `bool`, `char`, or an enum. A floating-point type is excluded because `NaN` compares differently.
+
+The code fix rewrites the loop to `return left.AsSpan().SequenceEqual(right);`.
+
+### E128122: Guard an expensive log argument with IsEnabled
+
+Flags `Log*` calls where an argument is a non-constant interpolated string or a non-constant string concatenation.
+The rule stays silent when an `IsEnabled` check for the same logger and level wraps the call or returns early.
+The check can sit in a local variable, or in a helper method or property that returns it.
+The message is built before the level check.
+The code fix wraps the statement in `if (logger.IsEnabled(LogLevel.X))`.
+The fix applies only to a statement in a block, and only when the logger expression contains no call.
+
+### E128123: Use GeneratedRegex for a constant pattern
+
+Flags a `static readonly Regex` field built from a string literal when the target defines `GeneratedRegexAttribute`
+and the language version is C# 13 or later.
+`[GeneratedRegex]` builds the matcher at compile time and keeps the pattern in source.
+The code fix applies only when the arguments are constants and the options are a plain list of flags.
+It replaces the field with a partial property and makes every containing type `partial`.
+The fix adds `matchTimeoutMilliseconds: Timeout.Infinite`, which keeps the original behavior and satisfies E128011. It drops `RegexOptions.Compiled`.
+
+### E128124: Cache SearchValues in a static readonly field
+
+Flags `SearchValues.Create` outside a static readonly field or a static property initializer.
+The rule applies only when every argument is a constant or a static readonly value.
+The call builds an immutable table on every call.
+The code fix hoists the call into a private static readonly field named after the method, for example `_containsDelimiterSearchValues`.
+
+### E128125: Pin the object explicitly with fixed
+
+Flags `Unsafe.AsPointer(ref value)` outside a `fixed` statement.
+The rule stays silent for a plain local or a by-value parameter, because the stack does not move.
+The call takes no pin, so the GC can move a heap object while the pointer is live.
+No code fix. Use a `fixed` block around the pointer.
+
+### E128126: Do not write to a string through a fixed pointer
+
+Flags a `fixed (char* p = text)` block when the body writes through `p`.
+A write is an assignment, an increment, or a `ref` or `out` argument on `p[i]`, `*p`, or `*(p + n)`.
+A read-only pin is silent. A copy of the pointer in another variable is not followed.
+A string is immutable, and the runtime shares interned strings between callers.
+No code fix. Build a new string instead.
+
+### E128127: Do not create a null managed reference
+
+Flags `Unsafe.NullRef<T>()` and `Unsafe.AsRef<T>` on a null pointer.
+The rule stays silent when a `ref` return gives `NullRef` back as a "not found" sentinel.
+A null byref has no valid referent, and any read or write through it corrupts memory.
+No code fix. Use a null object, an empty span, or a nullable value instead.
+
+### E128128: Keep the delegate alive while native code holds its function pointer
+
+Flags `Marshal.GetFunctionPointerForDelegate` when the delegate is a temporary (`new`, a lambda, or a method group),
+or when it is a local or a parameter that nothing stores in a field, property or element, or passes to another call such as `GC.KeepAlive` or `list.Add`.
+The call does not root the delegate, so the GC can collect it while native code holds the pointer.
+No code fix. Keep the delegate in a field or a `GCHandle` for the lifetime of the pointer.
+
+### E128129: Do not bulk-copy a type that holds references
+
+Flags `Unsafe.Copy` where the copied type holds a reference.
+The copy bypasses the write barrier, so a copied reference can miss a GC update.
+No code fix. The right replacement depends on whether the caller needs a deep or a shallow copy.
 
 ## Configuration
 

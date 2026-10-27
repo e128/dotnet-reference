@@ -1,7 +1,8 @@
 # Pooled Buffer and stackalloc Rules
-*Updated: 2026-10-27T16:15:56Z*
+*Updated: 2026-10-27T18:20:50Z*
 
-Reliability analyzers guard buffer memory. All report at Warning and ship no code fix.
+Reliability analyzers guard buffer memory. All report at Warning. E128109 ships a
+code fix. E128110 and E128111 ship no code fix.
 See also [code-fix-patterns.md](code-fix-patterns.md) and the E128070 section in
 [analyzers.md](../analyzers.md).
 
@@ -14,7 +15,12 @@ See also [code-fix-patterns.md](code-fix-patterns.md) and the E128070 section in
 - Its length is not constant and has no guard. `Math.Min` counts as a guard. A conditional expression or an `if` statement counts only when its condition tests a name used in the length.
 - It is assigned to a pointer. A `Span<T>` or `ReadOnlySpan<T>` target gives bounds checks.
 
-Rationale: stack space is not reclaimed until the method returns. The fallback buffer is context-specific, so the rule has no fix.
+Rationale: stack space is not reclaimed until the method returns.
+
+`StackAllocSafetyCodeFixProvider` changes the pointer target to `Span<T>`. The fix
+applies only when the pointer variable has one declarator, sits outside a loop,
+and is used with an indexer alone. Taking `&buffer[i]` blocks the fix. Any other use
+keeps the diagnostic and offers no fix.
 
 ```csharp
 Span<byte> buffer = length <= 256 ? stackalloc byte[length] : new byte[length];

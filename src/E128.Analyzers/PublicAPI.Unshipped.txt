@@ -37,3 +37,67 @@ E128.Analyzers.Reliability.PooledBufferZeroingAnalyzer
 E128.Analyzers.Reliability.PooledBufferZeroingAnalyzer.PooledBufferZeroingAnalyzer() -> void
 E128.Analyzers.Reliability.StackAllocSafetyAnalyzer
 E128.Analyzers.Reliability.StackAllocSafetyAnalyzer.StackAllocSafetyAnalyzer() -> void
+E128.Analyzers.Unsafe.UnsafeAsToBitCastAnalyzer
+E128.Analyzers.Unsafe.UnsafeAsToBitCastAnalyzer.UnsafeAsToBitCastAnalyzer() -> void
+E128.Analyzers.Unsafe.UnsafeAsToBitCastCodeFixProvider
+E128.Analyzers.Unsafe.UnsafeAsToBitCastCodeFixProvider.UnsafeAsToBitCastCodeFixProvider() -> void
+E128.Analyzers.Unsafe.UnsafeReadWriteAlignmentAnalyzer
+E128.Analyzers.Unsafe.UnsafeReadWriteAlignmentAnalyzer.UnsafeReadWriteAlignmentAnalyzer() -> void
+E128.Analyzers.Unsafe.UnsafeReadWriteAlignmentCodeFixProvider
+E128.Analyzers.Unsafe.UnsafeReadWriteAlignmentCodeFixProvider.UnsafeReadWriteAlignmentCodeFixProvider() -> void
+E128.Analyzers.Unsafe.UnsafeAddArrayDataReferenceAnalyzer
+E128.Analyzers.Unsafe.UnsafeAddArrayDataReferenceAnalyzer.UnsafeAddArrayDataReferenceAnalyzer() -> void
+E128.Analyzers.Unsafe.UnsafeAddArrayDataReferenceCodeFixProvider
+E128.Analyzers.Unsafe.UnsafeAddArrayDataReferenceCodeFixProvider.UnsafeAddArrayDataReferenceCodeFixProvider() -> void
+E128.Analyzers.Unsafe.UnsafeBooleanConversionsAnalyzer
+E128.Analyzers.Unsafe.UnsafeBooleanConversionsAnalyzer.UnsafeBooleanConversionsAnalyzer() -> void
+E128.Analyzers.Unsafe.UnsafeBooleanConversionsCodeFixProvider
+E128.Analyzers.Unsafe.UnsafeBooleanConversionsCodeFixProvider.UnsafeBooleanConversionsCodeFixProvider() -> void
+E128.Analyzers.Performance.AggressiveOptimizationAnalyzer
+E128.Analyzers.Performance.AggressiveOptimizationAnalyzer.AggressiveOptimizationAnalyzer() -> void
+E128.Analyzers.Performance.AggressiveOptimizationCodeFixProvider
+E128.Analyzers.Performance.AggressiveOptimizationCodeFixProvider.AggressiveOptimizationCodeFixProvider() -> void
+E128.Analyzers.Performance.DllImportToLibraryImportAnalyzer
+E128.Analyzers.Performance.DllImportToLibraryImportAnalyzer.DllImportToLibraryImportAnalyzer() -> void
+E128.Analyzers.Performance.DllImportToLibraryImportCodeFixProvider
+E128.Analyzers.Performance.DllImportToLibraryImportCodeFixProvider.DllImportToLibraryImportCodeFixProvider() -> void
+E128.Analyzers.Unsafe.MemoryMarshalNonBlittableAnalyzer
+E128.Analyzers.Unsafe.MemoryMarshalNonBlittableAnalyzer.MemoryMarshalNonBlittableAnalyzer() -> void
+E128.Analyzers.Unsafe.MemoryMarshalNonBlittableCodeFixProvider
+E128.Analyzers.Unsafe.MemoryMarshalNonBlittableCodeFixProvider.MemoryMarshalNonBlittableCodeFixProvider() -> void
+E128.Analyzers.Unsafe.FixedBufferFieldAnalyzer
+E128.Analyzers.Unsafe.FixedBufferFieldAnalyzer.FixedBufferFieldAnalyzer() -> void
+E128.Analyzers.Unsafe.FixedBufferFieldCodeFixProvider
+E128.Analyzers.Unsafe.FixedBufferFieldCodeFixProvider.FixedBufferFieldCodeFixProvider() -> void
+E128.Analyzers.Unsafe.SkipInitAnalyzer
+E128.Analyzers.Unsafe.SkipInitAnalyzer.SkipInitAnalyzer() -> void
+E128.Analyzers.Unsafe.SkipInitCodeFixProvider
+E128.Analyzers.Unsafe.SkipInitCodeFixProvider.SkipInitCodeFixProvider() -> void
+E128.Analyzers.Performance.SequenceEqualLoopAnalyzer
+E128.Analyzers.Performance.SequenceEqualLoopAnalyzer.SequenceEqualLoopAnalyzer() -> void
+E128.Analyzers.Performance.SequenceEqualLoopCodeFixProvider
+E128.Analyzers.Performance.SequenceEqualLoopCodeFixProvider.SequenceEqualLoopCodeFixProvider() -> void
+E128.Analyzers.Performance.LoggerArgumentGuardAnalyzer
+E128.Analyzers.Performance.LoggerArgumentGuardAnalyzer.LoggerArgumentGuardAnalyzer() -> void
+E128.Analyzers.Performance.LoggerArgumentGuardCodeFixProvider
+E128.Analyzers.Performance.LoggerArgumentGuardCodeFixProvider.LoggerArgumentGuardCodeFixProvider() -> void
+E128.Analyzers.Performance.RuntimeRegexToGeneratedAnalyzer
+E128.Analyzers.Performance.RuntimeRegexToGeneratedAnalyzer.RuntimeRegexToGeneratedAnalyzer() -> void
+E128.Analyzers.Performance.RuntimeRegexToGeneratedCodeFixProvider
+E128.Analyzers.Performance.RuntimeRegexToGeneratedCodeFixProvider.RuntimeRegexToGeneratedCodeFixProvider() -> void
+E128.Analyzers.Performance.SearchValuesHoistingAnalyzer
+E128.Analyzers.Performance.SearchValuesHoistingAnalyzer.SearchValuesHoistingAnalyzer() -> void
+E128.Analyzers.Performance.SearchValuesHoistingCodeFixProvider
+E128.Analyzers.Performance.SearchValuesHoistingCodeFixProvider.SearchValuesHoistingCodeFixProvider() -> void
+E128.Analyzers.Unsafe.UnsafeAsPointerEscapeAnalyzer
+E128.Analyzers.Unsafe.UnsafeAsPointerEscapeAnalyzer.UnsafeAsPointerEscapeAnalyzer() -> void
+E128.Analyzers.Unsafe.FixedStringMutationAnalyzer
+E128.Analyzers.Unsafe.FixedStringMutationAnalyzer.FixedStringMutationAnalyzer() -> void
+E128.Analyzers.Unsafe.NullByRefAnalyzer
+E128.Analyzers.Unsafe.NullByRefAnalyzer.NullByRefAnalyzer() -> void
+E128.Analyzers.Unsafe.FunctionPointerDelegateLifetimeAnalyzer
+E128.Analyzers.Unsafe.FunctionPointerDelegateLifetimeAnalyzer.FunctionPointerDelegateLifetimeAnalyzer() -> void
+E128.Analyzers.Unsafe.UnsafeCopyReferenceTypeAnalyzer
+E128.Analyzers.Unsafe.UnsafeCopyReferenceTypeAnalyzer.UnsafeCopyReferenceTypeAnalyzer() -> void
+E128.Analyzers.Reliability.StackAllocSafetyCodeFixProvider
+E128.Analyzers.Reliability.StackAllocSafetyCodeFixProvider.StackAllocSafetyCodeFixProvider() -> void
