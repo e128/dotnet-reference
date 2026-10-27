@@ -71,4 +71,25 @@ public sealed class ImmutableArrayCreateToArrayAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenToArrayIsUserDefined()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Immutable;
+                           class Cache
+                           {
+                               private readonly int[] _shared = { 1, 2, 3 };
+                               public int[] ToArray() => _shared;
+                           }
+                           class C
+                           {
+                               void M(Cache cache)
+                               {
+                                   var arr = ImmutableArray.Create(cache.ToArray());
+                               }
+                           }
+                           """);
+    }
 }

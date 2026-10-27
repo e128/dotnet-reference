@@ -62,6 +62,10 @@ public sealed class ImmutableArrayCreateToArrayCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        var model = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        var alreadyImported = model is not null
+            && model.LookupNamespacesAndTypes(invocation.SpanStart, name: "ImmutableCollectionsMarshal").Length > 0;
+
         var argument = invocation.ArgumentList.Arguments[0].Expression;
 
         var replacement = SyntaxFactory.InvocationExpression(
@@ -73,7 +77,8 @@ public sealed class ImmutableArrayCreateToArrayCodeFixProvider : CodeFixProvider
                 SyntaxFactory.SingletonSeparatedList(
                     SyntaxFactory.Argument(argument))));
 
-        var newRoot = AddUsingIfMissing(root.ReplaceNode(invocation, replacement.WithTriviaFrom(invocation)));
+        var replaced = root.ReplaceNode(invocation, replacement.WithTriviaFrom(invocation));
+        var newRoot = alreadyImported ? replaced : AddUsingIfMissing(replaced);
         return document.WithSyntaxRoot(newRoot);
     }
 

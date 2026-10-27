@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-10-16T18:14:05Z*
+*Updated: 2026-10-27T16:15:56Z*
 
 ## Strategy: Deny by Default
 
@@ -111,7 +111,7 @@ Key rules by category (not exhaustive):
 | Category    | Examples                                                                                           |
 | ----------- | -------------------------------------------------------------------------------------------------- |
 | Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray   |
-| Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard  |
+| Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard, stackalloc bounds, pool zeroing |
 | Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation, O(n²) loop patterns, `SearchValues<char>` over `string.IndexOfAny` (E128102) |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
 | Maintainability | See the README rule table                                                                      |
@@ -185,6 +185,8 @@ Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or a
 **Exclusions**: `Math.Min(value, cap)` as the direct argument or via a local variable. Small constant literals (e.g., `Rent(1024)`).
 
 No code fix: the cap value is context-specific.
+
+Rules E128109, E128110, and E128111 cover `stackalloc` limits, pooled buffer zeroing, and use after Return. See [pooled-buffer-rules.md](analyzers/pooled-buffer-rules.md).
 
 ## Common Test Overrides
 

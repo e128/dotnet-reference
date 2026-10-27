@@ -85,6 +85,24 @@ of what is portable versus Claude-only.
 - Never use the null-forgiving operator (`!`) to silence CS8600 through
   CS8604.
 
+## Pooled Buffers (Required)
+
+- Clear every `ArrayPool<T>` or `MemoryPool<T>` buffer with
+  `CryptographicOperations.ZeroMemory` before you return it to the pool.
+- Zero the whole rented array, not only the bytes you used.
+- Zero it in a `finally` block so every exit path (exceptions and early
+  returns) clears it.
+- Never rely on `Return(buffer, clearArray: true)`. It is not the
+  cryptographic guarantee this repo requires.
+- Pass the exact-length slice to an API that needs one. A rented array is
+  oversized.
+- Analyzer `E128110` enforces this for `ArrayPool<T>.Return`. `MemoryPool<T>`
+  is not yet enforced by code. Follow the rule by hand.
+- Reference pattern: the E128110 section of `src/E128.Analyzers/README.md`.
+  The compliant test case is `Silent_WhenFinallyZeroesWholeArrayBeforeReturn`
+  in `tests/E128.Analyzers.Tests/PooledBufferZeroingAnalyzerTests.cs`. No
+  production code in this repo rents a pooled buffer yet.
+
 ## Git Conventions
 
 - Write commit messages in the imperative mood with a concise summary.

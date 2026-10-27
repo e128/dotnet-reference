@@ -23,7 +23,8 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         true,
         "List<T>.GetRange(start, count) allocates an intermediate List<T>. " +
-        "CollectionsMarshal.AsSpan(list).Slice(start, count).ToArray() copies directly from the internal array.");
+        "CollectionsMarshal.AsSpan(list).Slice(start, count).ToArray() copies directly from the internal array. " +
+        "The rule skips a call whose result stays a List<T>. The fixed code throws ArgumentOutOfRangeException, not ArgumentException, on a bad range.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -87,6 +88,22 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
         }
 
         if (!SymbolEqualityComparer.Default.Equals(containingType.OriginalDefinition, listType))
+        {
+            return;
+        }
+
+        // The fix returns T[]. Skip a call whose result must stay a List<T>.
+        var convertedType = context.SemanticModel.GetTypeInfo(invocation, context.CancellationToken).ConvertedType;
+        if (convertedType is INamedTypeSymbol converted
+            && SymbolEqualityComparer.Default.Equals(converted.OriginalDefinition, listType))
+        {
+            return;
+        }
+
+        // GetRange throws on a null receiver. AsSpan(null) returns an empty span. Report only a receiver
+        // that flow analysis proves non-null, so a maybe-null or nullable-disabled receiver stays silent.
+        if (context.SemanticModel.GetTypeInfo(memberAccess.Expression, context.CancellationToken).Nullability.FlowState
+            != NullableFlowState.NotNull)
         {
             return;
         }

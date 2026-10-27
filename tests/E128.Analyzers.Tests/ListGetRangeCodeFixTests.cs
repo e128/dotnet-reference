@@ -24,17 +24,19 @@ public sealed class ListGetRangeCodeFixTests
     {
         return VerifyFixAsync(
             """
+            #nullable enable
             using System.Collections.Generic;
             class C
             {
                 void M()
                 {
                     var list = new List<int> { 1, 2, 3, 4, 5 };
-                    var range = {|E128084:list.GetRange(1, 3)|};
+                    IReadOnlyList<int> range = {|E128084:list.GetRange(1, 3)|};
                 }
             }
             """,
             """
+            #nullable enable
             using System.Collections.Generic;
             using System.Runtime.InteropServices;
 
@@ -43,7 +45,7 @@ public sealed class ListGetRangeCodeFixTests
                 void M()
                 {
                     var list = new List<int> { 1, 2, 3, 4, 5 };
-                    var range = CollectionsMarshal.AsSpan(list).Slice(1, 3).ToArray();
+                    IReadOnlyList<int> range = CollectionsMarshal.AsSpan(list).Slice(1, 3).ToArray();
                 }
             }
             """);

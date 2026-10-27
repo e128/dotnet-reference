@@ -88,6 +88,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128100 | Catch filter reads negated token state on `OperationCanceledException`                | Yes      |
 | E128101 | Verify process output file exists before use                                          | Yes      |
 | E128103 | DI resolve without a registration in the compilation                                  | No       |
+| E128109 | `stackalloc` must be bounded and outside loops                                         | No       |
+| E128110 | Zero a pooled buffer in a `finally` block before `Return`                             | No       |
+| E128111 | Pooled buffer used after `Return`                                                     | No       |
 
 ### Performance
 
@@ -940,7 +943,7 @@ var startInfo = new ProcessStartInfo
 
 ### E128083 &mdash; ImmutableArray.Create with ToArray copies the array
 
-Flags `ImmutableArray.Create(x.ToArray())` and `ImmutableArray.CreateRange(x.ToArray())`. Both patterns copy the array unnecessarily. `ImmutableCollectionsMarshal.AsImmutableArray` wraps an existing array in zero copies.
+Flags `ImmutableArray.Create(x.ToArray())` and `ImmutableArray.CreateRange(x.ToArray())`. Both patterns copy the array unnecessarily. `ImmutableCollectionsMarshal.AsImmutableArray` wraps an existing array in zero copies. The rule fires only when `ToArray` comes from an allowlisted BCL type (`Enumerable`, `List<T>`, `HashSet<T>`, `Queue<T>`, `Stack<T>`).  A user-defined `ToArray` may return a shared array.
 
 ```csharp
 // Before (warns)
@@ -952,7 +955,7 @@ var result = ImmutableCollectionsMarshal.AsImmutableArray(items.ToArray());
 
 ### E128084 &mdash; List.GetRange allocates intermediate list
 
-Flags `list.GetRange(start, count)`. `GetRange` allocates an intermediate `List<T>`. Use `CollectionsMarshal.AsSpan(list).Slice(start, count).ToArray()` to copy directly from the internal array without the intermediate allocation.
+Flags `list.GetRange(start, count)`. `GetRange` allocates an intermediate `List<T>`. Use `CollectionsMarshal.AsSpan(list).Slice(start, count).ToArray()` to copy directly from the internal array without the intermediate allocation. The rule fires only when flow analysis proves the receiver non-null, because `AsSpan(null)` returns an empty span where `GetRange` throws. A bad range throws `ArgumentOutOfRangeException` from `Slice`.
 
 ```csharp
 // Before (warns)
@@ -1084,6 +1087,49 @@ async Task Insert(SqliteConnection connection, FileInsertData data)
     await command.ExecuteNonQueryAsync();
 }
 ```
+
+### E128109 &mdash; stackalloc safety
+
+Flags `stackalloc` inside a loop, with a constant size above 1024 bytes, or with a length that has
+no guard, or that is assigned to a pointer instead of `Span<T>`.
+Stack space is not reclaimed until the method returns. A conditional expression or an `if` statement counts as
+a guard only when its condition tests a name used in the length. `Math.Min` also counts as a guard. No code fix: the fallback buffer is context-specific.
+
+```csharp
+// Before (warns)
+Span<byte> buffer = stackalloc byte[length];
+
+// After
+Span<byte> buffer = length <= 256 ? stackalloc byte[length] : new byte[length];
+```
+
+### E128110 &mdash; Zero a pooled buffer before Return
+
+Flags `ArrayPool<T>.Return(buffer)` unless the same `finally` block first calls
+`CryptographicOperations.ZeroMemory` on the whole rented array as a direct statement. A call nested in an
+`if`, loop, or lambda does not count. A slice such as `buffer.AsSpan(0, used)`
+does not satisfy the rule. `Return(buffer, clearArray: true)` does not satisfy it either. The rule
+covers `ArrayPool<T>` only. `MemoryPool<T>` is not checked. No code fix.
+
+```csharp
+// Before (warns)
+ArrayPool<byte>.Shared.Return(buffer);
+
+// After
+try { /* use buffer */ }
+finally
+{
+    CryptographicOperations.ZeroMemory(buffer);
+    ArrayPool<byte>.Shared.Return(buffer);
+}
+```
+
+### E128111 &mdash; Pooled buffer used after Return
+
+Flags a read or write of a rented buffer in a statement that follows `ArrayPool<T>.Return(buffer)`.
+After `Return` the pool may give the array to another caller. Return from a `finally` block only when
+no other thread or pending async operation still uses the buffer. A reassignment of the buffer stops the
+scan. No code fix.
 
 ### E128107 and E128108 &mdash; Low-value test conditions
 

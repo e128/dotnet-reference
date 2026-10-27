@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -14,6 +15,17 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
 
     private const string ImmutableArrayMetadataName = "System.Collections.Immutable.ImmutableArray";
     private const string ImmutableCollectionsMarshalMetadataName = "System.Runtime.InteropServices.ImmutableCollectionsMarshal";
+
+    // BCL types whose ToArray always returns a new array.
+    private static readonly HashSet<string> FreshArrayToArrayOwners = new(StringComparer.Ordinal)
+    {
+        "System.Linq.Enumerable",
+        "System.Linq.ImmutableArrayExtensions",
+        "System.Collections.Generic.List<T>",
+        "System.Collections.Generic.HashSet<T>",
+        "System.Collections.Generic.Queue<T>",
+        "System.Collections.Generic.Stack<T>"
+    };
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -98,6 +110,13 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
         // rejects, so the diagnostic set does not change.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
             || !SymbolEqualityComparer.Default.Equals(method.ContainingType, immutableArrayType))
+        {
+            return;
+        }
+
+        // AsImmutableArray wraps the array without a copy. Only an allowlisted BCL ToArray guarantees a fresh array.
+        if (context.SemanticModel.GetSymbolInfo(innerInvocation, context.CancellationToken).Symbol is not IMethodSymbol inner
+            || !FreshArrayToArrayOwners.Contains(inner.ContainingType.OriginalDefinition.ToDisplayString()))
         {
             return;
         }

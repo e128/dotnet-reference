@@ -24,13 +24,66 @@ public sealed class ListGetRangeAnalyzerTests
     public Task Reports_WhenCalledOnList()
     {
         return VerifyAsync("""
+                           #nullable enable
                            using System.Collections.Generic;
                            class C
                            {
                                void M()
                                {
                                    var list = new List<int> { 1, 2, 3, 4, 5 };
-                                   var range = {|E128084:list.GetRange(1, 3)|};
+                                   IReadOnlyList<int> range = {|E128084:list.GetRange(1, 3)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenResultStaysList()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var list = new List<int> { 1, 2, 3, 4, 5 };
+                                   var inferred = list.GetRange(1, 3);
+                                   inferred.Add(6);
+                                   List<int> typed = list.GetRange(0, 2);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenReceiverMaybeNull()
+    {
+        return VerifyAsync("""
+                           #nullable enable
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M(List<int>? list)
+                               {
+                                   IReadOnlyList<int> range = list.GetRange(1, 3);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenNullableContextIsDisabled()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M(List<int> list)
+                               {
+                                   IReadOnlyList<int> range = list.GetRange(1, 3);
                                }
                            }
                            """);

@@ -67,6 +67,10 @@ public sealed class ListGetRangeCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        var model = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        var alreadyImported = model is not null
+            && model.LookupNamespacesAndTypes(invocation.SpanStart, name: "CollectionsMarshal").Length > 0;
+
         var receiver = memberAccess.Expression;
         var startArg = invocation.ArgumentList.Arguments[0].Expression;
         var countArg = invocation.ArgumentList.Arguments[1].Expression;
@@ -99,7 +103,8 @@ public sealed class ListGetRangeCodeFixProvider : CodeFixProvider
                 sliceCall,
                 SyntaxFactory.IdentifierName("ToArray")));
 
-        var newRoot = AddUsingIfMissing(root.ReplaceNode(invocation, toArrayCall.WithTriviaFrom(invocation)));
+        var replaced = root.ReplaceNode(invocation, toArrayCall.WithTriviaFrom(invocation));
+        var newRoot = alreadyImported ? replaced : AddUsingIfMissing(replaced);
         return document.WithSyntaxRoot(newRoot);
     }
 
