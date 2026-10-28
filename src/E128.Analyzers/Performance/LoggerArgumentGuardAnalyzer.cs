@@ -133,7 +133,33 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
             .DescendantNodesAndSelf()
             .OfType<InvocationExpressionSyntax>()
             .Any(candidate => IsGuardCall(candidate, receiver, level)
-                && candidate.Parent is not PrefixUnaryExpressionSyntax);
+                && !IsWeakened(candidate, node));
+    }
+
+    // A guard only proves the level is enabled when it is not negated and not one side of
+    // `||`. `if (verbose || logger.IsEnabled(Information))` still logs when logging is off.
+    private static bool IsWeakened(SyntaxNode guard, SyntaxNode condition)
+    {
+        for (var parent = guard.Parent; parent is not null; parent = parent.Parent)
+        {
+            if (parent is PrefixUnaryExpressionSyntax negation
+                && negation.IsKind(SyntaxKind.LogicalNotExpression))
+            {
+                return true;
+            }
+
+            if (parent is BinaryExpressionSyntax binary && binary.IsKind(SyntaxKind.LogicalOrExpression))
+            {
+                return true;
+            }
+
+            if (parent == condition)
+            {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     // One level of indirection: a local that holds the check, or a helper method or property that returns it.

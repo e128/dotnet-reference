@@ -87,7 +87,10 @@ public sealed class SearchValuesHoistingAnalyzer : DiagnosticAnalyzer
             foreach (var name in argument.Expression.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
             {
                 var symbol = semanticModel.GetSymbolInfo(name, cancellationToken).Symbol;
-                var isStaticInput = symbol is INamespaceOrTypeSymbol or IMethodSymbol
+                // A member call must be static too. Hoisting an instance call into a static
+                // field initializer does not compile.
+                var isStaticInput = symbol is INamespaceOrTypeSymbol
+                    || symbol is IMethodSymbol { IsStatic: true }
                     || symbol is IFieldSymbol { IsStatic: true } field && (field.IsConst || field.IsReadOnly);
 
                 if (!isStaticInput)

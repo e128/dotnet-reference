@@ -51,6 +51,27 @@ public sealed class AggressiveOptimizationAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenTheAttributeUsesTheSuffixOrAFullyQualifiedName()
+    {
+        return VerifyAsync("""
+                           using System.Runtime.CompilerServices;
+                           class C
+                           {
+                               [{|E128116:MethodImplAttribute(MethodImplOptions.AggressiveOptimization)|}]
+                               void M()
+                               {
+                               }
+
+                               [{|E128116:System.Runtime.CompilerServices.MethodImpl(MethodImplOptions.AggressiveOptimization)|}]
+                               void N()
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenOnlyInliningIsRequested()
     {
         return VerifyAsync("""
