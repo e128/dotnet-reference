@@ -160,8 +160,9 @@ For each threat with Likelihood >= Medium OR Impact >= High, using the bridge ta
 
 6. **Print report** to terminal with severity summary and top-3 unmitigated findings
 
-7. **If CRITICAL or HIGH unmitigated findings exist**: recommend creating a structured plan:
-   `"Consider: /org:dev-planning security-hardening-{domain}"`
+7. **If CRITICAL or HIGH unmitigated findings exist**: recommend a plan under `plans/`:
+   `"Consider: plans/security-hardening-{domain}"`. Resolve the path with
+   `scripts/internal/plan-path.sh`.
 
 ## Report Format
 
@@ -169,12 +170,12 @@ See [references/report-format.md](references/report-format.md) for the full temp
 
 ## Integration Points
 
-- **org:dev-planning**: when creating plans for security-sensitive features, recommend running
-  `/threat-model` during the investigation phase. Feed CRITICAL/HIGH findings into the plan
+- **plans/**: when creating a plan for a security-sensitive feature, run `/threat-model` during
+  the investigation phase. Feed CRITICAL/HIGH findings into the plan
 - **solution-audit**: dependency/CPM/NuGet-audit and suppression-hygiene dimensions remain
   structural checks in solution-audit. Threat-model covers design-level concerns
-- **review-orchestrator** / **org:review-pr**: adversarial PR review can reference the threat
-  register when reviewing security-sensitive changes
+- **mr-sparkle**: adversarial review can reference the threat register when it reviews
+  security-sensitive changes
 - **security-review skill**: code-level OWASP scanning of the current diff. Complementary to
   this skill's design-level analysis
 - **dep-check** (`scripts/dep-check.sh`): supply-chain threats (CAPEC-664) should be confirmed
