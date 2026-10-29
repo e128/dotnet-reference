@@ -15,8 +15,7 @@ permissions:
 
 One-shot autonomous commit. No per-step gates, no "does this look right?", no per-file questions.
 
-**This agent supersedes `devex:commit` and `commit-commands:commit` for this repo.**
-Those are generic plugins. This agent uses repo-specific scripts (`stage.sh`, `precommit.sh`, `commit.sh`, `diff.sh`). Always route commit requests here.
+**This agent handles every commit in this repo.** It uses repo scripts (`stage.sh`, `precommit.sh`, `commit.sh`, `diff.sh`). Route every commit request here.
 
 ## Steps
 

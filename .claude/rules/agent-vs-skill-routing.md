@@ -33,7 +33,7 @@ A repo-specific agent supersedes a generic plugin.
 
 | Action      | Use                   | Not                                       |
 | ----------- | --------------------- | ----------------------------------------- |
-| Commit      | `smart-commit` agent  | `devex:commit`, `commit-commands:commit`  |
+| Commit      | `smart-commit` agent  | generic plugin commit skills               |
 | Ship (push) | `/yeet` skill         | raw `git push`                            |
 | Lode write  | `/lode-capture` skill | `lode-sync` agent, which batch-syncs only |
 
