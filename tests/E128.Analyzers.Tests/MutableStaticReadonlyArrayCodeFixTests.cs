@@ -126,4 +126,71 @@ public sealed class MutableStaticReadonlyArrayCodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FixByteArray_BecomesReadOnlySpan()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                private static readonly {|E128061:byte[] Magic = [0x50, 0x4B, 0x03, 0x04]|};
+            }
+            """,
+            """
+            using System;
+
+            class C
+            {
+                private static ReadOnlySpan<byte> Magic => [0x50, 0x4B, 0x03, 0x04];
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FixByteArray_WithNewInitializer_BecomesReadOnlySpan()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                private static readonly {|E128061:byte[] Mask = new byte[] { 0xFF, 0x0F }|};
+            }
+            """,
+            """
+            using System;
+
+            class C
+            {
+                private static ReadOnlySpan<byte> Mask => [0xFF, 0x0F];
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FixByteArray_WithNonConstantElement_BecomesImmutableArray()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                private static readonly {|E128061:byte[] Bytes = new byte[] { 1, ReadOne() }|};
+
+                private static byte ReadOne() => 1;
+            }
+            """,
+            """
+            using System.Collections.Immutable;
+
+            class C
+            {
+                private static readonly ImmutableArray<byte> Bytes = [1, ReadOne()];
+
+                private static byte ReadOne() => 1;
+            }
+            """);
+    }
 }

@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-10-31T19:47:35Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three
@@ -25,7 +25,8 @@ description.
 ## Rules From Guidance Documents
 
 Two published guidance documents seeded the rules below. Most rules carry a code
-fix provider. The rules E128125 to E128129 carry a diagnostic only.
+fix provider. The rules E128125 to E128129 and E128136 to E128138 carry a
+diagnostic only.
 
 - Source A: the .NET performance skill guide in `EgorBo/BlazingFastDotnet`.
 - Source B: the runtime unsafe-code best-practices page in `dotnet/docs`.
@@ -40,8 +41,10 @@ rule description and the fix shape live in `src/E128.Analyzers/README.md`.
 | E128118-E128120 | Unsafe code | every rule      | `Unsafe/`          |
 | E128121-E128124 | Performance | every rule      | `Performance/`     |
 | E128125-E128129 | Unsafe code | no rule         | `Unsafe/`          |
+| E128131-E128135 | Performance | E128135 partial | `Performance/`     |
+| E128136-E128138 | Unsafe code | no rule         | `Unsafe/`          |
 
-The next free ID after this set is E128130.
+The next free ID after the implemented set is E128130.
 
 These rules have no code fix. The remediation depends on intent that the syntax
 tree does not carry.
@@ -66,3 +69,35 @@ The guidance rows that stay a document and not a rule:
 | Object header and MethodTable access   | No supported replacement                  |
 | Fuzzing and raw IL validation          | Process guidance, not a code shape        |
 | `AggressiveInlining` overuse           | The size heuristic is too noisy           |
+
+## Second Read Of The Guidance Documents
+
+A second read on 2026-10-31 found ten more rows with a code shape that an
+analyzer can see. Nine of them ship. The tenth folded into a shipped rule.
+
+| ID            | Rule                                                   | Source  | Code fix | Noise  |
+| ------------- | ------------------------------------------------------ | ------- | -------- | ------ |
+| none          | Static byte array literal becomes an RVA span property | C5      | Yes      | Low    |
+| E128131       | Parse and format UTF-8 bytes without a string          | C7, C28 | Yes      | Low    |
+| E128132       | Use an ordinal comparer in a string dictionary or set  | C27     | Yes      | Low    |
+| E128133       | Look up a span key with `GetAlternateLookup`           | C10     | Yes      | Medium |
+| E128134       | Use `BitOperations` instead of a manual bit loop       | C17     | Yes      | Medium |
+| E128135       | Use `TensorPrimitives` over a numeric span             | C12     | Partial  | Medium |
+| E128136       | Use `Span<T>` instead of a pointer and a length        | 16.1    | No       | Low    |
+| E128137       | Do not access nonpublic BCL members                    | 3.4     | No       | Low    |
+| E128138       | Do not emit raw IL with `ILGenerator`                  | 18.1    | No       | Low    |
+| E128139       | Guard pointer indexing with `Debug.Assert`             | 9.4     | Partial  | High   |
+
+The byte literal row folded into E128061. That rule owns every
+`private static readonly T[]` field, so a second rule would report the same
+field twice. The E128061 fix reads a constant byte sequence as a
+`ReadOnlySpan<byte>` property and every other element type as
+`ImmutableArray<T>`.
+
+The unsafe guidance row 20.2 says to abandon a pooled buffer instead of
+returning it in `finally`. The repository requires a zero and a return in
+`finally`. Keep the repository rule. It satisfies the row, because the buffer
+is provably unused at that point.
+
+E128139 has high noise and no automatic fix. Skip it unless a real defect
+appears in review. E128130 stays free, so the next new rule takes that ID.

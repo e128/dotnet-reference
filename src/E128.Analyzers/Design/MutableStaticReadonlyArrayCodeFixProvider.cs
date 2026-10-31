@@ -12,8 +12,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     Code fix for E128061: replaces <c lang="csharp">static readonly T[]</c> with <c lang="csharp">ImmutableArray&lt;T&gt;</c>
-///     and converts the initializer to a collection expression.
+///     Code fix for E128061. A <c lang="csharp">static readonly byte[]</c> field of constants becomes a
+///     <c lang="csharp">static ReadOnlySpan&lt;byte&gt;</c> property, which the compiler stores as read-only
+///     data. Every other element type becomes <c lang="csharp">ImmutableArray&lt;T&gt;</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MutableStaticReadonlyArrayCodeFixProvider))]
 [Shared]
@@ -37,10 +38,26 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
             return;
         }
 
-        var declaration = root.FindNode(context.Diagnostics[0].Location.SourceSpan)
-            .AncestorsAndSelf()
-            .OfType<VariableDeclarationSyntax>()
-            .FirstOrDefault();
+        var node = root.FindNode(context.Diagnostics[0].Location.SourceSpan, getInnermostNodeForTie: true);
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken)
+            .ConfigureAwait(false);
+
+        if (semanticModel is not null
+            && node.AncestorsAndSelf().OfType<FieldDeclarationSyntax>().FirstOrDefault() is { } field
+            && BuildSpanProperties(field, semanticModel, context.CancellationToken) is { } properties)
+        {
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    "Convert to ReadOnlySpan<byte>",
+                    ct => ReplaceFieldWithPropertiesAsync(context.Document, field, properties, ct),
+                    MutableStaticReadonlyArrayAnalyzer.DiagnosticId),
+                context.Diagnostics[0]);
+
+            return;
+        }
+
+        var declaration = node.AncestorsAndSelf().OfType<VariableDeclarationSyntax>().FirstOrDefault();
 
         if (declaration is null)
         {
@@ -53,6 +70,113 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
                 ct => ConvertToImmutableArrayAsync(context.Document, declaration, ct),
                 MutableStaticReadonlyArrayAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
+    }
+
+    /// <summary>
+    ///     Builds one <c lang="csharp">ReadOnlySpan&lt;byte&gt;</c> property per variable. Returns
+    ///     null when any variable is not a constant byte sequence.
+    /// </summary>
+    private static ImmutableArray<PropertyDeclarationSyntax>? BuildSpanProperties(
+        FieldDeclarationSyntax field,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var properties = ImmutableArray.CreateBuilder<PropertyDeclarationSyntax>(field.Declaration.Variables.Count);
+
+        foreach (var variable in field.Declaration.Variables)
+        {
+            if (variable.Initializer is null
+                || semanticModel.GetDeclaredSymbol(variable, cancellationToken) is not IFieldSymbol
+                {
+                    Type: IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte }
+                }
+                || TryGetElements(variable.Initializer.Value) is not { } elements
+                || !elements.All(element => IsByteConstant(element, semanticModel, cancellationToken)))
+            {
+                return null;
+            }
+
+            properties.Add(CreateSpanProperty(field, variable, elements));
+        }
+
+        return properties.Count == 0 ? null : properties.MoveToImmutable();
+    }
+
+    private static PropertyDeclarationSyntax CreateSpanProperty(
+        FieldDeclarationSyntax field,
+        VariableDeclaratorSyntax variable,
+        ImmutableArray<ExpressionSyntax> elements)
+    {
+        var modifiers = SyntaxFactory.TokenList(
+            field.Modifiers.Where(modifier => !modifier.IsKind(SyntaxKind.ReadOnlyKeyword)));
+
+        var collection = SyntaxFactory.CollectionExpression(
+            SyntaxFactory.SeparatedList<CollectionElementSyntax>(
+                elements.Select(element => SyntaxFactory.ExpressionElement(element.WithoutTrivia()))));
+
+        return SyntaxFactory.PropertyDeclaration(
+                SyntaxFactory.ParseTypeName("ReadOnlySpan<byte>"),
+                variable.Identifier.WithoutTrivia().WithLeadingTrivia(SyntaxFactory.Space))
+            .WithAttributeLists(field.AttributeLists)
+            .WithModifiers(modifiers)
+            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(collection))
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+    private static async Task<Document> ReplaceFieldWithPropertiesAsync(
+        Document document,
+        FieldDeclarationSyntax field,
+        ImmutableArray<PropertyDeclarationSyntax> properties,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+        {
+            return document;
+        }
+
+        var replacement = properties
+            .Select((property, index) => index == properties.Length - 1
+                ? property.WithTrailingTrivia(field.GetTrailingTrivia())
+                : property.WithTrailingTrivia(SyntaxFactory.ElasticCarriageReturnLineFeed))
+            .ToArray();
+
+        replacement[0] = replacement[0].WithLeadingTrivia(field.GetLeadingTrivia());
+
+        return document.WithSyntaxRoot(
+            UsingDirectives.AddIfMissing(root.ReplaceNode(field, replacement), "System"));
+    }
+
+    private static ImmutableArray<ExpressionSyntax>? TryGetElements(ExpressionSyntax expression)
+    {
+        switch (expression)
+        {
+            case CollectionExpressionSyntax collection
+                when collection.Elements.All(element => element is ExpressionElementSyntax):
+                return [.. collection.Elements.Cast<ExpressionElementSyntax>().Select(element => element.Expression)];
+            case ImplicitArrayCreationExpressionSyntax { Initializer: { } implicitInitializer }:
+                return [.. implicitInitializer.Expressions];
+            case ArrayCreationExpressionSyntax { Initializer: { } explicitInitializer }:
+                return [.. explicitInitializer.Expressions];
+            default:
+                return null;
+        }
+    }
+
+    private static bool IsByteConstant(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var constant = semanticModel.GetConstantValue(expression, cancellationToken);
+
+        return constant.HasValue
+            && constant.Value switch
+            {
+                byte => true,
+                int value => value is >= 0 and <= 255,
+                _ => false
+            };
     }
 
     private static async Task<Document> ConvertToImmutableArrayAsync(

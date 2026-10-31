@@ -1,5 +1,5 @@
 # Unsafe Code Policy
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-10-31T19:47:35Z*
 
 Production code in this repository contains no unsafe code. No project sets
 `AllowUnsafeBlocks`, so a new `unsafe` block or a pointer type fails the build.
@@ -41,8 +41,10 @@ The document lists four areas that no E128 rule covers as of 2026-10-31.
 - `MemoryPool<T>` and `IMemoryOwner<T>`. E128110 and E128111 watch
   `ArrayPool<T>` only. The pooled buffer rule in `AGENTS.md` still applies by
   hand.
-- A pointer plus a length, and an assumed zero terminator. No rule flags this.
-  Use `Span<T>` and `ReadOnlySpan<T>` instead.
+- A pointer plus a length. E128136 flags a method with a pointer parameter and
+  a separate integer or pointer-width parameter. Use `Span<T>` and
+  `ReadOnlySpan<T>` instead.
+- An assumed zero terminator. No rule flags this.
 - Cross-thread access to a local variable. No rule flags this.
 - Fuzz testing. The repository has no fuzz harness.
 

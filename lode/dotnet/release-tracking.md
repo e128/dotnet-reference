@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-10-31T19:47:35Z*
 
 ## Overview
 
@@ -25,6 +25,10 @@ E128001 | Design | Warning | Description here
 ```
 
 ### AnalyzerReleases.Unshipped.md
+
+This file stays in the project, even when no pending rule exists. RS2000 fails
+the build for a `DiagnosticDescriptor` that appears in neither file. Removing
+the file needs a suppression, which the repository forbids without approval.
 
 Must **NOT** have a `## Release` header. Sections appear directly at top level.
 

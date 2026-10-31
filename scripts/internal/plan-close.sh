@@ -29,9 +29,9 @@ if [[ ! -d "$PLAN_DIR" ]]; then
 fi
 
 # Check for unchecked tasks (excluding Discovered During Implementation).
-# A count of zero exits 1. The old pipeline exited 1 on an empty grep result
-# under pipefail, so a complete plan stopped the script here.
-UNCHECKED=$(awk '/^- \[ \]/ && !/Discovered/ {n++} END {print n+0; if (n == 0) exit 1}' "$TASKS_FILE" 2>/dev/null) || exit 1
+# awk prints a zero count and exits 0 on a complete plan, so the guard below
+# never fires on success. A missing tasks file fails here through awk.
+UNCHECKED=$(awk '/^- \[ \]/ && !/Discovered/ {n++} END {print n+0}' "$TASKS_FILE" 2>/dev/null) || exit 1
 
 if [[ $UNCHECKED -gt 0 ]]; then
     err "$UNCHECKED unchecked task(s) remain — cannot close plan"

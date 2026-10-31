@@ -101,3 +101,29 @@ E128.Analyzers.Unsafe.UnsafeCopyReferenceTypeAnalyzer
 E128.Analyzers.Unsafe.UnsafeCopyReferenceTypeAnalyzer.UnsafeCopyReferenceTypeAnalyzer() -> void
 E128.Analyzers.Reliability.StackAllocSafetyCodeFixProvider
 E128.Analyzers.Reliability.StackAllocSafetyCodeFixProvider.StackAllocSafetyCodeFixProvider() -> void
+E128.Analyzers.Performance.AlternateLookupAnalyzer
+E128.Analyzers.Performance.AlternateLookupAnalyzer.AlternateLookupAnalyzer() -> void
+E128.Analyzers.Performance.AlternateLookupCodeFixProvider
+E128.Analyzers.Performance.AlternateLookupCodeFixProvider.AlternateLookupCodeFixProvider() -> void
+E128.Analyzers.Performance.CultureStringComparerAnalyzer
+E128.Analyzers.Performance.CultureStringComparerAnalyzer.CultureStringComparerAnalyzer() -> void
+E128.Analyzers.Performance.CultureStringComparerCodeFixProvider
+E128.Analyzers.Performance.CultureStringComparerCodeFixProvider.CultureStringComparerCodeFixProvider() -> void
+E128.Analyzers.Performance.ManualBitCountAnalyzer
+E128.Analyzers.Performance.ManualBitCountAnalyzer.ManualBitCountAnalyzer() -> void
+E128.Analyzers.Performance.ManualBitCountCodeFixProvider
+E128.Analyzers.Performance.ManualBitCountCodeFixProvider.ManualBitCountCodeFixProvider() -> void
+E128.Analyzers.Performance.ManualSpanSumAnalyzer
+E128.Analyzers.Performance.ManualSpanSumAnalyzer.ManualSpanSumAnalyzer() -> void
+E128.Analyzers.Performance.ManualSpanSumCodeFixProvider
+E128.Analyzers.Performance.ManualSpanSumCodeFixProvider.ManualSpanSumCodeFixProvider() -> void
+E128.Analyzers.Performance.Utf8StringParseAnalyzer
+E128.Analyzers.Performance.Utf8StringParseAnalyzer.Utf8StringParseAnalyzer() -> void
+E128.Analyzers.Performance.Utf8StringParseCodeFixProvider
+E128.Analyzers.Performance.Utf8StringParseCodeFixProvider.Utf8StringParseCodeFixProvider() -> void
+E128.Analyzers.Unsafe.NonPublicBclReflectionAnalyzer
+E128.Analyzers.Unsafe.NonPublicBclReflectionAnalyzer.NonPublicBclReflectionAnalyzer() -> void
+E128.Analyzers.Unsafe.PointerAndLengthParameterAnalyzer
+E128.Analyzers.Unsafe.PointerAndLengthParameterAnalyzer.PointerAndLengthParameterAnalyzer() -> void
+E128.Analyzers.Unsafe.RawIlEmitAnalyzer
+E128.Analyzers.Unsafe.RawIlEmitAnalyzer.RawIlEmitAnalyzer() -> void
