@@ -47,11 +47,14 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            // One action on a member access replaces a second action on every identifier. A member
-            // access covers both the enum member and the reflection call shape.
+            // A member access covers the enum member and the reflection call shape. An identifier
+            // covers the type name in a typeof, a cast, or a declaration.
             startContext.RegisterSyntaxNodeAction(
                 nodeContext => AnalyzeMemberAccess(nodeContext, bindingFlagsType, typeType),
                 SyntaxKind.SimpleMemberAccessExpression);
+            startContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeIdentifier(nodeContext, bindingFlagsType),
+                SyntaxKind.IdentifierName);
         });
     }
 
@@ -62,7 +65,18 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
     {
         var memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
-        if (IsBindingFlagsAccess(context, memberAccess, bindingFlagsType))
+        // Most member accesses sit outside a test method, and this walk allocates nothing.
+        // Resolve symbols only for the members that remain. An aliased receiver such as
+        // `using BF = System.Reflection.BindingFlags; BF.Public` resolves too, so the check
+        // stays text-free.
+        if (!IsInsideTestMethod(memberAccess))
+        {
+            return;
+        }
+
+        var receiverSymbol = context.SemanticModel.GetSymbolInfo(
+            memberAccess.Expression, context.CancellationToken).Symbol;
+        if (SymbolEqualityComparer.Default.Equals(receiverSymbol, bindingFlagsType))
         {
             context.ReportDiagnostic(
                 Diagnostic.Create(Rule, memberAccess.Expression.GetLocation(), "BindingFlags"));
@@ -75,14 +89,10 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsInsideTestMethod(memberAccess))
-        {
-            return;
-        }
-
+        // A type derived from System.Type, such as TypeBuilder, exposes the same reflection methods.
         var symbol = context.SemanticModel.GetSymbolInfo(memberAccess, context.CancellationToken).Symbol;
         if (symbol is not IMethodSymbol method
-            || !SymbolEqualityComparer.Default.Equals(method.ContainingType, typeType))
+            || !TypeSymbols.DerivesFrom(method.ContainingType, typeType))
         {
             return;
         }
@@ -94,18 +104,34 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, reportNode.GetLocation(), methodName));
     }
 
-    private static bool IsBindingFlagsAccess(
+    private static void AnalyzeIdentifier(
         SyntaxNodeAnalysisContext context,
-        MemberAccessExpressionSyntax memberAccess,
         INamedTypeSymbol bindingFlagsType)
     {
-        if (!IsInsideTestMethod(memberAccess))
+        var identifier = (IdentifierNameSyntax)context.Node;
+
+        // The member-access action already reports the receiver of an enum member.
+        if (identifier.Parent is MemberAccessExpressionSyntax memberAccess
+            && memberAccess.Expression == identifier)
         {
-            return false;
+            return;
         }
 
-        var symbol = context.SemanticModel.GetSymbolInfo(memberAccess.Expression, context.CancellationToken).Symbol;
-        return SymbolEqualityComparer.Default.Equals(symbol, bindingFlagsType);
+        if (!string.Equals(identifier.Identifier.ValueText, "BindingFlags", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (!IsInsideTestMethod(identifier))
+        {
+            return;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol;
+        if (SymbolEqualityComparer.Default.Equals(symbol, bindingFlagsType))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), "BindingFlags"));
+        }
     }
 
     private static bool IsInsideTestMethod(SyntaxNode node)

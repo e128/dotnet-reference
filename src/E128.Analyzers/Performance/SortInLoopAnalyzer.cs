@@ -105,7 +105,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            var containingType = method.ContainingType.OriginalDefinition;
+            var containingType = method.ContainingType?.OriginalDefinition;
             if (!IsSameType(containingType, listType) && !IsSameType(containingType, arrayType))
             {
                 return;
@@ -148,7 +148,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsSameType(method.ContainingType.OriginalDefinition, listType))
+        if (!IsSameType(method.ContainingType?.OriginalDefinition, listType))
         {
             return;
         }

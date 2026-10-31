@@ -1,5 +1,5 @@
 # Unsafe Code Policy
-*Updated: 2026-10-31T13:32:41Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 Production code in this repository contains no unsafe code. No project sets
 `AllowUnsafeBlocks`, so a new `unsafe` block or a pointer type fails the build.

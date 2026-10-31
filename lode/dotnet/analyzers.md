@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-10-27T18:20:50Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 ## Strategy: Deny by Default
 
@@ -100,9 +100,9 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 
 `src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"`. It applies to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
-Rules span categories: Design, Reliability, Performance, Unsafe, Maintainability, Security, Style, Testing, and FileSystem. Most rules ship with a code fix. A few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard, and the diagnostic-only rules E128125 to E128129) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
+Rules span categories: Design, Reliability, Performance, Unsafe, Maintainability, Security, Style, Testing, and FileSystem. Most rules ship with a code fix. Several (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard, and the diagnostic-only rules E128125 to E128129) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
 
-Redundant E128 rules with no code fix are disabled in `.globalconfig`. See [redundant-rules.md](analyzers/redundant-rules.md).
+Redundant E128 rules are disabled in `.globalconfig`, whether or not a code fix ships. See [redundant-rules.md](analyzers/redundant-rules.md).
 
 Key rules by category (not exhaustive):
 

@@ -79,6 +79,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected           |
 | `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4.1-flash:cloud) |
 | `lode-opencode.nu`  | Nushell wrapper: launch opencode via Ollama backend with SystemPrompt.txt injected. The model comes from the `model` key in the global opencode.json |
+| `cc-oc.nu`          | Nushell wrapper: launch claude with SystemPrompt.txt injected against the opencode Go endpoint (default deepseek-v4.1-flash). Reads the `oc_sk_` key from the macOS Keychain |
 
 ## Code Navigation & Analysis
 
@@ -127,7 +128,6 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/plan-gate.sh`              | Phase gate prerequisite verification                                                       |
 | `internal/plan-path.sh`              | Resolve a plan's canonical path by partial name                                            |
 | `internal/precommit.sh`              | Shell lint and PII and secret scan on staged files                                        |
-| `internal/review-agents.sh`          | Discover code-review-relevant agents dynamically from .claude/agents/                      |
 | `internal/review-findings.sh`        | Locate the latest review plan and parse its checklist findings, grouped by file with severity |
 | `internal/settings-gap.sh`           | Diff catalog commands against settings.json allow-list; classify gaps by safety tier       |
 | `internal/stage.sh`                  | Stage modified + new files, excluding secrets                                              |

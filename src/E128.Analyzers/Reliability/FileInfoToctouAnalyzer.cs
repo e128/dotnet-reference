@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -24,8 +25,8 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "FileInfo.Exists TOCTOU race condition",
-        "File read on '{0}' follows FileInfo.Exists check without try/catch guard — another process may delete the file between the check and the read",
+        "File existence check TOCTOU race condition",
+        "File read on '{0}' follows an existence check without a try/catch guard. Another process may delete the file between the check and the read.",
         "Reliability",
         DiagnosticSeverity.Warning,
         true,
@@ -93,7 +94,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var guardedValue = GetGuardedValue(context, invocation);
+            var guardedValue = GetGuardedValue(context, invocation, fileSystemInfoType);
             if (guardedValue is null || !guardedValues.Contains(guardedValue))
             {
                 continue;
@@ -104,17 +105,17 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), guardedValue.Name));
+            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), DisplayName(guardedValue)));
         }
     }
 
-    private static HashSet<ISymbol> CollectGuardedValues(
+    private static HashSet<GuardedValue> CollectGuardedValues(
         SyntaxNodeAnalysisContext context,
         MethodDeclarationSyntax method,
         INamedTypeSymbol fileType,
         INamedTypeSymbol fileSystemInfoType)
     {
-        var result = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var result = new HashSet<GuardedValue>(GuardedValueComparer.Instance);
 
         foreach (var memberAccess in method.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
         {
@@ -129,7 +130,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
             {
                 if (ResolvesTo(context, invocation, fileType))
                 {
-                    AddSymbol(result, GetGuardedValue(context, invocation));
+                    AddSymbol(result, GetGuardedValue(context, invocation, fileSystemInfoType));
                 }
 
                 continue;
@@ -137,18 +138,18 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 
             if (IsFileSystemInfoExists(context, memberAccess, fileSystemInfoType))
             {
-                AddSymbol(result, GetGuardedValue(context, memberAccess.Expression));
+                AddSymbol(result, GetGuardedValue(context, memberAccess.Expression, fileSystemInfoType));
             }
         }
 
         return result;
     }
 
-    private static void AddSymbol(HashSet<ISymbol> target, ISymbol? symbol)
+    private static void AddSymbol(HashSet<GuardedValue> target, GuardedValue? value)
     {
-        if (symbol is not null)
+        if (value is not null)
         {
-            target.Add(symbol);
+            target.Add(value);
         }
     }
 
@@ -159,7 +160,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
     {
         return context.SemanticModel.GetSymbolInfo(memberAccess, context.CancellationToken).Symbol
                    is IPropertySymbol property
-               && DerivesFrom(property.ContainingType, fileSystemInfoType);
+               && TypeSymbols.DerivesFrom(property.ContainingType, fileSystemInfoType);
     }
 
     private static bool IsFileReadCall(
@@ -172,38 +173,114 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                && ResolvesTo(context, invocation, fileType);
     }
 
+    /// <summary>
+    ///     The guarded storage location and, for a member, the member that holds it. A plain class
+    ///     because netstandard2.0 analysis assemblies have no IsExternalInit type for records.
+    /// </summary>
+    private sealed class GuardedValue
+    {
+        private readonly int cachedHash;
+
+        public GuardedValue(ISymbol? receiver, ISymbol? member)
+        {
+            Receiver = receiver;
+            Member = member;
+
+            // Compute the hash here instead of in GetHashCode(). A seal-side rule bans a custom
+            // GetHashCode body from reading SymbolEqualityComparer.Default.
+            var receiverHash = receiver is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(receiver);
+            var memberHash = member is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(member);
+            cachedHash = unchecked((receiverHash * 397) ^ memberHash);
+        }
+
+        public ISymbol? Receiver { get; }
+
+        public ISymbol? Member { get; }
+
+        public string Name => Member?.Name ?? Receiver?.Name ?? "<unknown>";
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is GuardedValue other
+                   && SymbolEqualityComparer.Default.Equals(other.Receiver, Receiver)
+                   && SymbolEqualityComparer.Default.Equals(other.Member, Member);
+        }
+
+        public override int GetHashCode()
+        {
+            return cachedHash;
+        }
+    }
+
+    private sealed class GuardedValueComparer : IEqualityComparer<GuardedValue>
+    {
+        public static readonly GuardedValueComparer Instance = new();
+
+        public bool Equals(GuardedValue? x, GuardedValue? y)
+        {
+            return SymbolEqualityComparer.Default.Equals(x?.Receiver, y?.Receiver)
+                   && SymbolEqualityComparer.Default.Equals(x?.Member, y?.Member);
+        }
+
+        public int GetHashCode(GuardedValue obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
+    private static string DisplayName(GuardedValue value)
+    {
+        return value.Name;
+    }
+
     // The guarded value for File.Exists(path) and for File.ReadAllText(path) is the path argument.
-    private static ISymbol? GetGuardedValue(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
+    private static GuardedValue? GetGuardedValue(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol fileSystemInfoType)
     {
         return invocation.ArgumentList.Arguments.Count == 0
             ? null
-            : GetGuardedValue(context, invocation.ArgumentList.Arguments[0].Expression);
+            : GetGuardedValue(context, invocation.ArgumentList.Arguments[0].Expression, fileSystemInfoType);
     }
 
-    private static ISymbol? GetGuardedValue(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
+    private static GuardedValue? GetGuardedValue(
+        SyntaxNodeAnalysisContext context,
+        ExpressionSyntax expression,
+        INamedTypeSymbol fileSystemInfoType)
     {
-        // fileInfo.FullName names the same file as fileInfo, so the receiver is the guarded value.
-        var target = expression is MemberAccessExpressionSyntax member ? member.Expression : expression;
-        return context.SemanticModel.GetSymbolInfo(target, context.CancellationToken).Symbol;
+        // A call names no storage location. Two calls to the same helper bind to one method symbol,
+        // so a call argument cannot identify the guarded value.
+        if (expression is InvocationExpressionSyntax)
+        {
+            return null;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(expression, context.CancellationToken).Symbol;
+        if (symbol is null)
+        {
+            return null;
+        }
+
+        var receiverSymbol = expression is MemberAccessExpressionSyntax member
+            ? context.SemanticModel.GetSymbolInfo(member.Expression, context.CancellationToken).Symbol
+            : null;
+
+        // fileInfo.FullName names the same file as fileInfo, so a member of a FileSystemInfo reduces
+        // to the same guarded value that a read of the receiver itself produces. Any other member
+        // keys on the (receiver, member) pair, so config.Input, config.Output, and the same member
+        // on a sibling instance all stay distinct.
+        return symbol is IPropertySymbol property
+               && TypeSymbols.DerivesFrom(property.ContainingType, fileSystemInfoType)
+               && expression is MemberAccessExpressionSyntax fsMember
+            ? GetGuardedValue(context, fsMember.Expression, fileSystemInfoType)
+            : new GuardedValue(receiverSymbol, symbol);
     }
 
     private static bool ResolvesTo(SyntaxNodeAnalysisContext context, SyntaxNode node, INamedTypeSymbol target)
     {
         return context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol is IMethodSymbol method
                && SymbolEqualityComparer.Default.Equals(method.ContainingType, target);
-    }
-
-    private static bool DerivesFrom(INamedTypeSymbol? type, INamedTypeSymbol baseType)
-    {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, baseType))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static bool IsInsideTryCatch(SyntaxNode node, SyntaxNode boundary)

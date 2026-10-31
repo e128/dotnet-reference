@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -237,7 +238,7 @@ public sealed partial class LowValueTestAnalyzer
             // such as IDocument.QuerySelector("img") is not the call under test and does not echo.
             if (IsLiteralOnlyProductionCall(facts, argument.Expression, out var call))
             {
-                calls.Add(call!);
+                calls.Add(call);
                 continue;
             }
 
@@ -295,7 +296,7 @@ public sealed partial class LowValueTestAnalyzer
     private static bool IsLiteralOnlyProductionCall(
         TestFacts facts,
         ExpressionSyntax expression,
-        out InvocationExpressionSyntax? call)
+        [NotNullWhen(true)] out InvocationExpressionSyntax? call)
     {
         call = expression as InvocationExpressionSyntax;
 
@@ -339,7 +340,9 @@ public sealed partial class LowValueTestAnalyzer
             }
             else if (node is MemberAccessExpressionSyntax member
                      && string.Equals(member.Name.Identifier.ValueText, "Message", StringComparison.Ordinal)
-                     && DerivesFromException(facts.Model.GetTypeInfo(member.Expression, facts.CancellationToken).Type))
+                     && DerivesFromException(
+                         facts.Model.GetTypeInfo(member.Expression, facts.CancellationToken).Type,
+                         facts.Model.Compilation.GetTypeByMetadataName("System.Exception")))
             {
                 hasExceptionMessage = true;
             }
@@ -427,17 +430,9 @@ public sealed partial class LowValueTestAnalyzer
         return name.StartsWith("Verify", StringComparison.Ordinal);
     }
 
-    private static bool DerivesFromException(ITypeSymbol? type)
+    private static bool DerivesFromException(ITypeSymbol? type, ITypeSymbol? exceptionType)
     {
-        for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
-        {
-            if (string.Equals(current.ToDisplayString(), "System.Exception", StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return exceptionType is not null && TypeSymbols.DerivesFrom(type, exceptionType);
     }
 
     private static bool IsNullOnly(TestFacts facts)

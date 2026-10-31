@@ -20,14 +20,6 @@ namespace E128.Analyzers.Design;
 [Shared]
 public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
 {
-    // Keeps the type arguments and the qualification. A simple name drops both, so a generic
-    // type or a type from another namespace writes a call that does not compile.
-    private static readonly SymbolDisplayFormat TypeNameFormat = new(
-        globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
-        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
-
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConcreteOnlyDiRegistrationAnalyzer.DiagnosticId];
 
@@ -49,6 +41,13 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
 
         var invocation = node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
         if (invocation is null)
+        {
+            return;
+        }
+
+        // An unqualified registration through `using static` has no receiver to rewrite, so
+        // offering a fix would register an action that changes nothing.
+        if (invocation.Expression is not MemberAccessExpressionSyntax)
         {
             return;
         }
@@ -101,16 +100,26 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return document;
+        }
+
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
             return document;
         }
 
+        // The minimal form qualifies a name only when it is out of scope, and it escapes a keyword
+        // identifier. It also matches the action title, so the preview shows the text that lands.
         var newTypeArgs = SyntaxFactory.TypeArgumentList(
             SyntaxFactory.SeparatedList(
                 [
-                    SyntaxFactory.ParseTypeName(targetInterface.ToDisplayString(TypeNameFormat)),
-                    SyntaxFactory.ParseTypeName(concreteType.ToDisplayString(TypeNameFormat))
+                    SyntaxFactory.ParseTypeName(
+                        targetInterface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)),
+                    SyntaxFactory.ParseTypeName(
+                        concreteType.ToMinimalDisplayString(semanticModel, invocation.SpanStart))
                 ]));
 
         var newName = SyntaxFactory.GenericName(memberAccess.Name.Identifier)

@@ -1,9 +1,9 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using E128.Analyzers.Design;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -21,12 +21,6 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
 {
-    private static readonly SymbolDisplayFormat TypeNameFormat = new(
-        globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
-        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
-
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DisposableSingletonFactoryAnalyzer.DiagnosticId];
 
@@ -52,19 +46,26 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
             return;
         }
 
-        var returnType = await ResolveReturnTypeAsync(context, invocation).ConfigureAwait(false);
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return;
+        }
+
+        var returnType = ResolveReturnType(semanticModel, invocation, context.CancellationToken);
         if (returnType is null)
         {
             return;
         }
 
         var nonMarkerInterfaces = returnType.AllInterfaces
-            .Where(i => !IsMarkerInterface(i))
+            .Where(i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
             .ToList();
 
         foreach (var iface in nonMarkerInterfaces)
         {
-            var title = $"Register as AddSingleton<{iface.Name}, {returnType.Name}>()";
+            // The minimal form keeps the type arguments and matches the text the fix writes.
+            var title = $"Register as AddSingleton<{iface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}, {returnType.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}>()";
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
@@ -74,23 +75,11 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
         }
     }
 
-    private static bool IsMarkerInterface(INamedTypeSymbol iface)
+    private static ITypeSymbol? ResolveReturnType(
+        SemanticModel semanticModel,
+        InvocationExpressionSyntax invocation,
+        CancellationToken cancellationToken)
     {
-        var display = iface.ToDisplayString();
-        return string.Equals(display, "System.IDisposable", StringComparison.Ordinal)
-               || string.Equals(display, "System.IAsyncDisposable", StringComparison.Ordinal);
-    }
-
-    private static async Task<ITypeSymbol?> ResolveReturnTypeAsync(
-        CodeFixContext context,
-        InvocationExpressionSyntax invocation)
-    {
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return null;
-        }
-
         var arg = invocation.ArgumentList.Arguments[0].Expression;
         var bodyExpr = arg switch
         {
@@ -99,7 +88,7 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
             _ => null
         };
 
-        return bodyExpr is null ? null : semanticModel.GetTypeInfo(bodyExpr, context.CancellationToken).Type;
+        return bodyExpr is null ? null : semanticModel.GetTypeInfo(bodyExpr, cancellationToken).Type;
     }
 
     private static async Task<Document> RewriteToGenericOverloadAsync(
@@ -120,13 +109,21 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return document;
+        }
+
         // A bare Name drops the type arguments and the namespace. `Repository` alone, for
         // Repository<Order>, does not compile, so the written name carries both.
         var newTypeArgs = SyntaxFactory.TypeArgumentList(
             SyntaxFactory.SeparatedList(
                 [
-                    SyntaxFactory.ParseTypeName(targetInterface.ToDisplayString(TypeNameFormat)),
-                    SyntaxFactory.ParseTypeName(concreteType.ToDisplayString(TypeNameFormat))
+                    SyntaxFactory.ParseTypeName(
+                        targetInterface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)),
+                    SyntaxFactory.ParseTypeName(
+                        concreteType.ToMinimalDisplayString(semanticModel, invocation.SpanStart))
                 ]));
 
         var newName = SyntaxFactory.GenericName(

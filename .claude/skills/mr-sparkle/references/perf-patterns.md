@@ -1,6 +1,6 @@
 # Performance Anti-Pattern Catalog (E128-Gap)
 
-Reference for the performance-focused review agent and `--perf` flag on `/review --local`. ~15 patterns NOT enforced by E128 build-time analyzers.
+Reference for the performance-focused review agent and the `--perf` flag on `/mr-sparkle`. ~15 patterns NOT enforced by E128 build-time analyzers.
 
 **E128-covered patterns are excluded**: patterns already flagged by the repo's E128 build-time performance analyzers do not belong here. Skip them silently.
 

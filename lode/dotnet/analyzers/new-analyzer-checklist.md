@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-10-31T14:21:47Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 
@@ -75,11 +75,15 @@ only when the async member exists in the compilation.
 ```csharp
 var owner = compilation.GetTypeByMetadataName(entry.Value);
 if (owner is null
-    || !owner.GetMembers(SyncToAsyncMethodNames[entry.Key]).OfType<IMethodSymbol>().Any())
+    || !SyncToAsyncMethodNames.TryGetValue(entry.Key, out var asyncName)
+    || !owner.GetMembers(asyncName).OfType<IMethodSymbol>().Any())
 {
     continue;
 }
 ```
+
+A missing key must skip the pair. An indexer throws inside the registration
+action, and Roslyn reports that as AD0001 for every consumer.
 
 Test the gate. Set `ReferenceAssemblies` to
 `ReferenceAssemblies.NetStandard.NetStandard20` and expect no diagnostic.
@@ -97,16 +101,35 @@ on the spelling alone reports user code that shares the name.
 
 Resolve the symbol once at compilation start, then compare with
 `SymbolEqualityComparer.Default`. E128090 resolves `System.Reflection.BindingFlags`
-and `System.Type`. E128018 resolves `System.Linq.Enumerable`. E128051 and
-E128056 resolve their framework types and compare the bound symbol.
+and `System.Type`. E128018 resolves `System.Linq.Enumerable`, which owns every
+base-library `ToList` binding. E128051 and E128056 resolve their framework types and
+compare the bound symbol.
 
 Never compare `ToDisplayString()` with a literal. Never key a lookup on a
 display string. A display format change silences the rule and no test fails.
 E128068 and E128083 resolve their BCL types and compare `OriginalDefinition`
 with `SymbolEqualityComparer.Default`.
 
-One action on `SimpleMemberAccessExpression` covers both the enum member and
-the reflection call shape. Prefer one narrow action over two broad actions.
+One action on `SimpleMemberAccessExpression` covers both the enum member and the
+reflection call shape. A bare type name, as in `typeof(BindingFlags)`, reaches no
+member access, so E128090 also registers an `IdentifierName` action. That action
+skips the receiver of a member access, which the first action already reports.
+Prefer one narrow action over two broad actions.
+
+Key a guarded value on a symbol that names storage. `GetSymbolInfo` on an
+invocation returns the callee method, so two calls to the same helper compare
+equal. E128056 returns no key for a call argument, and it unwraps a member of a
+`FileSystemInfo` to the value that a read of the receiver itself produces. Any
+other member keys on the (receiver, member) pair, so `config.Input` and
+`config.Output` stay distinct.
+
+A helper type used as a set key needs a pair-keyed comparer. A bare symbol key
+reports `configA.Path` as guarded when only `configB.Path` is guarded. Add an
+`IEqualityComparer<T>` that compares through `SymbolEqualityComparer.Default`.
+Give an `Equals(object?)` override a `[NotNullWhen(true)]` parameter. Compute a
+helper type's hash in the constructor and have `GetHashCode()` return the
+stored value. A repo gate bans a `GetHashCode` body that reads a static
+comparer.
 
 ### Exact Type or Derived Type
 
@@ -118,6 +141,10 @@ requires an exact match. A rule that accepts a family requires a base-type walk.
 - E128051 accepts any type that derives from `OperationCanceledException` as a
   cancellation handler. `TaskCanceledException` counts.
 - E128056 accepts `FileSystemInfo.Exists`, so a `DirectoryInfo` receiver counts.
+- E128090 accepts any type that derives from `System.Type`, so a `TypeBuilder`
+  receiver counts.
+- `TypeSymbols.DerivesFrom` is the shared base-type walk. Call it instead of
+  writing a local copy.
 
 ## Keep the Package README Current
 

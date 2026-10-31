@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-10-16T18:14:38Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.

@@ -29,7 +29,7 @@ if [[ ! -d plans ]]; then
     if $JSON; then
         printf '{"plan":null,"findings":[],"count":0}\n'
     else
-        warn "No saved review found. Run 'review --local' first."
+        warn "No saved review found. Run '/mr-sparkle' first."
     fi
     exit 0
 fi
@@ -39,7 +39,7 @@ if [[ -z "$PLAN_DIR" ]]; then
     if $JSON; then
         printf '{"plan":null,"findings":[],"count":0}\n'
     else
-        warn "No saved review found. Run 'review --local' first."
+        warn "No saved review found. Run '/mr-sparkle' first."
     fi
     exit 0
 fi

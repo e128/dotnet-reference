@@ -82,7 +82,10 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
         // same gated table as the analyzer, so a pair whose async member is absent is left alone.
         var availableSyncIoMethods =
             TaskFromResultSyncIoAnalyzer.FindAvailableSyncIoMethods(semanticModel.Compilation);
-        var syncIoCalls = FindAllSyncIoCalls(newMethod, semanticModel, availableSyncIoMethods, cancellationToken);
+        var syncIoOwnerTypes =
+            TaskFromResultSyncIoAnalyzer.ResolveSyncIoOwnerTypes(semanticModel.Compilation, availableSyncIoMethods);
+        var syncIoCalls = FindAllSyncIoCalls(
+            newMethod, semanticModel, availableSyncIoMethods, syncIoOwnerTypes, cancellationToken);
         if (syncIoCalls.Count > 0)
         {
             newMethod = ReplaceSyncCallsWithAsyncEquivalents(newMethod, syncIoCalls);
@@ -107,6 +110,7 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
         MethodDeclarationSyntax method,
         SemanticModel semanticModel,
         ImmutableDictionary<string, string> availableSyncIoMethods,
+        ImmutableDictionary<string, INamedTypeSymbol?> syncIoOwnerTypes,
         CancellationToken cancellationToken)
     {
         var results = new List<InvocationExpressionSyntax>();
@@ -124,20 +128,23 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
             }
 
             var methodName = memberAccess.Name.Identifier.ValueText;
-            if (!availableSyncIoMethods.ContainsKey(methodName))
+            if (!availableSyncIoMethods.TryGetValue(methodName, out var expectedType))
             {
                 continue;
             }
 
-            var symbolInfo = semanticModel.GetSymbolInfo(invocation, cancellationToken);
-            if (symbolInfo.Symbol is IMethodSymbol calledMethod)
+            if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol calledMethod)
             {
-                var containingType = calledMethod.ContainingType?.ToDisplayString();
-                if (availableSyncIoMethods.TryGetValue(methodName, out var expectedType)
-                    && string.Equals(containingType, expectedType, StringComparison.Ordinal))
-                {
-                    results.Add(invocation);
-                }
+                continue;
+            }
+
+            // Compare the bound type against the per-compilation symbol, so a user type that
+            // shares the metadata name is not a match.
+            if (syncIoOwnerTypes.TryGetValue(expectedType, out var expectedTypeSymbol)
+                && expectedTypeSymbol is not null
+                && SymbolEqualityComparer.Default.Equals(calledMethod.ContainingType, expectedTypeSymbol))
+            {
+                results.Add(invocation);
             }
         }
 

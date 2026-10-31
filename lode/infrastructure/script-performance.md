@@ -1,5 +1,5 @@
 # Script Performance
-*Updated: 2026-10-17T13:32:21Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 Rules for the bash scripts in `scripts/`. The scripts run on macOS and on Linux
 CI. Both hosts pay a high price for a new process. The rules below remove that

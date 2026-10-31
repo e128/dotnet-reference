@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-10-27T18:20:50Z*
+*Updated: 2026-10-31T16:06:37Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three

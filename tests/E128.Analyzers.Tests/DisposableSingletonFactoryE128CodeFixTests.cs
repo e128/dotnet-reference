@@ -63,7 +63,7 @@ public sealed class DisposableSingletonFactoryE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task CodeFix_WritesTheNamespacedGenericInterface_WhenTheServiceIsGeneric()
+    public Task CodeFix_WritesTheGenericInterface_WhenTheServiceIsGeneric()
     {
         return VerifyFixAsync(
             """
@@ -101,7 +101,7 @@ public sealed class DisposableSingletonFactoryE128CodeFixTests
                 {
                     void Configure(IServiceCollection services)
                     {
-                        services.AddSingleton<MyApp.IMyService<string>, MyApp.MyService<string>>();
+                        services.AddSingleton<IMyService<string>, MyService<string>>();
                     }
                 }
             }

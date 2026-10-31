@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-10-31T13:32:41Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice

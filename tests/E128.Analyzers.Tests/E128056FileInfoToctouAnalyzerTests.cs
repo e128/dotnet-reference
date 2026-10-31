@@ -73,6 +73,29 @@ public sealed class E128056FileInfoToctouAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task FileInfoToctou_NoReport_WhenTheSamePropertyIsReadOnADifferentInstance()
+    {
+        // The guarded value keys on the (receiver, member) pair, so configA.Path and configB.Path
+        // name different files even though both bind to the same property symbol.
+        return VerifyAsync("""
+                           using System.IO;
+                           class Config
+                           {
+                               public string Path { get; set; } = string.Empty;
+                           }
+                           class Loader
+                           {
+                               string Load(Config configA, Config configB)
+                               {
+                                   if (File.Exists(configA.Path)) return string.Empty;
+                                   return File.ReadAllText(configB.Path);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task FileInfoToctou_NoReport_WhenReadIsGuardedWithTryCatch()
     {
         return VerifyAsync("""
@@ -115,6 +138,62 @@ public sealed class E128056FileInfoToctouAnalyzerTests
                                    {
                                        return null;
                                    }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FileInfoToctou_NoReport_WhenEachCheckAndReadBuildsItsOwnPath()
+    {
+        // Both arguments bind to Path.Combine. A call names no storage location, so it cannot
+        // stand for a guarded value.
+        return VerifyAsync("""
+                           using System.IO;
+                           class Loader
+                           {
+                               string Load(string dir)
+                               {
+                                   if (!File.Exists(Path.Combine(dir, "a.txt"))) return string.Empty;
+                                   return File.ReadAllText(Path.Combine(dir, "b.txt"));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FileInfoToctou_NoReport_WhenTheReadUsesADifferentPropertyOfTheSameObject()
+    {
+        // InputPath and OutputPath are separate properties, so the check guards a different value.
+        return VerifyAsync("""
+                           using System.IO;
+                           class Options { public string InputPath { get; set; } = ""; public string OutputPath { get; set; } = ""; }
+                           class Loader
+                           {
+                               string Load(Options options)
+                               {
+                                   if (!File.Exists(options.InputPath)) return string.Empty;
+                                   return File.ReadAllText(options.OutputPath);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FileInfoToctou_Reports_WhenTheReadUsesTheGuardedProperty()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class Options { public string Path { get; set; } = ""; }
+                           class Loader
+                           {
+                               string Load(Options options)
+                               {
+                                   if (!File.Exists(options.Path)) return string.Empty;
+                                   return {|E128056:File.ReadAllText(options.Path)|};
                                }
                            }
                            """);

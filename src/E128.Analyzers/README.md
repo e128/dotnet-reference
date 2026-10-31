@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.41.13" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.42.4" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -71,7 +71,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128040 | Concurrency limit must be positive                                                    | Yes      |
 | E128041 | `JsonDocument.RootElement` must not escape the document's `using` scope               | Yes      |
 | E128051 | Broad catch in async `HttpClient` method missing `OperationCanceledException` handler | Yes      |
-| E128056 | `FileInfo.Exists` TOCTOU race condition                                               | Yes      |
+| E128056 | File existence check TOCTOU race condition                                            | Yes      |
 | E128057 | Unprotected cleanup in finally block                                                  | Yes      |
 | E128064 | Disk write-then-read round-trip — use the in-memory value instead of reading back     | Yes      |
 | E128070 | Pool `Rent()` capacity must be bounded — guard with `Math.Min`                        | No       |
@@ -702,9 +702,11 @@ string? value = GetValue();
 #pragma warning restore CS8600
 ```
 
-### E128056 &mdash; FileInfo.Exists TOCTOU race condition
+### E128056 &mdash; File existence check TOCTOU race condition
 
-Flags file-read calls (e.g., `File.ReadAllText`, `File.OpenRead`) that immediately follow a `FileInfo.Exists` check without a `try/catch` guard. Another process may delete the file between the check and the read, causing an unhandled `IOException`.
+Flags file-read calls (e.g., `File.ReadAllText`, `File.OpenRead`) that follow a `FileInfo.Exists` property check or a `File.Exists(path)` call without a `try/catch` guard. Another process may delete the file between the check and the read, causing an unhandled `IOException`.
+
+The rule compares the guarded value by symbol. It reports a read only when the checked value names the same storage location. A call argument such as `Path.Combine(dir, name)` names no storage location, so it is not matched.
 
 ```csharp
 // Before (warns)
@@ -1047,7 +1049,7 @@ if (!int.TryParse(input, out var value)) { /* handle invalid input */ }
 
 ### E128090 &mdash; Reflection in test methods (Info)
 
-Flags `GetMethod`, `GetProperty`, and `GetField` reflection calls inside test methods. Reflection couples tests to private implementation detail; prefer testing through the public API. Default severity: **Info**. No code fix.
+Flags `GetMethod`, `GetProperty`, and `GetField` reflection calls inside test methods, plus a use of the `BindingFlags` type. A type that derives from `System.Type`, such as `TypeBuilder`, counts as a reflection call. Reflection couples tests to private implementation detail; prefer testing through the public API. Default severity: **Info**. No code fix.
 
 ```csharp
 // Before (info)
@@ -1159,8 +1161,9 @@ scan. No code fix.
 
 Flags an xUnit `[Fact]` or `[Theory]` method whose shape locks an implementation detail in place.
 Such a test fails on every honest refactor. One condition reports E128107 at info. Two or more
-report E128108 at warning. Both rules are off by default. Opt in with `dotnet_diagnostic.E128107.severity`
-or `dotnet_diagnostic.E128108.severity`. The code fix deletes the whole test method.
+report E128108 at warning. Tune the severity with `dotnet_diagnostic.E128107.severity`
+or `dotnet_diagnostic.E128108.severity`. This repo keeps both at suggestion, so the code fix
+never auto-applies. The code fix deletes the whole test method.
 
 The conditions:
 

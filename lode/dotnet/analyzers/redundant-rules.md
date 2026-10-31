@@ -1,7 +1,7 @@
 # Redundant E128 Rules
-*Updated: 2026-10-16T18:13:55Z*
+*Updated: 2026-10-31T16:06:37Z*
 
-An E128 rule is redundant when an installed third-party rule fires on the same code. A redundant E128 rule with a code fix stays enabled, because the fix adds value. A redundant rule without a code fix gets `severity = none` in `.globalconfig` (section "E128"). The rule source stays in the project, so package consumers still receive it.
+An E128 rule is redundant when an installed third-party rule fires on the same code. The redundant rule gets `severity = none` in `.globalconfig` (section "E128"), even when the rule ships a code fix. The rule source stays in the project, so package consumers still receive the rule and its fix.
 
 | Disabled rule | Covered by                       |
 | ------------- | -------------------------------- |
@@ -12,6 +12,6 @@ An E128 rule is redundant when an installed third-party rule fires on the same c
 | E128088       | IDE0010, SS018, SS019            |
 | E128096       | VSTHRD002, SS034                 |
 
-E128007 (async void) overlaps S3168 and VSTHRD100 but ships a code fix, so it stays enabled. Probe method: build a scratch project with one snippet per rule, then compare which diagnostic IDs fire on the same line. `scripts/build.sh --project` resolves projects under `src/` or `tests/`.
+E128007 (async void) overlaps S3168 and VSTHRD100 but stays enabled. Probe method: build a scratch project with one snippet per rule, then compare which diagnostic IDs fire on the same line. `scripts/build.sh --project` resolves projects under `src/` or `tests/`.
 
 Related: [analyzers.md](../analyzers.md), [release-tracking.md](../release-tracking.md).
