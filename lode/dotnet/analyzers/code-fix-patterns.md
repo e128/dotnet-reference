@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-10-31T18:31:44Z*
+*Updated: 2026-10-31T19:00:50Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 
@@ -193,6 +193,11 @@ the common shape.
 - **Bare pragma**: a bare `#pragma warning disable` covers every warning. Hold it
   under a `"*"` sentinel, and emit a bare restore for that key. E128055 follows
   this rule.
+- **Inserted statement**: the new statement takes the target statement's leading
+  trivia and an elastic trailing line feed. Without the line feed both statements
+  land on one line. E128110 follows this rule.
+- **Policy value**: a fix that needs a threshold reads an `e128_*` option and
+  falls back to a constant. E128070 follows this rule.
 
 ## Decline at Registration
 

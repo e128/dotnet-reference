@@ -103,7 +103,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `nuget-heat-map.sh`    | NuGet dependency heat map: classify packages and map cross-project sharing (--json) |
 | `runtime-matrix.sh`    | Runtime pinning matrix: SDK pin, per-project target frameworks, Docker base images (--json) |
 | `diagnostics.sh`       | Parse .NET build diagnostics into structured records (--group, --code ID, --diff OLD NEW, --json) |
-| `readme-table-diff.sh` | Detect drift between scripts/README.md and the scripts on disk                   |
+| `readme-table-diff.sh` | Detect drift between a README table and its source of truth                      |
 | `coverage-areas.sh`    | Test coverage heuristic by namespace/project                                    |
 | `session-health.sh`    | Session analytics: error trends, tool counts, bash commands                     |
 | `session-mine.sh`      | Mine Claude Code session transcripts for repeated patterns                      |

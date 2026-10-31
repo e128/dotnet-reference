@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.50.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.50.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -74,9 +74,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128056 | File existence check TOCTOU race condition                                            | Yes      |
 | E128057 | Unprotected cleanup in finally block                                                  | Yes      |
 | E128064 | Disk write-then-read round-trip — use the in-memory value instead of reading back     | Yes      |
-| E128070 | Pool `Rent()` capacity must be bounded — guard with `Math.Min`                        | No       |
+| E128070 | Pool `Rent()` capacity must be bounded — guard with `Math.Min`                        | Yes      |
 | E128076 | Materialize `QuerySelectorAll` result before iterating                                | Yes      |
-| E128077 | `TextContent` string match requires a preceding length guard                          | No       |
+| E128077 | `TextContent` string match requires a preceding length guard                          | Yes      |
 | E128078 | `GetAttribute("href")` on element that does not carry href                            | No       |
 | E128079 | `CompositeDetection` with single generic ID selector lacks specificity                | No       |
 | E128086 | `ArrayPool` buffer used as `SqliteParameter` value without `Size`                     | Yes      |
@@ -89,7 +89,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128101 | Verify process output file exists before use                                          | Yes      |
 | E128103 | DI resolve without a registration in the compilation                                  | No       |
 | E128109 | `stackalloc` must be bounded and outside loops                                         | Yes      |
-| E128110 | Zero a pooled buffer in a `finally` block before `Return`                             | No       |
+| E128110 | Zero a pooled buffer in a `finally` block before `Return`                             | Yes      |
 | E128111 | Pooled buffer used after `Return`                                                     | No       |
 
 ### Performance
@@ -162,7 +162,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 | Rule    | Title                                            | Code Fix |
 | ------- | ------------------------------------------------ | -------- |
-| E128088 | Switch over an enum does not case every member   | No       |
+| E128088 | Switch over an enum does not case every member   | Yes      |
 | E128090 | Avoid reflection in test methods (default: Info) | No       |
 
 ### Unsafe
@@ -862,7 +862,7 @@ var result = source.Reverse().ToList();
 
 ### E128070 &mdash; Pool Rent() capacity guard
 
-Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or any type with "Pool" in the name) where the capacity argument is not bounded. Passing `int.MaxValue` or an unbounded variable causes an OOM crash. Guard with `Math.Min(value, cap)`. No code fix &mdash; the cap value is context-specific.
+Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or any type with "Pool" in the name) where the capacity argument is not bounded. Passing `int.MaxValue` or an unbounded variable causes an OOM crash. Guard with `Math.Min(value, cap)`. The fix wraps the argument in `Math.Min`. The cap comes from the `e128_pool_rent_max_capacity` option, which defaults to 1,048,576.
 
 ```csharp
 // Before (warns)
@@ -1135,7 +1135,9 @@ Flags `ArrayPool<T>.Return(buffer)` unless the same `finally` block first calls
 `CryptographicOperations.ZeroMemory` on the whole rented array as a direct statement. A call nested in an
 `if`, loop, or lambda does not count. A slice such as `buffer.AsSpan(0, used)`
 does not satisfy the rule. `Return(buffer, clearArray: true)` does not satisfy it either. The rule
-covers `ArrayPool<T>` only. `MemoryPool<T>` is not checked. No code fix.
+covers `ArrayPool<T>` only. `MemoryPool<T>` is not checked. The fix inserts the
+`CryptographicOperations.ZeroMemory` call before the flagged `Return` inside its `finally` block.
+It offers no fix when the `Return` has no enclosing `finally`.
 
 ```csharp
 // Before (warns)
