@@ -20,28 +20,28 @@ public sealed class ConcurrencyLimitE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task SemaphoreSlim_Zero_ReplacesWithProcessorCount()
+    public Task MaxDegreeOfParallelism_Zero_ReplacesWithProcessorCount()
     {
         const string source = """
                               using System;
-                              using System.Threading;
+                              using System.Threading.Tasks;
                               class C
                               {
-                                  void M()
+                                  void M(ParallelOptions options)
                                   {
-                                      var s = {|E128040:new SemaphoreSlim(0)|};
+                                      options.MaxDegreeOfParallelism = {|E128040:0|};
                                   }
                               }
                               """;
 
         const string fixedCode = """
                                  using System;
-                                 using System.Threading;
+                                 using System.Threading.Tasks;
                                  class C
                                  {
-                                     void M()
+                                     void M(ParallelOptions options)
                                      {
-                                         var s = new SemaphoreSlim(Environment.ProcessorCount);
+                                         options.MaxDegreeOfParallelism = Environment.ProcessorCount;
                                      }
                                  }
                                  """;

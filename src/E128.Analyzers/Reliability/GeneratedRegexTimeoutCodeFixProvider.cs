@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -34,7 +35,9 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not AttributeSyntax)
+        // A positional argument cannot follow a named one, so an attribute that already uses a named
+        // argument cannot take the appended positional pair.
+        if (node is not AttributeSyntax attribute || HasNamedArgument(attribute))
         {
             return;
         }
@@ -63,8 +66,22 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : CodeFixProvider
 
         var newRoot = root.ReplaceNode(attribute, newAttribute);
 
-        return await EnsureUsingDirectiveAsync(document.WithSyntaxRoot(newRoot), "System.Threading", cancellationToken)
+        var withTimeoutUsing = await EnsureUsingDirectiveAsync(
+                document.WithSyntaxRoot(newRoot), "System.Threading", cancellationToken)
             .ConfigureAwait(false);
+
+        // The emitted options value needs its namespace when the attribute was written fully
+        // qualified.
+        return await EnsureUsingDirectiveAsync(
+                withTimeoutUsing, "System.Text.RegularExpressions", cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static bool HasNamedArgument(AttributeSyntax attribute)
+    {
+        return attribute.ArgumentList?.Arguments.Any(
+                   argument => argument.NameColon is not null || argument.NameEquals is not null)
+               ?? false;
     }
 
     private static AttributeSyntax BuildAttributeWithTimeout(AttributeSyntax attribute)

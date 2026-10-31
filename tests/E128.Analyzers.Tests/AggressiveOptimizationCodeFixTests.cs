@@ -100,4 +100,31 @@ public sealed class AggressiveOptimizationCodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Fix_RemovesAParenthesizedOption()
+    {
+        return VerifyFixAsync(
+            """
+            using System.Runtime.CompilerServices;
+            class C
+            {
+                [{|E128116:MethodImpl(MethodImplOptions.AggressiveInlining | (MethodImplOptions.AggressiveOptimization))|}]
+                void M()
+                {
+                }
+            }
+            """,
+            """
+            using System.Runtime.CompilerServices;
+            class C
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void M()
+                {
+                }
+            }
+            """);
+    }
 }

@@ -77,8 +77,39 @@ public sealed class UnsafeAsPointerEscapeAnalyzer : DiagnosticAnalyzer
         System.Threading.CancellationToken cancellationToken)
     {
         return invocation.ArgumentList.Arguments.Count == 1
+            && !IsInAsyncMember(invocation)
             && model.GetSymbolInfo(invocation.ArgumentList.Arguments[0].Expression, cancellationToken).Symbol
                 is ILocalSymbol { RefKind: RefKind.None } or IParameterSymbol { RefKind: RefKind.None };
+    }
+
+    // An async member moves its locals and by-value parameters into a state machine, which lives on
+    // the heap and moves during a collection. Only a plain stack frame keeps the address stable.
+    private static bool IsInAsyncMember(SyntaxNode node)
+    {
+        foreach (var ancestor in node.Ancestors())
+        {
+            if (ancestor is AnonymousFunctionExpressionSyntax anonymous)
+            {
+                return anonymous.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword);
+            }
+
+            if (ancestor is LocalFunctionStatementSyntax local)
+            {
+                return local.Modifiers.Any(SyntaxKind.AsyncKeyword);
+            }
+
+            if (ancestor is MethodDeclarationSyntax method)
+            {
+                return method.Modifiers.Any(SyntaxKind.AsyncKeyword);
+            }
+
+            if (ancestor is MemberDeclarationSyntax)
+            {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsInsideFixedStatement(SyntaxNode node)

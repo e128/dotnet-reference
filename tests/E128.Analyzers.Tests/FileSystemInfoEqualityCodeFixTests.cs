@@ -67,4 +67,29 @@ public sealed class FileSystemInfoEqualityCodeFixTests
 
         return VerifyFixAsync(source, fixedCode);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FileInfo_Equality_NoFix_WhenOtherOperandIsNotFileSystemInfo()
+    {
+        // The rule fires on either operand, but .FullName exists only on a FileSystemInfo.
+        return VerifyNoFixAsync("""
+                                using System.IO;
+                                class C
+                                {
+                                    bool M(FileInfo file, object other) => file {|E128030:==|} other;
+                                }
+                                """);
+    }
+
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return new CSharpCodeFixTest<FileSystemInfoEqualityAnalyzer, FileSystemInfoEqualityCodeFixProvider, DefaultVerifier>
+        {
+            TestCode = code,
+            FixedCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            NumberOfFixAllIterations = 0
+        }.RunAsync();
+    }
 }

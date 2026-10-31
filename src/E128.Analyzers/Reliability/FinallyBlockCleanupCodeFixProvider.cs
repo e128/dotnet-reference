@@ -42,6 +42,13 @@ public sealed class FinallyBlockCleanupCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // A local declared by the statement would leave the try block. A yield inside a try block
+        // with a catch clause does not compile either.
+        if (statement is LocalDeclarationStatementSyntax or YieldStatementSyntax)
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Wrap cleanup in try/catch(Exception)",

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -44,6 +45,13 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // The rewrite declares a local beside the statement that reads it. With no enclosing
+        // statement, such as a field initializer, the declared name has no scope to live in.
+        if (node.FirstAncestorOrSelf<StatementSyntax>() is null)
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Add null guard around ExecuteScalar",
@@ -68,9 +76,36 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var nullGuard = BuildNullGuardExpression(convertMethodName);
-        var resultDecl = BuildResultDeclaration(innerExpr);
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return document;
+        }
+
+        var localName = GetFreeLocalName(semanticModel, convertInvocation.SpanStart);
+        var nullGuard = BuildNullGuardExpression(convertMethodName, localName);
+        var resultDecl = BuildResultDeclaration(innerExpr, localName);
         return InsertFixIntoTree(document, root, convertInvocation, nullGuard, resultDecl);
+    }
+
+    private static string GetFreeLocalName(SemanticModel semanticModel, int position)
+    {
+        const string BaseName = "result";
+        const int MaxAttempts = 1000;
+
+        for (var suffix = 1; suffix <= MaxAttempts; suffix++)
+        {
+            var candidate = suffix == 1
+                ? BaseName
+                : BaseName + suffix.ToString(CultureInfo.InvariantCulture);
+
+            if (semanticModel.LookupSymbols(position, name: candidate).Length == 0)
+            {
+                return candidate;
+            }
+        }
+
+        return BaseName + MaxAttempts.ToString(CultureInfo.InvariantCulture);
     }
 
     private static bool TryExtractParts(
@@ -97,11 +132,13 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
         return true;
     }
 
-    private static ConditionalExpressionSyntax BuildNullGuardExpression(string convertMethodName)
+    private static ConditionalExpressionSyntax BuildNullGuardExpression(
+        string convertMethodName,
+        string localName)
     {
         return SyntaxFactory.ConditionalExpression(
             SyntaxFactory.IsPatternExpression(
-                SyntaxFactory.IdentifierName("result"),
+                SyntaxFactory.IdentifierName(localName),
                 SyntaxFactory.ConstantPattern(
                     SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression))),
             SyntaxFactory.LiteralExpression(
@@ -114,16 +151,18 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : CodeFixProvider
                     SyntaxFactory.IdentifierName(convertMethodName)),
                 SyntaxFactory.ArgumentList(
                     SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("result"))))));
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName(localName))))));
     }
 
-    private static LocalDeclarationStatementSyntax BuildResultDeclaration(ExpressionSyntax innerExpr)
+    private static LocalDeclarationStatementSyntax BuildResultDeclaration(
+        ExpressionSyntax innerExpr,
+        string localName)
     {
         return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),
                     SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.VariableDeclarator("result")
+                        SyntaxFactory.VariableDeclarator(localName)
                             .WithInitializer(
                                 SyntaxFactory.EqualsValueClause(innerExpr.WithoutTrivia())))))
             .WithTrailingTrivia(SyntaxFactory.LineFeed);

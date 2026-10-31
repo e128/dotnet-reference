@@ -79,9 +79,15 @@ public sealed class MissingTraitCategoryCodeFixProvider : CodeFixProvider
         var lastAttrList = method.AttributeLists.Last();
         var leadingTrivia = lastAttrList.GetLeadingTrivia();
 
+        // The leading trivia holds the doc comment as well as the indentation. Copy only the
+        // indentation, or the fix duplicates the comment on the new list.
+        var indentation = leadingTrivia.Count > 0 && leadingTrivia.Last().IsKind(SyntaxKind.WhitespaceTrivia)
+            ? SyntaxFactory.TriviaList(leadingTrivia.Last())
+            : default;
+
         var traitAttrList = SyntaxFactory.AttributeList(
                 SyntaxFactory.SingletonSeparatedList(traitAttribute))
-            .WithLeadingTrivia(leadingTrivia)
+            .WithLeadingTrivia(indentation)
             .WithTrailingTrivia(SyntaxFactory.LineFeed);
 
         var newMethod = method.WithAttributeLists(method.AttributeLists.Add(traitAttrList));

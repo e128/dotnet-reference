@@ -34,15 +34,40 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (FindBinaryExpression(node) is { } binary)
+        if (FindBinaryExpression(node) is not { } binary)
         {
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Compare .FullName instead",
-                    ct => FixBinaryExpressionAsync(context.Document, root, binary, ct),
-                    nameof(FileSystemInfoEqualityCodeFixProvider)),
-                diagnostic);
+            return;
         }
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return;
+        }
+
+        // The rule fires when either operand is a FileSystemInfo, but reading .FullName works only
+        // when both are. The other operand may be object or an unrelated type.
+        if (!IsFileSystemInfoOperand(binary.Left, semanticModel, context.CancellationToken)
+            || !IsFileSystemInfoOperand(binary.Right, semanticModel, context.CancellationToken))
+        {
+            return;
+        }
+
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                "Compare .FullName instead",
+                ct => FixBinaryExpressionAsync(context.Document, root, binary, ct),
+                nameof(FileSystemInfoEqualityCodeFixProvider)),
+            diagnostic);
+    }
+
+    private static bool IsFileSystemInfoOperand(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var type = semanticModel.GetTypeInfo(expression, cancellationToken).Type;
+        return type is not null && FileSystemInfoEqualityAnalyzer.InheritsFromFileSystemInfo(type);
     }
 
     private static BinaryExpressionSyntax? FindBinaryExpression(SyntaxNode node)

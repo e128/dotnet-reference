@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Globalization;
@@ -85,31 +86,48 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : CodeFixProvide
 
         var paramVarName = GenerateUniqueParameterName(block);
 
-        var declarationStatement = isDiscard
-            ? SyntaxFactory.LocalDeclarationStatement(
-                    SyntaxFactory.VariableDeclaration(
-                        SyntaxFactory.IdentifierName("var"),
-                        SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.VariableDeclarator(paramVarName)
-                                .WithInitializer(SyntaxFactory.EqualsValueClause(invocation)))))
-                .WithLeadingTrivia(containingStatement.GetLeadingTrivia())
-                .WithTrailingTrivia(containingStatement.GetTrailingTrivia())
-            : (StatementSyntax)containingStatement;
+        var declaration = BuildParameterDeclaration(
+            paramVarName, invocation, containingStatement.GetLeadingTrivia(), containingStatement.GetTrailingTrivia());
 
         var sizeStatement = CreateSizeAssignmentStatement(
             SyntaxFactory.IdentifierName(paramVarName),
             containingStatement.GetLeadingTrivia());
 
+        var replacement = new List<StatementSyntax> { declaration, sizeStatement };
+
+        // A statement that only performs the call keeps no second copy of it. Any other statement
+        // still reads the parameter, so the call moves into the declaration and the statement uses
+        // the new name.
+        if (!isDiscard
+            && containingStatement is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax })
+        {
+            replacement.Add(containingStatement.ReplaceNode(
+                invocation, SyntaxFactory.IdentifierName(paramVarName)));
+        }
+
         var stmtIndex = block.Statements.IndexOf(containingStatement);
-        var newStatements = block.Statements
-            .RemoveAt(stmtIndex)
-            .Insert(stmtIndex, declarationStatement)
-            .Insert(stmtIndex + 1, sizeStatement);
+        var newStatements = block.Statements.RemoveAt(stmtIndex).InsertRange(stmtIndex, replacement);
 
         var newBlock = block.WithStatements(newStatements);
         var newRoot = root.ReplaceNode(block, newBlock);
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static LocalDeclarationStatementSyntax BuildParameterDeclaration(
+        string paramVarName,
+        InvocationExpressionSyntax invocation,
+        SyntaxTriviaList leadingTrivia,
+        SyntaxTriviaList trailingTrivia)
+    {
+        return SyntaxFactory.LocalDeclarationStatement(
+                SyntaxFactory.VariableDeclaration(
+                    SyntaxFactory.IdentifierName("var"),
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(paramVarName)
+                            .WithInitializer(SyntaxFactory.EqualsValueClause(invocation.WithoutTrivia())))))
+            .WithLeadingTrivia(leadingTrivia)
+            .WithTrailingTrivia(trailingTrivia);
     }
 
     private static async Task<Document> FixValueAssignmentAsync(

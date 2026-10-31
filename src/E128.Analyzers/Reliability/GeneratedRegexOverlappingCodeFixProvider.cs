@@ -268,7 +268,11 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : CodeFixProvider
         }
         else
         {
-            newToken = SyntaxFactory.Literal(fixedValueText)
+            // The one-argument overload takes the token text, so it needs the quotes and the
+            // escapes. Without them the rewrite emits an unquoted literal.
+            newToken = SyntaxFactory.Literal(
+                    SymbolDisplay.FormatLiteral(fixedValueText, quote: true),
+                    fixedValueText)
                 .WithLeadingTrivia(original.Token.LeadingTrivia)
                 .WithTrailingTrivia(original.Token.TrailingTrivia);
         }

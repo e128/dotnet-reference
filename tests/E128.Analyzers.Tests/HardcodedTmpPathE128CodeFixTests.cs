@@ -42,4 +42,29 @@ public sealed class HardcodedTmpPathE128CodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_KeepsSubdirectory_WhenLiteralNamesOne()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                void M()
+                {
+                    var path = {|E128023:"/tmp/cache"|};
+                }
+            }
+            """,
+            """
+            class C
+            {
+                void M()
+                {
+                    var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "cache");
+                }
+            }
+            """);
+    }
 }

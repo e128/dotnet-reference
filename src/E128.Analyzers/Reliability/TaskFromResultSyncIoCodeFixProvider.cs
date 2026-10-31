@@ -180,9 +180,12 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
 
     private static MethodDeclarationSyntax UnwrapFromResultCalls(MethodDeclarationSyntax method)
     {
+        // Unwrap only a call that is the returned value. Any other call may feed a Task-typed
+        // variable or a continuation, and the bare value would not compile there.
         var fromResultCalls = method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Where(invocation => IsFromResultInvocation(invocation)
+                                 && IsReturnedValue(invocation)
                                  && !TaskFromResultSyncIoAnalyzer.IsInNestedFunction(invocation, method))
             .ToList();
 
@@ -194,6 +197,11 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
                     .WithLeadingTrivia(rewritten.GetLeadingTrivia())
                     .WithTrailingTrivia(rewritten.GetTrailingTrivia());
         });
+    }
+
+    private static bool IsReturnedValue(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Parent is ReturnStatementSyntax or ArrowExpressionClauseSyntax;
     }
 
     private static bool IsFromResultInvocation(InvocationExpressionSyntax invocation)

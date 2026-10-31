@@ -67,7 +67,9 @@ public sealed class QuerySelectorAllMaterializationCodeFixProvider : CodeFixProv
                 SyntaxFactory.ArgumentList())
             .WithTriviaFrom(qsaInvocation);
 
-        var newRoot = root.ReplaceNode(qsaInvocation, toListInvocation);
+        // ToList is an extension method, so the file needs its namespace.
+        var newRoot = UsingDirectives.AddIfMissing(
+            root.ReplaceNode(qsaInvocation, toListInvocation), "System.Linq");
         return document.WithSyntaxRoot(newRoot);
     }
 }

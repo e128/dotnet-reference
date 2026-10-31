@@ -79,7 +79,7 @@ public sealed class LowValueTestCodeFixProvider : CodeFixProvider
     {
         return IsTrailingMember(method)
             ? TrimTrailingMember(root, method)
-            : root.RemoveNode(method, SyntaxRemoveOptions.KeepNoTrivia)!;
+            : root.RemoveNode(method, SyntaxRemoveOptions.KeepNoTrivia) ?? root;
     }
 
     private static bool IsTrailingMember(MethodDeclarationSyntax method)
@@ -91,11 +91,10 @@ public sealed class LowValueTestCodeFixProvider : CodeFixProvider
 
     private static SyntaxNode TrimTrailingMember(SyntaxNode root, MethodDeclarationSyntax method)
     {
-        var type = (TypeDeclarationSyntax)method.Parent!;
-
-        return root.ReplaceNode(
-            type,
-            WithoutBlankLine(type.RemoveNode(method, SyntaxRemoveOptions.KeepNoTrivia)!));
+        return method.Parent is TypeDeclarationSyntax type
+               && type.RemoveNode(method, SyntaxRemoveOptions.KeepNoTrivia) is { } withoutMethod
+            ? root.ReplaceNode(type, WithoutBlankLine(withoutMethod))
+            : root;
     }
 
     private static TypeDeclarationSyntax WithoutBlankLine(TypeDeclarationSyntax type)

@@ -38,10 +38,13 @@ public sealed class HardcodedTmpPathCodeFixProvider : CodeFixProvider
                 continue;
             }
 
+            diagnostic.Properties.TryGetValue(
+                HardcodedTmpPathE128Analyzer.PropRelativeSuffix, out var suffix);
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     "Replace with Path.GetTempPath()",
-                    ct => ReplaceWithGetTempPathAsync(context.Document, root, node, ct),
+                    ct => ReplaceWithGetTempPathAsync(context.Document, root, node, suffix, ct),
                     "ReplaceWithGetTempPath"),
                 diagnostic);
         }
@@ -51,23 +54,48 @@ public sealed class HardcodedTmpPathCodeFixProvider : CodeFixProvider
         Document document,
         SyntaxNode root,
         SyntaxNode node,
+        string? suffix,
         CancellationToken cancellationToken)
     {
         _ = cancellationToken;
-        var getTempPath = SyntaxFactory.InvocationExpression(
+
+        // A literal that names a subdirectory keeps that part, so the rewrite does not send every
+        // caller to the bare temp root.
+        var replacement = suffix is { Length: > 0 }
+            ? BuildCombineCall(suffix).WithTriviaFrom(node)
+            : SyntaxFactory.InvocationExpression(BuildPathMember("GetTempPath")).WithTriviaFrom(node);
+
+        var newRoot = root.ReplaceNode(node, replacement);
+        return Task.FromResult(document.WithSyntaxRoot(newRoot));
+    }
+
+    private static InvocationExpressionSyntax BuildCombineCall(string suffix)
+    {
+        return SyntaxFactory.InvocationExpression(
+            BuildPathMember("Combine"),
+            SyntaxFactory.ArgumentList(
+                SyntaxFactory.SeparatedList(
+                [
+                    SyntaxFactory.Argument(
+                        SyntaxFactory.InvocationExpression(BuildPathMember("GetTempPath"))),
+                    SyntaxFactory.Argument(
+                        SyntaxFactory.LiteralExpression(
+                            SyntaxKind.StringLiteralExpression,
+                            SyntaxFactory.Literal(suffix)))
+                ])));
+    }
+
+    private static MemberAccessExpressionSyntax BuildPathMember(string memberName)
+    {
+        return SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        SyntaxFactory.IdentifierName("System"),
-                        SyntaxFactory.IdentifierName("IO")),
-                    SyntaxFactory.IdentifierName("Path")),
-                SyntaxFactory.IdentifierName("GetTempPath")));
-
-        var replacement = getTempPath.WithTriviaFrom(node);
-        var newRoot = root.ReplaceNode(node, replacement);
-        return Task.FromResult(document.WithSyntaxRoot(newRoot));
+                    SyntaxFactory.IdentifierName("System"),
+                    SyntaxFactory.IdentifierName("IO")),
+                SyntaxFactory.IdentifierName("Path")),
+            SyntaxFactory.IdentifierName(memberName));
     }
 }

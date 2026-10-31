@@ -17,6 +17,9 @@ public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128023";
 
+    // The code fix builds the replacement from this value, so the path prefixes live here only.
+    internal const string PropRelativeSuffix = "RelativeSuffix";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Avoid hardcoded /tmp path",
@@ -54,7 +57,23 @@ public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
             || string.Equals(value, @"C:\Windows\Temp", StringComparison.Ordinal)
             || value.StartsWith(@"C:\Windows\Temp\", StringComparison.Ordinal))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, context.Node.GetLocation(), value));
+            var properties = ImmutableDictionary<string, string?>.Empty;
+
+            if (value.StartsWith("/tmp/", StringComparison.Ordinal))
+            {
+                properties = properties.Add(PropRelativeSuffix, value.Substring("/tmp/".Length));
+            }
+            else if (value.StartsWith(@"C:\Temp\", StringComparison.Ordinal))
+            {
+                properties = properties.Add(PropRelativeSuffix, value.Substring(@"C:\Temp\".Length));
+            }
+            else if (value.StartsWith(@"C:\Windows\Temp\", StringComparison.Ordinal))
+            {
+                properties = properties.Add(PropRelativeSuffix, value.Substring(@"C:\Windows\Temp\".Length));
+            }
+
+            context.ReportDiagnostic(
+                Diagnostic.Create(Rule, context.Node.GetLocation(), properties, value));
         }
     }
 }

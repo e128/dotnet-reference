@@ -116,4 +116,58 @@ public sealed class ChainedStringReplaceCodeFixTests
                                  }
                                  """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewlineCollapseLoop_EmitsAnEscapedCharLiteral()
+    {
+        // The collapse character is a runtime value. A raw newline between single quotes is not a
+        // character literal, so the emitted test must carry the escape.
+        return VerifyFixAsync(
+            """
+            using System;
+            class C
+            {
+                void M(string value)
+                {
+                    {|E128098:while (value.Contains("\n\n", StringComparison.Ordinal))
+                    {
+                        value = value.Replace("\n\n", "\n", StringComparison.Ordinal);
+                    }|}
+                }
+            }
+            """,
+            """
+            using System;
+            class C
+            {
+                void M(string value)
+                {
+                    {
+                        var __buffer = new char[value.Length];
+                        var __pos = 0;
+                        var __collapsing = false;
+                        foreach (var __c in value)
+                        {
+                            if (__c == '\n')
+                            {
+                                if (!__collapsing)
+                                {
+                                    __buffer[__pos++] = __c;
+                                    __collapsing = true;
+                                }
+                            }
+                            else
+                            {
+                                __buffer[__pos++] = __c;
+                                __collapsing = false;
+                            }
+                        }
+
+                        value = new string(__buffer, 0, __pos);
+                    }
+                }
+            }
+            """);
+    }
 }

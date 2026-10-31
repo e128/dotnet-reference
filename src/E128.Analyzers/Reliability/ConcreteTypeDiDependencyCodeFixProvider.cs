@@ -52,6 +52,15 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // The rewrite replaces the whole statement. A fluent chain carries more registrations after
+        // the matched call, so only a bare call can be rewritten.
+        if (registrationInfo.Value.Invocation.FirstAncestorOrSelf<ExpressionStatementSyntax>()
+                is not { } statement
+            || statement.Expression != registrationInfo.Value.Invocation)
+        {
+            return;
+        }
+
         var title = $"Add direct registration for {concreteTypeName}";
         context.RegisterCodeFix(
             CodeAction.Create(

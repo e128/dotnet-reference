@@ -37,6 +37,13 @@ public sealed class ProcessStartInfoArgumentCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // A nested collection initializer fits an object initializer only. The statement form
+        // `psi.Arguments = value;` has no equivalent member-initializer rewrite.
+        if (assignment.Parent is not InitializerExpressionSyntax)
+        {
+            return;
+        }
+
         var tokens = ArgumentTokenizer.TryTokenize(assignment.Right);
         if (tokens is null)
         {

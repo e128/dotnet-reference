@@ -116,4 +116,38 @@ public sealed class ConcreteOnlyDiRegistrationE128CodeFixTests
             """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_NotOffered_WhenTheFactoryPassesAnArgument()
+    {
+        const string source = """
+                              using Microsoft.Extensions.DependencyInjection;
+                              interface IRepository<T> { }
+                              class Repository<T> : IRepository<T>
+                              {
+                                  public Repository(int capacity) { }
+                              }
+                              class Startup
+                              {
+                                  void Configure(IServiceCollection services)
+                                  {
+                                      services.{|E128032:AddSingleton<Repository<int>>(sp => new Repository<int>(1))|};
+                                  }
+                              }
+                              """;
+
+        // The two-type-argument overload takes no factory, so the registration must stay as it is.
+        var test = new CSharpCodeFixTest<
+            ConcreteOnlyDiRegistrationAnalyzer,
+            ConcreteOnlyDiRegistrationCodeFixProvider,
+            DefaultVerifier>
+        {
+            TestCode = source,
+            FixedCode = source,
+            ReferenceAssemblies = Net100WithDi,
+            NumberOfFixAllInDocumentIterations = 0
+        };
+
+        return test.RunAsync();
+    }
 }

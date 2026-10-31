@@ -70,6 +70,24 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
                                 """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_NoFixOffered_ForCancellationTokenArgument()
+    {
+        // Removing the wrapper would drop the cancellation token, so the work would ignore it.
+        return VerifyNoFixAsync("""
+                                using System.Threading;
+                                using System.Threading.Tasks;
+                                class C
+                                {
+                                    async Task M()
+                                    {
+                                        await {|E128036:Task.Run(async () => await Task.Delay(1), CancellationToken.None)|};
+                                    }
+                                }
+                                """);
+    }
+
     private static Task VerifyNoFixAsync(string code)
     {
         return new CSharpCodeFixTest<TaskRunAsyncLambdaAnalyzer, TaskRunAsyncLambdaCodeFixProvider, DefaultVerifier>

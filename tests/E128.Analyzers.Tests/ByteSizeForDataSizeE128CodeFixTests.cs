@@ -55,6 +55,33 @@ public sealed class ByteSizeForDataSizeE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task LocalWithTwoDeclarators_WrapsEveryInitializer()
+    {
+        // Both declarators share the rewritten type, so both initializers need the conversion.
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                void M()
+                {
+                    long {|E128080:maxBufferSize|} = 1, {|E128080:minBufferSize|} = 2;
+                }
+            }
+            """,
+            """
+            using Pug.Core.Classes;
+            class C
+            {
+                void M()
+                {
+                    ByteSize maxBufferSize = Pug.Core.Classes.ByteSize.FromBytes(1), minBufferSize = Pug.Core.Classes.ByteSize.FromBytes(2);
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ParameterWithDefaultValue_OffersNoFix()
     {
         // A default value must stay a compile-time constant, and ByteSize.FromBytes is a method call,

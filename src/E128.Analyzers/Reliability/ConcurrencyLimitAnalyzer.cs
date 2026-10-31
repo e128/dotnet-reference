@@ -58,6 +58,11 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        if (!NamesSemaphoreSlim(context.Node))
+        {
+            return;
+        }
+
         var symbolInfo = context.SemanticModel.GetSymbolInfo(context.Node, context.CancellationToken);
         if (symbolInfo.Symbol is not IMethodSymbol constructor)
         {
@@ -75,10 +80,30 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (value <= 0)
+        // Zero is a legal initial count for SemaphoreSlim, so only a negative value is a defect.
+        if (value < 0)
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, nodeForLocation.GetLocation(), value));
         }
+    }
+
+    // Bind the semantic model only for a creation that names SemaphoreSlim. Binding every object
+    // creation in the compilation is the expensive part of this analyzer.
+    private static bool NamesSemaphoreSlim(SyntaxNode node)
+    {
+        return node is not ObjectCreationExpressionSyntax creation
+               || (creation.Type switch
+               {
+                   IdentifierNameSyntax identifier => IsSemaphoreSlimName(identifier.Identifier.ValueText),
+                   QualifiedNameSyntax qualified => IsSemaphoreSlimName(qualified.Right.Identifier.ValueText),
+                   AliasQualifiedNameSyntax alias => IsSemaphoreSlimName(alias.Name.Identifier.ValueText),
+                   _ => false
+               });
+    }
+
+    private static bool IsSemaphoreSlimName(string name)
+    {
+        return string.Equals(name, "SemaphoreSlim", StringComparison.Ordinal);
     }
 
     private static bool TryGetArgumentList(
@@ -114,12 +139,15 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
-        if (assignment.Left is not IdentifierNameSyntax identifier)
+        // The property appears both bare and behind a receiver, as in options.MaxDegreeOfParallelism.
+        var left = assignment.Left switch
         {
-            return;
-        }
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            _ => null
+        };
 
-        if (!string.Equals(identifier.Identifier.ValueText, "MaxDegreeOfParallelism", StringComparison.Ordinal))
+        if (!string.Equals(left, "MaxDegreeOfParallelism", StringComparison.Ordinal))
         {
             return;
         }

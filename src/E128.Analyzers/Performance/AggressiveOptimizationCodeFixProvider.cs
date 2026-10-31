@@ -124,6 +124,12 @@ public sealed class AggressiveOptimizationCodeFixProvider : CodeFixProvider
 
     private static bool IsAggressiveOptimization(ExpressionSyntax expression)
     {
+        // A parenthesized option must match too, or the fix keeps it and changes nothing.
+        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expression = parenthesized.Expression;
+        }
+
         var name = expression switch
         {
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText,

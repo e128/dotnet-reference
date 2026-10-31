@@ -44,6 +44,13 @@ public sealed class AsyncVoidCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // An override or an explicit interface implementation inherits its void return type from the
+        // base member or the interface. Rewriting only this declaration gives CS0508 or CS0738.
+        if (method.Modifiers.Any(SyntaxKind.OverrideKeyword) || method.ExplicitInterfaceSpecifier is not null)
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Change return type to Task",

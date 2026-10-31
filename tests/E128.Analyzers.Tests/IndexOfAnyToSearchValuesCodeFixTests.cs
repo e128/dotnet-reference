@@ -124,6 +124,42 @@ public sealed class IndexOfAnyToSearchValuesCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task ExistingFirstMember_KeepsItsDocComment()
+    {
+        // The doc comment is leading trivia of the member, so the new field must go above it.
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                /// <summary>Counts the entries.</summary>
+                private readonly int _count;
+
+                void M(string value)
+                {
+                    var i = {|E128102:value.IndexOfAny(new[] { 'a', 'b' })|};
+                }
+            }
+            """,
+            """
+            using System;
+
+            class C
+            {
+                private static readonly System.Buffers.SearchValues<char> _valueChars = System.Buffers.SearchValues.Create("ab");
+
+                /// <summary>Counts the entries.</summary>
+                private readonly int _count;
+
+                void M(string value)
+                {
+                    var i = value.AsSpan().IndexOfAny(_valueChars);
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NonLiteralArgument_DiagnosticWithoutFix()
     {
         return VerifyNoFixAsync(

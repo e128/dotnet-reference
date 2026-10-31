@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-10-31T18:31:44Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 
@@ -66,6 +66,20 @@ API before it registers, so an older target framework gets no report.
 A rule can also need one member, not a whole type. E128072 resolves
 `System.Security.Cryptography.SHA256` and then looks for a `HashData` member.
 .NET 5 adds that member, so the rule stays silent on an older target.
+
+## Register Both Object Creation Forms
+
+`new Foo { ... }` reports as `ObjectCreationExpression`. The target-typed form
+`Foo x = new() { ... }` reports as `ImplicitObjectCreationExpression`. Register
+both, and take `BaseObjectCreationExpressionSyntax` in the handler.
+
+```csharp
+context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ObjectCreationExpression);
+context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ImplicitObjectCreationExpression);
+```
+
+E128071 and E128091 follow this shape. A rule that registers one form misses
+half of the object initializers in modern code.
 
 Gate the remedy, not the API the rule names. E128028 maps each sync I/O call to
 its async replacement. `File.ReadAllTextAsync` arrived after `File.ReadAllText`,
@@ -145,6 +159,19 @@ requires an exact match. A rule that accepts a family requires a base-type walk.
   receiver counts.
 - `TypeSymbols.DerivesFrom` is the shared base-type walk. Call it instead of
   writing a local copy.
+
+### Document Order
+
+A directive, a state machine, and a switch arm all apply in source order. A set
+comparison loses that order.
+
+- E128055 walks the pragmas in one pass. A restore removes only a disable that
+  comes first, so a file that restores early and disables later stays open.
+- E128125 treats a local in an `async` member as moving. The state machine
+  stores the local on the heap. Only a synchronous frame keeps the address
+  stable.
+- E128088 treats an unguarded `var` or discard pattern as a catch-all. A `when`
+  clause filters the match, so a guarded pattern is not exhaustive.
 
 ## Keep the Package README Current
 

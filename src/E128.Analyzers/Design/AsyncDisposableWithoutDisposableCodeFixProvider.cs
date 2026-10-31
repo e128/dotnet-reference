@@ -87,7 +87,8 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : CodeFixPro
             .WithBaseList(newBaseList.WithTrailingTrivia(SyntaxFactory.LineFeed))
             .WithMembers(newMembers);
 
-        var newRoot = root.ReplaceNode(typeDecl, newTypeDecl);
+        var newRoot = UsingDirectives.AddIfMissing(
+            root.ReplaceNode(typeDecl, newTypeDecl), "System");
         return document.WithSyntaxRoot(newRoot);
     }
 }

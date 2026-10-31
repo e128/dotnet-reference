@@ -70,4 +70,29 @@ public sealed class GeneratedRegexOverlappingE128CodeFixTests
               }
               """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task OverlappingQuantifier_NonVerbatimLiteral_StaysQuoted()
+    {
+        return VerifyFixAsync(
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128013:GeneratedRegex("\\s*.*", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [GeneratedRegex(".*", RegexOptions.None, 1000)]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """);
+    }
 }

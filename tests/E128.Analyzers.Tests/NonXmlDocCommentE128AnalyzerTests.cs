@@ -132,4 +132,19 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PragmaJustification_NoFire()
+    {
+        return VerifyAsync("""
+                           class Foo
+                           {
+                           #pragma warning disable CA1822
+                               // Intentional: stays instance for the container.
+                               public void Run() { }
+                           #pragma warning restore CA1822
+                           }
+                           """);
+    }
 }

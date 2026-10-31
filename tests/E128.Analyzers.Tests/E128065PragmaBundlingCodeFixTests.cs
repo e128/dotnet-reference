@@ -41,6 +41,24 @@ public sealed class E128065PragmaBundlingCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task PragmaBundling_Fix_KeepsTheTrailingComment()
+    {
+        const string source = """
+                              {|E128065:#pragma warning disable CA2007, MA0004 // justified|}
+                              class Foo { }
+                              """;
+
+        const string fixedCode = """
+                                 #pragma warning disable CA2007
+                                 #pragma warning disable MA0004 // justified
+                                 class Foo { }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task PragmaBundling_Fix_SplitsThreeIdsIntoThreeLines()
     {
         const string source = """

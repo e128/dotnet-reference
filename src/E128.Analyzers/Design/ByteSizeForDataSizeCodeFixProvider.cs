@@ -87,14 +87,8 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
         var declaration = local.Declaration;
         var byteSizeType = CreateByteSizeTypeSyntax();
 
-        var newDeclaration = declaration.WithType(byteSizeType.WithTrailingTrivia(SyntaxFactory.Space));
-
-        if (declaration.Variables.Count == 1 && declaration.Variables[0].Initializer is { } initializer)
-        {
-            var wrapped = WrapInFromBytes(initializer.Value);
-            var newVariable = declaration.Variables[0].WithInitializer(initializer.WithValue(wrapped));
-            newDeclaration = newDeclaration.WithVariables(SyntaxFactory.SingletonSeparatedList(newVariable));
-        }
+        var newDeclaration = WrapEveryInitializer(declaration)
+            .WithType(byteSizeType.WithTrailingTrivia(SyntaxFactory.Space));
 
         var newLocal = local
             .WithModifiers(RemoveConstModifier(local.Modifiers))
@@ -140,14 +134,8 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
     {
         var declaration = field.Declaration;
         var byteSizeType = CreateByteSizeTypeSyntax();
-        var newDeclaration = declaration.WithType(byteSizeType.WithTrailingTrivia(SyntaxFactory.Space));
-
-        if (declaration.Variables.Count == 1 && declaration.Variables[0].Initializer is { } initializer)
-        {
-            var wrapped = WrapInFromBytes(initializer.Value);
-            var newVariable = declaration.Variables[0].WithInitializer(initializer.WithValue(wrapped));
-            newDeclaration = newDeclaration.WithVariables(SyntaxFactory.SingletonSeparatedList(newVariable));
-        }
+        var newDeclaration = WrapEveryInitializer(declaration)
+            .WithType(byteSizeType.WithTrailingTrivia(SyntaxFactory.Space));
 
         var newModifiers = field.Modifiers;
         if (newModifiers.Any(SyntaxKind.ConstKeyword))
@@ -166,6 +154,18 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
             .WithDeclaration(newDeclaration);
 
         return root.ReplaceNode(field, newField);
+    }
+
+    // Every declarator shares the new type, so every initializer must carry the conversion. A field
+    // or local with more than one declarator would otherwise assign an int to ByteSize.
+    private static VariableDeclarationSyntax WrapEveryInitializer(VariableDeclarationSyntax declaration)
+    {
+        var variables = declaration.Variables.Select(variable =>
+            variable.Initializer is { } initializer
+                ? variable.WithInitializer(initializer.WithValue(WrapInFromBytes(initializer.Value)))
+                : variable);
+
+        return declaration.WithVariables(SyntaxFactory.SeparatedList(variables));
     }
 
     private static InvocationExpressionSyntax WrapInFromBytes(ExpressionSyntax expression)

@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-10-31T18:31:44Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 
@@ -39,9 +39,9 @@ The elastic line feed adds a blank line before the first declaration when the
 new directive lands at the end of the block. A `FixedCode` string must match
 the real output. Run the code fix test before you finalize the expected text.
 
-Ten providers use the helper as of 2026-10-31. Ten providers still insert
-inlines through `CompilationUnitSyntax.AddUsings()`. Move one to the helper the
-next time you touch it.
+Some providers still insert a using inline through
+`CompilationUnitSyntax.AddUsings()`. Move one to the helper the next time you
+touch it.
 
 The helper handles a top-level using on the compilation unit only. A file with
 a namespace-scoped using list needs a different path.
@@ -145,32 +145,95 @@ ungated fix rewrote `File.ReadAllText` on a netstandard2.0 target.
 
 Add a parity test when a rule needs two tables. Assert that both key sets match.
 
-## Common Fix Patterns
+Pass a computed value through `diagnostic.Properties` instead of copying the
+table. E128023 puts the detected path literal in the analyzer and hands the
+relative suffix to the fix. The path prefixes live in one file.
 
-| Pattern                          | Example analyzers       | Notes                                  |
-| -------------------------------- | ----------------------- | -------------------------------------- |
-| Replace expression               | E128061, E128064        | Swap one expression for another        |
-| Add using + replace expression   | E128066 (ToHashSet)     | Use `UsingDirectives.AddIfMissing`     |
-| Rename symbol                    | E128063, IDE1006        | Requires SequentialRenameFixAllProvider |
-| Remove node                      | E128022 (ConfigureAwait)| Remove a method call from a chain      |
-| Delete member                    | E128107, E128108        | Removes a whole test method            |
-| Wrap in method call              | E128070 (Math.Min)      | Context-specific, often no auto fix   |
+## Guard the Rewrite Shape
 
-## Removing a Member Node
+A fix must produce code that compiles. Test the shape that breaks it, not only
+the common shape.
 
-`RemoveNode(node, SyntaxRemoveOptions.KeepNoTrivia)` drops the trivia of the removed node. The
-line break that ended the previous token stays. That result is correct for the common case.
+- **Return type**: skip a method with `override` or an explicit interface
+  implementation. The base member or the interface owns the return type. E128007
+  rewrote both and produced CS0508 or CS0738.
+- **Wrap in try/catch**: a catch body that returns `default` fits a return
+  statement. Any other statement in a value-returning method loses the scope of
+  its local. A void method takes an empty catch block instead. E128056 and
+  E128057 follow this rule.
+- **Append an argument**: find an overload with one more parameter that ends
+  with the required type. The Playwright calls accept only an options object, so
+  E128038 offers no fix there.
+- **Await placement**: an await needs an async member. Refuse a lambda, a local
+  function, and an accessor. E128008 follows this rule.
+- **Value position**: a rewrite whose result value is new fits statement
+  position only. E128087 offers the `Interlocked` fix for a whole statement.
+- **Hoist a declaration**: a rewrite that needs a local declares it before the
+  statement that reads it. E128086 declares the parameter for every statement
+  form.
+- **Member initializer**: a nested collection initializer fits an object
+  initializer only. E128091 leaves the statement form alone.
+- **Constant context**: a pattern or an attribute argument needs a constant.
+  E128002 skips both.
+- **Forwarded argument**: an argument takes its type from the old target. A
+  collection expression forwarded to a new call site has no target, so
+  `[1, 2, 3].ToFrozenSet()` is CS9176. E128026 declines that argument.
+- **Factory argument**: a two-type-argument registration takes no factory. The
+  fix drops the argument list and declines a factory that passes an argument.
+  The container cannot rebuild that type. E128031 and E128032 follow this rule.
+- **Type-only change**: an initializer keeps its old value. `int TimeoutMs = 5000`
+  becomes `TimeSpan TimeoutMs = 5000`, which is CS0029. E128050 declines a
+  property with an initializer and a parameter with a default.
+- **Null annotation**: a type replacement keeps the `?` of the old type. Copy
+  the annotation across, or a working null return gains a warning. E128052
+  follows this rule.
+- **Static field order**: a new static field goes after the static fields that
+  its initializer reads. Static initializers run in textual order. E128124
+  inserts after the last static field.
+- **Bare pragma**: a bare `#pragma warning disable` covers every warning. Hold it
+  under a `"*"` sentinel, and emit a bare restore for that key. E128055 follows
+  this rule.
 
-A blank line between the removed member and the closing brace survives the removal. Trim that
-line only when the leading trivia of the closing brace holds whitespace and line breaks alone.
-Keep the whitespace, and drop the line breaks. Never clear the whole trivia list.
+## Decline at Registration
 
-Clearing the whole list moves the closing brace to column 0 when the type is nested. It also
-joins a trailing comment and the brace onto one line, which comments the brace out.
+A fix that returns the document unchanged offers the user a dead action. The
+harness fails that case with "a fix was offered that made no changes".
 
-`LowValueTestCodeFixProvider` follows this rule.
+Do the whole shape check in `RegisterCodeFixesAsync`. Build the replacement
+node there and hand it to the action delegate. The apply path then never
+discovers a reason to stop.
+
+```csharp
+var interpolated = BuildFromInvocation(invocation, semanticModel, cancellationToken);
+if (interpolated is null)
+{
+    return; // no code action, so no dead fix
+}
+```
+
+The rule also covers a rewrite that needs statements outside the reported node.
+`StringConcatInLoopCodeFixProvider` builds the whole method body first. It
+declares a builder before the loop and reads it back after the loop. The build
+step returns null when the local is read inside the loop or is not empty at the
+start. A null build registers no action.
+
+## Tree Identity
+
+The semantic model binds to one tree. A node from another tree throws "Syntax
+node is not within syntax tree" on `GetSymbolInfo`.
+
+Annotate every target in one `ReplaceNodes` call over the original tree. Never
+annotate the declaration first, then pass the original reference nodes to a
+later call. E128017 did that, and the reference pass matched nothing.
+
+## Keep the Receiver
+
+Rewrite the member name, not the whole member access. `Encoding.Default` may
+carry a qualified receiver such as `System.Text.Encoding`. E128006 swaps
+`Name` only.
 
 ## Related
 
+- [Code Fix Trivia](code-fix-trivia.md): absent trivia, literals, member removal
 - [New Analyzer Checklist](new-analyzer-checklist.md)
 - [Analyzers](../analyzers.md): main analyzer documentation

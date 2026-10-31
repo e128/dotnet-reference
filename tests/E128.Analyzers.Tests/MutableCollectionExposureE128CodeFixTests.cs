@@ -92,4 +92,29 @@ public sealed class MutableCollectionExposureE128CodeFixTests
 
         return VerifyFixAsync(source, fixedCode);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Fix_KeepsTheNullableAnnotation()
+    {
+        const string source = """
+                              using System.Collections.Generic;
+
+                              public class Service
+                              {
+                                  public List<int>? {|E128052:Items|} { get; init; }
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System.Collections.Generic;
+
+                                 public class Service
+                                 {
+                                     public IReadOnlyList<int>? Items { get; init; }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
 }

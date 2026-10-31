@@ -38,7 +38,7 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var ifStatement = node.FirstAncestorOrSelf<IfStatementSyntax>();
-        if (ifStatement is null)
+        if (ifStatement is null || !IsEqualityChain(ifStatement))
         {
             return;
         }
@@ -129,6 +129,24 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
         return sections;
     }
 
+    // Only an equality chain maps to case labels. A chain of inequalities would invert the logic.
+    private static bool IsEqualityChain(IfStatementSyntax ifStatement)
+    {
+        var current = ifStatement;
+        while (current is not null)
+        {
+            if (current.Condition is not BinaryExpressionSyntax binary
+                || !binary.IsKind(SyntaxKind.EqualsExpression))
+            {
+                return false;
+            }
+
+            current = current.Else?.Statement as IfStatementSyntax;
+        }
+
+        return true;
+    }
+
     private static SwitchSectionSyntax BuildCaseSection(SwitchLabelSyntax label, StatementSyntax body)
     {
         var statements = new List<StatementSyntax>();
@@ -141,11 +159,24 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
             statements.Add(body);
         }
 
-        statements.Add(SyntaxFactory.BreakStatement());
+        // A section that already leaves the switch cannot take a break. The break after a return or
+        // throw is unreachable code, which CS0162 reports.
+        if (statements.Count == 0 || !LeavesSwitch(statements[statements.Count - 1]))
+        {
+            statements.Add(SyntaxFactory.BreakStatement());
+        }
 
         return SyntaxFactory.SwitchSection(
             SyntaxFactory.SingletonList(label),
             SyntaxFactory.List(statements));
+    }
+
+    private static bool LeavesSwitch(StatementSyntax statement)
+    {
+        return statement is ReturnStatementSyntax
+            or ThrowStatementSyntax
+            or ContinueStatementSyntax
+            or BreakStatementSyntax;
     }
 
     private static ExpressionSyntax? ExtractSwitchExpression(

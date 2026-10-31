@@ -107,4 +107,45 @@ public sealed class DisposableSingletonFactoryE128CodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_NotOffered_WhenTheFactoryPassesAnArgument()
+    {
+        const string source = """
+                              using System;
+                              using Microsoft.Extensions.DependencyInjection;
+
+                              namespace MyApp
+                              {
+                                  interface IMyService<T> { }
+                                  class MyService<T> : IMyService<T>, IDisposable
+                                  {
+                                      public MyService(int capacity) { }
+                                      public void Dispose() { }
+                                  }
+                                  class Startup
+                                  {
+                                      void Configure(IServiceCollection services)
+                                      {
+                                          services.AddSingleton<MyService<string>>({|E128031:sp => new MyService<string>(1)|});
+                                      }
+                                  }
+                              }
+                              """;
+
+        // The container cannot rebuild a type that the factory builds with an argument.
+        var test = new CSharpCodeFixTest<
+            DisposableSingletonFactoryAnalyzer,
+            DisposableSingletonFactoryCodeFixProvider,
+            DefaultVerifier>
+        {
+            TestCode = source,
+            FixedCode = source,
+            ReferenceAssemblies = Net100WithDi,
+            NumberOfFixAllInDocumentIterations = 0
+        };
+
+        return test.RunAsync();
+    }
 }

@@ -82,7 +82,7 @@ public sealed class HttpClientMissingOceCatchCodeFixProvider : CodeFixProvider
                             .WithTrailingTrivia(SyntaxFactory.LineFeed))
                     .WithOpenBraceToken(
                         SyntaxFactory.Token(SyntaxKind.OpenBraceToken)
-                            .WithLeadingTrivia(SyntaxFactory.LineFeed, SyntaxFactory.TriviaList(indentation).Last())
+                            .WithLeadingTrivia(BraceLeadingTrivia(indentation))
                             .WithTrailingTrivia(SyntaxFactory.LineFeed))
                     .WithCloseBraceToken(
                         SyntaxFactory.Token(SyntaxKind.CloseBraceToken)
@@ -94,8 +94,18 @@ public sealed class HttpClientMissingOceCatchCodeFixProvider : CodeFixProvider
         var newCatches = tryStatement.Catches.Insert(catchIndex, oceCatch);
         var newTryStatement = tryStatement.WithCatches(newCatches);
 
-        var newRoot = root.ReplaceNode(tryStatement, newTryStatement);
+        var newRoot = UsingDirectives.AddIfMissing(
+            root.ReplaceNode(tryStatement, newTryStatement), "System");
+
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    // The indentation list is empty when the catch keyword starts a line with no leading space.
+    private static SyntaxTriviaList BraceLeadingTrivia(SyntaxTriviaList indentation)
+    {
+        return indentation.Count > 0
+            ? SyntaxFactory.TriviaList(SyntaxFactory.LineFeed, indentation.Last())
+            : SyntaxFactory.TriviaList(SyntaxFactory.LineFeed);
     }
 
     private static SyntaxTriviaList ExtractIndentation(SyntaxTriviaList trivia)

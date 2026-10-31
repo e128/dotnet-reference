@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -44,7 +45,16 @@ public sealed class NonXmlDocCommentE128Analyzer : DiagnosticAnalyzer
 
     private static void AnalyzeNode(SyntaxNodeAnalysisContext context)
     {
-        foreach (var trivia in context.Node.GetLeadingTrivia())
+        var leadingTrivia = context.Node.GetLeadingTrivia();
+
+        // A comment that follows #pragma warning disable justifies the suppression. The fix removes
+        // the comment, which would drop that reason and trip IDE0079.
+        if (leadingTrivia.Any(trivia => trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia)))
+        {
+            return;
+        }
+
+        foreach (var trivia in leadingTrivia)
         {
             if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                 && !IsSingleLineDocComment(trivia))

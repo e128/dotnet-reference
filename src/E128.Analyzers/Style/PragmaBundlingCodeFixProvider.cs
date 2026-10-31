@@ -67,27 +67,13 @@ public sealed class PragmaBundlingCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var ids = new List<string>();
-        foreach (var code in pragma.ErrorCodes)
-        {
-            var id = code.ToString().Trim();
-            if (!string.IsNullOrEmpty(id))
-            {
-                ids.Add(id);
-            }
-        }
-
+        var ids = CollectIds(pragma);
         if (ids.Count <= 1)
         {
             return document;
         }
 
-        var replacements = new List<SyntaxTrivia>(ids.Count);
-        foreach (var id in ids)
-        {
-            replacements.Add(SyntaxFactory.Trivia(BuildSingleIdPragma(id)));
-        }
-
+        var replacements = BuildReplacements(pragma, ids);
         var token = trivia.Token;
         SyntaxTriviaList originalList;
         bool isLeading;
@@ -111,21 +97,80 @@ public sealed class PragmaBundlingCodeFixProvider : CodeFixProvider
         return document.WithSyntaxRoot(newRoot);
     }
 
+    private static List<PragmaWarningDirectiveTriviaSyntax> BuildReplacements(
+        PragmaWarningDirectiveTriviaSyntax pragma,
+        List<string> ids)
+    {
+        var directives = new List<PragmaWarningDirectiveTriviaSyntax>(ids.Count);
+        foreach (var id in ids)
+        {
+            directives.Add(BuildSingleIdPragma(id));
+        }
+
+        var tail = CollectTail(pragma);
+        if (tail.Count > 0)
+        {
+            var last = directives[directives.Count - 1];
+            var code = last.ErrorCodes.Last();
+            directives[directives.Count - 1] = last.WithErrorCodes(
+                last.ErrorCodes.Replace(code, code.WithTrailingTrivia(tail)));
+        }
+
+        return directives;
+    }
+
+    // Everything after the last ID stays with the last line of the split: the separator space and
+    // any justification comment. The generated directive supplies its own line break.
+    private static SyntaxTriviaList CollectTail(PragmaWarningDirectiveTriviaSyntax pragma)
+    {
+        var tail = new List<SyntaxTrivia>();
+        tail.AddRange(pragma.ErrorCodes.Last().GetTrailingTrivia());
+        tail.AddRange(pragma.EndOfDirectiveToken.LeadingTrivia);
+
+        var kept = new List<SyntaxTrivia>(tail.Count);
+        foreach (var trivia in tail)
+        {
+            if (!trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+            {
+                kept.Add(trivia);
+            }
+        }
+
+        return SyntaxFactory.TriviaList(kept);
+    }
+
+    private static List<string> CollectIds(PragmaWarningDirectiveTriviaSyntax pragma)
+    {
+        var ids = new List<string>();
+        foreach (var code in pragma.ErrorCodes)
+        {
+            var id = code.ToString().Trim();
+            if (!string.IsNullOrEmpty(id))
+            {
+                ids.Add(id);
+            }
+        }
+
+        return ids;
+    }
+
     private static SyntaxTriviaList ReplaceInTriviaList(
         SyntaxTriviaList list,
         SyntaxTrivia target,
-        List<SyntaxTrivia> replacements)
+        List<PragmaWarningDirectiveTriviaSyntax> replacements)
     {
-        var result = new List<SyntaxTrivia>(list.Count - 1 + replacements.Count);
+        var result = new List<SyntaxTrivia>(list.Count);
         foreach (var t in list)
         {
-            if (t.SpanStart == target.SpanStart && t.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia))
-            {
-                result.AddRange(replacements);
-            }
-            else
+            if (!t.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia) || t.SpanStart != target.SpanStart)
             {
                 result.Add(t);
+                continue;
+            }
+
+            foreach (var directive in replacements)
+            {
+                result.Add(SyntaxFactory.Trivia(directive));
             }
         }
 

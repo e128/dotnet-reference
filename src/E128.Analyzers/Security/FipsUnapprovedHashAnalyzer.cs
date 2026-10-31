@@ -24,11 +24,14 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         StringComparer.Ordinal,
         "MD5",
         "SHA1",
+        "RIPEMD160",
         "DES",
         "RC2",
         "TripleDES",
         "HMACMD5",
-        "HMACSHA1");
+        "HMACSHA1",
+        "HMACRIPEMD160",
+        "MACTripleDES");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -44,6 +47,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
 
         context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
         context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ObjectCreationExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ImplicitObjectCreationExpression);
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
@@ -88,7 +92,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeObjectCreation(SyntaxNodeAnalysisContext context)
     {
-        var creation = (ObjectCreationExpressionSyntax)context.Node;
+        var creation = (BaseObjectCreationExpressionSyntax)context.Node;
 
         var symbolInfo = context.SemanticModel.GetSymbolInfo(creation, context.CancellationToken);
         if (symbolInfo.Symbol is not IMethodSymbol { MethodKind: MethodKind.Constructor } constructor)

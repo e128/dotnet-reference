@@ -135,6 +135,41 @@ public sealed class MultiStringEqualsOrChainCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task ExistingFirstMember_KeepsItsDocComment()
+    {
+        // The doc comment is leading trivia of the member, so the new field must go above it.
+        const string source = """
+                              class C
+                              {
+                                  /// <summary>Counts the calls.</summary>
+                                  private int _count;
+
+                                  bool M(string text) =>
+                                      {|E128029:text == "a" || text == "b" || text == "c"|};
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System;
+                                 using System.Collections.Generic;
+
+                                 class C
+                                 {
+                                     private static readonly HashSet<string> _textValues = new(StringComparer.Ordinal) { "a", "b", "c" };
+
+                                     /// <summary>Counts the calls.</summary>
+                                     private int _count;
+
+                                     bool M(string text) =>
+                                         _textValues.Contains(text);
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task LiteralWithEscapes_KeepsTheEscapesInTheField()
     {
         // The analyzer captures the unescaped value, so the fix must put the escapes back or the

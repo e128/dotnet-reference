@@ -12,8 +12,9 @@ namespace E128.Analyzers.Testing;
 
 /// <summary>
 ///     Code fix for E128054: adds <c lang="csharp">IAsyncLifetime</c> to the class and generates
-///     <c lang="csharp">InitializeAsync</c> (returns <c lang="csharp">Task.CompletedTask</c>) and <c lang="csharp">DisposeAsync</c>
-///     (calls <c lang="csharp">Directory.Delete</c> on the temp path).
+///     <c lang="csharp">InitializeAsync</c> (returns <c lang="csharp">ValueTask.CompletedTask</c>) and
+///     <c lang="csharp">DisposeAsync</c> (calls <c lang="csharp">Directory.Delete</c> on the temp path).
+///     xUnit v3 declares both members with <c lang="csharp">ValueTask</c>.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TempDirCleanupCodeFixProvider))]
 [Shared]
@@ -36,6 +37,14 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
         }
 
         var diagnostic = context.Diagnostics[0];
+
+        // The cleanup call needs the name of the member that holds the temp path.
+        if (!diagnostic.Properties.TryGetValue(TempDirCleanupAnalyzer.PropMemberName, out var memberName)
+            || memberName is not { Length: > 0 })
+        {
+            return;
+        }
+
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var classDecl = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
@@ -47,7 +56,7 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Implement IAsyncLifetime with temp cleanup",
-                ct => AddAsyncLifetimeAsync(context.Document, classDecl, ct),
+                ct => AddAsyncLifetimeAsync(context.Document, classDecl, memberName, ct),
                 nameof(TempDirCleanupCodeFixProvider)),
             diagnostic);
     }
@@ -55,6 +64,7 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
     private static async Task<Document> AddAsyncLifetimeAsync(
         Document document,
         ClassDeclarationSyntax classDecl,
+        string memberName,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -71,7 +81,7 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
             : SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(asyncLifetimeBase));
 
         var initMethod = BuildInitializeMethod();
-        var disposeMethod = BuildDisposeMethod();
+        var disposeMethod = BuildDisposeMethod(memberName);
 
         var newMembers = classDecl.Members.Add(initMethod).Add(disposeMethod);
 
@@ -80,27 +90,32 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
             .WithMembers(newMembers);
 
         var newRoot = root.ReplaceNode(classDecl, newClassDecl);
+
+        // Both types the generated body names need a using. Do not add a using for the interface.
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System.IO");
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Threading.Tasks");
+
         return document.WithSyntaxRoot(newRoot);
     }
 
     private static MethodDeclarationSyntax BuildInitializeMethod()
     {
         return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("Task"),
+                SyntaxFactory.ParseTypeName("ValueTask"),
                 "InitializeAsync")
             .WithModifiers(SyntaxFactory.TokenList(
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(SyntaxFactory.Space)))
             .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.IdentifierName("Task"),
+                    SyntaxFactory.IdentifierName("ValueTask"),
                     SyntaxFactory.IdentifierName("CompletedTask"))))
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
             .WithLeadingTrivia(SyntaxFactory.LineFeed)
             .WithTrailingTrivia(SyntaxFactory.LineFeed);
     }
 
-    private static MethodDeclarationSyntax BuildDisposeMethod()
+    private static MethodDeclarationSyntax BuildDisposeMethod(string memberName)
     {
         var deleteCall = SyntaxFactory.ExpressionStatement(
             SyntaxFactory.InvocationExpression(
@@ -110,7 +125,7 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
                     SyntaxFactory.IdentifierName("Delete")),
                 SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(
                     [
-                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_path")),
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName(memberName)),
                         SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(
                             SyntaxKind.TrueLiteralExpression))
                     ]))));
@@ -118,11 +133,11 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
         var returnStatement = SyntaxFactory.ReturnStatement(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName("Task"),
+                SyntaxFactory.IdentifierName("ValueTask"),
                 SyntaxFactory.IdentifierName("CompletedTask")));
 
         return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("Task"),
+                SyntaxFactory.ParseTypeName("ValueTask"),
                 "DisposeAsync")
             .WithModifiers(SyntaxFactory.TokenList(
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(SyntaxFactory.Space)))

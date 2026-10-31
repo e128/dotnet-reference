@@ -36,6 +36,13 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
+        // The await must land in an async member. A lambda, local function, or property accessor
+        // cannot take the async modifier from this fix, and an await there does not compile.
+        if (!IsInOrdinaryMethod(node))
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Replace with await",
@@ -77,8 +84,36 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
 
         // Promote the containing method to async.
         newRoot = PromoteContainingMethod(newRoot, insertedAwait);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Threading.Tasks");
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static bool IsInOrdinaryMethod(SyntaxNode node)
+    {
+        foreach (var ancestor in node.Ancestors())
+        {
+            if (ancestor is AnonymousFunctionExpressionSyntax
+                or LocalFunctionStatementSyntax
+                or AccessorDeclarationSyntax
+                or PropertyDeclarationSyntax
+                or IndexerDeclarationSyntax)
+            {
+                return false;
+            }
+
+            if (ancestor is MethodDeclarationSyntax)
+            {
+                return true;
+            }
+
+            if (ancestor is BaseTypeDeclarationSyntax)
+            {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryGetAwaitTarget(

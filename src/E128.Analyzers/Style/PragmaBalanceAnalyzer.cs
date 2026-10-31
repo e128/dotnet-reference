@@ -18,6 +18,9 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128055";
     internal const string DiagnosticIdKey = "SuppressedId";
 
+    // A bare #pragma warning disable has no error code. The key stands for "every warning".
+    internal const string AllCodesKey = "*";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Unbalanced pragma warning disable",
@@ -44,17 +47,15 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeTree(SyntaxTreeAnalysisContext context)
     {
         var root = context.Tree.GetRoot(context.CancellationToken);
-        CollectPragmaIds(root, out var disabled, out var restored);
-        ReportUnbalanced(context, disabled, restored);
+        var openSuppressions = CollectOpenSuppressions(root);
+        ReportUnbalanced(context, openSuppressions);
     }
 
-    private static void CollectPragmaIds(
-        SyntaxNode root,
-        out Dictionary<string, Location> disabled,
-        out HashSet<string> restored)
+    // Directives apply in document order. A restore clears only a disable that comes before it, so a
+    // file that restores first and disables later leaves the suppression open.
+    private static Dictionary<string, Location> CollectOpenSuppressions(SyntaxNode root)
     {
-        disabled = new Dictionary<string, Location>(StringComparer.Ordinal);
-        restored = new HashSet<string>(StringComparer.Ordinal);
+        var open = new Dictionary<string, Location>(StringComparer.Ordinal);
 
         foreach (var trivia in root.DescendantTrivia())
         {
@@ -63,37 +64,42 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var pragma = (PragmaWarningDirectiveTriviaSyntax)trivia.GetStructure()!;
-            var isDisable = pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword);
-            var isRestore = pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.RestoreKeyword);
-
-            if (!pragma.ErrorCodes.Any())
-            {
-                // Bare #pragma warning restore restores all previously disabled IDs.
-                if (isRestore)
-                {
-                    foreach (var disabledId in disabled.Keys)
-                    {
-                        restored.Add(disabledId);
-                    }
-                }
-
-                continue;
-            }
-
-            ProcessPragmaCodes(pragma.ErrorCodes, isDisable, isRestore, disabled, restored, pragma.GetLocation());
+            ApplyPragma(trivia.GetStructure() as PragmaWarningDirectiveTriviaSyntax, open);
         }
+
+        return open;
     }
 
-    private static void ProcessPragmaCodes(
-        SeparatedSyntaxList<ExpressionSyntax> codes,
-        bool isDisable,
-        bool isRestore,
-        Dictionary<string, Location> disabled,
-        HashSet<string> restored,
-        Location pragmaLocation)
+    private static void ApplyPragma(
+        PragmaWarningDirectiveTriviaSyntax? pragma,
+        Dictionary<string, Location> open)
     {
-        foreach (var code in codes)
+        if (pragma is null)
+        {
+            return;
+        }
+
+        var isDisable = pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword);
+
+        if (!pragma.ErrorCodes.Any())
+        {
+            if (!isDisable)
+            {
+                // A bare #pragma warning restore restores every open suppression.
+                open.Clear();
+                return;
+            }
+
+            // A bare disable turns off every warning, so it is unbalanced until a bare restore.
+            if (!open.ContainsKey(AllCodesKey))
+            {
+                open[AllCodesKey] = pragma.GetLocation();
+            }
+
+            return;
+        }
+
+        foreach (var code in pragma.ErrorCodes)
         {
             var id = code.ToString().Trim();
             if (string.IsNullOrEmpty(id))
@@ -101,29 +107,23 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (isDisable && !disabled.ContainsKey(id))
+            if (!isDisable)
             {
-                disabled[id] = pragmaLocation;
+                open.Remove(id);
             }
-            else if (isRestore)
+            else if (!open.ContainsKey(id))
             {
-                restored.Add(id);
+                open[id] = pragma.GetLocation();
             }
         }
     }
 
     private static void ReportUnbalanced(
         SyntaxTreeAnalysisContext context,
-        Dictionary<string, Location> disabled,
-        HashSet<string> restored)
+        Dictionary<string, Location> openSuppressions)
     {
-        foreach (var kvp in disabled)
+        foreach (var kvp in openSuppressions)
         {
-            if (restored.Contains(kvp.Key))
-            {
-                continue;
-            }
-
             var properties = ImmutableDictionary<string, string?>.Empty.Add(DiagnosticIdKey, kvp.Key);
             context.ReportDiagnostic(Diagnostic.Create(Rule, kvp.Value, properties, kvp.Key));
         }

@@ -52,37 +52,52 @@ public sealed class TestCodeCommentCodeFixProvider : CodeFixProvider
 
         var commentTrivia = root.FindTrivia(commentSpan.Start);
         var owningToken = commentTrivia.Token;
-        var leading = owningToken.LeadingTrivia;
 
+        // A comment sits in the leading list when it has its own line, and in the trailing list when
+        // it follows code on the same line.
+        var leading = owningToken.LeadingTrivia;
         var index = leading.IndexOf(commentTrivia);
+        if (index >= 0)
+        {
+            var kept = CopyWithoutComment(leading, index, removeLineFeed: true);
+            return document.WithSyntaxRoot(
+                root.ReplaceToken(owningToken, owningToken.WithLeadingTrivia(SyntaxFactory.TriviaList(kept))));
+        }
+
+        var trailing = owningToken.TrailingTrivia;
+        index = trailing.IndexOf(commentTrivia);
         if (index < 0)
         {
             return document;
         }
 
-        var start = index;
-        if (start > 0 && leading[start - 1].IsKind(SyntaxKind.WhitespaceTrivia))
-        {
-            start--;
-        }
+        // The line break after a trailing comment ends the line of code. Keep it.
+        var keptTrailing = CopyWithoutComment(trailing, index, removeLineFeed: false);
+        return document.WithSyntaxRoot(
+            root.ReplaceToken(owningToken, owningToken.WithTrailingTrivia(SyntaxFactory.TriviaList(keptTrailing))));
+    }
 
+    private static List<SyntaxTrivia> CopyWithoutComment(
+        SyntaxTriviaList trivia,
+        int index,
+        bool removeLineFeed)
+    {
+        var start = index > 0 && trivia[index - 1].IsKind(SyntaxKind.WhitespaceTrivia) ? index - 1 : index;
         var end = index;
-        if (end + 1 < leading.Count && leading[end + 1].IsKind(SyntaxKind.EndOfLineTrivia))
+        if (removeLineFeed && end + 1 < trivia.Count && trivia[end + 1].IsKind(SyntaxKind.EndOfLineTrivia))
         {
             end++;
         }
 
-        var kept = new List<SyntaxTrivia>();
-        for (var i = 0; i < leading.Count; i++)
+        var kept = new List<SyntaxTrivia>(trivia.Count);
+        for (var i = 0; i < trivia.Count; i++)
         {
             if (i < start || i > end)
             {
-                kept.Add(leading[i]);
+                kept.Add(trivia[i]);
             }
         }
 
-        var newToken = owningToken.WithLeadingTrivia(SyntaxFactory.TriviaList(kept));
-        var newRoot = root.ReplaceToken(owningToken, newToken);
-        return document.WithSyntaxRoot(newRoot);
+        return kept;
     }
 }
