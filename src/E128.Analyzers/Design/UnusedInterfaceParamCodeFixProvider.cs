@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
+using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -20,12 +21,20 @@ namespace E128.Analyzers.Design;
 [Shared]
 public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
 {
+    // A rename touches the whole solution, so the batch fixer loses one of two edits in the same
+    // document. Apply the renames in sequence instead.
+    private static readonly SequentialRenameFixAllProvider s_fixAllProvider =
+        new((_, symbolName) => symbolName is null || symbolName.StartsWith("_", StringComparison.Ordinal)
+                ? null
+                : "_" + symbolName,
+            nameof(UnusedInterfaceParamCodeFixProvider));
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnusedInterfaceParamAnalyzer.DiagnosticId];
 
     public override FixAllProvider GetFixAllProvider()
     {
-        return WellKnownFixAllProviders.BatchFixer;
+        return s_fixAllProvider;
     }
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)

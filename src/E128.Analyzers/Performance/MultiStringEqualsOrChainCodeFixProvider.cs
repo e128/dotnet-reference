@@ -23,6 +23,8 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
 
     public override FixAllProvider? GetFixAllProvider()
     {
+        // Two chains on the same operand in one type both need the field name, and a batch merge
+        // emits that field twice. The fix stays single-diagnostic.
         return null;
     }
 
@@ -177,8 +179,8 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
         var typeDeclWithField = InsertFieldAsFirstMember(typeDeclAfterReplace, fieldDecl);
 
         var newRoot = root.ReplaceNode(typeDecl, typeDeclWithField);
-        newRoot = AddUsingIfMissing(newRoot, "System");
-        return AddUsingIfMissing(newRoot, "System.Collections.Generic");
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System");
+        return UsingDirectives.AddIfMissing(newRoot, "System.Collections.Generic");
     }
 
     private static TypeDeclarationSyntax InsertFieldAsFirstMember(
@@ -217,27 +219,6 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
         return typeDecl.WithMembers(updatedMembers);
     }
 
-    private static SyntaxNode AddUsingIfMissing(SyntaxNode root, string namespaceName)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        foreach (var u in compilationUnit.Usings)
-        {
-            if (string.Equals(u.Name?.ToString(), namespaceName, StringComparison.Ordinal))
-            {
-                return root;
-            }
-        }
-
-        var newUsing = SyntaxFactory
-            .ParseCompilationUnit("using " + namespaceName + ";\n")
-            .Usings[0];
-        return compilationUnit.AddUsings(newUsing);
-    }
-
     private static MemberDeclarationSyntax ParseFieldDeclaration(
         string fieldName,
         string comparerExpr,
@@ -256,7 +237,9 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
                 sb.Append(", ");
             }
 
-            sb.Append('"').Append(literals[i]).Append('"');
+            // The analyzer captures Token.ValueText, which is already unescaped. FormatLiteral puts
+            // the escapes back so a literal with a quote or a backslash stays valid C#.
+            sb.Append(SymbolDisplay.FormatLiteral(literals[i], quote: true));
         }
 
         sb.Append(" };");

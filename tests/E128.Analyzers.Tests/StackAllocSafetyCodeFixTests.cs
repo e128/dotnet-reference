@@ -45,6 +45,7 @@ public sealed class StackAllocSafetyCodeFixTests
             """,
             """
             using System;
+
             class C
             {
                 unsafe void M()

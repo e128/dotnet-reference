@@ -39,7 +39,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         "AddTransient"
     };
 
-    private static readonly HashSet<string> MarkerInterfaces = new(StringComparer.Ordinal)
+    internal static readonly HashSet<string> MarkerInterfaces = new(StringComparer.Ordinal)
     {
         "System.IDisposable",
         "System.IAsyncDisposable"
@@ -115,11 +115,6 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (InheritsFromDelegate(typeArg))
-        {
-            return;
-        }
-
         var nonMarkerInterfaces = typeArg.AllInterfaces
             .Where(i => !MarkerInterfaces.Contains(i.ToDisplayString()))
             .ToList();
@@ -187,22 +182,6 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
             {
                 return true;
             }
-        }
-
-        return false;
-    }
-
-    private static bool InheritsFromDelegate(ITypeSymbol type)
-    {
-        var current = type.BaseType;
-        while (current is not null)
-        {
-            if (string.Equals(current.ToDisplayString(), "System.Delegate", StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            current = current.BaseType;
         }
 
         return false;

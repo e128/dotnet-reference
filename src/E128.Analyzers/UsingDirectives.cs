@@ -8,7 +8,10 @@ namespace E128.Analyzers;
 
 internal static class UsingDirectives
 {
-    /// <summary>Adds a top-level using directive when the file does not already have it.</summary>
+    /// <summary>
+    ///     Adds a top-level using directive when the file does not already have it. The new directive
+    ///     goes into ordinal position, so the file stays sorted without a later format pass.
+    /// </summary>
     internal static SyntaxNode AddIfMissing(SyntaxNode root, string namespaceName)
     {
         if (root is not CompilationUnitSyntax compilationUnit)
@@ -22,11 +25,18 @@ internal static class UsingDirectives
             return root;
         }
 
-        var newUsing = SyntaxFactory
-            .ParseCompilationUnit("using " + namespaceName + ";\n")
-            .Usings[0]
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
+        var newUsing = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(namespaceName))
+            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
 
-        return compilationUnit.AddUsings(newUsing);
+        var insertIndex = 0;
+        for (var i = 0; i < compilationUnit.Usings.Count; i++)
+        {
+            if (StringComparer.Ordinal.Compare(compilationUnit.Usings[i].Name?.ToString(), namespaceName) < 0)
+            {
+                insertIndex = i + 1;
+            }
+        }
+
+        return compilationUnit.WithUsings(compilationUnit.Usings.Insert(insertIndex, newUsing));
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -174,7 +173,8 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
         }
 
         var interlockedInvocation = BuildInterlockedInvocation(expression, fieldOperand);
-        var newRoot = AddUsingIfMissing(root.ReplaceNode(expression, interlockedInvocation));
+        var newRoot = UsingDirectives.AddIfMissing(
+            root.ReplaceNode(expression, interlockedInvocation), ThreadingNamespace);
         return document.WithSyntaxRoot(newRoot);
     }
 
@@ -265,32 +265,4 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
         return document.WithSyntaxRoot(newRoot);
     }
 
-    private static SyntaxNode AddUsingIfMissing(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), ThreadingNamespace, StringComparison.Ordinal)))
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ThreadingNamespace))
-            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
-
-        var insertIndex = 0;
-        for (var i = 0; i < compilationUnit.Usings.Count; i++)
-        {
-            if (StringComparer.Ordinal.Compare(
-                    compilationUnit.Usings[i].Name?.ToString(), ThreadingNamespace) < 0)
-            {
-                insertIndex = i + 1;
-            }
-        }
-
-        return compilationUnit.WithUsings(compilationUnit.Usings.Insert(insertIndex, usingDirective));
-    }
 }

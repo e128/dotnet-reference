@@ -12,6 +12,8 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128018";
 
+    private const string EnumerableMetadataName = "System.Linq.Enumerable";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use ToArray() instead of ToList() for read-only foreach iteration",
@@ -32,10 +34,24 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeForeach, SyntaxKind.ForEachStatement);
+
+        context.RegisterCompilationStartAction(startContext =>
+        {
+            // A type with its own ToList() is not the LINQ method, so the rule has nothing to say
+            // about it. Report only when System.Linq is in scope.
+            var enumerableType = startContext.Compilation.GetTypeByMetadataName(EnumerableMetadataName);
+            if (enumerableType is null)
+            {
+                return;
+            }
+
+            startContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeForeach(nodeContext, enumerableType),
+                SyntaxKind.ForEachStatement);
+        });
     }
 
-    private static void AnalyzeForeach(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeForeach(SyntaxNodeAnalysisContext context, INamedTypeSymbol enumerableType)
     {
         var forEach = (ForEachStatementSyntax)context.Node;
 
@@ -50,6 +66,13 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
         }
 
         if (!string.Equals(memberAccess.Name.Identifier.Text, "ToList", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
+        if (symbol is not IMethodSymbol method
+            || !SymbolEqualityComparer.Default.Equals(method.ContainingType, enumerableType))
         {
             return;
         }

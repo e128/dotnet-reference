@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -88,7 +87,8 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
             .WithType(immutableArrayType.WithTriviaFrom(arrayType))
             .WithVariables(SyntaxFactory.SeparatedList(newVariables));
 
-        var newRoot = AddUsingIfMissing(root.ReplaceNode(declaration, newDeclaration));
+        var newRoot = UsingDirectives.AddIfMissing(
+            root.ReplaceNode(declaration, newDeclaration), ImmutableNamespace);
         return document.WithSyntaxRoot(newRoot);
     }
 
@@ -150,33 +150,5 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
 
         return SyntaxFactory.CollectionExpression(
             SyntaxFactory.SeparatedList<CollectionElementSyntax>(elements));
-    }
-
-    private static SyntaxNode AddUsingIfMissing(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), ImmutableNamespace, StringComparison.Ordinal)))
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ImmutableNamespace))
-            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
-
-        var insertIndex = 0;
-        for (var i = 0; i < compilationUnit.Usings.Count; i++)
-        {
-            if (StringComparer.Ordinal.Compare(compilationUnit.Usings[i].Name?.ToString(), ImmutableNamespace) < 0)
-            {
-                insertIndex = i + 1;
-            }
-        }
-
-        return compilationUnit.WithUsings(compilationUnit.Usings.Insert(insertIndex, usingDirective));
     }
 }

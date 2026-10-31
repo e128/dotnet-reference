@@ -60,9 +60,8 @@ public sealed class StringBuilderPoolCodeFixTests
                               """;
 
         const string fixedCode = """
-                                 using System.Text;
                                  using Pug.Core.Text;
-
+                                 using System.Text;
                                  namespace Pug.Core.Text
                                  {
                                      public abstract class StringBuilderPool
@@ -115,9 +114,8 @@ public sealed class StringBuilderPoolCodeFixTests
                               """;
 
         const string fixedCode = """
-                                 using System.Text;
                                  using Pug.Core.Text;
-
+                                 using System.Text;
                                  namespace Pug.Core.Text
                                  {
                                      public abstract class StringBuilderPool
@@ -144,15 +142,17 @@ public sealed class StringBuilderPoolCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task NoFix_WhenStringBuilderPoolNotInCompilation()
+    public Task NoDiagnostic_WhenStringBuilderPoolNotInCompilation()
     {
+        // The pool type is absent, so the analyzer must not report at all. A report without a
+        // fix leaves the user with a suggestion that this compilation cannot act on.
         const string source = """
                               using System.Text;
                               class C
                               {
                                   void M()
                                   {
-                                      var sb = {|E128081:new StringBuilder()|};
+                                      var sb = new StringBuilder();
                                       sb.Append("hello");
                                       _ = sb.ToString();
                                   }

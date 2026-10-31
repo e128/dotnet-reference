@@ -47,6 +47,7 @@ public sealed class IndexOfAnyToSearchValuesCodeFixTests
             """,
             """
             using System;
+
             class C
             {
                 private static readonly System.Buffers.SearchValues<char> _pathChars = System.Buffers.SearchValues.Create("/\\");
@@ -75,6 +76,7 @@ public sealed class IndexOfAnyToSearchValuesCodeFixTests
             """,
             """
             using System;
+
             class C
             {
                 private static readonly System.Buffers.SearchValues<char> _nameChars = System.Buffers.SearchValues.Create(".-");
@@ -105,6 +107,7 @@ public sealed class IndexOfAnyToSearchValuesCodeFixTests
             """,
             """
             using System;
+
             class C
             {
                 private static readonly System.Buffers.SearchValues<char> _valueChars = System.Buffers.SearchValues.Create("ab");

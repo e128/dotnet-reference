@@ -119,4 +119,24 @@ public sealed class E128056FileInfoToctouAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FileInfoToctou_NoReport_WhenTheSameNameBelongsToAnotherScope()
+    {
+        // The nested path parameter is a different symbol from the one the check guarded.
+        return VerifyAsync("""
+                           using System.IO;
+                           class Loader
+                           {
+                               string Load(string path)
+                               {
+                                   if (!File.Exists(path)) return string.Empty;
+
+                                   string Read(string path) => File.ReadAllText(path);
+                                   return Read(path);
+                               }
+                           }
+                           """);
+    }
 }

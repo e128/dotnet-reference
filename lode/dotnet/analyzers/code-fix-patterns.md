@@ -1,51 +1,141 @@
 # Code Fix Patterns
-*Updated: 2026-10-16T18:14:38Z*
+*Updated: 2026-10-31T14:21:47Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 
-## AddUsingIfMissing + Blank Line Behavior
+## Decide Before You Write the Fix
 
-When a code fix adds a `using` directive via `CompilationUnitSyntax.AddUsings()` with default trivia, and the original source has no existing `using` block, Roslyn inserts the new `using` followed by an `ElasticLineFeed` trivia. This produces a **blank line** between the new `using` and the first type declaration.
+Answer these five questions before the first line of a fix provider. Each
+answer prevents a defect that the test suite will not catch on its own.
 
-In `CSharpCodeFixVerifier` tests, the `FixedCode` string must include this blank line when the fix provider relies on default trivia. Otherwise the verifier reports a diff mismatch even though the code is semantically correct.
+1. Does the rewritten text parse? Emit a value through its formatter and a
+   type through `SymbolDisplayFormat`. See § Emit Valid Source Text.
+2. Does the walk cross a lambda or a local function? Stop at the boundary.
+   See § Stop at a Nested Function.
+3. Does the fix read a table the analyzer owns? Read the same gated table.
+   See § One Table for Analyzer and Fix.
+4. Does the fix insert a member? Return null from `GetFixAllProvider()`. See
+   § FixAll That Inserts a Member.
+5. Does the fix remove a member? Trim the trivia, never clear it. See
+   § Removing a Member Node.
 
-Most fix providers in this codebase avoid the blank line. They call
-`.WithTrailingTrivia(SyntaxFactory.LineFeed)` on the new `UsingDirective` before
-`AddUsings()`. Examples: `FileSystemPathCodeFixProvider`,
-`AsyncVoidCodeFixProvider`, `CollectionPathCodeFixProvider`,
-`MutableCollectionExposureCodeFixProvider`. Use this pattern for a new fix
-provider unless a test proves the blank line is required.
-A few providers still rely on default trivia and need the blank line in their
-`FixedCode` string: `DiskRoundtripCodeFixProvider`,
-`DateTimeParseRoundtripCodeFixProvider`, `GeneratedRegexTimeoutCodeFixProvider`,
-and `MultiStringEqualsOrChainCodeFixProvider`.
+## Add a Using Directive
+
+Use `UsingDirectives.AddIfMissing(root, namespaceName)` from
+`src/E128.Analyzers/UsingDirectives.cs`. Do not write a local helper.
+
+The helper skips the namespace when an exact-name using is already present.
+Otherwise it inserts the directive in ordinal position with an elastic line
+feed. The file stays sorted without a later format pass.
 
 ```csharp
-// If original code has NO usings and the fix adds "using System.Text;":
-const string FixedCode = """
-    using System.Text;
-
-    namespace Example
-    {
-        // ...
-    }
-    """;
-// Note the blank line between "using System.Text;" and "namespace Example"
+var newRoot = UsingDirectives.AddIfMissing(replaced, "System.Collections.Generic");
+return document.WithSyntaxRoot(newRoot);
 ```
 
-When the original code already has `using` directives, the new one is merged into the existing block without an extra blank line.
+The elastic line feed adds a blank line before the first declaration when the
+new directive lands at the end of the block. A `FixedCode` string must match
+the real output. Run the code fix test before you finalize the expected text.
+
+Ten providers use the helper as of 2026-10-31. Ten providers still insert
+inlines through `CompilationUnitSyntax.AddUsings()`. Move one to the helper the
+next time you touch it.
+
+The helper handles a top-level using on the compilation unit only. A file with
+a namespace-scoped using list needs a different path.
 
 ## BatchFixer vs SequentialRenameFixAllProvider
 
 - **`WellKnownFixAllProviders.BatchFixer`**: standard choice for most code fixes. Computes all fixes from the original snapshot and merges. Works well when fixes are independent local edits (expression replacements, type swaps).
-- **`SequentialRenameFixAllProvider`**: required when the fix uses `Renamer.RenameSymbolAsync`. BatchFixer fails when multiple renames touch the same document because the rename API modifies the solution globally. See `analyzers.md § SequentialRenameFixAllProvider`.
+- **`SequentialRenameFixAllProvider`**: required when the fix uses `Renamer.RenameSymbolAsync`. BatchFixer fails when multiple renames touch the same document because the rename API modifies the solution globally. See `analyzers.md § SequentialRenameFixAllProvider`. E128059 and E128063 use it.
+
+## Emit Valid Source Text
+
+A syntax token that the analyzer captured carries the unescaped value. Never
+put that value between hand-written quotes.
+
+```csharp
+// Wrong: the value behind "a\"b" is a"b, so the emitted field does not parse.
+sb.Append('"').Append(literal).Append('"');
+
+// Right
+sb.Append(SymbolDisplay.FormatLiteral(literal, quote: true));
+```
+
+`SyntaxFactory.ParseMemberDeclaration` returns null when the text is malformed.
+A fallback branch that emits a stub member hides the defect and writes broken
+code into the document. Use a formatter for each value and the parse holds.
+
+Abort the fix when the parse returns null. A stub drops the attributes and the
+fields, so the result is not a usable member. `FixedBufferFieldCodeFixProvider`
+parses the InlineArray struct before it registers and offers no fix on a null.
+
+Emit a type through a `SymbolDisplayFormat` that keeps the type arguments and the
+qualification. `ITypeSymbol.Name` drops both. E128032 wrote
+`AddSingleton<IRepository, Repository>()` for a generic type, which is CS0305.
+
+```csharp
+private static readonly SymbolDisplayFormat TypeNameFormat = new(
+    globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
+    typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+    genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+    miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+```
+
+`ConcreteOnlyDiRegistrationCodeFixProvider` and
+`DisposableSingletonFactoryCodeFixProvider` both use this format. Use
+`ToMinimalDisplayString` for a code action title, where the extra qualification
+only adds noise.
+
+## Stop at a Nested Function
+
+A walk over `MethodDeclarationSyntax.DescendantNodes()` reaches into lambdas and
+local functions. Neither can take an `await` unless it becomes `async` itself.
+
+E128028 treated both as part of the method body. An `await` inside a lambda
+suppressed a real report. The fix wrote `await` inside a lambda that stayed sync,
+which is CS4033.
+
+Stop the walk at `AnonymousFunctionExpressionSyntax` and
+`LocalFunctionStatementSyntax`. Declare the helper once on the analyzer as
+`internal static` and call it from the fix provider, so both apply one boundary.
+`TaskFromResultSyncIoAnalyzer.IsInNestedFunction` is that helper.
+
+## FixAll That Inserts a Member
+
+`BatchFixer` computes every fix from the same snapshot and merges the results.
+Two fixes in one type that insert the same member name each pass their own
+conflict check on the original tree. The merge then emits the member twice.
+
+Return `null` from `GetFixAllProvider()` for a fix that inserts a field or a
+property. Keep that fix single-diagnostic. E128029 follows this rule.
+
+## One Table for Analyzer and Fix
+
+A lookup table that the analyzer reports from must be the same table the fix
+reads. A private copy in the fix provider drifts, and the drift is silent.
+
+E128028 held the sync I/O names twice. The analyzer table listed `File.Copy`,
+`File.Move`, and `File.ReadLines`. The fix table did not. The fix still added
+`async` and unwrapped `Task.FromResult`, so it wrote an `async` method with no
+`await` and left the blocking call in place. The compiler then reported CS1998.
+
+Declare the table `internal static readonly` on the analyzer and let the fix
+provider read it. Report only what the fix can repair. E128028 now omits a
+method unless an awaitable overload exists.
+
+Gate the table once. E128028 builds the pair list at compilation start and the
+fix reads that gated list, so both sides skip a pair with no async member. An
+ungated fix rewrote `File.ReadAllText` on a netstandard2.0 target.
+
+Add a parity test when a rule needs two tables. Assert that both key sets match.
 
 ## Common Fix Patterns
 
 | Pattern                          | Example analyzers       | Notes                                  |
 | -------------------------------- | ----------------------- | -------------------------------------- |
 | Replace expression               | E128061, E128064        | Swap one expression for another        |
-| Add using + replace expression   | E128066 (ToHashSet)     | Must handle blank line in tests        |
+| Add using + replace expression   | E128066 (ToHashSet)     | Use `UsingDirectives.AddIfMissing`     |
 | Rename symbol                    | E128063, IDE1006        | Requires SequentialRenameFixAllProvider |
 | Remove node                      | E128022 (ConfigureAwait)| Remove a method call from a chain      |
 | Delete member                    | E128107, E128108        | Removes a whole test method            |

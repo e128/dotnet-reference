@@ -8,6 +8,20 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StringBuilderPoolAnalyzerTests
 {
+    // The rule depends on the Pug pool type. Every positive case declares it, because the
+    // analyzer must stay silent on a compilation that cannot use the suggested API.
+    private const string PoolType = """
+                                    namespace Pug.Core.Text
+                                    {
+                                        public abstract class StringBuilderPool
+                                        {
+                                            public static StringBuilderPool Shared => null;
+                                            public abstract System.Text.StringBuilder Rent();
+                                            public abstract void Return(System.Text.StringBuilder builder);
+                                        }
+                                    }
+                                    """;
+
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
         var test = new CSharpAnalyzerTest<StringBuilderPoolAnalyzer, DefaultVerifier>
@@ -19,58 +33,63 @@ public sealed class StringBuilderPoolAnalyzerTests
         return test.RunAsync();
     }
 
+    private static Task VerifyWithPoolAsync(string code, params DiagnosticResult[] expected)
+    {
+        return VerifyAsync(code + PoolType, expected);
+    }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenBareStringBuilderAllocated()
     {
-        return VerifyAsync("""
-                           using System.Text;
-                           class C
-                           {
-                               void M()
-                               {
-                                   var sb = {|E128081:new StringBuilder()|};
-                                   sb.Append("hello");
-                                   _ = sb.ToString();
-                               }
-                           }
-                           """);
+        return VerifyWithPoolAsync("""
+                                     using System.Text;
+                                     class C
+                                     {
+                                         void M()
+                                         {
+                                             var sb = {|E128081:new StringBuilder()|};
+                                             sb.Append("hello");
+                                             _ = sb.ToString();
+                                         }
+                                     }
+                                     """);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenStringBuilderAllocatedWithCapacity()
     {
-        return VerifyAsync("""
-                           using System.Text;
-                           class C
-                           {
-                               void M()
-                               {
-                                   var sb = {|E128081:new StringBuilder(1024)|};
-                                   sb.Append("hello");
-                                   _ = sb.ToString();
-                               }
-                           }
-                           """);
+        return VerifyWithPoolAsync("""
+                                     using System.Text;
+                                     class C
+                                     {
+                                         void M()
+                                         {
+                                             var sb = {|E128081:new StringBuilder(1024)|};
+                                             sb.Append("hello");
+                                             _ = sb.ToString();
+                                         }
+                                     }
+                                     """);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenImplicitObjectCreation()
     {
-        return VerifyAsync("""
-                           using System.Text;
-                           class C
-                           {
-                               void M()
-                               {
-                                   StringBuilder sb = {|E128081:new(1024)|};
-                                   sb.Append("hello");
-                                   _ = sb.ToString();
-                               }
-                           }
-                           """);
+        return VerifyWithPoolAsync("""
+                                     using System.Text;
+                                     class C
+                                     {
+                                         void M()
+                                         {
+                                             StringBuilder sb = {|E128081:new(1024)|};
+                                             sb.Append("hello");
+                                             _ = sb.ToString();
+                                         }
+                                     }
+                                     """);
     }
 
     [Fact]
@@ -79,11 +98,32 @@ public sealed class StringBuilderPoolAnalyzerTests
     {
         return VerifyAsync("""
                            using System.Text;
-                           class StringBuilderPool
+                           namespace Pug.Core.Text
                            {
-                               StringBuilder Create()
+                               class StringBuilderPool
                                {
-                                   return new StringBuilder(100);
+                                   StringBuilder Create()
+                                   {
+                                       return new StringBuilder(100);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoDiagnostic_WhenPoolTypeMissing()
+    {
+        return VerifyAsync("""
+                           using System.Text;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var sb = new StringBuilder();
+                                   sb.Append("hello");
+                                   _ = sb.ToString();
                                }
                            }
                            """);

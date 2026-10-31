@@ -25,6 +25,10 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128051";
 
+    private const string HttpClientMetadataName = "System.Net.Http.HttpClient";
+    private const string ExceptionMetadataName = "System.Exception";
+    private const string OperationCanceledExceptionMetadataName = "System.OperationCanceledException";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Broad catch in async HttpClient method missing OperationCanceledException handler",
@@ -47,10 +51,33 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+
+        context.RegisterCompilationStartAction(startContext =>
+        {
+            // The rule names System.Net.Http types. Without them the method names below belong to
+            // some other type, so the rule must not run at all.
+            var compilation = startContext.Compilation;
+            var httpClientType = compilation.GetTypeByMetadataName(HttpClientMetadataName);
+            var exceptionType = compilation.GetTypeByMetadataName(ExceptionMetadataName);
+            if (httpClientType is null || exceptionType is null)
+            {
+                return;
+            }
+
+            // TaskCanceledException derives from OperationCanceledException, so either catch counts.
+            var operationCanceledType = compilation.GetTypeByMetadataName(OperationCanceledExceptionMetadataName);
+
+            startContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeMethod(nodeContext, httpClientType, exceptionType, operationCanceledType),
+                SyntaxKind.MethodDeclaration);
+        });
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeMethod(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol httpClientType,
+        INamedTypeSymbol exceptionType,
+        INamedTypeSymbol? operationCanceledType)
     {
         var method = (MethodDeclarationSyntax)context.Node;
 
@@ -69,7 +96,7 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         var httpClientCalls = new List<InvocationExpressionSyntax>();
         foreach (var invocation in method.Body.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
-            if (IsHttpClientCall(invocation))
+            if (IsHttpClientCall(context, invocation, httpClientType))
             {
                 httpClientCalls.Add(invocation);
             }
@@ -91,13 +118,13 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
             {
                 var catchClause = tryStatement.Catches[i];
 
-                if (!IsBroadExceptionCatch(catchClause))
+                if (!IsBroadExceptionCatch(context, catchClause, exceptionType))
                 {
                     continue;
                 }
 
                 var precedingCatches = tryStatement.Catches.Take(i);
-                if (precedingCatches.Any(IsOperationCanceledExceptionCatch))
+                if (precedingCatches.Any(preceding => IsOperationCanceledExceptionCatch(context, preceding, operationCanceledType)))
                 {
                     continue;
                 }
@@ -111,10 +138,25 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsHttpClientCall(InvocationExpressionSyntax invocation)
+    private static bool IsHttpClientCall(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol httpClientType)
     {
-        return invocation.Expression is MemberAccessExpressionSyntax { Name: IdentifierNameSyntax name }
-               && IsHttpClientMethod(name.Identifier.Text);
+        if (invocation.Expression is not MemberAccessExpressionSyntax { Name: IdentifierNameSyntax name })
+        {
+            return false;
+        }
+
+        if (!IsHttpClientMethod(name.Identifier.Text))
+        {
+            return false;
+        }
+
+        // A custom client type can declare GetAsync and PostAsync too. Only an HttpClient receiver
+        // throws the cancellation this rule is about.
+        return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
+               && DerivesFrom(method.ContainingType, httpClientType);
     }
 
     private static bool IsHttpClientMethod(string name)
@@ -126,7 +168,10 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static bool IsBroadExceptionCatch(CatchClauseSyntax catchClause)
+    private static bool IsBroadExceptionCatch(
+        SyntaxNodeAnalysisContext context,
+        CatchClauseSyntax catchClause,
+        INamedTypeSymbol exceptionType)
     {
         // A when-filtered catch is intentionally restricted — not considered broad
         if (catchClause.Filter is not null)
@@ -139,27 +184,38 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
             return true; // bare catch { } catches everything
         }
 
-        return IsExceptionTypeName(catchClause.Declaration.Type);
+        // Only System.Exception itself is broad. A derived type is a narrower catch, and a local
+        // type that merely shares the name is not System.Exception at all.
+        return SymbolEqualityComparer.Default.Equals(GetCatchType(context, catchClause), exceptionType);
     }
 
-    private static bool IsOperationCanceledExceptionCatch(CatchClauseSyntax catchClause)
+    private static bool IsOperationCanceledExceptionCatch(
+        SyntaxNodeAnalysisContext context,
+        CatchClauseSyntax catchClause,
+        INamedTypeSymbol? operationCanceledType)
     {
-        return catchClause.Declaration is not null
-               && IsNamedType(catchClause.Declaration.Type, "OperationCanceledException");
+        return operationCanceledType is not null
+               && GetCatchType(context, catchClause) is INamedTypeSymbol type
+               && DerivesFrom(type, operationCanceledType);
     }
 
-    private static bool IsExceptionTypeName(TypeSyntax typeSyntax)
+    private static ITypeSymbol? GetCatchType(SyntaxNodeAnalysisContext context, CatchClauseSyntax catchClause)
     {
-        return IsNamedType(typeSyntax, "Exception");
+        return catchClause.Declaration is null
+            ? null
+            : context.SemanticModel.GetTypeInfo(catchClause.Declaration.Type, context.CancellationToken).Type;
     }
 
-    private static bool IsNamedType(TypeSyntax typeSyntax, string simpleName)
+    private static bool DerivesFrom(INamedTypeSymbol? type, INamedTypeSymbol baseType)
     {
-        return typeSyntax switch
+        for (var current = type; current is not null; current = current.BaseType)
         {
-            IdentifierNameSyntax id => string.Equals(id.Identifier.Text, simpleName, StringComparison.Ordinal),
-            QualifiedNameSyntax qualified => string.Equals(qualified.Right.Identifier.Text, simpleName, StringComparison.Ordinal),
-            _ => false
-        };
+            if (SymbolEqualityComparer.Default.Equals(current, baseType))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

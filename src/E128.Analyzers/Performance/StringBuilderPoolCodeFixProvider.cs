@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -16,9 +14,6 @@ namespace E128.Analyzers.Performance;
 [Shared]
 public sealed class StringBuilderPoolCodeFixProvider : CodeFixProvider
 {
-    private const string StringBuilderPoolMetadataName = "Pug.Core.Text.StringBuilderPool";
-    private const string StringBuilderPoolNamespace = "Pug.Core.Text";
-
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StringBuilderPoolAnalyzer.DiagnosticId];
 
@@ -41,7 +36,8 @@ public sealed class StringBuilderPoolCodeFixProvider : CodeFixProvider
             return;
         }
 
-        var poolType = semanticModel.Compilation.GetTypeByMetadataName(StringBuilderPoolMetadataName);
+        var poolType = semanticModel.Compilation.GetTypeByMetadataName(
+            StringBuilderPoolAnalyzer.StringBuilderPoolMetadataName);
         if (poolType is null)
         {
             return;
@@ -89,18 +85,9 @@ public sealed class StringBuilderPoolCodeFixProvider : CodeFixProvider
                 SyntaxFactory.ArgumentList())
             .WithTriviaFrom(creationNode);
 
-        var newRoot = root.ReplaceNode(creationNode, rentInvocation);
-
-        var compilationUnit = (CompilationUnitSyntax)newRoot;
-        if (!compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), StringBuilderPoolNamespace, StringComparison.Ordinal)))
-        {
-            var usingDirective = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(StringBuilderPoolNamespace))
-                .NormalizeWhitespace()
-                .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
-            compilationUnit = compilationUnit.AddUsings(usingDirective);
-            newRoot = compilationUnit;
-        }
+        var newRoot = UsingDirectives.AddIfMissing(
+            root.ReplaceNode(creationNode, rentInvocation),
+            StringBuilderPoolAnalyzer.StringBuilderPoolNamespace);
 
         return document.WithSyntaxRoot(newRoot);
     }

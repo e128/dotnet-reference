@@ -75,4 +75,28 @@ public sealed class ToListInForeachE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ToListOnANonLinqType_DoesNotFire()
+    {
+        // A domain type with its own ToList() is not Enumerable.ToList, so the allocation advice
+        // does not apply to it.
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class Bag
+                           {
+                               public List<int> ToList() => [];
+                           }
+                           class C
+                           {
+                               void M(Bag bag)
+                               {
+                                   foreach (var x in bag.ToList())
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
 }

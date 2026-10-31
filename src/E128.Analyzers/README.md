@@ -442,7 +442,7 @@ private static readonly FrozenSet<string> AllowedMethods = new HashSet<string>(S
 
 ### E128028 &mdash; Task.FromResult wrapping sync I/O
 
-Flags methods that return `Task.FromResult` or `ValueTask.FromResult` while also calling synchronous I/O methods that have async equivalents (e.g., `File.ReadAllText` instead of `File.ReadAllTextAsync`). Does not flag early-return guards, null-object implementations, or methods that already use `await`.
+Flags methods that return `Task.FromResult` or `ValueTask.FromResult` while also calling synchronous I/O methods that have async equivalents (e.g., `File.ReadAllText` instead of `File.ReadAllTextAsync`). Does not flag early-return guards, null-object implementations, or methods that already use `await`. The rule stays silent when the target framework has no async member for the pair, for example `File.ReadAllTextAsync` on `netstandard2.0`.
 
 ```csharp
 // Before (warns)
@@ -490,7 +490,7 @@ Flags `AddSingleton` factory registrations that return types implementing `IDisp
 
 ### E128032 &mdash; Concrete-only DI registration
 
-Flags `AddScoped<ConcreteType>()` / `AddTransient<ConcreteType>()` / `AddSingleton<ConcreteType>()` when the concrete type implements a single non-marker interface. Register as the interface to enable testing and substitution.
+Flags `AddScoped<ConcreteType>()` / `AddTransient<ConcreteType>()` / `AddSingleton<ConcreteType>()` when the concrete type implements a non-marker interface. Register as that interface to enable testing and substitution. The code fix offers one action per interface, and it writes the type arguments and the qualification, so a generic type converts cleanly.
 
 ### E128033 &mdash; Options class with init-only properties
 
