@@ -40,6 +40,25 @@ public sealed class ToListInForeachE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task ToListInForeach_QueryableSource_Fires()
+    {
+        // The call binds to Enumerable.ToList, because IQueryable<T> converts to IEnumerable<T>.
+        return VerifyAsync("""
+                           using System.Linq;
+                           class C
+                           {
+                               void M(IQueryable<int> items)
+                               {
+                                   foreach (var x in {|E128018:items.ToList()|})
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ToListInForeach_WithLinqChain_Fires()
     {
         return VerifyAsync("""

@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-10-31T14:21:47Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 
@@ -25,8 +25,10 @@ Use `UsingDirectives.AddIfMissing(root, namespaceName)` from
 `src/E128.Analyzers/UsingDirectives.cs`. Do not write a local helper.
 
 The helper skips the namespace when an exact-name using is already present.
-Otherwise it inserts the directive in ordinal position with an elastic line
-feed. The file stays sorted without a later format pass.
+Otherwise it inserts the directive after the last directive that sorts before it,
+so an already-sorted block stays sorted. A file header is leading trivia of the
+first directive, so the helper moves that trivia to the new directive when the
+new one sorts first.
 
 ```csharp
 var newRoot = UsingDirectives.AddIfMissing(replaced, "System.Collections.Generic");
@@ -69,23 +71,32 @@ code into the document. Use a formatter for each value and the parse holds.
 Abort the fix when the parse returns null. A stub drops the attributes and the
 fields, so the result is not a usable member. `FixedBufferFieldCodeFixProvider`
 parses the InlineArray struct before it registers and offers no fix on a null.
+`MultiStringEqualsOrChainCodeFixProvider` returns null from its build step and
+leaves the document unchanged. It validates the whole member before it
+registers, so every offered fix changes code.
 
-Emit a type through a `SymbolDisplayFormat` that keeps the type arguments and the
-qualification. `ITypeSymbol.Name` drops both. E128032 wrote
-`AddSingleton<IRepository, Repository>()` for a generic type, which is CS0305.
+## A Fix Without a Rewritable Receiver
+
+`InvocationExpressionSyntax.Expression` is the only node the fix can rewrite. A
+call that avoids a member access on the receiver, such as a fully qualified
+static call, still yields one. A `using static` import cannot call an extension
+method unqualified in C# at all, so a guard for that shape needs no test. The
+harness cannot compile such source and a diagnostic that fires there would
+offer nothing to rewrite.
+
+Emit a type through `ToMinimalDisplayString(semanticModel, position)`. It keeps
+the type arguments, qualifies a name only when the name is out of scope, and
+escapes a keyword identifier. `ITypeSymbol.Name` drops the arguments and the
+qualification. E128032 wrote `AddSingleton<IRepository, Repository>()` for a
+generic type, which is CS0305.
 
 ```csharp
-private static readonly SymbolDisplayFormat TypeNameFormat = new(
-    globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
-    typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-    genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-    miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+var typeName = SyntaxFactory.ParseTypeName(
+    targetInterface.ToMinimalDisplayString(semanticModel, invocation.SpanStart));
 ```
 
-`ConcreteOnlyDiRegistrationCodeFixProvider` and
-`DisposableSingletonFactoryCodeFixProvider` both use this format. Use
-`ToMinimalDisplayString` for a code action title, where the extra qualification
-only adds noise.
+Use the same call for the code action title, so the preview shows the text that
+lands. E128031 and E128032 both follow this shape.
 
 ## Stop at a Nested Function
 
@@ -100,6 +111,10 @@ Stop the walk at `AnonymousFunctionExpressionSyntax` and
 `LocalFunctionStatementSyntax`. Declare the helper once on the analyzer as
 `internal static` and call it from the fix provider, so both apply one boundary.
 `TaskFromResultSyncIoAnalyzer.IsInNestedFunction` is that helper.
+
+Apply the boundary to the node that is reported, not only to the scans. A rule
+that scans the method body but reports every candidate node still names a node
+that the fix refuses to touch.
 
 ## FixAll That Inserts a Member
 

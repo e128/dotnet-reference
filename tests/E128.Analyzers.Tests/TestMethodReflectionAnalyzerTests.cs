@@ -40,6 +40,26 @@ public sealed class TestMethodReflectionAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task FactMethod_BareBindingFlagsType_FiresE128090()
+    {
+        // The type name reaches no member access, so the identifier action must report it.
+        return VerifyAsync("""
+                           using System;
+                           using System.Reflection;
+                           class FactAttribute : Attribute { }
+                           class C
+                           {
+                               [Fact]
+                               public void TestMethod()
+                               {
+                                   var type = typeof({|E128090:BindingFlags|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task TheoryMethod_GetMethod_FiresE128090()
     {
         return VerifyAsync("""
@@ -106,6 +126,47 @@ public sealed class TestMethodReflectionAnalyzerTests
                                public void TestMethod()
                                {
                                    var f = {|E128090:typeof(string).GetField("Empty")|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FactMethod_AliasedBindingFlags_FiresE128090()
+    {
+        // The receiver text carries no "BindingFlags", so only the resolved symbol can match.
+        // The report covers the receiver, as it does for a non-aliased receiver.
+        return VerifyAsync("""
+                           using System;
+                           using BF = System.Reflection.BindingFlags;
+                           class FactAttribute : Attribute { }
+                           class C
+                           {
+                               [Fact]
+                               public void TestMethod()
+                               {
+                                   var flags = {|E128090:BF|}.Public;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FactMethod_TypeBuilderDerivedReceiver_FiresE128090()
+    {
+        // TypeBuilder derives from System.Type, so its reflection-shaped member counts too.
+        return VerifyAsync("""
+                           using System;
+                           using System.Reflection.Emit;
+                           class FactAttribute : Attribute { }
+                           class C
+                           {
+                               [Fact]
+                               public void TestMethod()
+                               {
+                                   var m = {|E128090:typeof(TypeBuilder).GetMethod("DefineType")|};
                                }
                            }
                            """);

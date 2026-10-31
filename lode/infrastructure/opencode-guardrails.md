@@ -1,5 +1,5 @@
 # opencode v2 Guardrail Parity
-*Updated: 2026-10-16T18:13:41Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 Claude Code enforces guardrails through hook scripts under `.claude/hooks/`.
 opencode v2 has no hook file. Its plugin API carries the same interception.

@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-10-18T14:56:49Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 ## Harness Portability Capability Map
 
@@ -36,7 +36,7 @@ Two supported harnesses load instructions in this repo:
 | `.claude/rules/*.md`            | Partial                     | Shared domain rules. Claude Code auto-loads the directory. opencode resolves no `instructions` glob, so `AGENTS.md` directs it to read the matching file |
 | `.claude/skills/`               | Yes                         | Skills (`SKILL.md`). Claude Code loads them through the skill tool. opencode reads project-level `.claude/skills/` through a compatibility path |
 | `prompts/SystemPrompt.txt`      | Yes (content), no (launch)  | The Lode Coding methodology. Content applies on any harness. The `--append-system-prompt` injection mechanism is Claude CLI only |
-| `scripts/internal/lode.sh`, `scripts/lode.nu`, `scripts/lode.ps1`, `scripts/lode-ollama.nu` | No | Claude CLI wrappers that inject `prompts/SystemPrompt.txt`. On another harness, read that file directly at session start instead |
+| `scripts/internal/lode.sh`, `scripts/lode.nu`, `scripts/lode.ps1`, `scripts/lode-ollama.nu`, `scripts/cc-oc.nu` | No | Claude CLI wrappers that inject `prompts/SystemPrompt.txt`. On another harness, read that file directly at session start instead. `cc-oc.nu` points Claude Code at the opencode Go endpoint. It reads the API key from the macOS Keychain |
 | `scripts/lode-opencode.nu`, `lode-opencode-lib.nu` | Partial | OpenCode wrapper: launches `opencode` with `prompts/SystemPrompt.txt` as the opening message. opencode has no persistent system prompt flag. The model comes from the `model` key in the global `opencode.json`. The wrapper drops a `--model` flag, because opencode reads the config key. Ollama needs no provider config, because v2 probes the local server |
 | `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md`, adds a thin Claude-only overlay |
 | `.claude/hooks/`                | No (file format)            | Claude Code guardrail hooks. opencode v2 has no hook file. Its plugin API provides the same interception. See [opencode-guardrails.md](opencode-guardrails.md) |

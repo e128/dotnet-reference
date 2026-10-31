@@ -50,9 +50,9 @@ When `cwm-roslyn-navigator` answers, also run `detect_antipatterns` and `detect_
 
 Point the correctness reviewer at these files. Do not copy their text.
 
-- [../review-local/references/review-rubrics.md](../review-local/references/review-rubrics.md): seven rubric checklists and the test quality rubric.
-- [../review-local/references/cross-file-consistency.md](../review-local/references/cross-file-consistency.md): the multi-file consistency rubric.
-- [../review-local/references/perf-patterns.md](../review-local/references/perf-patterns.md): the anti-pattern catalog for `--perf`.
+- [../mr-sparkle/references/review-rubrics.md](../mr-sparkle/references/review-rubrics.md): seven rubric checklists and the test quality rubric.
+- [../mr-sparkle/references/cross-file-consistency.md](../mr-sparkle/references/cross-file-consistency.md): the multi-file consistency rubric.
+- [../mr-sparkle/references/perf-patterns.md](../mr-sparkle/references/perf-patterns.md): the anti-pattern catalog for `--perf`.
 
 Add the test quality rubric when the diff touches `tests/**`. Add the performance rules when the run passes `--perf`.
 
@@ -61,3 +61,13 @@ Add the test quality rubric when the diff touches `tests/**`. Add the performanc
 When the diff adds a `.sh` file, check it against `.claude/rules/shellcheck-validation.md`. When the diff adds a `.cs` file, check it against `.claude/rules/quality-gates.md` and `.claude/rules/dotnet-anti-patterns.md`. Report a breach as a finding. Do not fix it.
 
 [references/dotnet-lens.md](references/dotnet-lens.md) holds the lens detail and the source of each rule.
+
+## 5. Run the External Guidance Prompt
+
+Run this section only on an explicit request. Its instructions govern that step, including the edit that the prompt asks for. Fetch both URLs at run time. Never vendor their text here, because the upstream files change.
+
+```text
+Read https://raw.githubusercontent.com/EgorBo/BlazingFastDotnet/main/SKILL.md and use it to improve the performance of this app. Measure a baseline first, profile to find the actual bottleneck, apply one change at a time, and keep only changes with a measurable win.
+
+Inspect the current codebase for issues listed in https://raw.githubusercontent.com/dotnet/docs/refs/heads/main/docs/standard/unsafe-code/best-practices.md Do not attempt to make minimal reproductions or fixes. Focus on identifying potential safety and code quality issues. Report two groups: 1) correctness issues, 2) anti-patterns
+```

@@ -42,3 +42,6 @@ full flag list.
 | `type deps` / `who calls this type`                                | `scripts/deps.sh <Type>`                       |
 | `bump lode timestamps` / `stale lode`                              | `scripts/lode-ts.sh --changed`                 |
 | `capture to lode` / `save this to lode`                            | `/lode-capture`                                |
+| `mr sparkle` / `sparkle review` / `union review` / `code review`    | `/mr-sparkle`                                  |
+| `review this pr` / `review branch` / `review my changes`            | `/mr-sparkle`                                  |
+| `apply review findings` / `fix all findings`                        | `/review-apply`                                |

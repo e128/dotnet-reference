@@ -132,6 +132,28 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenFromResultIsInsideALambda()
+    {
+        // The fix leaves a FromResult inside a nested function alone, so the analyzer must not
+        // report it either.
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               int M(string path)
+                               {
+                                   var text = File.ReadAllText(path);
+                                   Func<Task<int>> later = () => Task.FromResult(text.Length);
+                                   return text.Length;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenTheAsyncAlternativeIsMissing()
     {
         // File.ReadAllTextAsync arrived after netstandard2.0. Reporting there would give a fix

@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-10-31T14:23:23Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 ## Overview
 
@@ -89,7 +89,7 @@ E128099 | Design | Warning | No longer needed
 
 ## E128.Analyzers Status
 
-- `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content) and `RS1038`
+- `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content), `RS1038`, `RS0016`, `RS0017`, and `NU5128`
 - Files registered as `<AdditionalFiles>` in csproj
 - Published to NuGet: https://www.nuget.org/packages/E128.Analyzers/
 - `Shipped.md` lists all shipped rules across release sections; run `scripts/internal/analyzer-release-check.sh` for current shipped/unshipped/source ID counts

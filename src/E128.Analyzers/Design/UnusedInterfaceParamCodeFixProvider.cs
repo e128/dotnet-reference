@@ -53,9 +53,14 @@ public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
         }
 
         var paramName = param.Identifier.ValueText;
-        var newName = paramName.StartsWith("_", StringComparison.Ordinal)
-            ? paramName
-            : $"_{paramName}";
+        if (paramName.StartsWith("_", StringComparison.Ordinal))
+        {
+            // The fix-all path skips an underscore-prefixed name, so a single fix must skip it too
+            // rather than offer a rename to the same text.
+            return;
+        }
+
+        var newName = $"_{paramName}";
 
         context.RegisterCodeFix(
             CodeAction.Create(

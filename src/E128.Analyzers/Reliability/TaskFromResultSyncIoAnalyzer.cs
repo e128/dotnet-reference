@@ -119,13 +119,19 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
+            // Resolve each owning type once per compilation. A symbol compare rejects a user type
+            // that lives in the same namespace and shares the metadata name; the display-string
+            // compare would match it.
+            var syncIoOwnerTypes = ResolveSyncIoOwnerTypes(compilationContext.Compilation, availableSyncIoMethods);
+
             // The await and sync-I/O scans depend only on the enclosing method, not on the
             // individual FromResult call. Cache the result per method.
             var methodScans =
                 new ConcurrentDictionary<MethodDeclarationSyntax, (bool HasAwait, string? SyncIoCall)>();
 
             compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, taskType, valueTaskType, availableSyncIoMethods, methodScans),
+                nodeContext => AnalyzeInvocation(
+                    nodeContext, taskType, valueTaskType, availableSyncIoMethods, syncIoOwnerTypes, methodScans),
                 SyntaxKind.InvocationExpression);
         });
     }
@@ -135,6 +141,11 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
     ///     after the sync ones, so a netstandard2.0 target has no <c lang="csharp">File.ReadAllTextAsync</c>.
     ///     Reporting a method there would give a fix that does not compile.
     /// </summary>
+    /// <remarks>
+    ///     shortcut: the gate checks the async member name only, not the overload shape, so one call
+    ///     shape can still rewrite to a call that does not bind. Check the parameter shape when a
+    ///     rule needs that guarantee.
+    /// </remarks>
     internal static ImmutableDictionary<string, string> FindAvailableSyncIoMethods(Compilation compilation)
     {
         var builder = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
@@ -143,12 +154,30 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
         {
             var owner = compilation.GetTypeByMetadataName(entry.Value);
             if (owner is null
-                || !owner.GetMembers(SyncToAsyncMethodNames[entry.Key]).OfType<IMethodSymbol>().Any())
+                || !SyncToAsyncMethodNames.TryGetValue(entry.Key, out var asyncName)
+                || !owner.GetMembers(asyncName).OfType<IMethodSymbol>().Any())
             {
                 continue;
             }
 
             builder.Add(entry.Key, entry.Value);
+        }
+
+        return builder.ToImmutable();
+    }
+
+    /// <summary>
+    ///     Resolves each owning metadata name into the compiled symbol, keyed by the same string.
+    ///     A null value means the name is ambiguous or absent, so no call can match on it.
+    /// </summary>
+    internal static ImmutableDictionary<string, INamedTypeSymbol?> ResolveSyncIoOwnerTypes(
+        Compilation compilation,
+        ImmutableDictionary<string, string> availableSyncIoMethods)
+    {
+        var builder = ImmutableDictionary.CreateBuilder<string, INamedTypeSymbol?>(StringComparer.Ordinal);
+        foreach (var ownerName in availableSyncIoMethods.Values)
+        {
+            builder[ownerName] = compilation.GetTypeByMetadataName(ownerName);
         }
 
         return builder.ToImmutable();
@@ -182,6 +211,7 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol? taskType,
         INamedTypeSymbol? valueTaskType,
         ImmutableDictionary<string, string> availableSyncIoMethods,
+        ImmutableDictionary<string, INamedTypeSymbol?> syncIoOwnerTypes,
         ConcurrentDictionary<MethodDeclarationSyntax, (bool HasAwait, string? SyncIoCall)> methodScans)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
@@ -197,6 +227,13 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // The fix leaves a FromResult inside a lambda or a local function alone, so only a
+        // FromResult in the method body can be reported.
+        if (IsInNestedFunction(invocation, containingMethod))
+        {
+            return;
+        }
+
         var semanticModel = context.SemanticModel;
         var cancellationToken = context.CancellationToken;
         var (hasAwait, syncIoCall) = methodScans.GetOrAdd(containingMethod, method =>
@@ -206,7 +243,8 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
                 return (true, null);
             }
 
-            return (false, FindSyncIoCallWithAsyncAlternative(method, semanticModel, availableSyncIoMethods, cancellationToken));
+            return (false, FindSyncIoCallWithAsyncAlternative(
+                method, semanticModel, availableSyncIoMethods, syncIoOwnerTypes, cancellationToken));
         });
 
         if (hasAwait || syncIoCall is not { } syncCall)
@@ -280,6 +318,7 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
         MethodDeclarationSyntax method,
         SemanticModel semanticModel,
         ImmutableDictionary<string, string> availableSyncIoMethods,
+        ImmutableDictionary<string, INamedTypeSymbol?> syncIoOwnerTypes,
         CancellationToken cancellationToken)
     {
         foreach (var descendant in method.DescendantNodes())
@@ -312,8 +351,11 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var containingTypeName = calledMethod.ContainingType?.ToDisplayString();
-            if (string.Equals(containingTypeName, expectedContainingType, StringComparison.Ordinal))
+            // Symbol compare holds the code fix to the same match predicate, so a user type that
+            // shares the metadata name never gets a rewrite.
+            if (syncIoOwnerTypes.TryGetValue(expectedContainingType, out var ownerType)
+                && ownerType is not null
+                && SymbolEqualityComparer.Default.Equals(calledMethod.ContainingType, ownerType))
             {
                 return $"{expectedContainingType}.{methodName}";
             }

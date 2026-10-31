@@ -1,16 +1,31 @@
 # Claude Code Upstream Reference
-*Updated: 2026-10-16T18:14:38Z*
+*Updated: 2026-10-31T16:06:37Z*
 
 Baseline snapshot of official Claude Code harness guidance. Config health checks use it. This file
 covers harness features only: no model names, model defaults, context-window sizes, or pricing.
 
-## Current Version: 2.1.301
+## Current Version: 2.1.316
 
-The installed version is 2.1.301. The changelog top entry is 2.1.301.
+The installed version is 2.1.316. The changelog top entry is 2.1.316.
 
 ## Harness Changes Since 2.1.155
 
 | Version | Change                                                                                                                                                                                                                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.1.316 | `CLAUDE_CODE_DISABLE_ULTRATHINK`, `CLAUDE_CODE_DISABLE_LOOPED_CROSS_CERT_DROP`, and `CLAUDE_CODE_SUBAGENT_EFFORT` added. `managed.policy_mode: layered` merges every matching policy. Fast mode for Opus 4.8 is deprecated. |
+| 2.1.314 | `permissions.blockWritesOutsideWorkingDirectories` added. A `PreCompact` hook's output is cut at 10,000 characters. Hooks matching `Bash` run on the Monitor tool's shell commands, and a hook `if` such as `Monitor(tail *)` matches as `Bash(tail *)` does. Idle compaction added to VS Code and the desktop Code tab. |
+| 2.1.312 | `oidc.user_id_claim` added to the gateway. Click-to-send added. Write asks Claude to read a very large `CLAUDE.md`, rules file, or `@`-included file in full before it overwrites. Per-directory and `paths:` skills are found after a `cd` deeper into the repository. Prompt and agent hooks run at most 24 at a time. A subagent's `autoCompactWindow` lowers the window `CLAUDE_CODE_AUTO_COMPACT_WINDOW` set. |
+| 2.1.311 | `--hold-idle-file` and `--max-hold-min` added to `self-hosted-runner`. A standard-context session that passes 200K tokens now compacts and continues. `SubagentStop` hooks run once when a subagent finishes. `ultrathink` runs its turn at xhigh effort on Opus 5.5, Sonnet 5.5, Haiku 5.5, and Fable 5.1. |
+| 2.1.310 | The Monitor tool and plugin monitors work on Bedrock, Vertex, and Foundry and when telemetry is disabled. Long foreground sleeps are blocked there too. |
+| 2.1.309 | Sandboxed Bash no longer runs the shell's startup files outside the sandbox between commands. `--mcp-config` files are protected from sandboxed commands and auto-accepted edits. PowerShell hooks block on exit code 2, and Windows `PreToolUse`/`PermissionRequest` hooks with quoted-string commands no longer fail open. `sed -i` runs as written and is no longer a rewind-restorable preview. |
+| 2.1.308 | Bug fixes and reliability improvements.                                                                                                                                                                                                                                           |
+| 2.1.307 | `/claude-api api-version` and the `claude_code.safety_event` OpenTelemetry event added. `/permissions` > Recently denied now names the denied shell command.                                                                                                                       |
+| 2.1.306 | `claude -p` inside cloud sessions no longer reports "Not logged in" when started without the session's environment variables.                                                                                                                                                      |
+| 2.1.305 | `sandbox.allowNestedUserNamespaces` and `CLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS` added. Requests behind a gateway that rejects tool search are retried without it.                                                                                                      |
+| 2.1.304 | `/auto-mode-setup` added. Mod `tool.check` accepts `decider: "person"` and `e.isReadOnly`. Tool search is on by default behind a custom `ANTHROPIC_BASE_URL`. The skills of one source can register at most 1,024 hooks per session.                                                |
+| 2.1.303 | Bug fixes and reliability improvements.                                                                                                                                                                                                                                           |
+| 2.1.302 | `CLAUDE_CODE_AUTO_MODE_MODEL` and an `Idle compaction` row in `/config` added. At most 12 hooks of one event run at a time. Fork subagents are on by default in `claude -p`, the Agent SDK, the desktop app, and VS Code.                                                          |
+| 2.1.299 |                                                                                                                                                                                                                                                                            |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2.1.299 | `tools:` in an agent lists only the named MCP server tools: write a server name that contains `__` as `mcp__<whole name>__*`. `UserPromptSubmit` hooks run before a skill or slash command expands. A skill `UserPromptSubmit` hook first runs on the prompt after the invoking prompt. `CLAUDE_CODE_DISABLE_FILE_MENTIONS` added. |
 | 2.1.296 | `autoCompactWindow` added to subagent frontmatter and `--agents` JSON. `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` added. `--debug` names unrecognized agent frontmatter fields. |
@@ -188,7 +203,7 @@ directory.
 
 ## Sources
 
-- https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md (2026-10-16)
+- https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md (2026-10-31)
 - https://code.claude.com/docs/en/sub-agents (2026-10-06)
 - https://code.claude.com/docs/en/skills (2026-10-06)
 - https://github.com/anthropics/skills/commits/main/ (2026-05-28, not refetched)

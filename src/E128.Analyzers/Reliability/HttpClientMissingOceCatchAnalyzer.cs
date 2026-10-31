@@ -156,7 +156,7 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         // A custom client type can declare GetAsync and PostAsync too. Only an HttpClient receiver
         // throws the cancellation this rule is about.
         return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
-               && DerivesFrom(method.ContainingType, httpClientType);
+               && TypeSymbols.DerivesFrom(method.ContainingType, httpClientType);
     }
 
     private static bool IsHttpClientMethod(string name)
@@ -196,7 +196,7 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
     {
         return operationCanceledType is not null
                && GetCatchType(context, catchClause) is INamedTypeSymbol type
-               && DerivesFrom(type, operationCanceledType);
+               && TypeSymbols.DerivesFrom(type, operationCanceledType);
     }
 
     private static ITypeSymbol? GetCatchType(SyntaxNodeAnalysisContext context, CatchClauseSyntax catchClause)
@@ -206,16 +206,4 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
             : context.SemanticModel.GetTypeInfo(catchClause.Declaration.Type, context.CancellationToken).Type;
     }
 
-    private static bool DerivesFrom(INamedTypeSymbol? type, INamedTypeSymbol baseType)
-    {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, baseType))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

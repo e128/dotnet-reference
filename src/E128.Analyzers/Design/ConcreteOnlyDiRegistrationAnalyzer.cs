@@ -24,7 +24,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Concrete-only DI registration with available interface",
-        "'{0}' implements '{1}' — register as Add{2}<{1}, {0}>() for testability and loose coupling",
+        "'{0}' implements '{1}'. Register as Add{2}<{3}, {0}>() for testability and loose coupling.",
         "Design",
         DiagnosticSeverity.Warning,
         true,
@@ -39,11 +39,9 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         "AddTransient"
     };
 
-    internal static readonly HashSet<string> MarkerInterfaces = new(StringComparer.Ordinal)
-    {
-        "System.IDisposable",
-        "System.IAsyncDisposable"
-    };
+    // The code fix reads this set, so it is shared. An immutable set keeps it read-only.
+    internal static readonly ImmutableHashSet<string> MarkerInterfaces =
+        ImmutableHashSet.Create(StringComparer.Ordinal, "System.IDisposable", "System.IAsyncDisposable");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -135,12 +133,22 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         }
 
         var lifetime = nameNode.Identifier.Text.Substring(3);
+        // string.Join already returns the single element unchanged, so Count == 1 needs no branch.
         var interfaceNames = string.Join(", ", nonMarkerInterfaces.Select(i => i.Name));
+        // The suggested call must carry the type arguments so it matches what the code fix writes.
+        var suggestedType = nonMarkerInterfaces[0]
+            .ToMinimalDisplayString(context.SemanticModel, invocation.SpanStart);
 
         var diagnosticSpan = TextSpan.FromBounds(nameNode.SpanStart, invocation.Span.End);
         var diagnosticLocation = Location.Create(invocation.SyntaxTree, diagnosticSpan);
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, diagnosticLocation, typeArg.Name, interfaceNames, lifetime));
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            diagnosticLocation,
+            typeArg.Name,
+            interfaceNames,
+            lifetime,
+            suggestedType));
     }
 
     /// <summary>

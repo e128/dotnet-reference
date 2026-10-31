@@ -60,12 +60,21 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
             return;
         }
 
-        if (!TryExtractChainInfo(semanticModel, orExpr, context.CancellationToken, out var pivot, out _))
+        if (!TryExtractChainInfo(semanticModel, orExpr, context.CancellationToken, out var pivot, out var literals))
         {
             return;
         }
 
-        if (HasConflictingField(typeDecl, BuildFieldName(pivot.OperandText)))
+        var fieldName = BuildFieldName(pivot.OperandText);
+        if (HasConflictingField(typeDecl, fieldName))
+        {
+            return;
+        }
+
+        // The only no-op path is a failed field parse. Validate that too, so a registered fix
+        // always changes code.
+        var fieldDecl = ParseFieldDeclaration(fieldName, GetComparerExpression(pivot.ComparisonKey), literals);
+        if (fieldDecl is null)
         {
             return;
         }
@@ -109,7 +118,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
         }
 
         var newRoot = BuildFixedRoot(root, typeDecl, orExpr, pivot, literals, fieldName);
-        return document.WithSyntaxRoot(newRoot);
+        return newRoot is null ? document : document.WithSyntaxRoot(newRoot);
     }
 
     private static bool TryExtractChainInfo(
@@ -158,7 +167,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
         return true;
     }
 
-    private static SyntaxNode BuildFixedRoot(
+    private static SyntaxNode? BuildFixedRoot(
         SyntaxNode root,
         TypeDeclarationSyntax typeDecl,
         BinaryExpressionSyntax orExpr,
@@ -168,6 +177,10 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
     {
         var comparerExpr = GetComparerExpression(pivot.ComparisonKey);
         var fieldDecl = ParseFieldDeclaration(fieldName, comparerExpr, literals);
+        if (fieldDecl is null)
+        {
+            return null;
+        }
 
         // Preserve the OR-chain's leading trivia (indentation) on the replacement expression.
         var containsExpr = SyntaxFactory
@@ -219,7 +232,8 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
         return typeDecl.WithMembers(updatedMembers);
     }
 
-    private static MemberDeclarationSyntax ParseFieldDeclaration(
+    // A fallback member writes broken code into the document, so abort the fix when the parse fails.
+    private static MemberDeclarationSyntax? ParseFieldDeclaration(
         string fieldName,
         string comparerExpr,
         List<string> literals)
@@ -243,9 +257,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
         }
 
         sb.Append(" };");
-        var parsed = SyntaxFactory.ParseMemberDeclaration(sb.ToString());
-        return parsed ?? SyntaxFactory.FieldDeclaration(
-            SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var")));
+        return SyntaxFactory.ParseMemberDeclaration(sb.ToString());
     }
 
     private static bool HasConflictingField(TypeDeclarationSyntax typeDecl, string fieldName)

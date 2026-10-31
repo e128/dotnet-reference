@@ -40,6 +40,27 @@ public sealed class E128059UnusedInterfaceParamAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task UnusedInterfaceParam_NoReport_WhenTheParamFollowsTheDiscardConvention()
+    {
+        // The code fix skips underscore-prefixed parameters, so the analyzer must not report
+        // a diagnostic that offers no fix.
+        return VerifyAsync("""
+                           interface IProcessor
+                           {
+                               string Process(string _input);
+                           }
+                           class Processor : IProcessor
+                           {
+                               public string Process(string _input)
+                               {
+                                   return "constant";
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task UnusedInterfaceParam_NoReport_WhenAllParamsAreUsed()
     {
         return VerifyAsync("""
