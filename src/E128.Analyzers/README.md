@@ -43,7 +43,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128058 | Return `List<T>` via `.AsReadOnly()` when exposing as `IReadOnlyList<T>`                             | Yes      |
 | E128059 | Interface method parameter is unused in implementation (default: Error)                              | Yes      |
 | E128060 | Return `Dictionary<K,V>` via `.AsReadOnly()` when exposing as `IReadOnlyDictionary<K,V>`             | Yes      |
-| E128061 | Use `ImmutableArray<T>` for static readonly arrays                                                   | Yes      |
+| E128061 | Use an immutable type for static readonly arrays                                                     | Yes      |
 | E128074 | Readonly struct property should use `init` accessor                                                  | Yes      |
 | E128080 | Use `ByteSize` for data-size values to avoid unit ambiguity (default: Error)                         | Yes      |
 | E128082 | Do not unwrap `ByteSize` via cast                                                                    | Yes      |
@@ -121,6 +121,11 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128122 | Guard an expensive log argument with `IsEnabled`                                                                 | Yes      |
 | E128123 | Use `[GeneratedRegex]` for a constant pattern                                                                    | Yes      |
 | E128124 | Cache `SearchValues` in a static readonly field                                                                  | Yes      |
+| E128131 | Parse UTF-8 bytes with the span overload instead of a decoded string                                             | Yes      |
+| E128132 | Do not use a culture-aware comparer for a collection key                                                         | Yes      |
+| E128133 | Use an alternate lookup instead of a temporary string key                                                        | Yes      |
+| E128134 | Use `BitOperations.PopCount` instead of a shift loop                                                             | Yes      |
+| E128135 | Use `TensorPrimitives.Sum` instead of a sum loop                                                                 | Yes      |
 
 ### Security
 
@@ -181,6 +186,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128127 | Do not create a null managed reference                                                               | No       |
 | E128128 | Keep the delegate alive while native code holds its function pointer                                 | No       |
 | E128129 | Do not bulk-copy a type that holds references                                                        | No       |
+| E128136 | Do not pair a pointer parameter with a separate length parameter                                     | No       |
+| E128137 | Do not bind to a non-public BCL member through reflection                                            | No       |
+| E128138 | Do not build dynamic methods with raw IL                                                             | No       |
 
 ## What each rule catches
 
@@ -788,16 +796,20 @@ public IReadOnlyDictionary<string, int> Counts => _counts;
 public IReadOnlyDictionary<string, int> Counts => _counts.AsReadOnly();
 ```
 
-### E128061 &mdash; Static readonly array should be ImmutableArray
+### E128061 &mdash; Static readonly array should be immutable
 
-Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types &mdash; `readonly` prevents reassignment but callers can still mutate contents via the indexer. Use `ImmutableArray<T>` for true immutability.
+Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types &mdash; `readonly` prevents reassignment but callers can still mutate contents via the indexer.
+
+An initializer of constant `byte` values becomes a `ReadOnlySpan<byte>` property. The compiler stores those bytes as read-only data, so the property allocates nothing and copies nothing. Every other element type becomes `ImmutableArray<T>`.
 
 ```csharp
 // Before (warns)
 private static readonly string[] Names = ["a", "b"];
+private static readonly byte[] Magic = [0x50, 0x4B, 0x03, 0x04];
 
 // After
 private static readonly ImmutableArray<string> Names = ["a", "b"];
+private static ReadOnlySpan<byte> Magic => [0x50, 0x4B, 0x03, 0x04];
 ```
 
 ### E128066 &mdash; Linear lookup in loop (O(n²))
@@ -1326,6 +1338,62 @@ No code fix. Keep the delegate in a field or a `GCHandle` for the lifetime of th
 Flags `Unsafe.Copy` where the copied type holds a reference.
 The copy bypasses the write barrier, so a copied reference can miss a GC update.
 No code fix. The right replacement depends on whether the caller needs a deep or a shallow copy.
+
+### E128131: Parse UTF-8 bytes without a decoded string
+
+Flags `Encoding.UTF8.GetString(...)` passed to a `Parse` or `TryParse` call. The decode allocates a string that the parse then reads through a span. The span overload reads the bytes directly.
+
+The fix replaces the decoded argument with the byte argument. When the method needs an `IFormatProvider`, the fix appends `CultureInfo.CurrentCulture`.
+
+```csharp
+// Before
+int value = int.Parse(Encoding.UTF8.GetString(bytes));
+
+// After
+int value = int.Parse(bytes, CultureInfo.CurrentCulture);
+```
+
+### E128132: Do not use a culture-aware comparer for a collection key
+
+Flags `StringComparer.CurrentCulture`, `CurrentCultureIgnoreCase`, `InvariantCulture`, and `InvariantCultureIgnoreCase` in the constructor of `Dictionary<TKey, TValue>`, `ConcurrentDictionary<TKey, TValue>`, `SortedDictionary<TKey, TValue>`, `HashSet<T>`, or `SortedSet<T>`. A culture-aware comparer holds a `CompareInfo` reference and compares code points with culture rules.
+
+The fix replaces the comparer with `Ordinal` or `OrdinalIgnoreCase`.
+
+### E128133: Use an alternate lookup instead of a temporary string key
+
+Flags a lookup key of the form `new string(span)` on a string-keyed `Dictionary<TKey, TValue>`, `ConcurrentDictionary<TKey, TValue>`, or `HashSet<T>`. The construction allocates a string on every lookup.
+
+The fix reads the collection through `GetAlternateLookup<ReadOnlySpan<char>>()`, which compares the span in place. The analyzer reports only when the initializer proves the default or the ordinal comparer, because the alternate lookup throws for a culture-aware comparer. The fix provider offers no Fix All, since one file can mix both comparer kinds.
+
+### E128134: Use `BitOperations.PopCount` instead of a shift loop
+
+Flags a `while (value != 0)` loop whose body is exactly `count += value & 1;` and `value >>= 1;`. The loop counts one bit per iteration. `BitOperations.PopCount` compiles to one hardware instruction.
+
+The fix replaces the loop with `count += BitOperations.PopCount(value);` and casts a signed value to its unsigned width.
+
+### E128135: Use `TensorPrimitives.Sum` instead of a sum loop
+
+Flags a `foreach` loop whose body is exactly `sum += value;` where both the sum and the element are `float` or `double`, and the source is an array, `Span<T>`, or `ReadOnlySpan<T>`. The loop adds one element per iteration.
+
+The fix replaces the loop with `sum += TensorPrimitives.Sum(source);`. The analyzer reports only when the referenced `System.Numerics.Tensors` assembly declares the matching `Sum` overload.
+
+### E128136: Do not pair a pointer parameter with a separate length parameter
+
+Flags a method with a pointer parameter and another parameter of an integer or pointer-width type. The pair invites a length that does not match the buffer.
+
+No code fix. Replace the pair with a single `Span<T>` or `ReadOnlySpan<T>` parameter.
+
+### E128137: Do not bind to a non-public BCL member through reflection
+
+Flags `Type.GetMethod`, `GetField`, `GetProperty`, `GetEvent`, `GetMember`, `GetConstructor`, or `GetNestedType` when a `BindingFlags` argument names a non-public member and the receiver is `typeof(X)`. A private BCL member can change or disappear between runtime versions.
+
+No code fix. Use the public API, or a package that owns the access.
+
+### E128138: Do not build dynamic methods with raw IL
+
+Flags every call on `System.Reflection.Emit.ILGenerator`. The emitted opcodes are unchecked by the compiler and are hard to read.
+
+No code fix. Use `Expression.Lambda` or a source-generated method.
 
 ## Configuration
 
