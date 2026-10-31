@@ -71,7 +71,7 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
         }
 
         var variable = declaration.Variables.FirstOrDefault();
-        if (variable?.Initializer?.Value is null)
+        if (declaration.Variables.Count != 1 || variable?.Initializer?.Value is null)
         {
             return document;
         }

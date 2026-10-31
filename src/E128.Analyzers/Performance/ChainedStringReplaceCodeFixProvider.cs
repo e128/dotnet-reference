@@ -129,7 +129,9 @@ public sealed class ChainedStringReplaceCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var escapedChar = collapseChar is '\'' or '\\' ? "\\" + collapseChar : collapseChar.ToString();
+        // The collapse character is a runtime value. FormatLiteral puts the quotes and the escapes
+        // back, so a newline or a quote stays a valid character literal.
+        var charLiteral = SymbolDisplay.FormatLiteral(collapseChar, quote: true);
         var replacement = SyntaxFactory.ParseStatement($$"""
             {
                 var __buffer = new char[{{receiverName}}.Length];
@@ -137,7 +139,7 @@ public sealed class ChainedStringReplaceCodeFixProvider : CodeFixProvider
                 var __collapsing = false;
                 foreach (var __c in {{receiverName}})
                 {
-                    if (__c == '{{escapedChar}}')
+                    if (__c == {{charLiteral}})
                     {
                         if (!__collapsing)
                         {

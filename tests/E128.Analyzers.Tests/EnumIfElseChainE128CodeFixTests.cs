@@ -57,13 +57,10 @@ public sealed class EnumIfElseChainE128CodeFixTests
                                          {
                                              case Color.Red:
                                                  return 1;
-                                                 break;
                                              case Color.Green:
                                                  return 2;
-                                                 break;
                                              case Color.Blue:
                                                  return 3;
-                                                 break;
                                          }
                                          return 0;
                                      }
@@ -112,13 +109,10 @@ public sealed class EnumIfElseChainE128CodeFixTests
                                          {
                                              case Color.Red:
                                                  return 1;
-                                                 break;
                                              case Color.Green:
                                                  return 2;
-                                                 break;
                                              case Color.Blue:
                                                  return 3;
-                                                 break;
                                          }
                                          return 0;
                                      }

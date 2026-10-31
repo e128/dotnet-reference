@@ -65,6 +65,36 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixTests
                        """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_DeclaresParameter_WhenStatementOnlyCallsAddWithValue()
+    {
+        return VerifyFixAsync(
+            Preamble + """
+                       class C
+                       {
+                           void M()
+                           {
+                               var buffer = ArrayPool<byte>.Shared.Rent(1024);
+                               var cmd = new SqliteCommand();
+                               {|E128086:cmd.Parameters.AddWithValue("@p", buffer)|};
+                           }
+                       }
+                       """,
+            Preamble + """
+                       class C
+                       {
+                           void M()
+                           {
+                               var buffer = ArrayPool<byte>.Shared.Rent(1024);
+                               var cmd = new SqliteCommand();
+                               var sqliteParam = cmd.Parameters.AddWithValue("@p", buffer);
+                               sqliteParam.Size = 0; // TODO: set to actual byte count
+                           }
+                       }
+                       """);
+    }
+
     /// <summary>VB7: Code fix inserts .Size after .Value assignment.</summary>
     [Fact]
     [Trait("Category", "CI")]

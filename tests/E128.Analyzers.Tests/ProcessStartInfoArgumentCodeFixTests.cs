@@ -95,6 +95,25 @@ public sealed class ProcessStartInfoArgumentCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task StatementFormAssignment_NoFixOffered()
+    {
+        // A nested collection initializer is not a statement, so the statement form has no fix.
+        return VerifyNoFixAsync(
+            """
+            using System.Diagnostics;
+            class C
+            {
+                void M(string value)
+                {
+                    var startInfo = new ProcessStartInfo { FileName = "tool" };
+                    {|E128091:startInfo.Arguments = $"-x \"{value}\""|};
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task BareIdentifierArguments_NoFixOffered()
     {
         return VerifyNoFixAsync(

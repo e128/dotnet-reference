@@ -109,14 +109,19 @@ public sealed class SearchValuesHoistingCodeFixProvider : CodeFixProvider
             .IdentifierName(fieldName)
             .WithTriviaFrom(invocation);
 
-        var typeWithField = InsertFieldAsFirstMember(
+        var typeWithField = InsertField(
             typeDeclaration.ReplaceNode(invocation, replacement),
             field);
 
         return document.WithSyntaxRoot(root.ReplaceNode(typeDeclaration, typeWithField));
     }
 
-    private static TypeDeclarationSyntax InsertFieldAsFirstMember(
+    /// <summary>
+    ///     Static field initializers run in textual order. A field placed above a static field that
+    ///     the initializer reads would see the default value, so the new field goes after the last
+    ///     static field.
+    /// </summary>
+    private static TypeDeclarationSyntax InsertField(
         TypeDeclarationSyntax typeDeclaration,
         MemberDeclarationSyntax field)
     {
@@ -125,15 +130,18 @@ public sealed class SearchValuesHoistingCodeFixProvider : CodeFixProvider
             return typeDeclaration.WithMembers(typeDeclaration.Members.Add(field));
         }
 
-        var firstMember = typeDeclaration.Members[0];
-        var indent = firstMember.GetLeadingTrivia()
-            .FirstOrDefault(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia))
-            .ToFullString();
-
-        if (indent.Length == 0)
+        var anchorIndex = LastStaticFieldIndex(typeDeclaration);
+        if (anchorIndex >= 0)
         {
-            indent = "    ";
+            return InsertFieldAfter(
+                typeDeclaration,
+                typeDeclaration.Members[anchorIndex],
+                anchorIndex,
+                field);
         }
+
+        var firstMember = typeDeclaration.Members[0];
+        var indent = Indentation(firstMember);
 
         // Keep the existing trivia, so a doc comment on the first member survives. Skip the
         // line break that ends the open brace line. Set both ends of the gap explicitly, so the
@@ -163,6 +171,58 @@ public sealed class SearchValuesHoistingCodeFixProvider : CodeFixProvider
             .Insert(0, fieldWithIndent);
 
         return typeDeclaration.WithMembers(members);
+    }
+
+    private static int LastStaticFieldIndex(TypeDeclarationSyntax typeDeclaration)
+    {
+        var index = -1;
+
+        for (var i = 0; i < typeDeclaration.Members.Count; i++)
+        {
+            if (typeDeclaration.Members[i] is FieldDeclarationSyntax field
+                && field.Modifiers.Any(SyntaxKind.StaticKeyword))
+            {
+                index = i;
+            }
+        }
+
+        return index;
+    }
+
+    private static TypeDeclarationSyntax InsertFieldAfter(
+        TypeDeclarationSyntax typeDeclaration,
+        MemberDeclarationSyntax anchor,
+        int anchorIndex,
+        MemberDeclarationSyntax field)
+    {
+        var fieldWithIndent = field
+            .WithLeadingTrivia(SyntaxFactory.Whitespace(Indentation(anchor)))
+            .WithTrailingTrivia(SyntaxFactory.EndOfLine(LineBreak(anchor)));
+
+        return typeDeclaration.WithMembers(
+            typeDeclaration.Members.Insert(anchorIndex + 1, fieldWithIndent));
+    }
+
+    private static string Indentation(MemberDeclarationSyntax member)
+    {
+        var indent = member.GetLeadingTrivia()
+            .FirstOrDefault(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            .ToFullString();
+
+        return indent.Length == 0 ? "    " : indent;
+    }
+
+    private static string LineBreak(MemberDeclarationSyntax member)
+    {
+        foreach (var trivia in member.GetTrailingTrivia())
+        {
+            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+            {
+                return trivia.ToString();
+            }
+        }
+
+        return "\n";
     }
 
     private static bool HasMember(TypeDeclarationSyntax typeDeclaration, string name)

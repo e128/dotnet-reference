@@ -127,7 +127,8 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : CodeFixP
             .. lambdaArg.DescendantNodes()
                 .OfType<InvocationExpressionSyntax>()
                 .Where(inv => IsHttpClientOrPlaywrightMethod(inv)
-                              && !HasCancellationTokenArgument(semanticModel, inv, cancellationToken))
+                              && !HasCancellationTokenArgument(semanticModel, inv, cancellationToken)
+                              && AcceptsTrailingCancellationToken(semanticModel, inv, cancellationToken))
         ];
     }
 
@@ -171,6 +172,25 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : CodeFixP
                 or "WaitForNavigationAsync" or "WaitForURLAsync" or "WaitForLoadStateAsync" => true,
             _ => false
         };
+    }
+
+    // Appending the token positionally needs an overload that takes one more argument and ends with
+    // the token. The Playwright calls accept only an options object, so they get no fix.
+    private static bool AcceptsTrailingCancellationToken(
+        SemanticModel semanticModel,
+        InvocationExpressionSyntax invocation,
+        CancellationToken cancellationToken)
+    {
+        var argumentCount = invocation.ArgumentList.Arguments.Count;
+
+        return semanticModel.GetMemberGroup(invocation.Expression, cancellationToken)
+            .OfType<IMethodSymbol>()
+            .Any(candidate =>
+                candidate.Parameters.Length == argumentCount + 1
+                && string.Equals(
+                    candidate.Parameters[argumentCount].Type.ToDisplayString(),
+                    "System.Threading.CancellationToken",
+                    StringComparison.Ordinal));
     }
 
     private static bool HasCancellationTokenArgument(

@@ -21,6 +21,55 @@ public sealed class HttpClientMissingOceCatchCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Fix_InsertsOceCatch_WhenCatchHasNoIndentation()
+    {
+        const string source = """
+                              using System;
+                              using System.Net.Http;
+                              using System.Threading.Tasks;
+                              class C
+                              {
+                              async Task M(HttpClient client, string url)
+                              {
+                              try
+                              {
+                              await client.GetAsync(url);
+                              }
+                              {|E128051:catch (Exception)|}
+                              {
+                              }
+                              }
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System;
+                                 using System.Net.Http;
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                 async Task M(HttpClient client, string url)
+                                 {
+                                 try
+                                 {
+                                 await client.GetAsync(url);
+                                 }
+                                 catch (OperationCanceledException)
+                                         {
+                                             throw;
+                                         }
+                                 catch (Exception)
+                                 {
+                                 }
+                                 }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Fix_InsertsOceCatch_BeforeBroadCatchException()
     {
         const string source = """

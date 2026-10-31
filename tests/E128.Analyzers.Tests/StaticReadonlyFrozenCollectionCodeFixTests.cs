@@ -85,4 +85,26 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Fix_NotOffered_WhenTheDeclarationHasTwoVariables()
+    {
+        // One type node declares both variables. Converting one would delete the other.
+        const string source = """
+                              using System.Collections.Generic;
+                              class C
+                              {
+                                  private static readonly HashSet<string> A = new() { "a" }, B = new() { "b" };
+                              }
+                              """;
+
+        return new CSharpCodeFixTest<StaticReadonlyFrozenCollectionAnalyzer, StaticReadonlyFrozenCollectionCodeFixProvider, DefaultVerifier>
+        {
+            TestCode = source,
+            FixedCode = source,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            NumberOfFixAllInDocumentIterations = 0
+        }.RunAsync();
+    }
 }

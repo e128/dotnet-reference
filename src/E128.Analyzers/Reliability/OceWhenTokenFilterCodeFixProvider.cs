@@ -54,9 +54,14 @@ public sealed class OceWhenTokenFilterCodeFixProvider : CodeFixProvider
     {
         _ = cancellationToken;
 
+        if (catchClause.Declaration is not { } declaration || catchClause.Filter is not { } filter)
+        {
+            return Task.FromResult(document);
+        }
+
         var newCatchClause = catchClause
             .WithFilter(null)
-            .WithDeclaration(catchClause.Declaration!.WithTrailingTrivia(catchClause.Filter!.GetTrailingTrivia()));
+            .WithDeclaration(declaration.WithTrailingTrivia(filter.GetTrailingTrivia()));
 
         var newRoot = root.ReplaceNode(catchClause, newCatchClause);
         return Task.FromResult(document.WithSyntaxRoot(newRoot));

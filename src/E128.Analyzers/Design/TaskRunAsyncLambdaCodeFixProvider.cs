@@ -43,7 +43,10 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : CodeFixProvider
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (!args.Any())
+
+        // A second argument, such as the cancellation token, would be dropped by the removal and the
+        // work would no longer observe cancellation. Leave those calls to the developer.
+        if (args.Count != 1)
         {
             return;
         }

@@ -46,7 +46,8 @@ public sealed class StringBuilderPoolCodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not (ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax))
+        if (node is not (ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax)
+            || !CanReplaceWithRent(node, semanticModel, context.CancellationToken))
         {
             return;
         }
@@ -57,6 +58,26 @@ public sealed class StringBuilderPoolCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, node, ct),
                 nameof(StringBuilderPoolCodeFixProvider)),
             diagnostic);
+    }
+
+    // Rent() takes no seed. A seed string carries content the rewrite would drop. A capacity hint
+    // only costs a later resize, so it is safe to drop.
+    private static bool CanReplaceWithRent(
+        SyntaxNode creation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var arguments = creation switch
+        {
+            ObjectCreationExpressionSyntax explicitCreation => explicitCreation.ArgumentList?.Arguments ?? default,
+            ImplicitObjectCreationExpressionSyntax implicitCreation => implicitCreation.ArgumentList.Arguments,
+            _ => default
+        };
+
+        return arguments.Count == 0
+               || (arguments.Count == 1
+                   && semanticModel.GetTypeInfo(arguments[0].Expression, cancellationToken).Type?.SpecialType
+                       == SpecialType.System_Int32);
     }
 
     private static async Task<Document> ApplyFixAsync(

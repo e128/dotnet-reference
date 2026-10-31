@@ -73,4 +73,63 @@ public sealed class AsyncVoidE128CodeFixTests
 
         return VerifyFixAsync(source, fixedCode);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AsyncVoid_NoFix_WhenMethodOverridesABaseMethod()
+    {
+        // The base declares void. Changing only the override gives CS0508.
+        return VerifyNoFixAsync("""
+                                using System.Threading.Tasks;
+
+                                class B
+                                {
+                                    protected virtual void OnLoad()
+                                    {
+                                    }
+                                }
+
+                                class C : B
+                                {
+                                    protected override async void {|E128007:OnLoad|}()
+                                    {
+                                        await Task.Delay(1);
+                                    }
+                                }
+                                """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AsyncVoid_NoFix_WhenMethodImplementsAnInterface()
+    {
+        // The interface declares void. Changing only the implementation gives CS0738.
+        return VerifyNoFixAsync("""
+                                using System.Threading.Tasks;
+
+                                interface IFoo
+                                {
+                                    void Run();
+                                }
+
+                                class C : IFoo
+                                {
+                                    async void IFoo.{|E128007:Run|}()
+                                    {
+                                        await Task.Delay(1);
+                                    }
+                                }
+                                """);
+    }
+
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return new CSharpCodeFixTest<AsyncVoidAnalyzer, AsyncVoidCodeFixProvider, DefaultVerifier>
+        {
+            TestCode = code,
+            FixedCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            NumberOfFixAllIterations = 0
+        }.RunAsync();
+    }
 }

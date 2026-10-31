@@ -58,6 +58,13 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // The two-type-argument overload asks the container to construct the type itself. A factory
+        // that passes any argument builds something the container cannot reproduce.
+        if (!IsParameterlessCreation(invocation.ArgumentList.Arguments[0].Expression))
+        {
+            return;
+        }
+
         var nonMarkerInterfaces = returnType.AllInterfaces
             .Where(i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
             .ToList();
@@ -73,6 +80,19 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
                     $"E128031_{iface.ToDisplayString()}"),
                 diagnostic);
         }
+    }
+
+    private static bool IsParameterlessCreation(ExpressionSyntax argument)
+    {
+        var body = argument switch
+        {
+            SimpleLambdaExpressionSyntax simple => simple.Body as ExpressionSyntax,
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.Body as ExpressionSyntax,
+            _ => null
+        };
+
+        return body is ObjectCreationExpressionSyntax creation
+               && (creation.ArgumentList?.Arguments.Count ?? 0) == 0;
     }
 
     private static ITypeSymbol? ResolveReturnType(

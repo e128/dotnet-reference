@@ -18,6 +18,17 @@ public sealed class SelectManyToListCodeFixTests
         }.RunAsync();
     }
 
+    private static Task VerifyNoFixAsync(string source)
+    {
+        return new CSharpCodeFixTest<SelectManyToListAnalyzer, SelectManyToListCodeFixProvider, DefaultVerifier>
+        {
+            TestCode = source,
+            FixedCode = source,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            NumberOfFixAllInDocumentIterations = 0
+        }.RunAsync();
+    }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task CodeFix_RewritesToForeachAddRange()
@@ -48,6 +59,58 @@ public sealed class SelectManyToListCodeFixTests
                     {
                         flat.AddRange(x);
                     }
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_AddsTheGenericCollectionsUsing()
+    {
+        // Implicit usings are off in this repo, so the emitted List<T> needs its namespace.
+        return VerifyFixAsync(
+            """
+            using System.Linq;
+            class C
+            {
+                void M(int[][] items)
+                {
+                    var flat = {|E128085:items.SelectMany(x => x).ToList()|};
+                }
+            }
+            """,
+            """
+            using System.Collections.Generic;
+            using System.Linq;
+            class C
+            {
+                void M(int[][] items)
+                {
+                    var flat = new List<int>();
+                    foreach (var x in items)
+                    {
+                        flat.AddRange(x);
+                    }
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_NotOffered_WhenTheCallIsNestedInAnExpression()
+    {
+        // The rewrite replaces a whole statement, so a nested call has nothing it can replace.
+        return VerifyNoFixAsync(
+            """
+            using System.Collections.Generic;
+            using System.Linq;
+            class C
+            {
+                void M(List<List<int>> lists)
+                {
+                    var count = {|E128085:lists.SelectMany(x => x).ToList()|}.Count;
                 }
             }
             """);

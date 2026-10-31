@@ -138,4 +138,52 @@ public sealed class DirectHttpClientInstantiationCodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_OffersNoFix_WhenInitializerIsPresent()
+    {
+        // The factory rewrite would drop BaseAddress, so the developer keeps the call.
+        return VerifyNoFixAsync(
+            """
+            using System;
+            using System.Net.Http;
+            class C
+            {
+                void M()
+                {
+                    var client = {|E128004:new HttpClient() { Timeout = TimeSpan.FromSeconds(5) }|};
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_OffersNoFix_WhenInStaticMethod()
+    {
+        // The rewrite adds an instance field, which a static method cannot use.
+        return VerifyNoFixAsync(
+            """
+            using System.Net.Http;
+            class C
+            {
+                static void M()
+                {
+                    var client = {|E128004:new HttpClient()|};
+                }
+            }
+            """);
+    }
+
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return new CSharpCodeFixTest<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider, DefaultVerifier>
+        {
+            TestCode = code,
+            FixedCode = code,
+            ReferenceAssemblies = Net100WithHttp,
+            NumberOfFixAllIterations = 0
+        }.RunAsync();
+    }
 }

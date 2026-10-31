@@ -84,10 +84,50 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
             return document;
         }
 
-        var newRoot = ReplaceFieldReferences(root, fieldSymbol, parameterName, semanticModel, cancellationToken);
-        newRoot = RemoveFieldDeclaration(newRoot, variable);
+        var fieldDeclaration = variable.FirstAncestorOrSelf<FieldDeclarationSyntax>();
+        if (fieldDeclaration is null)
+        {
+            return document;
+        }
+
+        // Collect the references from the original tree, because the semantic model is bound to it.
+        var references = CollectFieldReferences(root, fieldSymbol, semanticModel, cancellationToken);
+
+        var newRoot = RewriteTree(
+            root, fieldDeclaration, references, parameterName, variable.Identifier.ValueText);
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static SyntaxNode RewriteTree(
+        SyntaxNode root,
+        FieldDeclarationSyntax fieldDeclaration,
+        List<SyntaxNode> references,
+        string parameterName,
+        string fieldName)
+    {
+        // Annotate the declaration and the references in one pass over the original tree. Two types
+        // in one file can declare the same field name, so the removal must find this exact
+        // declaration, not the first text match.
+        var declarationAnnotation = new SyntaxAnnotation("E128BackingField");
+        var referenceAnnotation = new SyntaxAnnotation("FieldReference");
+        var targets = new List<SyntaxNode>(references) { fieldDeclaration };
+        var annotatedRoot = root.ReplaceNodes(targets, (original, _) =>
+            ReferenceEquals(original, fieldDeclaration)
+                ? original.WithAdditionalAnnotations(declarationAnnotation)
+                : original.WithAdditionalAnnotations(referenceAnnotation));
+
+        var newRoot = annotatedRoot.ReplaceNodes(
+            annotatedRoot.GetAnnotatedNodes(referenceAnnotation),
+            (_, rewritten) => SyntaxFactory.IdentifierName(parameterName).WithTriviaFrom(rewritten));
+
+        var target = newRoot.GetAnnotatedNodes(declarationAnnotation)
+            .OfType<FieldDeclarationSyntax>()
+            .FirstOrDefault();
+
+        return target is null
+            ? newRoot
+            : RemoveFieldDeclaration(newRoot, target, fieldName);
     }
 
     private static string? GetParameterName(VariableDeclaratorSyntax variable)
@@ -95,29 +135,6 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
         return variable.Initializer?.Value is IdentifierNameSyntax identifier
             ? identifier.Identifier.ValueText
             : null;
-    }
-
-    private static SyntaxNode ReplaceFieldReferences(
-        SyntaxNode root,
-        IFieldSymbol fieldSymbol,
-        string parameterName,
-        SemanticModel semanticModel,
-        CancellationToken cancellationToken)
-    {
-        var annotation = new SyntaxAnnotation("FieldReference");
-        var nodesToAnnotate = CollectFieldReferences(root, fieldSymbol, semanticModel, cancellationToken);
-
-        if (nodesToAnnotate.Count == 0)
-        {
-            return root;
-        }
-
-        root = root.ReplaceNodes(nodesToAnnotate, (_, rewritten) =>
-            rewritten.WithAdditionalAnnotations(annotation));
-
-        var annotated = root.GetAnnotatedNodes(annotation).ToArray();
-        return root.ReplaceNodes(annotated, (_, rewritten) =>
-            SyntaxFactory.IdentifierName(parameterName).WithTriviaFrom(rewritten));
     }
 
     private static List<SyntaxNode> CollectFieldReferences(
@@ -158,20 +175,19 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
 
     private static SyntaxNode RemoveFieldDeclaration(
         SyntaxNode root,
-        VariableDeclaratorSyntax variable)
+        FieldDeclarationSyntax fieldDeclaration,
+        string identifier)
     {
-        var currentField = root.DescendantNodes()
-            .OfType<FieldDeclarationSyntax>()
-            .FirstOrDefault(f => f.Declaration.Variables
-                .Any(v => string.Equals(v.Identifier.ValueText, variable.Identifier.ValueText, StringComparison.Ordinal)));
+        if (fieldDeclaration.Declaration.Variables.Count == 1)
+        {
+            return root.RemoveNode(fieldDeclaration, SyntaxRemoveOptions.KeepNoTrivia) ?? root;
+        }
 
-        return currentField is null
+        var target = fieldDeclaration.Declaration.Variables
+            .FirstOrDefault(v => string.Equals(v.Identifier.ValueText, identifier, StringComparison.Ordinal));
+
+        return target is null
             ? root
-            : currentField.Declaration.Variables.Count == 1
-                ? root.RemoveNode(currentField, SyntaxRemoveOptions.KeepNoTrivia)!
-                : root.RemoveNode(
-                    currentField.Declaration.Variables.First(v =>
-                        string.Equals(v.Identifier.ValueText, variable.Identifier.ValueText, StringComparison.Ordinal)),
-                    SyntaxRemoveOptions.KeepNoTrivia)!;
+            : root.RemoveNode(target, SyntaxRemoveOptions.KeepNoTrivia) ?? root;
     }
 }

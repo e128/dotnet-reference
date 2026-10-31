@@ -109,7 +109,7 @@ public sealed class FileSystemInfoEqualityAnalyzer : DiagnosticAnalyzer
                || expression.IsKind(SyntaxKind.DefaultExpression);
     }
 
-    private static bool InheritsFromFileSystemInfo(ITypeSymbol type)
+    internal static bool InheritsFromFileSystemInfo(ITypeSymbol type)
     {
         var current = type;
         while (current is not null)

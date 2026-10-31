@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Globalization;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -35,7 +36,21 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not InvocationExpressionSyntax)
+        if (node is not InvocationExpressionSyntax invocation)
+        {
+            return;
+        }
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return;
+        }
+
+        // An unsupported format string makes the rewrite impossible. Decline here so the user never
+        // sees a fix that leaves the document unchanged.
+        var interpolated = BuildFromInvocation(invocation, semanticModel, context.CancellationToken);
+        if (interpolated is null)
         {
             return;
         }
@@ -43,31 +58,19 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Convert to string interpolation",
-                ct => ApplyFixAsync(context.Document, node, ct),
+                ct => ApplyFixAsync(context.Document, invocation, interpolated, ct),
                 nameof(StringFormatToInterpolationCodeFixProvider)),
             diagnostic);
     }
 
     private static async Task<Document> ApplyFixAsync(
         Document document,
-        SyntaxNode invocationNode,
+        InvocationExpressionSyntax invocation,
+        InterpolatedStringExpressionSyntax interpolated,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (root is null)
-        {
-            return document;
-        }
-
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return document;
-        }
-
-        var invocation = (InvocationExpressionSyntax)invocationNode;
-        var interpolated = BuildFromInvocation(invocation, semanticModel, cancellationToken);
-        if (interpolated is null)
         {
             return document;
         }
@@ -132,8 +135,15 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
                     return null;
                 }
             }
-            else if (formatString[i] == '}' && i + 1 < formatString.Length && formatString[i + 1] == '}')
+            else if (formatString[i] == '}')
             {
+                // A brace is either doubled (a literal brace) or unmatched. An unmatched brace
+                // cannot be reproduced in an interpolated string, so the fix declines.
+                if (i + 1 >= formatString.Length || formatString[i + 1] != '}')
+                {
+                    return null;
+                }
+
                 contents.Add(CreateTextContent("}"));
                 i += 2;
             }
@@ -223,14 +233,37 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
         return i;
     }
 
+    // The token carries source text, so a backslash, a quote, or a line break must be escaped.
+    // The format string holds the runtime value, and a raw value breaks the emitted literal.
     private static InterpolatedStringTextSyntax CreateTextContent(string text)
     {
+        var escaped = EscapeText(text);
+
         return SyntaxFactory.InterpolatedStringText(
             SyntaxFactory.Token(
                 SyntaxTriviaList.Empty,
                 SyntaxKind.InterpolatedStringTextToken,
-                text,
+                escaped,
                 text,
                 SyntaxTriviaList.Empty));
+    }
+
+    private static string EscapeText(string text)
+    {
+        var escaped = new StringBuilder(text.Length);
+        foreach (var character in text)
+        {
+            escaped.Append(character switch
+            {
+                '\\' => "\\\\",
+                '"' => "\\\"",
+                '\r' => "\\r",
+                '\n' => "\\n",
+                '\t' => "\\t",
+                _ => character.ToString()
+            });
+        }
+
+        return escaped.ToString();
     }
 }

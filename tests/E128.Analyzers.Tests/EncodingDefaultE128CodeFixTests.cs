@@ -50,6 +50,33 @@ public sealed class EncodingDefaultE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task EncodingDefault_CodeFix_KeepsTheQualifiedReceiver()
+    {
+        const string source = """
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var bytes = {|E128006:System.Text.Encoding.Default|}.GetBytes("test");
+                                  }
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var bytes = System.Text.Encoding.UTF8.GetBytes("test");
+                                     }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task MultipleOccurrences_FixAll_ReplacesAll()
     {
         const string source = """

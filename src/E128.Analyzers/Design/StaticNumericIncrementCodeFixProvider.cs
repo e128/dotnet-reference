@@ -62,7 +62,7 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
         var isIntOrLong = fieldSymbol.Type.SpecialType is SpecialType.System_Int32 or SpecialType.System_Int64;
 
         RegisterInterlockedFix(context, diagnostic, expression, fieldOperand, isIntOrLong);
-        RegisterRemoveStaticFix(context, diagnostic, fieldSymbol);
+        RegisterRemoveStaticFix(context, diagnostic, fieldSymbol, expression);
     }
 
     private static ExpressionSyntax? ResolveExpression(SyntaxNode tokenNode)
@@ -107,6 +107,13 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // Interlocked returns the new value. In statement position the result is discarded, so the
+        // rewrite keeps the meaning. In value position, such as `var v = counter++;`, it would not.
+        if (expression.Parent is not ExpressionStatementSyntax)
+        {
+            return;
+        }
+
         var interlockedTitle = expression switch
         {
             PrefixUnaryExpressionSyntax => "Use Interlocked.Decrement/Increment",
@@ -129,9 +136,11 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
     private static void RegisterRemoveStaticFix(
         CodeFixContext context,
         Diagnostic diagnostic,
-        IFieldSymbol fieldSymbol)
+        IFieldSymbol fieldSymbol,
+        ExpressionSyntax mutationSite)
     {
-        if (IsContainingTypeStaticClass(fieldSymbol))
+        // An instance field is unreachable from a static member, so removing static there is worse.
+        if (IsContainingTypeStaticClass(fieldSymbol) || IsInStaticMember(mutationSite))
         {
             return;
         }
@@ -142,6 +151,17 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
                 ct => ApplyRemoveStaticFixAsync(context.Document, fieldSymbol, ct),
                 $"{StaticNumericIncrementAnalyzer.DiagnosticId}RemoveStatic"),
             diagnostic);
+    }
+
+    private static bool IsInStaticMember(SyntaxNode node)
+    {
+        return node.Ancestors().Any(ancestor => ancestor switch
+        {
+            BaseMethodDeclarationSyntax method => method.Modifiers.Any(SyntaxKind.StaticKeyword),
+            BasePropertyDeclarationSyntax property => property.Modifiers.Any(SyntaxKind.StaticKeyword),
+            BaseFieldDeclarationSyntax field => field.Modifiers.Any(SyntaxKind.StaticKeyword),
+            _ => false
+        });
     }
 
     private static bool IsContainingTypeStaticClass(IFieldSymbol fieldSymbol)

@@ -42,10 +42,35 @@ public sealed class FileInfoToctouCodeFixProvider : CodeFixProvider
             return;
         }
 
+        var semanticModel = await context.Document
+            .GetSemanticModelAsync(context.CancellationToken)
+            .ConfigureAwait(false);
+        if (semanticModel?.GetEnclosingSymbol(statement.SpanStart, context.CancellationToken)
+            is not IMethodSymbol enclosing)
+        {
+            return;
+        }
+
+        // The catch body returns default, so this rewrite fits a return statement. Any other
+        // statement in a value-returning method would leave the try block, so its local would
+        // lose its scope, and the catch would have nothing to return.
+        var isReturn = statement is ReturnStatementSyntax;
+
+        if (!isReturn && !enclosing.ReturnsVoid)
+        {
+            return;
+        }
+
+        var catchBody = isReturn
+            ? SyntaxFactory.Block(
+                SyntaxFactory.ReturnStatement(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)))
+            : SyntaxFactory.Block();
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Wrap file read in try/catch(IOException)",
-                ct => WrapInTryCatchAsync(context.Document, statement, ct),
+                ct => WrapInTryCatchAsync(context.Document, statement, catchBody, ct),
                 nameof(FileInfoToctouCodeFixProvider)),
             diagnostic);
     }
@@ -53,6 +78,7 @@ public sealed class FileInfoToctouCodeFixProvider : CodeFixProvider
     private static async Task<Document> WrapInTryCatchAsync(
         Document document,
         StatementSyntax statement,
+        BlockSyntax catchBody,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -66,9 +92,7 @@ public sealed class FileInfoToctouCodeFixProvider : CodeFixProvider
             SyntaxFactory.CatchDeclaration(
                 SyntaxFactory.ParseTypeName("System.IO.IOException")),
             null,
-            SyntaxFactory.Block(
-                SyntaxFactory.ReturnStatement(
-                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression))));
+            catchBody);
 
         var tryCatch = SyntaxFactory.TryStatement(
                 tryBlock,

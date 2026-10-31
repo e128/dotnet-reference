@@ -106,16 +106,22 @@ public sealed class BareParseAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         SyntaxNodeAnalysisContext context)
     {
-        for (var current = invocation.Parent; current is not null; current = current.Parent)
+        SyntaxNode? child = invocation;
+
+        for (var current = invocation.Parent; current is not null; child = current, current = current.Parent)
         {
-            if (current is TryStatementSyntax tryStatement)
+            // Only the try block is guarded by the catch clauses. A call in the catch block or the
+            // finally block runs outside that guard, so the walk looks for an outer try instead.
+            if (current is not TryStatementSyntax tryStatement || !ReferenceEquals(child, tryStatement.Block))
             {
-                foreach (var catchClause in tryStatement.Catches)
+                continue;
+            }
+
+            foreach (var catchClause in tryStatement.Catches)
+            {
+                if (IsFormatExceptionOrException(catchClause, context))
                 {
-                    if (IsFormatExceptionOrException(catchClause, context))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }

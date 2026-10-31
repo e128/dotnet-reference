@@ -324,4 +324,21 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewHMACSHA1_TargetTyped_Reports()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   HMACSHA1 h = {|E128071:new()|};
+                               }
+                           }
+                           """);
+    }
 }

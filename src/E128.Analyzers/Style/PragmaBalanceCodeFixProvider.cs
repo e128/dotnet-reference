@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
@@ -41,9 +42,11 @@ public sealed class PragmaBalanceCodeFixProvider : CodeFixProvider
             return;
         }
 
+        var isAllCodes = string.Equals(suppressedId, PragmaBalanceAnalyzer.AllCodesKey, StringComparison.Ordinal);
+
         context.RegisterCodeFix(
             CodeAction.Create(
-                $"Add #pragma warning restore {suppressedId}",
+                isAllCodes ? "Add #pragma warning restore" : $"Add #pragma warning restore {suppressedId}",
                 ct => AddRestorePragmaAsync(context.Document, suppressedId, ct),
                 $"{nameof(PragmaBalanceCodeFixProvider)}.{suppressedId}"),
             diagnostic);
@@ -65,13 +68,18 @@ public sealed class PragmaBalanceCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        // A bare restore clears every open suppression, so it carries no error code.
+        var errorCodes = string.Equals(suppressedId, PragmaBalanceAnalyzer.AllCodesKey, StringComparison.Ordinal)
+            ? SyntaxFactory.SeparatedList<ExpressionSyntax>()
+            : SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
+                SyntaxFactory.IdentifierName(suppressedId).WithLeadingTrivia(SyntaxFactory.Space));
+
         var restoreDirective = SyntaxFactory.PragmaWarningDirectiveTrivia(
             SyntaxFactory.Token(SyntaxKind.HashToken),
             SyntaxFactory.Token(SyntaxKind.PragmaKeyword).WithLeadingTrivia(SyntaxFactory.Space),
             SyntaxFactory.Token(SyntaxKind.WarningKeyword).WithLeadingTrivia(SyntaxFactory.Space),
             SyntaxFactory.Token(SyntaxKind.RestoreKeyword).WithLeadingTrivia(SyntaxFactory.Space),
-            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
-                SyntaxFactory.IdentifierName(suppressedId).WithLeadingTrivia(SyntaxFactory.Space)),
+            errorCodes,
             SyntaxFactory.Token(SyntaxKind.EndOfDirectiveToken).WithTrailingTrivia(SyntaxFactory.LineFeed),
             true);
 

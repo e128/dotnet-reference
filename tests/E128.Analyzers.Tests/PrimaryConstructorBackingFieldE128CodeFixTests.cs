@@ -90,4 +90,36 @@ public sealed class PrimaryConstructorBackingFieldE128CodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task BackingField_Removed_LeavesTheSameNamedFieldInAnotherType()
+    {
+        return VerifyFixAsync(
+            """
+            class A(string name)
+            {
+                private readonly string {|E128017:_name|} = name;
+                string Get() => _name;
+            }
+
+            class B
+            {
+                private readonly string _name = "b";
+                string Get() => _name;
+            }
+            """,
+            """
+            class A(string name)
+            {
+                string Get() => name;
+            }
+
+            class B
+            {
+                private readonly string _name = "b";
+                string Get() => _name;
+            }
+            """);
+    }
 }

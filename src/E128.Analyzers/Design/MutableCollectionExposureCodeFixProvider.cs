@@ -67,14 +67,12 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
 
         if (node is MethodDeclarationSyntax method)
         {
-            var newReturnType = SyntaxFactory.ParseTypeName(suggestedType)
-                .WithTriviaFrom(method.ReturnType);
+            var newReturnType = KeepNullability(suggestedType, method.ReturnType);
             newRoot = root.ReplaceNode(method, method.WithReturnType(newReturnType));
         }
         else if (node is PropertyDeclarationSyntax property)
         {
-            var newPropertyType = SyntaxFactory.ParseTypeName(suggestedType)
-                .WithTriviaFrom(property.Type);
+            var newPropertyType = KeepNullability(suggestedType, property.Type);
             newRoot = root.ReplaceNode(property, property.WithType(newPropertyType));
         }
 
@@ -85,6 +83,20 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
 
         newRoot = EnsureUsingCollectionsGeneric(newRoot);
         return Task.FromResult(document.WithSyntaxRoot(newRoot));
+    }
+
+    /// <summary>
+    ///     The suggested type comes from the analyzer without a null annotation. A nullable member
+    ///     must stay nullable, or the fix turns a working null return into a warning.
+    /// </summary>
+    private static TypeSyntax KeepNullability(string suggestedType, TypeSyntax originalType)
+    {
+        var newType = SyntaxFactory.ParseTypeName(suggestedType);
+
+        return (originalType is NullableTypeSyntax
+                ? SyntaxFactory.NullableType(newType)
+                : newType)
+            .WithTriviaFrom(originalType);
     }
 
     private static SyntaxNode EnsureUsingCollectionsGeneric(SyntaxNode root)

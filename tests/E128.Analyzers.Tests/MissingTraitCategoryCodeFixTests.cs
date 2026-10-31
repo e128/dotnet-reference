@@ -47,6 +47,34 @@ public sealed class MissingTraitCategoryCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Fix_KeepsTheDocCommentOnce()
+    {
+        // The doc comment is leading trivia of the first attribute list, so copying that
+        // trivia onto the new list would duplicate it.
+        return VerifyFixAsync(
+            """
+            using Xunit;
+            public sealed class MyTests
+            {
+                /// <summary>Covers the happy path.</summary>
+                [{|E128073:Fact|}]
+                public void Should_Work() { }
+            }
+            """,
+            """
+            using Xunit;
+            public sealed class MyTests
+            {
+                /// <summary>Covers the happy path.</summary>
+                [Fact]
+                [Trait("Category", "CI")]
+                public void Should_Work() { }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Fix_AddsTrait_ToTheoryMethod()
     {
         return VerifyFixAsync(

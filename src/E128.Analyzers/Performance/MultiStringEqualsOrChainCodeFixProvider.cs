@@ -207,7 +207,8 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
 
         // Detect indent string from the existing first member's leading whitespace.
         var firstMember = typeDecl.Members[0];
-        var indentStr = firstMember.GetLeadingTrivia()
+        var firstMemberLeadingTrivia = firstMember.GetLeadingTrivia();
+        var indentStr = firstMemberLeadingTrivia
             .FirstOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia))
             .ToFullString();
         if (indentStr.Length == 0)
@@ -217,13 +218,12 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : CodeFixProvider
 
         var fieldWithIndent = fieldDecl.WithLeadingTrivia(SyntaxFactory.Whitespace(indentStr));
 
-        // Give the existing first member a blank line before it: \n\n<indent>
-        // (ParseMemberDeclaration produces no trailing newline on ";", so we need two linefeeds.)
+        // Give the existing first member a blank line before it, and keep its own leading trivia so
+        // a doc comment stays with the member.
         var firstMemberWithBlankLine = firstMember.WithLeadingTrivia(
-            SyntaxFactory.TriviaList(
-                SyntaxFactory.LineFeed,
-                SyntaxFactory.LineFeed,
-                SyntaxFactory.Whitespace(indentStr)));
+            firstMemberLeadingTrivia.InsertRange(
+                0,
+                SyntaxFactory.TriviaList(SyntaxFactory.LineFeed, SyntaxFactory.LineFeed)));
 
         var updatedMembers = typeDecl.Members
             .Replace(firstMember, firstMemberWithBlankLine)

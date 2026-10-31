@@ -33,7 +33,7 @@ public sealed class EncodingDefaultCodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not MemberAccessExpressionSyntax)
+        if (node is not MemberAccessExpressionSyntax memberAccess)
         {
             return;
         }
@@ -41,14 +41,14 @@ public sealed class EncodingDefaultCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Replace Encoding.Default with Encoding.UTF8",
-                ct => ApplyFixAsync(context.Document, node, ct),
+                ct => ApplyFixAsync(context.Document, memberAccess, ct),
                 nameof(EncodingDefaultCodeFixProvider)),
             diagnostic);
     }
 
     private static async Task<Document> ApplyFixAsync(
         Document document,
-        SyntaxNode encodingDefaultNode,
+        MemberAccessExpressionSyntax encodingDefaultNode,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -57,11 +57,9 @@ public sealed class EncodingDefaultCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var encodingUtf8 = SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName("Encoding"),
-                SyntaxFactory.IdentifierName("UTF8"))
-            .WithTriviaFrom(encodingDefaultNode);
+        // Swap the member name only, so a qualified receiver such as System.Text.Encoding stays.
+        var encodingUtf8 = encodingDefaultNode.WithName(
+            SyntaxFactory.IdentifierName("UTF8").WithTriviaFrom(encodingDefaultNode.Name));
 
         var newRoot = root.ReplaceNode(encodingDefaultNode, encodingUtf8);
         return document.WithSyntaxRoot(newRoot);

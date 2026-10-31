@@ -35,6 +35,7 @@
 - [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md): Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
 - [redundant-rules.md](dotnet/analyzers/redundant-rules.md): E128 rules disabled because third-party analyzers cover them
 - [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md): Code fix implementation patterns, BatchFixer vs SequentialRename, AddUsing blank line behavior
+- [code-fix-trivia.md](dotnet/analyzers/code-fix-trivia.md): Trivia the fix must keep: absent whitespace, replacement literals, member removal
 - [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
 - [performance.md](dotnet/analyzers/performance.md): Analyzer hot-path rules: bind late, resolve types once, scan each scope once
 

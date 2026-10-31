@@ -58,16 +58,29 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
             return;
         }
 
-        if (semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol)
+        if (semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol
+            || methodSymbol.TypeArguments.Length != 1)
         {
             return;
         }
 
-        if (methodSymbol.TypeArguments.Length != 1)
+        // The two-type-argument overload takes no factory. A factory that passes an argument builds
+        // something the container cannot reproduce, so the registration must stay as it is.
+        if (!HasNoFactoryOrParameterlessFactory(invocation))
         {
             return;
         }
 
+        RegisterInterfaceFixes(context, invocation, semanticModel, methodSymbol, diagnostic);
+    }
+
+    private static void RegisterInterfaceFixes(
+        CodeFixContext context,
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        IMethodSymbol methodSymbol,
+        Diagnostic diagnostic)
+    {
         var concreteType = methodSymbol.TypeArguments[0];
         var nonMarkerInterfaces = concreteType.AllInterfaces
             .Where(i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
@@ -85,6 +98,29 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
                     $"E128032_{iface.ToDisplayString()}"),
                 diagnostic);
         }
+    }
+
+    private static bool HasNoFactoryOrParameterlessFactory(InvocationExpressionSyntax invocation)
+    {
+        if (invocation.ArgumentList.Arguments.Count == 0)
+        {
+            return true;
+        }
+
+        if (invocation.ArgumentList.Arguments.Count > 1)
+        {
+            return false;
+        }
+
+        var body = invocation.ArgumentList.Arguments[0].Expression switch
+        {
+            SimpleLambdaExpressionSyntax simple => simple.Body as ExpressionSyntax,
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.Body as ExpressionSyntax,
+            _ => null
+        };
+
+        return body is ObjectCreationExpressionSyntax creation
+               && (creation.ArgumentList?.Arguments.Count ?? 0) == 0;
     }
 
     private static async Task<Document> RewriteToInterfaceMappedAsync(
@@ -126,7 +162,9 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
             .WithTypeArgumentList(newTypeArgs);
 
         var newMemberAccess = memberAccess.WithName(newName);
-        var newInvocation = invocation.WithExpression(newMemberAccess);
+        var newInvocation = invocation
+            .WithExpression(newMemberAccess)
+            .WithArgumentList(SyntaxFactory.ArgumentList());
 
         var newRoot = root.ReplaceNode(invocation, newInvocation);
         return document.WithSyntaxRoot(newRoot);

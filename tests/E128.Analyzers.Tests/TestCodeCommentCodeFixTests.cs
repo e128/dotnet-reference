@@ -52,4 +52,38 @@ public sealed class TestCodeCommentCodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_RemovesATrailingComment_AndKeepsTheLine()
+    {
+        // The comment is trailing trivia of the semicolon, so the fix must look in that list too.
+        return VerifyFixAsync(
+            """
+            using Xunit;
+
+            public class C
+            {
+                [Fact]
+                public void M()
+                {
+                    var x = 1; {|E128097:// note|}
+                    var y = 2;
+                }
+            }
+            """,
+            """
+            using Xunit;
+
+            public class C
+            {
+                [Fact]
+                public void M()
+                {
+                    var x = 1;
+                    var y = 2;
+                }
+            }
+            """);
+    }
 }

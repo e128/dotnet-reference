@@ -37,7 +37,11 @@ public sealed class ImmutableArrayCreateToArrayCodeFixProvider : CodeFixProvider
             .OfType<InvocationExpressionSyntax>()
             .FirstOrDefault();
 
-        if (invocation is null)
+        // An explicit type argument can widen the result, for example Create<Base>(derived). The
+        // rewrite infers the element type from the array, so it would change the type. Leave the
+        // diagnostic without a fix.
+        if (invocation is null
+            || invocation.Expression is MemberAccessExpressionSyntax { Name: GenericNameSyntax })
         {
             return;
         }

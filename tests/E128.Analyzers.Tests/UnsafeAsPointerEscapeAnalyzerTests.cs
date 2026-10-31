@@ -60,6 +60,29 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
     }
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenTheStackLocalLivesInAnAsyncMethod()
+    {
+        // An async member moves its locals into a heap state machine, which moves during a collection.
+        return VerifyAsync("""
+                           using System.Runtime.CompilerServices;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M(int parameter)
+                               {
+                                   unsafe
+                                   {
+                                       void* pointer = {|E128125:Unsafe.AsPointer(ref parameter)|};
+                                   }
+
+                                   await Task.Yield();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenThePointerTargetsAStackLocal()
     {
         return VerifyAsync("""

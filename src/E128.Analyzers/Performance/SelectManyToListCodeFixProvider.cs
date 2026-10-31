@@ -55,6 +55,13 @@ public sealed class SelectManyToListCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // The rewrite replaces a whole statement. A call nested inside a larger expression cannot
+        // be replaced without dropping the rest of that expression.
+        if (FindReplacedStatement(toListInvocation) is null)
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use foreach + AddRange",
@@ -89,12 +96,12 @@ public sealed class SelectManyToListCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var containingStatement = toListInvocation.Ancestors().OfType<LocalDeclarationStatementSyntax>().FirstOrDefault();
-        if (containingStatement?.Declaration.Variables.FirstOrDefault() is not { } variableDeclarator)
+        if (FindReplacedStatement(toListInvocation) is not { } containingStatement)
         {
             return document;
         }
 
+        var variableDeclarator = containingStatement.Declaration.Variables[0];
         var elementTypeName = listType.TypeArguments[0].ToMinimalDisplayString(semanticModel, toListInvocation.SpanStart);
         var variableName = variableDeclarator.Identifier.Text;
 
@@ -102,7 +109,20 @@ public sealed class SelectManyToListCodeFixProvider : CodeFixProvider
             variableName, elementTypeName, lambdaParam.Identifier.Text, source, lambdaBody, containingStatement.GetLeadingTrivia());
 
         var newRoot = root.ReplaceNode(containingStatement, newStatements);
-        return document.WithSyntaxRoot(newRoot);
+        return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, "System.Collections.Generic"));
+    }
+
+    // Only a declaration whose whole initializer is the ToList call can be replaced. Anything
+    // wider loses the expression around the call.
+    private static LocalDeclarationStatementSyntax? FindReplacedStatement(InvocationExpressionSyntax toListInvocation)
+    {
+        var statement = toListInvocation.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>();
+
+        return statement is not null
+               && statement.Declaration.Variables.Count == 1
+               && statement.Declaration.Variables[0].Initializer?.Value == toListInvocation
+            ? statement
+            : null;
     }
 
     private static SyntaxNode[] BuildReplacementStatements(

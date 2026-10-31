@@ -66,7 +66,8 @@ public sealed class UntimedProcessExitCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Add a timeout and Kill fallback",
-                ct => ReplaceStatementAsync(context.Document, statement, BuildSyncReplacement(receiverText), ct),
+                ct => ReplaceStatementAsync(
+                    context.Document, statement, BuildSyncReplacement(receiverText), ["System"], ct),
                 nameof(UntimedProcessExitCodeFixProvider)),
             diagnostic);
     }
@@ -94,7 +95,12 @@ public sealed class UntimedProcessExitCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Add a timeout CancellationTokenSource with a Kill fallback",
-                ct => ReplaceStatementAsync(context.Document, statement, BuildAsyncReplacement(receiverText), ct),
+                ct => ReplaceStatementAsync(
+                    context.Document,
+                    statement,
+                    BuildAsyncReplacement(receiverText),
+                    ["System", "System.Threading"],
+                    ct),
                 nameof(UntimedProcessExitCodeFixProvider)),
             diagnostic);
     }
@@ -135,6 +141,7 @@ public sealed class UntimedProcessExitCodeFixProvider : CodeFixProvider
         Document document,
         StatementSyntax oldStatement,
         StatementSyntax newStatement,
+        string[] requiredNamespaces,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -148,7 +155,14 @@ public sealed class UntimedProcessExitCodeFixProvider : CodeFixProvider
             .WithTrailingTrivia(oldStatement.GetTrailingTrivia())
             .WithAdditionalAnnotations(Formatter.Annotation);
 
+        // The emitted block names types the original statement did not, so the file needs their
+        // namespaces.
         var newRoot = root.ReplaceNode(oldStatement, replacement);
+        foreach (var requiredNamespace in requiredNamespaces)
+        {
+            newRoot = UsingDirectives.AddIfMissing(newRoot, requiredNamespace);
+        }
+
         return document.WithSyntaxRoot(newRoot);
     }
 }

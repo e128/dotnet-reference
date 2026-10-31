@@ -63,20 +63,25 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
         {
             foreach (var label in section.Labels)
             {
-                if (label is DefaultSwitchLabelSyntax or CasePatternSwitchLabelSyntax { Pattern: DiscardPatternSyntax })
+                if (label is DefaultSwitchLabelSyntax)
                 {
                     return;
+                }
+
+                if (label is CasePatternSwitchLabelSyntax patternLabel)
+                {
+                    if (IsCatchAllPattern(patternLabel))
+                    {
+                        return;
+                    }
+
+                    AddPatternMembers(context.SemanticModel, patternLabel.Pattern, casedNames, context.CancellationToken);
+                    continue;
                 }
 
                 if (label is CaseSwitchLabelSyntax caseLabel)
                 {
                     AddCasedMemberName(context.SemanticModel, caseLabel.Value, casedNames, context.CancellationToken);
-                    continue;
-                }
-
-                if (label is CasePatternSwitchLabelSyntax patternLabel)
-                {
-                    AddPatternMembers(context.SemanticModel, patternLabel.Pattern, casedNames, context.CancellationToken);
                 }
             }
         }
@@ -96,7 +101,7 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
         var casedNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var arm in switchExpression.Arms)
         {
-            if (arm.Pattern is DiscardPatternSyntax or VarPatternSyntax)
+            if (IsCatchAllArm(arm))
             {
                 return;
             }
@@ -105,6 +110,21 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
         }
 
         ReportIfIncomplete(context, switchExpression.SwitchKeyword, enumType, casedNames);
+    }
+
+    /// <summary>
+    ///   A discard pattern or a <c lang="csharp">var</c> pattern matches every value, so the switch is
+    ///   exhaustive. A <see langword="when"/> clause filters the match, so a guarded pattern is not a
+    ///   catch-all.
+    /// </summary>
+    private static bool IsCatchAllPattern(CasePatternSwitchLabelSyntax label)
+    {
+        return label.WhenClause is null && label.Pattern is DiscardPatternSyntax or VarPatternSyntax;
+    }
+
+    private static bool IsCatchAllArm(SwitchExpressionArmSyntax arm)
+    {
+        return arm.WhenClause is null && arm.Pattern is DiscardPatternSyntax or VarPatternSyntax;
     }
 
     /// <summary>

@@ -46,6 +46,13 @@ public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
             return;
         }
 
+        // A property initializer is a number too. Changing the type alone leaves `= 5000` next to
+        // TimeSpan, which does not compile.
+        if (node.FirstAncestorOrSelf<PropertyDeclarationSyntax>() is { Initializer: not null })
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Change type to TimeSpan",

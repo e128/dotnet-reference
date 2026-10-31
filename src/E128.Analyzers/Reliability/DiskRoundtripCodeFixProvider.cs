@@ -51,6 +51,13 @@ public sealed class DiskRoundtripCodeFixProvider : CodeFixProvider
         diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropIsAwaited, out var isAwaitedStr);
         var isAwaited = string.Equals(isAwaitedStr, "true", StringComparison.Ordinal);
 
+        // The read must yield the value the write produced. Only a matching kind, or a text and bytes
+        // pair, converts. Any other pair would put a value of the wrong type at the read site.
+        if (!IsConvertible(writeKind, readKind))
+        {
+            return;
+        }
+
         var targetNode = FindReplacementTarget(root, diagnostic.Location.SourceSpan, isAwaited);
         if (targetNode is null)
         {
@@ -143,6 +150,14 @@ public sealed class DiskRoundtripCodeFixProvider : CodeFixProvider
         return SyntaxFactory.InvocationExpression(
             target,
             SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(arg))));
+    }
+
+    private static bool IsConvertible(string? writeKind, string? readKind)
+    {
+        return writeKind is null
+               || readKind is null
+               || string.Equals(writeKind, readKind, StringComparison.Ordinal)
+               || NeedsSystemTextImport(writeKind, readKind);
     }
 
     private static bool NeedsSystemTextImport(string? writeKind, string? readKind)

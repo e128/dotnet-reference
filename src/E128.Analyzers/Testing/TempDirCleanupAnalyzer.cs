@@ -19,6 +19,8 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128054";
 
+    internal const string PropMemberName = "MemberName";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Class creates temp directory without cleanup interface",
@@ -73,7 +75,37 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, classDecl.Identifier.GetLocation(), classSymbol.Name));
+        // The fix names this member in the generated cleanup call, so the name travels with the
+        // diagnostic instead of a hardcoded guess.
+        var properties = ImmutableDictionary<string, string?>.Empty;
+        if (GetAssignedMemberName(context, invocation) is { } memberName)
+        {
+            properties = properties.Add(PropMemberName, memberName);
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(Rule, classDecl.Identifier.GetLocation(), properties, classSymbol.Name));
+    }
+
+    private static string? GetAssignedMemberName(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
+    {
+        var symbol = invocation.FirstAncestorOrSelf<EqualsValueClauseSyntax>()?.Parent switch
+        {
+            PropertyDeclarationSyntax property => context.SemanticModel.GetDeclaredSymbol(property, context.CancellationToken),
+            VariableDeclaratorSyntax declarator => context.SemanticModel.GetDeclaredSymbol(declarator, context.CancellationToken),
+            _ => GetAssignedTargetSymbol(context, invocation)
+        };
+
+        // A local variable or a parameter is not a member. The generated Dispose call cannot reach
+        // it, so the fix would not compile.
+        return symbol is IFieldSymbol or IPropertySymbol ? symbol.Name : null;
+    }
+
+    private static ISymbol? GetAssignedTargetSymbol(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
+    {
+        return invocation.FirstAncestorOrSelf<AssignmentExpressionSyntax>()?.Left is { } target
+            ? context.SemanticModel.GetSymbolInfo(target, context.CancellationToken).Symbol
+            : null;
     }
 
     private static bool IsGetTempPathCall(

@@ -86,4 +86,20 @@ public sealed class TimeSpanForDurationE128CodeFixTests
                                        }
                                        """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoFix_WhenThePropertyHasANumericInitializer()
+    {
+        const string source = """
+                              using System;
+                              public class Service
+                              {
+                                  public int {|E128050:TimeoutMs|} { get; init; } = 5000;
+                              }
+                              """;
+
+        // Changing the type alone would leave `= 5000` next to TimeSpan, which does not compile.
+        return VerifyFixAsync(source, source);
+    }
 }
