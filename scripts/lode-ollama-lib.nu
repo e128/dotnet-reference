@@ -12,10 +12,8 @@ export def lode-run [
 
     let parsed = parse-lode-args (load-system-prompt) $default_model ...$args
 
- # PATH configuration — derive repo root relative to this script
-    let repo_root = $env.CURRENT_FILE | path dirname | path dirname
     $env.PATH = (
-        $env.PATH | prepend "/opt/homebrew/bin" | prepend "~/.local/bin/"
+        $env.PATH | prepend "/opt/homebrew/bin" | prepend $"($env.HOME)/.local/bin"
     )
 
     with-env {

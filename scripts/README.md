@@ -76,10 +76,9 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `lode-summary.sh`   | Find and display lode content by section                                |
 | `lode-guard.sh`     | Lode file size guard: check line count before appending                 |
 | `task.sh`           | Task management: check/next/progress                                    |
-| `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected           |
-| `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4.1-flash:cloud) |
-| `lode-opencode.nu`  | Nushell wrapper: launch opencode via Ollama backend with SystemPrompt.txt injected. The model comes from the `model` key in the global opencode.json |
-| `cc-oc.nu`          | Nushell wrapper: launch claude with SystemPrompt.txt injected against the opencode Go endpoint (default deepseek-v4.1-flash). Reads the `oc_sk_` key from the macOS Keychain |
+| `dotnet-reference.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4.1-flash:cloud) |
+| `dotnet-reference-go.nu` | Nushell wrapper: launch claude against the opencode Go endpoint (default deepseek-v4.1-flash). Reads the `oc_sk_` key from the macOS Keychain |
+| `dotnet-reference-oc.nu` | Nushell wrapper: launch opencode with SystemPrompt.txt composed into the first turn. The model is `opencode-go/deepseek-v4.1-flash` |
 
 ## Code Navigation & Analysis
 
@@ -119,7 +118,6 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/analyzer-release-check.sh` | Validate analyzer release files (Unshipped/Shipped) against source DiagnosticId constants |
 | `internal/commit.sh`                 | Commit helper: blocks emails in the message, appends a name-only co-author trailer         |
 | `internal/cr-diff-deliver.sh`        | Decide code-review diff delivery mode by size: inline (≤30KB), write (30-40KB), or split (>40KB) |
-| `internal/lode.sh`                   | Legacy Claude CLI wrapper (SystemPrompt.txt)                                               |
 | `internal/mechanical-diff.sh`        | Classify each changed file in the working diff as MECHANICAL (namespace rename) or SUBSTANTIVE |
 | `internal/opencode-agents.sh`        | Sync (`sync`) or verify (`check`) the Claude Code agent definitions in the opencode v2 mirror (agents/ + agent-assets/) |
 | `internal/overlap-detect.sh`         | Detect trigger-phrase overlap between agents and skills                                    |

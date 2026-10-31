@@ -1,8 +1,8 @@
 #!/usr/bin/env nu
 
-# Launch Claude Code against the opencode Go subscription endpoint.
+# Lode-enabled claude wrapper against the opencode Go subscription endpoint.
 # The API key is read from the macOS Keychain.
-# Usage: cc-oc [--model <model>] [--append-system-prompt <text>] [...claude args]
+# Usage: dotnet-reference-go [--model <model>] [--append-system-prompt <text>] [...claude args]
 
 use lode-lib.nu [parse-lode-args load-system-prompt]
 
@@ -28,7 +28,7 @@ def read-keychain-token []: nothing -> string {
     $token
 }
 
-def main [...args: string] {
+def --wrapped main [...args: string] {
     let parsed = parse-lode-args (load-system-prompt) $DEFAULT_MODEL ...$args
     let token = (read-keychain-token)
 

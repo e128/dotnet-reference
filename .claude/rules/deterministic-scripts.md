@@ -69,8 +69,8 @@ terse JSON by default. Pass `--verbose` for the full log.
 `agent-spawns`, `slash-freq`, `redundant-ci`, `runner-fallback`, and `all`.
 
 Two files are never invoked directly. `scripts/lib.sh` is a sourced library.
-`scripts/internal/lode.sh` is the Claude wrapper that injects
-`SystemPrompt.txt`.
+`scripts/lode-lib.nu` and `scripts/lode-ollama-lib.nu` are Nushell modules
+that the `dotnet-reference*.nu` launchers import.
 
 Skills own the `scripts/internal/` entries. Call one directly only when no
 skill covers the step.
