@@ -33,7 +33,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 
 | Script               | Purpose                                                   | Key flags                                                                         |
 | -------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `build.sh`           | Build the solution or a specific project                  | `--verbose`, `--project`, `--warnings`, `--fix`                                   |
+| `build.sh`           | Build the solution or a specific project                  | `--verbose`, `--project`, `--errors`, `--warnings`, `--fix`                       |
 | `test.sh`            | Run tests (defaults to CI category)                       | `--all`, `--verbose`, `--dry-run`, `--trait`                                      |
 | `format.sh`          | Run jb cleanupcode then dotnet format                     | `--check`, `--changed`, `--no-jb`                                                 |
 | `check.sh`           | Composed: shell lint + format + build + test              | `--all`, `--no-format`, `--json`                                                  |
@@ -75,6 +75,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `lode-ts.sh`        | Update timestamps on lode files                                         |
 | `lode-summary.sh`   | Find and display lode content by section                                |
 | `lode-guard.sh`     | Lode file size guard: check line count before appending                 |
+| `lode-check.sh`     | Run the style lint and the size guard over lode files                   |
 | `task.sh`           | Task management: check/next/progress                                    |
 | `dotnet-reference.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4.1-flash:cloud) |
 | `dotnet-reference-go.nu` | Nushell wrapper: launch claude against the opencode Go endpoint (default deepseek-v4.1-flash). Reads the `oc_sk_` key from the macOS Keychain |

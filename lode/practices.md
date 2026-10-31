@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-10-31T21:23:16Z*
 
 ## Design Principles
 
@@ -56,7 +56,12 @@ See [AGENTS.md](../AGENTS.md) for the always-loaded subset.
 - The lode-write subset of these rules also ships in
   `prompts/SystemPrompt.txt`, together with a style self-lint. That copy
   reaches any harness, including OpenCode and Ollama, which never load
-  `.claude/rules/`. No tool lints the dash ban. The rule applies to lines you write in the current turn. Never
+  `.claude/rules/`.
+- The self-lint is `scripts/lode-check.sh`, which runs
+  `.claude/skills/tech-writing/scripts/tech-writing-lint.sh` and the 250-line
+  guard in one call. The lint flags the dash ban and the other mechanical
+  rules. The skill file lists the four judgment checks that the script cannot
+  make. The rule applies to lines you write in the current turn. Never
   bulk-rewrite an untouched file to apply it.
 
 ### Chat Style

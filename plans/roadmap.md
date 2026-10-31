@@ -1,12 +1,5 @@
 # Roadmap
-*Updated: 2026-10-27T16:59:48Z*
-
-## Active
-
-### Unsafe And Performance Analyzer Expansion
-18 new E128 rules from two published guidance documents. 13 carry a code fix
-provider. The rules are built and tested. The release is pending.
-Plan: [unsafe-perf-analyzers](unsafe-perf-analyzers/unsafe-perf-analyzers-plan.md).
+*Updated: 2026-10-31T19:55:01Z*
 
 ## Backlog
 
@@ -20,9 +13,3 @@ Future analyzers that detect APIs only available on newer runtimes should pre-sc
 
 ### smart.sh — Natural Language Router
 Natural language command dispatcher. Accepts plain English and routes to the right script.
-
-### session.sh — Transcript Analysis
-Session transcript analysis: tool-counts, errors, topics, stats from Claude Code JSONL transcripts.
-
-### violation-scan.sh — Anti-Pattern Scanner
-Session anti-pattern scan: detects bash anti-patterns and raw command usage in `.claude/` files.

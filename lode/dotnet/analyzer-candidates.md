@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-10-31T19:47:35Z*
+*Updated: 2026-10-31T21:17:52Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three
@@ -43,8 +43,10 @@ rule description and the fix shape live in `src/E128.Analyzers/README.md`.
 | E128125-E128129 | Unsafe code | no rule         | `Unsafe/`          |
 | E128131-E128135 | Performance | E128135 partial | `Performance/`     |
 | E128136-E128138 | Unsafe code | no rule         | `Unsafe/`          |
+| E128139         | Unsafe code | `bool` read     | `Unsafe/`          |
+| E128140-E128141 | Performance | every rule      | `Performance/`     |
 
-The next free ID after the implemented set is E128130.
+The lowest free ID is E128130.
 
 These rules have no code fix. The remediation depends on intent that the syntax
 tree does not carry.
@@ -57,8 +59,8 @@ tree does not carry.
 
 The guidance rows that stay a document and not a rule:
 
-| Row                                    | Why it stays a document                  |
-| -------------------------------------- | ---------------------------------------- |
+| Row                                    | Why it stays a document                   |
+| -------------------------------------- | ----------------------------------------- |
 | Ordinal string comparison              | CA1307, CA1309, and CA1310 cover it       |
 | `ToLower()` equality idiom             | Meziantou covers it                       |
 | Runtime knob tuning                    | Environment variables, not source         |
@@ -86,7 +88,7 @@ analyzer can see. Nine of them ship. The tenth folded into a shipped rule.
 | E128136       | Use `Span<T>` instead of a pointer and a length        | 16.1    | No       | Low    |
 | E128137       | Do not access nonpublic BCL members                    | 3.4     | No       | Low    |
 | E128138       | Do not emit raw IL with `ILGenerator`                  | 18.1    | No       | Low    |
-| E128139       | Guard pointer indexing with `Debug.Assert`             | 9.4     | Partial  | High   |
+| none          | Guard pointer indexing with `Debug.Assert`             | 9.4     | No       | High   |
 
 The byte literal row folded into E128061. That rule owns every
 `private static readonly T[]` field, so a second rule would report the same
@@ -99,5 +101,21 @@ returning it in `finally`. The repository requires a zero and a return in
 `finally`. Keep the repository rule. It satisfies the row, because the buffer
 is provably unused at that point.
 
-E128139 has high noise and no automatic fix. Skip it unless a real defect
-appears in review. E128130 stays free, so the next new rule takes that ID.
+The `Debug.Assert` guard idea stays unshipped. Its noise is high, so it needs a
+real defect in review before a rule is worth the false positives. The E128139
+ID belongs to the unaligned-access rule below.
+
+## Third Read Of The Guidance Documents
+
+A third read on 2026-10-31 found three code shapes that the first two reads
+missed. Two of them ship a code fix. E128139 covers the `bool` case only.
+
+| ID      | Rule                                                         | Source                            | Code fix         | Noise  |
+| ------- | ------------------------------------------------------------ | --------------------------------- | ---------------- | ------ |
+| E128139 | Do not move a non-blittable type through an unaligned access | Unsafe guide, struct bit patterns | `bool` read only | Low    |
+| E128140 | Use a span bulk method instead of an element loop            | Performance guide, bulk span APIs | Yes              | Low    |
+| E128141 | Use a u8 literal instead of `Encoding.UTF8.GetBytes`         | Performance guide, UTF-8 parsing  | Yes              | Low    |
+
+E128139 extends E128118 to the `Unsafe` read and write calls. E128118 covers
+`MemoryMarshal` only. E128140 covers the `Fill`, `Clear`, and `CopyTo` shapes.
+E128141 needs C# 11 or later, and the rule checks the language version.

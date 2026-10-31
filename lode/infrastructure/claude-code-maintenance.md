@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-10-31T16:46:25Z*
+*Updated: 2026-10-31T21:23:16Z*
 
 ## Harness Portability Capability Map
 
@@ -175,9 +175,16 @@ Link instead.
 The last row is a deliberate exception to the one-owner rule.
 `writing-style.md` owns the full STE definition. Claude Code auto-loads it
 and opencode reads it on demand. `prompts/SystemPrompt.txt` carries the lode-write
-subset (STE, the dash ban, and the style self-lint) for injected-launcher
-sessions, where no repo config file loads. Do not delete that copy as
-duplication. Keep the two in agreement when either one changes.
+subset (STE and the dash ban) for injected-launcher sessions, where no repo
+config file loads. Do not delete that copy as duplication. Keep the two in
+agreement when either one changes.
+
+`prompts/SystemPrompt.txt` does not hold the style checklist. It points at
+`scripts/lode-check.sh`, which runs the mechanical checks through
+`.claude/skills/tech-writing/scripts/tech-writing-lint.sh` and enforces the
+250-line limit. It also points at `.claude/skills/tech-writing/SKILL.md`, which
+lists the four judgment checks. All three paths work on any harness, so the
+prompt keeps no copy of the rules.
 
 `prompts/SystemPrompt.txt` owns the lode file conventions: the H1 title on line
 1, the italic `Updated` header line in ISO 8601 UTC on line 2, the `lode-map.md` entry

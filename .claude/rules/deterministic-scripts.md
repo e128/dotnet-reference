@@ -50,6 +50,8 @@ terse JSON by default. Pass `--verbose` for the full log.
 | ad-hoc `#pragma warning disable` or `[SuppressMessage]` greps    | `scripts/suppression-scan.sh [--json]`                          |
 | ad-hoc `PackageVersion` orphan or `ProjectReference` set-diff    | `scripts/deps-graph.sh [--orphans] [--json]`                    |
 | a manual `wc -l` before a lode write                             | `scripts/lode-guard.sh <file>`                                  |
+| a `for` loop running the style lint and the size guard          | `scripts/lode-check.sh <file...> \| --changed`                  |
+| a build with `--verbose` piped through a grep for errors         | `scripts/build.sh --errors`                                     |
 | hand-editing an `*Updated:*` timestamp in a lode file            | `scripts/lode-ts.sh [--changed] [--stale] [FILE...]`            |
 | a manual clean-tree, build-pass, or test-pass check              | `scripts/assert.sh [--clean-working-tree] [--build-pass]`       |
 | hand-editing `<Version>` in a `.csproj`                          | `scripts/internal/version-bump.sh <ProjectName>`                |

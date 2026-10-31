@@ -52,23 +52,23 @@ scripts/podman.sh test
 
 ## What Is Included
 
-| Component                | Description                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------ |
-| **E128.Reference.Web**   | Minimal API web app with Kestrel and a health endpoint                         |
-| **E128.Reference.Cli**   | System.CommandLine CLI with a `--name` option                                  |
-| **E128.Reference.Core**  | Shared library (Greeter service, models, repositories, services)               |
-| **E128.Analyzers**       | Roslyn analyzers (E128001 to E128129) with code fixes, published to nuget.org  |
-| **E128.Reference.Tests** | xUnit v3 and MTP with the CI, Podman, and Manual test categories               |
-| **Architecture.Tests**   | ArchUnitNET structural invariant tests (layers, naming, sealed)                |
-| **E128.Analyzers.Tests** | Analyzer and code fix unit tests                                               |
-| **E128.Reference.Cli.Tests**  | Unit tests for the CLI app                                                 |
-| **E128.Reference.Core.Tests** | Unit tests for the Greeter, GreetingService, and repositories              |
-| **Podman**               | Hardened Resolute multi-stage Dockerfile and compose.yaml                      |
-| **Bash scripts**         | Build, test, format, CI, Podman, and lode tasks ([catalog](scripts/README.md)) |
-| **Claude Code harness**  | CLAUDE.md, rules, hooks, skills, and agents (see `.claude/`)                   |
-| **CI/CD**                | GitHub Actions CI and NuGet trusted publishing                                 |
-| **Renovate**             | Automatic dependency updates with grouped PRs and a security bypass            |
-| **Lode**                 | Structured documentation with the [Lode Coding Toolkit][lode-toolkit]          |
+| Component                     | Description                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| **E128.Reference.Web**        | Minimal API web app with Kestrel and a health endpoint                         |
+| **E128.Reference.Cli**        | System.CommandLine CLI with a `--name` option                                  |
+| **E128.Reference.Core**       | Shared library (Greeter service, models, repositories, services)               |
+| **E128.Analyzers**            | Roslyn analyzers (E128001 to E128141) with code fixes, published to nuget.org  |
+| **E128.Reference.Tests**      | xUnit v3 and MTP with the CI, Podman, and Manual test categories               |
+| **Architecture.Tests**        | ArchUnitNET structural invariant tests (layers, naming, sealed)                |
+| **E128.Analyzers.Tests**      | Analyzer and code fix unit tests                                               |
+| **E128.Reference.Cli.Tests**  | Unit tests for the CLI app                                                     |
+| **E128.Reference.Core.Tests** | Unit tests for the Greeter, GreetingService, and repositories                  |
+| **Podman**                    | Hardened Resolute multi-stage Dockerfile and compose.yaml                      |
+| **Bash scripts**              | Build, test, format, CI, Podman, and lode tasks ([catalog](scripts/README.md)) |
+| **Claude Code harness**       | CLAUDE.md, rules, hooks, skills, and agents (see `.claude/`)                   |
+| **CI/CD**                     | GitHub Actions CI and NuGet trusted publishing                                 |
+| **Renovate**                  | Automatic dependency updates with grouped PRs and a security bypass            |
+| **Lode**                      | Structured documentation with the [Lode Coding Toolkit][lode-toolkit]          |
 
 ## Prerequisites
 
@@ -158,7 +158,7 @@ This repository uses a **deny-by-default** analyzer strategy:
 
 - `dotnet_analyzer_diagnostic.severity = error` makes each diagnostic an error unless a rule overrides it
 - Third-party analyzer packages (see [`Directory.Packages.props`](./Directory.Packages.props)) add more than 1000 rules
-- About 60 rules are disabled or set to `suggestion`. The `.globalconfig` file documents each one.
+- The `.globalconfig` file documents each rule that is disabled or set to `suggestion`.
 - Test projects use a separate `tests/.globalconfig` at `global_level = 101` for test overrides
 
 ### Analyzer Packages
@@ -182,8 +182,8 @@ Tests run on **xUnit v3** with the **Microsoft Testing Platform** (MTP) runner:
 # Run CI tests (default category)
 scripts/test.sh
 
-# Run one test class
-scripts/test.sh GreeterTests
+# Run one test class (fully qualified name required)
+scripts/test.sh E128.Reference.Core.Tests.GreeterTests
 
 # Run all tests, including Podman and Manual
 scripts/test.sh --all

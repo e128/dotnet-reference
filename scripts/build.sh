@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Build the solution or a specific project.
-# Usage: build.sh [--project NAME] [--warnings] [--fix] [--verbose]
+# Usage: build.sh [--project NAME] [--warnings] [--fix] [--errors] [--verbose]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-VERBOSE=false; WARNINGS=false; FIX=false; PROJECT=""
+VERBOSE=false; WARNINGS=false; FIX=false; ERRORS=false; PROJECT=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -11,6 +11,7 @@ while [[ $# -gt 0 ]]; do
         --verbose)  VERBOSE=true ;;
         --warnings) WARNINGS=true ;;
         --fix)      FIX=true ;;
+        --errors)   ERRORS=true ;;
         --project)  PROJECT="$2"; shift ;;
         *)          err "Unknown flag: $1"; exit 1 ;;
     esac
@@ -38,7 +39,9 @@ if [[ "$WARNINGS" == false ]]; then
 fi
 
 if ! output=$("${ARGS[@]}" 2>&1); then
-    if [[ "$VERBOSE" == true ]]; then
+    if [[ "$ERRORS" == true ]]; then
+        echo "$output" | grep ': error ' | head -40
+    elif [[ "$VERBOSE" == true ]]; then
         err "Build failed"
         echo "$output"
     else

@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-10-31T19:47:35Z*
+*Updated: 2026-10-31T21:25:49Z*
 
 ## Overview
 
@@ -82,6 +82,11 @@ E128099 | Design | Warning | No longer needed
 4. Commit as part of release
 
 **Pre-first-release:** keep all rules in `Unshipped.md`; `Shipped.md` starts with `; No shipped releases yet.`
+
+The `/yeet` skill enforces the first step on every run. It calls
+`scripts/internal/analyzer-release-check.sh` for the release files and
+`scripts/readme-table-diff.sh --analyzer` for the analyzer README. A rule that
+is missing from either file blocks the ship, even on a docs-only change set.
 
 ## Consumers
 

@@ -1,5 +1,5 @@
 # Unsafe Code Policy
-*Updated: 2026-10-31T19:47:35Z*
+*Updated: 2026-10-31T20:40:01Z*
 
 Production code in this repository contains no unsafe code. No project sets
 `AllowUnsafeBlocks`, so a new `unsafe` block or a pointer type fails the build.
@@ -20,7 +20,7 @@ repository and on any project that references the package.
 | Use `Unsafe.BitCast` over `Unsafe.As`           | E128112                              |
 | Use the unaligned `Unsafe` read and write calls | E128113                              |
 | Do not remove a bounds check by hand            | E128114                              |
-| Do not treat a non-blittable type as bytes      | E128118                              |
+| Do not treat a non-blittable type as bytes      | E128118, E128139                     |
 | Use an inline array over a fixed-size buffer    | E128119                              |
 | Do not skip local initialization                | E128120                              |
 | Do not create a null managed reference          | E128127                              |

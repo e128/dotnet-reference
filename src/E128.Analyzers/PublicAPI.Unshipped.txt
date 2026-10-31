@@ -127,3 +127,15 @@ E128.Analyzers.Unsafe.PointerAndLengthParameterAnalyzer
 E128.Analyzers.Unsafe.PointerAndLengthParameterAnalyzer.PointerAndLengthParameterAnalyzer() -> void
 E128.Analyzers.Unsafe.RawIlEmitAnalyzer
 E128.Analyzers.Unsafe.RawIlEmitAnalyzer.RawIlEmitAnalyzer() -> void
+E128.Analyzers.Performance.ElementLoopToBulkSpanAnalyzer
+E128.Analyzers.Performance.ElementLoopToBulkSpanAnalyzer.ElementLoopToBulkSpanAnalyzer() -> void
+E128.Analyzers.Performance.ElementLoopToBulkSpanCodeFixProvider
+E128.Analyzers.Performance.ElementLoopToBulkSpanCodeFixProvider.ElementLoopToBulkSpanCodeFixProvider() -> void
+E128.Analyzers.Performance.Utf8GetBytesLiteralAnalyzer
+E128.Analyzers.Performance.Utf8GetBytesLiteralAnalyzer.Utf8GetBytesLiteralAnalyzer() -> void
+E128.Analyzers.Performance.Utf8GetBytesLiteralCodeFixProvider
+E128.Analyzers.Performance.Utf8GetBytesLiteralCodeFixProvider.Utf8GetBytesLiteralCodeFixProvider() -> void
+E128.Analyzers.Unsafe.UnsafeUnalignedNonBlittableAnalyzer
+E128.Analyzers.Unsafe.UnsafeUnalignedNonBlittableAnalyzer.UnsafeUnalignedNonBlittableAnalyzer() -> void
+E128.Analyzers.Unsafe.UnsafeUnalignedNonBlittableCodeFixProvider
+E128.Analyzers.Unsafe.UnsafeUnalignedNonBlittableCodeFixProvider.UnsafeUnalignedNonBlittableCodeFixProvider() -> void

@@ -33,7 +33,7 @@ Authority inside lode/
 • Report the disparity in one line. Do not ask permission for that fix.
 • Ask the user only when the CODE looks wrong. That decision belongs to them.
 
-Autonomous Lode Maintenance (NON-NEGOTIABLE, this is the prime directive)
+Autonomous Lode Maintenance
 The Lode is auto-managed. You keep it accurate without a prompt. "Always apply
 updates to the lode" is a standing order. Every session that touches code,
 config, scripts, skills, or structure ends with the Lode in agreement with the
@@ -49,7 +49,7 @@ AUTO-UPDATE (do this in the same turn as the code change, before you report
 "done"):
 • A change to behavior, structure, naming, signatures, config keys,
   dependencies, scripts, or skills requires an immediate lode update.
-• Do not defer to "later" or to a follow-up task. Later never comes.
+• Apply the update in the same turn as the change.
 • Run the post-change verification below after your edits. It needs no prompt.
 • Rewrite to current-state prose. Never append "now we also" text.
 • Never add a dated change note. State what is true now.
@@ -158,35 +158,31 @@ Lode writing style (applies to every line you write in lode/)
   untouched file.
 • The scope is the prose. Code, identifiers, and command syntax are exempt.
 
-Style self-lint (run it on every lode file before you report the edit)
-1. Any sentence over the word cap?
-2. Any semicolon?
-3. Any contraction?
-4. Any dash used as a pause?
-5. Any passive voice with a known actor?
-6. Any thing named two ways?
-Fix every hit before you finish the turn.
+Style self-lint
+Run `scripts/lode-check.sh <file>` on every lode file before you report the
+edit. It runs the mechanical style checks and the 250-line limit together.
+`.claude/skills/tech-writing/SKILL.md` lists the judgment checks. Fix every hit,
+or state why the hit is a false positive, before you finish the turn.
 
 Session start
 1. Read lode/lode-map.md, lode/terminology.md, and lode/summary.md.
 2. Read the lode files that the current request touches. lode-map.md is your
    index. Use it before you search the codebase or read code.
-3. Show briefly that you hold the domain knowledge. Then attend to the first
-   request.
+3. Start the requested work.
 When lode/ does not exist, ask the user whether you should create it.
 
-Mandatory workflow (enforce it, do not merely suggest it)
+Workflow
 1. Explore the problem space. Confirm the design before you write code.
 2. Implement only after a clear decision.
 3. When the user says "looks good", "ship it", or "this is final", update or
    create the matching lode entries at once.
 4. After each implementation phase or significant code change, verify the
-   affected lode files. This is a quality gate, not a suggestion.
+   affected lode files.
 5. After a large change, check that the lode structure still mirrors the
    codebase. Refactor it when it does not.
 
-Post-change verification (mandatory after every code change)
-This is the procedure for step 4 above. Do not skip it.
+Post-change verification
+This is the procedure for step 4 above.
 
 After a code change that renames, removes, or changes the signature of a class,
 method, option, or config key:
@@ -214,12 +210,6 @@ Timestamp integrity
   just because you made no edit.
 • A bulk timestamp update without content verification creates false freshness
   and hides real drift. Do not do this.
-
-Recurring nudges you should use naturally
-- "Let us capture this design in lode/... before we implement it."
-- "Per Lode Coding, explore and design first, then implement."
-- "Now that this is settled, I will update the lode so we never forget."
-- "I renamed X. Let me search the lode for the old name."
 
 What goes where
 - A permanent learning goes in a main lode file.
@@ -252,14 +242,14 @@ GOOD (stable reference):
    current list."
 
 Session handovers
-When the user asks for a handover, create a handover document in lode/tmp/. Give
-the current task state, the decisions made, the approaches tried, the blockers
-found, and the next steps. A fresh session must resume without a loss of
-momentum.
+When the user asks for a handover, write lode/tmp/handover-<topic>.md. The
+directory is git-ignored. Give the current task state, the decisions made, the
+approaches tried, the blockers found, and the next steps. A fresh session must
+resume without a loss of momentum.
 
-A project can override this with an automated handover mechanism, for example a
-session hook that captures state from git and the working tree. Check for a
-project handover convention before you write to lode/tmp/.
+Run `scripts/status.sh` and `scripts/diff.sh --commits 5` first. Paste their
+output at the end of the document. That gives the next session the exact
+working-tree state.
 
 CLAUDE.md and .claude/rules/ maintenance
 The tier structure runs from AGENTS.md, to CLAUDE.md, to .claude/rules/*.md, to
@@ -267,9 +257,8 @@ lode/. That structure, the rule-ownership table, and the staleness-detection
 procedure are authoritative in lode/infrastructure/claude-code-maintenance.md.
 Apply them here too. SystemPrompt.txt is part of the same tier system. It is the
 launcher-only layer that bootstraps the Lode method into a repository before
-AGENTS.md and lode/ exist there. The exact launcher script name and location
-are repository-specific. Check the repository's own script catalog for the
-current name. Never assume a fixed path such as scripts/lode.sh. CLAUDE.md is NOT a
+AGENTS.md and lode/ exist there. A repository names its own launcher in its
+script catalog, for example `scripts/dotnet-reference.nu`. CLAUDE.md is NOT a
 changelog. When a convention changes, update the rule in place. Never append "as
 of date X, we now do Y". The git history preserves the change. The file states
 what is true now.

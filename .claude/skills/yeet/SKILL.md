@@ -78,7 +78,7 @@ If format produces changes and the working tree was previously clean, those chan
 
 After format, re-check working tree state. If still no changes (format found nothing, and `has_changes` was false):
 - If `unpushed == 0` → "Nothing to yeet: working tree is clean, nothing unpushed." **Stop.**
-- If `unpushed > 0` → there is nothing new to stage, but the unpushed commits themselves can contain `.cs`/analyzer/script changes the remote has never been checked against, a clean working tree does NOT mean "nothing to verify." Re-derive `cs_changed`/`analyzers_or_scripts_changed` from `scripts/branch.sh --files` (diff against `main`, not the working tree) and run step B below against that file list before continuing to step 2's **push-only path**. Do not run steps C, D, or E here: they edit files, and a clean tree has no commit to hold those edits. Run `scripts/internal/analyzer-release-check.sh --json` read-only. If it reports issues, stop and tell the user.
+- If `unpushed > 0` → there is nothing new to stage, but the unpushed commits themselves can contain `.cs`/analyzer/script changes the remote has never been checked against, a clean working tree does NOT mean "nothing to verify." Re-derive `cs_changed`/`analyzers_or_scripts_changed` from `scripts/branch.sh --files` (diff against `main`, not the working tree) and run step B below against that file list before continuing to step 2's **push-only path**. Do not run steps C, D, or E here: they edit files, and a clean tree has no commit to hold those edits. Run C.1 and C.2 read-only. If either reports an issue, stop and tell the user.
 
 **B) Build + test (conditional):**
 Skip if `--skip-tests` (explicit, or auto-enabled because `cs_changed == 0`).
@@ -88,18 +88,10 @@ scripts/check.sh --all
 Step A already formatted the changed files, so the format check inside `check.sh` passes. Never pass `--no-format` (`.claude/rules/quality-gates.md`).
 If exit code is non-zero → **stop and report failures.**
 
-**C) Analyzer release files (conditional):**
-Only if the repo has a Roslyn analyzer project (a `src/*Analyzers*/` project) AND any staged or unstaged `.cs` file changes under it. Resolve the analyzer project name from the changed path (or `scripts/solution-inventory.sh --json`). Call it `<AnalyzerProject>` below. Skip this whole step if no analyzer project exists.
+**C) Analyzer release files and README (every run, when an analyzer project exists):**
+Run this step when the repo has a Roslyn analyzer project (a `src/*Analyzers*/` project). Resolve the project name with `scripts/solution-inventory.sh --json`. Call it `<AnalyzerProject>` below. Skip the whole step only when no analyzer project exists. Both checks are read-only and cheap, so they run on every yeet, including a docs-only change set.
 
-**C.1) Version bump:**
-```bash
-scripts/internal/version-bump.sh <AnalyzerProject>
-```
-This increments the `<Version>` in the analyzer csproj so the NuGet package ships with a new version. Skip with "Analyzer version bump skipped, no analyzer source changes" if no `.cs` files changed.
-
-If the version was bumped, re-read the csproj before any subsequent edits.
-
-**C.2) Unshipped/Shipped validation:**
+**C.1) Release file validation:**
 
 ```bash
 scripts/internal/analyzer-release-check.sh --json
@@ -111,6 +103,27 @@ Parse the JSON output. If `status` is `"issues"`:
 - **`orphans`** array → remove each orphaned entry from Unshipped.md
 - Verify table format consistency: aligned-column markdown, column order `Rule ID | Category | Severity | Notes`
 
+**C.2) README rule table:**
+
+```bash
+scripts/readme-table-diff.sh --analyzer --json
+```
+
+If `drift` is true:
+- **`missing_from_readme`** → add a row for each rule ID, with the title, the description, and the code-fix column from the analyzer source
+- **`extra_in_readme`** → remove the stale row
+- **`code_fix_mismatches`** → correct the code-fix column
+- Repad the table so every column shares one width (`.claude/rules/common-gotchas.md`)
+
+**C.3) Version bump:**
+Only if staged or unstaged `.cs` files changed under `<AnalyzerProject>`.
+```bash
+scripts/internal/version-bump.sh <AnalyzerProject>
+```
+This increments the `<Version>` in the analyzer csproj so the NuGet package ships with a new version. Skip with "Analyzer version bump skipped, no analyzer source changes" if no `.cs` files changed.
+
+If the version was bumped, re-read the csproj before any subsequent edits.
+
 If any fixes are needed, apply them silently (auto-approval per project rules). Log what was fixed.
 
 **D) README freshness (conditional):**
@@ -121,6 +134,8 @@ Spawn the `readme-auditor` agent:
 Agent(subagent_type="readme-auditor",
       prompt="Audit all README.md files for staleness and auto-fix drift.")
 ```
+
+The analyzer README rule table is already checked in C.2. This step covers every other README claim.
 
 If the agent produces edits, they become part of this commit. No separate commit.
 
@@ -142,7 +157,7 @@ the script regenerate.
 
 Skip with "Agent mirror skipped: no agent definition changes" when neither path is touched.
 
-**If `--dry-run`**: nothing may write a file. Use `scripts/format.sh --check` in step A. Skip C.1 (version bump), D (README edits), and E (mirror sync). Run C.2 read-only and report each issue as "would fix". Run `scripts/internal/opencode-agents.sh check` for E. Report the gate results and **stop here.** Do not continue to step 2.
+**If `--dry-run`**: nothing may write a file. Use `scripts/format.sh --check` in step A. Skip C.3 (version bump), D (README edits), and E (mirror sync). Run C.1 and C.2 read-only and report each issue as "would fix". Run `scripts/internal/opencode-agents.sh check` for E. Report the gate results and **stop here.** Do not continue to step 2.
 
 ### 2. Stage + commit + push
 
@@ -189,6 +204,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
 - **`--dry-run` stops after step 1**: quality check only, no file writes
 - **Format is scoped to changed files**: `scripts/format.sh --changed` runs only when `.cs` files changed. Skipped on docs-only/config-only changes.
 - **Re-read gate**: if format ran (step 1A), all `.cs` file contents are stale. Do NOT Edit any `.cs` file after step 1 without re-reading first.
+- **Analyzer release files and README ship accurate on every run**: `AnalyzerReleases.Shipped.md`, `AnalyzerReleases.Unshipped.md`, and `src/E128.Analyzers/README.md` are checked on every yeet, even a docs-only change set. A new rule that is missing from either file blocks the ship.
 
 ## Troubleshooting
 

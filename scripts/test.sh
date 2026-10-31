@@ -81,6 +81,17 @@ skipped=$(echo "$output" | sed -n 's/.*skipped: *\([0-9]*\).*/\1/p' | tail -1)
 
 total=${total:-0}; failed=${failed:-0}; succeeded=${succeeded:-0}; skipped=${skipped:-0}
 
+# A filter that matches nothing is a typo, not a pass. MTP needs the fully
+# qualified class name, so `test.sh MyTests` would otherwise exit 0.
+if [[ $total -eq 0 && $REAL_FAILED -eq 0 ]]; then
+    if [[ "$VERBOSE" == true ]]; then
+        err "No test matched the filter: ${CLASSES[*]:-trait $TRAIT}"
+    else
+        json_object status=no-match total=0 passed=0 failed=0 skipped=0
+    fi
+    exit 3
+fi
+
 if [[ "$VERBOSE" == true ]]; then
     if [[ $REAL_FAILED -eq 1 || "$failed" -gt 0 ]]; then
         err "Tests failed: $failed failed, $succeeded passed, $skipped skipped"

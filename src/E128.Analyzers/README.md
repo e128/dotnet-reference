@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.50.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.60.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -126,6 +126,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128133 | Use an alternate lookup instead of a temporary string key                                                        | Yes      |
 | E128134 | Use `BitOperations.PopCount` instead of a shift loop                                                             | Yes      |
 | E128135 | Use `TensorPrimitives.Sum` instead of a sum loop                                                                 | Yes      |
+| E128140 | Use `Span.Fill`/`Clear`/`CopyTo` instead of an element loop                                                      | Yes      |
+| E128141 | Use a `u8` literal instead of `Encoding.UTF8.GetBytes`                                                           | Yes      |
 
 ### Security
 
@@ -189,6 +191,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128136 | Do not pair a pointer parameter with a separate length parameter                                     | No       |
 | E128137 | Do not bind to a non-public BCL member through reflection                                            | No       |
 | E128138 | Do not build dynamic methods with raw IL                                                             | No       |
+| E128139 | Do not move a non-blittable type through an unaligned access                                         | Yes      |
 
 ## What each rule catches
 
@@ -1394,6 +1397,369 @@ No code fix. Use the public API, or a package that owns the access.
 Flags every call on `System.Reflection.Emit.ILGenerator`. The emitted opcodes are unchecked by the compiler and are hard to read.
 
 No code fix. Use `Expression.Lambda` or a source-generated method.
+
+### E128139 &mdash; Do not move a non-blittable type through an unaligned access
+
+Flags `Unsafe.ReadUnaligned<T>` and `Unsafe.WriteUnaligned<T>` when `T` is not blittable. A type is not blittable when it holds a reference, or when it is or contains a `bool` or a `decimal`. The bit pattern of such a type is not portable.
+
+```csharp
+// Before (warns)
+bool value = Unsafe.ReadUnaligned<bool>(ref source);
+
+// After
+bool value = source != 0;
+```
+
+The code fix applies to `Unsafe.ReadUnaligned<bool>` only.
+
+### E128140 &mdash; Use a span bulk method instead of an element loop
+
+Flags a `for` loop that writes one element per iteration, in these shapes:
+
+- `target[i] = value` becomes `Fill(value)`.
+- `target[i] = 0`, `false`, `null`, or `default` becomes `Clear()`.
+- `target[i] = source[i]` becomes `source.CopyTo(target)`.
+
+The loop must count from zero with `i++` and stop at `< target.Length`. The receiver must be a name, not a method call. For the copy shape the loop bound belongs to the source, because `CopyTo` reads the whole source span.
+
+```csharp
+// Before (warns)
+for (var i = 0; i < values.Length; i++)
+{
+    values[i] = 1;
+}
+
+// After
+values.AsSpan().Fill(1);
+```
+
+The code fix calls `AsSpan()` on an array and calls the method directly on a `Span<T>`.
+
+### E128141 &mdash; Use a u8 literal instead of Encoding.UTF8.GetBytes
+
+Flags `Encoding.UTF8.GetBytes` with a literal string argument. The call runs the UTF-8 encoder on every call. A `u8` literal stores the bytes in the assembly.
+
+```csharp
+// Before (warns)
+byte[] bytes = Encoding.UTF8.GetBytes("abc");
+
+// After
+byte[] bytes = "abc"u8.ToArray();
+```
+
+The rule needs C# 11 or later. The fix emits the bare literal when the target is a `ReadOnlySpan<byte>`. Every other target, including `Span<byte>`, keeps the `byte[]` shape through `ToArray()`.
+
+### E128076 &mdash; Materialize QuerySelectorAll result before iterating
+
+Flags a `foreach` over an AngleSharp `QuerySelectorAll` result that does not pass through `ToList()` or `ToArray()`. The loop also reports when it reads a local variable initialized from an unmaterialized call. A call inside a lambda in the initializer is not reported. The collection is live, so a DOM change inside the loop moves elements that the loop has not visited yet.
+
+```csharp
+// Before (warns)
+foreach (var row in document.QuerySelectorAll("tr"))
+{
+    row.Remove();
+}
+
+// After
+foreach (var row in document.QuerySelectorAll("tr").ToList())
+{
+    row.Remove();
+}
+```
+
+### E128077 &mdash; TextContent string match requires a preceding length guard
+
+Flags a `Contains`, `StartsWith`, `EndsWith`, or `Equals` call on an AngleSharp `TextContent` value when the same `&&` chain holds no length guard. A comparison against 100 or fewer characters counts anywhere in the chain. A comparison against more than 100 characters counts only when it comes before the match. `TextContent` covers every descendant node, so an ancestor element can match text that belongs to a child.
+
+```csharp
+// Before (warns)
+if (block.TextContent.Contains("cookie"))
+{
+    block.Remove();
+}
+
+// After
+if (block.TextContent.Length < 200 && block.TextContent.Contains("cookie"))
+{
+    block.Remove();
+}
+```
+
+### E128078 &mdash; GetAttribute("href") on element that does not carry href
+
+Flags `GetAttribute("href")` when the receiver is a local variable set from `QuerySelector` or `QuerySelectorAll` with a literal selector. Only `a`, `link`, `area`, and `base` elements carry `href`. The call returns null on any other element.
+
+```csharp
+// Before (warns)
+var div = document.QuerySelector("div");
+var href = div.GetAttribute("href");
+
+// After
+var link = document.QuerySelector("a");
+var href = link.GetAttribute("href");
+```
+
+No code fix. Change the selector, or read a different attribute.
+
+### E128079 &mdash; CompositeDetection with single generic ID selector lacks specificity
+
+Flags a `CompositeDetection` built from a collection expression that holds one `ResourceDetection` branch with a bare CSS ID selector such as `#content` or `#main`. Such a selector matches unrelated sites. Add a domain or meta-tag branch, or a second resource branch.
+
+```csharp
+// Before (warns)
+var detection = new CompositeDetection([new ResourceDetection("#content")]);
+
+// After
+var detection = new CompositeDetection(
+[
+    new DomainDetection("example.com"),
+    new ResourceDetection("#content")
+]);
+```
+
+No code fix.
+
+### E128080 &mdash; Use ByteSize for data-size values
+
+Flags a numeric property, parameter, field, or local variable whose name ends with a data-size suffix. The suffix list covers `Bytes`, `Kb`, `Kilobytes`, `Mb`, `Megabytes`, `Gb`, `Gigabytes`, `Tb`, `Terabytes`, `FileSize`, `MaxSize`, `CacheSize`, `BufferSize`, and `ChunkSize`. A nullable numeric reports too. Members declared inside the `ByteSize` type are exempt. `ByteSize` comes from `Pug.Core.Classes`. The rule reports at error.
+
+```csharp
+// Before (error)
+public int MaxBufferSizeMb { get; init; }
+
+// After
+public ByteSize MaxBufferSize { get; init; }
+```
+
+### E128081 &mdash; Use StringBuilderPool instead of `new StringBuilder()`
+
+Flags every `new StringBuilder()` and every target-typed `new()` that produces a `System.Text.StringBuilder`. The rule runs only when the compilation references `Pug.Core.Text.StringBuilderPool`. Code inside the `StringBuilderPool` class is exempt. The rule reports at info. A code fix rewrites the creation to the pooled form.
+
+```csharp
+// Before (info)
+var builder = new StringBuilder();
+
+// After
+var builder = StringBuilderPool.Shared.Rent();
+```
+
+### E128082 &mdash; Do not unwrap ByteSize via cast
+
+Flags a cast to a numeric type of a `Bytes`, `Bits`, `Kilobytes`, `Megabytes`, `Gigabytes`, or `Terabytes` property on a `ByteSize` value. The cast removes the unit from the type system. Compare `ByteSize` values directly, or format the value.
+
+```csharp
+// Before (warns)
+if ((long)limit.Bytes > 1024) { }
+
+// After
+if (limit > threshold) { }
+```
+
+### E128088 &mdash; Switch over an enum does not case every member
+
+Flags a `switch` statement or switch expression over a non-nullable enum. The rule reports when at least one member has no case and the switch has no `default`, discard, or `var` arm. An `or` pattern counts for each of its operands. A nullable enum is not checked. A new enum member otherwise falls through silently.
+
+```csharp
+// Before (warns)
+var label = color switch
+{
+    Color.Red => "red",
+    Color.Green => "green"
+};
+
+// After
+var label = color switch
+{
+    Color.Red => "red",
+    Color.Green => "green",
+    _ => "unknown"
+};
+```
+
+### E128094 &mdash; Pragma warning disable placed before a file-scoped namespace declaration
+
+Flags a `#pragma warning disable` that sits above `namespace X;`. The directive sits outside the namespace it was meant to scope. IDE0079 treats it as unnecessary and removes it during format, so the suppression stops working. The rule reports at error.
+
+```csharp
+// Before (error)
+#pragma warning disable CS1591
+namespace App;
+
+// After
+namespace App;
+#pragma warning disable CS1591
+```
+
+### E128096 &mdash; Call async local function with await instead of blocking
+
+Flags `.Result` or `.Wait()` on a call to a local function declared `async`. VSTHRD002 covers async methods but not local functions. The rule skips a call site that is already inside an async method or an async local function.
+
+```csharp
+// Before (warns)
+async Task<int> FetchAsync() => await GetValueAsync();
+int value = FetchAsync().Result;
+
+// After
+int value = await FetchAsync();
+```
+
+### E128097 &mdash; Comment inside test code
+
+Flags every `//`, `/* */`, and `///` comment inside a class that declares an xUnit `[Fact]` or `[Theory]` method. A license header or a doc comment on the type itself stays out of scope. The test name and the assertions already state what the test checks.
+
+```csharp
+// Before (warns)
+[Fact]
+public void ParsesValue()
+{
+    // Validates the happy path
+    Assert.Equal(42, Parse("42"));
+}
+
+// After
+[Fact]
+public void ParsesValue()
+{
+    Assert.Equal(42, Parse("42"));
+}
+```
+
+### E128098 &mdash; Collapse chained or looped string Replace calls into a single pass
+
+Flags two or more chained `string.Replace` calls at the outermost call. Also flags a `while` loop whose condition calls `Contains` on a string and whose body assigns `s = s.Replace(...)` to that string. Each call allocates a new string and copies the whole value.
+
+```csharp
+// Before (warns)
+var cleaned = input.Replace("a", "").Replace("b", "");
+
+// After
+var builder = new StringBuilder(input.Length);
+foreach (var c in input)
+{
+    if (c is not ('a' or 'b'))
+    {
+        builder.Append(c);
+    }
+}
+var cleaned = builder.ToString();
+```
+
+### E128099 &mdash; Wait for process exit with a provable timeout
+
+Flags `Process.WaitForExit()` and `Process.WaitForExitAsync()` with no argument. Also flags a single-token `WaitForExitAsync(token)` when the token is an enclosing method parameter or `CancellationToken.None`. A token from a `CancellationTokenSource` local counts as timeout-backed.
+
+```csharp
+// Before (warns)
+process.WaitForExit();
+
+// After
+if (!process.WaitForExit(TimeSpan.FromSeconds(30)))
+{
+    process.Kill();
+}
+```
+
+### E128100 &mdash; Catch filter reads negated token state on OperationCanceledException
+
+Flags a `when` filter of the form `!token.IsCancellationRequested` on a `catch` clause for `OperationCanceledException` or `TaskCanceledException`. The token state read races with the throw, so the filter can swallow a real cancellation. Rethrow without a filter instead.
+
+```csharp
+// Before (warns)
+catch (OperationCanceledException) when (!token.IsCancellationRequested)
+{
+    return Result.Failed;
+}
+
+// After
+catch (OperationCanceledException)
+{
+    throw;
+}
+```
+
+### E128101 &mdash; Verify process output file exists before use
+
+Flags `File.ReadAllText`, `ReadAllBytes`, `ReadAllLines`, `OpenRead`, `Open`, `OpenText`, and the async forms when the call follows `Process.WaitForExit` or `Process.WaitForExitAsync` in the same method. An earlier `File.Exists` or `FileInfo.Exists` check for the same path suppresses the report. A failed binary or a wrong flag leaves the output missing.
+
+```csharp
+// Before (warns)
+process.WaitForExit();
+var report = File.ReadAllText(outputFile);
+
+// After
+process.WaitForExit();
+if (!File.Exists(outputFile))
+{
+    throw new InvalidOperationException("The process did not write the output file.");
+}
+var report = File.ReadAllText(outputFile);
+```
+
+### E128103 &mdash; DI resolve without a registration in the compilation
+
+Flags `GetRequiredService<T>()` and constructor parameters of registered types when no `Add*` or `TryAdd*` call in the same compilation registers the type. The rule reports at compilation end. `GetService<T>()` is not flagged, because it returns null on a miss.
+
+Registration in another assembly needs an entry in the `e128_registered_services` option. The option holds comma-separated simple type names. Framework services such as `ILogger`, `IHttpClientFactory`, and `IConfiguration` need no entry. An open-generic registration matches by name. No code fix.
+
+```csharp
+// Before (warns)
+services.AddSingleton<IReportWriter, ReportWriter>();
+var exporter = provider.GetRequiredService<IReportExporter>();
+
+// After
+services.AddSingleton<IReportWriter, ReportWriter>();
+services.AddSingleton<IReportExporter, ReportExporter>();
+var exporter = provider.GetRequiredService<IReportExporter>();
+```
+
+### E128104 &mdash; Assertion with literal operands
+
+Flags an xUnit `Assert` call whose every argument is a literal, such as `Assert.Equal("alpha", "alpha")`. Such an assertion passes or fails without the code under test. `Skip`, `SkipWhen`, `SkipUnless`, and `Fail` are not checked. A named constant is not a literal, so a comparison of two constants stays allowed. No code fix.
+
+```csharp
+// Before (warns)
+Assert.Equal("alpha", "alpha");
+
+// After
+Assert.Equal("alpha", subject.Name);
+```
+
+### E128105 &mdash; Test method calls an out-of-repo resolver without a skip guard
+
+Flags a `[Fact]` or `[Theory]` method that calls a resolver named in the `e128_out_of_repo_resolvers` option and carries no skip guard. The option holds comma-separated `Type` or `Type.Member` entries. A bare `Type` entry matches every member of that type. A guard is an `Assert.Skip`, `Assert.SkipWhen`, or `Assert.SkipUnless` call before the resolver call, or a `Skip*` property on the test attribute. With no option entry the rule stays silent. No code fix.
+
+```csharp
+// Before (warns)
+[Fact]
+public void ReadsSharedFixture()
+{
+    var fixture = FixtureLocator.Load("shared");
+    Assert.NotNull(fixture);
+}
+
+// After
+[Fact]
+public void ReadsSharedFixture()
+{
+    Assert.SkipUnless(FixtureLocator.Exists("shared"), "The shared fixture is absent.");
+    var fixture = FixtureLocator.Load("shared");
+    Assert.NotNull(fixture);
+}
+```
+
+### E128106 &mdash; Index a collection with a bound taken from a different collection
+
+Flags an element access whose index comes from an `Enumerable.Range(0, other.Count)` lambda parameter, or from a `for` loop whose condition reads `other.Count` or `other.Length`, when the indexed collection is a different symbol. A relational comparison against the indexed collection's own `Count` or `Length` in the same scope suppresses the report. A ragged pair throws `IndexOutOfRangeException` on the first short collection. No code fix.
+
+```csharp
+// Before (warns)
+var cells = Enumerable.Range(0, columns.Count).Select(i => rows[i]).ToList();
+
+// After
+var cells = Enumerable.Range(0, columns.Count)
+    .Select(i => i < rows.Count ? rows[i] : default)
+    .ToList();
+```
 
 ## Configuration
 
