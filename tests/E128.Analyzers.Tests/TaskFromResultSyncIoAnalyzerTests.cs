@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
 using Microsoft.CodeAnalysis.CSharp.Testing;
@@ -17,6 +19,32 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
+    }
+
+    private static Task VerifyWithReferencesAsync(ReferenceAssemblies referenceAssemblies, string code)
+    {
+        var test = new CSharpAnalyzerTest<TaskFromResultSyncIoAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = referenceAssemblies
+        };
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void SyncIoTable_AndAsyncNameTable_ShareTheSameKeys()
+    {
+        // The code fix reads the async name for every call the analyzer reports. A key in one
+        // table and not the other leaves the fix unable to convert the call.
+        var reported = TaskFromResultSyncIoAnalyzer.SyncIoMethodsWithAsyncAlternatives.Keys
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        var rewritable = TaskFromResultSyncIoAnalyzer.SyncToAsyncMethodNames.Keys
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(reported, rewritable);
     }
 
     #region Fires
@@ -75,9 +103,73 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
                            """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TaskFromResultSyncIoAnalyzer_ReportsDiagnostic_WhenTheOnlyAwaitIsInsideALambda()
+    {
+        // An await inside a lambda does not make the enclosing method async.
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               Task<string> M(string path)
+                               {
+                                   Run(async () => await Task.Yield());
+                                   var text = File.ReadAllText(path);
+                                   return {|E128028:Task.FromResult(text)|};
+                               }
+
+                               static void Run(Func<Task> action) { }
+                           }
+                           """);
+    }
+
     #endregion Fires
 
     #region Does Not Fire
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenTheAsyncAlternativeIsMissing()
+    {
+        // File.ReadAllTextAsync arrived after netstandard2.0. Reporting there would give a fix
+        // that does not compile, so the rule stays silent.
+        return VerifyWithReferencesAsync(ReferenceAssemblies.NetStandard.NetStandard20, """
+                                         using System.IO;
+                                         using System.Threading.Tasks;
+                                         class C
+                                         {
+                                             Task<string> M(string path)
+                                             {
+                                                 var text = File.ReadAllText(path);
+                                                 return Task.FromResult(text);
+                                             }
+                                         }
+                                         """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenTheCallHasNoAwaitableEquivalent()
+    {
+        // File.Copy and File.ReadLines have no overload that awaits. Reporting them would leave
+        // a fix that adds async and no await, so the rule stays silent.
+        return VerifyAsync("""
+                           using System.IO;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               Task M(string source, string target)
+                               {
+                                   File.Copy(source, target);
+                                   File.ReadLines(source);
+                                   return Task.FromResult(0);
+                               }
+                           }
+                           """);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

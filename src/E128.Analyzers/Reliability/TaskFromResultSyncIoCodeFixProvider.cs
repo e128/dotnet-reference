@@ -21,27 +21,6 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
 {
-    /// <summary>
-    ///     Maps sync I/O method names to their async equivalents.
-    /// </summary>
-    private static readonly ImmutableDictionary<string, string> SyncToAsyncMethodNames =
-        new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["ReadAllText"] = "ReadAllTextAsync",
-            ["ReadAllBytes"] = "ReadAllBytesAsync",
-            ["ReadAllLines"] = "ReadAllLinesAsync",
-            ["WriteAllText"] = "WriteAllTextAsync",
-            ["WriteAllBytes"] = "WriteAllBytesAsync",
-            ["WriteAllLines"] = "WriteAllLinesAsync",
-            ["AppendAllText"] = "AppendAllTextAsync",
-            ["AppendAllLines"] = "AppendAllLinesAsync",
-            ["Read"] = "ReadAsync",
-            ["Write"] = "WriteAsync",
-            ["CopyTo"] = "CopyToAsync",
-            ["Flush"] = "FlushAsync",
-            ["Send"] = "SendAsync"
-        }.ToImmutableDictionary(StringComparer.Ordinal);
-
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TaskFromResultSyncIoAnalyzer.DiagnosticId];
 
@@ -99,8 +78,11 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
 
         var newMethod = method;
 
-        // 1. Replace sync I/O calls with async equivalents wrapped in await
-        var syncIoCalls = FindAllSyncIoCalls(newMethod, semanticModel, cancellationToken);
+        // 1. Replace sync I/O calls with async equivalents wrapped in await. The rewrite reads the
+        // same gated table as the analyzer, so a pair whose async member is absent is left alone.
+        var availableSyncIoMethods =
+            TaskFromResultSyncIoAnalyzer.FindAvailableSyncIoMethods(semanticModel.Compilation);
+        var syncIoCalls = FindAllSyncIoCalls(newMethod, semanticModel, availableSyncIoMethods, cancellationToken);
         if (syncIoCalls.Count > 0)
         {
             newMethod = ReplaceSyncCallsWithAsyncEquivalents(newMethod, syncIoCalls);
@@ -124,6 +106,7 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
     private static List<InvocationExpressionSyntax> FindAllSyncIoCalls(
         MethodDeclarationSyntax method,
         SemanticModel semanticModel,
+        ImmutableDictionary<string, string> availableSyncIoMethods,
         CancellationToken cancellationToken)
     {
         var results = new List<InvocationExpressionSyntax>();
@@ -135,8 +118,13 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
                 continue;
             }
 
+            if (TaskFromResultSyncIoAnalyzer.IsInNestedFunction(invocation, method))
+            {
+                continue;
+            }
+
             var methodName = memberAccess.Name.Identifier.ValueText;
-            if (!SyncToAsyncMethodNames.ContainsKey(methodName))
+            if (!availableSyncIoMethods.ContainsKey(methodName))
             {
                 continue;
             }
@@ -145,7 +133,7 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
             if (symbolInfo.Symbol is IMethodSymbol calledMethod)
             {
                 var containingType = calledMethod.ContainingType?.ToDisplayString();
-                if (TaskFromResultSyncIoAnalyzer.SyncIoMethodsWithAsyncAlternatives.TryGetValue(methodName, out var expectedType)
+                if (availableSyncIoMethods.TryGetValue(methodName, out var expectedType)
                     && string.Equals(containingType, expectedType, StringComparison.Ordinal))
                 {
                     results.Add(invocation);
@@ -168,7 +156,7 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
             }
 
             var methodName = memberAccess.Name.Identifier.ValueText;
-            if (!SyncToAsyncMethodNames.TryGetValue(methodName, out var asyncName))
+            if (!TaskFromResultSyncIoAnalyzer.SyncToAsyncMethodNames.TryGetValue(methodName, out var asyncName))
             {
                 return rewritten;
             }
@@ -187,7 +175,8 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : CodeFixProvider
     {
         var fromResultCalls = method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Where(IsFromResultInvocation)
+            .Where(invocation => IsFromResultInvocation(invocation)
+                                 && !TaskFromResultSyncIoAnalyzer.IsInNestedFunction(invocation, method))
             .ToList();
 
         return method.ReplaceNodes(fromResultCalls, (original, rewritten) =>

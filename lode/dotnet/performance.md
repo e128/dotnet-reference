@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-10-25T14:57:54Z*
+*Updated: 2026-10-31T13:32:41Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -174,8 +174,8 @@ after a measurement.
   `CreateSlimBuilder` reduces the set. Measure the startup and the request
   path before a switch.
 - Keep the middleware count small.
-- Avoid an Information-level host log per request. Raise the level or clear
-  the providers.
+- Keep the host log level above Information. `Program.cs` sets the minimum
+  level to Warning. See [Request Logging](#request-logging).
 - Register the source-generated JSON metadata. `AppJsonContext` in the Web
   project owns it, and `Program.cs` inserts its resolver at the head of the
   resolver chain. Register a new response type in that context.
@@ -193,11 +193,37 @@ noise of about 2 percent. Cold start moved by 4 percent, which is inside the
 same noise. The app keeps the generated context for AOT readiness and does not
 claim a latency win. `CreateSlimBuilder` is not in use.
 
+## Request Logging
+
+`Program.cs` sets the minimum log level to Warning. A per-request Information
+log costs a console write and a monitor lock on the request thread.
+
+On a Release publish over loopback, the change moved the median service time
+on `GET /` from 0.072 ms to 0.062 ms at `-c 1`. It removed two log lines per
+request. Throughput at `-c 20` stayed inside the noise.
+
+## Change Protocol
+
+Apply one performance change at a time. Keep the change only on a measured
+win. This loop applies to every new app path, not only to a fix.
+
+1. Profile the running process with `dotnet-counters` before you guess at a
+   cause.
+2. Publish both builds with `dotnet publish -c Release`. A Debug build measures
+   unoptimized code, and no script publishes Release today.
+3. Run the two builds on separate ports and interleave the load runs.
+4. Compare the median of three or more runs. Discard a change that sits inside
+   the run-to-run noise.
+
+Read two numbers. A loopback run at `-c 20` reports throughput, but it swings
+by 30 percent on a busy machine. A run at `-c 1` reports serial service time
+and is stable enough to compare a CPU change. Prefer the `-c 1` number.
+
 ## Verification
 
 A performance change needs a measurement before and after it. Record the
-command and both results in the pull request. See
-[testing.md](testing.md) for the test entry point.
+command and both results in the pull request. Follow the change protocol
+above. See [testing.md](testing.md) for the test entry point.
 
 The reference app was measured on a Release publish over loopback. Load came
 from four parallel `ab` jobs at `-c 20`. Service time came from `ab -c 1`.

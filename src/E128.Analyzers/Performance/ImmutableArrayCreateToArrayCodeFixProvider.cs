@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -78,35 +77,7 @@ public sealed class ImmutableArrayCreateToArrayCodeFixProvider : CodeFixProvider
                     SyntaxFactory.Argument(argument))));
 
         var replaced = root.ReplaceNode(invocation, replacement.WithTriviaFrom(invocation));
-        var newRoot = alreadyImported ? replaced : AddUsingIfMissing(replaced);
+        var newRoot = alreadyImported ? replaced : UsingDirectives.AddIfMissing(replaced, InteropNamespace);
         return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static SyntaxNode AddUsingIfMissing(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), InteropNamespace, StringComparison.Ordinal)))
-        {
-            return root;
-        }
-
-        var newUsing = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(InteropNamespace))
-            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
-
-        var insertIndex = 0;
-        for (var i = 0; i < compilationUnit.Usings.Count; i++)
-        {
-            if (StringComparer.Ordinal.Compare(compilationUnit.Usings[i].Name?.ToString(), InteropNamespace) < 0)
-            {
-                insertIndex = i + 1;
-            }
-        }
-
-        return compilationUnit.WithUsings(compilationUnit.Usings.Insert(insertIndex, newUsing));
     }
 }

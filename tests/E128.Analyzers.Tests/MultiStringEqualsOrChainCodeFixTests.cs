@@ -35,6 +35,7 @@ public sealed class MultiStringEqualsOrChainCodeFixTests
         const string fixedCode = """
                                  using System;
                                  using System.Collections.Generic;
+
                                  class C
                                  {
                                      private static readonly HashSet<string> _textValues = new(StringComparer.OrdinalIgnoreCase) { "a", "b", "c" };
@@ -62,6 +63,7 @@ public sealed class MultiStringEqualsOrChainCodeFixTests
         const string fixedCode = """
                                  using System;
                                  using System.Collections.Generic;
+
                                  class C
                                  {
                                      private static readonly HashSet<string> _textValues = new(StringComparer.Ordinal) { "a", "b", "c" };
@@ -89,6 +91,7 @@ public sealed class MultiStringEqualsOrChainCodeFixTests
         const string fixedCode = """
                                  using System;
                                  using System.Collections.Generic;
+
                                  class C
                                  {
                                      private static readonly HashSet<string> _textValues = new(StringComparer.Ordinal) { "a", "b", "c", "d" };
@@ -128,5 +131,36 @@ public sealed class MultiStringEqualsOrChainCodeFixTests
                                  """;
 
         return VerifyFixAsync(source, fixedCode, 0);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LiteralWithEscapes_KeepsTheEscapesInTheField()
+    {
+        // The analyzer captures the unescaped value, so the fix must put the escapes back or the
+        // emitted field does not parse.
+        const string source = """
+                              using System;
+                              class C
+                              {
+                                  bool M(string text) =>
+                                      {|E128029:text == "a\"b" || text == "c\\d" || text == "e"|};
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System;
+                                 using System.Collections.Generic;
+
+                                 class C
+                                 {
+                                     private static readonly HashSet<string> _textValues = new(StringComparer.Ordinal) { "a\"b", "c\\d", "e" };
+
+                                     bool M(string text) =>
+                                         _textValues.Contains(text);
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
     }
 }

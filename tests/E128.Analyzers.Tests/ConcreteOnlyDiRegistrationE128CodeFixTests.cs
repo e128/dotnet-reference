@@ -83,4 +83,36 @@ public sealed class ConcreteOnlyDiRegistrationE128CodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_RewritesToInterfaceMapped_GenericConcreteType()
+    {
+        // A simple type name drops the type arguments here, so the emitted call would not compile.
+        return VerifyFixAsync(
+            """
+            using Microsoft.Extensions.DependencyInjection;
+            interface IRepository<T> { }
+            class Repository<T> : IRepository<T> { }
+            class Startup
+            {
+                void Configure(IServiceCollection services)
+                {
+                    services.{|E128032:AddSingleton<Repository<int>>()|};
+                }
+            }
+            """,
+            """
+            using Microsoft.Extensions.DependencyInjection;
+            interface IRepository<T> { }
+            class Repository<T> : IRepository<T> { }
+            class Startup
+            {
+                void Configure(IServiceCollection services)
+                {
+                    services.AddSingleton<IRepository<int>, Repository<int>>();
+                }
+            }
+            """);
+    }
 }

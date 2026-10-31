@@ -15,6 +15,10 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
 
     internal const string InsertAtZeroDiagnosticId = "E128069";
 
+    private const string ListMetadataName = "System.Collections.Generic.List`1";
+    private const string ArrayMetadataName = "System.Array";
+    private const string EnumerableMetadataName = "System.Linq.Enumerable";
+
     private static readonly DiagnosticDescriptor SortRule = new(
         DiagnosticId,
         "Sort operation inside loop creates O(n² log n) complexity",
@@ -51,10 +55,24 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+
+        context.RegisterCompilationStartAction(startContext =>
+        {
+            var listType = startContext.Compilation.GetTypeByMetadataName(ListMetadataName);
+            var arrayType = startContext.Compilation.GetTypeByMetadataName(ArrayMetadataName);
+            var enumerableType = startContext.Compilation.GetTypeByMetadataName(EnumerableMetadataName);
+
+            startContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeInvocation(nodeContext, listType, arrayType, enumerableType),
+                SyntaxKind.InvocationExpression);
+        });
     }
 
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeInvocation(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol? listType,
+        INamedTypeSymbol? arrayType,
+        INamedTypeSymbol? enumerableType)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -70,7 +88,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
 
         if (string.Equals(methodName, "Insert", StringComparison.Ordinal))
         {
-            AnalyzeInsertAtZero(context, invocation);
+            AnalyzeInsertAtZero(context, invocation, listType);
             return;
         }
 
@@ -87,15 +105,8 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            var containingType = method.ContainingType;
-            if (containingType is null)
-            {
-                return;
-            }
-
-            var typeName = containingType.OriginalDefinition.ToDisplayString();
-            if (!string.Equals(typeName, "System.Collections.Generic.List<T>", StringComparison.Ordinal)
-                && !string.Equals(typeName, "System.Array", StringComparison.Ordinal))
+            var containingType = method.ContainingType.OriginalDefinition;
+            if (!IsSameType(containingType, listType) && !IsSameType(containingType, arrayType))
             {
                 return;
             }
@@ -103,7 +114,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         else
         {
             var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
-            if (symbol is not IMethodSymbol method || !IsLinqEnumerable(method.ContainingType))
+            if (symbol is not IMethodSymbol method || !IsSameType(method.ContainingType, enumerableType))
             {
                 return;
             }
@@ -114,7 +125,8 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeInsertAtZero(
         SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation)
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol? listType)
     {
         var args = invocation.ArgumentList.Arguments;
         if (args.Count < 2)
@@ -136,8 +148,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var typeName = method.ContainingType?.OriginalDefinition.ToDisplayString();
-        if (!string.Equals(typeName, "System.Collections.Generic.List<T>", StringComparison.Ordinal))
+        if (!IsSameType(method.ContainingType.OriginalDefinition, listType))
         {
             return;
         }
@@ -178,9 +189,8 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsLinqEnumerable(INamedTypeSymbol? type)
+    private static bool IsSameType(ITypeSymbol? type, INamedTypeSymbol? target)
     {
-        return type is not null
-               && string.Equals(type.ToDisplayString(), "System.Linq.Enumerable", StringComparison.Ordinal);
+        return target is not null && SymbolEqualityComparer.Default.Equals(type, target);
     }
 }

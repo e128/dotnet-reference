@@ -49,6 +49,7 @@ public sealed class SequenceEqualLoopCodeFixTests
             """,
             """
             using System;
+
             class C
             {
                 bool M(int[] left, int[] right)

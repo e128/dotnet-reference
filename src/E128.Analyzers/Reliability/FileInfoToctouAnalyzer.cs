@@ -11,13 +11,16 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     E128056: Detects TOCTOU (Time-Of-Check Time-Of-Use) races where code checks
-///     <c lang="csharp">FileInfo.Exists</c> and then immediately reads the file without a try/catch guard.
-///     Between the check and the read, another process can delete or replace the file.
+///     <c lang="csharp">FileInfo.Exists</c> or <c lang="csharp">File.Exists(path)</c> and then reads the file
+///     without a try/catch guard. Between the check and the read, another process can delete or replace the file.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128056";
+
+    private const string FileMetadataName = "System.IO.File";
+    private const string FileSystemInfoMetadataName = "System.IO.FileSystemInfo";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -51,28 +54,47 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+
+        context.RegisterCompilationStartAction(startContext =>
+        {
+            // The rule names System.IO types. Without them the members below belong to some other
+            // type, so the rule must not run at all.
+            var compilation = startContext.Compilation;
+            var fileType = compilation.GetTypeByMetadataName(FileMetadataName);
+            var fileSystemInfoType = compilation.GetTypeByMetadataName(FileSystemInfoMetadataName);
+            if (fileType is null || fileSystemInfoType is null)
+            {
+                return;
+            }
+
+            startContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeMethod(nodeContext, fileType, fileSystemInfoType),
+                SyntaxKind.MethodDeclaration);
+        });
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeMethod(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol fileType,
+        INamedTypeSymbol fileSystemInfoType)
     {
         var method = (MethodDeclarationSyntax)context.Node;
 
-        var existsIdentifiers = CollectExistsIdentifiers(method);
-        if (existsIdentifiers.Count == 0)
+        var guardedValues = CollectGuardedValues(context, method, fileType, fileSystemInfoType);
+        if (guardedValues.Count == 0)
         {
             return;
         }
 
         foreach (var invocation in method.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
-            if (!IsFileReadCall(invocation))
+            if (!IsFileReadCall(context, invocation, fileType))
             {
                 continue;
             }
 
-            var argIdentifier = ExtractFirstArgIdentifier(invocation);
-            if (argIdentifier is null || !existsIdentifiers.Contains(argIdentifier))
+            var guardedValue = GetGuardedValue(context, invocation);
+            if (guardedValue is null || !guardedValues.Contains(guardedValue))
             {
                 continue;
             }
@@ -82,13 +104,17 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), argIdentifier));
+            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), guardedValue.Name));
         }
     }
 
-    private static HashSet<string> CollectExistsIdentifiers(MethodDeclarationSyntax method)
+    private static HashSet<ISymbol> CollectGuardedValues(
+        SyntaxNodeAnalysisContext context,
+        MethodDeclarationSyntax method,
+        INamedTypeSymbol fileType,
+        INamedTypeSymbol fileSystemInfoType)
     {
-        var result = new HashSet<string>(StringComparer.Ordinal);
+        var result = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
 
         foreach (var memberAccess in method.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
         {
@@ -97,57 +123,87 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // File.Exists(path) guards the path, so the key is the path argument. fileInfo.Exists is a
-            // property read that guards the instance, so the receiver names the guarded thing.
-            // Recording the receiver of File.Exists stores "File", which no read path ever matches.
-            var key = memberAccess.Parent is InvocationExpressionSyntax invocation
-                ? ExtractFirstArgIdentifier(invocation)
-                : null;
-
-            if (key is null && memberAccess.Expression is IdentifierNameSyntax receiver)
+            // File.Exists(path) guards the path value passed in. fileInfo.Exists is a property read
+            // that guards the instance, so the receiver names the guarded thing.
+            if (memberAccess.Parent is InvocationExpressionSyntax invocation)
             {
-                key = receiver.Identifier.ValueText;
+                if (ResolvesTo(context, invocation, fileType))
+                {
+                    AddSymbol(result, GetGuardedValue(context, invocation));
+                }
+
+                continue;
             }
 
-            if (key is not null)
+            if (IsFileSystemInfoExists(context, memberAccess, fileSystemInfoType))
             {
-                result.Add(key);
+                AddSymbol(result, GetGuardedValue(context, memberAccess.Expression));
             }
         }
 
         return result;
     }
 
-    private static bool IsFileReadCall(InvocationExpressionSyntax invocation)
+    private static void AddSymbol(HashSet<ISymbol> target, ISymbol? symbol)
+    {
+        if (symbol is not null)
+        {
+            target.Add(symbol);
+        }
+    }
+
+    private static bool IsFileSystemInfoExists(
+        SyntaxNodeAnalysisContext context,
+        MemberAccessExpressionSyntax memberAccess,
+        INamedTypeSymbol fileSystemInfoType)
+    {
+        return context.SemanticModel.GetSymbolInfo(memberAccess, context.CancellationToken).Symbol
+                   is IPropertySymbol property
+               && DerivesFrom(property.ContainingType, fileSystemInfoType);
+    }
+
+    private static bool IsFileReadCall(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol fileType)
     {
         return invocation.Expression is MemberAccessExpressionSyntax memberAccess
                && FileReadMethods.Contains(memberAccess.Name.Identifier.ValueText)
-               && (memberAccess.Expression is IdentifierNameSyntax { Identifier.ValueText: "File" }
-                   || IsQualifiedFileAccess(memberAccess.Expression));
+               && ResolvesTo(context, invocation, fileType);
     }
 
-    private static bool IsQualifiedFileAccess(ExpressionSyntax expression)
+    // The guarded value for File.Exists(path) and for File.ReadAllText(path) is the path argument.
+    private static ISymbol? GetGuardedValue(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
-        return expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "File" };
+        return invocation.ArgumentList.Arguments.Count == 0
+            ? null
+            : GetGuardedValue(context, invocation.ArgumentList.Arguments[0].Expression);
     }
 
-    private static string? ExtractFirstArgIdentifier(InvocationExpressionSyntax invocation)
+    private static ISymbol? GetGuardedValue(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
-        var firstArg = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-        if (firstArg is null)
+        // fileInfo.FullName names the same file as fileInfo, so the receiver is the guarded value.
+        var target = expression is MemberAccessExpressionSyntax member ? member.Expression : expression;
+        return context.SemanticModel.GetSymbolInfo(target, context.CancellationToken).Symbol;
+    }
+
+    private static bool ResolvesTo(SyntaxNodeAnalysisContext context, SyntaxNode node, INamedTypeSymbol target)
+    {
+        return context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol is IMethodSymbol method
+               && SymbolEqualityComparer.Default.Equals(method.ContainingType, target);
+    }
+
+    private static bool DerivesFrom(INamedTypeSymbol? type, INamedTypeSymbol baseType)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
         {
-            return null;
+            if (SymbolEqualityComparer.Default.Equals(current, baseType))
+            {
+                return true;
+            }
         }
 
-        // fileInfo.FullName → "fileInfo"
-        if (firstArg is MemberAccessExpressionSyntax argMember
-            && argMember.Expression is IdentifierNameSyntax argId)
-        {
-            return argId.Identifier.ValueText;
-        }
-
-        // bare path variable
-        return firstArg is IdentifierNameSyntax directId ? directId.Identifier.ValueText : null;
+        return false;
     }
 
     private static bool IsInsideTryCatch(SyntaxNode node, SyntaxNode boundary)

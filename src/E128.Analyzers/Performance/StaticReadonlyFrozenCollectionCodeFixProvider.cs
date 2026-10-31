@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Diagnostics.CodeAnalysis;
@@ -83,7 +82,8 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
         }
 
         var newDeclaration = BuildFrozenDeclaration(declaration, variable, fieldType, isHashSet);
-        var newRoot = AddUsingIfMissing(root.ReplaceNode(declaration, newDeclaration));
+        var newRoot = UsingDirectives.AddIfMissing(
+            root.ReplaceNode(declaration, newDeclaration), FrozenNamespace);
         return document.WithSyntaxRoot(newRoot);
     }
 
@@ -178,33 +178,5 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
         return SyntaxFactory.ObjectCreationExpression(explicitType)
             .WithArgumentList(implicitNew.ArgumentList)
             .WithInitializer(implicitNew.Initializer);
-    }
-
-    private static SyntaxNode AddUsingIfMissing(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), FrozenNamespace, StringComparison.Ordinal)))
-        {
-            return root;
-        }
-
-        var frozenUsing = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(FrozenNamespace))
-            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
-
-        var insertIndex = 0;
-        for (var i = 0; i < compilationUnit.Usings.Count; i++)
-        {
-            if (StringComparer.Ordinal.Compare(compilationUnit.Usings[i].Name?.ToString(), FrozenNamespace) < 0)
-            {
-                insertIndex = i + 1;
-            }
-        }
-
-        return compilationUnit.WithUsings(compilationUnit.Usings.Insert(insertIndex, frozenUsing));
     }
 }

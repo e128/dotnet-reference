@@ -17,15 +17,15 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
     private const string ImmutableCollectionsMarshalMetadataName = "System.Runtime.InteropServices.ImmutableCollectionsMarshal";
 
     // BCL types whose ToArray always returns a new array.
-    private static readonly HashSet<string> FreshArrayToArrayOwners = new(StringComparer.Ordinal)
-    {
+    private static readonly ImmutableArray<string> FreshArrayToArrayOwnerMetadataNames =
+    [
         "System.Linq.Enumerable",
         "System.Linq.ImmutableArrayExtensions",
-        "System.Collections.Generic.List<T>",
-        "System.Collections.Generic.HashSet<T>",
-        "System.Collections.Generic.Queue<T>",
-        "System.Collections.Generic.Stack<T>"
-    };
+        "System.Collections.Generic.List`1",
+        "System.Collections.Generic.HashSet`1",
+        "System.Collections.Generic.Queue`1",
+        "System.Collections.Generic.Stack`1"
+    ];
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -63,13 +63,25 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
+            var freshOwners = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            foreach (var metadataName in FreshArrayToArrayOwnerMetadataNames)
+            {
+                if (compilationContext.Compilation.GetTypeByMetadataName(metadataName) is { } owner)
+                {
+                    freshOwners.Add(owner);
+                }
+            }
+
             compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, immutableArrayType),
+                nodeContext => AnalyzeInvocation(nodeContext, immutableArrayType, freshOwners),
                 SyntaxKind.InvocationExpression);
         });
     }
 
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol immutableArrayType)
+    private static void AnalyzeInvocation(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol immutableArrayType,
+        HashSet<ISymbol> freshOwners)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -116,7 +128,7 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
 
         // AsImmutableArray wraps the array without a copy. Only an allowlisted BCL ToArray guarantees a fresh array.
         if (context.SemanticModel.GetSymbolInfo(innerInvocation, context.CancellationToken).Symbol is not IMethodSymbol inner
-            || !FreshArrayToArrayOwners.Contains(inner.ContainingType.OriginalDefinition.ToDisplayString()))
+            || !freshOwners.Contains(inner.ContainingType.OriginalDefinition))
         {
             return;
         }

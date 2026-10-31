@@ -66,10 +66,18 @@ public sealed class FixedBufferFieldCodeFixProvider : CodeFixProvider
             return;
         }
 
+        var bufferStruct = BuildBufferStruct(field, bufferTypeName, size, GetIndent(field));
+        if (bufferStruct is null)
+        {
+            // The generated text did not parse. A stub would drop the attribute and the element
+            // field, so offer no fix at all.
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Replace with an inline array",
-                _ => Task.FromResult(ApplyFix(context.Document, root, field, type, size, bufferTypeName)),
+                _ => Task.FromResult(ApplyFix(context.Document, root, field, type, bufferTypeName, bufferStruct)),
                 nameof(FixedBufferFieldCodeFixProvider)),
             diagnostic);
     }
@@ -79,13 +87,11 @@ public sealed class FixedBufferFieldCodeFixProvider : CodeFixProvider
         SyntaxNode root,
         FieldDeclarationSyntax field,
         TypeDeclarationSyntax type,
-        int size,
-        string bufferTypeName)
+        string bufferTypeName,
+        MemberDeclarationSyntax bufferStruct)
     {
         var variable = field.Declaration.Variables[0];
         var newField = BuildField(field, bufferTypeName, variable.Identifier.ValueText);
-        var indent = GetIndent(field);
-        var bufferStruct = BuildBufferStruct(field, bufferTypeName, size, indent);
 
         var index = type.Members.IndexOf(field);
         var members = type.Members.Replace(field, newField).Insert(index + 1, bufferStruct);
@@ -133,7 +139,7 @@ public sealed class FixedBufferFieldCodeFixProvider : CodeFixProvider
 
     // The buffer struct is nested in the containing type, so a name only has to be unique there.
     // It takes the accessibility of the field, so a public field never exposes a less visible type.
-    private static MemberDeclarationSyntax BuildBufferStruct(
+    private static MemberDeclarationSyntax? BuildBufferStruct(
         FieldDeclarationSyntax field,
         string bufferTypeName,
         int size,
@@ -166,10 +172,8 @@ public sealed class FixedBufferFieldCodeFixProvider : CodeFixProvider
             + indent
             + "}";
 
-        var parsed = SyntaxFactory.ParseMemberDeclaration(text) ?? SyntaxFactory.StructDeclaration(bufferTypeName);
-
-        return parsed
-            .WithLeadingTrivia(SyntaxFactory.TriviaList(SyntaxFactory.LineFeed, SyntaxFactory.Whitespace(indent)))
+        return SyntaxFactory.ParseMemberDeclaration(text)
+            ?.WithLeadingTrivia(SyntaxFactory.TriviaList(SyntaxFactory.LineFeed, SyntaxFactory.Whitespace(indent)))
             .WithTrailingTrivia(SyntaxFactory.LineFeed);
     }
 }

@@ -1,7 +1,23 @@
 # New Analyzer Checklist
-*Updated: 2026-10-16T18:13:34Z*
+*Updated: 2026-10-31T14:21:47Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
+
+## Decide Before You Write It
+
+Answer these five questions before the first line of a new rule. Each answer
+changes the registration, not the message text.
+
+1. Which API does the remedy need? Gate the rule at compilation start when
+   that API is absent. See § Gate on API Availability.
+2. Does the remedy need a type or a member? Check the member, not only the
+   containing type.
+3. How does the rule identify the construct: by a name or by a symbol? Match
+   the symbol. See § Match Symbols, Not Names.
+4. Can the code fix repair everything the rule reports? Narrow the report
+   until it can.
+5. Does the fix read a table that this analyzer owns? Declare the table here
+   as `internal static readonly`. Never copy it into the fix provider.
 
 ## Netstandard2.0 Constraints
 
@@ -24,6 +40,84 @@ Roslyn syntax node properties that are semantically always-present can be nullab
 - `ArgumentSyntax.Expression`: nullable in the API
 
 **Rule of thumb**: treat every Roslyn `SyntaxNode` property as potentially nullable unless the type is a non-nullable value type. Use pattern matching (`is { ExpressionBody: { } body }`) or explicit null guards.
+
+## Gate on API Availability
+
+A rule that names an API must check that the compilation can use the API.
+Register the analyzer only when the API type exists.
+
+```csharp
+context.RegisterCompilationStartAction(start =>
+{
+    // The rule names an API from the Pug package. Without that type the
+    // suggestion has no remedy, so the analyzer must not run at all.
+    if (start.Compilation.GetTypeByMetadataName("Pug.Core.Text.StringBuilderPool") is null)
+    {
+        return;
+    }
+    // ...
+});
+```
+
+Without the gate, every consumer gets a diagnostic that no code fix can
+resolve. E128081, E128072, and E128102 follow this shape. Each one checks its
+API before it registers, so an older target framework gets no report.
+
+A rule can also need one member, not a whole type. E128072 resolves
+`System.Security.Cryptography.SHA256` and then looks for a `HashData` member.
+.NET 5 adds that member, so the rule stays silent on an older target.
+
+Gate the remedy, not the API the rule names. E128028 maps each sync I/O call to
+its async replacement. `File.ReadAllTextAsync` arrived after `File.ReadAllText`,
+so a netstandard2.0 target has no remedy for the pair. The rule keeps a pair
+only when the async member exists in the compilation.
+
+```csharp
+var owner = compilation.GetTypeByMetadataName(entry.Value);
+if (owner is null
+    || !owner.GetMembers(SyncToAsyncMethodNames[entry.Key]).OfType<IMethodSymbol>().Any())
+{
+    continue;
+}
+```
+
+Test the gate. Set `ReferenceAssemblies` to
+`ReferenceAssemblies.NetStandard.NetStandard20` and expect no diagnostic.
+
+## Match Symbols, Not Names
+
+Report a construct only after the semantic model confirms the symbol. A check
+on the spelling alone reports user code that shares the name.
+
+- A method name: E128018 fired on any type with its own `ToList()`.
+- A method name on a receiver: E128051 fired on a custom `GetAsync` client.
+- A type name in a catch clause: E128051 treated a local `Exception` as broad.
+- A parameter or variable name: E128056 matched a guarded value from another
+  scope.
+
+Resolve the symbol once at compilation start, then compare with
+`SymbolEqualityComparer.Default`. E128090 resolves `System.Reflection.BindingFlags`
+and `System.Type`. E128018 resolves `System.Linq.Enumerable`. E128051 and
+E128056 resolve their framework types and compare the bound symbol.
+
+Never compare `ToDisplayString()` with a literal. Never key a lookup on a
+display string. A display format change silences the rule and no test fails.
+E128068 and E128083 resolve their BCL types and compare `OriginalDefinition`
+with `SymbolEqualityComparer.Default`.
+
+One action on `SimpleMemberAccessExpression` covers both the enum member and
+the reflection call shape. Prefer one narrow action over two broad actions.
+
+### Exact Type or Derived Type
+
+Decide which comparison the rule needs. A rule that names a forbidden type
+requires an exact match. A rule that accepts a family requires a base-type walk.
+
+- E128051 reports a broad catch only for `System.Exception` itself. A derived
+  type is a narrower catch, so it does not report.
+- E128051 accepts any type that derives from `OperationCanceledException` as a
+  cancellation handler. `TaskCanceledException` counts.
+- E128056 accepts `FileSystemInfo.Exists`, so a `DirectoryInfo` receiver counts.
 
 ## Keep the Package README Current
 

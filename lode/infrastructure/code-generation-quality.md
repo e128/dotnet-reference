@@ -1,5 +1,5 @@
 # Code Generation Quality with Claude Code
-*Updated: 2026-10-16T18:13:46Z*
+*Updated: 2026-10-31T14:21:47Z*
 
 Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
@@ -64,6 +64,28 @@ Make the right thing automatic and the wrong thing fail loudly:
 5. Domain knowledge is pre-loaded (lode + rules)
 
 The repo is a **compiler-enforced style guide**: Claude iterates against errors, not instructions.
+
+## The Review-to-Rule Loop
+
+A review finds a defect after the code exists. The rule that prevents the
+defect must reach the generating step before the next code exists. Run this
+loop after every review finding.
+
+1. Name the defect class. One bad line is not a class. "The fix provider read
+   an ungated table" is a class.
+2. Find the file that governs generation for that artifact. Analyzer code
+   reads [new-analyzer-checklist.md](../dotnet/analyzers/new-analyzer-checklist.md).
+   Code fix code reads [code-fix-patterns.md](../dotnet/analyzers/code-fix-patterns.md).
+3. Write the rule as a pre-write decision, in the imperative. A reader must
+   apply it before the first line, not after the last.
+4. Keep the evidence to one sentence. Name the rule that showed the defect.
+   Drop the chronology.
+5. Add the test that pins the new behavior. The rule guards the next author.
+   The test guards this change.
+
+Never record a finding as a change note. A dated note tells the reader what
+happened. A gate tells the reader what to do. The next session reads for the
+gate.
 
 ## None of This Is Enough
 

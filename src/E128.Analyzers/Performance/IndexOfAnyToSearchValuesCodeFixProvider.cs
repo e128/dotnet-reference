@@ -106,29 +106,7 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : CodeFixProvider
         var typeDeclWithField = InsertFieldAsFirstMember(typeDeclAfterReplace, fieldDecl);
 
         var newRoot = root.ReplaceNode(typeDecl, typeDeclWithField);
-        return document.WithSyntaxRoot(AddUsingIfMissing(newRoot, "System"));
-    }
-
-    private static SyntaxNode AddUsingIfMissing(SyntaxNode root, string namespaceName)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        foreach (var u in compilationUnit.Usings)
-        {
-            if (string.Equals(u.Name?.ToString(), namespaceName, StringComparison.Ordinal))
-            {
-                return root;
-            }
-        }
-
-        var newUsing = SyntaxFactory
-            .ParseCompilationUnit("using " + namespaceName + ";\n")
-            .Usings[0]
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-        return compilationUnit.AddUsings(newUsing);
+        return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, "System"));
     }
 
     private static bool TryExtractCharLiterals(SeparatedSyntaxList<ArgumentSyntax> arguments, out string chars)

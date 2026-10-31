@@ -42,26 +42,22 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
 
     /// <summary>
     ///     Maps sync I/O method names to their containing type (fully qualified metadata name).
-    ///     Includes methods with direct async equivalents (e.g., ReadAllText -> ReadAllTextAsync)
-    ///     and methods that should be offloaded via Task.Run (e.g., File.Copy, File.Move).
+    ///     Holds only methods that have a direct awaitable equivalent, so the code fix can always
+    ///     replace the call. File.Copy, File.Move, and File.ReadLines are absent because no async
+    ///     overload awaits cleanly.
     /// </summary>
     internal static readonly ImmutableDictionary<string, string> SyncIoMethodsWithAsyncAlternatives =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            // System.IO.File — methods with direct async alternatives
+            // System.IO.File
             ["ReadAllText"] = "System.IO.File",
             ["ReadAllBytes"] = "System.IO.File",
             ["ReadAllLines"] = "System.IO.File",
-            ["ReadLines"] = "System.IO.File",
             ["WriteAllText"] = "System.IO.File",
             ["WriteAllBytes"] = "System.IO.File",
             ["WriteAllLines"] = "System.IO.File",
             ["AppendAllText"] = "System.IO.File",
             ["AppendAllLines"] = "System.IO.File",
-
-            // System.IO.File — no direct async API, but should be offloaded via Task.Run
-            ["Copy"] = "System.IO.File",
-            ["Move"] = "System.IO.File",
 
             // System.IO.Stream
             ["Read"] = "System.IO.Stream",
@@ -71,6 +67,28 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
 
             // System.Net.Http.HttpClient — sync overload only
             ["Send"] = "System.Net.Http.HttpClient"
+        }.ToImmutableDictionary(StringComparer.Ordinal);
+
+    /// <summary>
+    ///     Maps each key of <see cref="SyncIoMethodsWithAsyncAlternatives" /> to its async name.
+    ///     The two tables are one source of truth and must keep the same keys.
+    /// </summary>
+    internal static readonly ImmutableDictionary<string, string> SyncToAsyncMethodNames =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["ReadAllText"] = "ReadAllTextAsync",
+            ["ReadAllBytes"] = "ReadAllBytesAsync",
+            ["ReadAllLines"] = "ReadAllLinesAsync",
+            ["WriteAllText"] = "WriteAllTextAsync",
+            ["WriteAllBytes"] = "WriteAllBytesAsync",
+            ["WriteAllLines"] = "WriteAllLinesAsync",
+            ["AppendAllText"] = "AppendAllTextAsync",
+            ["AppendAllLines"] = "AppendAllLinesAsync",
+            ["Read"] = "ReadAsync",
+            ["Write"] = "WriteAsync",
+            ["CopyTo"] = "CopyToAsync",
+            ["Flush"] = "FlushAsync",
+            ["Send"] = "SendAsync"
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -95,21 +113,75 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
+            var availableSyncIoMethods = FindAvailableSyncIoMethods(compilationContext.Compilation);
+            if (availableSyncIoMethods.IsEmpty)
+            {
+                return;
+            }
+
             // The await and sync-I/O scans depend only on the enclosing method, not on the
             // individual FromResult call. Cache the result per method.
             var methodScans =
                 new ConcurrentDictionary<MethodDeclarationSyntax, (bool HasAwait, string? SyncIoCall)>();
 
             compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, taskType, valueTaskType, methodScans),
+                nodeContext => AnalyzeInvocation(nodeContext, taskType, valueTaskType, availableSyncIoMethods, methodScans),
                 SyntaxKind.InvocationExpression);
         });
+    }
+
+    /// <summary>
+    ///     Keeps the pairs whose async half exists in the compilation. The async file APIs arrived
+    ///     after the sync ones, so a netstandard2.0 target has no <c lang="csharp">File.ReadAllTextAsync</c>.
+    ///     Reporting a method there would give a fix that does not compile.
+    /// </summary>
+    internal static ImmutableDictionary<string, string> FindAvailableSyncIoMethods(Compilation compilation)
+    {
+        var builder = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
+
+        foreach (var entry in SyncIoMethodsWithAsyncAlternatives)
+        {
+            var owner = compilation.GetTypeByMetadataName(entry.Value);
+            if (owner is null
+                || !owner.GetMembers(SyncToAsyncMethodNames[entry.Key]).OfType<IMethodSymbol>().Any())
+            {
+                continue;
+            }
+
+            builder.Add(entry.Key, entry.Value);
+        }
+
+        return builder.ToImmutable();
+    }
+
+    /// <summary>
+    ///     Returns true when the node sits inside a lambda or a local function nested in
+    ///     <paramref name="method" />. Neither can take an await unless it becomes async itself,
+    ///     so neither belongs to the body of the method under analysis.
+    /// </summary>
+    internal static bool IsInNestedFunction(SyntaxNode node, MethodDeclarationSyntax method)
+    {
+        foreach (var ancestor in node.Ancestors())
+        {
+            if (ancestor == method)
+            {
+                return false;
+            }
+
+            if (ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void AnalyzeInvocation(
         SyntaxNodeAnalysisContext context,
         INamedTypeSymbol? taskType,
         INamedTypeSymbol? valueTaskType,
+        ImmutableDictionary<string, string> availableSyncIoMethods,
         ConcurrentDictionary<MethodDeclarationSyntax, (bool HasAwait, string? SyncIoCall)> methodScans)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
@@ -134,7 +206,7 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
                 return (true, null);
             }
 
-            return (false, FindSyncIoCallWithAsyncAlternative(method, semanticModel, cancellationToken));
+            return (false, FindSyncIoCallWithAsyncAlternative(method, semanticModel, availableSyncIoMethods, cancellationToken));
         });
 
         if (hasAwait || syncIoCall is not { } syncCall)
@@ -200,12 +272,14 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
 
     private static bool MethodContainsAwait(MethodDeclarationSyntax method)
     {
-        return method.DescendantNodes().Any(n => n.IsKind(SyntaxKind.AwaitExpression));
+        return method.DescendantNodes()
+            .Any(node => node.IsKind(SyntaxKind.AwaitExpression) && !IsInNestedFunction(node, method));
     }
 
     private static string? FindSyncIoCallWithAsyncAlternative(
         MethodDeclarationSyntax method,
         SemanticModel semanticModel,
+        ImmutableDictionary<string, string> availableSyncIoMethods,
         CancellationToken cancellationToken)
     {
         foreach (var descendant in method.DescendantNodes())
@@ -222,7 +296,12 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
 
             var methodName = memberAccess.Name.Identifier.ValueText;
 
-            if (!SyncIoMethodsWithAsyncAlternatives.TryGetValue(methodName, out var expectedContainingType))
+            if (!availableSyncIoMethods.TryGetValue(methodName, out var expectedContainingType))
+            {
+                continue;
+            }
+
+            if (IsInNestedFunction(call, method))
             {
                 continue;
             }

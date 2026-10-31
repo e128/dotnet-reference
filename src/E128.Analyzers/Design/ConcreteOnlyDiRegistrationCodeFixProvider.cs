@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -22,11 +20,13 @@ namespace E128.Analyzers.Design;
 [Shared]
 public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
 {
-    private static readonly HashSet<string> MarkerInterfaces = new(StringComparer.Ordinal)
-    {
-        "System.IDisposable",
-        "System.IAsyncDisposable"
-    };
+    // Keeps the type arguments and the qualification. A simple name drops both, so a generic
+    // type or a type from another namespace writes a call that does not compile.
+    private static readonly SymbolDisplayFormat TypeNameFormat = new(
+        globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConcreteOnlyDiRegistrationAnalyzer.DiagnosticId];
@@ -71,12 +71,14 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
 
         var concreteType = methodSymbol.TypeArguments[0];
         var nonMarkerInterfaces = concreteType.AllInterfaces
-            .Where(i => !MarkerInterfaces.Contains(i.ToDisplayString()))
+            .Where(i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
             .ToList();
 
         foreach (var iface in nonMarkerInterfaces)
         {
-            var title = $"Register as Add{methodSymbol.Name.Substring(3)}<{iface.Name}, {concreteType.Name}>()";
+            var title = $"Register as Add{methodSymbol.Name.Substring(3)}"
+                        + $"<{iface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}, "
+                        + $"{concreteType.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}>()";
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
@@ -107,8 +109,8 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : CodeFixProvider
         var newTypeArgs = SyntaxFactory.TypeArgumentList(
             SyntaxFactory.SeparatedList(
                 [
-                    SyntaxFactory.ParseTypeName(targetInterface.Name),
-                    SyntaxFactory.ParseTypeName(concreteType.Name)
+                    SyntaxFactory.ParseTypeName(targetInterface.ToDisplayString(TypeNameFormat)),
+                    SyntaxFactory.ParseTypeName(concreteType.ToDisplayString(TypeNameFormat))
                 ]));
 
         var newName = SyntaxFactory.GenericName(memberAccess.Name.Identifier)

@@ -9,8 +9,12 @@ using E128.Reference.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// The per-request Information logs cost a console write and a lock per request.
+builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
 builder.Services.AddSingleton<Greeter>();
 builder.Services.AddSingleton(TimeProvider.System);

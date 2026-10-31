@@ -113,6 +113,51 @@ public sealed class TestMethodReflectionAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task FactMethod_UserTypeNamedBindingFlags_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class FactAttribute : Attribute { }
+                           class BindingFlags
+                           {
+                               public const int NonPublic = 1;
+                           }
+                           class C
+                           {
+                               [Fact]
+                               public void TestMethod()
+                               {
+                                   var flags = BindingFlags.NonPublic;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FactMethod_GetFieldOnNonTypeReceiver_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class FactAttribute : Attribute { }
+                           class FieldReader
+                           {
+                               public string GetField() => string.Empty;
+                           }
+                           class C
+                           {
+                               [Fact]
+                               public void TestMethod()
+                               {
+                                   var reader = new FieldReader();
+                                   _ = reader.GetField();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task SetupCode_BindingFlags_DoesNotFire()
     {
         return VerifyAsync("""

@@ -1,6 +1,6 @@
 # Roslyn Analyzer Release Tracking
 
-*Updated: 2026-10-27T23:51:06Z*
+*Updated: 2026-10-31T14:23:23Z*
 
 ## Overview
 
@@ -124,6 +124,7 @@ E128099 | Design | Warning | No longer needed
 | 1.42.0  | E128109-111 | Buffer safety rules |
 | 1.42.1  | E128112-129 | Unsafe and performance rules |
 | 1.42.2  | (none)      | Bug fixes in E128116, E128122 and E128124. `Shipped.md` gained the 1.42.0 and 1.42.1 sections at this release. |
+| 1.42.3  | (none)      | Symbol matching and API gating in E128018, 028, 032, 051, 056, 068, 072, 081, 083, 090, 102. Fix providers move to `UsingDirectives.AddIfMissing`. |
 
 ## Sources
 

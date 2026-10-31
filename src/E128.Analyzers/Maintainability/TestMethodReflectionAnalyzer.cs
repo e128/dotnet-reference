@@ -12,6 +12,10 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128090";
 
+    private const string BindingFlagsMetadataName = "System.Reflection.BindingFlags";
+
+    private const string TypeMetadataName = "System.Type";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Avoid reflection in test methods",
@@ -34,35 +38,34 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeIdentifier, SyntaxKind.IdentifierName);
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        context.RegisterCompilationStartAction(startContext =>
+        {
+            var bindingFlagsType = startContext.Compilation.GetTypeByMetadataName(BindingFlagsMetadataName);
+            var typeType = startContext.Compilation.GetTypeByMetadataName(TypeMetadataName);
+            if (bindingFlagsType is null || typeType is null)
+            {
+                return;
+            }
+
+            // One action on a member access replaces a second action on every identifier. A member
+            // access covers both the enum member and the reflection call shape.
+            startContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeMemberAccess(nodeContext, bindingFlagsType, typeType),
+                SyntaxKind.SimpleMemberAccessExpression);
+        });
     }
 
-    private static void AnalyzeIdentifier(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeMemberAccess(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol bindingFlagsType,
+        INamedTypeSymbol typeType)
     {
-        if (context.Node is not IdentifierNameSyntax identifier)
-        {
-            return;
-        }
+        var memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
-        if (!string.Equals(identifier.Identifier.ValueText, "BindingFlags", StringComparison.Ordinal))
+        if (IsBindingFlagsAccess(context, memberAccess, bindingFlagsType))
         {
-            return;
-        }
-
-        if (!IsInsideTestMethod(identifier))
-        {
-            return;
-        }
-
-        context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), "BindingFlags"));
-    }
-
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
-    {
-        var invocation = (InvocationExpressionSyntax)context.Node;
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(Rule, memberAccess.Expression.GetLocation(), "BindingFlags"));
             return;
         }
 
@@ -72,12 +75,37 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsInsideTestMethod(invocation))
+        if (!IsInsideTestMethod(memberAccess))
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), methodName));
+        var symbol = context.SemanticModel.GetSymbolInfo(memberAccess, context.CancellationToken).Symbol;
+        if (symbol is not IMethodSymbol method
+            || !SymbolEqualityComparer.Default.Equals(method.ContainingType, typeType))
+        {
+            return;
+        }
+
+        SyntaxNode reportNode = memberAccess.Parent is InvocationExpressionSyntax invocation
+            ? invocation
+            : memberAccess;
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, reportNode.GetLocation(), methodName));
+    }
+
+    private static bool IsBindingFlagsAccess(
+        SyntaxNodeAnalysisContext context,
+        MemberAccessExpressionSyntax memberAccess,
+        INamedTypeSymbol bindingFlagsType)
+    {
+        if (!IsInsideTestMethod(memberAccess))
+        {
+            return false;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(memberAccess.Expression, context.CancellationToken).Symbol;
+        return SymbolEqualityComparer.Default.Equals(symbol, bindingFlagsType);
     }
 
     private static bool IsInsideTestMethod(SyntaxNode node)
