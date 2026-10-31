@@ -1,8 +1,8 @@
 # Pooled Buffer and stackalloc Rules
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-10-31T19:00:50Z*
 
-Reliability analyzers guard buffer memory. All report at Warning. E128109 ships a
-code fix. E128110 and E128111 ship no code fix.
+Reliability analyzers guard buffer memory. All report at Warning. E128109 and
+E128110 ship a code fix. E128111 ships no code fix.
 See also [code-fix-patterns.md](code-fix-patterns.md) and the E128070 section in
 [analyzers.md](../analyzers.md).
 
@@ -39,6 +39,10 @@ The zero call must be a direct statement of the `finally` block. A call nested i
 - `MemoryPool<T>` is not checked. Follow the AGENTS.md rule by hand there.
 
 Invariant: this repo policy overrides the generic .NET unsafe-code advice to avoid `Return` in a `finally` block.
+
+`PooledBufferZeroingCodeFixProvider` inserts `CryptographicOperations.ZeroMemory(buffer);`
+before the flagged `Return` in its `finally` block. It declines a `Return` with no
+enclosing `finally`, because zeroing there leaves another exit path uncleared.
 
 ## E128111: Use After Return
 
