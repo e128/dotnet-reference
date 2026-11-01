@@ -7,10 +7,9 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!-- RS2007: the Roslyn 4.14.0 meta-analyzer rejects valid unshipped.md content -->
-    <!-- RS1038: intentional — code fix provider requires Workspaces reference in same assembly -->
     <!-- RS0016/RS0017: inherited override members (Initialize, SupportedDiagnostics, etc.) are
          tracked at the type+constructor level only in PublicAPI.Shipped.txt -->
-    <NoWarn>$(NoWarn);RS2007;RS1038;RS0016;RS0017;NU5128</NoWarn>
+    <NoWarn>$(NoWarn);RS2007;RS0016;RS0017;NU5128</NoWarn>
     <!-- PolySharp: netstandard2.0 polyfill for nullable analysis attributes only -->
     <PolySharpIncludeGeneratedTypes>
       System.Diagnostics.CodeAnalysis.NotNullWhenAttribute
@@ -19,7 +18,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>1.60.2</Version>
+    <Version>1.60.3</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -39,11 +38,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
     <PackageReference Include="PolySharp" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="E128.Analyzers.CodeFixers" />
     <InternalsVisibleTo Include="E128.Analyzers.Tests" />
   </ItemGroup>
 
@@ -54,13 +53,27 @@
     <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 
-  <!-- Place analyzer DLL in the NuGet convention path -->
+  <!-- Place the analyzer DLL and the code fixer DLL in the NuGet convention path -->
+  <PropertyGroup>
+    <CodeFixersProject>$(MSBuildThisFileDirectory)..\E128.Analyzers.CodeFixers\E128.Analyzers.CodeFixers.csproj</CodeFixersProject>
+    <CodeFixersOutputPath>$(ArtifactsPath)/bin/E128.Analyzers.CodeFixers/$(Configuration.ToLowerInvariant())/E128.Analyzers.CodeFixers.dll</CodeFixersOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="$(OutputPath)\$(AssemblyName).dll"
           Pack="true"
           PackagePath="analyzers/dotnet/cs"
           Visible="false" />
+    <None Include="$(CodeFixersOutputPath)"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
   </ItemGroup>
+
+  <!-- pack builds this project only, so build the code fixers first to produce the second DLL -->
+  <Target Name="BuildCodeFixersBeforePack" BeforeTargets="GenerateNuspec">
+    <MSBuild Projects="$(CodeFixersProject)" Targets="Build" Properties="Configuration=$(Configuration)" />
+  </Target>
 
   <!-- Package README -->
   <ItemGroup>

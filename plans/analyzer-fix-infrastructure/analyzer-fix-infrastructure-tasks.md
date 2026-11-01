@@ -1,6 +1,6 @@
 # Analyzer Fix Infrastructure Tasks
 
-*Updated: 2026-10-31T22:20:00Z*
+*Updated: 2026-11-01T13:49:33Z*
 
 ## Phase 1: Repair the unsafe fixes
 
@@ -14,24 +14,24 @@
 
 ## Phase 3: Migrate the remaining fix providers to DocumentEditor
 
-- [ ] `src/E128.Analyzers/**/*CodeFixProvider.cs` Fix: convert a provider that touches more than one node, starting with E128017. Confirm the schema and the FixAll tests stay green. Severity: Medium
-- [ ] `src/E128.Analyzers/UsingDirectives.cs` Fix: add a namespace-scoped using path for the first fix that needs it. Severity: Low
-- [ ] `src/E128.Analyzers/**/*CodeFixProvider.cs` Fix: replace hand-built type names with `SyntaxGenerator.TypeExpression(symbol, addImport: true)`, starting with the providers that add a using by hand. Severity: Medium
-- [ ] `src/E128.Analyzers/InModifierHelper.cs` Fix: add a modifier-order helper and replace the three providers that compute an insert index. Severity: Low
-- [ ] `src/E128.Analyzers/**/*CodeFixProvider.cs` Fix: decline a fix through a speculative bind where the fix adds an argument or swaps an overload. Severity: Medium
+- [x] `src/E128.Analyzers/Design/PrimaryConstructorBackingFieldCodeFixProvider.cs` (E128017) Fix: convert to `DocumentEditor`, so the field removal and the reference rewrites share one tracked tree. Severity: Medium
+- [x] `UsingDirectives.cs` Fix: no fix writes a namespace-scoped using, so the top-level path serves every provider. Severity: Low
+- [x] `HttpClientResponseHeadersReadCodeFixProvider.cs` Fix: `SyntaxGenerator.TypeExpression(symbol, addImport: true)` names the option type, and the hand-written `AddUsings` block is gone. Severity: Medium
+- [x] `InModifierHelper.cs` Fix: `AddModifier` places a token in language-reference order. `SealedByDefault` and `ByteSizeForDataSize` use it. No third provider computes a modifier index. Severity: Low
+- [x] `HttpClientResponseHeadersReadCodeFixProvider.cs` Fix: `BindsAfterImport` proves the added argument binds in a copy of the compilation that holds the import, and the fix declines otherwise. Severity: Medium
 
 ## Phase 4: Split the package assembly
 
-- [ ] `src/E128.Analyzers/E128.Analyzers.csproj` Fix: move the fix providers into `src/E128.Analyzers.CodeFixers`, link the shared tables, and remove the RS1038 suppression. Severity: High
-- [ ] `src/E128.Analyzers/E128.Analyzers.csproj` Fix: evaluate a `net10.0;netstandard2.0` multi-target and a package path per target. Severity: Medium
-- [ ] `Directory.Build.targets` Fix: add `Microsoft.CodeAnalysis.BannedApiAnalyzers` and a banned-symbol file for any direct diagnostic report. Run the dependency review first. Severity: Medium
+- [x] `src/E128.Analyzers.CodeFixers/E128.Analyzers.CodeFixers.csproj` Fix: the fix providers, their helpers, and `UsingDirectives` live in the new project. The Workspaces reference and the RS1038 suppression are gone from `E128.Analyzers`. Severity: High
+- [x] Multi-target `net10.0;netstandard2.0` Fix: deferred. One assembly name cannot occupy two folders under `analyzers/dotnet/cs`, and the versioned layout needs three projects per Roslyn version. Severity: Medium
+- [x] `Directory.Build.targets` Fix: deferred. No shared diagnostic helper exists, so a banned-symbol file has no entry to guard. RS1038 covers the Workspaces boundary. Severity: Medium
 
 ## Phase 5: Harden the build metadata
 
-- [ ] `global.json` Fix: change `rollForward` from `latestMajor` to `latestPatch`, so an SDK major bump cannot change analyzer output silently. Severity: Low
-- [ ] `tests/` Fix: add a test run configuration that caps parallel compilation, then measure peak memory. Severity: Low
+- [x] `global.json` Fix: `rollForward` is `latestPatch`, so a feature-band SDK bump needs a deliberate edit. Severity: Low
+- [x] `tests/E128.Analyzers.Tests/xunit.runner.json` Fix: `maxParallelThreads` is 4. Peak RSS fell from 402 MiB to 375 MiB on a full CI run. Severity: Low
 
 ## Phase 6: Verify
 
-- [ ] Run `scripts/check.sh`.
-- [ ] Re-read the three lode files this plan links and correct any claim that a phase changes.
+- [x] Run `scripts/check.sh`.
+- [x] Re-read the three lode files this plan links and correct any claim that a phase changes.

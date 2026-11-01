@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Editing;
 
 namespace E128.Analyzers.Design;
 
@@ -54,17 +55,10 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
         Diagnostic diagnostic,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return document;
-        }
+        var root = editor.OriginalRoot;
+        var semanticModel = editor.SemanticModel;
 
         var token = root.FindToken(diagnostic.Location.SourceSpan.Start);
         var variable = token.Parent?.FirstAncestorOrSelf<VariableDeclaratorSyntax>();
@@ -90,44 +84,20 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
             return document;
         }
 
-        // Collect the references from the original tree, because the semantic model is bound to it.
-        var references = CollectFieldReferences(root, fieldSymbol, semanticModel, cancellationToken);
+        // Two types in one file can declare the same field name. The tracked nodes from the original
+        // tree, not a text search, select this exact declaration and its references.
+        foreach (var reference in CollectFieldReferences(root, fieldSymbol, semanticModel, cancellationToken))
+        {
+            editor.ReplaceNode(
+                reference,
+                SyntaxFactory.IdentifierName(parameterName).WithTriviaFrom(reference));
+        }
 
-        var newRoot = RewriteTree(
-            root, fieldDeclaration, references, parameterName, variable.Identifier.ValueText);
+        editor.RemoveNode(
+            fieldDeclaration.Declaration.Variables.Count == 1 ? fieldDeclaration : variable,
+            SyntaxRemoveOptions.KeepNoTrivia);
 
-        return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static SyntaxNode RewriteTree(
-        SyntaxNode root,
-        FieldDeclarationSyntax fieldDeclaration,
-        List<SyntaxNode> references,
-        string parameterName,
-        string fieldName)
-    {
-        // Annotate the declaration and the references in one pass over the original tree. Two types
-        // in one file can declare the same field name, so the removal must find this exact
-        // declaration, not the first text match.
-        var declarationAnnotation = new SyntaxAnnotation("E128BackingField");
-        var referenceAnnotation = new SyntaxAnnotation("FieldReference");
-        var targets = new List<SyntaxNode>(references) { fieldDeclaration };
-        var annotatedRoot = root.ReplaceNodes(targets, (original, _) =>
-            ReferenceEquals(original, fieldDeclaration)
-                ? original.WithAdditionalAnnotations(declarationAnnotation)
-                : original.WithAdditionalAnnotations(referenceAnnotation));
-
-        var newRoot = annotatedRoot.ReplaceNodes(
-            annotatedRoot.GetAnnotatedNodes(referenceAnnotation),
-            (_, rewritten) => SyntaxFactory.IdentifierName(parameterName).WithTriviaFrom(rewritten));
-
-        var target = newRoot.GetAnnotatedNodes(declarationAnnotation)
-            .OfType<FieldDeclarationSyntax>()
-            .FirstOrDefault();
-
-        return target is null
-            ? newRoot
-            : RemoveFieldDeclaration(newRoot, target, fieldName);
+        return editor.GetChangedDocument();
     }
 
     private static string? GetParameterName(VariableDeclaratorSyntax variable)
@@ -171,23 +141,5 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
         }
 
         return nodes;
-    }
-
-    private static SyntaxNode RemoveFieldDeclaration(
-        SyntaxNode root,
-        FieldDeclarationSyntax fieldDeclaration,
-        string identifier)
-    {
-        if (fieldDeclaration.Declaration.Variables.Count == 1)
-        {
-            return root.RemoveNode(fieldDeclaration, SyntaxRemoveOptions.KeepNoTrivia) ?? root;
-        }
-
-        var target = fieldDeclaration.Declaration.Variables
-            .FirstOrDefault(v => string.Equals(v.Identifier.ValueText, identifier, StringComparison.Ordinal));
-
-        return target is null
-            ? root
-            : root.RemoveNode(target, SyntaxRemoveOptions.KeepNoTrivia) ?? root;
     }
 }

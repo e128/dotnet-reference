@@ -230,8 +230,9 @@ private static partial Regex MyRegex { get; }
 
 ## Package Assembly Layout
 
-The package builds one assembly today and carries an RS1038 suppression to do
-it. See [Package Layout](analyzers/package-layout.md) for the split, the
+The package ships two assemblies. `E128.Analyzers` holds the analyzers and
+`E128.Analyzers.CodeFixers` holds the fix providers. See
+[Package Layout](analyzers/package-layout.md) for both projects, the
 per-Roslyn-version layout, and the build metadata.
 
 ## Related

@@ -9,6 +9,7 @@ ROOT="$(find_repo_root)"
 SCRIPTS_DIR="$ROOT/scripts"
 README="$SCRIPTS_DIR/README.md"
 ANALYZER_DIR="$ROOT/src/E128.Analyzers"
+FIXER_DIR="$ROOT/src/E128.Analyzers.CodeFixers"
 ANALYZER_README="$ANALYZER_DIR/README.md"
 JSON=false
 ANALYZER=false
@@ -90,7 +91,7 @@ if [[ "$ANALYZER" == true ]]; then
 
     # Fixable ids: extract every FixableDiagnosticIds block, pull ClassName.ConstName
     # references and literal "E128nnn" tokens, resolve refs through the map.
-    rg -U -o --no-heading -e 'FixableDiagnosticIds[[:space:]]*=>[[:space:]]*\[[^]]*\]' "$ANALYZER_DIR" --type cs 2>/dev/null \
+    rg -U -o --no-heading -e 'FixableDiagnosticIds[[:space:]]*=>[[:space:]]*\[[^]]*\]' "$ANALYZER_DIR" "$FIXER_DIR" --type cs 2>/dev/null \
         | grep -oE '([A-Za-z0-9_]+\.[A-Za-z0-9_]*DiagnosticId|"E128[0-9]{3}")' \
         | sed -E 's/"//g' | sort -u > "$WORK/refs.txt" || true
     awk -F'\t' '
