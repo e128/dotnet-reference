@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-10-31T21:17:52Z*
+*Updated: 2026-11-01T01:49:31Z*
 
 ## Strategy: Deny by Default
 
@@ -228,20 +228,11 @@ dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 private static partial Regex MyRegex { get; }
 ```
 
-## SequentialRenameFixAllProvider (Shared Fix-All Logic)
+## Package Assembly Layout
 
-`SequentialRenameFixAllProvider` in `E128.Analyzers.Style` is a shared `FixAllProvider` used by any code fix that renames symbols via `Renamer.RenameSymbolAsync`. It replaces `WellKnownFixAllProviders.BatchFixer`, which computes all renames from the original solution snapshot and then merges. This merge fails when multiple renames touch the same document, causing `dotnet format` to log "doesn't support Fix All in Solution".
-
-The provider accepts a `Func<Diagnostic, string?, string?>` delegate for computing the new name, allowing reuse across different fixers:
-
-- `NamingStyleCodeFixProvider` (IDE1006): delegates to `ComputeCompliantName(diagnostic, symbolName)`
-- `MidNameUnderscoreCodeFixProvider` (E128063): delegates to `ComputeFixedName(symbolName)`
-
-Sequential application:
-1. Collects all diagnostics across the fix-all scope (Document / Project / Solution)
-2. Sorts renames back-to-front within each document to prevent span drift
-3. Applies `Renamer.RenameSymbolAsync` one at a time to the evolving solution
-4. Skips a rename if the symbol has already been renamed (name mismatch guard)
+The package builds one assembly today and carries an RS1038 suppression to do
+it. See [Package Layout](analyzers/package-layout.md) for the split, the
+per-Roslyn-version layout, and the build metadata.
 
 ## Related
 

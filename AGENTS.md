@@ -50,8 +50,8 @@ of what is portable versus Claude-only.
   defer.
   Remove lode content the same turn the feature it describes disappears.
   The full Lode Coding methodology lives in `prompts/SystemPrompt.txt`. On
-  Claude Code, `scripts/dotnet-reference.nu` launches a session through the
-  local Ollama server. `scripts/dotnet-reference-go.nu` uses the opencode Go
+  Claude Code, `scripts/dotnet-reference.sh` launches a session through the
+  local Ollama server. `scripts/dotnet-reference-go.sh` uses the opencode Go
   endpoint instead. Both inject that file as the system prompt. On a harness
   without a system-prompt-injection flag, read `prompts/SystemPrompt.txt`
   directly at session start. Its rules apply regardless of launch method.

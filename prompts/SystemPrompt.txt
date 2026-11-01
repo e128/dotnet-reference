@@ -258,7 +258,7 @@ procedure are authoritative in lode/infrastructure/claude-code-maintenance.md.
 Apply them here too. SystemPrompt.txt is part of the same tier system. It is the
 launcher-only layer that bootstraps the Lode method into a repository before
 AGENTS.md and lode/ exist there. A repository names its own launcher in its
-script catalog, for example `scripts/dotnet-reference.nu`. CLAUDE.md is NOT a
+script catalog, for example `scripts/dotnet-reference.sh`. CLAUDE.md is NOT a
 changelog. When a convention changes, update the rule in place. Never append "as
 of date X, we now do Y". The git history preserves the change. The file states
 what is true now.

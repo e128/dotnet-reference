@@ -1,5 +1,4 @@
 # Roslyn Analyzer Release Tracking
-
 *Updated: 2026-10-31T21:25:49Z*
 
 ## Overview

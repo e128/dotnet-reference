@@ -52,12 +52,11 @@ public sealed class TempDirCleanupE128CodeFixTests
                                      ValueTask DisposeAsync();
                                  }
 
-                                 class MyTests
-                                 : IAsyncLifetime
+                                 class MyTests : IAsyncLifetime
                                  {
                                      private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
 
-                                 public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+                                     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
                                      public ValueTask DisposeAsync()
                                      {
@@ -101,12 +100,11 @@ public sealed class TempDirCleanupE128CodeFixTests
                                      ValueTask DisposeAsync();
                                  }
 
-                                 class MyTests
-                                 : IAsyncLifetime
+                                 class MyTests : IAsyncLifetime
                                  {
                                      private readonly string _root = Path.Combine(Path.GetTempPath(), "test");
 
-                                 public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+                                     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
                                      public ValueTask DisposeAsync()
                                      {
@@ -148,5 +146,103 @@ public sealed class TempDirCleanupE128CodeFixTests
         };
 
         return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_DoesNotDuplicateAnExistingLifetimeMethod()
+    {
+        // A second InitializeAsync would be CS0111. The existing member satisfies the interface.
+        const string source = """
+                              using System.IO;
+                              using System.Threading.Tasks;
+
+                              interface IAsyncLifetime
+                              {
+                                  ValueTask InitializeAsync();
+                                  ValueTask DisposeAsync();
+                              }
+
+                              class {|E128054:MyTests|}
+                              {
+                                  private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
+
+                                  public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System.IO;
+                                 using System.Threading.Tasks;
+
+                                 interface IAsyncLifetime
+                                 {
+                                     ValueTask InitializeAsync();
+                                     ValueTask DisposeAsync();
+                                 }
+
+                                 class MyTests : IAsyncLifetime
+                                 {
+                                     private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
+
+                                     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+
+                                     public ValueTask DisposeAsync()
+                                     {
+                                         Directory.Delete(_path, true);
+                                         return ValueTask.CompletedTask;
+                                     }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_DoesNotReformatTheExistingMembers()
+    {
+        // The fix touches the header and appends members. It must not reindent the field.
+        const string source = """
+                              using System.IO;
+                              using System.Threading.Tasks;
+
+                              interface IAsyncLifetime
+                              {
+                                  ValueTask InitializeAsync();
+                                  ValueTask DisposeAsync();
+                              }
+
+                              class {|E128054:MyTests|}
+                              {
+                                      private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System.IO;
+                                 using System.Threading.Tasks;
+
+                                 interface IAsyncLifetime
+                                 {
+                                     ValueTask InitializeAsync();
+                                     ValueTask DisposeAsync();
+                                 }
+
+                                 class MyTests : IAsyncLifetime
+                                 {
+                                         private readonly string _path = Path.Combine(Path.GetTempPath(), "test");
+
+                                     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+
+                                     public ValueTask DisposeAsync()
+                                     {
+                                         Directory.Delete(_path, true);
+                                         return ValueTask.CompletedTask;
+                                     }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
     }
 }

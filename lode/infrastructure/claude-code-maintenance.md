@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-10-31T21:23:16Z*
+*Updated: 2026-11-01T13:10:35Z*
 
 ## Harness Portability Capability Map
 
@@ -36,8 +36,8 @@ Two supported harnesses load instructions in this repo:
 | `.claude/rules/*.md`            | Partial                     | Shared domain rules. Claude Code auto-loads the directory. opencode resolves no `instructions` glob, so `AGENTS.md` directs it to read the matching file |
 | `.claude/skills/`               | Yes                         | Skills (`SKILL.md`). Claude Code loads them through the skill tool. opencode reads project-level `.claude/skills/` through a compatibility path |
 | `prompts/SystemPrompt.txt`      | Yes (content), no (launch)  | The Lode Coding methodology. Content applies on any harness. The `--append-system-prompt` injection mechanism is Claude CLI only |
-| `scripts/dotnet-reference.nu`, `scripts/dotnet-reference-go.nu` | No | Claude CLI wrappers that inject `prompts/SystemPrompt.txt`. On another harness, read that file directly at session start instead. `dotnet-reference.nu` uses the local Ollama server. `dotnet-reference-go.nu` uses the opencode Go endpoint, and reads the API key from the macOS Keychain |
-| `scripts/dotnet-reference-oc.nu` | Partial | OpenCode wrapper: launches `opencode` with `prompts/SystemPrompt.txt` as the opening message. opencode has no persistent system prompt flag. The wrapper pins `opencode-go/deepseek-v4.1-flash`, because the repo `opencode.json` holds no `model` key |
+| `scripts/dotnet-reference.sh`, `scripts/dotnet-reference-go.sh` | No | Claude CLI wrappers that inject `prompts/SystemPrompt.txt`. On another harness, read that file directly at session start instead. `dotnet-reference.sh` uses the local Ollama server. `dotnet-reference-go.sh` uses the opencode Go endpoint, and reads the API key from the macOS Keychain |
+| `scripts/dotnet-reference-oc.sh` | Partial | OpenCode wrapper: launches `opencode` with `prompts/SystemPrompt.txt` as the opening message. opencode has no persistent system prompt flag. The wrapper passes no `--model` flag, so opencode uses the global config model |
 | `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md`, adds a thin Claude-only overlay |
 | `.claude/hooks/`                | No (file format)            | Claude Code guardrail hooks. opencode v2 has no hook file. Its plugin API provides the same interception. See [opencode-guardrails.md](opencode-guardrails.md) |
 | `.claude/settings.json`         | No                          | Claude Code permissions and hook configuration |
@@ -204,8 +204,8 @@ All rule files are written in Simplified Technical English. See
 All scripts require bash 4.0 or later and live in `scripts/`. They source
 `scripts/lib.sh` for shared functions. `lib.sh` re-execs under Homebrew Bash
 when the interpreter is older than 4.0, so macOS `/bin/bash` 3.2 does not
-matter to the caller's PATH order. The Nushell scripts in `scripts/*.nu`
-require Nushell 0.93 or later. Minimum and current versions:
+matter to the caller's PATH order. The lode wrapper libraries use the same
+floor. Minimum and current versions:
 [scripts/README.md](../../scripts/README.md).
 
 `scripts/internal/precommit.sh` scans staged files for PII and secrets (see
@@ -238,6 +238,5 @@ each `.sh` file. For the performance rules that every script follows, see
 - `fd` — used by scripts for file discovery
 - `jq` — used for JSON parsing in scripts
 - `bash` 4.0+ (Homebrew Bash on macOS) — `mapfile` and associative arrays set the floor
-- `nu` (Nushell) 0.93+ — runs the `scripts/*.nu` wrappers
 - `podman` — container runtime; on macOS run `podman machine init && podman machine start` once after install
 - `jb` (JetBrains ReSharper CLI) — used by `scripts/format.sh` for semantic cleanup before `dotnet format`; gracefully skipped if absent; install with `dotnet tool install -g JetBrains.ReSharper.GlobalTools`

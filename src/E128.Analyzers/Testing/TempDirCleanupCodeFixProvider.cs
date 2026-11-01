@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Formatting;
 
 namespace E128.Analyzers.Testing;
 
@@ -80,14 +81,35 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
             ? classDecl.BaseList.AddTypes(asyncLifetimeBase)
             : SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(asyncLifetimeBase));
 
-        var initMethod = BuildInitializeMethod();
-        var disposeMethod = BuildDisposeMethod(memberName);
+        // A type that already declares one of the members satisfies the interface
+        // through it. A second copy with the same signature is CS0111.
+        var newMembers = classDecl.Members;
+        if (!HasParameterlessMethod(classDecl, "InitializeAsync"))
+        {
+            newMembers = newMembers.Add(BuildInitializeMethod());
+        }
 
-        var newMembers = classDecl.Members.Add(initMethod).Add(disposeMethod);
+        if (!HasParameterlessMethod(classDecl, "DisposeAsync"))
+        {
+            newMembers = newMembers.Add(BuildDisposeMethod(memberName));
+        }
 
-        var newClassDecl = classDecl
-            .WithBaseList(newBaseList.WithTrailingTrivia(SyntaxFactory.LineFeed))
-            .WithMembers(newMembers);
+        // A fix must not reformat the members the caller already wrote, so the
+        // annotation stays on the inserted nodes.
+        ClassDeclarationSyntax newClassDecl;
+        if (classDecl.BaseList is not null)
+        {
+            newClassDecl = classDecl.WithBaseList(newBaseList).WithMembers(newMembers);
+        }
+        else
+        {
+            // Without a base list, the line break before the brace is trailing trivia
+            // of the identifier. Move it after the new base list.
+            newClassDecl = classDecl
+                .WithIdentifier(classDecl.Identifier.WithTrailingTrivia(SyntaxFactory.Space))
+                .WithBaseList(newBaseList.WithTrailingTrivia(classDecl.Identifier.TrailingTrivia))
+                .WithMembers(newMembers);
+        }
 
         var newRoot = root.ReplaceNode(classDecl, newClassDecl);
 
@@ -112,7 +134,8 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
                     SyntaxFactory.IdentifierName("CompletedTask"))))
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
             .WithLeadingTrivia(SyntaxFactory.LineFeed)
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
+            .WithTrailingTrivia(SyntaxFactory.LineFeed)
+            .WithAdditionalAnnotations(Formatter.Annotation);
     }
 
     private static MethodDeclarationSyntax BuildDisposeMethod(string memberName)
@@ -143,6 +166,22 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(SyntaxFactory.Space)))
             .WithBody(SyntaxFactory.Block(deleteCall, returnStatement))
             .WithLeadingTrivia(SyntaxFactory.LineFeed)
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
+            .WithTrailingTrivia(SyntaxFactory.LineFeed)
+            .WithAdditionalAnnotations(Formatter.Annotation);
+    }
+
+    private static bool HasParameterlessMethod(ClassDeclarationSyntax classDecl, string name)
+    {
+        foreach (var member in classDecl.Members)
+        {
+            if (member is MethodDeclarationSyntax method
+                && method.ParameterList.Parameters.Count == 0
+                && string.Equals(method.Identifier.ValueText, name, System.StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

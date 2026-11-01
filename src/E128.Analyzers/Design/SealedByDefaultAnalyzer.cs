@@ -3,12 +3,14 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace E128.Analyzers.Design;
 
 /// <summary>
 ///     Reports non-sealed, non-abstract classes that have no derived types in the current compilation.
 ///     Encourages sealing classes by default to prevent unintended inheritance.
+///     A class that a type parameter names as a constraint is never reported.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
@@ -46,23 +48,40 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
         {
             var candidates = new ConcurrentBag<(INamedTypeSymbol Type, Location Location)>();
             var hasSubclassSet = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
+            var constraintTypes = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
 
             // Pass 1: Concurrent — collect candidates and base-type relationships.
             startContext.RegisterSymbolAction(
-                ctx => CollectTypeInfo(ctx, candidates, hasSubclassSet),
+                ctx => CollectTypeInfo(ctx, candidates, hasSubclassSet, constraintTypes),
                 SymbolKind.NamedType);
 
+            // A sealed class cannot be a generic constraint (CS0701), so a constraint
+            // keeps its type unsealed even when the compilation declares no derived type.
+            startContext.RegisterSymbolAction(
+                ctx => CollectConstraintTypes(((IMethodSymbol)ctx.Symbol).TypeParameters, constraintTypes),
+                SymbolKind.Method);
+
+            startContext.RegisterOperationAction(
+                ctx => CollectConstraintTypes(
+                    ((ILocalFunctionOperation)ctx.Operation).Symbol.TypeParameters,
+                    constraintTypes),
+                OperationKind.LocalFunction);
+
             // Pass 2: Single-threaded — report leaf classes at compilation end.
-            startContext.RegisterCompilationEndAction(ctx => ReportLeafClasses(ctx, candidates, hasSubclassSet));
+            startContext.RegisterCompilationEndAction(
+                ctx => ReportLeafClasses(ctx, candidates, hasSubclassSet, constraintTypes));
         });
     }
 
     private static void CollectTypeInfo(
         SymbolAnalysisContext context,
         ConcurrentBag<(INamedTypeSymbol, Location)> candidates,
-        ConcurrentDictionary<ISymbol, bool> hasSubclassSet)
+        ConcurrentDictionary<ISymbol, bool> hasSubclassSet,
+        ConcurrentDictionary<ISymbol, bool> constraintTypes)
     {
         var type = (INamedTypeSymbol)context.Symbol;
+
+        CollectConstraintTypes(type.TypeParameters, constraintTypes);
 
         // Record this type's base as having at least one subclass.
         if (type.BaseType is { SpecialType: not SpecialType.System_Object } baseType)
@@ -72,7 +91,8 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
 
         // Collect candidates that could trigger E128005.
         // Exclusions: abstract, static, sealed, record (IsRecord covers record class),
-        // struct (TypeKind.Struct), direct Object subclass.
+        // struct (TypeKind.Struct), direct Object subclass. A COM class needs no
+        // exclusion because CS0424 forbids a base class on a ComImport type.
         if (type.TypeKind != TypeKind.Class
             || type.IsAbstract
             || type.IsStatic
@@ -91,14 +111,33 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private static void CollectConstraintTypes(
+        ImmutableArray<ITypeParameterSymbol> typeParameters,
+        ConcurrentDictionary<ISymbol, bool> constraintTypes)
+    {
+        foreach (var typeParameter in typeParameters)
+        {
+            foreach (var constraintType in typeParameter.ConstraintTypes)
+            {
+                if (constraintType.TypeKind == TypeKind.Class)
+                {
+                    constraintTypes.TryAdd(constraintType, true);
+                    constraintTypes.TryAdd(constraintType.OriginalDefinition, true);
+                }
+            }
+        }
+    }
+
     private static void ReportLeafClasses(
         CompilationAnalysisContext context,
         ConcurrentBag<(INamedTypeSymbol Type, Location Location)> candidates,
-        ConcurrentDictionary<ISymbol, bool> hasSubclassSet)
+        ConcurrentDictionary<ISymbol, bool> hasSubclassSet,
+        ConcurrentDictionary<ISymbol, bool> constraintTypes)
     {
         foreach (var (type, location) in candidates)
         {
-            if (!hasSubclassSet.ContainsKey(type.OriginalDefinition))
+            if (!hasSubclassSet.ContainsKey(type.OriginalDefinition)
+                && !constraintTypes.ContainsKey(type.OriginalDefinition))
             {
                 context.ReportDiagnostic(
                     Diagnostic.Create(Rule, location, type.Name));

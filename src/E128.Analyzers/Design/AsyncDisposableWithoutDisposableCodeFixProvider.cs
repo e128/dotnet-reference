@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
@@ -7,6 +8,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Formatting;
 
 namespace E128.Analyzers.Design;
 
@@ -70,25 +72,40 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : CodeFixPro
             ? typeDecl.BaseList.AddTypes(disposableBase)
             : SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(disposableBase));
 
-        // Create Dispose() method stub.
-        var disposeMethod = SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                "Dispose")
-            .WithModifiers(SyntaxFactory.TokenList(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(SyntaxFactory.Space)))
-            .WithBody(SyntaxFactory.Block())
-            .WithLeadingTrivia(SyntaxFactory.LineFeed)
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
+        var newTypeDecl = typeDecl.WithBaseList(newBaseList.WithTrailingTrivia(SyntaxFactory.LineFeed));
 
-        var existingMembers = typeDecl.Members;
-        var newMembers = existingMembers.Add(disposeMethod);
+        // A type that already declares Dispose() satisfies IDisposable through that
+        // member. Inserting a second one is CS0111.
+        if (!HasParameterlessDispose(typeDecl))
+        {
+            var disposeMethod = SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                    "Dispose")
+                .WithModifiers(SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(SyntaxFactory.Space)))
+                .WithBody(SyntaxFactory.Block())
+                .WithAdditionalAnnotations(Formatter.Annotation);
 
-        var newTypeDecl = typeDecl
-            .WithBaseList(newBaseList.WithTrailingTrivia(SyntaxFactory.LineFeed))
-            .WithMembers(newMembers);
+            newTypeDecl = newTypeDecl.WithMembers(newTypeDecl.Members.Add(disposeMethod));
+        }
 
         var newRoot = UsingDirectives.AddIfMissing(
             root.ReplaceNode(typeDecl, newTypeDecl), "System");
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static bool HasParameterlessDispose(TypeDeclarationSyntax typeDecl)
+    {
+        foreach (var member in typeDecl.Members)
+        {
+            if (member is MethodDeclarationSyntax method
+                && method.ParameterList.Parameters.Count == 0
+                && string.Equals(method.Identifier.ValueText, "Dispose", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -70,9 +70,9 @@ terse JSON by default. Pass `--verbose` for the full log.
 `session-mine.sh` subcommands: `tool-freq`, `repeated-commands`, `most-read`,
 `agent-spawns`, `slash-freq`, `redundant-ci`, `runner-fallback`, and `all`.
 
-Two files are never invoked directly. `scripts/lib.sh` is a sourced library.
-`scripts/lode-lib.nu` and `scripts/lode-ollama-lib.nu` are Nushell modules
-that the `dotnet-reference*.nu` launchers import.
+Three files are never invoked directly. `scripts/lib.sh`,
+`scripts/lode-lib.sh`, and `scripts/lode-ollama-lib.sh` are sourced libraries.
+The `dotnet-reference*.sh` launchers source the lode libraries.
 
 Skills own the `scripts/internal/` entries. Call one directly only when no
 skill covers the step.

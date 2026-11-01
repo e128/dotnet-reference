@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-10-31T18:31:44Z*
+*Updated: 2026-11-01T01:49:31Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 
@@ -15,7 +15,8 @@ changes the registration, not the message text.
 3. How does the rule identify the construct: by a name or by a symbol? Match
    the symbol. See § Match Symbols, Not Names.
 4. Can the code fix repair everything the rule reports? Narrow the report
-   until it can.
+   until it can. A structural change needs an exclusion for every context that
+   forbids it, such as a generic constraint, an override, or a partial type.
 5. Does the fix read a table that this analyzer owns? Declare the table here
    as `internal static readonly`. Never copy it into the fix provider.
 

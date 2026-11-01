@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.60.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.60.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -225,7 +225,7 @@ Flags `new HttpClient()`. Direct instantiation leaks sockets and ignores DI-mana
 
 ### E128005 &mdash; Sealed by default
 
-Flags non-abstract, non-static classes with no derived types in the compilation. Sealing enables devirtualization and communicates design intent.
+Flags non-abstract, non-static classes with no derived types in the compilation. Sealing enables devirtualization and communicates design intent. The rule never reports a class that any type parameter, method, or local function names as a generic constraint, because a sealed class cannot be a constraint (CS0701).
 
 ```csharp
 // Before (warns)
@@ -549,7 +549,7 @@ Flags every use of the null-forgiving operator (`!`). The operator suppresses nu
 
 ### E128044 &mdash; IAsyncDisposable without IDisposable
 
-Flags types that implement `IAsyncDisposable` but not `IDisposable`. Consumers using synchronous `using` will silently skip disposal.
+Flags types that implement `IAsyncDisposable` but not `IDisposable`. Consumers using synchronous `using` will silently skip disposal. The code fix adds `IDisposable` to the base list, and adds a `Dispose()` stub only when the type does not already declare one.
 
 ### E128045 &mdash; Direct System.Console usage
 
@@ -631,7 +631,7 @@ Flags `Encoding.Default` and `Encoding.ASCII`. `Encoding.Default` is platform-sp
 
 ### E128054 &mdash; Temp directory cleanup
 
-Flags classes that call `Path.GetTempPath()` in a field initializer, property initializer, or constructor without implementing `IDisposable`, `IAsyncDisposable`, or xUnit's `IAsyncLifetime`. Temp directories allocated at class level leak without a cleanup interface.
+Flags classes that call `Path.GetTempPath()` in a field initializer, property initializer, or constructor without implementing `IDisposable`, `IAsyncDisposable`, or xUnit's `IAsyncLifetime`. Temp directories allocated at class level leak without a cleanup interface. The code fix adds `IAsyncLifetime`, and adds `InitializeAsync` or `DisposeAsync` only when the class does not already declare that member.
 
 ```csharp
 // Before (warns)
