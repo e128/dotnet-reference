@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-10-31T21:23:16Z*
+*Updated: 2026-11-01T13:58:50Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -45,7 +45,10 @@ Test `.csproj` files only need `<IsTestProject>true</IsTestProject>`, everything
 # CI tests (default, filters to Category=CI)
 scripts/test.sh
 
-# Specific test class, fully qualified
+# Specific test class. A bare name expands to a suffix wildcard.
+scripts/test.sh GreeterTests
+
+# Fully qualified name also works
 scripts/test.sh E128.Reference.Core.Tests.GreeterTests
 
 # All tests including Podman and Manual
@@ -66,9 +69,10 @@ dotnet test --solution E128.Reference.slnx -- --filter-trait "Category=CI"
 
 The `--` separator passes arguments to MTP. `--filter` (VSTest syntax) does not work, use `-- --filter-trait` instead.
 
-`--filter-class` needs the fully qualified class name. A short name matches
-nothing. `scripts/test.sh` reports `status: "no-match"` and exits 3 in that
-case, so a typo cannot pass as a green run.
+`--filter-class` matches the fully qualified class name. A short name matches
+nothing. `scripts/test.sh` expands a name without a dot to a suffix wildcard,
+so `test.sh MyTests` reaches `*MyTests`. A name that matches no test returns
+`status: "no-match"` and exit code 3, so a typo cannot pass as a green run.
 
 ## Test Categories
 

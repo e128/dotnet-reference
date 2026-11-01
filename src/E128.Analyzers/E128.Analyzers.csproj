@@ -70,9 +70,15 @@
           Visible="false" />
   </ItemGroup>
 
-  <!-- pack builds this project only, so build the code fixers first to produce the second DLL -->
+  <!-- pack builds this project only, so build the code fixers first to produce the second DLL.
+       Restore runs as its own build. NuGet imports the generated props during evaluation, so
+       the build needs a fresh evaluation: a distinct global property makes MSBuild evaluate
+       the project again instead of reusing the evaluation from the restore call. Without it,
+       a clean checkout has no package references and the build fails with CS0518. -->
   <Target Name="BuildCodeFixersBeforePack" BeforeTargets="GenerateNuspec">
-    <MSBuild Projects="$(CodeFixersProject)" Targets="Build" Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="$(CodeFixersProject)" Targets="Restore" Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="$(CodeFixersProject)" Targets="Build"
+             Properties="Configuration=$(Configuration);_E128PackCodeFixersBuild=true" />
   </Target>
 
   <!-- Package README -->

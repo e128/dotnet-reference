@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-01T13:40:12Z*
+*Updated: 2026-11-01T14:05:34Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
@@ -22,7 +22,12 @@ alike. The analyzer project declares `InternalsVisibleTo` for the fixer
 project. That exposes the `DiagnosticId` constants and `InModifierHelper`.
 
 Both DLLs pack to `analyzers/dotnet/cs`. `dotnet pack` builds one project, so
-the analyzer project runs a `BuildCodeFixersBeforePack` target first.
+the analyzer project runs a `BuildCodeFixersBeforePack` target first. That
+target restores the fixer project in one build and then builds it in a second
+build. The second build passes a distinct global property, so MSBuild evaluates
+the project again and imports the NuGet props that the restore wrote. Without
+that property, MSBuild reuses the evaluation from the restore call and the pack
+fails with CS0518 on a clean checkout.
 
 ## Per-Roslyn-Version Assemblies
 
