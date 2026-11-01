@@ -45,7 +45,7 @@ Without this constraint, a reviewer reads whole files to learn context and exhau
 
 Use this mode for a path argument, after a bulk fix, or when the git diff is empty but a review is needed. No diff exists, so the file list is the input.
 
-1. Enumerate the files with Glob, for example `src/E128.Analyzers/**/*.cs`.
+1. Take the `files` array from `scripts/internal/cr-target.sh --json` when `kind` is `path`.
 2. Estimate the total size. Group the files into slices of 40KB or less at file boundaries.
 3. Give each slice an explicit file list and this instruction: read only these files and review them for the named concerns.
 4. Pre-grep the known search patterns once in the main context. Pass the hits inline to the reviewer. This saves each reviewer the same grep.

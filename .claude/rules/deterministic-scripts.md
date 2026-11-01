@@ -62,6 +62,7 @@ terse JSON by default. Pass `--verbose` for the full log.
 | hand-classifying a diff as mechanical or substantive             | `scripts/internal/mechanical-diff.sh [--json]`                  |
 | sizing or splitting a review diff for delivery                   | `scripts/internal/cr-diff-deliver.sh <difffile>`                |
 | locating and parsing the latest review plan's findings           | `scripts/internal/review-findings.sh [--include-low] [--json]`  |
+| resolving a review target, its base, files, or reviewer set      | `scripts/internal/cr-target.sh --json [ARG...]`                 |
 | manual plan-directory path resolution                            | `scripts/internal/plan-path.sh NAME`                            |
 | a manual list of active plans and roadmap items                  | `scripts/internal/plan-context.sh [--active-only] [--json]`     |
 | a manual phase-prerequisite check                                | `scripts/internal/plan-gate.sh --plan NAME [--json]`            |

@@ -32,19 +32,19 @@ Core reviewers, every run:
 | `code-review`              | skill, built in  | Correctness bugs at a chosen effort level         |
 | `ponytail:ponytail-review` | plugin skill     | Over-engineering and what to delete               |
 
-Conditional reviewers, when the target matches:
+Conditional reviewers, when `scripts/internal/cr-target.sh` adds them to `skills`:
 
-| Reviewer                      | Kind         | Run when the target touches                                   |
-| ----------------------------- | ------------ | ------------------------------------------------------------- |
-| `mr-sparkle-dotnet`           | repo skill   | `.cs`, `.csproj`, `.props`, `.targets`, solution files        |
-| `interfaces:better-interface` | plugin skill | UI files (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.html`) |
+| Reviewer                      | Kind         |
+| ----------------------------- | ------------ |
+| `mr-sparkle-dotnet`           | repo skill   |
+| `interfaces:better-interface` | plugin skill |
 
 Left out on purpose:
 
 - `security-review` (built in). It duplicates `security-reviewer`.
 - `simplify`. It edits code.
 
-To change the set, edit the tables. Keep names only, with no copied reviewer text.
+`scripts/internal/cr-target.sh` owns both sets. The tables above describe them and do not define them. Edit the script, never the tables.
 
 ## Vendor a Reviewer
 
@@ -62,31 +62,27 @@ A vendored reviewer returns severity-rated findings. Never let it write a file.
 
 ## Resolve the Target
 
-Read `$ARGUMENTS` first. It sets the scope and the flags.
+Run `scripts/internal/cr-target.sh --json "$ARGUMENTS"`. It resolves every argument form and never treats a flag as a target. Never derive a base, a file list, or a reviewer set by hand.
 
-| Argument form          | Target                                                          |
-| ---------------------- | --------------------------------------------------------------- |
-| PR number or PR URL    | That PR. Get its branches with `gh` or `az`, whichever the repo uses. |
-| Branch name            | That branch, diffed against the default branch.                 |
-| `days N` or `commits N`| The change window, through `scripts/diff.sh --days N` or `--commits N`. |
-| A filesystem path      | Component mode: review the files under the path. No git diff.   |
-| No argument            | The working tree, against the merge base with the default branch. When that is empty, use the last commit. |
+It returns `kind`, `target`, `base`, `files`, `file_count`, `empty`, `agents`, `skills`, `dotnet`, `ui`, `shallow`, `perf`, `test_quality`, `no_plan`, `critical_only`, and `diff_command`.
 
-1. Stop and say so when the target is empty.
-2. List the changed files, then pick the conditional reviewers.
-3. Build one target description: the PR, branch, range, or path, the base, and the changed files. Pass the same description to every reviewer.
-4. Deliver the diff through `scripts/internal/cr-diff-deliver.sh <difffile>`. Follow the strategy it prints. Never paste a large diff into more prompts than the strategy names.
+1. Stop and say so when `empty` is true.
+2. Say so and continue with care when `shallow` is true. History is incomplete and the base may be a graft boundary.
+3. Pass `target`, `base`, and `files` to every reviewer unchanged.
+4. Run the agents in `agents` as subagents, and the skills in `skills` through the Skill tool. Run no other reviewer.
+5. Take the diff with `diff_command`. Deliver it through `scripts/internal/cr-diff-deliver.sh <difffile>`. Follow the strategy it prints. Never paste a large diff into more prompts than the strategy names.
+6. Carry `perf`, `test_quality`, `no_plan`, and `critical_only` into the phases that use them.
 
-Component mode has no diff. Enumerate the files with Glob, group them into slices of 40KB or less at file boundaries, and pass each slice an explicit path list with the instruction to read only those files.
+A returned `kind` of `path` is component mode. It has no diff. Group the returned files into slices of 40KB or less at file boundaries, and pass each slice an explicit path list with the instruction to read only those files.
 
 [references/implementation.md](references/implementation.md) holds the sub-slicing algorithm and the component-mode detail.
 
 ## Run the Reviewers
 
 1. Send every agent call in one message so they run in parallel. Ask each for severity-rated findings with `file:line` references.
-2. Invoke each roster skill with the Skill tool and the target description. Start `adversarial-review` first, because it is the longest.
+2. Invoke each skill in `skills` with the Skill tool and the target description. Start `adversarial-review` first, because it is the longest.
 3. Invoke `code-review` with the effort level `high` and the target. Never pass `--comment` or `--fix`, because this skill reviews only.
-4. Pass `--perf` and `--test-quality` unchanged to `mr-sparkle-dotnet`. That skill owns the performance lens and the test rubric. It runs the Roslyn vector on every dispatch.
+4. Pass `perf` and `test_quality` from the record to `mr-sparkle-dotnet`. That skill owns the performance lens and the test rubric. It runs the Roslyn vector on every dispatch.
 5. When a plugin reviewer does not resolve, because the plugin is absent or renamed, skip it, note it in Reviewer Notes, and continue. A vendored reviewer is always present.
 
 ## Merge
