@@ -12,7 +12,7 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(LoggerArgumentGuardCodeFixProvider))]
 [Shared]
-public sealed class LoggerArgumentGuardCodeFixProvider : CodeFixProvider
+public sealed class LoggerArgumentGuardCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [LoggerArgumentGuardAnalyzer.DiagnosticId];
@@ -22,14 +22,8 @@ public sealed class LoggerArgumentGuardCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -39,18 +33,18 @@ public sealed class LoggerArgumentGuardCodeFixProvider : CodeFixProvider
                 Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: var methodName } memberAccess,
             })
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (!LoggerArgumentGuardAnalyzer.TryGetLevel(methodName, out var level))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // The receiver appears twice in the fixed code, so it must be free of calls.
         if (memberAccess.Expression.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>().Any())
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var indent = GetIndent(statement);
@@ -77,6 +71,8 @@ public sealed class LoggerArgumentGuardCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, statement, text)),
                 nameof(LoggerArgumentGuardCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static string GetIndent(StatementSyntax statement)

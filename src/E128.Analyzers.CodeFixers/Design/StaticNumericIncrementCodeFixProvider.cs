@@ -13,26 +13,15 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StaticNumericIncrementCodeFixProvider))]
 [Shared]
-public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
+public sealed class StaticNumericIncrementCodeFixProvider : E128CodeFixProviderBase
 {
     private const string ThreadingNamespace = "System.Threading";
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StaticNumericIncrementAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var tokenNode = root.FindNode(diagnostic.Location.SourceSpan);
         var expression = ResolveExpression(tokenNode);
@@ -140,7 +129,7 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
         ExpressionSyntax mutationSite)
     {
         // An instance field is unreachable from a static member, so removing static there is worse.
-        if (IsContainingTypeStaticClass(fieldSymbol) || IsInStaticMember(mutationSite))
+        if (IsContainingTypeStaticClass(fieldSymbol) || FixSyntax.IsInStaticMember(mutationSite))
         {
             return;
         }
@@ -151,17 +140,6 @@ public sealed class StaticNumericIncrementCodeFixProvider : CodeFixProvider
                 ct => ApplyRemoveStaticFixAsync(context.Document, fieldSymbol, ct),
                 $"{StaticNumericIncrementAnalyzer.DiagnosticId}RemoveStatic"),
             diagnostic);
-    }
-
-    private static bool IsInStaticMember(SyntaxNode node)
-    {
-        return node.Ancestors().Any(ancestor => ancestor switch
-        {
-            BaseMethodDeclarationSyntax method => method.Modifiers.Any(SyntaxKind.StaticKeyword),
-            BasePropertyDeclarationSyntax property => property.Modifiers.Any(SyntaxKind.StaticKeyword),
-            BaseFieldDeclarationSyntax field => field.Modifiers.Any(SyntaxKind.StaticKeyword),
-            _ => false
-        });
     }
 
     private static bool IsContainingTypeStaticClass(IFieldSymbol fieldSymbol)

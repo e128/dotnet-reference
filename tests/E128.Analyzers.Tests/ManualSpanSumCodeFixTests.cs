@@ -8,24 +8,6 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ManualSpanSumCodeFixTests
 {
-    private const string TensorStub = """
-                                      namespace System.Numerics.Tensors
-                                      {
-                                          public static class TensorPrimitives
-                                          {
-                                              public static float Sum(ReadOnlySpan<float> values)
-                                              {
-                                                  return 0f;
-                                              }
-
-                                              public static double Sum(ReadOnlySpan<double> values)
-                                              {
-                                                  return 0d;
-                                              }
-                                          }
-                                      }
-                                      """;
-
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
         return new CSharpCodeFixTest<
@@ -33,8 +15,8 @@ public sealed class ManualSpanSumCodeFixTests
             ManualSpanSumCodeFixProvider,
             DefaultVerifier>
         {
-            TestCode = "using System;\n\n" + TensorStub + "\n\n" + source,
-            FixedCode = "using System;\nusing System.Numerics.Tensors;\n\n" + TensorStub + "\n\n" + fixedCode,
+            TestCode = "using System;\n\n" + TestStubs.TensorPrimitives + "\n\n" + source,
+            FixedCode = "using System;\nusing System.Numerics.Tensors;\n\n" + TestStubs.TensorPrimitives + "\n\n" + fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         }.RunAsync();
     }

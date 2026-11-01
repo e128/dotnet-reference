@@ -11,7 +11,7 @@ namespace E128.Analyzers.Unsafe;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnsafeAsToBitCastCodeFixProvider))]
 [Shared]
-public sealed class UnsafeAsToBitCastCodeFixProvider : CodeFixProvider
+public sealed class UnsafeAsToBitCastCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeAsToBitCastAnalyzer.DiagnosticId];
@@ -21,14 +21,8 @@ public sealed class UnsafeAsToBitCastCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -38,7 +32,7 @@ public sealed class UnsafeAsToBitCastCodeFixProvider : CodeFixProvider
             } invocation
             || invocation.ArgumentList.Arguments.Count != 1)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var argument = invocation.ArgumentList.Arguments[0];
@@ -50,6 +44,8 @@ public sealed class UnsafeAsToBitCastCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, invocation, memberAccess, argument, typeArguments)),
                 nameof(UnsafeAsToBitCastCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

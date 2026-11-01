@@ -17,15 +17,10 @@ namespace E128.Analyzers.Testing;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TestCodeCommentCodeFixProvider))]
 [Shared]
-public sealed class TestCodeCommentCodeFixProvider : CodeFixProvider
+public sealed class TestCodeCommentCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TestCodeCommentAnalyzer.DiagnosticId];
-
-    public override FixAllProvider GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
 
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {

@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-10-31T21:17:52Z*
+*Updated: 2026-11-01T20:56:22Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three
@@ -46,7 +46,8 @@ rule description and the fix shape live in `src/E128.Analyzers/README.md`.
 | E128139         | Unsafe code | `bool` read     | `Unsafe/`          |
 | E128140-E128141 | Performance | every rule      | `Performance/`     |
 
-The lowest free ID is E128130.
+The unused IDs between E128001 and E128141 are E128095 and E128130. The next
+new rule takes E128130, so the guidance range stays contiguous.
 
 These rules have no code fix. The remediation depends on intent that the syntax
 tree does not carry.

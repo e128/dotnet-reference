@@ -15,7 +15,7 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(HttpClientResponseHeadersReadCodeFixProvider))]
 [Shared]
-public sealed class HttpClientResponseHeadersReadCodeFixProvider : CodeFixProvider
+public sealed class HttpClientResponseHeadersReadCodeFixProvider : E128CodeFixProviderBase
 {
     private const string Namespace = "System.Net.Http";
     private const string OptionTypeName = "System.Net.Http.HttpCompletionOption";
@@ -24,25 +24,14 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : CodeFixProvid
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [HttpClientResponseHeadersReadAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not InvocationExpressionSyntax invocation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -51,6 +40,8 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : CodeFixProvid
                 ct => InsertResponseHeadersReadAsync(context.Document, invocation, ct),
                 nameof(HttpClientResponseHeadersReadCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> InsertResponseHeadersReadAsync(

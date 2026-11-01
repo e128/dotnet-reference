@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-01T14:05:34Z*
+*Updated: 2026-11-01T20:55:29Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.

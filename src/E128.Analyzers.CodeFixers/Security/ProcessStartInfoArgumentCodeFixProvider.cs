@@ -13,41 +13,30 @@ namespace E128.Analyzers.Security;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ProcessStartInfoArgumentCodeFixProvider))]
 [Shared]
-public sealed class ProcessStartInfoArgumentCodeFixProvider : CodeFixProvider
+public sealed class ProcessStartInfoArgumentCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ProcessStartInfoArgumentAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (root.FindNode(diagnostic.Location.SourceSpan) is not AssignmentExpressionSyntax assignment)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // A nested collection initializer fits an object initializer only. The statement form
         // `psi.Arguments = value;` has no equivalent member-initializer rewrite.
         if (assignment.Parent is not InitializerExpressionSyntax)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var tokens = ArgumentTokenizer.TryTokenize(assignment.Right);
         if (tokens is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -56,6 +45,8 @@ public sealed class ProcessStartInfoArgumentCodeFixProvider : CodeFixProvider
                 ct => ReplaceWithArgumentListAsync(context.Document, assignment, tokens, ct),
                 nameof(ProcessStartInfoArgumentCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ReplaceWithArgumentListAsync(

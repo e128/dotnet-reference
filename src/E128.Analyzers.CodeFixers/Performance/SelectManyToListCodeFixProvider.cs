@@ -14,23 +14,12 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SelectManyToListCodeFixProvider))]
 [Shared]
-public sealed class SelectManyToListCodeFixProvider : CodeFixProvider
+public sealed class SelectManyToListCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds => [SelectManyToListAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var toListInvocation = root.FindNode(context.Diagnostics[0].Location.SourceSpan)
             .AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
@@ -38,7 +27,7 @@ public sealed class SelectManyToListCodeFixProvider : CodeFixProvider
 
         if (toListInvocation is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (toListInvocation.Expression is not MemberAccessExpressionSyntax toListAccess
@@ -46,20 +35,20 @@ public sealed class SelectManyToListCodeFixProvider : CodeFixProvider
             || selectManyInvocation.Expression is not MemberAccessExpressionSyntax selectManyAccess
             || selectManyInvocation.ArgumentList.Arguments.Count != 1)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (selectManyInvocation.ArgumentList.Arguments[0].Expression is not SimpleLambdaExpressionSyntax lambda
             || lambda.ExpressionBody is not ExpressionSyntax lambdaBody)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // The rewrite replaces a whole statement. A call nested inside a larger expression cannot
         // be replaced without dropping the rest of that expression.
         if (FindReplacedStatement(toListInvocation) is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -68,6 +57,8 @@ public sealed class SelectManyToListCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, toListInvocation, selectManyAccess.Expression, lambda.Parameter, lambdaBody, ct),
                 SelectManyToListAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(

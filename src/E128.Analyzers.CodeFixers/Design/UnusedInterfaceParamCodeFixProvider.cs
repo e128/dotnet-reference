@@ -19,7 +19,7 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnusedInterfaceParamCodeFixProvider))]
 [Shared]
-public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
+public sealed class UnusedInterfaceParamCodeFixProvider : E128CodeFixProviderBase
 {
     // A rename touches the whole solution, so the batch fixer loses one of two edits in the same
     // document. Apply the renames in sequence instead.
@@ -37,19 +37,13 @@ public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
         return s_fixAllProvider;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node is not ParameterSyntax param)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var paramName = param.Identifier.ValueText;
@@ -57,7 +51,7 @@ public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
         {
             // The fix-all path skips an underscore-prefixed name, so a single fix must skip it too
             // rather than offer a rename to the same text.
-            return;
+            return Task.CompletedTask;
         }
 
         var newName = $"_{paramName}";
@@ -68,6 +62,8 @@ public sealed class UnusedInterfaceParamCodeFixProvider : CodeFixProvider
                 ct => RenameParameterAsync(context.Document, param, newName, ct),
                 nameof(UnusedInterfaceParamCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Solution> RenameParameterAsync(

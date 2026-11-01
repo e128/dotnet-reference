@@ -14,33 +14,22 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ChainedStringReplaceCodeFixProvider))]
 [Shared]
-public sealed class ChainedStringReplaceCodeFixProvider : CodeFixProvider
+public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ChainedStringReplaceAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (root.FindNode(diagnostic.Location.SourceSpan) is not WhileStatementSyntax whileStatement)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (!TryGetCollapseShape(whileStatement, out var receiverName, out var collapseChar))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -49,6 +38,8 @@ public sealed class ChainedStringReplaceCodeFixProvider : CodeFixProvider
                 ct => RewriteAsSinglePassAsync(context.Document, whileStatement, receiverName, collapseChar, ct),
                 nameof(ChainedStringReplaceCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     // Only the doubled-character collapse shape is provably rewritable from syntax alone.

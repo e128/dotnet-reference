@@ -16,7 +16,7 @@ namespace E128.Analyzers.Reliability;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ArrayPoolSqliteParameterSizeCodeFixProvider))]
 [Shared]
-public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : CodeFixProvider
+public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ArrayPoolSqliteParameterSizeAnalyzer.DiagnosticId];
@@ -26,14 +26,8 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : CodeFixProvide
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -55,6 +49,8 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : CodeFixProvide
                     nameof(ArrayPoolSqliteParameterSizeCodeFixProvider) + ".Value"),
                 diagnostic);
         }
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> FixAddWithValueAsync(

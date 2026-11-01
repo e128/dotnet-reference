@@ -11,7 +11,7 @@ namespace E128.Analyzers.Unsafe;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnsafeReadWriteAlignmentCodeFixProvider))]
 [Shared]
-public sealed class UnsafeReadWriteAlignmentCodeFixProvider : CodeFixProvider
+public sealed class UnsafeReadWriteAlignmentCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeReadWriteAlignmentAnalyzer.DiagnosticId];
@@ -21,27 +21,21 @@ public sealed class UnsafeReadWriteAlignmentCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess })
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (!UnsafeReadWriteAlignmentAnalyzer.IsUnalignedVariant(
                 memberAccess.Name.Identifier.ValueText,
                 out var replacement))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -50,6 +44,8 @@ public sealed class UnsafeReadWriteAlignmentCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, memberAccess, replacement)),
                 nameof(UnsafeReadWriteAlignmentCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

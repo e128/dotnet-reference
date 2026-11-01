@@ -13,7 +13,7 @@ namespace E128.Analyzers.Reliability;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(HttpClientMissingOceCatchCodeFixProvider))]
 [Shared]
-public sealed class HttpClientMissingOceCatchCodeFixProvider : CodeFixProvider
+public sealed class HttpClientMissingOceCatchCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [HttpClientMissingOceCatchAnalyzer.DiagnosticId];
@@ -23,21 +23,15 @@ public sealed class HttpClientMissingOceCatchCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var catchClause = node.FirstAncestorOrSelf<CatchClauseSyntax>();
         if (catchClause is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -46,6 +40,8 @@ public sealed class HttpClientMissingOceCatchCodeFixProvider : CodeFixProvider
                 ct => InsertOceCatchAsync(context.Document, catchClause, ct),
                 nameof(HttpClientMissingOceCatchCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> InsertOceCatchAsync(

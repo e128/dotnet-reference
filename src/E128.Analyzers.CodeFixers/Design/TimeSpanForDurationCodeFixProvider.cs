@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -17,7 +15,7 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TimeSpanForDurationCodeFixProvider))]
 [Shared]
-public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
+public sealed class TimeSpanForDurationCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TimeSpanForDurationAnalyzer.DiagnosticId];
@@ -27,14 +25,8 @@ public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -43,14 +35,14 @@ public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
         // zero. The developer has to pick the duration, so no fix is offered.
         if (node.FirstAncestorOrSelf<ParameterSyntax>() is { Default: not null })
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // A property initializer is a number too. Changing the type alone leaves `= 5000` next to
         // TimeSpan, which does not compile.
         if (node.FirstAncestorOrSelf<PropertyDeclarationSyntax>() is { Initializer: not null })
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -59,6 +51,8 @@ public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, root, node, ct),
                 nameof(TimeSpanForDurationCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> ApplyFixAsync(
@@ -87,28 +81,7 @@ public sealed class TimeSpanForDurationCodeFixProvider : CodeFixProvider
             return Task.FromResult(document);
         }
 
-        newRoot = EnsureUsingSystem(newRoot);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System");
         return Task.FromResult(document.WithSyntaxRoot(newRoot));
-    }
-
-    private static SyntaxNode EnsureUsingSystem(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), "System", StringComparison.Ordinal)))
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.IdentifierName("System"))
-            .NormalizeWhitespace()
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        return compilationUnit.AddUsings(usingDirective);
     }
 }

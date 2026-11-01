@@ -18,7 +18,7 @@ namespace E128.Analyzers.Performance;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(Utf8StringParseCodeFixProvider))]
 [Shared]
-public sealed class Utf8StringParseCodeFixProvider : CodeFixProvider
+public sealed class Utf8StringParseCodeFixProvider : E128CodeFixProviderBase
 {
     private const string GlobalizationNamespace = "System.Globalization";
     private const string CurrentCultureExpression = "CultureInfo.CurrentCulture";
@@ -26,19 +26,8 @@ public sealed class Utf8StringParseCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [Utf8StringParseAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
 
         var getString = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true)
@@ -51,7 +40,7 @@ public sealed class Utf8StringParseCodeFixProvider : CodeFixProvider
             || getString.Parent is not ArgumentSyntax argument
             || argument.Parent?.Parent is not InvocationExpressionSyntax parseInvocation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var addProvider = diagnostic.Properties.TryGetValue(Utf8StringParseAnalyzer.AddProviderKey, out var value)
@@ -63,6 +52,8 @@ public sealed class Utf8StringParseCodeFixProvider : CodeFixProvider
                 ct => RewriteAsync(context.Document, argument, getString, parseInvocation, addProvider, ct),
                 Utf8StringParseAnalyzer.DiagnosticId),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> RewriteAsync(

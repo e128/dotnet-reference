@@ -186,7 +186,7 @@ Tests run on **xUnit v3** with the **Microsoft Testing Platform** (MTP) runner:
 # Run CI tests (default category)
 scripts/test.sh
 
-# Run one test class (fully qualified name required)
+# Run one test class (bare or fully qualified name)
 scripts/test.sh E128.Reference.Core.Tests.GreeterTests
 
 # Run all tests, including Podman and Manual

@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-11-01T01:49:31Z*
+*Updated: 2026-11-01T20:57:16Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 
@@ -39,10 +39,6 @@ return document.WithSyntaxRoot(newRoot);
 The elastic line feed adds a blank line before the first declaration when the
 new directive lands at the end of the block. A `FixedCode` string must match
 the real output. Run the code fix test before you finalize the expected text.
-
-Some providers still insert a using inline through
-`CompilationUnitSyntax.AddUsings()`. Move one to the helper the next time you
-touch it.
 
 The helper handles a top-level using on the compilation unit only. A file with
 a namespace-scoped using list needs a different path.
@@ -153,9 +149,11 @@ list of shapes that break a rewrite.
 A fix that returns the document unchanged offers the user a dead action. The
 harness fails that case with "a fix was offered that made no changes".
 
-Do the whole shape check in `RegisterCodeFixesAsync`. Build the replacement
-node there and hand it to the action delegate. The apply path then never
-discovers a reason to stop.
+Do the whole shape check at registration, in the override the provider
+defines (`RegisterCodeFixesAsync`, or `RegisterFixesAsync(context, root)`
+from `E128CodeFixProviderBase`). Build the replacement node there and hand
+it to the action delegate. The apply path then never discovers a reason to
+stop.
 
 ```csharp
 var interpolated = BuildFromInvocation(invocation, semanticModel, cancellationToken);

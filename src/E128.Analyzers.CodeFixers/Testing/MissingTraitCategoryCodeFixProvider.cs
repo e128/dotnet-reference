@@ -15,31 +15,20 @@ namespace E128.Analyzers.Testing;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MissingTraitCategoryCodeFixProvider))]
 [Shared]
-public sealed class MissingTraitCategoryCodeFixProvider : CodeFixProvider
+public sealed class MissingTraitCategoryCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MissingTraitCategoryAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
         if (method is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -48,6 +37,8 @@ public sealed class MissingTraitCategoryCodeFixProvider : CodeFixProvider
                 ct => AddTraitAttributeAsync(context.Document, method, ct),
                 nameof(MissingTraitCategoryCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> AddTraitAttributeAsync(

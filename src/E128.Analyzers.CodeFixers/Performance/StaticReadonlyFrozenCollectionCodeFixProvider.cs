@@ -19,7 +19,7 @@ namespace E128.Analyzers.Performance;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StaticReadonlyFrozenCollectionCodeFixProvider))]
 [Shared]
-public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvider
+public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : E128CodeFixProviderBase
 {
     private const string HashSetMetadataName = "System.Collections.Generic.HashSet`1";
     private const string DictionaryMetadataName = "System.Collections.Generic.Dictionary`2";
@@ -27,19 +27,8 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
 
     public override ImmutableArray<string> FixableDiagnosticIds => [StaticReadonlyFrozenCollectionAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var declaration = root.FindNode(context.Diagnostics[0].Location.SourceSpan)
             .AncestorsAndSelf()
             .OfType<VariableDeclarationSyntax>()
@@ -47,7 +36,7 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
 
         if (declaration is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -56,6 +45,8 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : CodeFixProvi
                 ct => ConvertToFrozenAsync(context.Document, declaration, ct),
                 StaticReadonlyFrozenCollectionAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ConvertToFrozenAsync(

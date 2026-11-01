@@ -12,27 +12,15 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SearchValuesHoistingCodeFixProvider))]
 [Shared]
-public sealed class SearchValuesHoistingCodeFixProvider : CodeFixProvider
+public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBase
 {
     private const string FallbackFieldName = "_searchValues";
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SearchValuesHoistingAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 
@@ -141,7 +129,7 @@ public sealed class SearchValuesHoistingCodeFixProvider : CodeFixProvider
         }
 
         var firstMember = typeDeclaration.Members[0];
-        var indent = Indentation(firstMember);
+        var indent = FixSyntax.MemberIndentation(firstMember);
 
         // Keep the existing trivia, so a doc comment on the first member survives. Skip the
         // line break that ends the open brace line. Set both ends of the gap explicitly, so the
@@ -196,33 +184,11 @@ public sealed class SearchValuesHoistingCodeFixProvider : CodeFixProvider
         MemberDeclarationSyntax field)
     {
         var fieldWithIndent = field
-            .WithLeadingTrivia(SyntaxFactory.Whitespace(Indentation(anchor)))
-            .WithTrailingTrivia(SyntaxFactory.EndOfLine(LineBreak(anchor)));
+            .WithLeadingTrivia(SyntaxFactory.Whitespace(FixSyntax.MemberIndentation(anchor)))
+            .WithTrailingTrivia(SyntaxFactory.EndOfLine(FixSyntax.LineBreak(anchor)));
 
         return typeDeclaration.WithMembers(
             typeDeclaration.Members.Insert(anchorIndex + 1, fieldWithIndent));
-    }
-
-    private static string Indentation(MemberDeclarationSyntax member)
-    {
-        var indent = member.GetLeadingTrivia()
-            .FirstOrDefault(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia))
-            .ToFullString();
-
-        return indent.Length == 0 ? "    " : indent;
-    }
-
-    private static string LineBreak(MemberDeclarationSyntax member)
-    {
-        foreach (var trivia in member.GetTrailingTrivia())
-        {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-            {
-                return trivia.ToString();
-            }
-        }
-
-        return "\n";
     }
 
     private static bool HasMember(TypeDeclarationSyntax typeDeclaration, string name)

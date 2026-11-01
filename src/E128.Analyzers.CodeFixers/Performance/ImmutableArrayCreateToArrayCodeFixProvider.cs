@@ -13,25 +13,14 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ImmutableArrayCreateToArrayCodeFixProvider))]
 [Shared]
-public sealed class ImmutableArrayCreateToArrayCodeFixProvider : CodeFixProvider
+public sealed class ImmutableArrayCreateToArrayCodeFixProvider : E128CodeFixProviderBase
 {
     private const string InteropNamespace = "System.Runtime.InteropServices";
 
     public override ImmutableArray<string> FixableDiagnosticIds => [ImmutableArrayCreateToArrayAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var invocation = root.FindNode(context.Diagnostics[0].Location.SourceSpan)
             .AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
@@ -43,7 +32,7 @@ public sealed class ImmutableArrayCreateToArrayCodeFixProvider : CodeFixProvider
         if (invocation is null
             || invocation.Expression is MemberAccessExpressionSyntax { Name: GenericNameSyntax })
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -52,6 +41,8 @@ public sealed class ImmutableArrayCreateToArrayCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, invocation, ct),
                 ImmutableArrayCreateToArrayAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(

@@ -17,7 +17,7 @@ namespace E128.Analyzers.Performance;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AlternateLookupCodeFixProvider))]
 [Shared]
-public sealed class AlternateLookupCodeFixProvider : CodeFixProvider
+public sealed class AlternateLookupCodeFixProvider : E128CodeFixProviderBase
 {
     private const string Lookup = ".GetAlternateLookup<ReadOnlySpan<char>>()";
 
@@ -32,14 +32,8 @@ public sealed class AlternateLookupCodeFixProvider : CodeFixProvider
         return null;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var creation = root.FindNode(context.Diagnostics[0].Location.SourceSpan, getInnermostNodeForTie: true)
             .AncestorsAndSelf()
             .OfType<ObjectCreationExpressionSyntax>()
@@ -48,7 +42,7 @@ public sealed class AlternateLookupCodeFixProvider : CodeFixProvider
         if (creation?.ArgumentList is not { Arguments.Count: 1 } argumentList
             || creation.Parent is not ArgumentSyntax { Parent.Parent: { } owner })
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var span = argumentList.Arguments[0].Expression;
@@ -63,7 +57,7 @@ public sealed class AlternateLookupCodeFixProvider : CodeFixProvider
 
         if (replacement is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -72,6 +66,8 @@ public sealed class AlternateLookupCodeFixProvider : CodeFixProvider
                 ct => ReplaceAsync(context.Document, owner, replacement, ct),
                 AlternateLookupAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
+
+        return Task.CompletedTask;
     }
 
     private static ExpressionSyntax? BuildElementAccess(

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -14,7 +13,7 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ByteSizeForDataSizeCodeFixProvider))]
 [Shared]
-public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
+public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
 {
     private const string PugClassesNamespace = "Pug.Core.Classes";
     private const string ByteSizeTypeName = "ByteSize";
@@ -27,14 +26,8 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var token = root.FindToken(diagnostic.Location.SourceSpan.Start);
 
@@ -42,7 +35,7 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
         // the rewritten parameter gives CS1736. The developer has to pick the unit, so no fix is offered.
         if (FindAncestor<ParameterSyntax>(token) is { Default: not null })
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -51,6 +44,8 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, root, token, ct),
                 nameof(ByteSizeForDataSizeCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> ApplyFixAsync(
@@ -78,7 +73,7 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
             _ => root
         };
 
-        newRoot = EnsureUsingDirective(newRoot);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, PugClassesNamespace);
         return Task.FromResult(document.WithSyntaxRoot(newRoot));
     }
 
@@ -196,28 +191,6 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
     private static SyntaxTokenList RemoveConstModifier(SyntaxTokenList modifiers)
     {
         return SyntaxFactory.TokenList(modifiers.Where(m => !m.IsKind(SyntaxKind.ConstKeyword)));
-    }
-
-    private static SyntaxNode EnsureUsingDirective(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        var hasUsing = compilationUnit.Usings.Any(u =>
-            string.Equals(u.Name?.ToString(), PugClassesNamespace, StringComparison.Ordinal));
-
-        if (hasUsing)
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.ParseName(PugClassesNamespace))
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        return compilationUnit.WithUsings(compilationUnit.Usings.Insert(0, usingDirective));
     }
 
     private static T? FindAncestor<T>(SyntaxToken token) where T : SyntaxNode

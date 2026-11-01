@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -59,33 +58,8 @@ internal static class AsyncSiblingCodeFixHelper
         }
 
         newRoot = SyncOverAsyncCodeFixProvider.PromoteContainingMethod(newRoot, insertedAwait);
-        newRoot = AddTaskUsingIfMissing(newRoot);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Threading.Tasks");
 
         return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static SyntaxNode AddTaskUsingIfMissing(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), "System.Threading.Tasks", StringComparison.Ordinal)))
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.QualifiedName(
-                    SyntaxFactory.QualifiedName(
-                        SyntaxFactory.IdentifierName("System"),
-                        SyntaxFactory.IdentifierName("Threading")),
-                    SyntaxFactory.IdentifierName("Tasks")))
-            .NormalizeWhitespace()
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        return compilationUnit.AddUsings(usingDirective);
     }
 }

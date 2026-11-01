@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-11-01T20:55:18Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -11,7 +11,8 @@
 | `E128.Reference.Core`     | `Microsoft.NET.Sdk`     | `net10.0`  | Shared library for Web + Cli    | None                         |
 | `E128.Reference.Web`      | `Microsoft.NET.Sdk.Web` | `net10.0`  | ASP.NET Core web service        | None (project ref only)        |
 | `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net10.0`  | Console executable              | `System.CommandLine`, `Microsoft.Extensions.DependencyInjection` |
-| `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.Workspaces.Common`, `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
+| `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
+| `E128.Analyzers.CodeFixers` | `Microsoft.NET.Sdk`   | `netstandard2.0` | Code fix DLL packed into `E128.Analyzers` | `Microsoft.CodeAnalysis.CSharp.Workspaces` + project ref to `E128.Analyzers` |
 
 All production projects also receive the following **analyzer packages** via `Directory.Build.props`
 (`PrivateAssets="all"`, compile-time only, not shipped to consumers). Versions are pinned
@@ -58,7 +59,7 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 | Runtime image         | `mcr.microsoft.com/dotnet/aspnet:10.0-resolute`  | `Dockerfile` (final `runtime` stage) |
 | SDK/build image       | `mcr.microsoft.com/dotnet/sdk:10.0-resolute`     | `Dockerfile` (`restore`/`build` stages) |
 | .NET SDK pin          | see `global.json`                          | `global.json`                         |
-| SDK rollForward       | `latestMajor`                           | `global.json` (permits any future major version) |
+| SDK rollForward       | `latestPatch`                             | `global.json` (pins the SDK to the `10.0.403` line) |
 | Target framework      | `net10.0` (all except `E128.Analyzers`)    | `Directory.Build.props`               |
 | Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj`               |
 | CI SDK version        | `10.0.x`                                   | `.github/workflows/ci.yml` `setup-dotnet` |
@@ -66,8 +67,8 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 | Secret scanner        | gitleaks, version and SHA-256 pinned in job `env` | `.github/workflows/ci.yml` (`secrets` job) |
 | Test runner           | Microsoft.Testing.Platform                 | `global.json`                         |
 
-> `rollForward: "latestMajor"` in `global.json` allows the SDK to roll forward to
-> any future major version. `latestPatch` or `patch` is the safer default.
+> `rollForward: "latestPatch"` in `global.json` pins the SDK to the `10.0.403`
+> line. A major SDK bump needs a manual edit of `global.json`.
 
 ---
 
@@ -131,9 +132,17 @@ Versions are pinned centrally in `Directory.Packages.props`.
 | Package                                        | Role                                     |
 | ---------------------------------------------- | ---------------------------------------- |
 | `Microsoft.CodeAnalysis.CSharp`                | Roslyn syntax/semantic analysis APIs     |
-| `Microsoft.CodeAnalysis.Workspaces.Common`     | Code fix / workspace APIs                |
 | `Microsoft.CodeAnalysis.PublicApiAnalyzers`    | API tracking via PublicAPI.Shipped/Unshipped.txt (PrivateAssets=all) |
 | `PolySharp`                                    | netstandard2.0 polyfill for nullable attributes (PrivateAssets=all) |
+
+#### E128.Analyzers.CodeFixers
+
+**Role:** Code fix providers in a separate assembly. RS1038 forbids one assembly
+from carrying both analyzers and fix providers. `dotnet pack` on `E128.Analyzers`
+builds this project first and places both DLLs under `analyzers/dotnet/cs` in the
+package. Fix providers extend the shared base class `E128CodeFixProviderBase`
+and use `UsingDirectives.AddIfMissing` for using-directive insertion. The package
+reference stays `Microsoft.CodeAnalysis.CSharp.Workspaces`.
 
 #### Publishing
 

@@ -8,9 +8,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
-///     E128040: Detects concurrency primitives initialized with zero or negative limits.
-///     Covers SemaphoreSlim(0), ParallelOptions.MaxDegreeOfParallelism = 0,
-///     and Channel.CreateBounded(0).
+///     E128040: Detects negative concurrency limits and zero-bounded parallelism. A zero
+///     SemaphoreSlim initial count is legal, so only a negative value reports.
+///     Covers SemaphoreSlim(negative), ParallelOptions.MaxDegreeOfParallelism &lt;= 0,
+///     and Channel.CreateBounded(&lt;= 0).
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer

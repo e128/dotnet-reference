@@ -17,29 +17,18 @@ namespace E128.Analyzers.Style;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(PragmaBundlingCodeFixProvider))]
 [Shared]
-public sealed class PragmaBundlingCodeFixProvider : CodeFixProvider
+public sealed class PragmaBundlingCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [PragmaBundlingAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var trivia = root.FindTrivia(diagnostic.Location.SourceSpan.Start);
         if (!trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -48,6 +37,8 @@ public sealed class PragmaBundlingCodeFixProvider : CodeFixProvider
                 ct => SplitPragmaAsync(context.Document, diagnostic.Location, ct),
                 nameof(PragmaBundlingCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> SplitPragmaAsync(

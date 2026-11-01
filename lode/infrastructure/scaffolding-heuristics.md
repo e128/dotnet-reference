@@ -1,5 +1,5 @@
 # Scaffolding Heuristics
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-11-01T20:54:56Z*
 
 Reference definitions for the six heuristics of the simplification-agent. The agent
 prompt references this file rather than inlining the full definitions.

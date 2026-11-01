@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -19,7 +17,7 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MutableCollectionExposureCodeFixProvider))]
 [Shared]
-public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
+public sealed class MutableCollectionExposureCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MutableCollectionExposureAnalyzer.DiagnosticId];
@@ -29,19 +27,13 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (!diagnostic.Properties.TryGetValue(MutableCollectionExposureAnalyzer.SuggestedTypeKey, out var suggestedType)
             || suggestedType is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -50,6 +42,8 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct),
                 nameof(MutableCollectionExposureCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> ApplyFixAsync(
@@ -81,7 +75,7 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
             return Task.FromResult(document);
         }
 
-        newRoot = EnsureUsingCollectionsGeneric(newRoot);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Collections.Generic");
         return Task.FromResult(document.WithSyntaxRoot(newRoot));
     }
 
@@ -97,30 +91,5 @@ public sealed class MutableCollectionExposureCodeFixProvider : CodeFixProvider
                 ? SyntaxFactory.NullableType(newType)
                 : newType)
             .WithTriviaFrom(originalType);
-    }
-
-    private static SyntaxNode EnsureUsingCollectionsGeneric(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), "System.Collections.Generic", StringComparison.Ordinal)))
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.QualifiedName(
-                    SyntaxFactory.QualifiedName(
-                        SyntaxFactory.IdentifierName("System"),
-                        SyntaxFactory.IdentifierName("Collections")),
-                    SyntaxFactory.IdentifierName("Generic")))
-            .NormalizeWhitespace()
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        return compilationUnit.AddUsings(usingDirective);
     }
 }

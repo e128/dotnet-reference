@@ -4,6 +4,12 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# One owner for the lode file size limit. lode-guard.sh and lode-check.sh
+# both read this value.
+# shellcheck disable=SC2034  # read by the sourcing script, never here
+LODE_FILE_LIMIT=250
+
+
 # Print prompts/SystemPrompt.txt from the repo root (parent of scripts/).
 load_system_prompt() {
     local scripts_dir path

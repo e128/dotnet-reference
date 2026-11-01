@@ -40,7 +40,11 @@ fi
 
 if ! output=$("${ARGS[@]}" 2>&1); then
     if [[ "$ERRORS" == true ]]; then
-        echo "$output" | grep ': error ' | head -40
+        # A failure before the compiler runs has no error lines, so fall back to
+        # the output tail instead of printing nothing.
+        if ! echo "$output" | grep ': error ' | head -40; then
+            echo "$output" | tail -20
+        fi
     elif [[ "$VERBOSE" == true ]]; then
         err "Build failed"
         echo "$output"

@@ -15,35 +15,24 @@ namespace E128.Analyzers.Reliability;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ProcessOutputValidatorCodeFixProvider))]
 [Shared]
-public sealed class ProcessOutputValidatorCodeFixProvider : CodeFixProvider
+public sealed class ProcessOutputValidatorCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ProcessOutputValidatorAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax readCall
             || readCall.ArgumentList.Arguments.FirstOrDefault()?.Expression is not { } pathArg)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var waitStatement = FindPrecedingWaitStatement(readCall);
         if (waitStatement is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var pathText = pathArg.ToString();
@@ -57,6 +46,8 @@ public sealed class ProcessOutputValidatorCodeFixProvider : CodeFixProvider
                 ct => InsertGuardAsync(context.Document, waitStatement, pathText, receiverText, ct),
                 nameof(ProcessOutputValidatorCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static StatementSyntax? FindPrecedingWaitStatement(InvocationExpressionSyntax readCall)

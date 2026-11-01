@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -16,10 +15,7 @@ public sealed class PointerAndLengthParameterAnalyzerTests
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
-
-        test.SolutionTransforms.Add((solution, projectId) => solution.WithProjectCompilationOptions(
-            projectId,
-            ((CSharpCompilationOptions)solution.GetProject(projectId)!.CompilationOptions!).WithAllowUnsafe(true)));
+        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
         return test.RunAsync();
     }

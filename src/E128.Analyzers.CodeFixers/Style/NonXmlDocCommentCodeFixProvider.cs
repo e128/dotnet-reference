@@ -11,24 +11,13 @@ namespace E128.Analyzers.Style;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(NonXmlDocCommentCodeFixProvider))]
 [Shared]
-public sealed class NonXmlDocCommentCodeFixProvider : CodeFixProvider
+public sealed class NonXmlDocCommentCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [NonXmlDocCommentE128Analyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         foreach (var diagnostic in context.Diagnostics)
         {
             context.RegisterCodeFix(
@@ -38,6 +27,8 @@ public sealed class NonXmlDocCommentCodeFixProvider : CodeFixProvider
                     "RemoveNonXmlDocComment"),
                 diagnostic);
         }
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> RemoveCommentAsync(

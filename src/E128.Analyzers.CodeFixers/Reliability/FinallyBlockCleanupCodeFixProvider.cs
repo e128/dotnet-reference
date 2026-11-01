@@ -16,37 +16,26 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FinallyBlockCleanupCodeFixProvider))]
 [Shared]
-public sealed class FinallyBlockCleanupCodeFixProvider : CodeFixProvider
+public sealed class FinallyBlockCleanupCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FinallyBlockCleanupAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         var statement = node.FirstAncestorOrSelf<StatementSyntax>();
         if (statement is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // A local declared by the statement would leave the try block. A yield inside a try block
         // with a catch clause does not compile either.
         if (statement is LocalDeclarationStatementSyntax or YieldStatementSyntax)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -55,6 +44,8 @@ public sealed class FinallyBlockCleanupCodeFixProvider : CodeFixProvider
                 ct => WrapInTryCatchAsync(context.Document, statement, ct),
                 nameof(FinallyBlockCleanupCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> WrapInTryCatchAsync(

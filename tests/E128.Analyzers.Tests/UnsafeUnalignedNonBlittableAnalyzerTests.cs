@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -17,12 +16,7 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
-        test.SolutionTransforms.Add((solution, projectId) =>
-        {
-            return solution.GetProject(projectId)?.CompilationOptions is CSharpCompilationOptions options
-                ? solution.WithProjectCompilationOptions(projectId, options.WithAllowUnsafe(true))
-                : solution;
-        });
+        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
         return test.RunAsync();
     }

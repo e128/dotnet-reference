@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,28 +7,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ChainedStringReplaceCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<ChainedStringReplaceAnalyzer, ChainedStringReplaceCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<ChainedStringReplaceAnalyzer, ChainedStringReplaceCodeFixProvider>(source, fixedCode);
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpCodeFixTest<ChainedStringReplaceAnalyzer, ChainedStringReplaceCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllInDocumentIterations = 0
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
+        CodeFixTestRunner.NoFixAsync<ChainedStringReplaceAnalyzer, ChainedStringReplaceCodeFixProvider>(source, expected: expected);
 
     [Fact]
     [Trait("Category", "CI")]

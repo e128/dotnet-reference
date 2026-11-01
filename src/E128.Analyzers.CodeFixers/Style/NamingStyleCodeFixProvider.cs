@@ -18,7 +18,7 @@ namespace E128.Analyzers.Style;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(NamingStyleCodeFixProvider))]
 [Shared]
-public sealed class NamingStyleCodeFixProvider : CodeFixProvider
+public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
 {
     // Roslyn embeds these keys in IDE1006 diagnostic properties.
     private const string SuggestedNameKey = "SuggestedName"; // pre-computed by Roslyn's naming analyzer
@@ -40,17 +40,9 @@ public sealed class NamingStyleCodeFixProvider : CodeFixProvider
         return s_fixAllProvider;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
-
-        // Resolve the symbol first so its name can serve as a fallback when the diagnostic
-        // does not embed "SymbolName" (real Roslyn IDE1006 diagnostics omit it).
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel is null)

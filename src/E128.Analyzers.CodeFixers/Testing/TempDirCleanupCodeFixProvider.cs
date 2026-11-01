@@ -19,31 +19,20 @@ namespace E128.Analyzers.Testing;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TempDirCleanupCodeFixProvider))]
 [Shared]
-public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
+public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TempDirCleanupAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
 
         // The cleanup call needs the name of the member that holds the temp path.
         if (!diagnostic.Properties.TryGetValue(TempDirCleanupAnalyzer.PropMemberName, out var memberName)
             || memberName is not { Length: > 0 })
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var node = root.FindNode(diagnostic.Location.SourceSpan);
@@ -51,7 +40,7 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
         var classDecl = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
         if (classDecl is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -60,6 +49,8 @@ public sealed class TempDirCleanupCodeFixProvider : CodeFixProvider
                 ct => AddAsyncLifetimeAsync(context.Document, classDecl, memberName, ct),
                 nameof(TempDirCleanupCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> AddAsyncLifetimeAsync(

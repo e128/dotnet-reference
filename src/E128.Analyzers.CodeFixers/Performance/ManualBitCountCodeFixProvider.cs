@@ -17,26 +17,15 @@ namespace E128.Analyzers.Performance;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ManualBitCountCodeFixProvider))]
 [Shared]
-public sealed class ManualBitCountCodeFixProvider : CodeFixProvider
+public sealed class ManualBitCountCodeFixProvider : E128CodeFixProviderBase
 {
     private const string NumericsNamespace = "System.Numerics";
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ManualBitCountAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var loop = root.FindNode(context.Diagnostics[0].Location.SourceSpan, getInnermostNodeForTie: true)
             .AncestorsAndSelf()
             .OfType<WhileStatementSyntax>()
@@ -57,14 +46,29 @@ public sealed class ManualBitCountCodeFixProvider : CodeFixProvider
             return;
         }
 
-        var operand = valueType.SpecialType == SpecialType.System_Int32
-            ? "(uint)" + valueName
-            : valueType.SpecialType == SpecialType.System_Int64
-                ? "(ulong)" + valueName
-                : valueName;
+        var valueIdentifier = SyntaxFactory.IdentifierName(valueName);
+        ExpressionSyntax operand = valueIdentifier;
+        if (valueType.SpecialType == SpecialType.System_Int32)
+        {
+            operand = SyntaxFactory.CastExpression(SyntaxFactory.ParseTypeName("uint"), valueIdentifier);
+        }
+        else if (valueType.SpecialType == SpecialType.System_Int64)
+        {
+            operand = SyntaxFactory.CastExpression(SyntaxFactory.ParseTypeName("ulong"), valueIdentifier);
+        }
 
-        var replacement = SyntaxFactory.ParseStatement(
-            countName + " += BitOperations.PopCount(" + operand + ");");
+        var replacement = SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.AssignmentExpression(
+                SyntaxKind.AddAssignmentExpression,
+                SyntaxFactory.IdentifierName(countName),
+                SyntaxFactory.InvocationExpression(
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.IdentifierName("BitOperations"),
+                        SyntaxFactory.IdentifierName("PopCount")),
+                    SyntaxFactory.ArgumentList(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.Argument(operand))))));
 
         context.RegisterCodeFix(
             CodeAction.Create(

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -23,11 +22,7 @@ public sealed class DllImportToLibraryImportCodeFixTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             CompilerDiagnostics = CompilerDiagnostics.None,
         };
-
-        test.SolutionTransforms.Add((solution, projectId) =>
-            solution.GetProject(projectId)?.CompilationOptions is CSharpCompilationOptions options
-                ? solution.WithProjectCompilationOptions(projectId, options.WithAllowUnsafe(true))
-                : solution);
+        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
         return test.RunAsync();
     }

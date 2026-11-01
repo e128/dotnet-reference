@@ -21,29 +21,18 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DiskRoundtripCodeFixProvider))]
 [Shared]
-public sealed class DiskRoundtripCodeFixProvider : CodeFixProvider
+public sealed class DiskRoundtripCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DiskRoundtripAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
 
         if (!diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropSourceExpression, out var sourceExpr) || string.IsNullOrEmpty(sourceExpr))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropWriteKind, out var writeKind);
@@ -55,13 +44,13 @@ public sealed class DiskRoundtripCodeFixProvider : CodeFixProvider
         // pair, converts. Any other pair would put a value of the wrong type at the read site.
         if (!IsConvertible(writeKind, readKind))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var targetNode = FindReplacementTarget(root, diagnostic.Location.SourceSpan, isAwaited);
         if (targetNode is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -70,6 +59,8 @@ public sealed class DiskRoundtripCodeFixProvider : CodeFixProvider
                 ct => ReplaceReadAsync(context.Document, targetNode, sourceExpr!, writeKind, readKind, ct),
                 nameof(DiskRoundtripCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static SyntaxNode? FindReplacementTarget(SyntaxNode root, TextSpan span, bool isAwaited)
@@ -99,10 +90,9 @@ public sealed class DiskRoundtripCodeFixProvider : CodeFixProvider
 
         var newRoot = root.ReplaceNode(targetNode, replacement);
 
-        if (NeedsSystemTextImport(writeKind, readKind)
-            && newRoot is CompilationUnitSyntax compilationUnit)
+        if (NeedsSystemTextImport(writeKind, readKind))
         {
-            newRoot = EnsureUsingDirective(compilationUnit, "System.Text");
+            newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Text");
         }
 
         return document.WithSyntaxRoot(newRoot);
@@ -164,19 +154,5 @@ public sealed class DiskRoundtripCodeFixProvider : CodeFixProvider
     {
         return (string.Equals(writeKind, "Text", StringComparison.Ordinal) && string.Equals(readKind, "Bytes", StringComparison.Ordinal))
                || (string.Equals(writeKind, "Bytes", StringComparison.Ordinal) && string.Equals(readKind, "Text", StringComparison.Ordinal));
-    }
-
-    private static CompilationUnitSyntax EnsureUsingDirective(CompilationUnitSyntax unit, string namespaceName)
-    {
-        foreach (var existing in unit.Usings)
-        {
-            if (existing.Name is not null && string.Equals(existing.Name.ToString(), namespaceName, StringComparison.Ordinal))
-            {
-                return unit;
-            }
-        }
-
-        var newUsing = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(namespaceName));
-        return unit.AddUsings(newUsing);
     }
 }

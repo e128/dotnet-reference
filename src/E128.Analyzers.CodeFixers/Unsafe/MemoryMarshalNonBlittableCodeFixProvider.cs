@@ -12,7 +12,7 @@ namespace E128.Analyzers.Unsafe;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MemoryMarshalNonBlittableCodeFixProvider))]
 [Shared]
-public sealed class MemoryMarshalNonBlittableCodeFixProvider : CodeFixProvider
+public sealed class MemoryMarshalNonBlittableCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MemoryMarshalNonBlittableAnalyzer.DiagnosticId];
@@ -22,14 +22,8 @@ public sealed class MemoryMarshalNonBlittableCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -39,14 +33,14 @@ public sealed class MemoryMarshalNonBlittableCodeFixProvider : CodeFixProvider
             } invocation
             || invocation.ArgumentList.Arguments.Count != 1)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (!string.Equals(generic.Identifier.ValueText, "Read", StringComparison.Ordinal)
             || generic.TypeArgumentList.Arguments.Count != 1
             || !string.Equals(generic.TypeArgumentList.Arguments[0].ToString(), "bool", StringComparison.Ordinal))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var source = invocation.ArgumentList.Arguments[0].Expression;
@@ -57,6 +51,8 @@ public sealed class MemoryMarshalNonBlittableCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, invocation, source)),
                 nameof(MemoryMarshalNonBlittableCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

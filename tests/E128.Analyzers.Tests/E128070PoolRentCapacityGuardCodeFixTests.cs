@@ -8,15 +8,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class E128070PoolRentCapacityGuardCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<PoolRentCapacityGuardAnalyzer, PoolRentCapacityGuardCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<PoolRentCapacityGuardAnalyzer, PoolRentCapacityGuardCodeFixProvider>(source, fixedCode);
 
     private static Task VerifyFixWithCapacityAsync(string capacity, string source, string fixedCode)
     {

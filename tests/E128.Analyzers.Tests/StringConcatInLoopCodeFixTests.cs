@@ -1,33 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class StringConcatInLoopCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<StringConcatInLoopAnalyzer, StringConcatInLoopCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<StringConcatInLoopAnalyzer, StringConcatInLoopCodeFixProvider>(source, fixedCode);
 
-    private static Task VerifyNoFixAsync(string source)
-    {
-        return new CSharpCodeFixTest<StringConcatInLoopAnalyzer, StringConcatInLoopCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllInDocumentIterations = 0
-        }.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string source) =>
+        CodeFixTestRunner.NoFixAsync<StringConcatInLoopAnalyzer, StringConcatInLoopCodeFixProvider>(source);
 
     [Fact]
     [Trait("Category", "CI")]

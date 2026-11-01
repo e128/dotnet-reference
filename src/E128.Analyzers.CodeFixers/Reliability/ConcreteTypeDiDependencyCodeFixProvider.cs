@@ -20,36 +20,25 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConcreteTypeDiDependencyCodeFixProvider))]
 [Shared]
-public sealed class ConcreteTypeDiDependencyCodeFixProvider : CodeFixProvider
+public sealed class ConcreteTypeDiDependencyCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConcreteTypeDiDependencyAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
 
         var concreteTypeName = diagnostic.Properties.GetValueOrDefault("ConcreteType");
         if (concreteTypeName is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var registrationInfo = FindInterfaceMappedRegistration(root, concreteTypeName);
         if (registrationInfo is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // The rewrite replaces the whole statement. A fluent chain carries more registrations after
@@ -58,7 +47,7 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : CodeFixProvider
                 is not { } statement
             || statement.Expression != registrationInfo.Value.Invocation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var title = $"Add direct registration for {concreteTypeName}";
@@ -71,6 +60,8 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : CodeFixProvider
                     registrationInfo.Value.InterfaceName, ct),
                 $"E128035_{concreteTypeName}"),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static (InvocationExpressionSyntax Invocation, string Lifetime, string InterfaceName)?

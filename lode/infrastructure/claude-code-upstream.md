@@ -1,5 +1,5 @@
 # Claude Code Upstream Reference
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-11-01T20:55:05Z*
 
 Baseline snapshot of official Claude Code harness guidance. Config health checks use it. This file
 covers harness features only: no model names, model defaults, context-window sizes, or pricing.

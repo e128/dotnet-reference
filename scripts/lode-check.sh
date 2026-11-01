@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Lode check: run the style lint and the size guard over lode files.
 # Usage: lode-check.sh [--changed] [--json] [--help] [FILE...]
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lode-lib.sh"
 
 ROOT="$(find_repo_root)"
 LINT="$ROOT/.claude/skills/tech-writing/scripts/tech-writing-lint.sh"
-LIMIT=250
+LIMIT="$LODE_FILE_LIMIT"
 CHANGED=false; JSON=false; STRICT=false
 FILES=()
 
@@ -37,9 +37,16 @@ if [[ ! -x "$LINT" ]]; then
 fi
 
 if [[ "$CHANGED" == true ]]; then
+    # A new lode file is untracked, so the diff output needs the ls-files union
+    # to list it alongside the modified tracked files.
     while IFS= read -r f; do
         [[ -n "$f" ]] && FILES+=("$f")
-    done < <(git -C "$ROOT" diff --name-only --diff-filter=d HEAD -- 'lode' 2>/dev/null)
+    done < <(
+        {
+            git -C "$ROOT" diff --name-only --diff-filter=d HEAD -- 'lode' 2>/dev/null
+            git -C "$ROOT" ls-files --others --exclude-standard -- 'lode' 2>/dev/null
+        } | sort -u
+    )
     if [[ ${#FILES[@]} -eq 0 ]]; then
         if [[ "$JSON" == true ]]; then
             printf '[]\n'
@@ -85,8 +92,12 @@ for file in "${FILES[@]}"; do
     if [[ "$JSON" == true ]]; then
         $first || printf ','
         first=false
-        printf '{"file":"%s","lines":%d,"style_hits":%d,"status":"%s"}' \
-            "$rel" "$lines" "$style_hits" "$file_status"
+        # jq does the string escaping, so a path with a quote stays valid JSON.
+        printf '%s' "$(
+            jq -n --arg file "$rel" --argjson lines "$lines" --argjson style_hits "$style_hits" \
+                --arg status "$file_status" \
+                '{file:$file,lines:$lines,style_hits:$style_hits,status:$status}'
+        )"
     else
         case "$file_status" in
             ok)   ok "$rel: $lines lines, $style_hits style hit(s)" ;;

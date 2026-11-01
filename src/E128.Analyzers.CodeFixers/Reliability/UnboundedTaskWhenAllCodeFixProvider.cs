@@ -15,7 +15,7 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnboundedTaskWhenAllCodeFixProvider))]
 [Shared]
-public sealed class UnboundedTaskWhenAllCodeFixProvider : CodeFixProvider
+public sealed class UnboundedTaskWhenAllCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnboundedTaskWhenAllAnalyzer.DiagnosticId];

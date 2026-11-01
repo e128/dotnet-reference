@@ -13,30 +13,19 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(OrderByFirstCodeFixProvider))]
 [Shared]
-public sealed class OrderByFirstCodeFixProvider : CodeFixProvider
+public sealed class OrderByFirstCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [OrderByFirstAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not InvocationExpressionSyntax outerInvocation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -45,6 +34,8 @@ public sealed class OrderByFirstCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, outerInvocation, ct),
                 nameof(OrderByFirstCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(

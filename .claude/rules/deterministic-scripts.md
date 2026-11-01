@@ -19,6 +19,7 @@ terse JSON by default. Pass `--verbose` for the full log.
 | a full CI run                                                    | `scripts/ci.sh`                                                 |
 | session-start orientation                                        | `scripts/context.sh`                                            |
 | `git status`                                                     | `scripts/status.sh [--json] [--classify]`                       |
+| ad-hoc `git log --numstat` churn and firefight reads             | `scripts/git-forensics.sh [COMMAND] [--top N]`                  |
 | `git diff` or `git diff --cached`                                | `scripts/diff.sh [--json] [--staged] [--commits N\|--days N]`   |
 | `git log` or `git rev-list --count`                              | `scripts/branch.sh [--json]`                                    |
 | `git add` of modified tracked files                              | `scripts/internal/stage.sh [--include-new]`                     |

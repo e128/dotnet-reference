@@ -1,34 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class StringFormatToInterpolationE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<StringFormatToInterpolationAnalyzer, StringFormatToInterpolationCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<StringFormatToInterpolationAnalyzer, StringFormatToInterpolationCodeFixProvider>(source, fixedCode);
 
-    private static Task VerifyNoFixAsync(string source)
-    {
-        return new CSharpCodeFixTest<StringFormatToInterpolationAnalyzer, StringFormatToInterpolationCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllInDocumentIterations = 0
-        }.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string source) =>
+        CodeFixTestRunner.NoFixAsync<StringFormatToInterpolationAnalyzer, StringFormatToInterpolationCodeFixProvider>(source);
 
     [Fact]
     [Trait("Category", "CI")]

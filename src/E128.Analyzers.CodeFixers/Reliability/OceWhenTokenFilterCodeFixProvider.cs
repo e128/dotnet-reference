@@ -11,31 +11,20 @@ namespace E128.Analyzers.Reliability;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(OceWhenTokenFilterCodeFixProvider))]
 [Shared]
-public sealed class OceWhenTokenFilterCodeFixProvider : CodeFixProvider
+public sealed class OceWhenTokenFilterCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [OceWhenTokenFilterAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var catchClause = node.FirstAncestorOrSelf<CatchClauseSyntax>();
         if (catchClause?.Filter is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -44,6 +33,8 @@ public sealed class OceWhenTokenFilterCodeFixProvider : CodeFixProvider
                 ct => RemoveFilterAsync(context.Document, root, catchClause, ct),
                 nameof(OceWhenTokenFilterCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> RemoveFilterAsync(

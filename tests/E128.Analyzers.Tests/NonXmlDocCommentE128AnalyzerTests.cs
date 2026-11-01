@@ -147,4 +147,23 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
                            }
                            """);
     }
+
+    /// <summary>
+    ///     A restore that ends an earlier pragma block lands in the next method's leading
+    ///     trivia, so only a disable suppresses the rule.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CommentsAfterARestore_Fire()
+    {
+        return VerifyAsync("""
+                           class Foo
+                           {
+                               void A() { }
+                           #pragma warning restore CA1822
+                               {|E128024:// Not covered by the earlier pragma block|}
+                               public void B() { }
+                           }
+                           """);
+    }
 }

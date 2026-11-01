@@ -17,7 +17,7 @@ namespace E128.Analyzers.Style;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MidNameUnderscoreCodeFixProvider))]
 [Shared]
-public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
+public sealed class MidNameUnderscoreCodeFixProvider : E128CodeFixProviderBase
 {
     private static readonly SequentialRenameFixAllProvider s_fixAllProvider =
         new((_, symbolName) => symbolName is null ? null : ComputeFixedName(symbolName),
@@ -31,14 +31,8 @@ public sealed class MidNameUnderscoreCodeFixProvider : CodeFixProvider
         return s_fixAllProvider;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel is null)
         {

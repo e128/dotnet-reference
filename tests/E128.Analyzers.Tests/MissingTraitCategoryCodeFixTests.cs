@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -11,15 +10,8 @@ public sealed class MissingTraitCategoryCodeFixTests
     private static readonly ReferenceAssemblies Net100WithXunit = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("xunit.v3.core", "3.2.2")]);
 
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<MissingTraitCategoryAnalyzer, MissingTraitCategoryCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = Net100WithXunit
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<MissingTraitCategoryAnalyzer, MissingTraitCategoryCodeFixProvider>(source, fixedCode, references: Net100WithXunit);
 
     [Fact]
     [Trait("Category", "CI")]

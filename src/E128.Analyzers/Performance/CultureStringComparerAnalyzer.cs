@@ -59,6 +59,8 @@ public sealed class CultureStringComparerAnalyzer : DiagnosticAnalyzer
             AddCollection(start.Compilation, collections, "System.Collections.Generic.Dictionary`2");
             AddCollection(start.Compilation, collections, "System.Collections.Generic.HashSet`1");
             AddCollection(start.Compilation, collections, "System.Collections.Concurrent.ConcurrentDictionary`2");
+            AddCollection(start.Compilation, collections, "System.Collections.Generic.SortedDictionary`2");
+            AddCollection(start.Compilation, collections, "System.Collections.Generic.SortedSet`1");
 
             var stringComparer = start.Compilation.GetTypeByMetadataName("System.StringComparer");
             if (collections.Count == 0 || stringComparer is null)

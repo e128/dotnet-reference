@@ -14,31 +14,20 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DynamicallyAccessedMembersGuardCodeFixProvider))]
 [Shared]
-public sealed class DynamicallyAccessedMembersGuardCodeFixProvider : CodeFixProvider
+public sealed class DynamicallyAccessedMembersGuardCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DynamicallyAccessedMembersGuardAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var attribute = node.FirstAncestorOrSelf<AttributeSyntax>();
         if (attribute is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -47,6 +36,8 @@ public sealed class DynamicallyAccessedMembersGuardCodeFixProvider : CodeFixProv
                 ct => RemoveAttributeAsync(context.Document, attribute, ct),
                 nameof(DynamicallyAccessedMembersGuardCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> RemoveAttributeAsync(

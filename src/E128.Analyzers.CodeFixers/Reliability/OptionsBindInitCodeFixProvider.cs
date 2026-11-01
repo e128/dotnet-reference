@@ -16,24 +16,13 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(OptionsBindInitCodeFixProvider))]
 [Shared]
-public sealed class OptionsBindInitCodeFixProvider : CodeFixProvider
+public sealed class OptionsBindInitCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [OptionsBindInitAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -44,7 +33,7 @@ public sealed class OptionsBindInitCodeFixProvider : CodeFixProvider
 
         if (accessor is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -53,6 +42,8 @@ public sealed class OptionsBindInitCodeFixProvider : CodeFixProvider
                 ct => ChangeInitToSetAsync(context.Document, accessor, ct),
                 nameof(OptionsBindInitCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ChangeInitToSetAsync(

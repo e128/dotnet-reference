@@ -14,24 +14,13 @@ namespace E128.Analyzers.Style;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SuppressionAuditCodeFixProvider))]
 [Shared]
-public sealed class SuppressionAuditCodeFixProvider : CodeFixProvider
+public sealed class SuppressionAuditCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SuppressionAuditAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
 
         context.RegisterCodeFix(
@@ -40,6 +29,8 @@ public sealed class SuppressionAuditCodeFixProvider : CodeFixProvider
                 ct => AddJustificationCommentAsync(context.Document, root, diagnostic, ct),
                 nameof(SuppressionAuditCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> AddJustificationCommentAsync(

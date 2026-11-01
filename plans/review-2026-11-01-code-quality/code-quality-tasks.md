@@ -33,7 +33,7 @@ All findings applied. `scripts/check.sh` passes. `scripts/internal/cr-target.sh 
 - [x] List numbering, grammar, and the stale "three things" intro in `mr-sparkle-dotnet/SKILL.md`.
 - [x] Bare `cr-target.sh` name and the stale "roster above" reference in `mr-sparkle/SKILL.md`.
 - [x] Usage record omits `dotnet`, `ui`, and the new fields. Fix: the usage line lists every field.
-- [x] Two `jq` processes per transform. Fix: one `jq -R -s` call each.
+- [ ] Two `jq` processes per transform. Fix: one `jq -R -s` call each.
 - [x] `shallow` was emitted and never acted on. Fix: a step in `mr-sparkle/SKILL.md`.
 - [x] A credentialed PR URL reached `err`. Fix: the message names no reference.
 - [x] `PR_NUMBER` was a global. Fix: declared `local`.

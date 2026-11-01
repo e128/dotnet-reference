@@ -16,7 +16,7 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(JsonDocumentLifetimeCodeFixProvider))]
 [Shared]
-public sealed class JsonDocumentLifetimeCodeFixProvider : CodeFixProvider
+public sealed class JsonDocumentLifetimeCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [JsonDocumentLifetimeAnalyzer.DiagnosticId];

@@ -1,5 +1,5 @@
 # Code Generation Quality with Claude Code
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-11-01T20:55:05Z*
 
 Mechanisms in this repo that drive better AI code generation, ranked by impact.
 

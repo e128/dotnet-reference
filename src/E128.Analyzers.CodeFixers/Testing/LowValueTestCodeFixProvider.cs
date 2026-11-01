@@ -19,7 +19,7 @@ namespace E128.Analyzers.Testing;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(LowValueTestCodeFixProvider))]
 [Shared]
-public sealed class LowValueTestCodeFixProvider : CodeFixProvider
+public sealed class LowValueTestCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [LowValueTestAnalyzer.SuggestionDiagnosticId, LowValueTestAnalyzer.WarningDiagnosticId];
@@ -29,14 +29,8 @@ public sealed class LowValueTestCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var span = diagnostic.Location.SourceSpan;
 
@@ -46,7 +40,7 @@ public sealed class LowValueTestCodeFixProvider : CodeFixProvider
 
         if (method is null || XunitTestHelper.GetFactOrTheoryAttribute(method) is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -55,6 +49,8 @@ public sealed class LowValueTestCodeFixProvider : CodeFixProvider
                 ct => DeleteMethodAsync(context.Document, span, ct),
                 nameof(LowValueTestCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> DeleteMethodAsync(

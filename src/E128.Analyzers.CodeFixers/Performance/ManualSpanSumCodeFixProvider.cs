@@ -17,26 +17,15 @@ namespace E128.Analyzers.Performance;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ManualSpanSumCodeFixProvider))]
 [Shared]
-public sealed class ManualSpanSumCodeFixProvider : CodeFixProvider
+public sealed class ManualSpanSumCodeFixProvider : E128CodeFixProviderBase
 {
     private const string TensorsNamespace = "System.Numerics.Tensors";
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ManualSpanSumAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var loop = root.FindNode(context.Diagnostics[0].Location.SourceSpan, getInnermostNodeForTie: true)
             .AncestorsAndSelf()
             .OfType<ForEachStatementSyntax>()
@@ -44,7 +33,7 @@ public sealed class ManualSpanSumCodeFixProvider : CodeFixProvider
 
         if (loop is null || !ManualSpanSumAnalyzer.TryMatchLoop(loop, out var sumName, out _))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var replacement = SyntaxFactory.ParseStatement(
@@ -56,6 +45,8 @@ public sealed class ManualSpanSumCodeFixProvider : CodeFixProvider
                 ct => ReplaceLoopAsync(context.Document, loop, replacement, ct),
                 ManualSpanSumAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ReplaceLoopAsync(

@@ -16,31 +16,20 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(EnumIfElseChainCodeFixProvider))]
 [Shared]
-public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
+public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [EnumIfElseChainAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var ifStatement = node.FirstAncestorOrSelf<IfStatementSyntax>();
         if (ifStatement is null || !IsEqualityChain(ifStatement))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -49,6 +38,8 @@ public sealed class EnumIfElseChainCodeFixProvider : CodeFixProvider
                 ct => ConvertToSwitchAsync(context.Document, ifStatement, ct),
                 nameof(EnumIfElseChainCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ConvertToSwitchAsync(

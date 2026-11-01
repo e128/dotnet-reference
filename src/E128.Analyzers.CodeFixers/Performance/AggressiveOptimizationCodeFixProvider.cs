@@ -13,7 +13,7 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AggressiveOptimizationCodeFixProvider))]
 [Shared]
-public sealed class AggressiveOptimizationCodeFixProvider : CodeFixProvider
+public sealed class AggressiveOptimizationCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [AggressiveOptimizationAnalyzer.DiagnosticId];
@@ -23,20 +23,14 @@ public sealed class AggressiveOptimizationCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not AttributeSyntax { Parent: AttributeListSyntax attributeList } attribute)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -45,6 +39,8 @@ public sealed class AggressiveOptimizationCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, attribute, attributeList)),
                 nameof(AggressiveOptimizationCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

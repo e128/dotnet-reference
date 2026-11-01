@@ -87,7 +87,7 @@ public sealed class CultureStringComparerAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTheCollectionSortsByCulture()
+    public Task Reports_WhenTheSortedCollectionUsesACultureComparer()
     {
         return VerifyAsync("""
                            using System;
@@ -96,7 +96,24 @@ public sealed class CultureStringComparerAnalyzerTests
                            {
                                object M()
                                {
-                                   return new SortedDictionary<string, int>(StringComparer.CurrentCulture);
+                                   return new SortedDictionary<string, int>({|E128132:StringComparer.CurrentCulture|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheSortedSetUsesACultureComparer()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               object M()
+                               {
+                                   return new SortedSet<string>({|E128132:StringComparer.CurrentCulture|});
                                }
                            }
                            """);

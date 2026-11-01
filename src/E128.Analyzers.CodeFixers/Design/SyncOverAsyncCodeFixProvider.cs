@@ -15,24 +15,13 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SyncOverAsyncCodeFixProvider))]
 [Shared]
-public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
+public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SyncOverAsyncAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -40,7 +29,7 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
         // cannot take the async modifier from this fix, and an await there does not compile.
         if (!IsInOrdinaryMethod(node))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -49,6 +38,7 @@ public sealed class SyncOverAsyncCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, node, ct),
                 nameof(SyncOverAsyncCodeFixProvider)),
             diagnostic);
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(

@@ -32,6 +32,11 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [[ ! "$TOP" =~ ^[1-9][0-9]*$ ]]; then
+    err "--top needs a positive integer: $TOP"
+    exit 1
+fi
+
 # Convert "left<TAB>right" rows into a JSON array. $1 is a jq filter over
 # arrays of two strings.
 rows_to_json() {

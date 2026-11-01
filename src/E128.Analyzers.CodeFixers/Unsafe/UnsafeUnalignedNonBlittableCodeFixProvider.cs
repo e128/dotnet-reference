@@ -16,7 +16,7 @@ namespace E128.Analyzers.Unsafe;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnsafeUnalignedNonBlittableCodeFixProvider))]
 [Shared]
-public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : CodeFixProvider
+public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeUnalignedNonBlittableAnalyzer.DiagnosticId];
@@ -26,14 +26,8 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 
@@ -47,13 +41,13 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : CodeFixProvider
             || !predefinedType.Keyword.IsKind(SyntaxKind.BoolKeyword)
             || invocation.ArgumentList.Arguments.Count != 1)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // A comparison is not a valid expression statement, so leave that shape alone.
         if (invocation.Parent is ExpressionStatementSyntax)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var argument = invocation.ArgumentList.Arguments[0];
@@ -61,7 +55,7 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : CodeFixProvider
         // ReadUnaligned takes a byref, so the argument must carry a ref, in, or out keyword.
         if (argument.RefKindKeyword.IsKind(SyntaxKind.None))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -70,6 +64,8 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, invocation, argument.Expression)),
                 nameof(UnsafeUnalignedNonBlittableCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

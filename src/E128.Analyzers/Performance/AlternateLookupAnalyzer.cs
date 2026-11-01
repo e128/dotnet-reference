@@ -95,7 +95,15 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax receiver }
+        // Only a method whose first argument is a key reports. A member such as
+        // ContainsValue takes the value position, so its argument never proves
+        // that the dictionary keys come from this span.
+        if (invocation.Expression is not MemberAccessExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax receiver,
+                Name.Identifier.ValueText: var methodName
+            }
+            || !IsKeyLookupMethod(methodName)
             || !IsStringKeyed(receiver, context.SemanticModel, lookup, allowsIndexer: false, context.CancellationToken)
             || invocation.ArgumentList.Arguments.Count == 0
             || FindAllocatingKey(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel, lookup,
@@ -106,6 +114,14 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, key.GetLocation()));
+    }
+
+    // Members whose first argument is a key on the tracked collection types. ContainsValue,
+    // which takes a value, is never a lookup key.
+    private static bool IsKeyLookupMethod(string methodName)
+    {
+        return methodName is "Add" or "TryAdd" or "TryGetValue" or "ContainsKey" or "Contains"
+            or "Remove" or "TryRemove" or "GetOrAdd" or "AddOrUpdate" or "TryUpdate";
     }
 
     private static bool IsStringKeyed(

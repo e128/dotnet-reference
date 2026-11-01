@@ -39,6 +39,7 @@ public sealed class AsyncFileIoCodeFixTests
         const string fixedCode = """
                                  using System.IO;
                                  using System.Threading.Tasks;
+
                                  class C
                                  {
                                      async Task M(string path, string text)
@@ -70,6 +71,7 @@ public sealed class AsyncFileIoCodeFixTests
         const string fixedCode = """
                                  using System.IO;
                                  using System.Threading.Tasks;
+
                                  class C
                                  {
                                      async Task<string> M(string path)

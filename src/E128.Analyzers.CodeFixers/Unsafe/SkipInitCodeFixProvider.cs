@@ -11,7 +11,7 @@ namespace E128.Analyzers.Unsafe;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SkipInitCodeFixProvider))]
 [Shared]
-public sealed class SkipInitCodeFixProvider : CodeFixProvider
+public sealed class SkipInitCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SkipInitAnalyzer.DiagnosticId];
@@ -21,14 +21,8 @@ public sealed class SkipInitCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 

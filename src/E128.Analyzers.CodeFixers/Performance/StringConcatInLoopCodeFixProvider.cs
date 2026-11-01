@@ -15,7 +15,7 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StringConcatInLoopCodeFixProvider))]
 [Shared]
-public sealed class StringConcatInLoopCodeFixProvider : CodeFixProvider
+public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
 {
     private static readonly string[] BuilderNames = ["sb", "stringBuilder", "builder", "accumulator"];
 
@@ -29,14 +29,8 @@ public sealed class StringConcatInLoopCodeFixProvider : CodeFixProvider
         return null;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel is null)
         {

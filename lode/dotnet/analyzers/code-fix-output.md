@@ -1,5 +1,5 @@
 # Code Fix Output
-*Updated: 2026-11-01T01:49:31Z*
+*Updated: 2026-11-01T20:55:29Z*
 
 Rules for the code a fix writes. A fix that emits a broken member costs more than
 a missing fix: the apply path writes it into the document.

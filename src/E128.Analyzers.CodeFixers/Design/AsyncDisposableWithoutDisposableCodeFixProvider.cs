@@ -18,31 +18,20 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AsyncDisposableWithoutDisposableCodeFixProvider))]
 [Shared]
-public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : CodeFixProvider
+public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [AsyncDisposableWithoutDisposableAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var typeDecl = node.FirstAncestorOrSelf<TypeDeclarationSyntax>();
         if (typeDecl is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -51,6 +40,8 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : CodeFixPro
                 ct => AddIDisposableAsync(context.Document, typeDecl, ct),
                 nameof(AsyncDisposableWithoutDisposableCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> AddIDisposableAsync(

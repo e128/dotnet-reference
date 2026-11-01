@@ -46,6 +46,7 @@ public sealed class ByteSizeForDataSizeE128CodeFixTests
             """,
             """
             using Pug.Core.Classes;
+
             class C
             {
                 public ByteSize MaxSizeBytes { get; set; }
@@ -70,6 +71,7 @@ public sealed class ByteSizeForDataSizeE128CodeFixTests
             """,
             """
             using Pug.Core.Classes;
+
             class C
             {
                 void M()

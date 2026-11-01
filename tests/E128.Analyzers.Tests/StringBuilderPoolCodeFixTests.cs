@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,29 +7,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StringBuilderPoolCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<StringBuilderPoolAnalyzer, StringBuilderPoolCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<StringBuilderPoolAnalyzer, StringBuilderPoolCodeFixProvider>(source, fixedCode);
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpCodeFixTest<StringBuilderPoolAnalyzer, StringBuilderPoolCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllInDocumentIterations = 0
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
+        CodeFixTestRunner.NoFixAsync<StringBuilderPoolAnalyzer, StringBuilderPoolCodeFixProvider>(source, expected: expected);
 
     [Fact]
     [Trait("Category", "CI")]

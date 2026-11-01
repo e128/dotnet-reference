@@ -1,5 +1,5 @@
 # Code Fix Trivia
-*Updated: 2026-10-31T18:08:58Z*
+*Updated: 2026-11-01T20:55:29Z*
 
 How a code fix keeps the text around the node it rewrites. See
 [Code Fix Patterns](code-fix-patterns.md) for the rewrite shapes.

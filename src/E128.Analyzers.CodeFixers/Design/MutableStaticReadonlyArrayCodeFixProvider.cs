@@ -18,26 +18,15 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MutableStaticReadonlyArrayCodeFixProvider))]
 [Shared]
-public sealed class MutableStaticReadonlyArrayCodeFixProvider : CodeFixProvider
+public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProviderBase
 {
     private const string ImmutableNamespace = "System.Collections.Immutable";
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MutableStaticReadonlyArrayAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var node = root.FindNode(context.Diagnostics[0].Location.SourceSpan, getInnermostNodeForTie: true);
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken)

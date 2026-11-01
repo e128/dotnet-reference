@@ -1,9 +1,26 @@
 # Code Fix Techniques
-*Updated: 2026-11-01T13:40:12Z*
+*Updated: 2026-11-01T18:21:44Z*
 
 Techniques that prove a fix writes correct code. The shape rules live in
 [Code Fix Output](code-fix-output.md). The decision list lives in
 [Code Fix Patterns](code-fix-patterns.md).
+
+## Inherit E128CodeFixProviderBase
+
+Every code fix provider inherits `E128CodeFixProviderBase` in
+`src/E128.Analyzers.CodeFixers/E128CodeFixProviderBase.cs`. The base owns the
+batch fix-all provider and the syntax root fetch.
+
+Override `RegisterFixesAsync(context, root)` for the normal shape. The hook
+runs only when the root resolved. A hook with no `await` is non-`async` and
+returns `Task.CompletedTask`.
+
+Override `RegisterCodeFixesAsync` directly when the fix reads the diagnostic
+alone and never touches the root, or when the provider needs a semantic model
+read before the root fetch order matters. Silence a fix-all with
+`GetFixAllProvider()` returning `null` only when a merge would corrupt the
+output. See [Code Fix Patterns](code-fix-patterns.md) § FixAll That Inserts a
+Member.
 
 ## Use DocumentEditor for a Multi-Node Edit
 

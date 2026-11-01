@@ -1,5 +1,5 @@
 # .NET 10 Project Structure
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-11-01T20:55:33Z*
 
 ## Solution Format
 
@@ -19,6 +19,7 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 ├── .globalconfig              # Analyzer diagnostic severities
 ├── src/
 │   ├── E128.Analyzers/        # Solution-local Roslyn analyzer
+│   ├── E128.Analyzers.CodeFixers/  # Code fix providers for the analyzer
 │   ├── E128.Reference.Cli/    # CLI application
 │   ├── E128.Reference.Core/   # Core library
 │   └── E128.Reference.Web/    # Web application
@@ -50,7 +51,7 @@ Key properties in `Directory.Build.props`:
 
 ```json
 {
-  "sdk": { "version": "<pinned in global.json>", "rollForward": "latestMajor", "allowPrerelease": false },
+  "sdk": { "version": "<pinned in global.json>", "rollForward": "latestPatch", "allowPrerelease": false },
   "test": { "runner": "Microsoft.Testing.Platform" }
 }
 ```

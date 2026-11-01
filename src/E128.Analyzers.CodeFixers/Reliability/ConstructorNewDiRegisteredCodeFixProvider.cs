@@ -15,7 +15,7 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConstructorNewDiRegisteredCodeFixProvider))]
 [Shared]
-public sealed class ConstructorNewDiRegisteredCodeFixProvider : CodeFixProvider
+public sealed class ConstructorNewDiRegisteredCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConstructorNewDiRegisteredAnalyzer.DiagnosticId];

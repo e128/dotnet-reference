@@ -1,24 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class E128058ListAsReadOnlyCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        var test = new CSharpCodeFixTest<ListAsReadOnlyAnalyzer, ListAsReadOnlyCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        };
-        return test.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<ListAsReadOnlyAnalyzer, ListAsReadOnlyCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]

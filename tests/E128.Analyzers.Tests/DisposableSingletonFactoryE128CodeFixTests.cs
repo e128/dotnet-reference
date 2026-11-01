@@ -11,16 +11,8 @@ public sealed class DisposableSingletonFactoryE128CodeFixTests
     private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
 
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<DisposableSingletonFactoryAnalyzer, DisposableSingletonFactoryCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = Net100WithDi,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<DisposableSingletonFactoryAnalyzer, DisposableSingletonFactoryCodeFixProvider>(source, fixedCode, references: Net100WithDi);
 
     [Fact]
     [Trait("Category", "CI")]

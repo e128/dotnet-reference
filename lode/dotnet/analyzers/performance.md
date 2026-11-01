@@ -1,5 +1,5 @@
 # Analyzer Performance
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-11-01T20:55:18Z*
 
 Every analyzer in `src/E128.Analyzers` runs on each compilation and each edit. A
 slow analyzer multiplies its cost by the number of nodes it registers for.

@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -19,20 +17,8 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixTests
                                     }
                                     """;
 
-    private static Task VerifyFixAsync(string testCode, string fixedCode)
-    {
-        var test = new CSharpCodeFixTest<
-            ArrayPoolSqliteParameterSizeAnalyzer,
-            ArrayPoolSqliteParameterSizeCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = testCode,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        };
-        return test.RunAsync();
-    }
+    private static Task VerifyFixAsync(string testCode, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<ArrayPoolSqliteParameterSizeAnalyzer, ArrayPoolSqliteParameterSizeCodeFixProvider>(testCode, fixedCode);
 
     /// <summary>VB6: Code fix captures discard and inserts .Size for AddWithValue.</summary>
     [Fact]

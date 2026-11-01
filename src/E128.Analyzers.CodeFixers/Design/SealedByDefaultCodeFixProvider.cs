@@ -12,7 +12,7 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SealedByDefaultCodeFixProvider))]
 [Shared]
-public sealed class SealedByDefaultCodeFixProvider : CodeFixProvider
+public sealed class SealedByDefaultCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SealedByDefaultAnalyzer.DiagnosticId];
@@ -22,21 +22,15 @@ public sealed class SealedByDefaultCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var classDecl = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
         if (classDecl is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -45,6 +39,8 @@ public sealed class SealedByDefaultCodeFixProvider : CodeFixProvider
                 ct => AddSealedModifierAsync(context.Document, classDecl, ct),
                 nameof(SealedByDefaultCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> AddSealedModifierAsync(

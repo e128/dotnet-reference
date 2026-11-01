@@ -196,11 +196,11 @@ public sealed class ManualBitCountAnalyzer : DiagnosticAnalyzer
 
     internal static ITypeSymbol? FindType(
         SemanticModel model,
-        WhileStatementSyntax loop,
+        SyntaxNode scope,
         string name,
         System.Threading.CancellationToken cancellationToken)
     {
-        foreach (var node in loop.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
+        foreach (var node in scope.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
         {
             if (!string.Equals(node.Identifier.ValueText, name, StringComparison.Ordinal))
             {

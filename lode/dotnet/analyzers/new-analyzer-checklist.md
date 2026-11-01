@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-11-01T01:49:31Z*
+*Updated: 2026-11-01T20:55:29Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 
@@ -180,7 +180,9 @@ comparison loses that order.
 
 ## Test Infrastructure Notes
 
-- `CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>` and `CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>` from `Microsoft.CodeAnalysis.CSharp.Testing` are the standard test harness. Most test files build a `test.RunAsync()` call directly, not the static `CSharpAnalyzerVerifier` helper.
+- `CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>` and `CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>` from `Microsoft.CodeAnalysis.CSharp.Testing` are the standard test harness. Most analyzer test files build a `test.RunAsync()` call directly, not the static `CSharpAnalyzerVerifier` helper.
+- Code fix tests route through the shared runner in `tests/E128.Analyzers.Tests/CodeFixTestRunner.cs`. Call `CodeFixTestRunner.RunAsync` for a fix and `NoFixAsync` for a decline. The shared stub types live in `tests/E128.Analyzers.Tests/TestStubs.cs`.
+- New code fix providers inherit `E128CodeFixProviderBase` in `src/E128.Analyzers.CodeFixers`. The base owns the batch fix-all provider and the syntax root fetch. Override the protected `RegisterFixesAsync(context, root)` hook. Override `RegisterCodeFixesAsync` only when the fix never reads the root.
 - Test `ReferenceAssemblies` default to the SDK version configured in `tests/.globalconfig` via `e128_minimum_framework_version`
 - xUnit v3 MTP runner requires `scripts/test.sh`. Raw `dotnet test --filter` does not work
 

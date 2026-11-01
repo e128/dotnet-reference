@@ -10,30 +10,19 @@ namespace E128.Analyzers.Reliability;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AsyncDbIoCodeFixProvider))]
 [Shared]
-public sealed class AsyncDbIoCodeFixProvider : CodeFixProvider
+public sealed class AsyncDbIoCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [AsyncDbIoAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
             || invocation.Expression is not MemberAccessExpressionSyntax
             || !AsyncSiblingCodeFixHelper.HasFixableEnclosingMethod(invocation))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -42,5 +31,7 @@ public sealed class AsyncDbIoCodeFixProvider : CodeFixProvider
                 ct => AsyncSiblingCodeFixHelper.ApplyFixAsync(context.Document, invocation, ct),
                 nameof(AsyncDbIoCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 }

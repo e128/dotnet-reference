@@ -85,7 +85,7 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
 
         var model = context.SemanticModel;
 
-        if (FindType(model, loop, sumName, context.CancellationToken) is not { } sumType
+        if (ManualBitCountAnalyzer.FindType(model, loop, sumName, context.CancellationToken) is not { } sumType
             || sumType.SpecialType is not (SpecialType.System_Single or SpecialType.System_Double)
             || !sumContext.SupportedTypes.Contains(sumType, SymbolEqualityComparer.Default))
         {
@@ -141,24 +141,6 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
                 named.TypeArguments[0],
             _ => null
         };
-    }
-
-    internal static ITypeSymbol? FindType(
-        SemanticModel model,
-        ForEachStatementSyntax loop,
-        string name,
-        System.Threading.CancellationToken cancellationToken)
-    {
-        foreach (var node in loop.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
-        {
-            if (string.Equals(node.Identifier.ValueText, name, StringComparison.Ordinal)
-                && model.GetSymbolInfo(node, cancellationToken).Symbol is ILocalSymbol or IParameterSymbol)
-            {
-                return model.GetTypeInfo(node, cancellationToken).Type;
-            }
-        }
-
-        return null;
     }
 
     private static bool HasSum(INamedTypeSymbol tensors, INamedTypeSymbol spanType)

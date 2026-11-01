@@ -17,29 +17,18 @@ namespace E128.Analyzers.Style;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(PragmaBalanceCodeFixProvider))]
 [Shared]
-public sealed class PragmaBalanceCodeFixProvider : CodeFixProvider
+public sealed class PragmaBalanceCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [PragmaBalanceAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (!diagnostic.Properties.TryGetValue(PragmaBalanceAnalyzer.DiagnosticIdKey, out var suppressedId)
             || suppressedId is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var isAllCodes = string.Equals(suppressedId, PragmaBalanceAnalyzer.AllCodesKey, StringComparison.Ordinal);
@@ -50,6 +39,8 @@ public sealed class PragmaBalanceCodeFixProvider : CodeFixProvider
                 ct => AddRestorePragmaAsync(context.Document, suppressedId, ct),
                 $"{nameof(PragmaBalanceCodeFixProvider)}.{suppressedId}"),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> AddRestorePragmaAsync(

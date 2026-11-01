@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -14,7 +13,7 @@ namespace E128.Analyzers.FileSystem;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FileSystemPathCodeFixProvider))]
 [Shared]
-public sealed class FileSystemPathCodeFixProvider : CodeFixProvider
+public sealed class FileSystemPathCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FileSystemPathAnalyzer.DiagnosticId];
@@ -24,19 +23,13 @@ public sealed class FileSystemPathCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (!diagnostic.Properties.TryGetValue(FileSystemPathAnalyzer.SuggestedTypeKey, out var suggested)
             || suggested is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var node = root.FindNode(diagnostic.Location.SourceSpan);
@@ -47,7 +40,7 @@ public sealed class FileSystemPathCodeFixProvider : CodeFixProvider
         var isAmbiguous = string.Equals(suggested, FileSystemPathAnalyzer.SuggestedAmbiguous, StringComparison.Ordinal);
         if (node is ParameterSyntax && !isAmbiguous)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (isAmbiguous)
@@ -59,6 +52,8 @@ public sealed class FileSystemPathCodeFixProvider : CodeFixProvider
         {
             RegisterFix(context, diagnostic, node, suggested);
         }
+
+        return Task.CompletedTask;
     }
 
     private static void RegisterFix(
@@ -112,30 +107,7 @@ public sealed class FileSystemPathCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        newRoot = AddSystemIoUsingIfMissing(newRoot);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System.IO");
         return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static SyntaxNode AddSystemIoUsingIfMissing(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), "System.IO", StringComparison.Ordinal)))
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.QualifiedName(
-                    SyntaxFactory.IdentifierName("System"),
-                    SyntaxFactory.IdentifierName("IO")))
-            .NormalizeWhitespace()
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        return compilationUnit.AddUsings(usingDirective);
     }
 }

@@ -13,41 +13,30 @@ namespace E128.Analyzers.Security;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(InsecureRandomInCryptoContextCodeFixProvider))]
 [Shared]
-public sealed class InsecureRandomInCryptoContextCodeFixProvider : CodeFixProvider
+public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [InsecureRandomInCryptoContextAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is ObjectCreationExpressionSyntax)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (node is not MemberAccessExpressionSyntax randomSharedAccess)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var match = TryGetFixableInvocation(randomSharedAccess);
         if (match is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var (outerInvocation, methodName) = match.Value;
@@ -59,6 +48,8 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : CodeFixProvid
                     context.Document, outerInvocation, methodName, ct),
                 nameof(InsecureRandomInCryptoContextCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static (InvocationExpressionSyntax Invocation, string MethodName)? TryGetFixableInvocation(

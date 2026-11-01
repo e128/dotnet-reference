@@ -17,7 +17,7 @@ namespace E128.Analyzers.Performance;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(Utf8GetBytesLiteralCodeFixProvider))]
 [Shared]
-public sealed class Utf8GetBytesLiteralCodeFixProvider : CodeFixProvider
+public sealed class Utf8GetBytesLiteralCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [Utf8GetBytesLiteralAnalyzer.DiagnosticId];
@@ -27,14 +27,8 @@ public sealed class Utf8GetBytesLiteralCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 
@@ -42,7 +36,7 @@ public sealed class Utf8GetBytesLiteralCodeFixProvider : CodeFixProvider
             || invocation.ArgumentList.Arguments[0].Expression is not LiteralExpressionSyntax literal
             || !literal.IsKind(SyntaxKind.StringLiteralExpression))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var useToArray = diagnostic.Properties.TryGetValue(Utf8GetBytesLiteralAnalyzer.UseToArrayKey, out var value)
@@ -54,6 +48,8 @@ public sealed class Utf8GetBytesLiteralCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, invocation, literal, useToArray)),
                 nameof(Utf8GetBytesLiteralCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

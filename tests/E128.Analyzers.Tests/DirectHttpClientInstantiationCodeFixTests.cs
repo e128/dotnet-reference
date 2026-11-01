@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -11,16 +10,8 @@ public sealed class DirectHttpClientInstantiationCodeFixTests
     private static readonly ReferenceAssemblies Net100WithHttp = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.Extensions.Http", "10.0.6")]);
 
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = Net100WithHttp,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider>(source, fixedCode, references: Net100WithHttp);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -176,14 +167,6 @@ public sealed class DirectHttpClientInstantiationCodeFixTests
             """);
     }
 
-    private static Task VerifyNoFixAsync(string code)
-    {
-        return new CSharpCodeFixTest<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = code,
-            FixedCode = code,
-            ReferenceAssemblies = Net100WithHttp,
-            NumberOfFixAllIterations = 0
-        }.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string code) =>
+        CodeFixTestRunner.NoFixAsync<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider>(code, references: Net100WithHttp);
 }

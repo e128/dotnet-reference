@@ -10,7 +10,7 @@ namespace E128.Analyzers.Unsafe;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnsafeAddArrayDataReferenceCodeFixProvider))]
 [Shared]
-public sealed class UnsafeAddArrayDataReferenceCodeFixProvider : CodeFixProvider
+public sealed class UnsafeAddArrayDataReferenceCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeAddArrayDataReferenceAnalyzer.DiagnosticId];
@@ -20,26 +20,20 @@ public sealed class UnsafeAddArrayDataReferenceCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not InvocationExpressionSyntax invocation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var access = UnsafeAddArrayDataReferenceAnalyzer.TryGetIndexedAccess(invocation);
         if (access is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -48,6 +42,8 @@ public sealed class UnsafeAddArrayDataReferenceCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, invocation, access.Value)),
                 nameof(UnsafeAddArrayDataReferenceCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

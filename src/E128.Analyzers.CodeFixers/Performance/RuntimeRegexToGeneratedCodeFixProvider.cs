@@ -13,7 +13,7 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(RuntimeRegexToGeneratedCodeFixProvider))]
 [Shared]
-public sealed class RuntimeRegexToGeneratedCodeFixProvider : CodeFixProvider
+public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [RuntimeRegexToGeneratedAnalyzer.DiagnosticId];
@@ -23,14 +23,8 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 

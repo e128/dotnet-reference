@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
@@ -13,7 +12,7 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FileSystemInfoEqualityCodeFixProvider))]
 [Shared]
-public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
+public sealed class FileSystemInfoEqualityCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FileSystemInfoEqualityAnalyzer.DiagnosticId];
@@ -23,14 +22,8 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -107,7 +100,7 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
         replacement = replacement.WithTriviaFrom(binary);
 
         var newRoot = root.ReplaceNode(binary, replacement);
-        newRoot = EnsureSystemUsing(newRoot);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System");
         return Task.FromResult(document.WithSyntaxRoot(newRoot));
     }
 
@@ -142,34 +135,5 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : CodeFixProvider
                         SyntaxFactory.Argument(right),
                         SyntaxFactory.Argument(ordinalArg)
                     ])));
-    }
-
-    private static SyntaxNode EnsureSystemUsing(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        var hasSystem = false;
-        foreach (var directive in compilationUnit.Usings)
-        {
-            if (string.Equals(directive.Name?.ToString(), "System", StringComparison.Ordinal))
-            {
-                hasSystem = true;
-                break;
-            }
-        }
-
-        if (hasSystem)
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.ParseName("System"))
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        return compilationUnit.WithUsings(compilationUnit.Usings.Insert(0, usingDirective));
     }
 }

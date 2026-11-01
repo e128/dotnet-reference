@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-11-01T20:55:33Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -8,7 +8,8 @@ dates quickly. Apply a tip only after a measurement shows a problem.
 ## Scope
 
 The guidance applies to `E128.Reference.Web`, `E128.Reference.Cli`, and
-`E128.Reference.Core`. The `E128.Analyzers` project targets `netstandard2.0`
+`E128.Reference.Core`. The `E128.Analyzers` and
+`E128.Analyzers.CodeFixers` projects target `netstandard2.0`
 for Roslyn. Most runtime tips do not apply there. See
 [project-structure.md](project-structure.md).
 

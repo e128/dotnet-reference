@@ -17,31 +17,20 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ListAsReadOnlyCodeFixProvider))]
 [Shared]
-public sealed class ListAsReadOnlyCodeFixProvider : CodeFixProvider
+public sealed class ListAsReadOnlyCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ListAsReadOnlyAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         // The diagnostic is reported on the expression being returned (e.g. the identifier
         // '_items'), not on the enclosing return statement or arrow clause.
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node is not ExpressionSyntax expression)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -50,6 +39,8 @@ public sealed class ListAsReadOnlyCodeFixProvider : CodeFixProvider
                 ct => AppendAsReadOnlyAsync(context.Document, expression, ct),
                 nameof(ListAsReadOnlyCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> AppendAsReadOnlyAsync(

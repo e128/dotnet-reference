@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.60.3" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.60.4" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -533,7 +533,7 @@ Flags `catch (Exception ex) when (...)` filters that don't exclude `OperationCan
 
 ### E128040 &mdash; Concurrency limit must be positive
 
-Flags `SemaphoreSlim` and `MaxDegreeOfParallelism` initialized with zero or negative values. A zero semaphore deadlocks immediately.
+Flags a negative `SemaphoreSlim` initial count, and a `MaxDegreeOfParallelism` or a `Channel.CreateBounded` capacity of zero or negative. A zero `SemaphoreSlim` initial count is legal and stays silent.
 
 ### E128041 &mdash; JsonDocument.RootElement lifetime
 

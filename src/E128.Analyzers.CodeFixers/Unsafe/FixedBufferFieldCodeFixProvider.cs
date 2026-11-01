@@ -15,21 +15,15 @@ namespace E128.Analyzers.Unsafe;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FixedBufferFieldCodeFixProvider))]
 [Shared]
-public sealed class FixedBufferFieldCodeFixProvider : CodeFixProvider
+public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FixedBufferFieldAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null || model is null)
+        if (model is null)
         {
             return;
         }

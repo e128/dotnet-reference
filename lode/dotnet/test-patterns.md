@@ -1,5 +1,5 @@
 # Test Family Patterns
-*Updated: 2026-10-31T16:06:37Z*
+*Updated: 2026-11-01T20:55:33Z*
 
 Standard test patterns for this codebase. Tests avoid mocking frameworks, collaborators
 are either real lightweight implementations (e.g. `InMemoryGreetingRepository`) or small

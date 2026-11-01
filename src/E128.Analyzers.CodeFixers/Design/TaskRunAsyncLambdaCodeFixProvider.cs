@@ -16,30 +16,19 @@ namespace E128.Analyzers.Design;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TaskRunAsyncLambdaCodeFixProvider))]
 [Shared]
-public sealed class TaskRunAsyncLambdaCodeFixProvider : CodeFixProvider
+public sealed class TaskRunAsyncLambdaCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TaskRunAsyncLambdaAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not InvocationExpressionSyntax invocation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var args = invocation.ArgumentList.Arguments;
@@ -48,7 +37,7 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : CodeFixProvider
         // work would no longer observe cancellation. Leave those calls to the developer.
         if (args.Count != 1)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var lambda = args[0].Expression;
@@ -57,7 +46,7 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : CodeFixProvider
         var innerExpression = GetExpressionBodyFromLambda(lambda);
         if (innerExpression is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -66,6 +55,8 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : CodeFixProvider
                 ct => RemoveTaskRunAsync(context.Document, root, invocation, innerExpression, ct),
                 nameof(TaskRunAsyncLambdaCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static ExpressionSyntax? GetExpressionBodyFromLambda(ExpressionSyntax lambda)

@@ -12,7 +12,7 @@ namespace E128.Analyzers.Style;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(EmptyStringLiteralCodeFixProvider))]
 [Shared]
-public sealed class EmptyStringLiteralCodeFixProvider : CodeFixProvider
+public sealed class EmptyStringLiteralCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [EmptyStringLiteralAnalyzer.DiagnosticId];
@@ -22,20 +22,14 @@ public sealed class EmptyStringLiteralCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not LiteralExpressionSyntax)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -44,6 +38,8 @@ public sealed class EmptyStringLiteralCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, node, ct),
                 nameof(EmptyStringLiteralCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(

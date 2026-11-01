@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -15,35 +14,24 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(LinearLookupInLoopCodeFixProvider))]
 [Shared]
-public sealed class LinearLookupInLoopCodeFixProvider : CodeFixProvider
+public sealed class LinearLookupInLoopCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [LinearLookupInLoopAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not InvocationExpressionSyntax invocation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var methodName = memberAccess.Name.Identifier.ValueText;
@@ -51,7 +39,7 @@ public sealed class LinearLookupInLoopCodeFixProvider : CodeFixProvider
         if (!string.Equals(methodName, "Contains", StringComparison.Ordinal)
             && !string.Equals(methodName, "Any", StringComparison.Ordinal))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -60,6 +48,8 @@ public sealed class LinearLookupInLoopCodeFixProvider : CodeFixProvider
                 ct => ApplyToHashSetFixAsync(context.Document, invocation, memberAccess, ct),
                 nameof(LinearLookupInLoopCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyToHashSetFixAsync(
@@ -173,26 +163,7 @@ public sealed class LinearLookupInLoopCodeFixProvider : CodeFixProvider
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return document;
-        }
 
-        if (compilationUnit.Usings.Any(u =>
-                string.Equals(u.Name?.ToString(), namespaceName, StringComparison.Ordinal)))
-        {
-            return document;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.ParseName(namespaceName))
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        var lastUsing = compilationUnit.Usings.LastOrDefault();
-        var newRoot = lastUsing is not null
-            ? root.InsertNodesAfter(lastUsing, new[] { usingDirective })
-            : compilationUnit.WithUsings(SyntaxFactory.SingletonList(usingDirective));
-
-        return document.WithSyntaxRoot(newRoot);
+        return root is null ? document : document.WithSyntaxRoot(UsingDirectives.AddIfMissing(root, namespaceName));
     }
 }

@@ -16,24 +16,13 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConcurrencyLimitCodeFixProvider))]
 [Shared]
-public sealed class ConcurrencyLimitCodeFixProvider : CodeFixProvider
+public sealed class ConcurrencyLimitCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConcurrencyLimitAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -42,7 +31,7 @@ public sealed class ConcurrencyLimitCodeFixProvider : CodeFixProvider
         var zeroLiteral = FindZeroLiteral(node);
         if (zeroLiteral is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -51,6 +40,8 @@ public sealed class ConcurrencyLimitCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, zeroLiteral, ct),
                 nameof(ConcurrencyLimitCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static LiteralExpressionSyntax? FindZeroLiteral(SyntaxNode node)

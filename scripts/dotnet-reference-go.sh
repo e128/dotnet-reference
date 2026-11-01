@@ -4,8 +4,10 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/lode-lib.sh"
 
-readonly GO_BASE_URL="https://opencode.ai/inference/go/anthropic"
-readonly DEFAULT_MODEL="deepseek-v4.1-flash"
+# The endpoint and the fallback model are overridable, so no value lives in
+# source without an escape hatch.
+readonly GO_BASE_URL="${OPENCODE_GO_BASE_URL:-https://opencode.ai/inference/go/anthropic}"
+readonly DEFAULT_MODEL="${OPENCODE_GO_MODEL:-glm-5.3-flash}"
 readonly DEFAULT_KEYCHAIN_SERVICE="OPENCODE_API_KEY"
 
 # Print the oc_sk_ key from the Keychain. Override the service name with

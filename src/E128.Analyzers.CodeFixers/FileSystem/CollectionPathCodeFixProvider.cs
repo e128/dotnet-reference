@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -18,29 +16,18 @@ namespace E128.Analyzers.FileSystem;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(CollectionPathCodeFixProvider))]
 [Shared]
-public sealed class CollectionPathCodeFixProvider : CodeFixProvider
+public sealed class CollectionPathCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [CollectionPathAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (!diagnostic.Properties.TryGetValue(CollectionPathAnalyzer.SuggestedTypeKey, out var suggestedType)
             || suggestedType is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -49,6 +36,8 @@ public sealed class CollectionPathCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct),
                 nameof(CollectionPathCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> ApplyFixAsync(
@@ -68,7 +57,7 @@ public sealed class CollectionPathCodeFixProvider : CodeFixProvider
         }
 
         var newRoot = ReplaceStringTypeArgument(root, parameter.Type, suggestedType);
-        newRoot = EnsureUsingDirective(newRoot);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System.IO");
         return Task.FromResult(document.WithSyntaxRoot(newRoot));
     }
 
@@ -98,31 +87,6 @@ public sealed class CollectionPathCodeFixProvider : CodeFixProvider
         var newGenericName = genericName.WithTypeArgumentList(newTypeArgList);
 
         return root.ReplaceNode(genericName, newGenericName);
-    }
-
-    private static SyntaxNode EnsureUsingDirective(SyntaxNode root)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        var hasSystemIo = compilationUnit.Usings.Any(u =>
-            string.Equals(u.Name?.ToString(), "System.IO", StringComparison.Ordinal));
-
-        if (hasSystemIo)
-        {
-            return root;
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.QualifiedName(
-                    SyntaxFactory.IdentifierName("System"),
-                    SyntaxFactory.IdentifierName("IO")))
-            .NormalizeWhitespace()
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        return compilationUnit.AddUsings(usingDirective);
     }
 
     private static T? FindAncestor<T>(SyntaxToken token)

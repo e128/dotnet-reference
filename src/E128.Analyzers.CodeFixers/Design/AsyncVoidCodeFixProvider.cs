@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -14,7 +13,7 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AsyncVoidCodeFixProvider))]
 [Shared]
-public sealed class AsyncVoidCodeFixProvider : CodeFixProvider
+public sealed class AsyncVoidCodeFixProvider : E128CodeFixProviderBase
 {
     private const string TaskTypeName = "Task";
     private const string TaskNamespace = "System.Threading.Tasks";
@@ -22,33 +21,22 @@ public sealed class AsyncVoidCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [AsyncVoidAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
         if (method is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // An override or an explicit interface implementation inherits its void return type from the
         // base member or the interface. Rewriting only this declaration gives CS0508 or CS0738.
         if (method.Modifiers.Any(SyntaxKind.OverrideKeyword) || method.ExplicitInterfaceSpecifier is not null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -57,6 +45,8 @@ public sealed class AsyncVoidCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, method, ct),
                 nameof(AsyncVoidCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(
@@ -76,36 +66,8 @@ public sealed class AsyncVoidCodeFixProvider : CodeFixProvider
         var newMethod = method.WithReturnType(taskType);
         var newRoot = root.ReplaceNode(method, newMethod);
 
-        newRoot = EnsureUsingDirective(newRoot, TaskNamespace);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, TaskNamespace);
 
         return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static SyntaxNode EnsureUsingDirective(SyntaxNode root, string namespaceName)
-    {
-        if (root is not CompilationUnitSyntax compilationUnit)
-        {
-            return root;
-        }
-
-        var parts = namespaceName.Split('.');
-        var alreadyHasUsing = compilationUnit.Usings.Any(u =>
-            u.Name is not null && string.Equals(u.Name.ToString(), namespaceName, StringComparison.Ordinal));
-
-        if (alreadyHasUsing)
-        {
-            return root;
-        }
-
-        NameSyntax name = SyntaxFactory.IdentifierName(parts[0]);
-        for (var i = 1; i < parts.Length; i++)
-        {
-            name = SyntaxFactory.QualifiedName(name, SyntaxFactory.IdentifierName(parts[i]));
-        }
-
-        var usingDirective = SyntaxFactory.UsingDirective(name)
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
-
-        return compilationUnit.AddUsings(usingDirective);
     }
 }

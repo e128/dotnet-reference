@@ -14,7 +14,7 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DirectHttpClientInstantiationCodeFixProvider))]
 [Shared]
-public sealed class DirectHttpClientInstantiationCodeFixProvider : CodeFixProvider
+public sealed class DirectHttpClientInstantiationCodeFixProvider : E128CodeFixProviderBase
 {
     private const string FactoryInterfaceName = "IHttpClientFactory";
     private const string DefaultFieldName = "_httpClientFactory";
@@ -22,39 +22,29 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : CodeFixProvid
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DirectHttpClientInstantiationAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not ObjectCreationExpressionSyntax creation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // The replacement is a factory call, so an initializer such as BaseAddress or Timeout would
         // be dropped without a word. Leave those for the developer.
         if (creation.Initializer is not null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // The fix adds an instance field and a constructor parameter. A static context cannot hold
         // an instance field, and a struct or record cannot take the generated constructor here.
-        if (creation.FirstAncestorOrSelf<ClassDeclarationSyntax>() is null || IsInStaticContext(creation))
+        if (creation.FirstAncestorOrSelf<ClassDeclarationSyntax>() is null
+            || FixSyntax.IsInStaticMember(creation))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -63,6 +53,8 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : CodeFixProvid
                 ct => ApplyFixAsync(context.Document, node, ct),
                 nameof(DirectHttpClientInstantiationCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(
@@ -117,31 +109,6 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : CodeFixProvid
         newRoot = newRoot.ReplaceNode(newClassDecl, updatedClass);
 
         return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static bool IsInStaticContext(SyntaxNode node)
-    {
-        foreach (var ancestor in node.Ancestors())
-        {
-            if (IsStaticMember(ancestor))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsStaticMember(SyntaxNode node)
-    {
-        return node switch
-        {
-            BaseTypeDeclarationSyntax type => type.Modifiers.Any(SyntaxKind.StaticKeyword),
-            BaseMethodDeclarationSyntax method => method.Modifiers.Any(SyntaxKind.StaticKeyword),
-            BasePropertyDeclarationSyntax property => property.Modifiers.Any(SyntaxKind.StaticKeyword),
-            BaseFieldDeclarationSyntax field => field.Modifiers.Any(SyntaxKind.StaticKeyword),
-            _ => false
-        };
     }
 
     private static string? FindExistingFactoryField(ClassDeclarationSyntax classDecl)

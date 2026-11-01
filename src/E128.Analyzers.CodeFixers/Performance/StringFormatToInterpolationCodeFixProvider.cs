@@ -15,7 +15,7 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StringFormatToInterpolationCodeFixProvider))]
 [Shared]
-public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
+public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StringFormatToInterpolationAnalyzer.DiagnosticId];
@@ -25,14 +25,8 @@ public sealed class StringFormatToInterpolationCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 

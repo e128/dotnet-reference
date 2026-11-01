@@ -19,24 +19,13 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DisposableSingletonFactoryCodeFixProvider))]
 [Shared]
-public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
+public sealed class DisposableSingletonFactoryCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DisposableSingletonFactoryAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -60,7 +49,7 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
 
         // The two-type-argument overload asks the container to construct the type itself. A factory
         // that passes any argument builds something the container cannot reproduce.
-        if (!IsParameterlessCreation(invocation.ArgumentList.Arguments[0].Expression))
+        if (!FixSyntax.IsParameterlessCreation(invocation.ArgumentList.Arguments[0].Expression))
         {
             return;
         }
@@ -80,19 +69,6 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : CodeFixProvider
                     $"E128031_{iface.ToDisplayString()}"),
                 diagnostic);
         }
-    }
-
-    private static bool IsParameterlessCreation(ExpressionSyntax argument)
-    {
-        var body = argument switch
-        {
-            SimpleLambdaExpressionSyntax simple => simple.Body as ExpressionSyntax,
-            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.Body as ExpressionSyntax,
-            _ => null
-        };
-
-        return body is ObjectCreationExpressionSyntax creation
-               && (creation.ArgumentList?.Arguments.Count ?? 0) == 0;
     }
 
     private static ITypeSymbol? ResolveReturnType(

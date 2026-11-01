@@ -12,7 +12,7 @@ namespace E128.Analyzers.Unsafe;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnsafeBooleanConversionsCodeFixProvider))]
 [Shared]
-public sealed class UnsafeBooleanConversionsCodeFixProvider : CodeFixProvider
+public sealed class UnsafeBooleanConversionsCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeBooleanConversionsAnalyzer.DiagnosticId];
@@ -22,14 +22,8 @@ public sealed class UnsafeBooleanConversionsCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -40,7 +34,7 @@ public sealed class UnsafeBooleanConversionsCodeFixProvider : CodeFixProvider
             || invocation.ArgumentList.Arguments.Count != 1
             || generic.TypeArgumentList.Arguments.Count != 2)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var source = generic.TypeArgumentList.Arguments[0];
@@ -51,7 +45,7 @@ public sealed class UnsafeBooleanConversionsCodeFixProvider : CodeFixProvider
             invocation.ArgumentList.Arguments[0].Expression);
         if (text is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -60,6 +54,8 @@ public sealed class UnsafeBooleanConversionsCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, invocation, text)),
                 nameof(UnsafeBooleanConversionsCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static string? BuildReplacement(string source, string target, ExpressionSyntax value)

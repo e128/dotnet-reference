@@ -1,30 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class TextContentGuardCodeFixTests
 {
-    private const string AngleSharpStubs = """
-                                           namespace AngleSharp.Dom
-                                           {
-                                               public interface INode { string TextContent { get; } }
-                                               public interface IElement : INode { bool IsVisible { get; } }
-                                           }
-                                           """;
-
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<TextContentGuardAnalyzer, TextContentGuardCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<TextContentGuardAnalyzer, TextContentGuardCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -32,7 +15,7 @@ public sealed class TextContentGuardCodeFixTests
     {
         return VerifyFixAsync(
             $$"""
-              {{AngleSharpStubs}}
+              {{TestStubs.AngleSharpDom}}
               class C
               {
                   bool M(AngleSharp.Dom.IElement e)
@@ -42,7 +25,7 @@ public sealed class TextContentGuardCodeFixTests
               }
               """,
             $$"""
-              {{AngleSharpStubs}}
+              {{TestStubs.AngleSharpDom}}
               class C
               {
                   bool M(AngleSharp.Dom.IElement e)
@@ -59,7 +42,7 @@ public sealed class TextContentGuardCodeFixTests
     {
         return VerifyFixAsync(
             $$"""
-              {{AngleSharpStubs}}
+              {{TestStubs.AngleSharpDom}}
               class C
               {
                   bool M(AngleSharp.Dom.IElement e)
@@ -69,7 +52,7 @@ public sealed class TextContentGuardCodeFixTests
               }
               """,
             $$"""
-              {{AngleSharpStubs}}
+              {{TestStubs.AngleSharpDom}}
               class C
               {
                   bool M(AngleSharp.Dom.IElement e)
@@ -86,7 +69,7 @@ public sealed class TextContentGuardCodeFixTests
     {
         return VerifyFixAsync(
             $$"""
-              {{AngleSharpStubs}}
+              {{TestStubs.AngleSharpDom}}
               class C
               {
                   void M(AngleSharp.Dom.IElement e)
@@ -99,7 +82,7 @@ public sealed class TextContentGuardCodeFixTests
               }
               """,
             $$"""
-              {{AngleSharpStubs}}
+              {{TestStubs.AngleSharpDom}}
               class C
               {
                   void M(AngleSharp.Dom.IElement e)

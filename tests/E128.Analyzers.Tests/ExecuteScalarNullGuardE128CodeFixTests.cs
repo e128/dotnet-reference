@@ -1,22 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ExecuteScalarNullGuardE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<ExecuteScalarNullGuardAnalyzer, ExecuteScalarNullGuardCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<ExecuteScalarNullGuardAnalyzer, ExecuteScalarNullGuardCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -151,14 +142,6 @@ public sealed class ExecuteScalarNullGuardE128CodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code)
-    {
-        return new CSharpCodeFixTest<ExecuteScalarNullGuardAnalyzer, ExecuteScalarNullGuardCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = code,
-            FixedCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 0
-        }.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string code) =>
+        CodeFixTestRunner.NoFixAsync<ExecuteScalarNullGuardAnalyzer, ExecuteScalarNullGuardCodeFixProvider>(code);
 }

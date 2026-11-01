@@ -18,7 +18,7 @@ namespace E128.Analyzers.Maintainability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(SwitchEnumExhaustivenessCodeFixProvider))]
 [Shared]
-public sealed class SwitchEnumExhaustivenessCodeFixProvider : CodeFixProvider
+public sealed class SwitchEnumExhaustivenessCodeFixProvider : E128CodeFixProviderBase
 {
     private const string DefaultSectionTemplate = """
                                                   switch (0)
@@ -38,19 +38,8 @@ public sealed class SwitchEnumExhaustivenessCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SwitchEnumExhaustivenessAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         var target = node.FirstAncestorOrSelf<SyntaxNode>(
@@ -65,8 +54,7 @@ public sealed class SwitchEnumExhaustivenessCodeFixProvider : CodeFixProvider
                         ct => AddDefaultSectionAsync(context.Document, switchStatement, ct),
                         nameof(SwitchEnumExhaustivenessCodeFixProvider)),
                     diagnostic);
-                return;
-
+                return Task.CompletedTask;
             case SwitchExpressionSyntax switchExpression:
                 context.RegisterCodeFix(
                     CodeAction.Create(
@@ -74,10 +62,9 @@ public sealed class SwitchEnumExhaustivenessCodeFixProvider : CodeFixProvider
                         ct => AddDiscardArmAsync(context.Document, switchExpression, ct),
                         nameof(SwitchEnumExhaustivenessCodeFixProvider)),
                     diagnostic);
-                return;
-
+                return Task.CompletedTask;
             default:
-                return;
+                return Task.CompletedTask;
         }
     }
 

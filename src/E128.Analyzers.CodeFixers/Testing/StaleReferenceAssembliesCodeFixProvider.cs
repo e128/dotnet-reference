@@ -16,29 +16,18 @@ namespace E128.Analyzers.Testing;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StaleReferenceAssembliesCodeFixProvider))]
 [Shared]
-public sealed class StaleReferenceAssembliesCodeFixProvider : CodeFixProvider
+public sealed class StaleReferenceAssembliesCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StaleReferenceAssembliesAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node is not MemberAccessExpressionSyntax memberAccess)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // Get the target version from the diagnostic arguments
@@ -52,6 +41,8 @@ public sealed class StaleReferenceAssembliesCodeFixProvider : CodeFixProvider
                 ct => ReplaceVersionAsync(context.Document, root, memberAccess, newName, ct),
                 StaleReferenceAssembliesAnalyzer.DiagnosticId),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> ReplaceVersionAsync(

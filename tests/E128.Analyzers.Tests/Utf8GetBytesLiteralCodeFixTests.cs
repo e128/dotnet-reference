@@ -1,25 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class Utf8GetBytesLiteralCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<
-            Utf8GetBytesLiteralAnalyzer,
-            Utf8GetBytesLiteralCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<Utf8GetBytesLiteralAnalyzer, Utf8GetBytesLiteralCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]

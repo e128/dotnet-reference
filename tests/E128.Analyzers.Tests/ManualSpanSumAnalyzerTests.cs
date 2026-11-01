@@ -8,29 +8,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ManualSpanSumAnalyzerTests
 {
-    private const string TensorStub = """
-                                      namespace System.Numerics.Tensors
-                                      {
-                                          public static class TensorPrimitives
-                                          {
-                                              public static float Sum(ReadOnlySpan<float> values)
-                                              {
-                                                  return 0f;
-                                              }
-
-                                              public static double Sum(ReadOnlySpan<double> values)
-                                              {
-                                                  return 0d;
-                                              }
-                                          }
-                                      }
-                                      """;
-
     private static Task VerifyAsync(string code)
     {
         return new CSharpAnalyzerTest<ManualSpanSumAnalyzer, DefaultVerifier>
         {
-            TestCode = "using System;\n\n" + TensorStub + "\n\n" + code,
+            TestCode = "using System;\n\n" + TestStubs.TensorPrimitives + "\n\n" + code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         }.RunAsync();
     }

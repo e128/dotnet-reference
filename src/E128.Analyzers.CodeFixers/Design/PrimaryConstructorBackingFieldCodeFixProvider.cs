@@ -16,7 +16,7 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(PrimaryConstructorBackingFieldCodeFixProvider))]
 [Shared]
-public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvider
+public sealed class PrimaryConstructorBackingFieldCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [PrimaryConstructorBackingFieldAnalyzer.DiagnosticId];
@@ -26,20 +26,14 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindToken(diagnostic.Location.SourceSpan.Start).Parent;
 
         if (node is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -48,6 +42,8 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : CodeFixProvi
                 ct => ApplyFixAsync(context.Document, diagnostic, ct),
                 nameof(PrimaryConstructorBackingFieldCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(

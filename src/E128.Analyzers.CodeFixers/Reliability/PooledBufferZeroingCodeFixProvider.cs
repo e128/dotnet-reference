@@ -18,29 +18,18 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(PooledBufferZeroingCodeFixProvider))]
 [Shared]
-public sealed class PooledBufferZeroingCodeFixProvider : CodeFixProvider
+public sealed class PooledBufferZeroingCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [PooledBufferZeroingAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
             || invocation.ArgumentList.Arguments.Count == 0)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // The zeroing call clears the buffer on every exit path only when it shares the finally
@@ -51,7 +40,7 @@ public sealed class PooledBufferZeroingCodeFixProvider : CodeFixProvider
             || returnStatement.Parent is not BlockSyntax block
             || block.Parent is not FinallyClauseSyntax)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var bufferText = invocation.ArgumentList.Arguments[0].Expression.ToString();
@@ -62,6 +51,8 @@ public sealed class PooledBufferZeroingCodeFixProvider : CodeFixProvider
                 ct => ZeroBufferAsync(context.Document, returnStatement, bufferText, ct),
                 nameof(PooledBufferZeroingCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ZeroBufferAsync(

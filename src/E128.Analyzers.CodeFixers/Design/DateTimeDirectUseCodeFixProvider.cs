@@ -13,36 +13,25 @@ namespace E128.Analyzers.Design;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DateTimeDirectUseCodeFixProvider))]
 [Shared]
-public sealed class DateTimeDirectUseCodeFixProvider : CodeFixProvider
+public sealed class DateTimeDirectUseCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DateTimeDirectUseAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not MemberAccessExpressionSyntax memberAccess)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var replacement = GetReplacement(memberAccess);
         if (replacement is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -51,6 +40,8 @@ public sealed class DateTimeDirectUseCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, memberAccess, replacement, ct),
                 nameof(DateTimeDirectUseCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static ExpressionSyntax? GetReplacement(MemberAccessExpressionSyntax memberAccess)

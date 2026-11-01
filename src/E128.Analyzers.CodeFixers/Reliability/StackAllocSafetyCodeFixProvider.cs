@@ -13,7 +13,7 @@ namespace E128.Analyzers.Reliability;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(StackAllocSafetyCodeFixProvider))]
 [Shared]
-public sealed class StackAllocSafetyCodeFixProvider : CodeFixProvider
+public sealed class StackAllocSafetyCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StackAllocSafetyAnalyzer.DiagnosticId];
@@ -23,14 +23,8 @@ public sealed class StackAllocSafetyCodeFixProvider : CodeFixProvider
         return WellKnownFixAllProviders.BatchFixer;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
@@ -39,12 +33,12 @@ public sealed class StackAllocSafetyCodeFixProvider : CodeFixProvider
             || variable.Parent is not VariableDeclarationSyntax { Type: PointerTypeSyntax pointerType, Variables.Count: 1 }
             || IsInsideLoop(stackAlloc))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (!IsIndexOnly(variable.Identifier.ValueText, stackAlloc))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -53,6 +47,8 @@ public sealed class StackAllocSafetyCodeFixProvider : CodeFixProvider
                 _ => Task.FromResult(ApplyFix(context.Document, root, pointerType)),
                 nameof(StackAllocSafetyCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

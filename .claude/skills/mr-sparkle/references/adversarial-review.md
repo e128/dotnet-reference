@@ -13,7 +13,8 @@ The caller gives you a base branch, a head branch, a changed file list, and a de
 1. Read the diff. Never run raw `git diff`. Read the delivered path, or call `scripts/diff.sh`.
 2. Read `plans/` for a plan that covers this branch. When one exists, use its verifiable behaviors.
 3. When no plan exists, use the commit messages and the PR body as the intent.
-4. State four facts before the attack: the file count, the insertions and deletions, the commit count, and whether a plan was found.
+4. Read the plan task files. When a plan marks an issue as Deferred, do not report it again. Skip it and note the skip in one line.
+5. State four facts before the attack: the file count, the insertions and deletions, the commit count, and whether a plan was found.
 
 ## Phase 1: Attackers
 

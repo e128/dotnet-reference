@@ -12,24 +12,13 @@ namespace E128.Analyzers.Style;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(GuidNewGuidTempPathCodeFixProvider))]
 [Shared]
-public sealed class GuidNewGuidTempPathCodeFixProvider : CodeFixProvider
+public sealed class GuidNewGuidTempPathCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GuidNewGuidTempPathE128Analyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         foreach (var diagnostic in context.Diagnostics)
         {
             var node = root.FindNode(diagnostic.Location.SourceSpan);
@@ -45,6 +34,8 @@ public sealed class GuidNewGuidTempPathCodeFixProvider : CodeFixProvider
                     "ReplaceWithGetRandomFileName"),
                 diagnostic);
         }
+
+        return Task.CompletedTask;
     }
 
     private static Task<Document> ReplaceWithGetRandomFileNameAsync(

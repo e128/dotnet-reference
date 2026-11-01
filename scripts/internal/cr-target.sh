@@ -117,8 +117,8 @@ for word in "${WORDS[@]+"${WORDS[@]}"}"; do
     esac
 done
 
-# "critical only" is a phrase, but a branch can carry either word. Drop the pair
-# only when another word remains to use as the target.
+# A standalone flag word filters out at the word level. Dropping it when one
+# other word remains keeps a usable target for the match that follows.
 ARGS=()
 if (( ${#TARGET_WORDS[@]} > 1 )); then
     for word in "${TARGET_WORDS[@]}"; do
@@ -154,7 +154,17 @@ if [[ "$(git rev-parse --is-shallow-repository 2>/dev/null)" == "true" ]]; then
 fi
 
 # Report a path relative to the repo root, so every mode names files the same way.
-rel() { sed "s|^$ROOT/||"; }
+# Parameter expansion is literal, so a metacharacter in the checkout path stays safe.
+rel() {
+    local line
+    while IFS= read -r line; do
+        if [[ "$line" == "$ROOT"/* ]]; then
+            printf '%s\n' "${line#"$ROOT"/}"
+        else
+            printf '%s\n' "$line"
+        fi
+    done
+}
 
 # Default branch: origin/HEAD first, then the usual names, local before remote.
 # A stripped origin/HEAD name is kept only when the bare ref resolves.
@@ -247,7 +257,10 @@ if [[ -z "$first" ]]; then
         BASE="HEAD~1"
         TARGET="last commit ($BASE)"
         DIFF_COMMAND="git diff $BASE"
-        FILES="$(git diff --name-only "$BASE" 2>/dev/null | sort -u)"
+        if ! FILES="$(git diff --name-only "$BASE" | sort -u)"; then
+            err "git diff failed for the last-commit fallback."
+            exit 1
+        fi
     fi
 elif [[ "$first" =~ ^[0-9]+$ ]]; then
     KIND="pr"
@@ -266,6 +279,11 @@ elif [[ "$first" =~ ^days$ && "${ARGS[1]:-}" =~ ^[1-9][0-9]*$ ]]; then
         err "scripts/diff.sh failed for --days $DAYS."
         exit 1
     fi
+    if ! UNTRACKED_RANGE="$(git ls-files --others --exclude-standard)"; then
+        err "git ls-files failed for the days range."
+        exit 1
+    fi
+    FILES="$(printf '%s\n%s\n' "$FILES" "$UNTRACKED_RANGE" | sed '/^$/d' | sort -u)"
 elif [[ "$first" =~ ^commits$ && "${ARGS[1]:-}" =~ ^[1-9][0-9]*$ ]]; then
     KIND="commits"
     COMMITS="${ARGS[1]}"
@@ -277,6 +295,11 @@ elif [[ "$first" =~ ^commits$ && "${ARGS[1]:-}" =~ ^[1-9][0-9]*$ ]]; then
         err "scripts/diff.sh failed for --commits $COMMITS."
         exit 1
     fi
+    if ! UNTRACKED_RANGE="$(git ls-files --others --exclude-standard)"; then
+        err "git ls-files failed for the commits range."
+        exit 1
+    fi
+    FILES="$(printf '%s\n%s\n' "$FILES" "$UNTRACKED_RANGE" | sed '/^$/d' | sort -u)"
 elif [[ "$first" == "days" || "$first" == "commits" ]]; then
     err "$first needs a positive integer, for example: $first 5"
     exit 1
@@ -320,6 +343,19 @@ else
     FILES="$(printf '%s\n' "$FILES" | sed '/^$/d' | sort -u)"
 fi
 
+# The emitted diff has to carry the content of every listed file. git diff shows
+# no content for an untracked file, so each listed untracked file gets a
+# --no-index diff appended to the command the consumer runs.
+if [[ -n "$FILES" ]]; then
+    UNTRACKED="$(comm -13 <(git ls-files 2>/dev/null | sort -u) <(printf '%s\n' "$FILES" | sort -u))"
+    while IFS= read -r uf; do
+        [[ -n "$uf" ]] || continue
+        DIFF_COMMAND+="; git diff --no-index -- /dev/null $(printf '%q' "$uf")"
+    done <<<"$UNTRACKED"
+else
+    UNTRACKED=""
+fi
+
 # ── Reviewer routing ─────────────────────────────
 AGENTS=(security-reviewer code-reviewer adversarial-review)
 SKILLS=(code-review ponytail:ponytail-review)
@@ -342,6 +378,7 @@ EMPTY=false
 
 if $JSON; then
     FILES_JSON="$(printf '%s\n' "$FILES" | jq -R -s 'split("\n") | map(select(length > 0))')"
+    UNTRACKED_JSON="$(printf '%s\n' "$UNTRACKED" | jq -R -s 'split("\n") | map(select(length > 0))')"
     AGENTS_JSON="$(printf '%s\n' "${AGENTS[@]}" | jq -R -s 'split("\n") | map(select(length > 0))')"
     SKILLS_JSON="$(printf '%s\n' "${SKILLS[@]}" | jq -R -s 'split("\n") | map(select(length > 0))')"
     jq -n \
@@ -349,6 +386,7 @@ if $JSON; then
         --arg target "$TARGET" \
         --arg base "$BASE" \
         --argjson files "$FILES_JSON" \
+        --argjson untracked "$UNTRACKED_JSON" \
         --argjson file_count "$FILE_COUNT" \
         --argjson empty "$EMPTY" \
         --argjson agents "$AGENTS_JSON" \
@@ -361,7 +399,7 @@ if $JSON; then
         --argjson no_plan "$NO_PLAN" \
         --argjson critical_only "$CRITICAL_ONLY" \
         --arg diff_command "$DIFF_COMMAND" \
-        '{kind: $kind, target: $target, base: $base, files: $files,
+        '{kind: $kind, target: $target, base: $base, files: $files, untracked: $untracked,
           file_count: $file_count, empty: $empty, agents: $agents, skills: $skills,
           dotnet: $dotnet, ui: $ui, shallow: $shallow, perf: $perf,
           test_quality: $test_quality, no_plan: $no_plan,

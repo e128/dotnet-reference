@@ -14,29 +14,18 @@ namespace E128.Analyzers.Reliability;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UntimedProcessExitCodeFixProvider))]
 [Shared]
-public sealed class UntimedProcessExitCodeFixProvider : CodeFixProvider
+public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UntimedProcessExitAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
             || invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (string.Equals(memberAccess.Name.Identifier.ValueText, "WaitForExit", StringComparison.Ordinal))
@@ -47,6 +36,8 @@ public sealed class UntimedProcessExitCodeFixProvider : CodeFixProvider
         {
             RegisterAsyncFix(context, diagnostic, memberAccess, invocation);
         }
+
+        return Task.CompletedTask;
     }
 
     // Only the no-argument form is fixable here: it is always an ExpressionStatement (WaitForExit()

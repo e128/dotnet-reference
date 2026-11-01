@@ -13,25 +13,14 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ListGetRangeCodeFixProvider))]
 [Shared]
-public sealed class ListGetRangeCodeFixProvider : CodeFixProvider
+public sealed class ListGetRangeCodeFixProvider : E128CodeFixProviderBase
 {
     private const string InteropNamespace = "System.Runtime.InteropServices";
 
     public override ImmutableArray<string> FixableDiagnosticIds => [ListGetRangeAnalyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider()
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var invocation = root.FindNode(context.Diagnostics[0].Location.SourceSpan)
             .AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
@@ -39,7 +28,7 @@ public sealed class ListGetRangeCodeFixProvider : CodeFixProvider
 
         if (invocation is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -48,6 +37,8 @@ public sealed class ListGetRangeCodeFixProvider : CodeFixProvider
                 ct => ApplyFixAsync(context.Document, invocation, ct),
                 ListGetRangeAnalyzer.DiagnosticId),
             context.Diagnostics[0]);
+
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(

@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace E128.Analyzers.Style;
@@ -47,9 +48,12 @@ public sealed class NonXmlDocCommentE128Analyzer : DiagnosticAnalyzer
     {
         var leadingTrivia = context.Node.GetLeadingTrivia();
 
-        // A comment that follows #pragma warning disable justifies the suppression. The fix removes
-        // the comment, which would drop that reason and trip IDE0079.
-        if (leadingTrivia.Any(trivia => trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia)))
+        // A comment covered by an open #pragma warning disable justifies the suppression. The
+        // fix removes the comment, which would drop that reason and trip IDE0079. Only a
+        // disable counts: a restore that ends an earlier pragma block lands in the next
+        // member's leading trivia and must not suppress this rule.
+        if (leadingTrivia.Any(trivia => trivia.GetStructure() is PragmaWarningDirectiveTriviaSyntax pragma
+            && pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword)))
         {
             return;
         }

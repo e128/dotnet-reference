@@ -1,23 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SyncOverAsyncCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<SyncOverAsyncAnalyzer, SyncOverAsyncCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<SyncOverAsyncAnalyzer, SyncOverAsyncCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -179,14 +169,6 @@ public sealed class SyncOverAsyncCodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code)
-    {
-        return new CSharpCodeFixTest<SyncOverAsyncAnalyzer, SyncOverAsyncCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = code,
-            FixedCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 0
-        }.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string code) =>
+        CodeFixTestRunner.NoFixAsync<SyncOverAsyncAnalyzer, SyncOverAsyncCodeFixProvider>(code);
 }

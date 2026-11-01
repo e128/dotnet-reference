@@ -14,7 +14,7 @@ namespace E128.Analyzers.Performance;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(IndexOfAnyToSearchValuesCodeFixProvider))]
 [Shared]
-public sealed class IndexOfAnyToSearchValuesCodeFixProvider : CodeFixProvider
+public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [IndexOfAnyToSearchValuesAnalyzer.DiagnosticId];
@@ -24,48 +24,42 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : CodeFixProvider
         return null;
     }
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return;
-        }
-
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not InvocationExpressionSyntax invocation)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var receiver = memberAccess.Expression;
         if (receiver is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         if (!TryExtractCharLiterals(invocation.ArgumentList.Arguments, out var chars))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var typeDecl = invocation.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
         if (typeDecl is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var fieldName = BuildFieldName(receiver.ToString());
         if (HasConflictingMember(typeDecl, fieldName))
         {
-            return;
+            return Task.CompletedTask;
         }
 
         context.RegisterCodeFix(
@@ -76,6 +70,8 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : CodeFixProvider
                     memberAccess.Name.Identifier.ValueText, fieldName, chars)),
                 nameof(IndexOfAnyToSearchValuesCodeFixProvider)),
             diagnostic);
+
+        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(
@@ -188,15 +184,8 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : CodeFixProvider
 
         var firstMember = typeDecl.Members[0];
         var firstMemberLeadingTrivia = firstMember.GetLeadingTrivia();
-        var indentStr = firstMemberLeadingTrivia
-            .FirstOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia))
-            .ToFullString();
-        if (indentStr.Length == 0)
-        {
-            indentStr = "    ";
-        }
-
-        var fieldWithIndent = fieldDecl.WithLeadingTrivia(SyntaxFactory.Whitespace(indentStr));
+        var fieldWithIndent = fieldDecl
+            .WithLeadingTrivia(SyntaxFactory.Whitespace(FixSyntax.MemberIndentation(firstMember)));
 
         // Give the existing first member a blank line before it, and keep its own leading trivia so
         // a doc comment stays with the member.
