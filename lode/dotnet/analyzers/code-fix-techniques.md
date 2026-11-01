@@ -1,5 +1,5 @@
 # Code Fix Techniques
-*Updated: 2026-11-01T01:49:31Z*
+*Updated: 2026-11-01T13:40:12Z*
 
 Techniques that prove a fix writes correct code. The shape rules live in
 [Code Fix Output](code-fix-output.md). The decision list lives in
@@ -73,7 +73,13 @@ compilation.
 
 `SyntaxGenerator` writes a type, member, attribute, or argument through the
 Roslyn formatting model. `TypeExpression(symbol, addImport: true)` attaches the
-import annotation, so the code action adds and sorts the using.
+import annotation, so a host that runs the code-action post-processing adds and
+sorts the using.
+
+The generator picks the shortest name that binds in the current compilation. A
+file without the import yields a fully qualified name. The code fix test harness
+does not run the post-processing. A qualified name compiles without a using, so
+the fix needs no explicit import call.
 
 Use the generator for a new member or a new type name. Keep hand-built syntax for
 a local rewrite inside an expression, where the generator adds noise.

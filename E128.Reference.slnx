@@ -15,6 +15,7 @@
         <Project Path="src/E128.Reference.Core/E128.Reference.Core.csproj" />
         <Project Path="src/E128.Reference.Web/E128.Reference.Web.csproj" />
         <Project Path="src/E128.Analyzers/E128.Analyzers.csproj" />
+        <Project Path="src/E128.Analyzers.CodeFixers/E128.Analyzers.CodeFixers.csproj" />
         <Project Path="src/E128.Reference.Cli/E128.Reference.Cli.csproj" />
     </Folder>
     <Folder Name="/tests/">

@@ -14,10 +14,12 @@ The package holds Roslyn analyzers and code fixes. The rules enforce opinionated
 dotnet add package E128.Analyzers
 ```
 
-- Source: [`src/E128.Analyzers/`](src/E128.Analyzers/). The [README](src/E128.Analyzers/README.md) lists every rule.
+- Analyzers: [`src/E128.Analyzers/`](src/E128.Analyzers/). The [README](src/E128.Analyzers/README.md) lists every rule.
+- Code fixes: [`src/E128.Analyzers.CodeFixers/`](src/E128.Analyzers.CodeFixers/)
+- Packaging: the package ships `E128.Analyzers.dll` and `E128.Analyzers.CodeFixers.dll` under `analyzers/dotnet/cs`.
 - Tests: [`tests/E128.Analyzers.Tests/`](tests/E128.Analyzers.Tests/)
 - Release notes: [`AnalyzerReleases.Shipped.md`](src/E128.Analyzers/AnalyzerReleases.Shipped.md)
-- Publishing: `.github/workflows/publish.yml` pushes the package to nuget.org on each merge to `main` that changes `src/E128.Analyzers/`
+- Publishing: `.github/workflows/publish.yml` pushes the package to nuget.org on each merge to `main` that changes `src/E128.Analyzers/` or `src/E128.Analyzers.CodeFixers/`
 
 Report an analyzer defect, or ask for a new rule, in the [issues](https://github.com/e128/dotnet-reference/issues) of this repository.
 
@@ -57,7 +59,8 @@ scripts/podman.sh test
 | **E128.Reference.Web**        | Minimal API web app with Kestrel and a health endpoint                         |
 | **E128.Reference.Cli**        | System.CommandLine CLI with a `--name` option                                  |
 | **E128.Reference.Core**       | Shared library (Greeter service, models, repositories, services)               |
-| **E128.Analyzers**            | Roslyn analyzers (E128001 to E128141) with code fixes, published to nuget.org  |
+| **E128.Analyzers**            | Roslyn analyzers (E128001 to E128141), published to nuget.org                  |
+| **E128.Analyzers.CodeFixers** | Code fix providers for the analyzer rules, shipped in the same package         |
 | **E128.Reference.Tests**      | xUnit v3 and MTP with the CI, Podman, and Manual test categories               |
 | **Architecture.Tests**        | ArchUnitNET structural invariant tests (layers, naming, sealed)                |
 | **E128.Analyzers.Tests**      | Analyzer and code fix unit tests                                               |
@@ -141,6 +144,7 @@ scripts/podman.sh test
 ├── scripts/                  # Bash development scripts ([catalog](scripts/README.md))
 ├── src/
 │   ├── E128.Analyzers/       # Roslyn analyzers (published NuGet package)
+│   ├── E128.Analyzers.CodeFixers/ # Code fix providers (second DLL in the package)
 │   ├── E128.Reference.Core/  # Shared library
 │   ├── E128.Reference.Web/   # ASP.NET Core minimal API
 │   └── E128.Reference.Cli/   # System.CommandLine CLI
@@ -222,7 +226,7 @@ podman compose down
 3. **Agent Mirror Check**: checks that the opencode agent mirror is current, then verifies every guardrail hook referenced by the plugin exists
 4. **Secret Scan**: gitleaks scan over the full git history
 
-**NuGet publishing** (`.github/workflows/publish.yml`) starts on a push to `main` that changes `src/E128.Analyzers/`. The workflow uses OIDC trusted publishing, so it needs no API key. It skips the push when the version already exists on nuget.org.
+**NuGet publishing** (`.github/workflows/publish.yml`) starts on a push to `main` that changes `src/E128.Analyzers/` or `src/E128.Analyzers.CodeFixers/`. The workflow uses OIDC trusted publishing, so it needs no API key. It skips the push when the version already exists on nuget.org.
 
 ## dotnet-overhaul Skill
 

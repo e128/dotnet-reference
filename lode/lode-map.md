@@ -40,7 +40,7 @@
 - [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
 - [performance.md](dotnet/analyzers/performance.md): Analyzer hot-path rules: bind late, resolve types once, scan each scope once
 - [code-fix-techniques.md](dotnet/analyzers/code-fix-techniques.md): DocumentEditor, speculative bind, error-count guard, generator, attribute update
-- [package-layout.md](dotnet/analyzers/package-layout.md): one assembly vs two, per-Roslyn packaging, banned symbols, build metadata
+- [package-layout.md](dotnet/analyzers/package-layout.md): two assemblies, per-Roslyn packaging, banned symbols, build metadata
 
 ## dotnet-reference/
 

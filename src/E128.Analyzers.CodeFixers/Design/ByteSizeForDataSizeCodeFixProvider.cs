@@ -141,12 +141,8 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : CodeFixProvider
         if (newModifiers.Any(SyntaxKind.ConstKeyword))
         {
             newModifiers = RemoveConstModifier(newModifiers);
-            if (!newModifiers.Any(SyntaxKind.StaticKeyword))
-            {
-                newModifiers = newModifiers.Insert(0, SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.Space));
-            }
-
-            newModifiers = newModifiers.Add(SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword).WithTrailingTrivia(SyntaxFactory.Space));
+            newModifiers = InModifierHelper.AddModifier(newModifiers, SyntaxKind.StaticKeyword);
+            newModifiers = InModifierHelper.AddModifier(newModifiers, SyntaxKind.ReadOnlyKeyword);
         }
 
         var newField = field

@@ -1,35 +1,28 @@
 # Analyzer Package Layout
-*Updated: 2026-11-01T01:49:31Z*
+*Updated: 2026-11-01T13:40:12Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
 
-## One Assembly Today
+## Two Assemblies
 
-`E128.Analyzers` builds one assembly that holds the analyzers and the code fix
-providers. The fix providers need `Microsoft.CodeAnalysis.Workspaces`, so the
-project references it and suppresses RS1038.
+The package ships two assemblies:
 
-One assembly has two costs:
+| Project                     | Reference                                  | Content       |
+| --------------------------- | ------------------------------------------ | ------------- |
+| `E128.Analyzers`            | `Microsoft.CodeAnalysis.CSharp`             | analyzers     |
+| `E128.Analyzers.CodeFixers` | `Microsoft.CodeAnalysis.CSharp.Workspaces`  | fix providers |
 
-- The compiler process loads an assembly that references Workspaces.
-- The package ships one DLL under `analyzers/dotnet/cs`, so a host that cannot
-  load the Roslyn API it was built against gets no rules at all.
+The compiler host loads the analyzer assembly. RS1038 forbids a Workspaces
+reference in that assembly, so the fix providers live in their own project.
 
-## The Two-Assembly Split
+The fixer project sets `RootNamespace` to `E128.Analyzers`. Its files keep the
+`E128.Analyzers.Design` namespace, so an analyzer and its fix provider read
+alike. The analyzer project declares `InternalsVisibleTo` for the fixer
+project. That exposes the `DiagnosticId` constants and `InModifierHelper`.
 
-Two assemblies remove the suppression:
-
-| Project                     | Reference                              | Content            |
-| --------------------------- | -------------------------------------- | ------------------ |
-| `E128.Analyzers`            | `Microsoft.CodeAnalysis.CSharp`         | analyzers          |
-| `E128.Analyzers.CodeFixers` | `Microsoft.CodeAnalysis.CSharp.Workspaces` | fix providers   |
-
-Share a table through a `Compile Include` link, so one file serves both sides.
-Pack both DLLs under `analyzers/dotnet/cs`. See
-[Code Fix Patterns](code-fix-patterns.md) § One Table for Analyzer and Fix.
-
-The split is tracked in `plans/analyzer-fix-infrastructure/`.
+Both DLLs pack to `analyzers/dotnet/cs`. `dotnet pack` builds one project, so
+the analyzer project runs a `BuildCodeFixersBeforePack` target first.
 
 ## Per-Roslyn-Version Assemblies
 
@@ -46,13 +39,13 @@ version costs three files and no edits.
 - **Target framework**: the analyzer targets `netstandard2.0`. A `net10.0` build
   in the same package loads faster in a modern host and unlocks the modern API
   surface.
-- **SDK roll forward**: `global.json` sets `latestMajor`. A `latestPatch` pin
-  keeps a new SDK from changing analyzer output silently.
-- **Banned symbols**: a `BannedSymbols.txt` turns a project convention into a
-  compile error. The useful entries are the direct reporting overloads and the
-  direct generated-code configuration call, because both bypass a shared helper.
-- **Test parallelism**: every test compiles a project. An unbounded parallel run
-  trades wall-clock time for peak memory.
+- **SDK roll forward**: `global.json` sets `latestPatch`. A new SDK patch keeps
+  analyzer output stable, because a feature-band bump needs an edit to the pin.
+- **Banned symbols**: no `BannedSymbols.txt` file exists. No shared diagnostic
+  helper exists to route a report through, so a banned entry has nothing to
+  guard. RS1038 already guards the Workspaces boundary.
+- **Test parallelism**: every test compiles a project. `xunit.runner.json` caps
+  the analyzer test project at four threads to hold peak memory down.
 
 ## Related
 

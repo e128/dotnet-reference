@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/E128.Analyzers/**'
+      - 'src/E128.Analyzers.CodeFixers/**'
 
 permissions:
   contents: read

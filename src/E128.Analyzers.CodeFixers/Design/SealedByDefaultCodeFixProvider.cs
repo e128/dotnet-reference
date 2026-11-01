@@ -58,21 +58,6 @@ public sealed class SealedByDefaultCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        // Insert sealed after access modifiers and 'new'/'unsafe', before 'partial'.
-        var insertIndex = 0;
-        for (var i = 0; i < classDecl.Modifiers.Count; i++)
-        {
-            if (classDecl.Modifiers[i].Kind() is SyntaxKind.PublicKeyword
-                or SyntaxKind.PrivateKeyword
-                or SyntaxKind.ProtectedKeyword
-                or SyntaxKind.InternalKeyword
-                or SyntaxKind.NewKeyword
-                or SyntaxKind.UnsafeKeyword)
-            {
-                insertIndex = i + 1;
-            }
-        }
-
         var sealedToken = SyntaxFactory.Token(SyntaxKind.SealedKeyword)
             .WithTrailingTrivia(SyntaxFactory.Space);
 
@@ -89,7 +74,7 @@ public sealed class SealedByDefaultCodeFixProvider : CodeFixProvider
         else
         {
             newClassDecl = classDecl.WithModifiers(
-                classDecl.Modifiers.Insert(insertIndex, sealedToken));
+                InModifierHelper.AddModifier(classDecl.Modifiers, SyntaxKind.SealedKeyword));
         }
 
         var newRoot = root.ReplaceNode(classDecl, newClassDecl);
