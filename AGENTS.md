@@ -34,6 +34,9 @@ of what is portable versus Claude-only.
 - **Build** — `scripts/check.sh` is the single shell lint, format, build, and
   test gate. It runs `scripts/lint-shell.sh` first. Never call raw
   `shellcheck` in a gate.
+- **Verify before you claim done.** Re-run the build and the affected tests
+  after the last edit. Never assume a fix works. When a build or a run fails,
+  report it. Never claim success unless the build and the tests pass.
 - **Route every repeated operation through a script in `scripts/`.** Never
   run the raw command when a script exists. Run `scripts/help.sh` for the
   full list. The full routing table lives in
@@ -58,6 +61,8 @@ of what is portable versus Claude-only.
 
 ## .NET Development
 
+- C# idioms live in `.claude/rules/csharp-conventions.md`. Analyzer authoring
+  rules live in `.claude/rules/analyzer-authoring.md`.
 - Implicit usings are disabled (`<ImplicitUsings>disable</ImplicitUsings>`).
   Give every `.cs` file explicit `using` directives.
 - Seal by default. Every non-abstract class is sealed. E128005 and

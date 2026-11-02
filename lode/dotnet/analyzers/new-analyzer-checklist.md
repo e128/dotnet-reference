@@ -1,7 +1,38 @@
 # New Analyzer Checklist
-*Updated: 2026-10-16T18:13:34Z*
+*Updated: 2026-11-02T18:22:11Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
+
+## Rule Registration
+
+- `DiagnosticId` is an `internal const string` on the analyzer class. The value
+  is unique and continues the last assigned number.
+- Add the rule to `src/E128.Analyzers/AnalyzerReleases.Unshipped.md`. See
+  [Release Tracking](../release-tracking.md).
+- Add the rule row to `src/E128.Analyzers/README.md`. Confirm the row with
+  `scripts/readme-table-diff.sh --analyzer`.
+- Put the analyzer in `src/E128.Analyzers/<Category>/`. Put its tests in
+  `tests/E128.Analyzers.Tests/`. Name the files `<Name>AnalyzerTests.cs` and
+  `<Name>CodeFixTests.cs`.
+- Add `[Trait("Category", "CI")]` to every new test method.
+
+## Choose the Analysis API
+
+- Analyze with `IOperation` or `ISymbol`. Fall back to `SyntaxNode` only when
+  neither expresses the check.
+- Resolve a type with `Compilation.GetTypeByMetadataName` inside
+  `RegisterCompilationStartAction`. The pattern is in
+  [Analyzer Performance](performance.md).
+- Expect `null` from that call when two references declare the same type. Walk
+  `GetTypesByMetadataName` in that case. `MetadataTypes` holds the shared
+  lookup.
+
+## Generated Code
+
+- Pass `GeneratedCodeAnalysisFlags.None` to `ConfigureGeneratedCodeAnalysis`
+  for a rule that must ignore generated code. That is most rules.
+- Opt in only when the generated file is the subject of the rule. Add a comment
+  that states why.
 
 ## Netstandard2.0 Constraints
 

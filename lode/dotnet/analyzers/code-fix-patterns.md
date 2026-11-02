@@ -1,7 +1,34 @@
 # Code Fix Patterns
-*Updated: 2026-10-16T18:14:38Z*
+*Updated: 2026-11-02T18:22:11Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
+
+## Validate Before You Register
+
+Run every precondition check before the `RegisterCodeFix` call. A fix that
+returns the document unchanged after registration shows the user an action that
+does nothing. Two common late failures are a wrong node kind and a missing
+metadata type.
+
+```csharp
+var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not InvocationExpressionSyntax invocation)
+{
+    return;
+}
+
+var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+if (model?.Compilation.GetTypeByMetadataName(SomeTypeName) is null)
+{
+    return;
+}
+
+context.RegisterCodeFix(
+    CodeAction.Create(Title, ct => FixAsync(context.Document, invocation, ct), Title),
+    context.Diagnostics);
+```
+
+`StringBuilderPoolCodeFixProvider` follows this order.
 
 ## AddUsingIfMissing + Blank Line Behavior
 
