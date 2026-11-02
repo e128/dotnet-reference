@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-10-16T18:13:32Z*
+*Updated: 2026-11-01T20:55:29Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -45,8 +45,11 @@ Test `.csproj` files only need `<IsTestProject>true</IsTestProject>`, everything
 # CI tests (default, filters to Category=CI)
 scripts/test.sh
 
-# Specific test class
+# Specific test class. A bare name expands to a suffix wildcard.
 scripts/test.sh GreeterTests
+
+# Fully qualified name also works
+scripts/test.sh E128.Reference.Core.Tests.GreeterTests
 
 # All tests including Podman and Manual
 scripts/test.sh --all
@@ -61,10 +64,15 @@ scripts/test.sh --json
 ### Via dotnet test (raw)
 
 ```bash
-dotnet test --solution X.slnx -- --filter-trait "Category=CI"
+dotnet test --solution E128.Reference.slnx -- --filter-trait "Category=CI"
 ```
 
 The `--` separator passes arguments to MTP. `--filter` (VSTest syntax) does not work, use `-- --filter-trait` instead.
+
+`--filter-class` matches the fully qualified class name. A short name matches
+nothing. `scripts/test.sh` expands a name without a dot to a suffix wildcard,
+so `test.sh MyTests` reaches `*MyTests`. A name that matches no test returns
+`status: "no-match"` and exit code 3, so a typo cannot pass as a green run.
 
 ## Test Categories
 
@@ -84,13 +92,13 @@ Use `[Trait("Category", "...")]` to organize tests:
 
 Five test projects, all sharing `<IsTestProject>true</IsTestProject>` (inherits MTP config from `Directory.Build.targets`):
 
-| Project                     | Purpose                                  | Notable Packages (beyond `xunit.v3.mtp-v2`)                                                                  |
-| --------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `E128.Reference.Tests`      | Web integration tests                    | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Extensions.Diagnostics.Testing`                                |
-| `E128.Reference.Core.Tests` | Core library unit tests                  |,                                                                                                             |
-| `E128.Reference.Cli.Tests`  | CLI unit tests                           |,                                                                                                             |
-| `Architecture.Tests`        | ArchUnitNET structural invariant tests   | `TngTech.ArchUnitNET.xUnitV3`                                                                                 |
-| `E128.Analyzers.Tests`      | Roslyn analyzer + code fix verification  | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing`             |
+| Project                     | Purpose                                 | Notable Packages (beyond `xunit.v3.mtp-v2`)                                                       |
+| --------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `E128.Reference.Tests`      | Web integration tests                   | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Extensions.Diagnostics.Testing`                    |
+| `E128.Reference.Core.Tests` | Core library unit tests                 | `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`                 |
+| `E128.Reference.Cli.Tests`  | CLI unit tests                          | `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`                 |
+| `Architecture.Tests`        | ArchUnitNET structural invariant tests  | `TngTech.ArchUnitNET.xUnitV3`                                                                     |
+| `E128.Analyzers.Tests`      | Roslyn analyzer + code fix verification | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing` |
 
 Minimal `.csproj` template (all versions from CPM):
 

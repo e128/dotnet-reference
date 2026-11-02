@@ -154,4 +154,24 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TargetTypedCreation_Reports()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(string value)
+                               {
+                                   ProcessStartInfo startInfo = new()
+                                   {
+                                       FileName = "tool",
+                                       {|E128091:Arguments = value|}
+                                   };
+                               }
+                           }
+                           """);
+    }
 }

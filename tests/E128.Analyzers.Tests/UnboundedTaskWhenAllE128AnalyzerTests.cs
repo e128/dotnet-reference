@@ -111,8 +111,9 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task WhenAll_SyncSelect_DoesNotFire()
+    public Task WhenAll_PlainLambdaReturningTask_FiresE128037()
     {
+        // The fan-out is unbounded whether or not the lambda carries the async keyword.
         return VerifyAsync("""
                            using System.Collections.Generic;
                            using System.Linq;
@@ -122,7 +123,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
                                async Task M()
                                {
                                    var items = new List<string> { "a", "b" };
-                                   await Task.WhenAll(items.Select(x => Task.Delay(1)));
+                                   await {|E128037:Task.WhenAll(items.Select(x => Task.Delay(1)))|};
                                }
                            }
                            """);

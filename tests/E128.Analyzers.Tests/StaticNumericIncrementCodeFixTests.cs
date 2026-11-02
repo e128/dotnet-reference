@@ -1,23 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class StaticNumericIncrementCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        var test = new CSharpCodeFixTest<StaticNumericIncrementAnalyzer, StaticNumericIncrementCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        return test.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<StaticNumericIncrementAnalyzer, StaticNumericIncrementCodeFixProvider>(source, fixedCode);
 
     #region Interlocked fix
 
@@ -191,4 +181,30 @@ public sealed class StaticNumericIncrementCodeFixTests
     }
 
     #endregion Remove static fix
+
+    #region Value position
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FixInterlockedIncrement_OffersNoInterlockedFix_InValuePosition()
+    {
+        // Interlocked returns the new value, so the only offered fix is the remove-static one.
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                private static int _counter;
+                void M() { var previous = _counter{|E128087:++|}; }
+            }
+            """,
+            """
+            class C
+            {
+                private int _counter;
+                void M() { var previous = _counter++; }
+            }
+            """);
+    }
+
+    #endregion Value position
 }

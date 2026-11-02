@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-10-27T16:15:56Z*
+*Updated: 2026-11-01T20:54:44Z*
 
 ## Generated Docs
 
@@ -27,6 +27,7 @@
 - [analyzers.md](dotnet/analyzers.md): Deny-by-default strategy, analyzer packages, suppression policy
 - [release-tracking.md](dotnet/release-tracking.md): AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
 - [performance.md](dotnet/performance.md): Runtime knobs, profiling ladder, safe C# hot-path tips, ASP.NET Core
+- [unsafe-code.md](dotnet/unsafe-code.md): No-unsafe-code policy, E128 rule coverage map, known gaps
 - [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes
 
 ### dotnet/analyzers/
@@ -34,8 +35,12 @@
 - [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md): Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
 - [redundant-rules.md](dotnet/analyzers/redundant-rules.md): E128 rules disabled because third-party analyzers cover them
 - [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md): Code fix implementation patterns, BatchFixer vs SequentialRename, AddUsing blank line behavior
+- [code-fix-output.md](dotnet/analyzers/code-fix-output.md): Rules for the source a fix writes: valid literals, formatter placement, single insert, rewrite shape guards
+- [code-fix-trivia.md](dotnet/analyzers/code-fix-trivia.md): Trivia the fix must keep: absent whitespace, replacement literals, member removal
 - [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
 - [performance.md](dotnet/analyzers/performance.md): Analyzer hot-path rules: bind late, resolve types once, scan each scope once
+- [code-fix-techniques.md](dotnet/analyzers/code-fix-techniques.md): DocumentEditor, speculative bind, error-count guard, generator, attribute update
+- [package-layout.md](dotnet/analyzers/package-layout.md): two assemblies, per-Roslyn packaging, banned symbols, build metadata
 
 ## dotnet-reference/
 
@@ -46,7 +51,7 @@
 - [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md): Harness maintenance: Claude Code and opencode v2 capability map, discovery rules, rule ownership
 - [opencode-guardrails.md](infrastructure/opencode-guardrails.md): opencode v2 plugin hook mapping for Claude Code guardrails, permission and shell hook contracts
 - [claude-code-upstream.md](infrastructure/claude-code-upstream.md): Claude Code upstream reference: versions, agent/skill frontmatter fields
-- [code-generation-quality.md](infrastructure/code-generation-quality.md): Mechanisms that drive better AI code generation, ranked by impact
+- [code-generation-quality.md](infrastructure/code-generation-quality.md): Mechanisms that drive better AI code generation, ranked by impact, plus the review-to-rule loop
 - [claude-revision-log.md](infrastructure/claude-revision-log.md): Revision log: dated entries from `/claude-revision` runs
 - [podman.md](infrastructure/podman.md): Podman build commands, Dockerfile structure, smoke test patterns
 - [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md): OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging

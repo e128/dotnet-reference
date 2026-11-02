@@ -22,14 +22,15 @@ public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "Use ImmutableArray<T> for static readonly arrays",
-        "Static readonly array '{0}' should be ImmutableArray<{1}> — readonly prevents reassignment but not content mutation",
+        "Use an immutable type for static readonly arrays",
+        "Static readonly array '{0}' is mutable through its indexer",
         "Design",
         DiagnosticSeverity.Warning,
         true,
-        "A 'static readonly T[]' field is not truly immutable — readonly prevents reassignment, " +
-        "but callers can still mutate the array via the indexer. Use ImmutableArray<T> from " +
-        "System.Collections.Immutable for true immutability.");
+        "A 'static readonly T[]' field is not truly immutable. The readonly modifier prevents " +
+        "reassignment, but callers can mutate the array through the indexer. Use " +
+        "ImmutableArray<T> for true immutability. Use a ReadOnlySpan<byte> property for a " +
+        "constant byte sequence, so the compiler stores the bytes as read-only data.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

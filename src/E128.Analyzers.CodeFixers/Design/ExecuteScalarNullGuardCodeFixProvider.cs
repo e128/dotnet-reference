@@ -1,0 +1,216 @@
+using System.Collections.Immutable;
+using System.Composition;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace E128.Analyzers.Design;
+
+/// <summary>
+///     Code fix for E128042: wraps the Convert.ToInt32/ToInt64(cmd.ExecuteScalar()) call
+///     in a null-check pattern that extracts the scalar result into a local variable,
+///     checks for null, then converts.
+/// </summary>
+[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ExecuteScalarNullGuardCodeFixProvider))]
+[Shared]
+public sealed class ExecuteScalarNullGuardCodeFixProvider : E128CodeFixProviderBase
+{
+    public override ImmutableArray<string> FixableDiagnosticIds =>
+        [ExecuteScalarNullGuardAnalyzer.DiagnosticId];
+
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
+    {
+        var diagnostic = context.Diagnostics[0];
+        var node = root.FindNode(diagnostic.Location.SourceSpan);
+
+        if (node is not InvocationExpressionSyntax)
+        {
+            return Task.CompletedTask;
+        }
+
+        // The rewrite declares a local beside the statement that reads it. With no enclosing
+        // statement, such as a field initializer, the declared name has no scope to live in.
+        if (node.FirstAncestorOrSelf<StatementSyntax>() is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                "Add null guard around ExecuteScalar",
+                ct => ApplyFixAsync(context.Document, node, ct),
+                nameof(ExecuteScalarNullGuardCodeFixProvider)),
+            diagnostic);
+
+        return Task.CompletedTask;
+    }
+
+    private static async Task<Document> ApplyFixAsync(
+        Document document,
+        SyntaxNode diagnosticNode,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null || diagnosticNode is not InvocationExpressionSyntax convertInvocation)
+        {
+            return document;
+        }
+
+        if (!TryExtractParts(convertInvocation, out var innerExpr, out var convertMethodName))
+        {
+            return document;
+        }
+
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return document;
+        }
+
+        var localName = GetFreeLocalName(semanticModel, convertInvocation.SpanStart);
+        var nullGuard = BuildNullGuardExpression(convertMethodName, localName);
+        var resultDecl = BuildResultDeclaration(innerExpr, localName);
+        return InsertFixIntoTree(document, root, convertInvocation, nullGuard, resultDecl);
+    }
+
+    private static string GetFreeLocalName(SemanticModel semanticModel, int position)
+    {
+        const string BaseName = "result";
+        const int MaxAttempts = 1000;
+
+        for (var suffix = 1; suffix <= MaxAttempts; suffix++)
+        {
+            var candidate = suffix == 1
+                ? BaseName
+                : BaseName + suffix.ToString(CultureInfo.InvariantCulture);
+
+            if (semanticModel.LookupSymbols(position, name: candidate).Length == 0)
+            {
+                return candidate;
+            }
+        }
+
+        return BaseName + MaxAttempts.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static bool TryExtractParts(
+        InvocationExpressionSyntax convertInvocation,
+        [NotNullWhen(true)] out ExpressionSyntax? innerExpr,
+        out string convertMethodName)
+    {
+        innerExpr = null;
+        convertMethodName = string.Empty;
+
+        if (!convertInvocation.ArgumentList.Arguments.Any())
+        {
+            return false;
+        }
+
+        innerExpr = convertInvocation.ArgumentList.Arguments[0].Expression;
+
+        if (convertInvocation.Expression is not MemberAccessExpressionSyntax convertAccess)
+        {
+            return false;
+        }
+
+        convertMethodName = convertAccess.Name.Identifier.ValueText;
+        return true;
+    }
+
+    private static ConditionalExpressionSyntax BuildNullGuardExpression(
+        string convertMethodName,
+        string localName)
+    {
+        return SyntaxFactory.ConditionalExpression(
+            SyntaxFactory.IsPatternExpression(
+                SyntaxFactory.IdentifierName(localName),
+                SyntaxFactory.ConstantPattern(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression))),
+            SyntaxFactory.LiteralExpression(
+                SyntaxKind.NumericLiteralExpression,
+                SyntaxFactory.Literal(0)),
+            SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("Convert"),
+                    SyntaxFactory.IdentifierName(convertMethodName)),
+                SyntaxFactory.ArgumentList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName(localName))))));
+    }
+
+    private static LocalDeclarationStatementSyntax BuildResultDeclaration(
+        ExpressionSyntax innerExpr,
+        string localName)
+    {
+        return SyntaxFactory.LocalDeclarationStatement(
+                SyntaxFactory.VariableDeclaration(
+                    SyntaxFactory.IdentifierName("var"),
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(localName)
+                            .WithInitializer(
+                                SyntaxFactory.EqualsValueClause(innerExpr.WithoutTrivia())))))
+            .WithTrailingTrivia(SyntaxFactory.LineFeed);
+    }
+
+    private static Document InsertFixIntoTree(
+        Document document,
+        SyntaxNode root,
+        InvocationExpressionSyntax convertInvocation,
+        ConditionalExpressionSyntax nullGuard,
+        LocalDeclarationStatementSyntax resultDecl)
+    {
+        var newRoot = root.ReplaceNode(convertInvocation, nullGuard.WithTriviaFrom(convertInvocation));
+
+        var containingStatement = convertInvocation.FirstAncestorOrSelf<StatementSyntax>();
+        if (containingStatement is null)
+        {
+            return document.WithSyntaxRoot(newRoot);
+        }
+
+        var updatedStatement = newRoot.FindNode(containingStatement.Span).FirstAncestorOrSelf<StatementSyntax>();
+        if (updatedStatement is null)
+        {
+            return document.WithSyntaxRoot(newRoot);
+        }
+
+        // A braceless embedded statement, such as the body of `if (x) return cmd.ExecuteScalar();`, has
+        // no block to hold the declaration. Wrapping it keeps the declaration beside the statement
+        // that reads it. Returning the rewritten tree alone would leave `result` undefined.
+        if (updatedStatement.Parent is not BlockSyntax block)
+        {
+            if (updatedStatement.Parent is null)
+            {
+                return document.WithSyntaxRoot(newRoot);
+            }
+
+            var wrapper = SyntaxFactory.Block(
+                resultDecl
+                    .WithLeadingTrivia(updatedStatement.GetLeadingTrivia())
+                    .WithTrailingTrivia(SyntaxFactory.LineFeed),
+                updatedStatement.WithoutLeadingTrivia());
+
+            return document.WithSyntaxRoot(newRoot.ReplaceNode(updatedStatement, wrapper));
+        }
+
+        var index = block.Statements.IndexOf(updatedStatement);
+        if (index < 0)
+        {
+            return document.WithSyntaxRoot(newRoot);
+        }
+
+        var leadingTrivia = updatedStatement.GetLeadingTrivia();
+        var newStatements = block.Statements.Insert(index,
+            resultDecl.WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(SyntaxFactory.LineFeed));
+        var newBlock = block.WithStatements(newStatements);
+        newRoot = newRoot.ReplaceNode(block, newBlock);
+
+        return document.WithSyntaxRoot(newRoot);
+    }
+}

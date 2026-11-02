@@ -8,15 +8,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StaticReadonlyFrozenCollectionCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<StaticReadonlyFrozenCollectionAnalyzer, StaticReadonlyFrozenCollectionCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<StaticReadonlyFrozenCollectionAnalyzer, StaticReadonlyFrozenCollectionCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -84,5 +77,27 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixTests
                 private static readonly FrozenSet<string> Tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "a", "b" }.ToFrozenSet();
             }
             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Fix_NotOffered_WhenTheDeclarationHasTwoVariables()
+    {
+        // One type node declares both variables. Converting one would delete the other.
+        const string source = """
+                              using System.Collections.Generic;
+                              class C
+                              {
+                                  private static readonly HashSet<string> A = new() { "a" }, B = new() { "b" };
+                              }
+                              """;
+
+        return new CSharpCodeFixTest<StaticReadonlyFrozenCollectionAnalyzer, StaticReadonlyFrozenCollectionCodeFixProvider, DefaultVerifier>
+        {
+            TestCode = source,
+            FixedCode = source,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            NumberOfFixAllInDocumentIterations = 0
+        }.RunAsync();
     }
 }

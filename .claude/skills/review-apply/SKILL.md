@@ -1,15 +1,15 @@
 ---
 name: review-apply
 description: >
-  Batch-apply findings from the most recent --local review. One confirmation, one test run.
-when_to_use: "dispatched by review router"
+  Batch-apply findings from the most recent mr-sparkle review plan. One confirmation, one test run.
+when_to_use: "after a mr-sparkle run"
 argument-hint: "[--include-low]"
 user-invocable: true
 ---
 
 # Review: Apply Mode
 
-Batch-apply findings from the most recent `--local` review. One confirmation, one test run.
+Batch-apply findings from the most recent `mr-sparkle` plan. One confirmation, one test run.
 
 ## Phase 1: Load Findings
 
@@ -17,7 +17,7 @@ Load parsed findings from the latest `plans/review-*` dir (`tasks.md` preferred,
 ```bash
 scripts/internal/review-findings.sh --json          # add --include-low to keep LOW findings
 ```
-Each finding has `file`, `line`, `severity`, and `text`. LOW is skipped unless `--include-low`. If the script reports `"plan":null` → "No saved review found. Run `review --local` first."
+Each finding has `file`, `line`, `severity`, and `text`. LOW is skipped unless `--include-low`. If the script reports `"plan":null` → "No saved review found. Run `/mr-sparkle` first."
 
 Additionally skip: needs-verification, advisory-only, timed-out agents, known exceptions (see [references/known-exceptions.md](references/known-exceptions.md)).
 

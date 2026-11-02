@@ -55,7 +55,9 @@ public sealed class TestCodeCommentAnalyzer : DiagnosticAnalyzer
 
         foreach (var trivia in classDeclaration.DescendantTrivia())
         {
-            if (!IsCommentTrivia(trivia))
+            // DescendantTrivia includes the declaration's own leading trivia. A license header, or a
+            // doc comment on the type itself, sits outside the type body, so the rule leaves it alone.
+            if (trivia.SpanStart < classDeclaration.OpenBraceToken.SpanStart || !IsCommentTrivia(trivia))
             {
                 continue;
             }

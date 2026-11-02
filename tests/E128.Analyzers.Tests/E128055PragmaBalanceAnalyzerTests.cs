@@ -69,6 +69,18 @@ public sealed class E128055PragmaBalanceAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task PragmaBalance_Reports_WhenRestoreComesBeforeDisable()
+    {
+        // Directives apply in document order. A restore clears only a disable that precedes it.
+        return VerifyAsync("""
+                           #pragma warning restore CS0168
+                           {|E128055:#pragma warning disable CS0168|}
+                           class Foo { }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task PragmaBalance_Reports_WhenMultipleDisablesOnlyOneRestored()
     {
         return VerifyAsync("""
@@ -76,6 +88,27 @@ public sealed class E128055PragmaBalanceAnalyzerTests
                            #pragma warning disable CS0168
                            class Foo { }
                            #pragma warning restore CS0168
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PragmaBalance_Reports_WhenABareDisableIsNeverRestored()
+    {
+        return VerifyAsync("""
+                           {|E128055:#pragma warning disable|}
+                           class Foo { }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PragmaBalance_Silent_WhenABareDisableIsRestored()
+    {
+        return VerifyAsync("""
+                           #pragma warning disable
+                           class Foo { }
+                           #pragma warning restore
                            """);
     }
 }

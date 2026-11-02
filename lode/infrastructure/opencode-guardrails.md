@@ -1,5 +1,5 @@
 # opencode v2 Guardrail Parity
-*Updated: 2026-10-16T18:13:41Z*
+*Updated: 2026-11-01T20:54:44Z*
 
 Claude Code enforces guardrails through hook scripts under `.claude/hooks/`.
 opencode v2 has no hook file. Its plugin API carries the same interception.
@@ -110,8 +110,9 @@ returns.
 
 The repo `opencode.json` pins no model. A model default is a personal choice,
 and a committed default forces that choice on every clone. The global config
-file `~/.config/opencode/opencode.json` holds the `model` key instead. The
-`lode-opencode.nu` wrapper reads it from there.
+file `~/.config/opencode/opencode.json` holds the `model` key instead.
+`dotnet-reference-oc.sh` passes no `--model` flag. opencode reads the `model`
+key from the global config on both the TUI path and the run path.
 
 ## Invariants
 

@@ -34,6 +34,7 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ObjectCreationExpression);
+        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ImplicitObjectCreationExpression);
         context.RegisterSyntaxNodeAction(AnalyzeAssignment, SyntaxKind.SimpleAssignmentExpression);
     }
 
@@ -99,7 +100,7 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
 
     private static void Analyze(SyntaxNodeAnalysisContext context)
     {
-        var creation = (ObjectCreationExpressionSyntax)context.Node;
+        var creation = (BaseObjectCreationExpressionSyntax)context.Node;
 
         if (!IsProcessStartInfo(context, creation))
         {
@@ -125,7 +126,7 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, argumentsAssignment.GetLocation()));
     }
 
-    private static bool IsProcessStartInfo(SyntaxNodeAnalysisContext context, ObjectCreationExpressionSyntax creation)
+    private static bool IsProcessStartInfo(SyntaxNodeAnalysisContext context, BaseObjectCreationExpressionSyntax creation)
     {
         var type = context.SemanticModel.GetTypeInfo(creation, context.CancellationToken).Type;
 
@@ -138,7 +139,7 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
                && string.Equals(type.ContainingNamespace?.ToDisplayString(), "System.Diagnostics", StringComparison.Ordinal);
     }
 
-    private static AssignmentExpressionSyntax? FindMemberAssignment(ObjectCreationExpressionSyntax creation, string memberName)
+    private static AssignmentExpressionSyntax? FindMemberAssignment(BaseObjectCreationExpressionSyntax creation, string memberName)
     {
         return creation.Initializer?.Expressions
             .OfType<AssignmentExpressionSyntax>()

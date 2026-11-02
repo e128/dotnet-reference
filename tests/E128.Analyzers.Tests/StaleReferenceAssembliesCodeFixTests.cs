@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -11,15 +10,8 @@ public sealed class StaleReferenceAssembliesCodeFixTests
     private static readonly ReferenceAssemblies Net100WithTesting = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.CodeAnalysis.CSharp.CodeFix.Testing", "1.1.3")]);
 
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<StaleReferenceAssembliesAnalyzer, StaleReferenceAssembliesCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = Net100WithTesting
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<StaleReferenceAssembliesAnalyzer, StaleReferenceAssembliesCodeFixProvider>(source, fixedCode, references: Net100WithTesting);
 
     [Fact]
     [Trait("Category", "CI")]

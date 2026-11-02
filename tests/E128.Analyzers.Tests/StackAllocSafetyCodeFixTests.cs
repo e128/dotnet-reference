@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -20,10 +19,7 @@ public sealed class StackAllocSafetyCodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
-
-        test.SolutionTransforms.Add((solution, projectId) => solution.WithProjectCompilationOptions(
-            projectId,
-            ((CSharpCompilationOptions)solution.GetProject(projectId)!.CompilationOptions!).WithAllowUnsafe(true)));
+        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
         return test.RunAsync();
     }
@@ -45,6 +41,7 @@ public sealed class StackAllocSafetyCodeFixTests
             """,
             """
             using System;
+
             class C
             {
                 unsafe void M()

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -18,9 +17,8 @@ public sealed class StackAllocSafetyAnalyzerTests
         };
         if (allowUnsafe)
         {
-            test.SolutionTransforms.Add((solution, projectId) => solution.WithProjectCompilationOptions(
-                projectId,
-                ((CSharpCompilationOptions)solution.GetProject(projectId)!.CompilationOptions!).WithAllowUnsafe(true)));
+            test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
+
         }
 
         return test.RunAsync();

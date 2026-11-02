@@ -21,6 +21,32 @@ public sealed class BareParseAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task IntParse_InFinallyBlock_FiresE128089()
+    {
+        // The catch clauses guard only the try block, so the finally block stays unguarded.
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               void M(string input)
+                               {
+                                   try
+                                   {
+                                   }
+                                   catch (Exception)
+                                   {
+                                   }
+                                   finally
+                                   {
+                                       var n = {|E128089:int.Parse(input)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task IntParse_FiresE128089()
     {
         return VerifyAsync("""

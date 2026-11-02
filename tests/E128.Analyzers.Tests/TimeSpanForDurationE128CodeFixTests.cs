@@ -1,22 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class TimeSpanForDurationE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<TimeSpanForDurationAnalyzer, TimeSpanForDurationCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<TimeSpanForDurationAnalyzer, TimeSpanForDurationCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -85,5 +76,21 @@ public sealed class TimeSpanForDurationE128CodeFixTests
                                            public void Run(double {|E128050:DelayMs|} = 0) { }
                                        }
                                        """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoFix_WhenThePropertyHasANumericInitializer()
+    {
+        const string source = """
+                              using System;
+                              public class Service
+                              {
+                                  public int {|E128050:TimeoutMs|} { get; init; } = 5000;
+                              }
+                              """;
+
+        // Changing the type alone would leave `= 5000` next to TimeSpan, which does not compile.
+        return VerifyFixAsync(source, source);
     }
 }

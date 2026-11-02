@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -32,14 +30,6 @@ public sealed class UnboundedTaskWhenAllE128CodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code)
-    {
-        return new CSharpCodeFixTest<UnboundedTaskWhenAllAnalyzer, UnboundedTaskWhenAllCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = code,
-            FixedCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 0
-        }.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string code) =>
+        CodeFixTestRunner.NoFixAsync<UnboundedTaskWhenAllAnalyzer, UnboundedTaskWhenAllCodeFixProvider>(code);
 }

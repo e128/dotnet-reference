@@ -154,6 +154,10 @@ options "Yes, build all N" / "No, report only". Single gate, not per-candidate.
 
 See [references/build-phase.md](references/build-phase.md). No plan needed: small self-contained scripts, not features.
 
+**Wrapping an existing checker.** A new script that wraps an existing lint inherits that lint's backlog. Separate a new hit from the existing backlog. Report style hits as advisory by default. Add `--strict` to enforce a hard fail. Use a hard fail only when the backlog is already clean.
+
+**`set -e` in a wrapper.** `lib.sh` sets `set -e`. A command substitution that captures a non-zero exit aborts the whole script with no message. Add `|| true` to that assignment. Example: `style_output="$("$LINT" "$file" 2>&1)" || true`.
+
 ---
 
 ## Constraints

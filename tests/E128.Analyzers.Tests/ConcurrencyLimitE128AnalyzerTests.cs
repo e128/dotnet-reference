@@ -21,7 +21,24 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task SemaphoreSlim_ZeroInitialCount_Fires()
+    public Task SemaphoreSlim_ZeroInitialCount_DoesNotFire()
+    {
+        // Zero is a legal initial count, so a gate that starts closed is not a defect.
+        return VerifyAsync("""
+                           using System.Threading;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var s = new SemaphoreSlim(0);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SemaphoreSlim_ZeroInitialCountWithMaxCount_DoesNotFire()
     {
         return VerifyAsync("""
                            using System.Threading;
@@ -29,7 +46,23 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
                            {
                                void M()
                                {
-                                   var s = {|E128040:new SemaphoreSlim(0)|};
+                                   var s = new SemaphoreSlim(0, 4);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MaxDegreeOfParallelism_OnAReceiver_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               void M(ParallelOptions options)
+                               {
+                                   options.MaxDegreeOfParallelism = {|E128040:0|};
                                }
                            }
                            """);

@@ -1,23 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class PrimaryConstructorBackingFieldE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<PrimaryConstructorBackingFieldAnalyzer, PrimaryConstructorBackingFieldCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<PrimaryConstructorBackingFieldAnalyzer, PrimaryConstructorBackingFieldCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -87,6 +77,38 @@ public sealed class PrimaryConstructorBackingFieldE128CodeFixTests
             {
                 string GetName() => name;
                 bool IsEmpty() => name.Length == 0;
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task BackingField_Removed_LeavesTheSameNamedFieldInAnotherType()
+    {
+        return VerifyFixAsync(
+            """
+            class A(string name)
+            {
+                private readonly string {|E128017:_name|} = name;
+                string Get() => _name;
+            }
+
+            class B
+            {
+                private readonly string _name = "b";
+                string Get() => _name;
+            }
+            """,
+            """
+            class A(string name)
+            {
+                string Get() => name;
+            }
+
+            class B
+            {
+                private readonly string _name = "b";
+                string Get() => _name;
             }
             """);
     }

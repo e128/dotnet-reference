@@ -63,3 +63,12 @@ Start at [index.md](references/index.md). Route by task:
 ## Lint Before Returning Text
 
 Run `.claude/skills/tech-writing/scripts/tech-writing-lint.sh <file>`, or pipe text through it with `-`. It flags dashes used as pauses, contractions, semicolons, sentences over 25 words, filler, time-anchored words, banned word choices, and a passive-voice heuristic. Judge each hit. The linter checks form, not content. Possessives such as "Google's" trigger a false contraction hit.
+
+### Lode Files
+
+Every lode file gets the lint run, then this extra pass. Run `scripts/lode-guard.sh <file>` for the 250-line limit.
+
+1. Does any instruction exceed 20 words? The linter caps only the 25-word descriptive sentence.
+2. Does one thing carry two names?
+3. Does a claim point to the source of truth rather than copy it?
+4. Is every sentence a statement about the current state, with no change history?

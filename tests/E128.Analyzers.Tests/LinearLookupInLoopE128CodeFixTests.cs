@@ -204,6 +204,7 @@ public sealed class LinearLookupInLoopE128CodeFixTests
         const string fixedCode = """
                                  using System.Collections.Generic;
                                  using System.Linq;
+
                                  class C
                                  {
                                      void M()

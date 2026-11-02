@@ -93,7 +93,11 @@ public sealed class MissingTraitCategoryAnalyzer : DiagnosticAnalyzer
 
     private static bool IsTraitCategoryAttribute(AttributeSyntax attribute, SyntaxNodeAnalysisContext context)
     {
-        var name = attribute.Name.ToString();
+        // A qualified attribute writes Xunit.Trait. The last segment is the name either way.
+        var name = attribute.Name is QualifiedNameSyntax qualified
+            ? qualified.Right.Identifier.ValueText
+            : attribute.Name.ToString();
+
         if (!string.Equals(name, "Trait", StringComparison.Ordinal)
             && !string.Equals(name, "TraitAttribute", StringComparison.Ordinal))
         {

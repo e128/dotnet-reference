@@ -73,11 +73,13 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
     //   - const local: const string c = ""
     //   - default parameter value: void M(string s = "")
     //   - switch case label: case "": (also covers a when-guarded pattern label)
+    //   - pattern: s is "", or a switch expression arm
     private static bool IsConstContext(SyntaxNode node)
     {
         foreach (var ancestor in node.Ancestors())
         {
-            if (ancestor is CaseSwitchLabelSyntax or CasePatternSwitchLabelSyntax)
+            // goto case "" needs a constant too, so string.Empty would not compile there.
+            if (ancestor is CaseSwitchLabelSyntax or CasePatternSwitchLabelSyntax or ConstantPatternSyntax or GotoStatementSyntax)
             {
                 return true;
             }

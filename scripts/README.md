@@ -1,7 +1,6 @@
 # Scripts
 
 Bash scripts (`.sh`) live in `scripts/`. Run `scripts/help.sh` for a live catalog.
-Nushell scripts (`.nu`) are not listed by `help.sh`.
 
 ## Requirements
 
@@ -9,7 +8,6 @@ Nushell scripts (`.nu`) are not listed by `help.sh`.
 | ------------ | ------- | ------------------------ | -------------------------------------------------------------------- |
 | `bash`       | 4.0     | 5.3                      | `mapfile` and `declare -A` need 4.0. macOS ships 3.2 at `/bin/bash`. |
 | `shellcheck` | 0.11.0  | 0.11.0                   | The lint gate runs at `-S warning`. CI pins 0.11.0 by SHA256.        |
-| Nushell      | 0.93    | 0.116.1                  | `with-env` with a record argument needs 0.93.                        |
 
 `scripts/lib.sh` re-execs under Homebrew Bash when the interpreter is older
 than 4.0. Run every script by its own path. A login shell that resolves the
@@ -17,10 +15,6 @@ system Bash first defeats the re-exec.
 
 Bash 5.3 adds fork-free command substitution, `${ cmd; }`. Prefer it in a new
 hot loop. Keep the 4.0 floor until the repository drops the older interpreters.
-
-Nushell 0.116 keeps every `.nu` script working. Pin 0.106.1 or later to avoid
-the `with-env` list form removal in 0.94 and the `str replace` literal default
-in 0.84.
 
 `shellcheck` is required. `scripts/lint-shell.sh` runs it at warning severity
 over every `.sh` file. `scripts/check.sh`, `scripts/ci.sh`,
@@ -31,15 +25,15 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 
 ## Core Workflow
 
-| Script               | Purpose                                                   | Key flags                                                                         |
-| -------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `build.sh`           | Build the solution or a specific project                  | `--verbose`, `--project`, `--warnings`, `--fix`                                   |
-| `test.sh`            | Run tests (defaults to CI category)                       | `--all`, `--verbose`, `--dry-run`, `--trait`                                      |
-| `format.sh`          | Run jb cleanupcode then dotnet format                     | `--check`, `--changed`, `--no-jb`                                                 |
-| `check.sh`           | Composed: shell lint + format + build + test              | `--all`, `--no-format`, `--json`                                                  |
-| `ci.sh`              | Full CI pipeline                                          | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`               |
-| `podman.sh`          | Podman build/run/test/stop/clean                          | `--no-cache`                                                                      |
-| `verify-and-ship.sh` | Verify, commit, and push (format → version-bump → stage → precommit → commit → push) | `--message`/`-m` (required), `--json`, `--squash`, `--no-version-bump` |
+| Script               | Purpose                                                                                      | Key flags                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `build.sh`           | Build the solution or a specific project                                                     | `--verbose`, `--project`, `--errors`, `--warnings`, `--fix`                         |
+| `test.sh`            | Run tests (defaults to CI category)                                                          | `--all`, `--verbose`, `--dry-run`, `--trait`                                        |
+| `format.sh`          | Run jb cleanupcode then dotnet format                                                        | `--check`, `--changed`, `--no-jb`                                                   |
+| `check.sh`           | Composed: shell lint + format + build + test                                                 | `--all`, `--no-format`, `--json`                                                    |
+| `ci.sh`              | Full CI pipeline                                                                             | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`                 |
+| `podman.sh`          | Podman build/run/test/stop/clean                                                             | `--no-cache`                                                                        |
+| `verify-and-ship.sh` | Verify, commit, and push (format → check → version-bump → stage → precommit → commit → push) | `--message`/`-m` (required), `--json`, `--squash`, `--no-version-bump`              |
 
 ## Git & Status
 
@@ -49,7 +43,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `diff.sh`          | Diff summary                                                            | `--json`, `--files`, `--staged`, `--full`, `--commits N`, `--days N`               |
 | `branch.sh`        | Branch info vs base                                                     | `--json`, `--human`, `--base`, `--files`                                           |
 | `assert.sh`        | Fail-fast pre-commit gates                                              | `--build-pass`, `--clean-working-tree`, `--test-pass`, `--plan-complete`, `--json` |
-| `git-forensics.nu` | Git history forensics (churn, contributors, bugs, velocity, firefights) | `--since`, `--top`, `--json`                                                       |
+| `git-forensics.sh` | Git history forensics (churn, contributors, bugs, velocity, firefights) | `--since`, `--top`, `--json`                                                       |
 
 ## Utilities
 
@@ -70,15 +64,16 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 
 ## Lode & Plans
 
-| Script              | Purpose                                                                 |
-| ------------------- | ----------------------------------------------------------------------- |
-| `lode-ts.sh`        | Update timestamps on lode files                                         |
-| `lode-summary.sh`   | Find and display lode content by section                                |
-| `lode-guard.sh`     | Lode file size guard: check line count before appending                 |
-| `task.sh`           | Task management: check/next/progress                                    |
-| `lode.nu`           | Nushell wrapper: launch claude with SystemPrompt.txt injected           |
-| `lode-ollama.nu`    | Nushell wrapper: launch claude via Ollama backend (default deepseek-v4.1-flash:cloud) |
-| `lode-opencode.nu`  | Nushell wrapper: launch opencode via Ollama backend with SystemPrompt.txt injected. The model comes from the `model` key in the global opencode.json |
+| Script                   | Purpose                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------- |
+| `lode-ts.sh`             | Update timestamps on lode files                                                  |
+| `lode-summary.sh`        | Find and display lode content by section                                         |
+| `lode-guard.sh`          | Lode file size guard: check line count before appending                          |
+| `lode-check.sh`          | Run the style lint and the size guard over lode files                            |
+| `task.sh`                | Task management: check/next/progress                                             |
+| `dotnet-reference.sh`    | Launch claude via the Ollama backend (default deepseek-v4.1-flash:cloud)         |
+| `dotnet-reference-go.sh` | Launch claude against the opencode Go endpoint. Reads `oc_sk_` from the Keychain |
+| `dotnet-reference-oc.sh` | Launch opencode with SystemPrompt.txt as the first turn                          |
 
 ## Code Navigation & Analysis
 
@@ -103,7 +98,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `nuget-heat-map.sh`    | NuGet dependency heat map: classify packages and map cross-project sharing (--json) |
 | `runtime-matrix.sh`    | Runtime pinning matrix: SDK pin, per-project target frameworks, Docker base images (--json) |
 | `diagnostics.sh`       | Parse .NET build diagnostics into structured records (--group, --code ID, --diff OLD NEW, --json) |
-| `readme-table-diff.sh` | Detect drift between scripts/README.md and the scripts on disk                   |
+| `readme-table-diff.sh` | Detect drift between a README table and its source of truth                      |
 | `coverage-areas.sh`    | Test coverage heuristic by namespace/project                                    |
 | `session-health.sh`    | Session analytics: error trends, tool counts, bash commands                     |
 | `session-mine.sh`      | Mine Claude Code session transcripts for repeated patterns                      |
@@ -118,7 +113,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/analyzer-release-check.sh` | Validate analyzer release files (Unshipped/Shipped) against source DiagnosticId constants |
 | `internal/commit.sh`                 | Commit helper: blocks emails in the message, appends a name-only co-author trailer         |
 | `internal/cr-diff-deliver.sh`        | Decide code-review diff delivery mode by size: inline (≤30KB), write (30-40KB), or split (>40KB) |
-| `internal/lode.sh`                   | Legacy Claude CLI wrapper (SystemPrompt.txt)                                               |
+| `internal/cr-target.sh`              | Resolve a code-review target to base, changed files, and the reviewers to run              |
 | `internal/mechanical-diff.sh`        | Classify each changed file in the working diff as MECHANICAL (namespace rename) or SUBSTANTIVE |
 | `internal/opencode-agents.sh`        | Sync (`sync`) or verify (`check`) the Claude Code agent definitions in the opencode v2 mirror (agents/ + agent-assets/) |
 | `internal/overlap-detect.sh`         | Detect trigger-phrase overlap between agents and skills                                    |
@@ -127,7 +122,6 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/plan-gate.sh`              | Phase gate prerequisite verification                                                       |
 | `internal/plan-path.sh`              | Resolve a plan's canonical path by partial name                                            |
 | `internal/precommit.sh`              | Shell lint and PII and secret scan on staged files                                        |
-| `internal/review-agents.sh`          | Discover code-review-relevant agents dynamically from .claude/agents/                      |
 | `internal/review-findings.sh`        | Locate the latest review plan and parse its checklist findings, grouped by file with severity |
 | `internal/settings-gap.sh`           | Diff catalog commands against settings.json allow-list; classify gaps by safety tier       |
 | `internal/stage.sh`                  | Stage modified + new files, excluding secrets                                              |

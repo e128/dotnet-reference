@@ -10,8 +10,9 @@ in [dotnet-testing.md](dotnet-testing.md).
 - Add the rule to `src/E128.Analyzers/AnalyzerReleases.Unshipped.md`.
 - Add the row to the rule table in `src/E128.Analyzers/README.md`. Verify the
   table with `scripts/readme-table-diff.sh --analyzer`.
-- Write the analyzer under `src/E128.Analyzers/<Category>/`. Write its tests
-  under `tests/E128.Analyzers.Tests/`.
+- Write the analyzer under `src/E128.Analyzers/<Category>/`. Write its code fix
+  under `src/E128.Analyzers.CodeFixers/<Category>/`. Write its tests under
+  `tests/E128.Analyzers.Tests/`.
 - Update the README text for a changed rule in the same change.
 
 ## Choose the Analysis API
@@ -35,24 +36,24 @@ in [dotnet-testing.md](dotnet-testing.md).
 Validate every precondition before you call `RegisterCodeFix`. A registered fix
 that returns the document unchanged shows the user an action that does nothing.
 
-```csharp
-public override async Task RegisterCodeFixesAsync(CodeFixContext context)
-{
-    var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-    if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not InvocationExpressionSyntax invocation)
-    {
-        return;
-    }
+Inherit `E128CodeFixProviderBase`. The base owns the fix-all provider and the
+syntax root fetch. Override `RegisterFixesAsync(context, root)` for a fix that
+reads the root.
 
-    var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-    if (model?.Compilation.GetTypeByMetadataName(SomeTypeName) is null)
+```csharp
+protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
+{
+    var span = context.Diagnostics[0].Location.SourceSpan;
+    if (root.FindNode(span, getInnermostNodeForTie: true) is not InvocationExpressionSyntax invocation)
     {
-        return;
+        return Task.CompletedTask;
     }
 
     context.RegisterCodeFix(
         CodeAction.Create(Title, ct => FixAsync(context.Document, invocation, ct), Title),
         context.Diagnostics);
+
+    return Task.CompletedTask;
 }
 ```
 

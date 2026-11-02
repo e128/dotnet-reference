@@ -46,6 +46,7 @@ public sealed class FileSystemPathCodeFixTests
 
         const string fixedCode = """
                                  using System.IO;
+
                                  class C { void M(FileInfo path) { } }
                                  """;
 
@@ -63,6 +64,7 @@ public sealed class FileSystemPathCodeFixTests
 
         const string fixedCode = """
                                  using System.IO;
+
                                  class C { void M(DirectoryInfo path) { } }
                                  """;
 
@@ -80,6 +82,7 @@ public sealed class FileSystemPathCodeFixTests
 
         const string fixedCode = """
                                  using System.IO;
+
                                  interface I { void M(FileInfo path); }
                                  """;
 
@@ -97,6 +100,7 @@ public sealed class FileSystemPathCodeFixTests
 
         const string fixedCode = """
                                  using System.IO;
+
                                  class C { public C(FileInfo path) { } }
                                  """;
 

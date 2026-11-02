@@ -78,4 +78,24 @@ public sealed class TestCodeCommentAnalyzerTests
                             }
                             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Analyzer_ReportsNothing_WhenTheCommentSitsOnTheDeclaration()
+    {
+        // The comment is leading trivia of the class itself. It sits outside the type body, and the
+        // code fix would delete a license header or a type doc comment.
+        return VerifyAsync("""
+                            using Xunit;
+
+                            /// <summary>Covers the parser.</summary>
+                            public class C
+                            {
+                                [Fact]
+                                public void M()
+                                {
+                                }
+                            }
+                            """);
+    }
 }

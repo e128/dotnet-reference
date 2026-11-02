@@ -1,6 +1,5 @@
 # Roslyn Analyzer Release Tracking
-
-*Updated: 2026-10-27T23:51:06Z*
+*Updated: 2026-11-01T20:33:06Z*
 
 ## Overview
 
@@ -25,6 +24,10 @@ E128001 | Design | Warning | Description here
 ```
 
 ### AnalyzerReleases.Unshipped.md
+
+This file stays in the project, even when no pending rule exists. RS2000 fails
+the build for a `DiagnosticDescriptor` that appears in neither file. Removing
+the file needs a suppression, which the repository forbids without approval.
 
 Must **NOT** have a `## Release` header. Sections appear directly at top level.
 
@@ -79,6 +82,11 @@ E128099 | Design | Warning | No longer needed
 
 **Pre-first-release:** keep all rules in `Unshipped.md`; `Shipped.md` starts with `; No shipped releases yet.`
 
+The `/yeet` skill enforces the first step on every run. It calls
+`scripts/internal/analyzer-release-check.sh` for the release files and
+`scripts/readme-table-diff.sh --analyzer` for the analyzer README. A rule that
+is missing from either file blocks the ship, even on a docs-only change set.
+
 ## Consumers
 
 | Consumer                         | Purpose                                                       |
@@ -89,7 +97,7 @@ E128099 | Design | Warning | No longer needed
 
 ## E128.Analyzers Status
 
-- `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content) and `RS1038`
+- `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content), `RS0016`, `RS0017`, and `NU5128`
 - Files registered as `<AdditionalFiles>` in csproj
 - Published to NuGet: https://www.nuget.org/packages/E128.Analyzers/
 - `Shipped.md` lists all shipped rules across release sections; run `scripts/internal/analyzer-release-check.sh` for current shipped/unshipped/source ID counts
@@ -124,6 +132,8 @@ E128099 | Design | Warning | No longer needed
 | 1.42.0  | E128109-111 | Buffer safety rules |
 | 1.42.1  | E128112-129 | Unsafe and performance rules |
 | 1.42.2  | (none)      | Bug fixes in E128116, E128122 and E128124. `Shipped.md` gained the 1.42.0 and 1.42.1 sections at this release. |
+| 1.42.3  | (none)      | Symbol matching and API gating in E128018, 028, 032, 051, 056, 068, 072, 081, 083, 090, 102. Fix providers move to `UsingDirectives.AddIfMissing`. |
+| 1.60.4  | E128131-141 | Interop, span-bulk, and reflection rules. First new-rule release since 1.42.1. |
 
 ## Sources
 

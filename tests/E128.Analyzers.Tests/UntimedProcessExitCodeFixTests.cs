@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,28 +7,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UntimedProcessExitCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<UntimedProcessExitAnalyzer, UntimedProcessExitCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<UntimedProcessExitAnalyzer, UntimedProcessExitCodeFixProvider>(source, fixedCode);
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpCodeFixTest<UntimedProcessExitAnalyzer, UntimedProcessExitCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllInDocumentIterations = 0
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
+        CodeFixTestRunner.NoFixAsync<UntimedProcessExitAnalyzer, UntimedProcessExitCodeFixProvider>(source, expected: expected);
 
     [Fact]
     [Trait("Category", "CI")]

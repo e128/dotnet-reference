@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lode file size guard: check line count before appending to lode files.
 # Usage: lode-guard.sh <file> [--json] [--help]
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lode-lib.sh"
 
 JSON=false
 FILE=""
@@ -53,7 +53,7 @@ lines=$(wc -l < "$FILE" | tr -d ' ')
 if (( lines <= 200 )); then
     status="ok"
     exit_code=0
-elif (( lines <= 250 )); then
+elif (( lines <= LODE_FILE_LIMIT )); then
     status="warn"
     exit_code=0
 else
@@ -66,8 +66,8 @@ if [[ "$JSON" == true ]]; then
 else
     case "$status" in
         ok)   ok "$FILE: $lines lines — safe to append" ;;
-        warn) warn "$FILE: $lines lines — approaching 250-line limit" ;;
-        over) err "$FILE: $lines lines — over 250-line limit, must decompose into sub-files" ;;
+        warn) warn "$FILE: $lines lines — approaching ${LODE_FILE_LIMIT}-line limit" ;;
+        over) err "$FILE: $lines lines — over ${LODE_FILE_LIMIT}-line limit, must decompose into sub-files" ;;
     esac
 fi
 

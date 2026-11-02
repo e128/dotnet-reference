@@ -38,8 +38,13 @@ if [[ "$ALL" == true ]]; then
     # No filter — run everything including Podman and Manual
     :
 elif [[ ${#CLASSES[@]} -gt 0 ]]; then
-    # Filter to specific test class(es) — MTP supports repeated --filter-class
+    # Filter to specific test class(es) — MTP supports repeated --filter-class.
+    # MTP matches the fully qualified name, so a bare class name matches nothing.
+    # Expand a bare name to a suffix wildcard so `test.sh MyTests` works.
     for cls in "${CLASSES[@]}"; do
+        if [[ "$cls" != *.* && "$cls" != *'*'* ]]; then
+            cls="*$cls"
+        fi
         MTP_ARGS+=(--filter-class "$cls")
     done
 else
@@ -80,6 +85,22 @@ succeeded=$(echo "$output" | sed -n 's/.*succeeded: *\([0-9]*\).*/\1/p' | tail -
 skipped=$(echo "$output" | sed -n 's/.*skipped: *\([0-9]*\).*/\1/p' | tail -1)
 
 total=${total:-0}; failed=${failed:-0}; succeeded=${succeeded:-0}; skipped=${skipped:-0}
+
+# A filter that matches nothing is a typo, not a pass. MTP needs the fully
+# qualified class name, so a mistyped class would otherwise exit 0. With --all
+# no filter exists, so a zero total points at the summary parse, not a typo.
+if [[ $total -eq 0 && $REAL_FAILED -eq 0 ]]; then
+    if [[ "$VERBOSE" == true ]]; then
+        if [[ "$ALL" == true ]]; then
+            err "No test summary parsed. The MTP output format may have changed."
+        else
+            err "No test matched the filter: ${CLASSES[*]:-trait $TRAIT}"
+        fi
+    else
+        json_object status=no-match total=0 passed=0 failed=0 skipped=0
+    fi
+    exit 3
+fi
 
 if [[ "$VERBOSE" == true ]]; then
     if [[ $REAL_FAILED -eq 1 || "$failed" -gt 0 ]]; then

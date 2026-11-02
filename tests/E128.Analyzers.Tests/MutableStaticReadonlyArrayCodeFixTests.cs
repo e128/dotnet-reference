@@ -1,22 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class MutableStaticReadonlyArrayCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<MutableStaticReadonlyArrayAnalyzer, MutableStaticReadonlyArrayCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<MutableStaticReadonlyArrayAnalyzer, MutableStaticReadonlyArrayCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -123,6 +114,73 @@ public sealed class MutableStaticReadonlyArrayCodeFixTests
             class C
             {
                 private static readonly ImmutableArray<string> Suffixes = ["s_", "m_"];
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FixByteArray_BecomesReadOnlySpan()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                private static readonly {|E128061:byte[] Magic = [0x50, 0x4B, 0x03, 0x04]|};
+            }
+            """,
+            """
+            using System;
+
+            class C
+            {
+                private static ReadOnlySpan<byte> Magic => [0x50, 0x4B, 0x03, 0x04];
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FixByteArray_WithNewInitializer_BecomesReadOnlySpan()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                private static readonly {|E128061:byte[] Mask = new byte[] { 0xFF, 0x0F }|};
+            }
+            """,
+            """
+            using System;
+
+            class C
+            {
+                private static ReadOnlySpan<byte> Mask => [0xFF, 0x0F];
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FixByteArray_WithNonConstantElement_BecomesImmutableArray()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                private static readonly {|E128061:byte[] Bytes = new byte[] { 1, ReadOne() }|};
+
+                private static byte ReadOne() => 1;
+            }
+            """,
+            """
+            using System.Collections.Immutable;
+
+            class C
+            {
+                private static readonly ImmutableArray<byte> Bytes = [1, ReadOne()];
+
+                private static byte ReadOne() => 1;
             }
             """);
     }

@@ -12,6 +12,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\E128.Analyzers\E128.Analyzers.csproj" />
+        <ProjectReference Include="..\..\src\E128.Analyzers.CodeFixers\E128.Analyzers.CodeFixers.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -24,6 +25,12 @@
 
     <ItemGroup>
         <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
+
+    <!-- Every test in this project compiles a project, so an unbounded parallel run trades
+         wall-clock time for peak memory. Cap the thread count. -->
+    <ItemGroup>
+        <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>

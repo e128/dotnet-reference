@@ -1,22 +1,61 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class HttpClientMissingOceCatchCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<HttpClientMissingOceCatchAnalyzer, HttpClientMissingOceCatchCodeFixProvider>(source, fixedCode);
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Fix_InsertsOceCatch_WhenCatchHasNoIndentation()
     {
-        return new CSharpCodeFixTest<HttpClientMissingOceCatchAnalyzer, HttpClientMissingOceCatchCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
+        const string source = """
+                              using System;
+                              using System.Net.Http;
+                              using System.Threading.Tasks;
+                              class C
+                              {
+                              async Task M(HttpClient client, string url)
+                              {
+                              try
+                              {
+                              await client.GetAsync(url);
+                              }
+                              {|E128051:catch (Exception)|}
+                              {
+                              }
+                              }
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System;
+                                 using System.Net.Http;
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                 async Task M(HttpClient client, string url)
+                                 {
+                                 try
+                                 {
+                                 await client.GetAsync(url);
+                                 }
+                                 catch (OperationCanceledException)
+                                         {
+                                             throw;
+                                         }
+                                 catch (Exception)
+                                 {
+                                 }
+                                 }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
     }
 
     [Fact]

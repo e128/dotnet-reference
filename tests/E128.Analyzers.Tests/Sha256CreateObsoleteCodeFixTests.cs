@@ -8,15 +8,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class Sha256CreateObsoleteCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<Sha256CreateObsoleteAnalyzer, Sha256CreateObsoleteCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<Sha256CreateObsoleteAnalyzer, Sha256CreateObsoleteCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]

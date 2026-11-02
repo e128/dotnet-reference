@@ -145,4 +145,19 @@ public sealed class MissingTraitCategoryAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoReport_WhenTheTraitIsQualified()
+    {
+        return VerifyAsync("""
+                           using Xunit;
+                           public sealed class MyTests
+                           {
+                               [Fact]
+                               [Xunit.Trait("Category", "CI")]
+                               public void Should_Work() { }
+                           }
+                           """);
+    }
 }

@@ -19,6 +19,7 @@ terse JSON by default. Pass `--verbose` for the full log.
 | a full CI run                                                    | `scripts/ci.sh`                                                 |
 | session-start orientation                                        | `scripts/context.sh`                                            |
 | `git status`                                                     | `scripts/status.sh [--json] [--classify]`                       |
+| ad-hoc `git log --numstat` churn and firefight reads             | `scripts/git-forensics.sh [COMMAND] [--top N]`                  |
 | `git diff` or `git diff --cached`                                | `scripts/diff.sh [--json] [--staged] [--commits N\|--days N]`   |
 | `git log` or `git rev-list --count`                              | `scripts/branch.sh [--json]`                                    |
 | `git add` of modified tracked files                              | `scripts/internal/stage.sh [--include-new]`                     |
@@ -50,17 +51,19 @@ terse JSON by default. Pass `--verbose` for the full log.
 | ad-hoc `#pragma warning disable` or `[SuppressMessage]` greps    | `scripts/suppression-scan.sh [--json]`                          |
 | ad-hoc `PackageVersion` orphan or `ProjectReference` set-diff    | `scripts/deps-graph.sh [--orphans] [--json]`                    |
 | a manual `wc -l` before a lode write                             | `scripts/lode-guard.sh <file>`                                  |
+| a `for` loop running the style lint and the size guard          | `scripts/lode-check.sh <file...> \| --changed`                  |
+| a build with `--verbose` piped through a grep for errors         | `scripts/build.sh --errors`                                     |
 | hand-editing an `*Updated:*` timestamp in a lode file            | `scripts/lode-ts.sh [--changed] [--stale] [FILE...]`            |
 | a manual clean-tree, build-pass, or test-pass check              | `scripts/assert.sh [--clean-working-tree] [--build-pass]`       |
 | hand-editing `<Version>` in a `.csproj`                          | `scripts/internal/version-bump.sh <ProjectName>`                |
 | manual analyzer release file checks                              | `scripts/internal/analyzer-release-check.sh [--json]`           |
-| manual agent discovery for reviews                               | `scripts/internal/review-agents.sh [--json]`                    |
 | manual trigger-phrase overlap checks                             | `scripts/internal/overlap-detect.sh [--json]`                   |
 | manual plan-age checks                                           | `scripts/internal/stale-plans.sh [--days N] [--json]`           |
 | a manual `settings.json` allow-list gap scan                     | `scripts/internal/settings-gap.sh [--json]`                     |
 | hand-classifying a diff as mechanical or substantive             | `scripts/internal/mechanical-diff.sh [--json]`                  |
 | sizing or splitting a review diff for delivery                   | `scripts/internal/cr-diff-deliver.sh <difffile>`                |
 | locating and parsing the latest review plan's findings           | `scripts/internal/review-findings.sh [--include-low] [--json]`  |
+| resolving a review target, its base, files, or reviewer set      | `scripts/internal/cr-target.sh --json [ARG...]`                 |
 | manual plan-directory path resolution                            | `scripts/internal/plan-path.sh NAME`                            |
 | a manual list of active plans and roadmap items                  | `scripts/internal/plan-context.sh [--active-only] [--json]`     |
 | a manual phase-prerequisite check                                | `scripts/internal/plan-gate.sh --plan NAME [--json]`            |
@@ -69,9 +72,9 @@ terse JSON by default. Pass `--verbose` for the full log.
 `session-mine.sh` subcommands: `tool-freq`, `repeated-commands`, `most-read`,
 `agent-spawns`, `slash-freq`, `redundant-ci`, `runner-fallback`, and `all`.
 
-Two files are never invoked directly. `scripts/lib.sh` is a sourced library.
-`scripts/internal/lode.sh` is the Claude wrapper that injects
-`SystemPrompt.txt`.
+Three files are never invoked directly. `scripts/lib.sh`,
+`scripts/lode-lib.sh`, and `scripts/lode-ollama-lib.sh` are sourced libraries.
+The `dotnet-reference*.sh` launchers source the lode libraries.
 
 Skills own the `scripts/internal/` entries. Call one directly only when no
 skill covers the step.

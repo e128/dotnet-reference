@@ -10,10 +10,18 @@ public sealed class Sha256CreateObsoleteE128AnalyzerTests
 {
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
+        return VerifyAsync(code, ReferenceAssemblies.Net.Net100, expected);
+    }
+
+    private static Task VerifyAsync(
+        string code,
+        ReferenceAssemblies referenceAssemblies,
+        params DiagnosticResult[] expected)
+    {
         var test = new CSharpAnalyzerTest<Sha256CreateObsoleteAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+            ReferenceAssemblies = referenceAssemblies
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -50,6 +58,25 @@ public sealed class Sha256CreateObsoleteE128AnalyzerTests
                                }
                            }
                            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SHA256Create_NoDiagnostic_WhenHashDataIsUnavailable()
+    {
+        // HashData arrived in .NET 5. On netstandard2.0 the suggestion has no remedy that compiles.
+        return VerifyAsync(
+            """
+            using System.Security.Cryptography;
+            class C
+            {
+                void M()
+                {
+                    using var h = SHA256.Create();
+                }
+            }
+            """,
+            ReferenceAssemblies.NetStandard.NetStandard20);
     }
 
     [Fact]

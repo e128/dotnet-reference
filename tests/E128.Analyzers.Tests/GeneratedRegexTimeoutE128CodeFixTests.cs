@@ -10,16 +10,8 @@ public sealed class GeneratedRegexTimeoutE128CodeFixTests
 {
     private const string PartialImpl = "    private static partial System.Text.RegularExpressions.Regex DigitsOnly() => null!;";
 
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<GeneratedRegexAnalyzer, GeneratedRegexTimeoutCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<GeneratedRegexAnalyzer, GeneratedRegexTimeoutCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -106,5 +98,31 @@ public sealed class GeneratedRegexTimeoutE128CodeFixTests
                           """;
 
         return VerifyFixAsync(source, fixedCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoFix_WhenTheAttributeAlreadyUsesANamedArgument()
+    {
+        const string source = $$"""
+                                using System.Text.RegularExpressions;
+                                partial class C
+                                {
+                                    [{|E128011:GeneratedRegex(@"\d+", options: RegexOptions.None)|}]
+                                    private static partial Regex DigitsOnly();
+                                    {{PartialImpl}}
+                                }
+                                """;
+
+        // A positional argument cannot follow a named one, so the appended pair would not compile.
+        var test = new CSharpCodeFixTest<GeneratedRegexAnalyzer, GeneratedRegexTimeoutCodeFixProvider, DefaultVerifier>
+        {
+            TestCode = source,
+            FixedCode = source,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            NumberOfFixAllInDocumentIterations = 0
+        };
+
+        return test.RunAsync();
     }
 }

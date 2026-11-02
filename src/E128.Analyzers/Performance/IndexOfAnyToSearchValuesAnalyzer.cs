@@ -12,6 +12,8 @@ public sealed class IndexOfAnyToSearchValuesAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128102";
 
+    private const string SearchValuesMetadataName = "System.Buffers.SearchValues`1";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use SearchValues<char> for IndexOfAny scans",
@@ -31,7 +33,17 @@ public sealed class IndexOfAnyToSearchValuesAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        context.RegisterCompilationStartAction(startContext =>
+        {
+            // SearchValues<T> arrived in .NET 8. Without it the suggested replacement does not
+            // compile, so an older target framework must get no report.
+            if (startContext.Compilation.GetTypeByMetadataName(SearchValuesMetadataName) is null)
+            {
+                return;
+            }
+
+            startContext.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        });
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)

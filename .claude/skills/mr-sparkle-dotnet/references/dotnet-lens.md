@@ -6,13 +6,13 @@
 
 | Part                  | Source                                         |
 | --------------------- | ---------------------------------------------- |
-| Diff scoping          | `.claude/skills/review-local` Phase 1          |
-| Tool lens             | `.claude/skills/review-local` Phase 2 vector 2 |
-| Rubric set            | `.claude/skills/review-local/references`       |
+| Diff scoping          | `.claude/skills/mr-sparkle` Resolve the Target |
+| Tool lens             | `.claude/skills/mr-sparkle` Run the Reviewers  |
+| Rubric set            | `.claude/skills/mr-sparkle/references`         |
 | Repo gates            | `.claude/rules/quality-gates.md`               |
 | Analyzer candidates   | `analyzer-review-miner` agent, read only       |
 
-The repo `review` skill stays the plan-producing path. This overlay produces findings only.
+The core `mr-sparkle` skill owns the report and the plan. This overlay produces findings only.
 
 ## Questions the Lens Answers
 

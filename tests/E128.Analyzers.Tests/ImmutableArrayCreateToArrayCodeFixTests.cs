@@ -1,22 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ImmutableArrayCreateToArrayCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<ImmutableArrayCreateToArrayAnalyzer, ImmutableArrayCreateToArrayCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<ImmutableArrayCreateToArrayAnalyzer, ImmutableArrayCreateToArrayCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]

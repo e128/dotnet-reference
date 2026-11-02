@@ -132,4 +132,38 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PragmaJustification_NoFire()
+    {
+        return VerifyAsync("""
+                           class Foo
+                           {
+                           #pragma warning disable CA1822
+                               // Intentional: stays instance for the container.
+                               public void Run() { }
+                           #pragma warning restore CA1822
+                           }
+                           """);
+    }
+
+    /// <summary>
+    ///     A restore that ends an earlier pragma block lands in the next method's leading
+    ///     trivia, so only a disable suppresses the rule.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CommentsAfterARestore_Fire()
+    {
+        return VerifyAsync("""
+                           class Foo
+                           {
+                               void A() { }
+                           #pragma warning restore CA1822
+                               {|E128024:// Not covered by the earlier pragma block|}
+                               public void B() { }
+                           }
+                           """);
+    }
 }

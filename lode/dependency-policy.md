@@ -1,5 +1,5 @@
 # Dependency Policy
-*Updated: 2026-10-16T18:13:46Z*
+*Updated: 2026-11-01T20:55:18Z*
 
 ## Selection Criteria
 

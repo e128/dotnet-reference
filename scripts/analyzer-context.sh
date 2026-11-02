@@ -5,6 +5,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 ROOT="$(find_repo_root)"
 ANALYZER_DIR="$ROOT/src/E128.Analyzers"
+FIXER_DIR="$ROOT/src/E128.Analyzers.CodeFixers"
 JSON=false
 
 while [[ $# -gt 0 ]]; do
@@ -51,7 +52,7 @@ fi
 # declared in that class's file. Two rg passes replace one full tree scan per
 # class name.
 mapfile -t analyzer_files < <(fd -e cs . "$ANALYZER_DIR" --type f 2>/dev/null || true)
-mapfile -t provider_files < <(fd 'CodeFixProvider\.cs$' "$ANALYZER_DIR" 2>/dev/null || true)
+mapfile -t provider_files < <(fd 'CodeFixProvider\.cs$' "$FIXER_DIR" 2>/dev/null || true)
 
 declare -A file_class=() class_ids=() covered_ids=()
 if (( ${#analyzer_files[@]} > 0 )); then

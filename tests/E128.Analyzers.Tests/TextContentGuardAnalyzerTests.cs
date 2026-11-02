@@ -8,14 +8,6 @@ namespace E128.Analyzers.Tests;
 
 public sealed class TextContentGuardAnalyzerTests
 {
-    private const string AngleSharpStubs = """
-                                           namespace AngleSharp.Dom
-                                           {
-                                               public interface INode { string TextContent { get; } }
-                                               public interface IElement : INode { }
-                                           }
-                                           """;
-
     private const string NonAngleSharpStubs = """
                                               namespace MyApp
                                               {
@@ -41,7 +33,7 @@ public sealed class TextContentGuardAnalyzerTests
         return VerifyAsync($$"""
                              using System.Linq;
                              using System.Collections.Generic;
-                             {{AngleSharpStubs}}
+                             {{TestStubs.AngleSharpDom}}
                              class C
                              {
                                  void M(IEnumerable<AngleSharp.Dom.IElement> elements)
@@ -59,7 +51,7 @@ public sealed class TextContentGuardAnalyzerTests
         return VerifyAsync($$"""
                              using System.Linq;
                              using System.Collections.Generic;
-                             {{AngleSharpStubs}}
+                             {{TestStubs.AngleSharpDom}}
                              class C
                              {
                                  void M(IEnumerable<AngleSharp.Dom.IElement> elements)
@@ -95,7 +87,7 @@ public sealed class TextContentGuardAnalyzerTests
         return VerifyAsync($$"""
                              using System.Linq;
                              using System.Collections.Generic;
-                             {{AngleSharpStubs}}
+                             {{TestStubs.AngleSharpDom}}
                              class C
                              {
                                  void M(IEnumerable<AngleSharp.Dom.IElement> elements)
@@ -113,7 +105,7 @@ public sealed class TextContentGuardAnalyzerTests
         return VerifyAsync($$"""
                              using System.Linq;
                              using System.Collections.Generic;
-                             {{AngleSharpStubs}}
+                             {{TestStubs.AngleSharpDom}}
                              class C
                              {
                                  void M(IEnumerable<AngleSharp.Dom.IElement> elements)
@@ -131,7 +123,7 @@ public sealed class TextContentGuardAnalyzerTests
         return VerifyAsync($$"""
                              using System.Linq;
                              using System.Collections.Generic;
-                             {{AngleSharpStubs}}
+                             {{TestStubs.AngleSharpDom}}
                              class C
                              {
                                  void M(IEnumerable<AngleSharp.Dom.IElement> elements)

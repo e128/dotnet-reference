@@ -74,6 +74,13 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
     {
         var fieldDeclaration = (FieldDeclarationSyntax)context.Node;
 
+        // One type node declares every variable in the list, so a frozen rewrite cannot cover one
+        // variable alone. The fix rewrites the whole declaration, and the other variables would go.
+        if (fieldDeclaration.Declaration.Variables.Count != 1)
+        {
+            return;
+        }
+
         if (!HasStaticReadonlyModifiers(fieldDeclaration))
         {
             return;

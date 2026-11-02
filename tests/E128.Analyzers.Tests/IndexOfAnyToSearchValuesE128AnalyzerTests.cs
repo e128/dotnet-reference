@@ -10,10 +10,18 @@ public sealed class IndexOfAnyToSearchValuesE128AnalyzerTests
 {
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
+        return VerifyAsync(code, ReferenceAssemblies.Net.Net100, expected);
+    }
+
+    private static Task VerifyAsync(
+        string code,
+        ReferenceAssemblies referenceAssemblies,
+        params DiagnosticResult[] expected)
+    {
         var test = new CSharpAnalyzerTest<IndexOfAnyToSearchValuesAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+            ReferenceAssemblies = referenceAssemblies
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -62,6 +70,24 @@ public sealed class IndexOfAnyToSearchValuesE128AnalyzerTests
                                }
                            }
                            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task IndexOfAny_NoDiagnostic_WhenSearchValuesIsUnavailable()
+    {
+        // SearchValues<T> arrived in .NET 8. On netstandard2.0 the replacement does not compile.
+        return VerifyAsync(
+            """
+            class C
+            {
+                void M(string path)
+                {
+                    var i = path.IndexOfAny(new[] { '/', '\\' });
+                }
+            }
+            """,
+            ReferenceAssemblies.NetStandard.NetStandard20);
     }
 
     [Fact]

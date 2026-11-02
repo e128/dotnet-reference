@@ -103,6 +103,27 @@ public sealed class InsecureRandomInCryptoContextAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_NewRandom_WhenCryptoNamespaceIsImportedInsideABlockNamespace()
+    {
+        return VerifyAsync("""
+                           namespace N
+                           {
+                               using System;
+                               using System.Security.Cryptography;
+
+                               class C
+                               {
+                                   void M()
+                                   {
+                                       var r = {|E128075:new Random()|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NoReport_WhenCryptoNamespaceInComment()
     {
         return VerifyAsync("""

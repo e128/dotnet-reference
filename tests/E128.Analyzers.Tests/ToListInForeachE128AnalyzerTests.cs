@@ -40,6 +40,25 @@ public sealed class ToListInForeachE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task ToListInForeach_QueryableSource_Fires()
+    {
+        // The call binds to Enumerable.ToList, because IQueryable<T> converts to IEnumerable<T>.
+        return VerifyAsync("""
+                           using System.Linq;
+                           class C
+                           {
+                               void M(IQueryable<int> items)
+                               {
+                                   foreach (var x in {|E128018:items.ToList()|})
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ToListInForeach_WithLinqChain_Fires()
     {
         return VerifyAsync("""
@@ -69,6 +88,30 @@ public sealed class ToListInForeachE128AnalyzerTests
                                void M(IEnumerable<int> items)
                                {
                                    foreach (var x in items.ToArray())
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ToListOnANonLinqType_DoesNotFire()
+    {
+        // A domain type with its own ToList() is not Enumerable.ToList, so the allocation advice
+        // does not apply to it.
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class Bag
+                           {
+                               public List<int> ToList() => [];
+                           }
+                           class C
+                           {
+                               void M(Bag bag)
+                               {
+                                   foreach (var x in bag.ToList())
                                    {
                                    }
                                }

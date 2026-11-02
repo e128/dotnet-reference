@@ -75,7 +75,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!HasAsyncLambda(selectInvocation))
+        if (!ReturnsTask(context, selectInvocation))
         {
             return;
         }
@@ -145,7 +145,11 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
                    || string.Equals(memberAccess.Name.Identifier.ValueText, "ToList", StringComparison.Ordinal));
     }
 
-    private static bool HasAsyncLambda(InvocationExpressionSyntax selectInvocation)
+    // The fan-out is the same for an async lambda and for a plain lambda that returns a task.
+    // Only the bound return type tells the two apart.
+    private static bool ReturnsTask(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax selectInvocation)
     {
         var args = selectInvocation.ArgumentList.Arguments;
         if (!args.Any())
@@ -154,12 +158,26 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         }
 
         var lambdaArg = args.Last().Expression;
-        return lambdaArg switch
+        if (lambdaArg is not (ParenthesizedLambdaExpressionSyntax or SimpleLambdaExpressionSyntax))
         {
-            ParenthesizedLambdaExpressionSyntax pLambda => pLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            SimpleLambdaExpressionSyntax sLambda => sLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            _ => false
-        };
+            return false;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(lambdaArg, context.CancellationToken).Symbol;
+
+        return symbol
+            is IMethodSymbol { ReturnType: { } returnType }
+            && IsTaskLike(returnType);
+    }
+
+    private static bool IsTaskLike(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol named
+               && (string.Equals(named.OriginalDefinition.Name, "Task", StringComparison.Ordinal)
+                   || string.Equals(named.OriginalDefinition.Name, "ValueTask", StringComparison.Ordinal))
+               && named.ContainingNamespace is { Name: "Tasks" }
+               && named.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
+               && named.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
     }
 
     private static bool ContainsSemaphoreThrottle(InvocationExpressionSyntax selectInvocation)

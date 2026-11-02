@@ -1,0 +1,91 @@
+using System.Collections.Immutable;
+using System.Composition;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace E128.Analyzers.Design;
+
+/// <summary>
+///     Code fix for E128036: removes the <c lang="csharp">Task.Run</c> wrapper and keeps the inner async expression.
+///     <c lang="csharp">Task.Run(async () => await DoWorkAsync())</c> becomes <c lang="csharp">DoWorkAsync()</c>.
+///     <c lang="csharp">Task.Run(async () => { await A(); await B(); })</c> is not auto-fixable (block body).
+/// </summary>
+[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TaskRunAsyncLambdaCodeFixProvider))]
+[Shared]
+public sealed class TaskRunAsyncLambdaCodeFixProvider : E128CodeFixProviderBase
+{
+    public override ImmutableArray<string> FixableDiagnosticIds =>
+        [TaskRunAsyncLambdaAnalyzer.DiagnosticId];
+
+    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
+    {
+        var diagnostic = context.Diagnostics[0];
+        var node = root.FindNode(diagnostic.Location.SourceSpan);
+
+        if (node is not InvocationExpressionSyntax invocation)
+        {
+            return Task.CompletedTask;
+        }
+
+        var args = invocation.ArgumentList.Arguments;
+
+        // A second argument, such as the cancellation token, would be dropped by the removal and the
+        // work would no longer observe cancellation. Leave those calls to the developer.
+        if (args.Count != 1)
+        {
+            return Task.CompletedTask;
+        }
+
+        var lambda = args[0].Expression;
+
+        // Only fix expression-body lambdas — block bodies are too structural.
+        var innerExpression = GetExpressionBodyFromLambda(lambda);
+        if (innerExpression is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                "Remove Task.Run wrapper",
+                ct => RemoveTaskRunAsync(context.Document, root, invocation, innerExpression, ct),
+                nameof(TaskRunAsyncLambdaCodeFixProvider)),
+            diagnostic);
+
+        return Task.CompletedTask;
+    }
+
+    private static ExpressionSyntax? GetExpressionBodyFromLambda(ExpressionSyntax lambda)
+    {
+        return lambda switch
+        {
+            ParenthesizedLambdaExpressionSyntax { ExpressionBody: { } body } => UnwrapAwait(body),
+            SimpleLambdaExpressionSyntax { ExpressionBody: { } body } => UnwrapAwait(body),
+            _ => null
+        };
+    }
+
+    private static ExpressionSyntax UnwrapAwait(ExpressionSyntax expression)
+    {
+        return expression is AwaitExpressionSyntax awaitExpr
+            ? awaitExpr.Expression
+            : expression;
+    }
+
+    private static Task<Document> RemoveTaskRunAsync(
+        Document document,
+        SyntaxNode root,
+        InvocationExpressionSyntax invocation,
+        ExpressionSyntax replacement,
+        CancellationToken cancellationToken)
+    {
+        _ = cancellationToken;
+        var newExpression = replacement.WithTriviaFrom(invocation);
+        var newRoot = root.ReplaceNode(invocation, newExpression);
+        return Task.FromResult(document.WithSyntaxRoot(newRoot));
+    }
+}

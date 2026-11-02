@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-10-27T18:20:50Z*
+*Updated: 2026-11-01T20:55:29Z*
 
 ## Strategy: Deny by Default
 
@@ -100,9 +100,9 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 
 `src/E128.Analyzers/` is a solution-local Roslyn analyzer project. It is wired via `Directory.Build.targets` as a `ProjectReference` with `OutputItemType="Analyzer"`. It applies to all projects except the analyzer itself (excluded via `IsRoslynComponent` condition). Severity is governed by `.globalconfig` (blanket error by default).
 
-Rules span categories: Design, Reliability, Performance, Unsafe, Maintainability, Security, Style, Testing, and FileSystem. Most rules ship with a code fix. A few (e.g., `E128045` Direct Console usage, `E128046` Excessive inheritance, `E128070` Pool Rent() capacity guard, and the diagnostic-only rules E128125 to E128129) have no fix because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
+Rules span categories: Design, Reliability, Performance, Unsafe, Maintainability, Security, Style, Testing, and FileSystem. Most rules ship with a code fix. Several rules carry a diagnostic only, for example `E128045` Direct Console usage, `E128046` Excessive inheritance, E128125 to E128129, and E128136 to E128138, because the remediation is context-specific. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
 
-Redundant E128 rules with no code fix are disabled in `.globalconfig`. See [redundant-rules.md](analyzers/redundant-rules.md).
+Redundant E128 rules are disabled in `.globalconfig`, whether or not a code fix ships. See [redundant-rules.md](analyzers/redundant-rules.md).
 
 Key rules by category (not exhaustive):
 
@@ -110,15 +110,15 @@ Key rules by category (not exhaustive):
 | ----------- | -------------------------------------------------------------------------------------------------- |
 | Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray   |
 | Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard, stackalloc bounds, pool zeroing |
-| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, string interpolation, O(n²) loop patterns, `SearchValues<char>` over `string.IndexOfAny` (E128102) |
-| Unsafe      | `Unsafe.As` to `Unsafe.BitCast`, unaligned reads, bounds bypass, bool and int reinterpret, non-blittable `MemoryMarshal`, fixed buffers, `SkipInit`, unpinned pointers, string writes, null byref, delegate lifetime, bulk copy (E128112 to E128129) |
+| Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, O(n²) loops, `SearchValues<char>` (E128102), UTF-8 parsing, alternate lookups (E128131 to E128135), span bulk methods (E128140), u8 literals (E128141) |
+| Unsafe      | `Unsafe.As` to `Unsafe.BitCast`, unaligned reads, unaligned non-blittable reads (E128139), bounds bypass, bool and int reinterpret, non-blittable `MemoryMarshal`, fixed buffers, `SkipInit`, unpinned pointers, string writes, null byref, delegate lifetime, bulk copy, pointer and length pairs, nonpublic reflection, raw IL (E128112 to E128129, E128136 to E128139) |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
 | Maintainability | See the README rule table                                                                      |
 | Testing     | Temp directory cleanup, stale ReferenceAssemblies, low-value test conditions E128107/E128108       |
 
-### E128061: Static readonly array → ImmutableArray
+### E128061: Static readonly array → immutable type
 
-Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types. The `readonly` keyword prevents reassignment but callers can still mutate contents via the indexer. Code fix replaces `T[]` with `ImmutableArray<T>` and unwraps `new T[]` / `new[]` initializers to collection expressions.
+Flags `private static readonly T[]` and `internal static readonly T[]` fields. Arrays are reference types. The `readonly` keyword prevents reassignment but callers can still mutate contents via the indexer. The code fix reads a constant `byte` sequence as a `ReadOnlySpan<byte>` property, which the compiler stores as read-only data. For every other element type it replaces `T[]` with `ImmutableArray<T>` and unwraps `new T[]` / `new[]` initializers to collection expressions.
 
 ### E128062: Stale ReferenceAssemblies in tests
 
@@ -183,7 +183,7 @@ Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or a
 
 **Exclusions**: `Math.Min(value, cap)` as the direct argument or via a local variable. Small constant literals (e.g., `Rent(1024)`).
 
-No code fix: the cap value is context-specific.
+`PoolRentCapacityGuardCodeFixProvider` wraps the argument in `Math.Min`. The cap comes from the `e128_pool_rent_max_capacity` option, which defaults to 1,048,576.
 
 Rules E128109, E128110, and E128111 cover `stackalloc` limits, pooled buffer zeroing, and use after Return. See [pooled-buffer-rules.md](analyzers/pooled-buffer-rules.md). Rules E128112 to E128129 come from two published guidance documents. See [analyzer-candidates.md](analyzer-candidates.md) for the ID map and the excluded rows.
 
@@ -228,20 +228,12 @@ dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 private static partial Regex MyRegex { get; }
 ```
 
-## SequentialRenameFixAllProvider (Shared Fix-All Logic)
+## Package Assembly Layout
 
-`SequentialRenameFixAllProvider` in `E128.Analyzers.Style` is a shared `FixAllProvider` used by any code fix that renames symbols via `Renamer.RenameSymbolAsync`. It replaces `WellKnownFixAllProviders.BatchFixer`, which computes all renames from the original solution snapshot and then merges. This merge fails when multiple renames touch the same document, causing `dotnet format` to log "doesn't support Fix All in Solution".
-
-The provider accepts a `Func<Diagnostic, string?, string?>` delegate for computing the new name, allowing reuse across different fixers:
-
-- `NamingStyleCodeFixProvider` (IDE1006): delegates to `ComputeCompliantName(diagnostic, symbolName)`
-- `MidNameUnderscoreCodeFixProvider` (E128063): delegates to `ComputeFixedName(symbolName)`
-
-Sequential application:
-1. Collects all diagnostics across the fix-all scope (Document / Project / Solution)
-2. Sorts renames back-to-front within each document to prevent span drift
-3. Applies `Renamer.RenameSymbolAsync` one at a time to the evolving solution
-4. Skips a rename if the symbol has already been renamed (name mismatch guard)
+The package ships two assemblies. `E128.Analyzers` holds the analyzers and
+`E128.Analyzers.CodeFixers` holds the fix providers. See
+[Package Layout](analyzers/package-layout.md) for both projects, the
+per-Roslyn-version layout, and the build metadata.
 
 ## Related
 

@@ -117,23 +117,9 @@ public sealed class SearchValuesHoistingAnalyzer : DiagnosticAnalyzer
 
             if (ancestor is FieldDeclarationSyntax field)
             {
-                var isStatic = false;
-                var isReadOnly = false;
-
-                foreach (var modifier in field.Modifiers)
-                {
-                    if (modifier.IsKind(SyntaxKind.StaticKeyword))
-                    {
-                        isStatic = true;
-                    }
-
-                    if (modifier.IsKind(SyntaxKind.ReadOnlyKeyword))
-                    {
-                        isReadOnly = true;
-                    }
-                }
-
-                return isStatic && isReadOnly;
+                // A static field initializer runs once, readonly or not. Reassigning it later does
+                // not make the table a per-call build.
+                return field.Modifiers.Any(SyntaxKind.StaticKeyword);
             }
 
             if (ancestor is StatementSyntax or MemberDeclarationSyntax)

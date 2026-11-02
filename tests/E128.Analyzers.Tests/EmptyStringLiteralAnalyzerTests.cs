@@ -106,6 +106,35 @@ public sealed class EmptyStringLiteralAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Pattern_NoFire()
+    {
+        // string.Empty is not a constant, so it cannot replace a pattern.
+        return VerifyAsync("""
+                           class C
+                           {
+                               bool M(string s) => s is "";
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SwitchExpressionArm_NoFire()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               int M(string s) => s switch
+                               {
+                                   "" => 0,
+                                   _ => 1
+                               };
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NonEmptyLiteral_NoFire()
     {
         return VerifyAsync("""
@@ -114,6 +143,27 @@ public sealed class EmptyStringLiteralAnalyzerTests
                                void M()
                                {
                                    var x = "hello";
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GotoCaseLiteral_NoFire()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               void M(string s)
+                               {
+                                   switch (s)
+                                   {
+                                       case "a":
+                                           goto case "";
+                                       case "":
+                                           break;
+                                   }
                                }
                            }
                            """);

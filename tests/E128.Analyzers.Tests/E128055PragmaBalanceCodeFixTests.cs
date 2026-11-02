@@ -45,4 +45,27 @@ public sealed class E128055PragmaBalanceCodeFixTests
 
         return VerifyFixAsync(source, fixedCode);
     }
+
+    /// <summary>
+    ///     The bare-disable branch names the suppression with the AllCodes key, so the
+    ///     inserted restore carries no error code list. Covers the fixer's other branch.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PragmaBalance_CodeFix_BareDisableInsertsBareRestore()
+    {
+        const string source = """
+                              {|E128055:#pragma warning disable|}
+                              class Foo { }
+                              """;
+
+        const string fixedCode = """
+                                 #pragma warning disable
+                                 class Foo { }
+                                 #pragma warning restore
+
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
 }

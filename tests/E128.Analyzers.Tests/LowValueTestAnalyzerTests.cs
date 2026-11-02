@@ -871,7 +871,7 @@ public sealed class LowValueTestAnalyzerTests
                                [Fact]
                                public void Should_ReplaceTheAtSign()
                                {
-                                   Assert.Equal("user_domain.com", KeyNormalizer.Sanitize("user@domain.com"));
+                                   Assert.Equal("user_example.com", KeyNormalizer.Sanitize("user@example.com"));
                                }
                            }
                            """);

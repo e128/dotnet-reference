@@ -9,9 +9,12 @@ ROOT="$(find_repo_root)"
 SCRIPTS_DIR="$ROOT/scripts"
 README="$SCRIPTS_DIR/README.md"
 ANALYZER_DIR="$ROOT/src/E128.Analyzers"
+FIXER_DIR="$ROOT/src/E128.Analyzers.CodeFixers"
 ANALYZER_README="$ANALYZER_DIR/README.md"
 JSON=false
 ANALYZER=false
+# Sourced libraries. They are never invoked directly, so the README omits them.
+readonly LIB_EXCLUDE='^(help|lib|lode-lib|lode-ollama-lib)\.sh$'
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -88,7 +91,7 @@ if [[ "$ANALYZER" == true ]]; then
 
     # Fixable ids: extract every FixableDiagnosticIds block, pull ClassName.ConstName
     # references and literal "E128nnn" tokens, resolve refs through the map.
-    rg -U -o --no-heading -e 'FixableDiagnosticIds[[:space:]]*=>[[:space:]]*\[[^]]*\]' "$ANALYZER_DIR" --type cs 2>/dev/null \
+    rg -U -o --no-heading -e 'FixableDiagnosticIds[[:space:]]*=>[[:space:]]*\[[^]]*\]' "$ANALYZER_DIR" "$FIXER_DIR" --type cs 2>/dev/null \
         | grep -oE '([A-Za-z0-9_]+\.[A-Za-z0-9_]*DiagnosticId|"E128[0-9]{3}")' \
         | sed -E 's/"//g' | sort -u > "$WORK/refs.txt" || true
     awk -F'\t' '
@@ -149,19 +152,19 @@ if [[ ! -f "$README" ]]; then
     exit 1
 fi
 
-# Actual scripts on disk (public + internal), excluding help.sh and lib.sh.
+# Actual scripts on disk (public + internal), excluding help.sh and the libraries.
 mapfile -t actual < <(
     {
         fd -e sh --max-depth 1 . "$SCRIPTS_DIR" 2>/dev/null
         fd -e sh --max-depth 1 . "$SCRIPTS_DIR/internal" 2>/dev/null
-    } | sed 's#.*/##' | grep -Ev '^(help|lib)\.sh$' | sort -u
+    } | sed 's#.*/##' | grep -Ev "$LIB_EXCLUDE" | sort -u
 )
 
 # Script names documented in the README — only backtick-wrapped `name.sh` tokens
 # (optionally prefixed with internal/), normalized to basenames. This is how the
 # README references real scripts, so URL/prose false positives (e.g. www.nushell.sh)
 # are excluded.
-mapfile -t documented < <(rg -o -r '$1' '`(?:internal/)?([a-z0-9][a-z0-9-]*\.sh)`' "$README" 2>/dev/null | grep -Ev '^(help|lib)\.sh$' | sort -u)
+mapfile -t documented < <(rg -o -r '$1' '`(?:internal/)?([a-z0-9][a-z0-9-]*\.sh)`' "$README" 2>/dev/null | grep -Ev "$LIB_EXCLUDE" | sort -u)
 
 # Diffs.
 mapfile -t missing < <(comm -23 <(printf '%s\n' "${actual[@]}") <(printf '%s\n' "${documented[@]}"))

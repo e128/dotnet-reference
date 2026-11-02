@@ -1,0 +1,161 @@
+using System.Collections.Immutable;
+using System.Composition;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace E128.Analyzers.Design;
+
+/// <summary>
+///     Code fix for E128032: rewrites <c lang="csharp">Add{Lifetime}&lt;TImpl&gt;()</c> to
+///     <c lang="csharp">Add{Lifetime}&lt;IFoo, TImpl&gt;()</c>. When the concrete type implements
+///     multiple non-marker interfaces, one <see cref="CodeAction" /> is offered per interface.
+/// </summary>
+[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConcreteOnlyDiRegistrationCodeFixProvider))]
+[Shared]
+public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProviderBase
+{
+    public override ImmutableArray<string> FixableDiagnosticIds =>
+        [ConcreteOnlyDiRegistrationAnalyzer.DiagnosticId];
+
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
+    {
+        var diagnostic = context.Diagnostics[0];
+        var node = root.FindNode(diagnostic.Location.SourceSpan);
+
+        var invocation = node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+        if (invocation is null)
+        {
+            return;
+        }
+
+        // An unqualified registration through `using static` has no receiver to rewrite, so
+        // offering a fix would register an action that changes nothing.
+        if (invocation.Expression is not MemberAccessExpressionSyntax)
+        {
+            return;
+        }
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return;
+        }
+
+        if (semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol
+            || methodSymbol.TypeArguments.Length != 1)
+        {
+            return;
+        }
+
+        // The two-type-argument overload takes no factory. A factory that passes an argument builds
+        // something the container cannot reproduce, so the registration must stay as it is.
+        if (!HasNoFactoryOrParameterlessFactory(invocation))
+        {
+            return;
+        }
+
+        RegisterInterfaceFixes(context, invocation, semanticModel, methodSymbol, diagnostic);
+    }
+
+    private static void RegisterInterfaceFixes(
+        CodeFixContext context,
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        IMethodSymbol methodSymbol,
+        Diagnostic diagnostic)
+    {
+        var concreteType = methodSymbol.TypeArguments[0];
+        var nonMarkerInterfaces = concreteType.AllInterfaces
+            .Where(i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
+            .ToList();
+
+        foreach (var iface in nonMarkerInterfaces)
+        {
+            var title = $"Register as Add{methodSymbol.Name.Substring(3)}"
+                        + $"<{iface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}, "
+                        + $"{concreteType.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}>()";
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title,
+                    ct => RewriteToInterfaceMappedAsync(context.Document, invocation, concreteType, iface, ct),
+                    $"E128032_{iface.ToDisplayString()}"),
+                diagnostic);
+        }
+    }
+
+    private static bool HasNoFactoryOrParameterlessFactory(InvocationExpressionSyntax invocation)
+    {
+        if (invocation.ArgumentList.Arguments.Count == 0)
+        {
+            return true;
+        }
+
+        if (invocation.ArgumentList.Arguments.Count > 1)
+        {
+            return false;
+        }
+
+        var body = invocation.ArgumentList.Arguments[0].Expression switch
+        {
+            SimpleLambdaExpressionSyntax simple => simple.Body as ExpressionSyntax,
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.Body as ExpressionSyntax,
+            _ => null
+        };
+
+        return body is ObjectCreationExpressionSyntax creation
+               && (creation.ArgumentList?.Arguments.Count ?? 0) == 0;
+    }
+
+    private static async Task<Document> RewriteToInterfaceMappedAsync(
+        Document document,
+        InvocationExpressionSyntax invocation,
+        ITypeSymbol concreteType,
+        INamedTypeSymbol targetInterface,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+        {
+            return document;
+        }
+
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return document;
+        }
+
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        {
+            return document;
+        }
+
+        // The minimal form qualifies a name only when it is out of scope, and it escapes a keyword
+        // identifier. It also matches the action title, so the preview shows the text that lands.
+        var newTypeArgs = SyntaxFactory.TypeArgumentList(
+            SyntaxFactory.SeparatedList(
+                [
+                    SyntaxFactory.ParseTypeName(
+                        targetInterface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)),
+                    SyntaxFactory.ParseTypeName(
+                        concreteType.ToMinimalDisplayString(semanticModel, invocation.SpanStart))
+                ]));
+
+        var newName = SyntaxFactory.GenericName(memberAccess.Name.Identifier)
+            .WithTypeArgumentList(newTypeArgs);
+
+        var newMemberAccess = memberAccess.WithName(newName);
+        var newInvocation = invocation
+            .WithExpression(newMemberAccess)
+            .WithArgumentList(SyntaxFactory.ArgumentList());
+
+        var newRoot = root.ReplaceNode(invocation, newInvocation);
+        return document.WithSyntaxRoot(newRoot);
+    }
+}

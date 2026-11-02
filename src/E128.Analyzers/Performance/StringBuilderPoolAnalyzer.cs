@@ -12,6 +12,10 @@ public sealed class StringBuilderPoolAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128081";
 
+    internal const string StringBuilderPoolMetadataName = "Pug.Core.Text.StringBuilderPool";
+
+    internal const string StringBuilderPoolNamespace = "Pug.Core.Text";
+
     private const string StringBuilderMetadataName = "System.Text.StringBuilder";
 
     internal static readonly DiagnosticDescriptor Rule = new(
@@ -22,7 +26,7 @@ public sealed class StringBuilderPoolAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Info,
         true,
         "Direct StringBuilder allocations can be replaced with StringBuilderPool.Shared.Rent() " +
-        "from Pug.Text to reuse pooled instances and reduce GC pressure.");
+        "from Pug.Core.Text to reuse pooled instances and reduce GC pressure.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -38,6 +42,14 @@ public sealed class StringBuilderPoolAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
+            // The rule names an API from the Pug package. Without that type the suggestion has no
+            // remedy, so the analyzer must not run at all.
+            var poolType = compilationContext.Compilation.GetTypeByMetadataName(StringBuilderPoolMetadataName);
+            if (poolType is null)
+            {
+                return;
+            }
+
             var stringBuilderType = compilationContext.Compilation.GetTypeByMetadataName(StringBuilderMetadataName);
             if (stringBuilderType is null)
             {

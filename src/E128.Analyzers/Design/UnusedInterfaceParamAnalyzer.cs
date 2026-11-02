@@ -74,7 +74,11 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
 
         foreach (var param in method.Parameters)
         {
-            if (IsCancellationToken(param) || referencedNames.Contains(param.Name))
+            // An underscore-prefixed name is the discard convention the code fix would enforce on
+            // itself, so the parameter needs no report and no fix.
+            if (IsCancellationToken(param)
+                || param.Name.StartsWith("_", StringComparison.Ordinal)
+                || referencedNames.Contains(param.Name))
             {
                 continue;
             }

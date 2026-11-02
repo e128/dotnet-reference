@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -11,18 +12,21 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     E128056: Detects TOCTOU (Time-Of-Check Time-Of-Use) races where code checks
-///     <c lang="csharp">FileInfo.Exists</c> and then immediately reads the file without a try/catch guard.
-///     Between the check and the read, another process can delete or replace the file.
+///     <c lang="csharp">FileInfo.Exists</c> or <c lang="csharp">File.Exists(path)</c> and then reads the file
+///     without a try/catch guard. Between the check and the read, another process can delete or replace the file.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128056";
 
+    private const string FileMetadataName = "System.IO.File";
+    private const string FileSystemInfoMetadataName = "System.IO.FileSystemInfo";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "FileInfo.Exists TOCTOU race condition",
-        "File read on '{0}' follows FileInfo.Exists check without try/catch guard — another process may delete the file between the check and the read",
+        "File existence check TOCTOU race condition",
+        "File read on '{0}' follows an existence check without a try/catch guard. Another process may delete the file between the check and the read.",
         "Reliability",
         DiagnosticSeverity.Warning,
         true,
@@ -51,28 +55,47 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+
+        context.RegisterCompilationStartAction(startContext =>
+        {
+            // The rule names System.IO types. Without them the members below belong to some other
+            // type, so the rule must not run at all.
+            var compilation = startContext.Compilation;
+            var fileType = compilation.GetTypeByMetadataName(FileMetadataName);
+            var fileSystemInfoType = compilation.GetTypeByMetadataName(FileSystemInfoMetadataName);
+            if (fileType is null || fileSystemInfoType is null)
+            {
+                return;
+            }
+
+            startContext.RegisterSyntaxNodeAction(
+                nodeContext => AnalyzeMethod(nodeContext, fileType, fileSystemInfoType),
+                SyntaxKind.MethodDeclaration);
+        });
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeMethod(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol fileType,
+        INamedTypeSymbol fileSystemInfoType)
     {
         var method = (MethodDeclarationSyntax)context.Node;
 
-        var existsIdentifiers = CollectExistsIdentifiers(method);
-        if (existsIdentifiers.Count == 0)
+        var guardedValues = CollectGuardedValues(context, method, fileType, fileSystemInfoType);
+        if (guardedValues.Count == 0)
         {
             return;
         }
 
         foreach (var invocation in method.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
-            if (!IsFileReadCall(invocation))
+            if (!IsFileReadCall(context, invocation, fileType))
             {
                 continue;
             }
 
-            var argIdentifier = ExtractFirstArgIdentifier(invocation);
-            if (argIdentifier is null || !existsIdentifiers.Contains(argIdentifier))
+            var guardedValue = GetGuardedValue(context, invocation, fileSystemInfoType);
+            if (guardedValue is null || !guardedValues.Contains(guardedValue))
             {
                 continue;
             }
@@ -82,13 +105,17 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), argIdentifier));
+            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), DisplayName(guardedValue)));
         }
     }
 
-    private static HashSet<string> CollectExistsIdentifiers(MethodDeclarationSyntax method)
+    private static HashSet<GuardedValue> CollectGuardedValues(
+        SyntaxNodeAnalysisContext context,
+        MethodDeclarationSyntax method,
+        INamedTypeSymbol fileType,
+        INamedTypeSymbol fileSystemInfoType)
     {
-        var result = new HashSet<string>(StringComparer.Ordinal);
+        var result = new HashSet<GuardedValue>(GuardedValueComparer.Instance);
 
         foreach (var memberAccess in method.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
         {
@@ -97,57 +124,163 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // File.Exists(path) guards the path, so the key is the path argument. fileInfo.Exists is a
-            // property read that guards the instance, so the receiver names the guarded thing.
-            // Recording the receiver of File.Exists stores "File", which no read path ever matches.
-            var key = memberAccess.Parent is InvocationExpressionSyntax invocation
-                ? ExtractFirstArgIdentifier(invocation)
-                : null;
-
-            if (key is null && memberAccess.Expression is IdentifierNameSyntax receiver)
+            // File.Exists(path) guards the path value passed in. fileInfo.Exists is a property read
+            // that guards the instance, so the receiver names the guarded thing.
+            if (memberAccess.Parent is InvocationExpressionSyntax invocation)
             {
-                key = receiver.Identifier.ValueText;
+                if (ResolvesTo(context, invocation, fileType))
+                {
+                    AddSymbol(result, GetGuardedValue(context, invocation, fileSystemInfoType));
+                }
+
+                continue;
             }
 
-            if (key is not null)
+            if (IsFileSystemInfoExists(context, memberAccess, fileSystemInfoType))
             {
-                result.Add(key);
+                AddSymbol(result, GetGuardedValue(context, memberAccess.Expression, fileSystemInfoType));
             }
         }
 
         return result;
     }
 
-    private static bool IsFileReadCall(InvocationExpressionSyntax invocation)
+    private static void AddSymbol(HashSet<GuardedValue> target, GuardedValue? value)
+    {
+        if (value is not null)
+        {
+            target.Add(value);
+        }
+    }
+
+    private static bool IsFileSystemInfoExists(
+        SyntaxNodeAnalysisContext context,
+        MemberAccessExpressionSyntax memberAccess,
+        INamedTypeSymbol fileSystemInfoType)
+    {
+        return context.SemanticModel.GetSymbolInfo(memberAccess, context.CancellationToken).Symbol
+                   is IPropertySymbol property
+               && TypeSymbols.DerivesFrom(property.ContainingType, fileSystemInfoType);
+    }
+
+    private static bool IsFileReadCall(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol fileType)
     {
         return invocation.Expression is MemberAccessExpressionSyntax memberAccess
                && FileReadMethods.Contains(memberAccess.Name.Identifier.ValueText)
-               && (memberAccess.Expression is IdentifierNameSyntax { Identifier.ValueText: "File" }
-                   || IsQualifiedFileAccess(memberAccess.Expression));
+               && ResolvesTo(context, invocation, fileType);
     }
 
-    private static bool IsQualifiedFileAccess(ExpressionSyntax expression)
+    /// <summary>
+    ///     The guarded storage location and, for a member, the member that holds it. A plain class
+    ///     because netstandard2.0 analysis assemblies have no IsExternalInit type for records.
+    /// </summary>
+    private sealed class GuardedValue
     {
-        return expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "File" };
+        private readonly int cachedHash;
+
+        public GuardedValue(ISymbol? receiver, ISymbol? member)
+        {
+            Receiver = receiver;
+            Member = member;
+
+            // Compute the hash here instead of in GetHashCode(). A seal-side rule bans a custom
+            // GetHashCode body from reading SymbolEqualityComparer.Default.
+            var receiverHash = receiver is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(receiver);
+            var memberHash = member is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(member);
+            cachedHash = unchecked((receiverHash * 397) ^ memberHash);
+        }
+
+        public ISymbol? Receiver { get; }
+
+        public ISymbol? Member { get; }
+
+        public string Name => Member?.Name ?? Receiver?.Name ?? "<unknown>";
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is GuardedValue other
+                   && SymbolEqualityComparer.Default.Equals(other.Receiver, Receiver)
+                   && SymbolEqualityComparer.Default.Equals(other.Member, Member);
+        }
+
+        public override int GetHashCode()
+        {
+            return cachedHash;
+        }
     }
 
-    private static string? ExtractFirstArgIdentifier(InvocationExpressionSyntax invocation)
+    private sealed class GuardedValueComparer : IEqualityComparer<GuardedValue>
     {
-        var firstArg = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-        if (firstArg is null)
+        public static readonly GuardedValueComparer Instance = new();
+
+        public bool Equals(GuardedValue? x, GuardedValue? y)
+        {
+            return SymbolEqualityComparer.Default.Equals(x?.Receiver, y?.Receiver)
+                   && SymbolEqualityComparer.Default.Equals(x?.Member, y?.Member);
+        }
+
+        public int GetHashCode(GuardedValue obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
+    private static string DisplayName(GuardedValue value)
+    {
+        return value.Name;
+    }
+
+    // The guarded value for File.Exists(path) and for File.ReadAllText(path) is the path argument.
+    private static GuardedValue? GetGuardedValue(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol fileSystemInfoType)
+    {
+        return invocation.ArgumentList.Arguments.Count == 0
+            ? null
+            : GetGuardedValue(context, invocation.ArgumentList.Arguments[0].Expression, fileSystemInfoType);
+    }
+
+    private static GuardedValue? GetGuardedValue(
+        SyntaxNodeAnalysisContext context,
+        ExpressionSyntax expression,
+        INamedTypeSymbol fileSystemInfoType)
+    {
+        // A call names no storage location. Two calls to the same helper bind to one method symbol,
+        // so a call argument cannot identify the guarded value.
+        if (expression is InvocationExpressionSyntax)
         {
             return null;
         }
 
-        // fileInfo.FullName → "fileInfo"
-        if (firstArg is MemberAccessExpressionSyntax argMember
-            && argMember.Expression is IdentifierNameSyntax argId)
+        var symbol = context.SemanticModel.GetSymbolInfo(expression, context.CancellationToken).Symbol;
+        if (symbol is null)
         {
-            return argId.Identifier.ValueText;
+            return null;
         }
 
-        // bare path variable
-        return firstArg is IdentifierNameSyntax directId ? directId.Identifier.ValueText : null;
+        var receiverSymbol = expression is MemberAccessExpressionSyntax member
+            ? context.SemanticModel.GetSymbolInfo(member.Expression, context.CancellationToken).Symbol
+            : null;
+
+        // fileInfo.FullName names the same file as fileInfo, so a member of a FileSystemInfo reduces
+        // to the same guarded value that a read of the receiver itself produces. Any other member
+        // keys on the (receiver, member) pair, so config.Input, config.Output, and the same member
+        // on a sibling instance all stay distinct.
+        return symbol is IPropertySymbol property
+               && TypeSymbols.DerivesFrom(property.ContainingType, fileSystemInfoType)
+               && expression is MemberAccessExpressionSyntax fsMember
+            ? GetGuardedValue(context, fsMember.Expression, fileSystemInfoType)
+            : new GuardedValue(receiverSymbol, symbol);
+    }
+
+    private static bool ResolvesTo(SyntaxNodeAnalysisContext context, SyntaxNode node, INamedTypeSymbol target)
+    {
+        return context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol is IMethodSymbol method
+               && SymbolEqualityComparer.Default.Equals(method.ContainingType, target);
     }
 
     private static bool IsInsideTryCatch(SyntaxNode node, SyntaxNode boundary)

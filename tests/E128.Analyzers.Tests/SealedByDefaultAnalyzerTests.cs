@@ -78,4 +78,100 @@ public sealed class SealedByDefaultAnalyzerTests
                            record class Derived(int X, int Y) : Base(X);
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TypeConstraint_NoFire()
+    {
+        // Sealing Mid would make `where T : Mid` fail with CS0701.
+        return VerifyAsync("""
+                           class Root { }
+                           class Mid : Root { }
+                           class Holder<T> where T : Mid { }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MethodConstraint_NoFire()
+    {
+        return VerifyAsync("""
+                           class Root { }
+                           class Mid : Root { }
+                           static class Entry
+                           {
+                               internal static void Run<T>() where T : Mid { }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LocalFunctionConstraint_NoFire()
+    {
+        return VerifyAsync("""
+                           class Root { }
+                           class Mid : Root { }
+                           class Holder
+                           {
+                               internal static void Outer()
+                               {
+                                   void Inner<T>() where T : Mid { }
+                                   Inner<Mid>();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NestedTypeConstraint_NoFire()
+    {
+        return VerifyAsync("""
+                           class Root { }
+                           class Mid : Root { }
+                           class Outer<T> where T : Mid
+                           {
+                               internal class Inner<U> where U : Mid { }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComImportClass_NoFire()
+    {
+        // CS0424 forbids a base class on a ComImport type, so the rule never sees one.
+        return VerifyAsync("""
+                           using System.Runtime.InteropServices;
+
+                           class Root { }
+                           [ComImport]
+                           [Guid("00000000-0000-0000-0000-000000000001")]
+                           class ComServer { }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GenericConstraint_NoFire()
+    {
+        // The constraint names a constructed type; the original definition carries the rule.
+        return VerifyAsync("""
+                           class Root<T> { }
+                           class Mid<T> : Root<T> { }
+                           class Holder<T> where T : Mid<int> { }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ClassNotUsedAsConstraint_StillFires()
+    {
+        return VerifyAsync("""
+                           class Root { }
+                           class {|E128005:Mid|} : Root { }
+                           class {|E128005:Other|} : Root { }
+                           """);
+    }
 }

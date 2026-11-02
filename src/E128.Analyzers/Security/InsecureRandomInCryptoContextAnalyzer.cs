@@ -94,8 +94,15 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
     {
         var root = context.Node.SyntaxTree.GetRoot(context.CancellationToken);
 
-        return root is CompilationUnitSyntax compilationUnit
-               && compilationUnit.Usings.Any(u =>
-                   string.Equals(u.Name?.ToString(), "System.Security.Cryptography", StringComparison.Ordinal));
+        // A using can sit inside a block namespace as well as at the top of the file.
+        foreach (var directive in root.DescendantNodes().OfType<UsingDirectiveSyntax>())
+        {
+            if (string.Equals(directive.Name?.ToString(), "System.Security.Cryptography", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

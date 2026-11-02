@@ -28,8 +28,10 @@ printf "${DIM}%-24s %s${RESET}\n" "------------------------" "------------------
 for script in "$SCRIPTS_DIR"/*.sh; do
     name="${script##*/}"
 
-    # Skip self and lib
-    [[ "$name" == "help.sh" || "$name" == "lib.sh" ]] && continue
+    # Skip self and the sourced libraries
+    case "$name" in
+        help.sh|lib.sh|lode-lib.sh|lode-ollama-lib.sh) continue ;;
+    esac
 
     # Apply filter
     if [[ -n "$FILTER" && "$name" != *"$FILTER"* ]]; then

@@ -1,0 +1,139 @@
+using System.Collections.Immutable;
+using System.Composition;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace E128.Analyzers.Design;
+
+[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FileSystemInfoEqualityCodeFixProvider))]
+[Shared]
+public sealed class FileSystemInfoEqualityCodeFixProvider : E128CodeFixProviderBase
+{
+    public override ImmutableArray<string> FixableDiagnosticIds =>
+        [FileSystemInfoEqualityAnalyzer.DiagnosticId];
+
+    public override FixAllProvider? GetFixAllProvider()
+    {
+        return WellKnownFixAllProviders.BatchFixer;
+    }
+
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
+    {
+        var diagnostic = context.Diagnostics[0];
+        var node = root.FindNode(diagnostic.Location.SourceSpan);
+
+        if (FindBinaryExpression(node) is not { } binary)
+        {
+            return;
+        }
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return;
+        }
+
+        // The rule fires when either operand is a FileSystemInfo, but reading .FullName works only
+        // when both are. The other operand may be object or an unrelated type.
+        if (!IsFileSystemInfoOperand(binary.Left, semanticModel, context.CancellationToken)
+            || !IsFileSystemInfoOperand(binary.Right, semanticModel, context.CancellationToken))
+        {
+            return;
+        }
+
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                "Compare .FullName instead",
+                ct => FixBinaryExpressionAsync(context.Document, root, binary, ct),
+                nameof(FileSystemInfoEqualityCodeFixProvider)),
+            diagnostic);
+    }
+
+    private static bool IsFileSystemInfoOperand(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var type = semanticModel.GetTypeInfo(expression, cancellationToken).Type;
+        return type is not null && FileSystemInfoEqualityAnalyzer.InheritsFromFileSystemInfo(type);
+    }
+
+    private static BinaryExpressionSyntax? FindBinaryExpression(SyntaxNode node)
+    {
+        var current = node;
+        while (current is not null)
+        {
+            if (current is BinaryExpressionSyntax binary
+                && (binary.IsKind(SyntaxKind.EqualsExpression) || binary.IsKind(SyntaxKind.NotEqualsExpression)))
+            {
+                return binary;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
+    }
+
+    private static Task<Document> FixBinaryExpressionAsync(
+        Document document,
+        SyntaxNode root,
+        BinaryExpressionSyntax binary,
+        CancellationToken cancellationToken)
+    {
+        _ = cancellationToken;
+
+        var leftFullName = CreateFullNameAccess(binary.Left);
+        var rightFullName = CreateFullNameAccess(binary.Right);
+
+        var stringEquals = CreateStringEqualsInvocation(leftFullName, rightFullName);
+
+        ExpressionSyntax replacement = binary.IsKind(SyntaxKind.NotEqualsExpression)
+            ? SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, stringEquals)
+            : stringEquals;
+
+        replacement = replacement.WithTriviaFrom(binary);
+
+        var newRoot = root.ReplaceNode(binary, replacement);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System");
+        return Task.FromResult(document.WithSyntaxRoot(newRoot));
+    }
+
+    private static MemberAccessExpressionSyntax CreateFullNameAccess(ExpressionSyntax expression)
+    {
+        return SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            expression.WithoutTrivia(),
+            SyntaxFactory.IdentifierName("FullName"));
+    }
+
+    private static InvocationExpressionSyntax CreateStringEqualsInvocation(
+        ExpressionSyntax left,
+        ExpressionSyntax right)
+    {
+        var stringEqualsAccess = SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
+            SyntaxFactory.IdentifierName("Equals"));
+
+        var ordinalArg = SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            SyntaxFactory.IdentifierName("StringComparison"),
+            SyntaxFactory.IdentifierName("Ordinal"));
+
+        return SyntaxFactory.InvocationExpression(
+            stringEqualsAccess,
+            SyntaxFactory.ArgumentList(
+                SyntaxFactory.SeparatedList(
+                    [
+                        SyntaxFactory.Argument(left),
+                        SyntaxFactory.Argument(right),
+                        SyntaxFactory.Argument(ordinalArg)
+                    ])));
+    }
+}

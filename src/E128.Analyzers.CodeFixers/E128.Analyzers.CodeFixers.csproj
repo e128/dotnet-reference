@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ============================================== -->
+  <!-- Code fix providers for E128.Analyzers.          -->
+  <!--                                                 -->
+  <!-- Separate assembly: a fix provider needs         -->
+  <!-- Microsoft.CodeAnalysis.Workspaces, and the      -->
+  <!-- compiler host loads the analyzer assembly. RS1038 -->
+  <!-- forbids one assembly from carrying both.        -->
+  <!-- ============================================== -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- The fix providers keep the E128.Analyzers namespace hierarchy. Only the assembly
+         changes, so analyzer types and their fix providers read alike. -->
+    <RootNamespace>E128.Analyzers</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsPackable>false</IsPackable>
+    <!-- PolySharp: netstandard2.0 polyfill for nullable analysis attributes only -->
+    <PolySharpIncludeGeneratedTypes>
+      System.Diagnostics.CodeAnalysis.NotNullWhenAttribute
+    </PolySharpIncludeGeneratedTypes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <PackageReference Include="PolySharp" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- The analyzer types supply the diagnostic ids the fix providers register.
+       InternalsVisibleTo on the analyzer project exposes them across the boundary. -->
+  <ItemGroup>
+    <ProjectReference Include="..\E128.Analyzers\E128.Analyzers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="E128.Analyzers.Tests" />
+  </ItemGroup>
+
+</Project>

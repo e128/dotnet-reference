@@ -1,23 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class EncodingDefaultE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<EncodingDefaultAnalyzer, EncodingDefaultCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<EncodingDefaultAnalyzer, EncodingDefaultCodeFixProvider>(source, fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -41,6 +31,33 @@ public sealed class EncodingDefaultE128CodeFixTests
                                      void M()
                                      {
                                          var bytes = Encoding.UTF8.GetBytes("test");
+                                     }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task EncodingDefault_CodeFix_KeepsTheQualifiedReceiver()
+    {
+        const string source = """
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      var bytes = {|E128006:System.Text.Encoding.Default|}.GetBytes("test");
+                                  }
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 class C
+                                 {
+                                     void M()
+                                     {
+                                         var bytes = System.Text.Encoding.UTF8.GetBytes("test");
                                      }
                                  }
                                  """;
