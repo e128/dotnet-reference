@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-11-01T20:55:29Z*
+*Updated: 2026-11-02T18:23:33Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 
@@ -19,6 +19,19 @@ changes the registration, not the message text.
    forbids it, such as a generic constraint, an override, or a partial type.
 5. Does the fix read a table that this analyzer owns? Declare the table here
    as `internal static readonly`. Never copy it into the fix provider.
+
+## Rule Registration
+
+- `DiagnosticId` is an `internal const string` on the analyzer class. The value
+  is unique and continues the last assigned number.
+- Add the rule to `src/E128.Analyzers/AnalyzerReleases.Unshipped.md`. See
+  [Release Tracking](../release-tracking.md).
+- Add the rule row to the rule table in `src/E128.Analyzers/README.md`. Confirm
+  the table with `scripts/readme-table-diff.sh --analyzer`.
+- Put the analyzer in `src/E128.Analyzers/<Category>/` and the code fix in
+  `src/E128.Analyzers.CodeFixers/<Category>/`. Put the tests in
+  `tests/E128.Analyzers.Tests/`.
+- Add `[Trait("Category", "CI")]` to every new test method.
 
 ## Netstandard2.0 Constraints
 
@@ -173,6 +186,21 @@ comparison loses that order.
   stable.
 - E128088 treats an unguarded `var` or discard pattern as a catch-all. A `when`
   clause filters the match, so a guarded pattern is not exhaustive.
+
+## Choose the Analysis API
+
+- Analyze with `IOperation` or `ISymbol`. Fall back to `SyntaxNode` only when
+  neither expresses the check.
+- Expect `null` from `GetTypeByMetadataName` when two references declare the
+  same type. `MetadataTypes` wraps the `GetTypesByMetadataName` lookup for that
+  case.
+
+## Generated Code
+
+- Pass `GeneratedCodeAnalysisFlags.None` to `ConfigureGeneratedCodeAnalysis`
+  for a rule that must ignore generated code. That is the default shape.
+- Opt in only when the generated file is the subject of the rule. Add a comment
+  that states why.
 
 ## Keep the Package README Current
 
