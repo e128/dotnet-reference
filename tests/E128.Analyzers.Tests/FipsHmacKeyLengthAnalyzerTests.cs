@@ -37,6 +37,22 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task ShortInitializerArrayKey_Reports_E128151()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var hmac = {|E128151:new HMACSHA256(new byte[] { 0x01, 0x02, 0x03, 0x04 })|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task FullKeyCtor_NoReport()
     {
         return VerifyAsync("""

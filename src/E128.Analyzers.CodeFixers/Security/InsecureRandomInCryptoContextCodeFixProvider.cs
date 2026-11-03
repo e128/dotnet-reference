@@ -9,8 +9,6 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Editing;
-using Microsoft.CodeAnalysis.Simplification;
 
 namespace E128.Analyzers.Security;
 
@@ -23,14 +21,16 @@ namespace E128.Analyzers.Security;
 ///     <c lang="csharp">GetInt32</c> positions through the parameters of the bound <c lang="csharp">Random.Next</c>
 ///     overload, so <c lang="csharp">Next(maxValue: 7, minValue: 1)</c> becomes
 ///     <c lang="csharp">GetInt32(1, 7)</c>. The replacement draws from a different random source on purpose, so values
-///     differ from the original. The generated name starts with <c lang="csharp">global::</c> so a local or member named
-///     <c lang="csharp">System</c> cannot capture it.
+///     differ from the original. The replacement binds to the BCL
+///     <c lang="csharp">System.Security.Cryptography.RandomNumberGenerator</c> before the fix is registered.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(InsecureRandomInCryptoContextCodeFixProvider))]
 [Shared]
 public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixProviderBase
 {
     private const string RandomNumberGeneratorTypeName = "System.Security.Cryptography.RandomNumberGenerator";
+
+    private const string RandomNumberGeneratorName = "RandomNumberGenerator";
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [InsecureRandomInCryptoContextAnalyzer.DiagnosticId];
@@ -70,30 +70,38 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use RandomNumberGenerator.GetInt32",
-                ct => ReplaceAsync(context.Document, root, invocation, replacement, ct),
+                ct => Task.FromResult(Replace(context.Document, root, invocation, replacement)),
                 "UseGetInt32"),
             diagnostic);
     }
 
-    private static async Task<Document> ReplaceAsync(
+    private static Document Replace(
         Document document,
         SyntaxNode root,
         InvocationExpressionSyntax invocation,
-        InvocationExpressionSyntax replacement,
-        CancellationToken cancellationToken)
+        InvocationExpressionSyntax replacement)
     {
-        var changed = document.WithSyntaxRoot(root.ReplaceNode(invocation, replacement));
+        var changed = root.ReplaceNode(invocation, replacement);
 
-        // Add the using directive for the fully qualified name, then shorten the name.
-        changed = await ImportAdder.AddImportsAsync(
-            changed,
-            Simplifier.AddImportsAnnotation,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+        // Add the using directive only when a plain RandomNumberGenerator reference does not already resolve to it.
+        var alreadyImported = changed.DescendantNodes()
+            .Any(node => node is UsingDirectiveSyntax { Name: { } imported } &&
+                imported.ToString() is "System.Security.Cryptography" or "System.Security.Cryptography.*");
 
-        return await Simplifier.ReduceAsync(
-            changed,
-            Simplifier.Annotation,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+        var newRoot = alreadyImported ? changed : UsingDirectives.AddIfMissing(changed, "System.Security.Cryptography");
+
+        // AddIfMissing leaves the newline that separated the old usings from the first member, which
+        // doubles as a blank line. The fix keeps the file shape the pre-change ImportAdder output had.
+        if (newRoot is CompilationUnitSyntax unit &&
+            unit.Usings.Count > 0 &&
+            unit.Members.FirstOrDefault() is { } firstMember &&
+            firstMember.GetLeadingTrivia().Count > 0 &&
+            firstMember.GetLeadingTrivia().All(trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)))
+        {
+            newRoot = unit.ReplaceNode(firstMember, firstMember.WithLeadingTrivia(SyntaxFactory.TriviaList()));
+        }
+
+        return document.WithSyntaxRoot(newRoot);
     }
 
     /// <summary>
@@ -107,14 +115,37 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         InvocationExpressionSyntax replacement)
     {
         var expected = model.Compilation.GetTypeByMetadataName(RandomNumberGeneratorTypeName);
-        var bound = model.GetSpeculativeSymbolInfo(
+        if (expected is null ||
+            SymbolEqualityComparer.Default.Equals(expected.ContainingAssembly, model.Compilation.Assembly))
+        {
+            return false;
+        }
+
+        // The emitted replacement uses the plain name, which resolves only after the using directive lands. It
+        // must not bind, at the fix site, to a source type that shadows RandomNumberGenerator.
+        var boundPlain = model.GetSpeculativeSymbolInfo(
             invocation.SpanStart,
             replacement,
             SpeculativeBindingOption.BindAsExpression).Symbol;
+        if (boundPlain is ITypeSymbol { Name: "RandomNumberGenerator" } plainType &&
+            !SymbolEqualityComparer.Default.Equals(plainType, expected))
+        {
+            return false;
+        }
 
-        return expected is not null
-               && !SymbolEqualityComparer.Default.Equals(expected.ContainingAssembly, model.Compilation.Assembly)
-               && bound is IMethodSymbol { Name: "GetInt32", IsStatic: true } getInt32
+        // The API verification needs a binding that ignores the missing using, so it probes the global-qualified form.
+        var probe = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.ParseExpression("global::" + RandomNumberGeneratorTypeName),
+                SyntaxFactory.IdentifierName("GetInt32")),
+            replacement.ArgumentList);
+        var boundGlobal = model.GetSpeculativeSymbolInfo(
+            invocation.SpanStart,
+            probe,
+            SpeculativeBindingOption.BindAsExpression).Symbol;
+
+        return boundGlobal is IMethodSymbol { Name: "GetInt32", IsStatic: true } getInt32
                && SymbolEqualityComparer.Default.Equals(getInt32.ContainingType, expected)
                && getInt32.Parameters.Length == replacement.ArgumentList.Arguments.Count
                && getInt32.Parameters.All(parameter => parameter.Type.SpecialType == SpecialType.System_Int32)
@@ -292,10 +323,9 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         return SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.ParseExpression("global::" + RandomNumberGeneratorTypeName),
+                    SyntaxFactory.ParseExpression(RandomNumberGeneratorName),
                     SyntaxFactory.IdentifierName("GetInt32")),
                 SyntaxFactory.ArgumentList(arguments))
-            .WithTriviaFrom(invocation)
-            .WithAdditionalAnnotations(Simplifier.AddImportsAnnotation, Simplifier.Annotation);
+            .WithTriviaFrom(invocation);
     }
 }

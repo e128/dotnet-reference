@@ -413,4 +413,21 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
                            }
                            """);
     }
+
+    [Theory]
+    [Trait("Category", "CI")]
+    [InlineData("TripleDes3KeyPkcs12")]
+    public Task TripleDesPbeAlgorithm_Reports_E128071(string member)
+    {
+        var code = "using System.Security.Cryptography;\n" +
+            "class C\n" +
+            "{\n" +
+            "    void M()\n" +
+            "    {\n" +
+            $"        var algorithm = {{|E128071:PbeEncryptionAlgorithm.{member}|}};\n" +
+            "    }\n" +
+            "}\n";
+
+        return VerifyAsync(code);
+    }
 }

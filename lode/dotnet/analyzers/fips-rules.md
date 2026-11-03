@@ -1,5 +1,5 @@
 # FIPS Cryptography Rules
-*Updated: 2026-11-03T03:14:50Z*
+*Updated: 2026-11-03T13:17:08Z*
 
 The Security analyzer set enforces organization cryptography policy. All rules
 report an error, so a policy break fails the build by default. E128071 and
@@ -28,6 +28,10 @@ invariants that the rule set shares.
 
 - Every rule reports an error. A policy break fails the build by default, so a
   consumer must fix the code or lower the severity in its own configuration.
+  The only exception in this repository is E128075: `.globalconfig` sets it to
+  `none` because CA5394 and S2245 already cover insecure randomness here. That
+  local suppression is recorded in [redundant-rules.md](redundant-rules.md), and
+  package consumers still receive E128075 as an error.
 - RSA keys use at least 3072 bits. Approved curves are P-384 and P-521.
 - PBKDF2 uses at least 600,000 iterations.
 - AES-GCM uses the full 16-byte tag.
@@ -88,7 +92,9 @@ Invariants:
 - A buffer length also resolves through a slice or a range: `AsSpan`, `AsMemory`,
   `Slice`, `RuntimeHelpers.GetSubArray`, an index expression and an array range.
   A non-constant bound makes the length unknown.
-- A compile-time unknown value is not reported. The rule does not guess.
+- E128143, E128145 and E128149 report a key size or work factor the rule
+  cannot resolve, because a policy break must fail the build. A hash name the
+  rule cannot resolve stays unreported.
 - No rule reads memory or a runtime value.
 
 ## Hash Name Stores

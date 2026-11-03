@@ -24,7 +24,7 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Error,
         true,
         "A concrete Managed or Cng type fixes one implementation. The abstract factory lets the platform " +
-        "choose its cryptographic module. A Cng constructor that takes a key name, a CngKey or a CngProvider " +
+        "choose its cryptographic module. A Cng constructor that takes a CngKey or a CngProvider " +
         "is not reported, because the abstract factory cannot open a persisted key.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -94,17 +94,16 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if ((name.EndsWith("Managed", StringComparison.Ordinal) ||
-             (name.EndsWith("Cng", StringComparison.Ordinal) && !UsesCngKeyStorage(creation.Constructor))) &&
-            SuggestFactory(name, creation) is { } suggestion)
+        if (name.EndsWith("Managed", StringComparison.Ordinal) ||
+            (name.EndsWith("Cng", StringComparison.Ordinal) && !UsesCngKeyStorage(creation.Constructor)))
         {
-            Report(context, creation, name, suggestion);
+            Report(context, creation, name, SuggestFactory(name, creation) ?? "the abstract base factory's Create()");
         }
     }
 
     /// <summary>
-    ///     Returns true for a Cng constructor that takes a key name, <c lang="csharp">CngKey</c> or <c lang="csharp">CngProvider</c>. Those
-    ///     constructors open a persisted or hardware-backed key, which the abstract factory cannot do.
+    ///     Returns true for a Cng constructor that takes a <c lang="csharp">CngKey</c> or a <c lang="csharp">CngProvider</c>.
+    ///     Those constructors open a persisted or hardware-backed key, which the abstract factory cannot do.
     /// </summary>
     private static bool UsesCngKeyStorage(IMethodSymbol? constructor)
     {
@@ -115,8 +114,7 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
 
         foreach (var parameter in constructor.Parameters)
         {
-            if (parameter.Type.SpecialType == SpecialType.System_String ||
-                FipsSymbolHelpers.IsCryptographyType(parameter.Type, "CngKey") ||
+            if (FipsSymbolHelpers.IsCryptographyType(parameter.Type, "CngKey") ||
                 FipsSymbolHelpers.IsCryptographyType(parameter.Type, "CngProvider"))
             {
                 return true;

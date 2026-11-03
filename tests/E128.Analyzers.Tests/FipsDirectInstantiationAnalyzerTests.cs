@@ -21,6 +21,29 @@ public sealed class FipsDirectInstantiationAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task UnmappableConstructorArguments_FallBackToBaseFactoryMessage()
+    {
+        return VerifyAsync("""
+                           namespace System.Security.Cryptography;
+                           class CustomCng
+                           {
+                               public CustomCng(object key)
+                               {
+                               }
+                           }
+
+                           class C
+                           {
+                               void M(object key)
+                               {
+                                   var c = {|E128142:new CustomCng(key)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ManagedType_Reports_E128142()
     {
         return VerifyAsync("""

@@ -69,6 +69,22 @@ public sealed class FipsRsaKeySizeAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task FactoryWithoutCurve_Reports_E128143()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var key = {|E128143:ECDsa.Create()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ApprovedCurve_NoReport()
     {
         return VerifyAsync("""
@@ -94,6 +110,38 @@ public sealed class FipsRsaKeySizeAnalyzerTests
                                void M()
                                {
                                    using var rsa = {|E128143:RSA.Create()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnresolvableCurveName_Reports_E128143()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(string name)
+                               {
+                                   using var key = {|E128143:ECDsa.Create(ECCurve.CreateFromFriendlyName(name))|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CurveFromParameter_Reports_E128143()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(ECCurve curve)
+                               {
+                                   using var key = {|E128143:ECDsa.Create(curve)|};
                                }
                            }
                            """);

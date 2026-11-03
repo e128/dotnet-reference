@@ -185,10 +185,12 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         {
             CheckRsaCreation(context, invocation, invocation.Arguments, type.Name, invocation.Syntax, isFramework);
         }
-        else if (FipsSymbolHelpers.IsCryptographyType(type, "ECDsa") ||
-                 FipsSymbolHelpers.IsCryptographyType(type, "ECDiffieHellman"))
+        else if ((FipsSymbolHelpers.IsCryptographyType(type, "ECDsa") ||
+                  FipsSymbolHelpers.IsCryptographyType(type, "ECDiffieHellman")) &&
+                 // A factory without a curve argument creates the default P-256 key, which is below the policy minimum.
+                 !CheckCurveArgument(context, invocation.Arguments, invocation.Syntax))
         {
-            CheckCurveArgument(context, invocation.Arguments, invocation.Syntax);
+            Report(context, invocation.Syntax, DefaultCurveMessage(type.Name));
         }
 
         return true;
@@ -294,6 +296,11 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         else if (TryGetKeySizeArgument(creation.Arguments, out var keySize))
         {
             CheckKeySize(context, family, createdType.Name, keySize, syntax);
+        }
+        else if (family == Family.EllipticCurve)
+        {
+            // No curve and no key size: the type creates the default P-256 key, which is below the policy minimum.
+            Report(context, syntax, DefaultCurveMessage(createdType.Name));
         }
     }
 
@@ -445,6 +452,9 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
     private static string ImportedCurveMessage(string typeName) =>
         $"{typeName} curve cannot be verified because the key is imported; policy requires P-384 or P-521";
 
+    private static string DefaultCurveMessage(string typeName) =>
+        $"{typeName} created without a curve argument or a key size uses the default P-256 curve; policy requires P-384 or P-521";
+
     /// <summary>
     ///     Returns true when the object initializer, or the first statement that uses the local receiving the new
     ///     key, sets <c lang="csharp">KeySize</c> or imports a key. Each of those reports for itself.
@@ -521,9 +531,17 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
 
     private static void CheckCurveValue(OperationAnalysisContext context, IOperation value, SyntaxNode syntax)
     {
-        if (TryGetCurveName(value, out var curve) && !AllowedCurves.Contains(curve))
+        if (TryGetCurveName(value, out var curve))
         {
-            Report(context, syntax, $"Curve '{curve}' is not P-384 or P-521; use nistP384 or nistP521");
+            if (!AllowedCurves.Contains(curve))
+            {
+                Report(context, syntax, $"Curve '{curve}' is not P-384 or P-521; use nistP384 or nistP521");
+            }
+        }
+        else
+        {
+            // The twin key-size path reports an unresolvable value on purpose, so an unreadable curve cannot hide an unapproved curve.
+            Report(context, syntax, "Curve name cannot be verified at compile time; use nistP384 or nistP521");
         }
     }
 

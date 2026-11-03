@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.60.4" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.65.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -1469,7 +1469,7 @@ The rule needs C# 11 or later. The fix emits the bare literal when the target is
 
 ### E128142: Do not instantiate a Managed or CNG cryptography type
 
-Flags a direct `new` of a type whose name ends in `Managed` or `Cng`. A concrete type fixes one implementation. The abstract factory lets the platform select its cryptographic module. A `Cng` constructor that takes a key name, a `CngKey` or a `CngProvider` is not reported, because the factory cannot open a persisted key. `Rijndael` and `RijndaelManaged` are reported because AES does not allow their block sizes. Types that E128071 already blocks are skipped.
+Flags a direct `new` of a type whose name ends in `Managed` or `Cng`. A concrete type fixes one implementation. The abstract factory lets the platform select its cryptographic module. A `Cng` constructor that takes a `CngKey` or a `CngProvider` is not reported, because the factory cannot open a persisted key. When no factory overload matches the constructor arguments, the message names the abstract base factory instead of an overload. `Rijndael` and `RijndaelManaged` are reported because AES does not allow their block sizes. Types that E128071 already blocks are skipped.
 
 ```csharp
 // Before (warns)
@@ -1481,7 +1481,7 @@ using var sha = SHA256.Create();
 
 ### E128143: Use an RSA key of at least 3072 bits or an approved curve
 
-Flags an RSA key below 3072 bits and an elliptic curve key below 384 bits. Approved curves are P-384 and P-521. A key size that the rule cannot read at compile time is reported, including one created by name, imported from parameters, a handle, a blob, PEM text or a certificate.
+Flags an RSA key below 3072 bits and an elliptic curve key below 384 bits. Approved curves are P-384 and P-521. A key size or a curve name that the rule cannot read at compile time is reported, including a key size created by name, imported from parameters, a handle, a blob, PEM text or a certificate, and a curve held by friendly name, object identifier, parameter reference or struct initializer. A factory or constructor without a curve argument uses the default P-256 curve and is reported.
 
 ```csharp
 // Before (warns)

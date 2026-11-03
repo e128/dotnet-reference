@@ -180,24 +180,6 @@ internal static class FipsSymbolHelpers
     ///     A probe such as <c lang="csharp">Equals</c> or <c lang="csharp">Contains</c> on a framework type is skipped.
     ///     Each name reports once per call.
     /// </summary>
-    public static void ReportHashNameArguments(
-        IMethodSymbol? method,
-        ImmutableArray<IArgumentOperation> arguments,
-        SyntaxNode syntax,
-        Func<string, bool> isForbidden,
-        Action<SyntaxNode, string> report) =>
-        ReportHashNameArguments(
-            method,
-            arguments,
-            syntax,
-            (isForbidden, report),
-            static (state, name) => state.isForbidden(name),
-            static (state, node, name) => state.report(node, name));
-
-    /// <summary>
-    ///     Like <see cref="ReportHashNameArguments" /> but passes <paramref name="state" /> to both delegates, so a
-    ///     caller can use static lambdas and avoid a closure allocation on every call.
-    /// </summary>
     /// <typeparam name="TState">The type of the state passed to both delegates.</typeparam>
     public static void ReportHashNameArguments<TState>(
         IMethodSymbol? method,
@@ -241,20 +223,6 @@ internal static class FipsSymbolHelpers
     ///     Reports a hash name stored where <see cref="ResolveInitializer" /> cannot follow it: an assignment to any
     ///     <c lang="csharp">HashAlgorithmName</c> target, and the initializer of a mutable field or a property. A <c lang="csharp">readonly</c>
     ///     field with an initializer resolves at its use, so its initializer is skipped.
-    /// </summary>
-    public static void ReportHashNameStores(
-        IOperation operation,
-        Func<string, bool> isForbidden,
-        Action<SyntaxNode, string> report) =>
-        ReportHashNameStores(
-            operation,
-            (isForbidden, report),
-            static (state, name) => state.isForbidden(name),
-            static (state, node, name) => state.report(node, name));
-
-    /// <summary>
-    ///     Like <see cref="ReportHashNameStores" /> but passes <paramref name="state" /> to both delegates, so a
-    ///     caller can use static lambdas and avoid a closure allocation on every operation.
     /// </summary>
     /// <typeparam name="TState">The type of the state passed to both delegates.</typeparam>
     public static void ReportHashNameStores<TState>(
@@ -606,7 +574,8 @@ internal static class FipsSymbolHelpers
 
     /// <summary>
     ///     Returns true when <paramref name="operation" />, after any conversions, is an operand of <c lang="csharp">==</c> or
-    ///     <c lang="csharp">!=</c>, a constant pattern, a <c lang="csharp">case</c> label, or the argument of <c lang="csharp">Equals</c> or <c lang="csharp">HasFlag</c>.
+    ///     <c lang="csharp">!=</c>, a constant pattern, a <c lang="csharp">case</c> label, the argument of an
+    ///     <c lang="csharp">Equals</c> or <c lang="csharp">HasFlag</c> call, or the receiver of that call.
     ///     A comparison reads a value and does not select it.
     /// </summary>
     public static bool IsComparison(IOperation operation)
@@ -617,7 +586,12 @@ internal static class FipsSymbolHelpers
             parent = parent.Parent;
         }
 
-        return parent is IBinaryOperation { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals }
+        // The receiver of an Equals or HasFlag call reads the value; only the argument position could mislead a name check.
+        var receiverComparison = parent is IInvocationOperation { TargetMethod.Name: "Equals" or "HasFlag" } comparisonCall &&
+            comparisonCall.Instance == operation;
+
+        return receiverComparison ||
+            parent is IBinaryOperation { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals }
             or IConstantPatternOperation
             or ISingleValueCaseClauseOperation
             or IArgumentOperation { Parent: IInvocationOperation { TargetMethod.Name: "Equals" or "HasFlag" } };
@@ -778,13 +752,14 @@ internal static class FipsSymbolHelpers
             case null:
                 return false;
 
-            case IArrayCreationOperation { DimensionSizes.Length: 1 } array:
-                if (TryGetConstant<int>(array.DimensionSizes[0], out var size))
+            case IArrayCreationOperation array:
+                if (array.DimensionSizes.Length == 1 && TryGetConstant<int>(array.DimensionSizes[0], out var size))
                 {
                     length = size;
                     return true;
                 }
 
+                // 'new byte[] { ... }' carries no dimension size, so the element count is the length.
                 if (array.Initializer is not null)
                 {
                     length = array.Initializer.ElementValues.Length;

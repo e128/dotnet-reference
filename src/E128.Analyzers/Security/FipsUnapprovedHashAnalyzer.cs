@@ -423,7 +423,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         return string.Equals(method.Name, "Pbkdf2", StringComparison.Ordinal)
             ? FipsSymbolHelpers.IsCryptographyType(owner, "Rfc2898DeriveBytes") ||
                 FipsSymbolHelpers.IsType(owner, "KeyDerivation", "Microsoft.AspNetCore.Cryptography.KeyDerivation")
-            : FipsSymbolHelpers.IsBclType(owner) &&
+            : FipsSymbolHelpers.DerivesFromCryptographyType(owner, "AsymmetricAlgorithm") &&
                 (method.Name.StartsWith("Verify", StringComparison.Ordinal) ||
                  method.Name.StartsWith("TryVerify", StringComparison.Ordinal));
     }

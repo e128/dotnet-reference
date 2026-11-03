@@ -220,6 +220,7 @@ public sealed class InsecureRandomInCryptoContextE128CodeFixTests
             """
             using System;
             using System.Security.Cryptography;
+
             class C
             {
                 int M()

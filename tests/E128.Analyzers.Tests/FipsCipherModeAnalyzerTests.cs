@@ -84,4 +84,22 @@ public sealed class FipsCipherModeAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ModeEqualsReceiver_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(Aes aes)
+                               {
+                                   if (CipherMode.ECB.Equals(aes.Mode))
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
 }
