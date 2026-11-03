@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -8,9 +9,9 @@ namespace E128.Analyzers.Performance;
 
 /// <summary>
 ///     E128152: Reports code whose inferred algorithmic complexity exceeds a configurable ceiling.
-///     Flags nested loops of depth 2 or more (quadratic and worse) and direct non-memoized recursion
-///     within a type (exponential). The ceiling is a named tier set by the
-///     `e128_max_complexity` option.
+///     A loop inside another loop infers tier `quadratic`; a loop three or more levels deep infers
+///     tier `cubic or worse`. Direct non-memoized recursion within a type infers tier `exponential`.
+///     The ceiling is a named tier set by the `e128_max_complexity` option.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
@@ -19,6 +20,10 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
 
     private const string CeilingOptionKey = "e128_max_complexity";
     private const string DefaultCeiling = "linear";
+    private const int LinearTierRank = 0;
+    private const int LinearithmicTierRank = 1;
+    private const int QuadraticTierRank = 2;
+    private const int ExponentialTierRank = 3;
 
     private static readonly DiagnosticDescriptor NestedLoopRule = new(
         DiagnosticId,
@@ -48,26 +53,23 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterOperationAction(AnalyzeOperation, OperationKind.Loop);
+        context.RegisterOperationAction(AnalyzeLoop, OperationKind.Loop);
         context.RegisterOperationBlockAction(AnalyzeMethodRecursion);
     }
 
-    private static void AnalyzeOperation(OperationAnalysisContext context)
+    private static void AnalyzeLoop(OperationAnalysisContext context)
     {
-        if (context.Operation is not ILoopOperation loop)
-        {
-            return;
-        }
-
-        var tier = GetNestingTier(context.Operation);
+        var (tier, tierRank) = GetLoopTier(CountEnclosingLoops(context.Operation) + 1);
         var ceiling = GetCeiling(context.Operation.Syntax.SyntaxTree, context.Options.AnalyzerConfigOptionsProvider);
 
-        if (TierRank(tier) <= TierRank(ceiling))
+        TryGetTierRank(ceiling, out var ceilingRank);
+
+        if (tierRank <= ceilingRank)
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(NestedLoopRule, loop.Syntax.GetLocation(), tier, ceiling));
+        context.ReportDiagnostic(Diagnostic.Create(NestedLoopRule, context.Operation.Syntax.GetLocation(), tier, ceiling));
     }
 
     private static int CountEnclosingLoops(IOperation operation)
@@ -82,18 +84,23 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
                 enclosing++;
             }
 
+            if (current.Kind is OperationKind.AnonymousFunction or OperationKind.LocalFunction)
+            {
+                return 0;
+            }
+
             current = current.Parent;
         }
 
         return enclosing;
     }
 
-    private static string GetNestingTier(IOperation operation)
+    private static (string Tier, int Rank) GetLoopTier(int depth) => depth switch
     {
-        return CountEnclosingLoops(operation) == 0
-            ? "linear"
-            : "quadratic";
-    }
+        1 => ("linear", LinearTierRank),
+        2 => ("quadratic", QuadraticTierRank),
+        _ => ("cubic or worse", ExponentialTierRank),
+    };
 
     private static void AnalyzeMethodRecursion(OperationBlockAnalysisContext context)
     {
@@ -115,11 +122,13 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
             {
                 recursiveCalls++;
             }
-            else if (operation is IAssignmentOperation assignment && WritesToContainingTypeField(assignment.Target, containingType))
+            else if (operation is IAssignmentOperation assignment
+                     && Memoizes(assignment.Target, containingType, context.Compilation))
             {
                 memoizes = true;
             }
-            else if (operation is IIncrementOrDecrementOperation increment && WritesToContainingTypeField(increment.Target, containingType))
+            else if (operation is IIncrementOrDecrementOperation increment
+                     && Memoizes(increment.Target, containingType, context.Compilation))
             {
                 memoizes = true;
             }
@@ -132,7 +141,9 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
 
         var ceiling = GetCeiling(body.Syntax.SyntaxTree, context.Options.AnalyzerConfigOptionsProvider);
 
-        if (TierRank("exponential") <= TierRank(ceiling))
+        TryGetTierRank(ceiling, out var ceilingRank);
+
+        if (ExponentialTierRank <= ceilingRank)
         {
             return;
         }
@@ -147,6 +158,12 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(RecursionRule, declaration.GetLocation(), ceiling));
+    }
+
+    private static bool Memoizes(IOperation target, INamedTypeSymbol containingType, Compilation compilation)
+    {
+        return WritesToContainingTypeField(target, containingType)
+               || WritesToDictionaryLocal(target, compilation);
     }
 
     private static bool WritesToContainingTypeField(IOperation target, INamedTypeSymbol containingType)
@@ -164,29 +181,65 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static int TierRank(string tier) => tier switch
+    private static bool WritesToDictionaryLocal(IOperation target, Compilation compilation)
     {
-        { } t when string.Equals(t, "linear", StringComparison.Ordinal) => 0,
-        { } t when string.Equals(t, "linearithmic", StringComparison.Ordinal) => 1,
-        { } t when string.Equals(t, "quadratic", StringComparison.Ordinal) => 2,
-        _ => 3
-    };
+        var dictionaryInterface = compilation.GetTypeByMetadataName("System.Collections.Generic.IDictionary`2");
+
+        if (dictionaryInterface is null)
+        {
+            return false;
+        }
+
+        foreach (var part in target.DescendantsAndSelf())
+        {
+            if (part is ILocalReferenceOperation localReference
+                && localReference.Local.Type is { } localType
+                && localType.AllInterfaces.Any(interfaceType =>
+                    SymbolEqualityComparer.Default.Equals(interfaceType.OriginalDefinition, dictionaryInterface)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryGetTierRank(string value, out int rank)
+    {
+        if (string.Equals(value, "linear", StringComparison.Ordinal))
+        {
+            rank = LinearTierRank;
+            return true;
+        }
+
+        if (string.Equals(value, "linearithmic", StringComparison.Ordinal))
+        {
+            rank = LinearithmicTierRank;
+            return true;
+        }
+
+        if (string.Equals(value, "quadratic", StringComparison.Ordinal))
+        {
+            rank = QuadraticTierRank;
+            return true;
+        }
+
+        if (string.Equals(value, "exponential", StringComparison.Ordinal))
+        {
+            rank = ExponentialTierRank;
+            return true;
+        }
+
+        rank = ExponentialTierRank;
+        return false;
+    }
 
     private static string GetCeiling(SyntaxTree syntaxTree, AnalyzerConfigOptionsProvider provider)
     {
         var options = provider.GetOptions(syntaxTree);
 
-        return options.TryGetValue(CeilingOptionKey, out var rawValue)
-               && IsNamedTier(rawValue)
+        return options.TryGetValue(CeilingOptionKey, out var rawValue) && TryGetTierRank(rawValue, out _)
             ? rawValue
             : DefaultCeiling;
-    }
-
-    private static bool IsNamedTier(string value)
-    {
-        return string.Equals(value, "linear", StringComparison.Ordinal)
-               || string.Equals(value, "linearithmic", StringComparison.Ordinal)
-               || string.Equals(value, "quadratic", StringComparison.Ordinal)
-               || string.Equals(value, "exponential", StringComparison.Ordinal);
     }
 }

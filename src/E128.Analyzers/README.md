@@ -1902,9 +1902,9 @@ var cells = Enumerable.Range(0, columns.Count)
     .ToList();
 ```
 
-### E128152 &mdash; Complexity ceiling: nested loops and non-memoized recursion
+### E128152: Complexity ceiling: nested loops and non-memoized recursion
 
-Flags two shapes whose cost grows past the configured ceiling. A loop with an enclosing loop in the same method infers tier `quadratic`. A method body that calls itself two or more times with no write to a field of the containing type anywhere in the body infers tier `exponential` (direct same-type recursion only; a single self-call such as tree or tail recursion stays silent, and a single loop stays silent). The diagnostic anchors on the inner loop or on the recursive method declaration. No code fix.
+Flags two shapes whose cost grows past the configured ceiling. A loop with an enclosing loop in the same method infers tier `quadratic`. A loop two or more levels deeper is reported as tier `cubic or worse`. A method body that calls itself two or more times with no write to a field of the containing type or an `IDictionary`-typed local anywhere in the body infers tier `exponential`. Reach is direct same-type recursion only. A single self-call such as tree or tail recursion stays silent, and a single loop stays silent. The diagnostic anchors on the inner loop or on the recursive method declaration. No code fix.
 
 Set the allowed ceiling with `e128_max_complexity` in `.globalconfig` or `.editorconfig`. Named tiers: `linear`, `linearithmic`, `quadratic`, `exponential`. Default `linear`, so linearithmic and worse fires. In-loop lookups, sorts, and string concatenation keep their dedicated rules (E128066, E128067, E128068, E128009) and stay out of this rule. Suppress a constant-size or coordinate-table nesting per site. At ceiling `exponential` neither shape can fire.
 

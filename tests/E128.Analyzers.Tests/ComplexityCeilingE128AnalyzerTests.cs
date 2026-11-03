@@ -102,6 +102,65 @@ public sealed class ComplexityCeilingE128AnalyzerTests
         return VerifyWithCeilingAsync("quadratic", NestedLoopCode);
     }
 
+    private const string DepthThreeLoopCode = """
+                                         class C
+                                         {
+                                             void M(string[] items)
+                                             {
+                                                 foreach (var a in items)
+                                                 {
+                                                     foreach (var b in items)
+                                                     {
+                                                         foreach (var c in items)
+                                                         {
+                                                             _ = a.Length + b.Length + c.Length;
+                                                         }
+                                                     }
+                                                 }
+                                             }
+                                         }
+                                         """;
+
+    private const string LoopInsideLambdaLoopCode = """
+                                                    class C
+                                                    {
+                                                        void M(string[] items)
+                                                        {
+                                                            foreach (var a in items)
+                                                            {
+                                                                System.Action act = () =>
+                                                                {
+                                                                    foreach (var b in items)
+                                                                    {
+                                                                        _ = a.Length + b.Length;
+                                                                    }
+                                                                };
+                                                            }
+                                                        }
+                                                    }
+                                                    """;
+
+    private const string LoopInsideLocalFunctionLoopCode = """
+                                                           class C
+                                                           {
+                                                               void M(string[] items)
+                                                               {
+                                                                   foreach (var a in items)
+                                                                   {
+                                                                       int Probe(int v)
+                                                                       {
+                                                                           for (var i = 0; i < v; i++)
+                                                                           {
+                                                                               _ = a.Length + i;
+                                                                           }
+                                                                           return v;
+                                                                       }
+                                                                       _ = Probe(items.Length);
+                                                                   }
+                                                               }
+                                                           }
+                                                           """;
+
     private const string BranchingRecursionCode = """
                                                  class C
                                                  {
@@ -115,6 +174,23 @@ public sealed class ComplexityCeilingE128AnalyzerTests
                                                      }
                                                  }
                                                  """;
+
+    private const string LocalDictionaryMemoizedRecursionCode = """
+                                                                using System.Collections.Generic;
+                                                                class C
+                                                                {
+                                                                    int Fib(int n)
+                                                                    {
+                                                                        var memo = new Dictionary<int, int>();
+                                                                        if (memo.TryGetValue(n, out var value))
+                                                                        {
+                                                                            return value;
+                                                                        }
+                                                                        memo[n] = Fib(n - 1) + Fib(n - 2);
+                                                                        return memo[n];
+                                                                    }
+                                                                }
+                                                                """;
 
     private const string MemoizedRecursionCode = """
                                                  class C
@@ -163,5 +239,55 @@ public sealed class ComplexityCeilingE128AnalyzerTests
     public Task ComplexityCeilingAnalyzer_Silent_WhenSuppressionAttributePresent()
     {
         return VerifyAsync(SuppressedNestedLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_ReportsDepthThreeNesting_AtMiddleAndInnerLoops()
+    {
+        return VerifyAsync(DepthThreeLoopCode,
+            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(7, 13),
+            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(9, 17));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_FiresAtLinearithmicCeiling_WhenDepthTwoLoopsPresent()
+    {
+        return VerifyWithCeilingAsync("linearithmic", NestedLoopCode,
+            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(7, 13));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_QuadraticCeiling_StillFlagsDepthThreeLoop()
+    {
+        return VerifyWithCeilingAsync("quadratic", DepthThreeLoopCode,
+            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(9, 17));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopLivesOnlyInsideLambda()
+    {
+        return VerifyAsync(LoopInsideLambdaLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopLivesOnlyInsideLocalFunction()
+    {
+        return VerifyAsync(LoopInsideLocalFunctionLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionMemoizesIntoLocalDictionary()
+    {
+        return VerifyAsync(LocalDictionaryMemoizedRecursionCode);
     }
 }
