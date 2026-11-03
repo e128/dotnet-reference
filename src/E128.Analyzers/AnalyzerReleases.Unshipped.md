@@ -12,6 +12,7 @@ E128148 | Security | Error    | Do not use a cipher excluded by policy
 E128149 | Security | Error    | Use the full 16-byte AES-GCM tag
 E128150 | Security | Error    | Do not use SHA-3, SHAKE or KMAC
 E128151 | Security | Error    | Use an HMAC key at least as long as the hash output
+E128152 | Performance | Warning | Flags complexity past the e128_max_complexity ceiling: nested loops depth 2+ and non-memoized recursion
 
 ### Changed Rules
 

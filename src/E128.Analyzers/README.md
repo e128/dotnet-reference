@@ -128,6 +128,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128135 | Use `TensorPrimitives.Sum` instead of a sum loop                                                                 | Yes      |
 | E128140 | Use `Span.Fill`/`Clear`/`CopyTo` instead of an element loop                                                      | Yes      |
 | E128141 | Use a `u8` literal instead of `Encoding.UTF8.GetBytes`                                                           | Yes      |
+| E128152 | Complexity past the `e128_max_complexity` ceiling (nested loops, recursion)                                      | No       |
 
 ### Security
 
@@ -1901,6 +1902,30 @@ var cells = Enumerable.Range(0, columns.Count)
     .ToList();
 ```
 
+### E128152: Complexity ceiling: nested loops and non-memoized recursion
+
+Flags two shapes whose cost grows past the configured ceiling. A loop with an enclosing loop in the same method infers tier `quadratic`. A loop two or more levels deeper is reported as tier `cubic or worse`. A method body that calls itself two or more times with no write to a field of the containing type or an `IDictionary`-typed local anywhere in the body infers tier `exponential`. Reach is direct same-type recursion only. A single self-call such as tree or tail recursion stays silent, and a single loop stays silent. The diagnostic anchors on the inner loop or on the recursive method declaration. No code fix.
+
+Set the allowed ceiling with `e128_max_complexity` in `.globalconfig` or `.editorconfig`. Named tiers: `linear`, `linearithmic`, `quadratic`, `exponential`. Default `linear`, so linearithmic and worse fires. In-loop lookups, sorts, and string concatenation keep their dedicated rules (E128066, E128067, E128068, E128009) and stay out of this rule. Suppress a constant-size or coordinate-table nesting per site. At ceiling `exponential` neither shape can fire.
+
+```csharp
+// Before (warns)
+foreach (var a in items)
+{
+    foreach (var b in items)
+    {
+        _ = a.Length + b.Length;
+    }
+}
+
+// After — hoist the outer work, or track the inner iteration on a set
+var seen = new HashSet<string>(items);
+foreach (var a in items)
+{
+    Process(a);
+}
+```
+
 ## Configuration
 
 Override severity per rule in `.editorconfig`:
@@ -1911,6 +1936,9 @@ dotnet_diagnostic.E128008.severity = error
 
 # Disable a rule
 dotnet_diagnostic.E128005.severity = none
+
+# Set the complexity ceiling for E128152 (linear, linearithmic, quadratic, exponential)
+e128_max_complexity = linearithmic
 ```
 
 ## Requirements
