@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-01T20:54:44Z*
+*Updated: 2026-11-03T03:13:32Z*
 
 ## Generated Docs
 
@@ -32,15 +32,19 @@
 
 ### dotnet/analyzers/
 
+- [summary.md](dotnet/analyzers/summary.md): Domain snapshot, reading order, shared invariants
 - [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md): Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
+- [configuration.md](dotnet/analyzers/configuration.md): Option surfaces, key naming, severity keys, MSBuild properties, additional files
+- [symbol-lookups.md](dotnet/analyzers/symbol-lookups.md): Documentation comment IDs, accessibility, interface implementation, data and control flow, scoped registration
+- [testing.md](dotnet/analyzers/testing.md): Markup forms, code fix assertions, option injection, Roslyn version alignment
 - [redundant-rules.md](dotnet/analyzers/redundant-rules.md): E128 rules disabled because third-party analyzers cover them
-- [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md): Code fix implementation patterns, BatchFixer vs SequentialRename, AddUsing blank line behavior
-- [code-fix-output.md](dotnet/analyzers/code-fix-output.md): Rules for the source a fix writes: valid literals, formatter placement, single insert, rewrite shape guards
-- [code-fix-trivia.md](dotnet/analyzers/code-fix-trivia.md): Trivia the fix must keep: absent whitespace, replacement literals, member removal
-- [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
+- [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md): Code fix structure: decision list, code-aware library, AddUsing, span widening, tables, registration
+- [code-fix-output.md](dotnet/analyzers/code-fix-output.md): Text the fix writes and keeps: literals, formatter, inserted members, trivia, rewrite shape guards
+- [code-fix-techniques.md](dotnet/analyzers/code-fix-techniques.md): Fix-all providers, DocumentEditor, speculative bind, error-count guard, generator, attribute update
 - [performance.md](dotnet/analyzers/performance.md): Analyzer hot-path rules: bind late, resolve types once, scan each scope once
-- [code-fix-techniques.md](dotnet/analyzers/code-fix-techniques.md): DocumentEditor, speculative bind, error-count guard, generator, attribute update
-- [package-layout.md](dotnet/analyzers/package-layout.md): two assemblies, per-Roslyn packaging, banned symbols, build metadata
+- [package-layout.md](dotnet/analyzers/package-layout.md): two assemblies, NuGet analyzer layout, per-Roslyn packaging, build metadata
+- [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
+- [fips-rules.md](dotnet/analyzers/fips-rules.md): FIPS rule map, policy values, shared symbol and constant helpers
 
 ## dotnet-reference/
 

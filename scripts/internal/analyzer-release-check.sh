@@ -35,12 +35,14 @@ while IFS= read -r id; do
     source_ids+=("$id")
 done < <(rg -o '"E128\d{3}"' "$ANALYZER_DIR/" --no-filename 2>/dev/null | tr -d '"' | sort -u)
 
-# 2. Extract IDs from Unshipped.md
+# 2. Extract IDs from the New Rules section of Unshipped.md.
+# A rule under Changed Rules is already shipped, so its old Shipped entry is
+# expected and must not count as a duplicate.
 unshipped_ids=()
 if [[ -f "$UNSHIPPED" ]]; then
     while IFS= read -r id; do
         unshipped_ids+=("$id")
-    done < <(rg -o 'E128\d{3}' "$UNSHIPPED" 2>/dev/null | sort -u)
+    done < <(awk '/^### Changed Rules/ { exit } { print }' "$UNSHIPPED" | rg -o 'E128\d{3}' | sort -u)
 fi
 
 # 3. Extract IDs from Shipped.md

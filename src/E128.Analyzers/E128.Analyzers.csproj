@@ -12,13 +12,13 @@
     <NoWarn>$(NoWarn);RS2007;RS0016;RS0017;NU5128</NoWarn>
     <!-- PolySharp: netstandard2.0 polyfill for nullable analysis attributes only -->
     <PolySharpIncludeGeneratedTypes>
-      System.Diagnostics.CodeAnalysis.NotNullWhenAttribute
+      System.Diagnostics.CodeAnalysis.NotNullWhenAttribute;System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute
     </PolySharpIncludeGeneratedTypes>
   </PropertyGroup>
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>1.60.4</Version>
+    <Version>1.65.1</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>

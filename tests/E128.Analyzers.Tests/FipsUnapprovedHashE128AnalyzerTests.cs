@@ -341,4 +341,76 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RsaEncryptWithPkcs1Padding_Reports()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               byte[] M(RSA rsa)
+                               {
+                                   return rsa.Encrypt(new byte[1], {|E128071:RSAEncryptionPadding.Pkcs1|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RsaSignWithPkcs1Padding_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               byte[] M(RSA rsa, byte[] hash)
+                               {
+                                   return rsa.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CipherNamedTypeWithForbiddenFactoryName_NoReport()
+    {
+        // E128148 owns the type. Its verdict stops the factory-name analysis, so the call site gets one diagnostic.
+        return VerifyAsync("""
+                           namespace System.Security.Cryptography
+                           {
+                               class BlowfishEngine
+                               {
+                                   public static object Create(string name) => null;
+                               }
+                           }
+
+                           class C
+                           {
+                               void M()
+                               {
+                                   var cipher = System.Security.Cryptography.BlowfishEngine.Create("MD5");
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Pkcs1KeyExchangeFormatter_Reports()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(RSA rsa)
+                               {
+                                   var formatter = {|E128071:new RSAPKCS1KeyExchangeFormatter(rsa)|};
+                               }
+                           }
+                           """);
+    }
 }
