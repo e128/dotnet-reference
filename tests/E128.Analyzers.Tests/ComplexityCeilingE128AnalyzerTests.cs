@@ -102,15 +102,52 @@ public sealed class ComplexityCeilingE128AnalyzerTests
         return VerifyWithCeilingAsync("quadratic", NestedLoopCode);
     }
 
-    [Fact]
-    [Trait("Category", "CI")]
-    public void ComplexityCeilingAnalyzer_FlagsBranchingRecursion_WhenNoMemoization()
-        => Assert.Fail("Not implemented — see Verifiable Behaviors in plan.md");
+    private const string BranchingRecursionCode = """
+                                                 class C
+                                                 {
+                                                     int Fib(int n)
+                                                     {
+                                                         if (n < 2)
+                                                         {
+                                                             return n;
+                                                         }
+                                                         return Fib(n - 1) + Fib(n - 2);
+                                                     }
+                                                 }
+                                                 """;
+
+    private const string MemoizedRecursionCode = """
+                                                 class C
+                                                 {
+                                                     int[] cache = new int[64];
+
+                                                     int Fib(int n)
+                                                     {
+                                                         if (n < 2)
+                                                         {
+                                                             return n;
+                                                         }
+                                                         cache[n] = Fib(n - 1) + Fib(n - 2);
+                                                         return cache[n];
+                                                     }
+                                                 }
+                                                 """;
 
     [Fact]
     [Trait("Category", "CI")]
-    public void ComplexityCeilingAnalyzer_Silent_WhenRecursionMemoizes()
-        => Assert.Fail("Not implemented — see Verifiable Behaviors in plan.md");
+    public Task ComplexityCeilingAnalyzer_FlagsBranchingRecursion_WhenNoMemoization()
+    {
+        return VerifyAsync(BranchingRecursionCode,
+            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(3, 5));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionMemoizes()
+    {
+        return VerifyAsync(MemoizedRecursionCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

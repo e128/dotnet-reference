@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace E128.Analyzers.Performance;
 
@@ -49,6 +49,7 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterOperationAction(AnalyzeOperation, OperationKind.Loop);
+        context.RegisterOperationBlockAction(AnalyzeMethodRecursion);
     }
 
     private static void AnalyzeOperation(OperationAnalysisContext context)
@@ -92,6 +93,75 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         return CountEnclosingLoops(operation) == 0
             ? "linear"
             : "quadratic";
+    }
+
+    private static void AnalyzeMethodRecursion(OperationBlockAnalysisContext context)
+    {
+        if (context.OwningSymbol is not IMethodSymbol method
+            || method.ContainingType is not { } containingType
+            || context.OperationBlocks.IsEmpty
+            || context.OperationBlocks[0] is not IBlockOperation body)
+        {
+            return;
+        }
+
+        var recursiveCalls = 0;
+        var memoizes = false;
+
+        foreach (var operation in body.DescendantsAndSelf())
+        {
+            if (operation is IInvocationOperation invocation
+                && SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.OriginalDefinition, method.OriginalDefinition))
+            {
+                recursiveCalls++;
+            }
+            else if (operation is IAssignmentOperation assignment && WritesToContainingTypeField(assignment.Target, containingType))
+            {
+                memoizes = true;
+            }
+            else if (operation is IIncrementOrDecrementOperation increment && WritesToContainingTypeField(increment.Target, containingType))
+            {
+                memoizes = true;
+            }
+        }
+
+        if (recursiveCalls < 2 || memoizes)
+        {
+            return;
+        }
+
+        var ceiling = GetCeiling(body.Syntax.SyntaxTree, context.Options.AnalyzerConfigOptionsProvider);
+
+        if (TierRank("exponential") <= TierRank(ceiling))
+        {
+            return;
+        }
+
+        var declaration = method.DeclaringSyntaxReferences.Length > 0
+            ? method.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
+            : null;
+
+        if (declaration is null)
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(RecursionRule, declaration.GetLocation(), ceiling));
+    }
+
+    private static bool WritesToContainingTypeField(IOperation target, INamedTypeSymbol containingType)
+    {
+        foreach (var part in target.DescendantsAndSelf())
+        {
+            if (part is IFieldReferenceOperation fieldReference
+                && fieldReference.Field.ContainingType is { } owner
+                && SymbolEqualityComparer.Default.Equals(owner.OriginalDefinition, containingType.OriginalDefinition))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static int TierRank(string tier) => tier switch
