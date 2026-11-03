@@ -34,6 +34,11 @@ of what is portable versus Claude-only.
 - **Build** — `scripts/check.sh` is the single shell lint, format, build, and
   test gate. It runs `scripts/lint-shell.sh` first. Never call raw
   `shellcheck` in a gate.
+- **Subagents** — fan out to five subagents by default when five genuinely
+  independent workstreams exist and parallel work is safe. Use fewer when work
+  overlaps, the task does not justify five, coordination costs outweigh the
+  gain, or a tool or permission blocks independent execution. Never create work
+  to hit the count. Avoid overlapping edits and synthesize the findings.
 - **Verify before you claim done.** Re-run the build and the affected tests
   after the last edit. Never assume a fix works. When a build or a run fails,
   report it. Never claim success unless the build and the tests pass.

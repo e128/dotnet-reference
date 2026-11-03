@@ -1,8 +1,10 @@
 # Code Fix Output
-*Updated: 2026-11-01T20:55:29Z*
+*Updated: 2026-11-03T03:14:50Z*
 
-Rules for the code a fix writes. A fix that emits a broken member costs more than
-a missing fix: the apply path writes it into the document.
+Rules for the text a fix writes and the text around it. A fix that emits a
+broken member costs more than a missing fix: the apply path writes it into the
+document. The rewrite shapes live in
+[code-fix-patterns.md](code-fix-patterns.md).
 
 ## Emit Valid Source Text
 
@@ -17,6 +19,10 @@ sb.Append('"').Append(literal).Append('"');
 sb.Append(SymbolDisplay.FormatLiteral(literal, quote: true));
 ```
 
+`SyntaxFactory.Literal(value)` takes token text, not a value. It emits an
+unquoted literal. Pass `SymbolDisplay.FormatLiteral(value, quote: true)` as the
+text, and the value as the second argument. E128013 follows this rule.
+
 `SyntaxFactory.ParseMemberDeclaration` returns null when the text is malformed.
 A fallback branch that emits a stub member hides the defect and writes broken
 code into the document. Use a formatter for each value and the parse holds.
@@ -27,6 +33,13 @@ parses the InlineArray struct before it registers and offers no fix on a null.
 `MultiStringEqualsOrChainCodeFixProvider` returns null from its build step and
 leaves the document unchanged. It validates the whole member before it
 registers, so every offered fix changes code.
+
+## Text in an Interpolated String
+
+An `InterpolatedStringTextToken` carries two texts. `Text` is source text, so
+escape it. `ValueText` is the runtime value, so keep it raw. Set both to the
+escaped text and a tree comparison against parsed source fails. Set both raw
+and a quote or a line break breaks the emitted literal.
 
 ## Place a New Node with the Formatter
 
@@ -63,6 +76,60 @@ type reformats every member that the caller already wrote. E128054 inserts an
 Keep manual trivia when a token replaces an absent token, and when the test pins
 a blank line that the formatter would collapse.
 
+## Copy Only the Indentation
+
+A method leading trivia holds the doc comment as well as the indentation.
+Copying the whole list onto a new attribute list duplicates the comment.
+
+Copy the last whitespace trivia instead. E128073 follows this rule.
+
+```csharp
+var indentation = leadingTrivia.Last().IsKind(SyntaxKind.WhitespaceTrivia)
+    ? SyntaxFactory.TriviaList(leadingTrivia.Last())
+    : default;
+```
+
+## Trim Trailing Whitespace When Appending
+
+A fix that appends to a line can leave trailing whitespace behind. Reverse the
+trailing trivia, skip the whitespace, then reverse back:
+
+```csharp
+private static T WithoutTrailingSpaces<T>(T node)
+    where T : SyntaxNode
+{
+    var trailing = node.GetTrailingTrivia().Reverse()
+        .SkipWhile(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+        .Reverse();
+
+    return node.WithTrailingTrivia(trailing);
+}
+```
+
+Reach this helper only for an appended line. A node the fix inserts takes the
+formatter rule instead. See § Place a New Node with the Formatter.
+
+## Trivia That Is Absent
+
+A leading-trivia list may hold no whitespace. `indentation.Last()` throws on an
+empty list. Branch on the count and emit the line break alone. E128051 follows
+this rule.
+
+## A Comment Inside a Directive
+
+A structured directive holds its own trailing comment. A split of one pragma
+into two drops that comment unless the last line keeps it.
+
+Copy the tail of the last ID token onto the last split directive. E128065
+does this. Leading trivia on the end-of-directive token does not render.
+
+## Insert Above the First Member
+
+A new field goes under the open brace. Give the field the indentation of the
+first member only. Prepend two line feeds to the existing leading trivia of
+that member. The doc comment then stays attached to the member it documents.
+E128102 and E128029 follow this rule.
+
 ## Insert a Member Only Once
 
 A fix that adds a member must look for a member with the same name and arity
@@ -75,6 +142,23 @@ only and skip a member that exists.
 
 The analyzer gate is not a substitute: it checks the interface list, not the
 member list.
+
+## Removing a Member Node
+
+`RemoveNode(node, SyntaxRemoveOptions.KeepNoTrivia)` drops the trivia of the
+removed node. The line break that ended the previous token stays. That result
+is correct for the common case.
+
+A blank line between the removed member and the closing brace survives the
+removal. Trim that line only when the leading trivia of the closing brace holds
+whitespace and line breaks alone. Keep the whitespace, and drop the line
+breaks. Never clear the whole trivia list.
+
+Clearing the whole list moves the closing brace to column 0 when the type is
+nested. It also joins a trailing comment and the brace onto one line, which
+comments the brace out.
+
+`LowValueTestCodeFixProvider` follows this rule.
 
 ## Guard the Rewrite Shape
 
@@ -137,6 +221,5 @@ the common shape.
 
 - [Code Fix Patterns](code-fix-patterns.md): decision list, using directives,
   fix-all strategy, registration
-- [Code Fix Trivia](code-fix-trivia.md): absent trivia, literals, member removal
 - [Code Fix Techniques](code-fix-techniques.md): DocumentEditor, speculative
   bind, generator

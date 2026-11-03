@@ -133,9 +133,19 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 | Rule    | Title                                                                          | Code Fix |
 | ------- | ------------------------------------------------------------------------------ | -------- |
-| E128071 | Use a FIPS-approved hash algorithm                                             | Yes      |
+| E128071 | Use an approved cryptographic algorithm                                        | Yes      |
 | E128075 | Use `RandomNumberGenerator` instead of `Random` in crypto context              | Yes      |
 | E128091 | Use `ArgumentList` instead of a built `Arguments` string on `ProcessStartInfo` | Yes      |
+| E128142 | Do not instantiate a Managed or CNG cryptography type                          | No       |
+| E128143 | Use an RSA key of at least 3072 bits or an approved curve                      | No       |
+| E128144 | Use an authenticated cipher mode                                               | No       |
+| E128145 | Use a strong PBKDF2 configuration                                              | No       |
+| E128146 | Use TLS 1.2 or later                                                           | No       |
+| E128147 | RNGCryptoServiceProvider is deprecated                                         | No       |
+| E128148 | Do not use a cipher excluded by policy                                         | No       |
+| E128149 | Use the full 16-byte AES-GCM tag                                               | No       |
+| E128150 | Do not use SHA-3, SHAKE or KMAC                                                | No       |
+| E128151 | Use an HMAC key at least as long as the hash output                            | No       |
 
 ### Style
 
@@ -887,18 +897,22 @@ var buf = ArrayPool<char>.Shared.Rent(length);
 var buf = ArrayPool<char>.Shared.Rent(Math.Min(length, maxCapacity));
 ```
 
-### E128071 &mdash; FIPS-approved hash algorithm
+### E128071 &mdash; Approved cryptographic algorithm
 
-Flags use of non-FIPS algorithms (`MD5`, `SHA1`, `DES`, `RC2`, `TripleDES`, `HMACMD5`, `HMACSHA1`) in production code. Detects factory methods (`.Create()`, `.HashData()`) and constructors, including legacy concrete subclasses that bypass the base type name (`new MD5CryptoServiceProvider()`, `new SHA1Managed()`, etc.) via base-type-chain matching. FIPS 140-2 compliance requires SHA-256 or stronger.
+Flags algorithms that cryptography policy blocks: `MD5`, `SHA1`, `RIPEMD160`, `DES`, `RC2`, `TripleDES`, the MAC types built on them, `ChaCha20Poly1305` and `PasswordDeriveBytes`. It covers constructors, static `Create` and `HashData` members, method groups, legacy factories that select a weak algorithm by default, and any cryptography API that takes a blocked `HashAlgorithmName`.
+
+It also flags a constant blocked XML-DSig or XML-Enc URI, `CmsSigner.DigestAlgorithm` set to a blocked object identifier, `PbeEncryptionAlgorithm.TripleDes3KeyPkcs12`, `RSAEncryptionPadding.Pkcs1` on an RSA encryption call, the PKCS#1 key exchange formatters, and DSA signature generation. DSA verification stays allowed.
 
 ```csharp
 // Before (warns)
 using var md5 = MD5.Create();
 using var hmac = new HMACSHA1(key);
+var cipher = rsa.Encrypt(data, RSAEncryptionPadding.Pkcs1);
 
 // After
 using var sha256 = SHA256.Create();
 using var hmac = new HMACSHA256(key);
+var cipher = rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA256);
 ```
 
 ### E128072 &mdash; SHA256.Create() obsolete pattern (Info)
@@ -949,7 +963,11 @@ public readonly struct Point
 
 ### E128075 &mdash; Random in crypto context
 
-Flags `new Random()`, `Random.Shared`, and `Random.Next*` calls in methods whose names or surrounding types suggest cryptographic or security contexts (e.g., `Generate`, `Token`, `Secret`, `Password`, `Key`, `Nonce`, `Salt`). `System.Random` is not cryptographically secure. Use `RandomNumberGenerator` instead.
+Flags `System.Random`, and a class derived from it, in two cases. First, a random value flows into a variable, field, property or buffer with a security-sensitive name such as `token`, `salt`, `sessionId` or `key`. Second, a new instance or `Random.Shared` appears in a file that references a type from `System.Security.Cryptography` or `Microsoft.AspNetCore.Cryptography`. A file also counts as a cryptography file when it names a member of a cryptography type. `System.Random` is not cryptographically secure. Use `RandomNumberGenerator` instead.
+
+The check is a heuristic. It judges only the receiving name, and the file check reports every `Random` creation in a cryptography file. A sensitive name matches as a whole word, so `secretKey` reports and `secretary` does not. The name set also comes from the referenced assemblies.
+
+The code fix replaces `Random.Shared.Next` with `RandomNumberGenerator.GetInt32`. `Next()` becomes `GetInt32(int.MaxValue)`. The fix declines a variable bound, an empty range and `NextDouble`.
 
 ```csharp
 // Before (warns)
@@ -1448,6 +1466,128 @@ byte[] bytes = "abc"u8.ToArray();
 ```
 
 The rule needs C# 11 or later. The fix emits the bare literal when the target is a `ReadOnlySpan<byte>`. Every other target, including `Span<byte>`, keeps the `byte[]` shape through `ToArray()`.
+
+### E128142: Do not instantiate a Managed or CNG cryptography type
+
+Flags a direct `new` of a type whose name ends in `Managed` or `Cng`. A concrete type fixes one implementation. The abstract factory lets the platform select its cryptographic module. A `Cng` constructor that takes a key name, a `CngKey` or a `CngProvider` is not reported, because the factory cannot open a persisted key. `Rijndael` and `RijndaelManaged` are reported because AES does not allow their block sizes. Types that E128071 already blocks are skipped.
+
+```csharp
+// Before (warns)
+using var sha = new SHA256Managed();
+
+// After
+using var sha = SHA256.Create();
+```
+
+### E128143: Use an RSA key of at least 3072 bits or an approved curve
+
+Flags an RSA key below 3072 bits and an elliptic curve key below 384 bits. Approved curves are P-384 and P-521. A key size that the rule cannot read at compile time is reported, including one created by name, imported from parameters, a handle, a blob, PEM text or a certificate.
+
+```csharp
+// Before (warns)
+using var rsa = RSA.Create(2048);
+
+// After
+using var rsa = RSA.Create(3072);
+```
+
+### E128144: Use an authenticated cipher mode
+
+Flags `CipherMode.ECB`, `CipherMode.OFB` and `CipherMode.CFB`, and the `EncryptEcb`, `DecryptEcb`, `EncryptCfb` and `DecryptCfb` methods. ECB reveals plaintext structure. A comparison reads the mode and is not reported.
+
+```csharp
+// Before (warns)
+aes.Mode = CipherMode.ECB;
+
+// After
+aes.Mode = CipherMode.CBC;
+```
+
+### E128145: Use a strong PBKDF2 configuration
+
+Flags a PBKDF2 iteration count below 600,000 and an overload that defaults to 1,000 iterations. It also flags SHA-1 as the PRF and an iteration count that the rule cannot read at compile time. An `IterationCount` assignment on the same object replaces the default-count report.
+
+```csharp
+// Before (warns)
+using var kdf = new Rfc2898DeriveBytes("pw", salt, 1000, HashAlgorithmName.SHA256);
+
+// After
+using var kdf = new Rfc2898DeriveBytes("pw", salt, 600_000, HashAlgorithmName.SHA256);
+```
+
+### E128146: Use TLS 1.2 or later
+
+Flags `SslProtocols.Ssl2`, `Ssl3`, `Tls`, `Tls11` and `Default`, and the matching `SecurityProtocolType` members. It also flags a numeric cast that sets a weak protocol bit and a complement that enables every weak protocol. A comparison and a mask removal are not reported. `AppContext.SetSwitch("Switch.System.Net.DontEnableSchUseStrongCrypto", true)` is reported.
+
+```csharp
+// Before (warns)
+var protocols = SslProtocols.Tls11;
+
+// After
+var protocols = SslProtocols.Tls12;
+```
+
+### E128147: RNGCryptoServiceProvider is deprecated
+
+Flags `new RNGCryptoServiceProvider()` where the target framework marks the type `[Obsolete]`, as on .NET 6 and later. On .NET Framework and netstandard2.0 the type is supported and the rule stays silent.
+
+```csharp
+// Before (warns)
+using var rng = new RNGCryptoServiceProvider();
+
+// After
+var bytes = RandomNumberGenerator.GetBytes(32);
+```
+
+### E128148: Do not use a cipher excluded by policy
+
+Flags a type whose name contains a whole word from the excluded list: Blowfish, RC4, Arcfour, CAST5, CAST6, IDEA and Skipjack. Third-party libraries such as BouncyCastle expose these ciphers. `IDEA` is also an ordinary word, so it needs a cipher role word at the end of the type name, a cipher base type, a cipher interface or a cryptography namespace. `IdeaEngine` reports, and `IdeaRankingAlgorithm` does not.
+
+The rule inspects a constructor, a static member in `Create`, `HashData`, `TryHashData` or `HashDataAsync`, and a method group. Types that E128071 already blocks are skipped, so one type produces one diagnostic.
+
+```csharp
+// Before (warns)
+var cipher = new BlowfishEngine();
+
+// After
+using var aes = Aes.Create();
+```
+
+### E128149: Use the full 16-byte AES-GCM tag
+
+Flags an `AesGcm` constructor whose `tagSizeInBytes` constant is below 16. It also flags an `Encrypt` or `Decrypt` call whose constant tag buffer is below 16 bytes. A tag size or buffer held in an unreassigned local or a readonly field resolves to its initializer.
+
+```csharp
+// Before (warns)
+using var aes = new AesGcm(key, 12);
+
+// After
+using var aes = new AesGcm(key, 16);
+```
+
+### E128150: Do not use SHA-3, SHAKE or KMAC
+
+Flags the `SHA3_*`, `Shake*`, `HMACSHA3_*` and `Kmac*` types, the `OaepSHA3_*` paddings, and a SHA-3 hash name stored in a variable. NIST SP 800-131A Rev. 2 accepts SHA-3. This rule is organizational policy, not a NIST statement. A read of `IsSupported` is not reported.
+
+```csharp
+// Before (warns)
+var hash = SHA3_256.HashData(data);
+
+// After
+var hash = SHA256.HashData(data);
+```
+
+### E128151: Use an HMAC key at least as long as the hash output
+
+Flags an HMAC key shorter than the hash output: 32 bytes for SHA-256, 48 for SHA-384 and 64 for SHA-512. The rule reads the constructor, the static `HashData` family, and a `Key` property assignment. A key whose length is not a compile-time constant is not reported.
+
+```csharp
+// Before (warns)
+using var hmac = new HMACSHA256(new byte[16]);
+
+// After
+using var hmac = new HMACSHA256(new byte[32]);
+```
 
 ### E128076 &mdash; Materialize QuerySelectorAll result before iterating
 

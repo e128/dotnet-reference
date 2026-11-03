@@ -1,5 +1,5 @@
 # Analyzer Performance
-*Updated: 2026-11-01T20:55:18Z*
+*Updated: 2026-11-03T03:13:32Z*
 
 Every analyzer in `src/E128.Analyzers` runs on each compilation and each edit. A
 slow analyzer multiplies its cost by the number of nodes it registers for.
@@ -107,6 +107,33 @@ A collector that already walks a test method can hold derived data. Store the
 argument subtrees and the returned literal set on the fact object, then let each
 detector read the stored value. A lazy property keeps a method that never needs
 the view free of the cost.
+
+## Measure an Analyzer
+
+The compiler reports per-analyzer time when the build asks for it.
+
+```bash
+dotnet build src/E128.Analyzers/E128.Analyzers.csproj -p:ReportAnalyzer=true -v:d
+```
+
+The report lands in the verbose build output. It writes no separate file. It
+holds a `Total analyzer execution time` line and a table of `Time (s) | % |
+Analyzer` rows, indented per diagnostic analyzer.
+
+Analyzers run concurrently, so the summed analyzer time can exceed the elapsed
+build time. Use the numbers to find an outlier against the other analyzers.
+Never treat one absolute number as a budget.
+
+Two conditions produce a clean-looking report with no content:
+
+- An up-to-date incremental build runs no compiler, so no report appears.
+- `-v:d` is required. A quieter build prints nothing.
+
+A structured log gives the same data in the Structured Log Viewer under
+Analyzer Summary: add `-bl:artifacts/analyzer.binlog`.
+
+To isolate one suspect, set `RunAnalyzersDuringBuild=false` and run the rule
+alone through a unit test or a single project.
 
 ## Exemptions
 

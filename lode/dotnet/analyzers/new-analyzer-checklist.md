@@ -1,5 +1,5 @@
 # New Analyzer Checklist
-*Updated: 2026-11-02T18:23:33Z*
+*Updated: 2026-11-03T03:14:55Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 
@@ -81,24 +81,10 @@ A rule can also need one member, not a whole type. E128072 resolves
 `System.Security.Cryptography.SHA256` and then looks for a `HashData` member.
 .NET 5 adds that member, so the rule stays silent on an older target.
 
-## Register Both Object Creation Forms
-
-`new Foo { ... }` reports as `ObjectCreationExpression`. The target-typed form
-`Foo x = new() { ... }` reports as `ImplicitObjectCreationExpression`. Register
-both, and take `BaseObjectCreationExpressionSyntax` in the handler.
-
-```csharp
-context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ObjectCreationExpression);
-context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ImplicitObjectCreationExpression);
-```
-
-E128071 and E128091 follow this shape. A rule that registers one form misses
-half of the object initializers in modern code.
-
-Gate the remedy, not the API the rule names. E128028 maps each sync I/O call to
-its async replacement. `File.ReadAllTextAsync` arrived after `File.ReadAllText`,
-so a netstandard2.0 target has no remedy for the pair. The rule keeps a pair
-only when the async member exists in the compilation.
+Gate the remedy, not the API that the rule names. E128028 maps each sync I/O
+call to its async replacement. `File.ReadAllTextAsync` arrived after
+`File.ReadAllText`, so a netstandard2.0 target has no remedy for the pair. The
+rule keeps a pair only when the async member exists in the compilation.
 
 ```csharp
 var owner = compilation.GetTypeByMetadataName(entry.Value);
@@ -115,6 +101,20 @@ action, and Roslyn reports that as AD0001 for every consumer.
 
 Test the gate. Set `ReferenceAssemblies` to
 `ReferenceAssemblies.NetStandard.NetStandard20` and expect no diagnostic.
+
+## Register Both Object Creation Forms
+
+`new Foo { ... }` reports as `ObjectCreationExpression`. The target-typed form
+`Foo x = new() { ... }` reports as `ImplicitObjectCreationExpression`. Register
+both, and take `BaseObjectCreationExpressionSyntax` in the handler.
+
+```csharp
+context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ObjectCreationExpression);
+context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ImplicitObjectCreationExpression);
+```
+
+E128071 and E128091 follow this shape. A rule that registers one form misses
+half of the object initializers in modern code.
 
 ## Match Symbols, Not Names
 
@@ -195,24 +195,49 @@ comparison loses that order.
   same type. `MetadataTypes` wraps the `GetTypesByMetadataName` lookup for that
   case.
 
+## Expect Incomplete Code
+
+An analyzer sees an editor buffer that can fail to compile. Guard every
+semantic read.
+
+- `GetSymbolInfo` returns null while a `using` directive is missing. Cast with
+  `as` and test for null.
+- A conversion test rejects a user-defined conversion and a conversion that does
+  not exist. Check `ClassifyConversion` before the fix rewrites a value.
+- A reference type takes only `null` as a constant. `string` also takes a
+  literal.
+
 ## Generated Code
 
 - Pass `GeneratedCodeAnalysisFlags.None` to `ConfigureGeneratedCodeAnalysis`
   for a rule that must ignore generated code. That is the default shape.
 - Opt in only when the generated file is the subject of the rule. Add a comment
   that states why.
+- The FIPS cryptography rules opt in with `Analyze | ReportDiagnostics`. Code
+  that a source generator emits still runs in production, so generated crypto
+  code must meet the same policy. See [fips-rules.md](fips-rules.md).
 
 ## Keep the Package README Current
 
-`src/E128.Analyzers/README.md` is the NuGet package page (`PackageReadmeFile`). It is the primary documentation surface for the package and is copied to nuget.org. After any analyzer change (new rule, renamed rule, changed category/severity, added/removed code fix), update the README's rule tables, "What each rule catches" sections, and code examples to match. A stale rule table makes the package look unmaintained.
+`src/E128.Analyzers/README.md` ships as the NuGet package page
+(`PackageReadmeFile`) and appears on nuget.org. Update its rule tables, its
+"What each rule catches" sections, and its code examples in the same change as
+any rule edit. Cover a new rule, a rename, a category change, a severity change,
+and a new or removed code fix. A stale rule table makes the package look
+unmaintained.
 
-## Test Infrastructure Notes
+## Test Infrastructure
 
-- `CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>` and `CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>` from `Microsoft.CodeAnalysis.CSharp.Testing` are the standard test harness. Most analyzer test files build a `test.RunAsync()` call directly, not the static `CSharpAnalyzerVerifier` helper.
-- Code fix tests route through the shared runner in `tests/E128.Analyzers.Tests/CodeFixTestRunner.cs`. Call `CodeFixTestRunner.RunAsync` for a fix and `NoFixAsync` for a decline. The shared stub types live in `tests/E128.Analyzers.Tests/TestStubs.cs`.
-- New code fix providers inherit `E128CodeFixProviderBase` in `src/E128.Analyzers.CodeFixers`. The base owns the batch fix-all provider and the syntax root fetch. Override the protected `RegisterFixesAsync(context, root)` hook. Override `RegisterCodeFixesAsync` only when the fix never reads the root.
-- Test `ReferenceAssemblies` default to the SDK version configured in `tests/.globalconfig` via `e128_minimum_framework_version`
-- xUnit v3 MTP runner requires `scripts/test.sh`. Raw `dotnet test --filter` does not work
+The harness types, markup forms, and option injection live in
+[testing.md](testing.md). Read that file before you write the test file.
+
+Two rules belong here, because they change the source layout:
+
+- A new code fix provider inherits `E128CodeFixProviderBase` in
+  `src/E128.Analyzers.CodeFixers`. Override the protected
+  `RegisterFixesAsync(context, root)` hook.
+- Code fix tests route through `CodeFixTestRunner` in
+  `tests/E128.Analyzers.Tests/CodeFixTestRunner.cs`.
 
 ## Related
 

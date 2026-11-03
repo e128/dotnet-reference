@@ -1,5 +1,5 @@
 # Code Fix Techniques
-*Updated: 2026-11-01T18:21:44Z*
+*Updated: 2026-11-03T03:14:50Z*
 
 Techniques that prove a fix writes correct code. The shape rules live in
 [Code Fix Output](code-fix-output.md). The decision list lives in
@@ -19,8 +19,7 @@ Override `RegisterCodeFixesAsync` directly when the fix reads the diagnostic
 alone and never touches the root, or when the provider needs a semantic model
 read before the root fetch order matters. Silence a fix-all with
 `GetFixAllProvider()` returning `null` only when a merge would corrupt the
-output. See [Code Fix Patterns](code-fix-patterns.md) § FixAll That Inserts a
-Member.
+output. See § Fix-All Providers.
 
 ## Use DocumentEditor for a Multi-Node Edit
 
@@ -125,6 +124,43 @@ and the flow of a value between statements.
 
 Keep the syntax gate in front of the operation when the rule fires rarely. See
 [Analyzer Performance](performance.md) § Bind Late.
+
+## Fix-All Providers
+
+`CodeFixProvider.GetFixAllProvider` is virtual and returns null. A provider
+that does not override it offers no fix-all action. `E128CodeFixProviderBase`
+owns the override, so a derived provider inherits the batch provider.
+
+- **`WellKnownFixAllProviders.BatchFixer`**: the standard choice. It computes
+  every fix from the original snapshot and merges the results in parallel. Use
+  it when the fixes are independent local edits, such as an expression
+  replacement or a type swap. It handles the Document, Project, Solution,
+  ContainingMember and ContainingType scopes.
+- **`DocumentBasedFixAllProvider`**: required when a later fix must see an
+  earlier edit in the same document. Apply each diagnostic to the current
+  document in descending span order. Use it for a fix that re-binds a document,
+  and for a fix that removes or re-nests a node that a second diagnostic sits
+  inside.
+- **Null**: required for a fix that inserts a member. BatchFixer computes every
+  fix from one snapshot, so two inserts in one type each pass their own conflict
+  check and the merge emits the member twice. E128029 follows this rule.
+
+BatchFixer merges only `ApplyChangesOperation` instances. Any other operation
+that a provider emits is dropped without a warning. Keep a custom operation out
+of a fix path that fix-all must cover.
+
+`CodeAction.Create` groups fixes for fix-all by the equivalence key. Pass the
+three-argument overload. A two-argument call leaves the key null, and fix-all
+cannot separate the action from a sibling action on the same diagnostic.
+
+```csharp
+context.RegisterCodeFix(
+    CodeAction.Create(
+        title: "Use ImmutableArray<T>.Empty",
+        createChangedDocument: c => ChangeAsync(document, creation, c),
+        equivalenceKey: "UseImmutableArrayEmpty"),
+    diagnostic);
+```
 
 ## Sequential Rename Needs Its Own Fix-All
 

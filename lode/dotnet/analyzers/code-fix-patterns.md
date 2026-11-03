@@ -1,24 +1,50 @@
 # Code Fix Patterns
-*Updated: 2026-11-02T18:23:33Z*
+*Updated: 2026-11-03T03:14:50Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
+The emitted text rules live in [code-fix-output.md](code-fix-output.md). The
+advanced edit APIs live in [code-fix-techniques.md](code-fix-techniques.md).
 
 ## Decide Before You Write the Fix
 
-Answer these five questions before the first line of a fix provider. Each
+Answer these six questions before the first line of a fix provider. Each
 answer prevents a defect that the test suite will not catch on its own.
 
 1. Does the rewritten text parse? Emit a value through its formatter and a
-   type through `SymbolDisplayFormat`. See § Emit Valid Source Text.
+   type through `SymbolDisplayFormat`. See [code-fix-output.md](code-fix-output.md).
 2. Does the walk cross a lambda or a local function? Stop at the boundary.
    See § Stop at a Nested Function.
 3. Does the fix read a table the analyzer owns? Read the same gated table.
    See § One Table for Analyzer and Fix.
-4. Does the fix insert a member? Return null from `GetFixAllProvider()`. See
-   § FixAll That Inserts a Member. Then check that no member with that name and
-   arity exists. See § Insert a Member Only Once.
+4. Does the fix insert a member? Return null from `GetFixAllProvider()`, then
+   check that no member shares the name and arity. See
+   [code-fix-techniques.md](code-fix-techniques.md) § Fix-All Providers and
+   [code-fix-output.md](code-fix-output.md) § Insert a Member Only Once.
 5. Does the fix remove a member? Trim the trivia, never clear it. See
-   § Removing a Member Node.
+   [code-fix-output.md](code-fix-output.md) § Removing a Member Node.
+6. Does the remedy name an API that the caller can already reach? When the
+   only correct repair is a different call, the library must expose that call.
+   See § Code-Aware Library.
+
+## Code-Aware Library
+
+A library that ships an analyzer with it controls the remedy. The analyzer
+points at the canonical entry point, and the fix never invents a call.
+
+The `System.Collections.Immutable` guide shows the reason. `new ImmutableArray<int>()`
+produces a struct with a null backing array, so `.Length` throws at run time.
+The fix replaces the construction expression with a name the library owns:
+
+```csharp
+var generator = SyntaxGenerator.GetGenerator(document);
+var memberAccess = generator.MemberAccessExpression(objectCreation.Type, "Empty");
+var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+return document.WithSyntaxRoot(root.ReplaceNode(objectCreation, memberAccess));
+```
+
+Apply this rule this way. Gate the analyzer on the API, as
+[new-analyzer-checklist.md](new-analyzer-checklist.md) § Gate on API
+Availability requires. When no such API exists, report without a fix.
 
 ## Add a Using Directive
 
@@ -43,16 +69,21 @@ the real output. Run the code fix test before you finalize the expected text.
 The helper handles a top-level using on the compilation unit only. A file with
 a namespace-scoped using list needs a different path.
 
-## BatchFixer vs SequentialRenameFixAllProvider
+## Span Widening
 
-- **`WellKnownFixAllProviders.BatchFixer`**: standard choice for most code fixes. Computes all fixes from the original snapshot and merges. Works well when fixes are independent local edits (expression replacements, type swaps).
-- **`SequentialRenameFixAllProvider`**: required when the fix uses `Renamer.RenameSymbolAsync`. BatchFixer fails when multiple renames touch the same document because the rename API modifies the solution globally. See [Code Fix Techniques](code-fix-techniques.md) § Sequential Rename Needs Its Own Fix-All. E128059 and E128063 use it.
-- **`DocumentBasedFixAllProvider`**: required when a later fix must see an earlier edit in the same document. Apply each diagnostic to the current document in descending span order. Use it for a fix that re-binds a document, and for a fix that removes or re-nests a node that a second diagnostic sits inside.
+A diagnostic often lands on a narrower node than the edit replaces. Report on
+the token that names the defect, then widen the edit target before you replace.
 
-## Emit Valid Source Text
+```csharp
+if (root.FindNode(context.Span, getInnermostNodeForTie: true)
+        .FirstAncestorOrSelf<ObjectCreationExpressionSyntax>() is not { } creation)
+{
+    return;
+}
+```
 
-A token carries the unescaped value, so a hand-written quote breaks the parse.
-See [Code Fix Output](code-fix-output.md) § Emit Valid Source Text.
+`root.FindNode(span, getInnermostNodeForTie: true)` is the repo idiom. A token
+walk with `FindToken(span.Start)` reaches the same node and costs more.
 
 ## A Fix Without a Rewritable Receiver
 
@@ -95,25 +126,6 @@ Apply the boundary to the node that is reported, not only to the scans. A rule
 that scans the method body but reports every candidate node still names a node
 that the fix refuses to touch.
 
-## FixAll That Inserts a Member
-
-`BatchFixer` computes every fix from the same snapshot and merges the results.
-Two fixes in one type that insert the same member name each pass their own
-conflict check on the original tree. The merge then emits the member twice.
-
-Return `null` from `GetFixAllProvider()` for a fix that inserts a field or a
-property. Keep that fix single-diagnostic. E128029 follows this rule.
-
-## Insert a Member Only Once
-
-A second member with the same name and arity is CS0111. See
-[Code Fix Output](code-fix-output.md) § Insert a Member Only Once.
-
-## Place a New Node with the Formatter
-
-Attach `Formatter.Annotation` to a node the fix inserts or reshapes. See
-[Code Fix Output](code-fix-output.md) § Place a New Node with the Formatter.
-
 ## One Table for Analyzer and Fix
 
 A lookup table that the analyzer reports from must be the same table the fix
@@ -125,7 +137,7 @@ E128028 held the sync I/O names twice. The analyzer table listed `File.Copy`,
 `await` and left the blocking call in place. The compiler then reported CS1998.
 
 Declare the table `internal static readonly` on the analyzer and let the fix
-provider read it. Report only what the fix can repair. E128028 now omits a
+provider read it. Report only what the fix can repair. E128028 omits a
 method unless an awaitable overload exists.
 
 Gate the table once. E128028 builds the pair list at compilation start and the
@@ -138,16 +150,10 @@ Pass a computed value through `diagnostic.Properties` instead of copying the
 table. E128023 puts the detected path literal in the analyzer and hands the
 relative suffix to the fix. The path prefixes live in one file.
 
-## Guard the Rewrite Shape
-
-A fix must produce code that compiles. See
-[Code Fix Output](code-fix-output.md) § Guard the Rewrite Shape for the full
-list of shapes that break a rewrite.
-
 ## Decline at Registration
 
-A fix that returns the document unchanged offers the user a dead action. The
-harness fails that case with "a fix was offered that made no changes".
+A fix that returns the document unchanged offers a dead action. The harness
+fails that case with "a fix was offered that made no changes".
 
 Do the whole shape check at registration, in the override the provider
 defines (`RegisterCodeFixesAsync`, or `RegisterFixesAsync(context, root)`
@@ -186,7 +192,7 @@ carry a qualified receiver such as `System.Text.Encoding`. E128006 swaps
 
 ## Related
 
-- [Code Fix Trivia](code-fix-trivia.md): absent trivia, literals, member removal
+- [Code Fix Output](code-fix-output.md): emitted text, trivia, rewrite shapes
 - [Code Fix Techniques](code-fix-techniques.md): DocumentEditor, speculative bind, generator
 - [New Analyzer Checklist](new-analyzer-checklist.md)
 - [Analyzers](../analyzers.md): main analyzer documentation

@@ -1,5 +1,5 @@
 # Pooled Buffer and stackalloc Rules
-*Updated: 2026-11-01T20:55:29Z*
+*Updated: 2026-11-03T03:09:24Z*
 
 Reliability analyzers guard buffer memory. All report at Warning. E128109 and
 E128110 ship a code fix. E128111 ships no code fix.
