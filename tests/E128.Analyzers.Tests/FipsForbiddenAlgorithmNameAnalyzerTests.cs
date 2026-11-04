@@ -58,6 +58,38 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task UnsignedAssemblyNamedSystem_IsNotTreatedAsBcl()
+    {
+        var test = new CSharpAnalyzerTest<FipsForbiddenAlgorithmNameAnalyzer, DefaultVerifier>
+        {
+            TestCode = """
+                       class C
+                       {
+                           void M()
+                           {
+                               var cipher = {|E128148:new System.Vendor.BlowfishEngine()|};
+                           }
+                       }
+                       """,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+        var vendored = test.TestState.AdditionalProjects["System.Vendor"];
+        vendored.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        vendored.Sources.Add("""
+                             namespace System.Vendor
+                             {
+                                 public class BlowfishEngine
+                                 {
+                                 }
+                             }
+                             """);
+        test.TestState.AdditionalProjectReferences.Add("System.Vendor");
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task BlowfishCreation_Reports_E128148()
     {
         return VerifyAsync("""

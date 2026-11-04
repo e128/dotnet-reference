@@ -14,8 +14,10 @@ namespace E128.Analyzers.Reliability;
 ///     never read. The child blocks once the pipe buffer is full, and the wait never returns.
 /// </summary>
 /// <remarks>
-///     The rule reads one method body. A drain through a helper method stays silent, because the
-///     call does not appear where the wait happens.
+///     The rule reads one method body. A call that receives the process output stream as an
+///     argument counts as a drain. A redirect flag binds to the process through the start info
+///     member, a start info local passed to Process.Start or assigned to the process, or an
+///     initializer of the same process.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
@@ -146,10 +148,11 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
     {
         return scope.DescendantNodes()
             .OfType<AssignmentExpressionSyntax>()
-            .Any(assignment => IsTrueRedirect(assignment, processSymbol, model, cancellationToken));
+            .Any(assignment => IsTrueRedirect(scope, assignment, processSymbol, model, cancellationToken));
     }
 
     private static bool IsTrueRedirect(
+        SyntaxNode scope,
         AssignmentExpressionSyntax assignment,
         ISymbol processSymbol,
         SemanticModel model,
@@ -173,12 +176,221 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // An object initializer has no receiver, so the flag belongs to the info instance the
-        // process is started with.
-        return receiver is null
-               || SymbolEqualityComparer.Default.Equals(
-                   GetRootSymbol(receiver, model, cancellationToken),
-                   processSymbol);
+        if (receiver is not null)
+        {
+            return StartInfoBinds(scope, receiver, processSymbol, model, cancellationToken);
+        }
+
+        // An object initializer has no receiver. The flag belongs to the info instance the
+        // initializer builds, or to the start info of the process the initializer builds.
+        return assignment.Parent is InitializerExpressionSyntax initializer
+               && initializer.Parent switch
+               {
+                   BaseObjectCreationExpressionSyntax creation =>
+                       StartInfoBinds(scope, creation, processSymbol, model, cancellationToken),
+                   AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax processCreation } } =>
+                       FlowsTo(processCreation, processSymbol, model, cancellationToken),
+                   _ => false
+               };
+    }
+
+    /// <summary>
+    ///     True when the start info expression belongs to the process. The expression is the
+    ///     process start info member, a local that links to the process, or a new start info that
+    ///     is passed to <c lang="csharp">Process.Start</c> or assigned to the process.
+    /// </summary>
+    private static bool StartInfoBinds(
+        SyntaxNode scope,
+        ExpressionSyntax expression,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        var current = Unwrap(expression);
+
+        if (current is BaseObjectCreationExpressionSyntax creation)
+        {
+            return creation.Parent is { } parent && StartInfoCreationBinds(
+                scope, creation, parent, processSymbol, model, cancellationToken);
+        }
+
+        var root = GetRootSymbol(current, model, cancellationToken);
+
+        return SymbolEqualityComparer.Default.Equals(root, processSymbol)
+               || (current is IdentifierNameSyntax or MemberAccessExpressionSyntax
+                   && root is not null
+                   && IsLinked(scope, root, processSymbol, model, cancellationToken));
+    }
+
+    private static bool StartInfoCreationBinds(
+        SyntaxNode scope,
+        BaseObjectCreationExpressionSyntax creation,
+        SyntaxNode parent,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        switch (parent)
+        {
+            case ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax start } }:
+                return IsProcessStart(start, model, cancellationToken)
+                       && FlowsTo(start, processSymbol, model, cancellationToken);
+            case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }:
+                return model.GetDeclaredSymbol(declarator, cancellationToken) is { } local
+                       && IsLinked(scope, local, processSymbol, model, cancellationToken);
+            case AssignmentExpressionSyntax assignment when Unwrap(assignment.Right) == creation:
+                return AssignmentBinds(scope, assignment, processSymbol, model, cancellationToken);
+            case ParenthesizedExpressionSyntax or PostfixUnaryExpressionSyntax:
+                return parent.Parent is { } outer && StartInfoCreationBinds(
+                    scope, creation, outer, processSymbol, model, cancellationToken);
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    ///     True for an assignment of a start info to the process start info member, to a process
+    ///     initializer member, or to a local that links to the process.
+    /// </summary>
+    private static bool AssignmentBinds(
+        SyntaxNode scope,
+        AssignmentExpressionSyntax assignment,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return assignment is
+        {
+            Parent: InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax owner },
+            Left: IdentifierNameSyntax { Identifier.ValueText: "StartInfo" }
+        }
+            ? FlowsTo(owner, processSymbol, model, cancellationToken)
+            : assignment.Left is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "StartInfo" } access
+                ? SymbolEqualityComparer.Default.Equals(
+                    GetRootSymbol(access.Expression, model, cancellationToken),
+                    processSymbol)
+                : model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is { } target
+                  && IsLinked(scope, target, processSymbol, model, cancellationToken);
+    }
+
+    /// <summary>
+    ///     True when the start info symbol reaches the process. The scan looks for
+    ///     <c lang="csharp">process.StartInfo = info</c>, <c lang="csharp">Process.Start(info)</c>
+    ///     whose result is the process, and a process initializer that sets the start info.
+    /// </summary>
+    private static bool IsLinked(
+        SyntaxNode scope,
+        ISymbol infoSymbol,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        foreach (var node in scope.DescendantNodes())
+        {
+            if (node is AssignmentExpressionSyntax assignment
+                && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+                && IsSymbol(assignment.Right, infoSymbol, model, cancellationToken)
+                && AssignsStartInfo(assignment, processSymbol, model, cancellationToken))
+            {
+                return true;
+            }
+
+            if (node is InvocationExpressionSyntax invocation
+                && IsProcessStart(invocation, model, cancellationToken)
+                && invocation.ArgumentList.Arguments.Any(
+                    argument => IsSymbol(argument.Expression, infoSymbol, model, cancellationToken))
+                && FlowsTo(invocation, processSymbol, model, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool AssignsStartInfo(
+        AssignmentExpressionSyntax assignment,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return assignment.Left is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "StartInfo" } access
+            ? SymbolEqualityComparer.Default.Equals(
+                GetRootSymbol(access.Expression, model, cancellationToken),
+                processSymbol)
+            : assignment is { Left: IdentifierNameSyntax { Identifier.ValueText: "StartInfo" }, Parent: InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax owner } }
+              && FlowsTo(owner, processSymbol, model, cancellationToken);
+    }
+
+    private static bool IsSymbol(
+        ExpressionSyntax expression,
+        ISymbol symbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return SymbolEqualityComparer.Default.Equals(
+            model.GetSymbolInfo(Unwrap(expression), cancellationToken).Symbol,
+            symbol);
+    }
+
+    private static bool IsProcessStart(
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol { Name: "Start", IsStatic: true } method
+               && string.Equals(method.ContainingType?.ToDisplayString(), ProcessTypeName, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     True when the process-valued expression is stored in the process symbol, by a declaration
+    ///     or by an assignment.
+    /// </summary>
+    private static bool FlowsTo(
+        ExpressionSyntax value,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        SyntaxNode current = value;
+
+        while (current.Parent is (ParenthesizedExpressionSyntax or PostfixUnaryExpressionSyntax) and { } next)
+        {
+            current = next;
+        }
+
+        return current.Parent switch
+        {
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } =>
+                SymbolEqualityComparer.Default.Equals(
+                    model.GetDeclaredSymbol(declarator, cancellationToken),
+                    processSymbol),
+            AssignmentExpressionSyntax assignment when Unwrap(assignment.Right) == current =>
+                SymbolEqualityComparer.Default.Equals(
+                    model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol,
+                    processSymbol),
+            _ => false
+        };
+    }
+
+    private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
+    {
+        var current = expression;
+
+        while (true)
+        {
+            switch (current)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    current = parenthesized.Expression;
+                    break;
+                case PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression):
+                    current = postfix.Operand;
+                    break;
+                default:
+                    return current;
+            }
+        }
     }
 
     /// <summary>
@@ -208,6 +420,30 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
+    ///     True for a read method on the process stream, or for a call that receives the process
+    ///     output stream as an argument. A helper that gets the stream is assumed to drain it.
+    /// </summary>
+    private static bool IsDrainCall(
+        InvocationExpressionSyntax invocation,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return (invocation.Expression is MemberAccessExpressionSyntax access
+                && DrainMethodNames.Contains(access.Name.Identifier.ValueText)
+                && SymbolEqualityComparer.Default.Equals(
+                    GetRootSymbol(access.Expression, model, cancellationToken),
+                    processSymbol))
+               || invocation.ArgumentList.Arguments.Any(argument => argument.Expression
+            .DescendantNodesAndSelf()
+            .OfType<MemberAccessExpressionSyntax>()
+            .Any(member => member.Name.Identifier.ValueText is "StandardOutput" or "StandardError"
+                           && SymbolEqualityComparer.Default.Equals(
+                               GetRootSymbol(member.Expression, model, cancellationToken),
+                               processSymbol)));
+    }
+
+    /// <summary>
     ///     True when a drain on the same process runs before the wait. A read placed after the wait
     ///     cannot unblock the child, and a read on another process cannot drain this one.
     /// </summary>
@@ -227,11 +463,8 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
 
             var isDrain = node switch
             {
-                InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } =>
-                    DrainMethodNames.Contains(access.Name.Identifier.ValueText)
-                    && SymbolEqualityComparer.Default.Equals(
-                        GetRootSymbol(access.Expression, model, cancellationToken),
-                        processSymbol),
+                InvocationExpressionSyntax invocation =>
+                    IsDrainCall(invocation, processSymbol, model, cancellationToken),
                 AssignmentExpressionSyntax subscription =>
                     subscription.IsKind(SyntaxKind.AddAssignmentExpression)
                     && subscription.Left is MemberAccessExpressionSyntax left

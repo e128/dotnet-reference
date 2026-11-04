@@ -54,6 +54,31 @@ public sealed class UntrackedSkipAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task InvalidPattern_FallsBackToDefault()
+    {
+        var test = new CSharpAnalyzerTest<UntrackedSkipAnalyzer, DefaultVerifier>
+        {
+            TestCode = """
+                       using Xunit;
+                       public class T
+                       {
+                           [Fact(Skip = "AB#4521 flaky on CI")]
+                           public void A() { }
+
+                           [Fact({|E128168:Skip = "flaky on CI"|})]
+                           public void B() { }
+                       }
+                       """,
+            ReferenceAssemblies = Net100WithXunit
+        };
+        test.TestState.AnalyzerConfigFiles.Add(
+            ("/.editorconfig", "is_global = true\ne128_tracked_ref_pattern = ([unclosed"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task SkipWithTrackerReference_Silent()
     {
         return VerifyAsync("""

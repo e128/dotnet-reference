@@ -29,7 +29,10 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         "apikey",
         "accesskey",
         "privatekey",
-        "connectionstring"
+        "connectionstring",
+        "token",
+        "credential",
+        "bearer"
     ];
 
     // A name that ends in one of these words names a lookup key, a header, or a label. The value is
@@ -51,12 +54,20 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         "setting",
         "settingkey",
         "configkey",
-        "configurationkey"
+        "configurationkey",
+        "pattern",
+        "regex",
+        "arn",
+        "id",
+        "count",
+        "length",
+        "expiry",
+        "hint"
     ];
 
-    private static readonly string[] ServerKeys = ["server=", "data source=", "host="];
+    private static readonly string[] ServerKeys = ["server", "data source", "host"];
 
-    private static readonly string[] PasswordKeys = ["password=", "pwd="];
+    private static readonly string[] PasswordKeys = ["password", "pwd"];
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -85,7 +96,10 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            start.RegisterSyntaxNodeAction(AnalyzeLiteral, SyntaxKind.StringLiteralExpression);
+            start.RegisterSyntaxNodeAction(
+                AnalyzeLiteral,
+                SyntaxKind.StringLiteralExpression,
+                SyntaxKind.Utf8StringLiteralExpression);
         });
     }
 
@@ -100,7 +114,7 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (value.Length < MinimumSecretLength || ContainsWhitespace(value))
+        if (value.Length < MinimumSecretLength || ContainsWhitespace(value) || LooksLikeKeyName(value))
         {
             return;
         }
@@ -115,15 +129,129 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
 
     private static string? TargetName(LiteralExpressionSyntax literal)
     {
-        return literal.Parent switch
+        SyntaxNode current = literal;
+
+        // Look through parentheses, a coalesce, and the branches of a conditional.
+        while (current.Parent is { } parent && IsTransparent(parent, current))
+        {
+            current = parent;
+        }
+
+        return current.Parent switch
         {
             EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } => declarator.Identifier.ValueText,
             EqualsValueClauseSyntax { Parent: PropertyDeclarationSyntax property } => property.Identifier.ValueText,
             ArrowExpressionClauseSyntax { Parent: PropertyDeclarationSyntax property } => property.Identifier.ValueText,
-            AssignmentExpressionSyntax assignment when assignment.Right == literal => SimpleName(assignment.Left),
+            ArrowExpressionClauseSyntax { Parent: AccessorDeclarationSyntax accessor } => GetterPropertyName(accessor),
+            ReturnStatementSyntax returnStatement => ReturnPropertyName(returnStatement),
+            AssignmentExpressionSyntax assignment when assignment.Right == current => AssignmentTargetName(assignment.Left),
             ArgumentSyntax { NameColon: { } nameColon } => nameColon.Name.Identifier.ValueText,
             _ => null
         };
+    }
+
+    private static bool IsTransparent(SyntaxNode parent, SyntaxNode child)
+    {
+        return parent switch
+        {
+            ParenthesizedExpressionSyntax => true,
+            BinaryExpressionSyntax binary => binary.IsKind(SyntaxKind.CoalesceExpression),
+            ConditionalExpressionSyntax conditional => conditional.Condition != child,
+            _ => false
+        };
+    }
+
+    private static string? AssignmentTargetName(ExpressionSyntax left)
+    {
+        return left switch
+        {
+            ElementAccessExpressionSyntax element => ConstantKey(element.ArgumentList),
+            ImplicitElementAccessSyntax implicitElement => ConstantKey(implicitElement.ArgumentList),
+            _ => SimpleName(left)
+        };
+    }
+
+    // An indexer key such as ["Password"] names the credential.
+    private static string? ConstantKey(BracketedArgumentListSyntax argumentList)
+    {
+        return argumentList.Arguments.Count == 1
+               && argumentList.Arguments[0].Expression is LiteralExpressionSyntax key
+               && key.IsKind(SyntaxKind.StringLiteralExpression)
+            ? key.Token.ValueText
+            : null;
+    }
+
+    // A return statement counts only when it sits in the getter of a property.
+    private static string? ReturnPropertyName(ReturnStatementSyntax returnStatement)
+    {
+        foreach (var ancestor in returnStatement.Ancestors())
+        {
+            if (ancestor is AccessorDeclarationSyntax accessor)
+            {
+                return GetterPropertyName(accessor);
+            }
+
+            if (ancestor is BaseMethodDeclarationSyntax or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+            {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? GetterPropertyName(AccessorDeclarationSyntax accessor)
+    {
+        return accessor.IsKind(SyntaxKind.GetAccessorDeclaration)
+               && accessor.Parent?.Parent is PropertyDeclarationSyntax property
+            ? property.Identifier.ValueText
+            : null;
+    }
+
+    // A header name ("X-Api-Key", "Some-Header") or a config path ("Auth:Password") labels a
+    // setting. It is not the secret. A secret mixes digits and symbols or uses lowercase words.
+    private static bool LooksLikeKeyName(string value)
+    {
+        if (value.StartsWith("X-", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var hasPathSeparator = false;
+
+        foreach (var character in value)
+        {
+            if (character is ':' or '/' or '.')
+            {
+                hasPathSeparator = true;
+            }
+            else if (!char.IsLetter(character) && character is not '-' and not '_')
+            {
+                return false;
+            }
+        }
+
+        return hasPathSeparator || IsTitleCaseHyphenated(value);
+    }
+
+    private static bool IsTitleCaseHyphenated(string value)
+    {
+        var segments = value.Split('-');
+
+        if (segments.Length < 2)
+        {
+            return false;
+        }
+
+        foreach (var segment in segments)
+        {
+            if (segment.Length == 0 || !char.IsUpper(segment[0]))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static string? SimpleName(ExpressionSyntax expression)
@@ -139,6 +267,12 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
     private static bool IsCredentialName(string name)
     {
         var normalized = name.Replace("_", string.Empty);
+
+        // A cancellation token is not a credential.
+        if (normalized.IndexOf("cancellation", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return false;
+        }
 
         foreach (var suffix in NonCredentialSuffixes)
         {
@@ -159,39 +293,49 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
+    // A connection string is a list of key=value pairs separated by semicolons. Read each key
+    // so that a URL query string such as "?host=a&password=b" does not match.
     private static bool HasConnectionStringPassword(string value)
     {
-        return ContainsAny(value, ServerKeys) && HasPasswordValue(value);
-    }
-
-    private static bool HasPasswordValue(string text)
-    {
-        foreach (var key in PasswordKeys)
+        if (value.IndexOf(';') < 0)
         {
-            var index = text.IndexOf(key, StringComparison.OrdinalIgnoreCase);
+            return false;
+        }
 
-            if (index < 0)
+        var hasServer = false;
+        var hasPassword = false;
+
+        foreach (var pair in value.Split(';'))
+        {
+            var separator = pair.IndexOf('=');
+
+            if (separator <= 0)
             {
                 continue;
             }
 
-            var valueStart = index + key.Length;
+            var key = pair.Substring(0, separator).Trim();
+            var pairValue = pair.Substring(separator + 1).Trim();
 
-            // A format placeholder or an empty value is not a hardcoded password.
-            if (valueStart < text.Length && text[valueStart] != ';' && text[valueStart] != '{')
+            if (IsKey(key, ServerKeys))
             {
-                return true;
+                hasServer = true;
+            }
+            else if (IsKey(key, PasswordKeys) && pairValue.Length > 0 && pairValue[0] != '{')
+            {
+                // A format placeholder or an empty value is not a hardcoded password.
+                hasPassword = true;
             }
         }
 
-        return false;
+        return hasServer && hasPassword;
     }
 
-    private static bool ContainsAny(string text, string[] keys)
+    private static bool IsKey(string key, string[] keys)
     {
-        foreach (var key in keys)
+        foreach (var candidate in keys)
         {
-            if (text.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0)
+            if (string.Equals(key, candidate, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

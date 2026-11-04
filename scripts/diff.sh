@@ -3,8 +3,9 @@
 # Usage: diff.sh [--json] [--full] [--files] [--staged] [--commits N | --days N] [--max-lines [N]]
 # --commits N: scope to the last N commits plus the working tree.
 # --days N:    scope to commits newer than N days plus the working tree.
-# --max-lines [N]: warn when the branch changes more than N lines (default 400). The count
-#                  spans the merge base with main through the working tree and untracked files.
+# --max-lines [N]: warn when the branch changes more than N lines (default 400). Over the limit, it also
+#                  prints substantive, mechanical, and lode/plans lines apart. The count
+#                  spans the merge base with origin/main, main, or origin/HEAD through the working tree and untracked text files.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 MAX_LINES=""; JSON=false; FULL=false; FILES_ONLY=false; STAGED_ONLY=false; COMMITS=""; DAYS=""
@@ -45,19 +46,51 @@ if [[ "$FILES_ONLY" == true ]]; then
 fi
 
 if [[ -n "$MAX_LINES" ]]; then
-    SIZE_BASE=$(git -C "$ROOT" merge-base HEAD main 2>/dev/null || echo "$EMPTY_TREE")
+    SIZE_BASE=""
+    for ref in origin/main main origin/HEAD; do
+        if git -C "$ROOT" rev-parse --verify -q "$ref^{commit}" > /dev/null; then
+            SIZE_BASE=$(git -C "$ROOT" merge-base "$ref" HEAD 2>/dev/null || true)
+            [[ -n "$SIZE_BASE" ]] && break
+        fi
+    done
+    SIZE_BASE="${SIZE_BASE:-$EMPTY_TREE}"
     TRACKED=$(git -C "$ROOT" diff --numstat "$SIZE_BASE" 2>/dev/null | awk '$1 != "-" { n += $1 + $2 } END { print n + 0 }')
     UNTRACKED=0
     while IFS= read -r file; do
-        [[ -f "$ROOT/$file" ]] && UNTRACKED=$((UNTRACKED + $(wc -l < "$ROOT/$file")))
+        [[ -f "$ROOT/$file" ]] || continue
+        # rg -I skips binary files. It prints nothing for an empty file.
+        lines=$(rg -I --no-filename -c "" -- "$ROOT/$file" 2>/dev/null || true)
+        UNTRACKED=$((UNTRACKED + ${lines:-0}))
     done < <(git -C "$ROOT" ls-files --others --exclude-standard)
     TOTAL=$((TRACKED + UNTRACKED))
     OVER=false
     [[ "$TOTAL" -gt "$MAX_LINES" ]] && OVER=true
+    SUBS=0; MECH=0; DOCS=0
+    if [[ "$OVER" == true ]]; then
+        # Fail soft: any error leaves the breakdown at zero.
+        MECH_PATHS=$("$(dirname "${BASH_SOURCE[0]}")/internal/mechanical-diff.sh" --json 2>/dev/null \
+            | jq -r '.files[] | select(.class == "MECHANICAL") | .path' 2>/dev/null) || MECH_PATHS=""
+        BREAKDOWN=$({
+            git -C "$ROOT" diff --numstat "$SIZE_BASE" 2>/dev/null | awk -F'\t' '$1 != "-" { print $1 + $2 "\t" $3 }'
+            while IFS= read -r file; do
+                [[ -f "$ROOT/$file" ]] || continue
+                lines=$(rg -I --no-filename -c "" -- "$ROOT/$file" 2>/dev/null || true)
+                printf '%s\t%s\n' "${lines:-0}" "$file"
+            done < <(git -C "$ROOT" ls-files --others --exclude-standard)
+        } | awk -F'\t' -v mech="$MECH_PATHS" '
+            BEGIN { n = split(mech, a, "\n"); for (i = 1; i <= n; i++) m[a[i]] = 1 }
+            $2 ~ /^(lode|plans)\// { d += $1; next }
+            ($2 in m) { x += $1; next }
+            { s += $1 }
+            END { printf "%d %d %d\n", s, x, d }') || BREAKDOWN=""
+        read -r SUBS MECH DOCS <<< "${BREAKDOWN:-0 0 0}"
+    fi
     if [[ "$JSON" == true ]]; then
-        printf '{"changed_lines":%d,"max_lines":%d,"over":%s}\n' "$TOTAL" "$MAX_LINES" "$OVER"
+        printf '{"changed_lines":%d,"max_lines":%d,"over":%s,"substantive_lines":%d,"mechanical_lines":%d,"docs_lines":%d}\n' \
+            "$TOTAL" "$MAX_LINES" "$OVER" "$SUBS" "$MECH" "$DOCS"
     elif [[ "$OVER" == true ]]; then
         warn "Branch changes $TOTAL lines, over the limit of $MAX_LINES. Split the change."
+        printf "Substantive %d, mechanical %d, lode and plans %d.\n" "$SUBS" "$MECH" "$DOCS"
     else
         printf "Branch changes %d lines, within the limit of %d.\n" "$TOTAL" "$MAX_LINES"
     fi

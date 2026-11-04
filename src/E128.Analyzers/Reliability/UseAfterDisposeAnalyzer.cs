@@ -71,7 +71,9 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (invocation.FirstAncestorOrSelf<BlockSyntax>() is not { } block)
+        // Only a Dispose statement that sits directly in a block runs on every path through that
+        // block. A braceless if, else, loop, or switch section runs on some paths only.
+        if (invocation.Parent is not ExpressionStatementSyntax { Parent: BlockSyntax block })
         {
             return;
         }
@@ -95,6 +97,13 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
 
             // A second Dispose is harmless, so the rule does not report it.
             if (IsDisposeReceiver(identifier))
+            {
+                continue;
+            }
+
+            // Only a member access on the local reads its state. A nameof, a null test, and a
+            // comparison do not.
+            if (!IsMemberAccessReceiver(identifier))
             {
                 continue;
             }
@@ -132,6 +141,24 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool IsMemberAccessReceiver(IdentifierNameSyntax identifier)
+    {
+        if (identifier.Parent is not MemberAccessExpressionSyntax access || access.Expression != identifier)
+        {
+            return false;
+        }
+
+        foreach (var ancestor in identifier.Ancestors())
+        {
+            if (ancestor is InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" } })
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool IsDisposeReceiver(IdentifierNameSyntax identifier)

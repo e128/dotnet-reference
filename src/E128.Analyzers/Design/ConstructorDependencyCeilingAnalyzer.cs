@@ -41,27 +41,38 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeConstructor, SyntaxKind.ConstructorDeclaration);
-        context.RegisterSyntaxNodeAction(AnalyzePrimaryConstructor, SyntaxKind.ClassDeclaration, SyntaxKind.StructDeclaration);
+        context.RegisterCompilationStartAction(OnCompilationStart);
     }
 
-    private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context)
+    private static void OnCompilationStart(CompilationStartAnalysisContext context)
+    {
+        var known = new KnownTypes(
+            context.Compilation.GetTypeByMetadataName("System.Uri"),
+            context.Compilation.GetTypeByMetadataName("System.Exception"),
+            context.Compilation.GetSpecialType(SpecialType.System_Collections_IEnumerable));
+
+        // A record primary constructor is not registered. Its parameters declare data members, not services.
+        context.RegisterSyntaxNodeAction(ctx => AnalyzeConstructor(ctx, known), SyntaxKind.ConstructorDeclaration);
+        context.RegisterSyntaxNodeAction(ctx => AnalyzePrimaryConstructor(ctx, known), SyntaxKind.ClassDeclaration, SyntaxKind.StructDeclaration);
+    }
+
+    private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context, KnownTypes known)
     {
         var constructor = (ConstructorDeclarationSyntax)context.Node;
-        Check(context, constructor.ParameterList, constructor.Identifier);
+        Check(context, constructor.ParameterList, constructor.Identifier, known);
     }
 
-    private static void AnalyzePrimaryConstructor(SyntaxNodeAnalysisContext context)
+    private static void AnalyzePrimaryConstructor(SyntaxNodeAnalysisContext context, KnownTypes known)
     {
         var type = (TypeDeclarationSyntax)context.Node;
 
         if (type.ParameterList is { } parameters)
         {
-            Check(context, parameters, type.Identifier);
+            Check(context, parameters, type.Identifier, known);
         }
     }
 
-    private static void Check(SyntaxNodeAnalysisContext context, ParameterListSyntax parameters, SyntaxToken identifier)
+    private static void Check(SyntaxNodeAnalysisContext context, ParameterListSyntax parameters, SyntaxToken identifier, KnownTypes known)
     {
         var ceiling = ReadCeiling(context);
         var count = 0;
@@ -69,7 +80,7 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
         foreach (var parameter in parameters.Parameters)
         {
             if (context.SemanticModel.GetDeclaredSymbol(parameter, context.CancellationToken)?.Type is { } type
-                && IsDependency(type))
+                && IsDependency(type, known))
             {
                 count++;
             }
@@ -81,10 +92,67 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsDependency(ITypeSymbol type)
+    private static bool IsDependency(ITypeSymbol type, KnownTypes known)
     {
-        return type.SpecialType != SpecialType.System_String
-               && type.TypeKind is TypeKind.Class or TypeKind.Interface;
+        // Special types cover object, string, primitives, and the generic collection interfaces.
+        // Arrays, structs, enums, and delegates fail the type kind check, so a params array never counts.
+        if (type.SpecialType != SpecialType.None
+            || type.TypeKind is not (TypeKind.Class or TypeKind.Interface)
+            || type.IsRecord
+            || SymbolEqualityComparer.Default.Equals(type, known.Uri))
+        {
+            return false;
+        }
+
+        // An exception or a collection carries data. It does not provide a service.
+        return !DerivesFrom(type, known.Exception) && !IsEnumerable(type, known.Enumerable);
+    }
+
+    private static bool DerivesFrom(ITypeSymbol type, ITypeSymbol? baseType)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            if (SymbolEqualityComparer.Default.Equals(current, baseType))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsEnumerable(ITypeSymbol type, ITypeSymbol enumerable)
+    {
+        if (SymbolEqualityComparer.Default.Equals(type, enumerable))
+        {
+            return true;
+        }
+
+        foreach (var implemented in type.AllInterfaces)
+        {
+            if (SymbolEqualityComparer.Default.Equals(implemented, enumerable))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private sealed class KnownTypes
+    {
+        internal KnownTypes(INamedTypeSymbol? uri, INamedTypeSymbol? exception, INamedTypeSymbol enumerable)
+        {
+            Uri = uri;
+            Exception = exception;
+            Enumerable = enumerable;
+        }
+
+        internal INamedTypeSymbol? Uri { get; }
+
+        internal INamedTypeSymbol? Exception { get; }
+
+        internal INamedTypeSymbol Enumerable { get; }
     }
 
     private static int ReadCeiling(SyntaxNodeAnalysisContext context)

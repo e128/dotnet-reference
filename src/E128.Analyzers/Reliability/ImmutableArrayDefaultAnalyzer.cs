@@ -70,6 +70,9 @@ public sealed class ImmutableArrayDefaultAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(
             ctx => CollectAssignment(ctx, assignedFields),
             SyntaxKind.SimpleAssignmentExpression);
+        context.RegisterSyntaxNodeAction(
+            ctx => CollectArgument(ctx, assignedFields),
+            SyntaxKind.Argument);
         context.RegisterCompilationEndAction(ctx =>
             Report(candidates, assignedFields, ctx.ReportDiagnostic));
     }
@@ -106,7 +109,35 @@ public sealed class ImmutableArrayDefaultAnalyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
-        if (context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol
+        // A deconstruction has a tuple on the left. Check every element for a field.
+        foreach (var target in assignment.Left.DescendantNodesAndSelf())
+        {
+            if (target is not (IdentifierNameSyntax or MemberAccessExpressionSyntax))
+            {
+                continue;
+            }
+
+            if (context.SemanticModel.GetSymbolInfo(target, context.CancellationToken).Symbol
+                is IFieldSymbol field)
+            {
+                assignedFields.Add(field);
+            }
+        }
+    }
+
+    private static void CollectArgument(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentBag<IFieldSymbol> assignedFields)
+    {
+        var argument = (ArgumentSyntax)context.Node;
+
+        // A ref or out argument lets the callee write the field.
+        if (argument.RefKindKeyword.Kind() is not (SyntaxKind.RefKeyword or SyntaxKind.OutKeyword))
+        {
+            return;
+        }
+
+        if (context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol
             is IFieldSymbol field)
         {
             assignedFields.Add(field);

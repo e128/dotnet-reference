@@ -19,11 +19,13 @@ dotnet add package E128.Analyzers
 Paste this prompt into a coding agent in the repository you want to check:
 
 ```text
-Add the latest stable E128.Analyzers package from the configured NuGet sources to this repository.
+Add the latest stable E128.Analyzers package to this repository. Resolve the version from nuget.org only, and write the exact version number. Never use a floating version.
 
 Add one `<PackageReference Include="E128.Analyzers" PrivateAssets="all" />` to the root `Directory.Build.props`, inside an existing analyzer `ItemGroup` when one exists, in alphabetical position. Create the file if it is missing. Leave every other analyzer where it is.
 
 If this repository uses Central Package Management, add one `PackageVersion` entry to `Directory.Packages.props`. Never duplicate a version entry. Otherwise set `Version` on the reference.
+
+If `nuget.config` defines more than one package source, add a `packageSourceMapping` entry that maps `E128.*` to nuget.org.
 
 In the root `.editorconfig`, under `[*.cs]`, set these categories to `error` and set `e128_max_complexity = linear`:
 

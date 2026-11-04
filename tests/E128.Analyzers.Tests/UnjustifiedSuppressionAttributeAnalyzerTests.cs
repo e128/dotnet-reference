@@ -19,6 +19,20 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NullJustification_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics.CodeAnalysis;
+                           class C
+                           {
+                               [{|E128173:SuppressMessage("Design", "CA1000", Justification = null)|}]
+                               void M() { }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task SuppressMessageWithoutJustification_Fires()
     {
         return VerifyAsync("""
@@ -85,5 +99,29 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
                                void M() { }
                            }
                            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ExcludeFromCodeCoverageWithoutJustificationProperty_Silent()
+    {
+        return new CSharpAnalyzerTest<UnjustifiedSuppressionAttributeAnalyzer, DefaultVerifier>
+        {
+            TestCode = """
+                       namespace System.Diagnostics.CodeAnalysis
+                       {
+                           public sealed class ExcludeFromCodeCoverageAttribute : System.Attribute { }
+                       }
+
+                       namespace App
+                       {
+                           using System.Diagnostics.CodeAnalysis;
+
+                           [ExcludeFromCodeCoverage]
+                           class C { }
+                       }
+                       """,
+            ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20
+        }.RunAsync();
     }
 }

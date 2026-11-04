@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-01T20:55:03Z*
+*Updated: 2026-11-04T22:19:26Z*
 
 ## Design Principles
 
@@ -88,7 +88,7 @@ artifacts stay STE per `.claude/rules/writing-style.md`.
 
 ## Development Methodology
 
-- **TDD (Red-Green-Refactor)** for new features and significant changes. RED phase stubs use `Assert.Fail(message)`.
+- **TDD (Red-Green-Refactor)** for new features and significant changes. RED phase stubs use `Assert.Fail(message)`. Analyzer E128171 reports a test whose whole body is `Assert.Fail`. A RED stub lives only in the working tree. It never reaches the gate or a commit.
 - **Architecture testing** with ArchUnitNET enforces layer dependencies, naming conventions, sealed-by-default, and service patterns. See [Architecture Testing](dotnet/architecture-testing.md).
 
 ## Verification Workflow

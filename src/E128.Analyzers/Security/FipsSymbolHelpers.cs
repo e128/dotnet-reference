@@ -34,6 +34,9 @@ internal static class FipsSymbolHelpers
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IFieldSymbol, bool>> AssignedInConstructorCache = new();
 
+    // The cache key is the root operation of a body. The entry dies with the operation tree.
+    private static readonly ConditionalWeakTable<IOperation, HashSet<ILocalSymbol>> WrittenLocalsCache = new();
+
     /// <summary>
     ///     Returns the fully qualified type name without <c lang="csharp">global::</c>. Call this only when reporting,
     ///     because formatting allocates.
@@ -539,7 +542,7 @@ internal static class FipsSymbolHelpers
 
     /// <summary>
     ///     Calls <paramref name="check" /> with each target an assignment writes, the value it receives, and the
-    ///     syntax to report. It covers simple, compound, <c lang="csharp">??=</c> and tuple deconstruction assignments.
+    ///     syntax to report. It covers simple, <c lang="csharp">??=</c> and tuple deconstruction assignments. It skips a compound assignment such as <c lang="csharp">+=</c>, because the assigned value is not a known constant.
     /// </summary>
     public static void ForEachAssignment(IOperation operation, Action<IOperation, IOperation, SyntaxNode> check) =>
         ForEachAssignment(operation, check, static (callback, target, value, syntax) => callback(target, value, syntax));
@@ -565,10 +568,10 @@ internal static class FipsSymbolHelpers
             return;
         }
 
-        if (operation is ICompoundAssignmentOperation compound)
+        // A compound assignment such as += computes a new value from the old one. The result is not a
+        // known constant, and the right operand alone is not the assigned value, so skip it.
+        if (operation is ICompoundAssignmentOperation)
         {
-            check(state, compound.Target, compound.Value, compound.Syntax);
-
             return;
         }
 
@@ -1165,10 +1168,7 @@ internal static class FipsSymbolHelpers
     ///     Returns true when no statement in the enclosing body assigns the local, passes it by <c lang="csharp">ref</c> or
     ///     <c lang="csharp">out</c>, or increments it.
     /// </summary>
-    private static bool IsNeverReassigned(ILocalReferenceOperation reference) =>
-        ComputeIsNeverReassigned(reference);
-
-    private static bool ComputeIsNeverReassigned(ILocalReferenceOperation reference)
+    private static bool IsNeverReassigned(ILocalReferenceOperation reference)
     {
         var root = (IOperation)reference;
         while (root.Parent is not null)
@@ -1176,17 +1176,25 @@ internal static class FipsSymbolHelpers
             root = root.Parent;
         }
 
+        // One walk per body collects every written local, so each later reference is a set lookup.
+        var written = WrittenLocalsCache.GetValue(root, ComputeWrittenLocals);
+
+        return !written.Contains(reference.Local);
+    }
+
+    private static HashSet<ILocalSymbol> ComputeWrittenLocals(IOperation root)
+    {
+        var written = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
+
         foreach (var descendant in root.Descendants())
         {
-            if (descendant is ILocalReferenceOperation other &&
-                SymbolEqualityComparer.Default.Equals(other.Local, reference.Local) &&
-                IsWrite(other))
+            if (descendant is ILocalReferenceOperation other && IsWrite(other))
             {
-                return false;
+                written.Add(other.Local);
             }
         }
 
-        return true;
+        return written;
     }
 
     private static bool IsWrite(IOperation reference) => reference.Parent switch

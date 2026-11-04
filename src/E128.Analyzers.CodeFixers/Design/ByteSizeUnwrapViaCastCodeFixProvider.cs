@@ -24,7 +24,7 @@ public sealed class ByteSizeUnwrapViaCastCodeFixProvider : E128CodeFixProviderBa
             return;
         }
 
-        var inner = UnwrapParentheses(castExpression.Expression);
+        var inner = ExpressionUnwrapper.Parentheses(castExpression.Expression);
         if (inner is not MemberAccessExpressionSyntax memberAccess)
         {
             return;
@@ -60,16 +60,6 @@ public sealed class ByteSizeUnwrapViaCastCodeFixProvider : E128CodeFixProviderBa
         return castTargetType is null
                || semanticModel.GetSymbolInfo(memberAccess, cancellationToken).Symbol is not IPropertySymbol propertySymbol
                || castTargetType.SpecialType != propertySymbol.Type.SpecialType;
-    }
-
-    private static ExpressionSyntax UnwrapParentheses(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parens)
-        {
-            expression = parens.Expression;
-        }
-
-        return expression;
     }
 
     private static async Task<Document> RemoveCastAsync(

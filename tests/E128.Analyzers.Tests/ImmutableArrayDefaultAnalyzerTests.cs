@@ -97,4 +97,63 @@ public sealed class ImmutableArrayDefaultAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DeconstructionAssignment_Silent()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Immutable;
+                           class C
+                           {
+                               private ImmutableArray<int> values;
+
+                               internal void Set(ImmutableArray<int> a, int n)
+                               {
+                                   (values, _) = (a, n);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task OutArgument_Silent()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Immutable;
+                           class C
+                           {
+                               private ImmutableArray<int> values;
+
+                               private static void Fill(out ImmutableArray<int> target)
+                               {
+                                   target = ImmutableArray<int>.Empty;
+                               }
+
+                               internal void Init()
+                               {
+                                   Fill(out values);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ImmutableInterlockedRefArgument_Silent()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Immutable;
+                           class C
+                           {
+                               private ImmutableArray<int> values;
+
+                               internal void Init()
+                               {
+                                   ImmutableInterlocked.InterlockedInitialize(ref values, ImmutableArray<int>.Empty);
+                               }
+                           }
+                           """);
+    }
 }

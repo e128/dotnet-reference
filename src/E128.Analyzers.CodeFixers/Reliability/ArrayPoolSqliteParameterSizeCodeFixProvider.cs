@@ -229,11 +229,24 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
         if (rent is null && value is IdentifierNameSyntax bufferName)
         {
             var member = scope.FirstAncestorOrSelf<MemberDeclarationSyntax>();
-            var declarator = member?.DescendantNodes()
+            var name = bufferName.Identifier.ValueText;
+            var declarators = member?.DescendantNodes()
                 .OfType<VariableDeclaratorSyntax>()
-                .FirstOrDefault(v => string.Equals(
-                    v.Identifier.ValueText, bufferName.Identifier.ValueText, StringComparison.Ordinal));
-            rent = declarator?.Initializer?.Value as InvocationExpressionSyntax;
+                .Where(v => string.Equals(v.Identifier.ValueText, name, StringComparison.Ordinal))
+                .ToList();
+
+            // Decline when the name is ambiguous. Two declarators of one name can sit in different scopes,
+            // and a reassigned buffer can hold a different length at the call.
+            if (declarators is not { Count: 1 }
+                || member is null
+                || member.DescendantNodes().OfType<AssignmentExpressionSyntax>().Any(a =>
+                    a.Left is IdentifierNameSyntax left
+                    && string.Equals(left.Identifier.ValueText, name, StringComparison.Ordinal)))
+            {
+                return null;
+            }
+
+            rent = declarators[0].Initializer?.Value as InvocationExpressionSyntax;
         }
 
         if (rent is null

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -16,21 +17,30 @@ internal static class TrackerReference
 
     private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(1);
 
+    private static readonly Regex DefaultRegex = new(DefaultPattern, RegexOptions.CultureInvariant, MatchTimeout);
+
+    // One compiled Regex per configured pattern string. The cache is thread safe because the rules
+    // run concurrently, and it holds one entry per distinct option value.
+    private static readonly ConcurrentDictionary<string, Regex> Cache = new(StringComparer.Ordinal);
+
     internal static Regex GetPattern(AnalyzerConfigOptions options)
     {
-        if (options.TryGetValue(OptionKey, out var configured) && !string.IsNullOrWhiteSpace(configured))
-        {
-            try
-            {
-                return new Regex(configured, RegexOptions.CultureInvariant, MatchTimeout);
-            }
-            catch (ArgumentException)
-            {
-                // An invalid pattern falls back to the default instead of failing the build.
-            }
-        }
+        return options.TryGetValue(OptionKey, out var configured) && !string.IsNullOrWhiteSpace(configured)
+            ? Cache.GetOrAdd(configured, Compile)
+            : DefaultRegex;
+    }
 
-        return new Regex(DefaultPattern, RegexOptions.CultureInvariant, MatchTimeout);
+    private static Regex Compile(string pattern)
+    {
+        try
+        {
+            return new Regex(pattern, RegexOptions.CultureInvariant, MatchTimeout);
+        }
+        catch (ArgumentException)
+        {
+            // An invalid pattern falls back to the default instead of failing the build.
+            return DefaultRegex;
+        }
     }
 
     internal static bool IsTracked(Regex pattern, string text)

@@ -82,6 +82,19 @@ public sealed class UntrackedTodoAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task MarkerInsideProse_Silent()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               // This avoids a hack in the parser, see the design note
+                               void M() { }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task WordInsideAnotherWord_Silent()
     {
         return VerifyAsync("""

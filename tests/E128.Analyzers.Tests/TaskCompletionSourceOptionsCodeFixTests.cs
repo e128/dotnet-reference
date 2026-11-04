@@ -65,4 +65,34 @@ public sealed class TaskCompletionSourceOptionsCodeFixTests
         return CodeFixTestRunner.RunAsync<TaskCompletionSourceOptionsAnalyzer,
             TaskCompletionSourceOptionsCodeFixProvider>(source, fixedCode);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_ReplacesContinuationOptionsArgument()
+    {
+        const string source = """
+                              using System.Threading.Tasks;
+                              class C
+                              {
+                                  object M()
+                                  {
+                                      return {|E128159:new TaskCompletionSource<int>(TaskContinuationOptions.RunContinuationsAsynchronously)|};
+                                  }
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System.Threading.Tasks;
+                                 class C
+                                 {
+                                     object M()
+                                     {
+                                         return new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+                                     }
+                                 }
+                                 """;
+
+        return CodeFixTestRunner.RunAsync<TaskCompletionSourceOptionsAnalyzer,
+            TaskCompletionSourceOptionsCodeFixProvider>(source, fixedCode);
+    }
 }

@@ -85,6 +85,7 @@ if [[ "$LEVEL" == "auto" ]]; then
 
     # Commit signals since the merge base.
     while IFS= read -r -d $'\x1e' record; do
+        record=${record#$'\n'}
         subject=${record%%$'\n'*}
         if [[ "$subject" =~ ^[a-z]+(\([^\)]*\))?!: || "$record" =~ (^|$'\n')BREAKING[\ -]CHANGE: ]]; then
             LEVEL="major"; REASON="breaking commit: $subject"; break

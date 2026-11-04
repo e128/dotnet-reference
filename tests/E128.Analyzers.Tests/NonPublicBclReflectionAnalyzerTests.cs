@@ -52,6 +52,26 @@ public sealed class NonPublicBclReflectionAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenTheTypeComesFromNetStandard()
+    {
+        return new CSharpAnalyzerTest<NonPublicBclReflectionAnalyzer, DefaultVerifier>
+        {
+            TestCode = """
+                       using System.Reflection;
+                       class C
+                       {
+                           object M()
+                           {
+                               return {|E128137:typeof(string).GetMethod("Empty", BindingFlags.NonPublic | BindingFlags.Static)|};
+                           }
+                       }
+                       """,
+            ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20
+        }.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenTheTypeIsNotAFrameworkType()
     {
         return VerifyAsync("""

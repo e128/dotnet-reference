@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-11-04T21:23:17Z*
+*Updated: 2026-11-04T22:19:26Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -125,6 +125,7 @@ Minimal `.csproj` template (all versions from CPM):
 - Test naming: `MethodName_ExpectedBehavior_WhenCondition` (e.g., `GreetAsync_ReturnsGreeting_WithDefaultName`)
 - No reflection in tests, use `internal` + `InternalsVisibleTo`
 - RED phase stubs use `Assert.Fail("message")`
+- No net48 rule: code and tests target .NET 10 and `netstandard2.0` only (AGENTS.md)
 - Every test method has `[Trait("Category", "CI")]` (or appropriate category)
 
 ## Related

@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-11-04T15:45:30Z*
+*Updated: 2026-11-04T22:19:26Z*
 
 ## Strategy: Deny by Default
 
@@ -109,9 +109,9 @@ Key rules by category (not exhaustive):
 | Category    | Examples                                                                                           |
 | ----------- | -------------------------------------------------------------------------------------------------- |
 | Design      | Sealed-by-default, async void, sync-over-async, ConfigureAwait, TimeProvider, DI, ImmutableArray   |
-| Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard, stackalloc bounds, pool zeroing, service lifetime (E128154), `foreach` mutation (E128155), `TaskCompletionSource` options (E128159), process drain (E128160), `Path.Combine` segments (E128161), use after `Dispose` (E128162), `ImmutableArray` default (E128163) |
+| Reliability | GeneratedRegex safety, DateTime roundtrip, Task.WhenAll, JsonDocument lifetime, pool Rent() guard, stackalloc bounds, pool zeroing, service lifetime (E128154, `TryAdd`, keyed, `typeof` and `AddHostedService` forms), `foreach` mutation (E128155, including array writes and `break` or `return` exits), `TaskCompletionSource` options (E128159), process drain (E128160, binds start info and helper drains), `Path.Combine` segments (E128161), use after `Dispose` (E128162, direct block statement only), `ImmutableArray` default (E128163, no fix for struct instance fields) |
 | Performance | MinBy/MaxBy, HttpCompletionOption, FrozenSet, O(n²) loops, `SearchValues<char>` (E128102), UTF-8 parsing, alternate lookups (E128131 to E128135), span bulk methods (E128140), u8 literals (E128141), complexity ceiling (E128152), `RemoveAt(0)` in loop (E128153) |
-| Security    | FIPS cryptography rules: unapproved hash names, `System.Random` in security code, managed and CNG type creation, RSA key size, cipher mode, PBKDF2 work factor, TLS versions, deprecated RNG, excluded cipher names, AES-GCM tag size, SHA-3 policy, HMAC key length (E128071, E128075, E128142 to E128151), certificate bypass (E128156), fixed-time compare (E128157) |
+| Security    | FIPS cryptography rules: unapproved hash names, `System.Random` in security code, managed and CNG type creation, RSA key size, cipher mode, PBKDF2 work factor, TLS versions, deprecated RNG, excluded cipher names, AES-GCM tag size, SHA-3 policy, HMAC key length (E128071, E128075, E128142 to E128151), certificate bypass (E128156, `SslOptions` and `SslStream` too), fixed-time compare (E128157), hardcoded URL (E128164, dot boundary), hardcoded secret (E128165, token, credential and bearer names, `??`, indexers, getter returns, `u8`, connection strings), sensitive log argument (E128166, `LoggerMessage`, wrapped args, whole-word `ssn` and `pwd`, skips `EventId` and `Exception`) |
 | Unsafe      | `Unsafe.As` to `Unsafe.BitCast`, unaligned reads, unaligned non-blittable reads (E128139), bounds bypass, bool and int reinterpret, non-blittable `MemoryMarshal`, fixed buffers, `SkipInit`, unpinned pointers, string writes, null byref, delegate lifetime, bulk copy, pointer and length pairs, nonpublic reflection, raw IL (E128112 to E128129, E128136 to E128139) |
 | Style       | string.Empty, Encoding.UTF8, XML doc comments, null-forgiving operator                             |
 | Maintainability | See the README rule table                                                                      |

@@ -121,6 +121,105 @@ public sealed class SwallowedAssertionAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task CatchWithExceptionFilter_Silent()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Xunit;
+                           public class T
+                           {
+                               [Fact]
+                               public void A()
+                               {
+                                   try
+                                   {
+                                       Assert.True(true);
+                                   }
+                                   catch (Exception e) when (e is InvalidOperationException)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ThrowInsideNestedLambda_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Xunit;
+                           public class T
+                           {
+                               [Fact]
+                               public void A()
+                               {
+                                   try
+                                   {
+                                       Assert.True(true);
+                                   }
+                                   {|E128172:catch|} (Exception)
+                                   {
+                                       Action later = () => throw new InvalidOperationException();
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ThrowInsideLocalFunction_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Xunit;
+                           public class T
+                           {
+                               [Fact]
+                               public void A()
+                               {
+                                   try
+                                   {
+                                       Assert.True(true);
+                                   }
+                                   {|E128172:catch|} (Exception)
+                                   {
+                                       void Later() { throw new InvalidOperationException(); }
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CatchThatCallsAssertFail_Silent()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Xunit;
+                           public class T
+                           {
+                               [Fact]
+                               public void A()
+                               {
+                                   try
+                                   {
+                                       Assert.True(true);
+                                   }
+                                   catch (Exception e)
+                                   {
+                                       Assert.Fail(e.Message);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task TryWithoutAssert_Silent()
     {
         return VerifyAsync("""

@@ -29,8 +29,8 @@ Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
 --------|--------------|--------------|--------------|--------------|-------
 E128001 | E128-Design | Warning | Design | Warning | The category gains the E128- prefix, so category-E128-Design selects the rules of one area.
 E128002 | E128-Style | Warning | Style | Warning | The category gains the E128- prefix, so category-E128-Style selects the rules of one area.
-E128003 | E128-Reliability | Warning | Reliability | Warning | The category gains the E128- prefix, so category-E128-Reliability selects the rules of one area.
-E128004 | E128-Reliability | Warning | Reliability | Warning | The category gains the E128- prefix, so category-E128-Reliability selects the rules of one area.
+E128003 | E128-Design | Warning | Design | Warning | The category gains the E128- prefix, so category-E128-Design selects the rules of one area.
+E128004 | E128-Design | Warning | Design | Warning | The category gains the E128- prefix, so category-E128-Design selects the rules of one area.
 E128005 | E128-Design | Warning | Design | Warning | The category gains the E128- prefix, so category-E128-Design selects the rules of one area.
 E128006 | E128-Style | Warning | Style | Warning | The category gains the E128- prefix, so category-E128-Style selects the rules of one area.
 E128007 | E128-Design | Warning | Design | Warning | The category gains the E128- prefix, so category-E128-Design selects the rules of one area.

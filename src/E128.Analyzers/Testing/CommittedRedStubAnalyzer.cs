@@ -36,10 +36,36 @@ public sealed class CommittedRedStubAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+        context.RegisterCompilationStartAction(OnCompilationStart);
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+    private static void OnCompilationStart(CompilationStartAnalysisContext context)
+    {
+        // Two references can declare the same type, so the lookup keeps every match.
+        var assertTypes = context.Compilation.GetTypesByMetadataName("Xunit.Assert");
+
+        if (assertTypes.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        context.RegisterSyntaxNodeAction(ctx => AnalyzeMethod(ctx, assertTypes), SyntaxKind.MethodDeclaration);
+    }
+
+    private static bool IsAssertType(ImmutableArray<INamedTypeSymbol> assertTypes, ITypeSymbol type)
+    {
+        foreach (var candidate in assertTypes)
+        {
+            if (SymbolEqualityComparer.Default.Equals(candidate, type))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ImmutableArray<INamedTypeSymbol> assertTypes)
     {
         var method = (MethodDeclarationSyntax)context.Node;
 
@@ -53,7 +79,7 @@ public sealed class CommittedRedStubAnalyzer : DiagnosticAnalyzer
         if (call is not null
             && context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol is IMethodSymbol target
             && string.Equals(target.Name, "Fail", StringComparison.Ordinal)
-            && string.Equals(target.ContainingType.ToDisplayString(), "Xunit.Assert", StringComparison.Ordinal))
+            && IsAssertType(assertTypes, target.ContainingType))
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, call.GetLocation()));
         }

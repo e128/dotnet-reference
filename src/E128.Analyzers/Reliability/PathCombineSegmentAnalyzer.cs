@@ -24,16 +24,22 @@ public sealed class PathCombineSegmentAnalyzer : DiagnosticAnalyzer
 
     internal const string ReplacementMethodName = "Path.Join";
 
+    private const string RootedAdvice = "a rooted segment drops every earlier segment, so use Path.Join";
+
+    private const string ParentAdvice =
+        "call Path.GetFullPath on the result and check that it starts with the base directory";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Path.Combine with a rooted or parent segment",
-        "'{0}' starts from a root or a parent, so the combined path can escape the base directory",
+        "'{0}' can leave the base directory: {1}",
         "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
-        "Path.Combine returns the rooted segment on its own and drops every earlier segment. A " +
-        "segment that climbs with a parent reference escapes the base directory. Use Path.Join, " +
-        "which keeps every segment.");
+        "Path.Combine returns a rooted segment on its own and drops every earlier segment. Use " +
+        "Path.Join for a rooted segment, which keeps every segment. A segment that climbs with a " +
+        "parent reference can leave the base directory, and Path.Join does not stop that. Call " +
+        "Path.GetFullPath on the result and check that it starts with the base directory.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -79,9 +85,15 @@ public sealed class PathCombineSegmentAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (IsRooted(segment) || EscapesBase(segment))
+            if (IsRooted(segment))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, argument.GetLocation(), segment));
+                context.ReportDiagnostic(
+                    Diagnostic.Create(Rule, argument.GetLocation(), segment, RootedAdvice));
+            }
+            else if (EscapesBase(segment))
+            {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(Rule, argument.GetLocation(), segment, ParentAdvice));
             }
         }
     }
@@ -113,16 +125,39 @@ public sealed class PathCombineSegmentAnalyzer : DiagnosticAnalyzer
 
     /// <summary>
     ///     True when a multi-segment constant starts by climbing to the parent directory, so the
-    ///     result lands outside the base. A segment that is exactly <c lang="csharp">".."</c> is a
-    ///     deliberate step up, and <c lang="csharp">"a/../b"</c> stays inside the base, so both stay
-    ///     silent.
+    ///     result lands outside the base. The walk counts depth: a name adds one, a
+    ///     <c lang="csharp">".."</c> removes one, and a depth below zero escapes. A segment that is
+    ///     exactly <c lang="csharp">".."</c> is a deliberate step up, and
+    ///     <c lang="csharp">"a/../b"</c> stays inside the base, so both stay silent.
+    ///     <c lang="csharp">"a/../../b"</c> escapes.
     /// </summary>
     internal static bool EscapesBase(string segment)
     {
         var segments = segment.Split('/', '\\');
 
-        return segments.Length >= 2
-               && string.Equals(segments[0], "..", StringComparison.Ordinal);
+        if (segments.Length < 2)
+        {
+            return false;
+        }
+
+        var depth = 0;
+
+        foreach (var part in segments)
+        {
+            if (part.Length == 0 || string.Equals(part, ".", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            depth += string.Equals(part, "..", StringComparison.Ordinal) ? -1 : 1;
+
+            if (depth < 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsAsciiLetter(char value)

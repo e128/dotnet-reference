@@ -21,7 +21,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task TagEquality_Fires()
+    public Task SpanEquality_DoesNotFire()
     {
         return VerifyAsync("""
                            using System;
@@ -30,24 +30,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
                            {
                                bool M(ReadOnlySpan<byte> computedTag, ReadOnlySpan<byte> expectedTag)
                                {
-                                   return {|E128157:computedTag == expectedTag|};
-                               }
-                           }
-                           """);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task TagInequality_Fires()
-    {
-        return VerifyAsync("""
-                           using System;
-
-                           class C
-                           {
-                               bool M(ReadOnlySpan<byte> computedTag, ReadOnlySpan<byte> expectedTag)
-                               {
-                                   return {|E128157:computedTag != expectedTag|};
+                                   return computedTag == expectedTag || computedTag != expectedTag;
                                }
                            }
                            """);
@@ -87,7 +70,41 @@ public sealed class TimingSafeComparisonAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task HmacResultSpanEquality_Fires()
+    public Task StaticMemoryExtensionsSequenceEqual_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class C
+                           {
+                               bool M(ReadOnlySpan<byte> computedTag, ReadOnlySpan<byte> expectedTag)
+                               {
+                                   return {|E128157:MemoryExtensions.SequenceEqual(computedTag, expectedTag)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StaticEnumerableSequenceEqual_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Linq;
+
+                           class C
+                           {
+                               bool M(byte[] computedTag, byte[] expectedTag)
+                               {
+                                   return {|E128157:Enumerable.SequenceEqual(computedTag, expectedTag)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HmacResultSequenceEqual_Fires()
     {
         return VerifyAsync("""
                            using System;
@@ -97,7 +114,89 @@ public sealed class TimingSafeComparisonAnalyzerTests
                            {
                                bool M(byte[] key, byte[] data, byte[] expected)
                                {
-                                   return {|E128157:HMACSHA256.HashData(key, data).AsSpan() == expected.AsSpan()|};
+                                   return {|E128157:HMACSHA256.HashData(key, data).AsSpan().SequenceEqual(expected.AsSpan())|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HmacInstanceComputeHash_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Linq;
+                           using System.Security.Cryptography;
+
+                           class C
+                           {
+                               bool M(byte[] key, byte[] data, byte[] expected)
+                               {
+                                   using var hmac = new HMACSHA256(key);
+                                   var result = hmac.ComputeHash(data);
+                                   return {|E128157:result.SequenceEqual(expected)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HmacHashProperty_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Linq;
+                           using System.Security.Cryptography;
+
+                           class C
+                           {
+                               bool M(byte[] key, byte[] data, byte[] expected)
+                               {
+                                   using var hmac = new HMACSHA256(key);
+                                   hmac.ComputeHash(data);
+                                   return {|E128157:hmac.Hash.SequenceEqual(expected)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task IncrementalHmacResult_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Linq;
+                           using System.Security.Cryptography;
+
+                           class C
+                           {
+                               bool M(byte[] key, byte[] data, byte[] expected)
+                               {
+                                   using var hash = IncrementalHash.CreateHMAC(HashAlgorithmName.SHA256, key);
+                                   hash.AppendData(data);
+                                   var result = hash.GetHashAndReset();
+                                   return {|E128157:result.SequenceEqual(expected)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task IncrementalPlainHashResult_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Linq;
+                           using System.Security.Cryptography;
+
+                           class C
+                           {
+                               bool M(byte[] data, byte[] expected)
+                               {
+                                   using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+                                   hash.AppendData(data);
+                                   var result = hash.GetHashAndReset();
+                                   return result.SequenceEqual(expected);
                                }
                            }
                            """);
@@ -149,6 +248,120 @@ public sealed class TimingSafeComparisonAnalyzerTests
                                bool M(byte[] computedTag, byte[] expectedTag)
                                {
                                    return CryptographicOperations.FixedTimeEquals(computedTag, expectedTag);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HexOfHmacStringEquality_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Security.Cryptography;
+
+                           class C
+                           {
+                               bool M(byte[] key, byte[] data, string supplied)
+                               {
+                                   return {|E128157:Convert.ToHexString(HMACSHA256.HashData(key, data)) == supplied|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Base64OfHmacLocalStringNotEquals_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Security.Cryptography;
+
+                           class C
+                           {
+                               bool M(byte[] key, byte[] data, string supplied)
+                               {
+                                   var encoded = Convert.ToBase64String(HMACSHA256.HashData(key, data));
+                                   return {|E128157:encoded != supplied|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StringEqualsOnSignatureName_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class C
+                           {
+                               bool M(string signature, string expectedSignature)
+                               {
+                                   return {|E128157:string.Equals(signature, expectedSignature, StringComparison.Ordinal)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task InstanceEqualsOnMacName_Fires()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               bool M(string requestMac, string other)
+                               {
+                                   return {|E128157:requestMac.Equals(other)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TokenAgainstExpectedToken_Fires()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               bool M(string token, string expectedToken)
+                               {
+                                   return {|E128157:token == expectedToken|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StringTagAgainstLiteral_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               bool M(string htmlTag)
+                               {
+                                   return htmlTag == "div";
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StringHashNames_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               bool M(string firstHash, string secondHash, string name, string title)
+                               {
+                                   return firstHash == secondHash || name == title;
                                }
                            }
                            """);

@@ -69,6 +69,22 @@ public sealed class PathCombineSegmentAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NestedParentClimbingAboveBase_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               string M()
+                               {
+                                   return Path.Combine("base", {|E128161:"a/../../b"|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task BareParentSegment_DoesNotFire()
     {
         return VerifyAsync("""
