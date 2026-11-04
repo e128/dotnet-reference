@@ -1,6 +1,6 @@
 # Analyzer Testing
 
-*Updated: 2026-11-03T03:13:32Z*
+*Updated: 2026-11-04T14:11:30Z*
 
 How a test drives an analyzer and a code fix. The harness types live in
 `Microsoft.CodeAnalysis.CSharp.Testing`. The repo wrapper lives in
@@ -61,6 +61,19 @@ reported with no fix offered.
 
 Keep the analyzer and the fix in one test. A split test loses checks 3 and 4
 and duplicates the source text.
+
+### A CompilationEnd Rule Needs SkipLocalDiagnosticCheck
+
+A rule that tags its diagnostic with `WellKnownDiagnosticTags.CompilationEnd`
+reports a non-local diagnostic. The code fix harness refuses it by default with
+"Code fix is attempting to provide a fix for a non-local analyzer diagnostic".
+Set `CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck` and
+the harness drives the provider. `SealedByDefaultCodeFixTests` and
+`ImmutableArrayDefaultCodeFixTests` follow this shape.
+
+A fix that adds a using directive lands with a blank line between the last
+directive and the first member. Write the source and the fixed text with that
+blank line in place, or the diff fails on whitespace alone.
 
 ## Supply a Configuration Option
 
