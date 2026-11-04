@@ -1,0 +1,151 @@
+using System.Threading.Tasks;
+using E128.Analyzers.Reliability;
+using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Testing;
+using Xunit;
+
+namespace E128.Analyzers.Tests;
+
+public sealed class ProcessOutputDrainAnalyzerTests
+{
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        var test = new CSharpAnalyzerTest<ProcessOutputDrainAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+        test.ExpectedDiagnostics.AddRange(expected);
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RedirectedOutputNeverRead_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   process.StartInfo.RedirectStandardOutput = true;
+                                   process.Start();
+                                   {|E128160:process.WaitForExit()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RedirectedErrorNeverRead_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   process.StartInfo.RedirectStandardError = true;
+                                   process.Start();
+                                   {|E128160:process.WaitForExit()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReadToEndBeforeWait_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   process.StartInfo.RedirectStandardOutput = true;
+                                   process.Start();
+                                   _ = process.StandardOutput.ReadToEnd();
+                                   process.WaitForExit();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task EventHandlerBeforeWait_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   process.StartInfo.RedirectStandardOutput = true;
+                                   process.OutputDataReceived += (_, _) => { };
+                                   process.Start();
+                                   process.WaitForExit();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReadAfterWait_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   process.StartInfo.RedirectStandardOutput = true;
+                                   process.Start();
+                                   {|E128160:process.WaitForExit()|};
+                                   _ = process.StandardOutput.ReadToEnd();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReadOnAnotherProcess_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process, Process other)
+                               {
+                                   process.StartInfo.RedirectStandardOutput = true;
+                                   process.Start();
+                                   _ = other.StandardOutput.ReadToEnd();
+                                   {|E128160:process.WaitForExit()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoRedirectedStream_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   process.StartInfo.CreateNoWindow = true;
+                                   process.Start();
+                                   process.WaitForExit();
+                               }
+                           }
+                           """);
+    }
+}

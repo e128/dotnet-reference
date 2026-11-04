@@ -91,6 +91,13 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128109 | `stackalloc` must be bounded and outside loops                                         | Yes      |
 | E128110 | Zero a pooled buffer in a `finally` block before `Return`                             | Yes      |
 | E128111 | Pooled buffer used after `Return`                                                     | No       |
+| E128154 | Singleton service depends on a scoped service                                         | No       |
+| E128155 | Mutating the loop source inside its own foreach                                       | Yes      |
+| E128159 | TaskCompletionSource without RunContinuationsAsynchronously                           | Yes      |
+| E128160 | Redirected process output never read before WaitForExit                               | No       |
+| E128161 | Path.Combine with a rooted or parent segment                                          | Yes      |
+| E128162 | Local used after an explicit Dispose                                                  | No       |
+| E128163 | ImmutableArray field left at its default                                              | Yes      |
 
 ### Performance
 
@@ -148,6 +155,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128149 | Use the full 16-byte AES-GCM tag                                               | No       |
 | E128150 | Do not use SHA-3, SHAKE or KMAC                                                | No       |
 | E128151 | Use an HMAC key at least as long as the hash output                            | No       |
+| E128156 | HttpClient certificate validation accepts every certificate (default: Error)   | No       |
+| E128157 | Fixed-time comparison of a secret-derived value                                | Yes      |
 
 ### Style
 
@@ -1591,6 +1600,33 @@ using var hmac = new HMACSHA256(new byte[16]);
 using var hmac = new HMACSHA256(new byte[32]);
 ```
 
+### E128156: HttpClient certificate validation accepts every certificate
+
+Flags a `ServerCertificateCustomValidationCallback` on `HttpClientHandler` that accepts every certificate. The `SocketsHttpHandler.SslOptions` callback is out of scope. The rule reads three shapes: a `true` literal, the framework `DangerousAcceptAnyServerCertificateValidator` member, and a function that returns `true`. The function may be a lambda, an anonymous method, or a method, local, or field that resolves to one. A callback that reads the certificate chain or the policy errors is not reported. This rule is an error, so the build fails.
+
+```csharp
+// Before (warns)
+var handler = new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+};
+
+// After
+var handler = new HttpClientHandler();
+```
+
+### E128157: Fixed-time comparison of a secret-derived value
+
+Flags `==` or `!=` over a `Span<byte>` or a `ReadOnlySpan<byte>`, and `SequenceEqual` over a byte array or a span, when one side holds a secret. The equality operator on a byte array compares references, so the rule does not report that shape. A value counts as a secret in three cases: the name ends with `Mac`, `Hmac`, `Tag`, or `Signature` in any case, the name holds one of those words as a segment, or an HMAC type produced the value, directly or through `AsSpan`. A content hash comparison is not reported, because it is not a forgery check.
+
+```csharp
+// Before (warns)
+return computedTag == expectedTag;
+
+// After
+return CryptographicOperations.FixedTimeEquals(computedTag, expectedTag);
+```
+
 ### E128076 &mdash; Materialize QuerySelectorAll result before iterating
 
 Flags a `foreach` over an AngleSharp `QuerySelectorAll` result that does not pass through `ToList()` or `ToArray()`. The loop also reports when it reads a local variable initialized from an unmaterialized call. A call inside a lambda in the initializer is not reported. The collection is live, so a DOM change inside the loop moves elements that the loop has not visited yet.
@@ -1927,6 +1963,107 @@ foreach (var a in items)
 {
     Process(a);
 }
+```
+
+### E128154: Singleton service depends on a scoped service
+
+Flags an `AddSingleton` registration whose implementation type takes a constructor parameter of a type that an `AddScoped` call registers in the same compilation. The container builds the singleton once, so it keeps the first scoped instance for the life of the application. The rule reads a direct constructor dependency only. A parameter typed `IServiceProvider`, `IServiceScopeFactory`, or `IServiceScope` is not reported. A registration with any argument is not reported, because the container then receives a built instance or picks the constructor at run time.
+
+```csharp
+// Before (warns)
+services.AddScoped<Repository>();
+services.AddSingleton<Worker>();
+
+// After
+services.AddScoped<Repository>();
+services.AddScoped<Worker>();
+```
+
+### E128155: Mutating the loop source inside its own foreach
+
+Flags a call in a `foreach` body that mutates the collection the loop enumerates. The rule reads a local, a field, or a parameter as the loop source. A mutating call includes `Add`, `AddRange`, `Clear`, `Insert`, `Remove`, `RemoveAt`, `RemoveAll`, `RemoveRange`, `Reverse`, and `Sort`. An assignment to an index of that collection is reported too. The enumerator throws `InvalidOperationException` on the next step. An immutable, frozen, or concurrent collection is not reported. A mutation inside a lambda or a local function is not reported, because it runs after the loop. The report sits on the loop source, so one loop reports once. The code fix materializes the source with `ToArray()`.
+
+```csharp
+// Before (warns)
+foreach (var item in items)
+{
+    items.Add(item);
+}
+
+// After
+foreach (var item in items.ToArray())
+{
+    items.Add(item);
+}
+```
+
+### E128159: TaskCompletionSource without RunContinuationsAsynchronously
+
+Flags a `TaskCompletionSource` creation that omits `TaskCreationOptions.RunContinuationsAsynchronously`. Without the flag, the awaiting continuation runs inside the thread that calls `SetResult`. That thread then runs foreign code, which can deadlock or stall a pool thread. A computed options value is not reported, because the rule cannot decide it. The code fix adds the flag, or combines it with an existing value by `|`.
+
+```csharp
+// Before (warns)
+var source = new TaskCompletionSource<int>();
+
+// After
+var source = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+```
+
+### E128160: Redirected process output never read before WaitForExit
+
+Flags a `Process.WaitForExit` call in a method that redirects `RedirectStandardOutput` or `RedirectStandardError` and never reads the stream. The child blocks once the pipe buffer fills, so the wait never returns. A read method such as `ReadToEnd`, `ReadLineAsync`, or `BeginOutputReadLine` clears the report. A subscription to `OutputDataReceived` or `ErrorDataReceived` clears it too. The read or the subscription clears the report only when it runs before the wait and on the same process. The rule reads one method body or one lambda body.
+
+```csharp
+// Before (warns)
+process.StartInfo.RedirectStandardOutput = true;
+process.Start();
+process.WaitForExit();
+
+// After
+process.StartInfo.RedirectStandardOutput = true;
+process.Start();
+var output = process.StandardOutput.ReadToEnd();
+process.WaitForExit();
+```
+
+### E128161: Path.Combine with a rooted or parent segment
+
+Flags a `System.IO.Path.Combine` call with a constant segment that starts from a root or climbs to a parent directory. A rooted segment drops every earlier segment, so the result escapes the base directory. The rule reads both separators and the drive-letter form. A segment that is exactly `".."` is not reported, because a caller uses it on purpose. The code fix replaces the call with `Path.Join` for a rooted segment only. A parent segment still escapes under `Path.Join`, so a report on that shape offers no fix.
+
+```csharp
+// Before (warns)
+var path = Path.Combine("base", "/etc/passwd");
+
+// After
+var path = Path.Join("base", "/etc/passwd");
+```
+
+### E128162: Local used after an explicit Dispose
+
+Flags a read of a local after the same block calls `Dispose()` on it. The object throws `ObjectDisposedException` on the next member call that reads its state. A second `Dispose` call is not reported. An assignment to the local ends the disposed state, so the reads that follow are not reported. A dispose at the end of a `using` scope is not reported. A read inside a nested lambda or local function is not reported, because the block order does not give the time that body runs.
+
+```csharp
+// Before (warns)
+var stream = new MemoryStream();
+stream.Dispose();
+stream.WriteByte(1);
+
+// After
+var stream = new MemoryStream();
+stream.WriteByte(1);
+stream.Dispose();
+```
+
+### E128163: ImmutableArray field left at its default
+
+Flags an `ImmutableArray<T>` field that no initializer and no assignment reaches. The field keeps its default value, and the default array holds a null inner array. Every operation that reads it throws `NullReferenceException`. The rule collects assignments across the whole compilation, so a partial type that assigns the field in another file is not reported. The code fix initializes the field to `ImmutableArray<T>.Empty`.
+
+```csharp
+// Before (warns)
+private ImmutableArray<int> values;
+
+// After
+private ImmutableArray<int> values = ImmutableArray<int>.Empty;
 ```
 
 ## Configuration

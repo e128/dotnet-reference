@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-03T03:13:32Z*
+*Updated: 2026-11-04T13:45:03Z*
 
 ## Generated Docs
 
@@ -45,6 +45,7 @@
 - [package-layout.md](dotnet/analyzers/package-layout.md): two assemblies, NuGet analyzer layout, per-Roslyn packaging, build metadata
 - [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
 - [fips-rules.md](dotnet/analyzers/fips-rules.md): FIPS rule map, policy values, shared symbol and constant helpers
+- [rule-details.md](dotnet/analyzers/rule-details.md): Per-rule detection shape, exclusions, and code-fix behavior for the E128 rules
 
 ## dotnet-reference/
 

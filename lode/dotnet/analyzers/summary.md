@@ -1,5 +1,5 @@
 # Analyzers Summary
-*Updated: 2026-11-03T03:13:32Z*
+*Updated: 2026-11-04T14:42:07Z*
 
 `src/E128.Analyzers` holds every E128 Roslyn rule. `src/E128.Analyzers.CodeFixers`
 holds the fix providers. The analyzer assembly targets `netstandard2.0` and
@@ -33,6 +33,8 @@ repair.
   never leaves the document unchanged.
 - The fix and the analyzer read one table. The table is `internal static
   readonly` on the analyzer.
+- A rule that scans a block for a later use skips a nested lambda body and a
+  local function body. The block order does not give the time that body runs.
 
 ## Related
 
