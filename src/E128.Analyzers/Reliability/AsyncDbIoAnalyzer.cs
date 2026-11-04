@@ -24,7 +24,7 @@ public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use the async DbConnection/DbCommand *Async overload",
         "'{0}' has an async sibling '{1}' -- use it and make the containing method async instead of blocking synchronously",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "DbConnection/DbCommand synchronous methods (Open, ExecuteReader, ExecuteNonQuery, ExecuteScalar, ...) block the calling thread even on provider subclasses like SqliteConnection/SqliteCommand. CA1849/VSTHRD103 only flag this inside an already-async method; this rule also flags it in a fully synchronous method, where those analyzers give no signal at all.");

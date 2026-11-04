@@ -16,7 +16,7 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use string.Empty instead of \"\"",
         "Replace empty string literal \"\" with string.Empty",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Warning,
         true);
 

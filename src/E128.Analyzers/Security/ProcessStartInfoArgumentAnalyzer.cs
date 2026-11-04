@@ -17,7 +17,7 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use ArgumentList instead of a built Arguments string on ProcessStartInfo",
         "ProcessStartInfo.Arguments is assigned a built string instead of using ArgumentList — prefer ArgumentList to avoid shell-quoting/injection risk",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Warning,
         true);
 

@@ -21,7 +21,7 @@ public sealed class ManualBitCountAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use BitOperations.PopCount instead of a bit-count loop",
         "The loop counts set bits one at a time. Use BitOperations.PopCount.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "BitOperations.PopCount maps to one hardware instruction on a supported CPU. The loop " +

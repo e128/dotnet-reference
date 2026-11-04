@@ -17,7 +17,7 @@ public sealed class FixedStringMutationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not write to a string through a fixed pointer",
         "A string is immutable. Writing through a char* fixes it in place and breaks the runtime invariant. Build a new string instead.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

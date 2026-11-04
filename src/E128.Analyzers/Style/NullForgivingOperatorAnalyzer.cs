@@ -20,7 +20,7 @@ public sealed class NullForgivingOperatorAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not use the null-forgiving operator",
         "Replace null-forgiving operator '!' with a proper null check or type annotation",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Warning,
         true);
 

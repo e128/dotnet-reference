@@ -16,7 +16,7 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use SequenceEqual instead of an element-by-element loop",
         "This loop reimplements SequenceEqual. The span method is vectorized and bounds-checked.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

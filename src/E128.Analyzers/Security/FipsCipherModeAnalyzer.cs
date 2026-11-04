@@ -27,7 +27,7 @@ public sealed class FipsCipherModeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use an authenticated cipher mode",
         "Cipher mode '{0}' is not permitted; use AES-GCM, or CBC with a random IV and a MAC",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "ECB reveals plaintext structure. The OFB and CFB modes are not permitted by policy. Use " +

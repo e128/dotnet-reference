@@ -21,7 +21,7 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use ToArray() instead of ToList() for read-only foreach iteration",
         "ToList() in foreach loop allocates an unnecessary list — use ToArray() for read-only iteration",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "When a ToList() call is the direct expression of a foreach loop, the list is never mutated. Use ToArray() instead to avoid the per-element resizing overhead and signal read-only intent.");

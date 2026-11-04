@@ -30,7 +30,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Index a collection with a bound taken from a different collection",
         "'{0}' is indexed with a bound taken from '{1}', so a shorter collection throws IndexOutOfRangeException",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "An index bounded by the length of one collection does not bound another collection. " +

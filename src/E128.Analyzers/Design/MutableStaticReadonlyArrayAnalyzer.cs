@@ -24,7 +24,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use an immutable type for static readonly arrays",
         "Static readonly array '{0}' is mutable through its indexer",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "A 'static readonly T[]' field is not truly immutable. The readonly modifier prevents " +

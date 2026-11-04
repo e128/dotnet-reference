@@ -33,7 +33,7 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "HttpClient certificate validation accepts every certificate",
         "Certificate validation accepts every certificate",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "A ServerCertificateCustomValidationCallback that returns true for every certificate " +

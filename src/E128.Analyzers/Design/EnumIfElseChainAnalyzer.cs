@@ -25,7 +25,7 @@ public sealed class EnumIfElseChainAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use switch instead of if/else-if chain on enum values",
         "if/else-if chain on enum type '{0}' with {1} branches — use a switch statement or expression instead",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "if/else-if chains on enum values bypass the compiler's exhaustiveness checking. " +

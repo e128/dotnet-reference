@@ -21,7 +21,7 @@ public sealed class DynamicallyAccessedMembersGuardAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Avoid [DynamicallyAccessedMembers] — suppress with justification if required for HttpClientFactory or JSON discriminated union",
         "Avoid [DynamicallyAccessedMembers] — suppress with justification if required for HttpClientFactory or JSON discriminated union",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "[DynamicallyAccessedMembers] is correct only for types registered via AddHttpClient<T>() " +

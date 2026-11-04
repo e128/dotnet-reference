@@ -19,7 +19,7 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "#pragma warning disable without justification comment",
         "Add a justification comment explaining why this suppression is necessary",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Warning,
         true);
 

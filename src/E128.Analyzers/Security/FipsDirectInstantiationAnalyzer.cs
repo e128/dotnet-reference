@@ -20,7 +20,7 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not instantiate a Managed or CNG cryptography type",
         "Do not instantiate '{0}' directly; call the factory '{1}' so the platform selects the implementation",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "A concrete Managed or Cng type fixes one implementation. The abstract factory lets the platform " +

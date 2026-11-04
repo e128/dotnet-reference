@@ -19,7 +19,7 @@ public sealed class Sha256CreateObsoleteAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Prefer SHA256.HashData() over SHA256.Create()",
         "SHA256.Create() allocates — use SHA256.HashData() for single-shot hashing or SHA256.HashData(Stream) for streaming",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Info,
         true);
 

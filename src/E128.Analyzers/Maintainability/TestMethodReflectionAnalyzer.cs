@@ -20,7 +20,7 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Avoid reflection in test methods",
         "Test method uses {0} — consider testing through public API instead",
-        "Maintainability",
+        "E128-Maintainability",
         DiagnosticSeverity.Info,
         true);
 

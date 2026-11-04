@@ -22,7 +22,7 @@ public sealed class DictionaryAsReadOnlyAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Return Dictionary<K,V> via .AsReadOnly() when exposing as IReadOnlyDictionary<K,V>",
         "Returning a mutable Dictionary<K,V> as IReadOnlyDictionary<K,V> leaks the internal dictionary — use .AsReadOnly() to prevent callers from casting back to Dictionary<K,V>",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "Returning a mutable Dictionary<K,V> directly as IReadOnlyDictionary<K,V> allows callers to cast back to Dictionary<K,V> and mutate the internal collection. Return .AsReadOnly() instead.");

@@ -28,7 +28,7 @@ public sealed class PathCombineSegmentAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Path.Combine with a rooted or parent segment",
         "'{0}' starts from a root or a parent, so the combined path can escape the base directory",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Path.Combine returns the rooted segment on its own and drops every earlier segment. A " +

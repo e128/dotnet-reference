@@ -23,7 +23,7 @@ public sealed class Utf8StringParseAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Parse UTF-8 bytes without a string",
         "'{0}' reads a string that Encoding.UTF8.GetString allocates. Pass the bytes to the UTF-8 overload.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "The UTF-8 Parse and TryParse overloads read a ReadOnlySpan<byte> directly. The string " +

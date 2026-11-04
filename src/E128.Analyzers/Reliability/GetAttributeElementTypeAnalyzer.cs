@@ -18,7 +18,7 @@ public sealed class GetAttributeElementTypeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "GetAttribute(\"href\") on element that does not carry href",
         "'{0}' elements do not carry 'href' — only <a>, <link>, <area>, and <base> do",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Calling .GetAttribute(\"href\") on a non-anchor/link element silently returns null. " +

@@ -23,7 +23,7 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
         DiagnosticId,
         "Task.WhenAll async lambda missing CancellationToken propagation",
         "The async lambda inside Task.WhenAll calls an HttpClient or Playwright method without passing the enclosing CancellationToken",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "When an enclosing async method has a CancellationToken parameter, " +

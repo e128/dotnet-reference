@@ -23,7 +23,7 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Verify process output file exists before use",
         "Output file '{0}' is read after process exit without an existence check — the process may have failed to create it",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "After Process.WaitForExit, verify the declared output file exists before reading it.");

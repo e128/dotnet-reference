@@ -35,7 +35,7 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use Unsafe.BitCast instead of Unsafe.As",
         "Unsafe.As reinterprets one value type as another. Use Unsafe.BitCast, which checks the size and rejects a reference type.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

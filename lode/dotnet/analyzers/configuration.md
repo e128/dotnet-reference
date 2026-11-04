@@ -1,6 +1,6 @@
 # Analyzer Configuration
 
-*Updated: 2026-11-03T03:14:50Z*
+*Updated: 2026-11-04T15:43:52Z*
 
 How a rule reads a configuration value. The project-level file split lives in
 [Analyzers](../analyzers.md) § Configuration Split. This file covers the
@@ -46,12 +46,19 @@ Three keys exist, from narrow to broad:
 
 ```ini
 dotnet_diagnostic.E128028.severity = error
-dotnet_analyzer_diagnostic.category-Reliability.severity = warning
+dotnet_analyzer_diagnostic.category-E128-Security.severity = error
 dotnet_analyzer_diagnostic.severity = error
 ```
 
 The prefix differs on purpose. One rule uses `dotnet_diagnostic`. A bulk key
 uses `dotnet_analyzer_diagnostic`.
+
+Every E128 rule declares a category named `E128-<Area>`, such as `E128-Security`.
+The key `category-E128-Security` selects the rules of one area and no
+third-party rule. Roslyn matches the whole category string, so no one key
+selects every E128 rule. Give a new rule an `E128-` category, never a CA-style
+name such as `Reliability`. The areas are Design, Maintainability, Performance,
+Reliability, Security, Style, Testing, and Unsafe.
 
 Precedence runs rule ID, then category, then blanket. A rule-specific key wins
 over both bulk forms.

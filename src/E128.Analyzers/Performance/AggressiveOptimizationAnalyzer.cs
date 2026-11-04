@@ -17,7 +17,7 @@ public sealed class AggressiveOptimizationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not use MethodImplOptions.AggressiveOptimization",
         "AggressiveOptimization disables tiered compilation for the method and usually lowers steady-state throughput",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

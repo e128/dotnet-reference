@@ -23,7 +23,7 @@ public sealed class FinallyBlockCleanupAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Unprotected cleanup in finally block",
         "Cleanup call '{0}' in finally block is not wrapped in try/catch — a thrown exception will mask the original exception",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Cleanup calls inside finally blocks should be wrapped in try/catch to prevent exceptions from masking the original exception that triggered the finally.");

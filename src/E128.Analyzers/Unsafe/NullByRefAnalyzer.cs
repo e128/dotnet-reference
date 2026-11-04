@@ -16,7 +16,7 @@ public sealed class NullByRefAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not create a null managed reference",
         "A null byref has no valid referent. Use a null object, an empty span, or a nullable value instead.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

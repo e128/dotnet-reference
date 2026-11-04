@@ -23,7 +23,7 @@ public sealed class Utf8GetBytesLiteralAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use a u8 literal instead of Encoding.UTF8.GetBytes",
         "Encoding.UTF8.GetBytes encodes a constant string on every call. A u8 literal is stored in the assembly.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

@@ -21,7 +21,7 @@ public sealed class SyncLocalFunctionCallAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Call async local function with await instead of blocking",
         "Synchronous call to async local function '{0}' via '{1}' blocks the calling thread",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "VSTHRD002 targets method declarations but not local functions. A local function declared with 'async' and returning Task/Task<T> invoked via .Result or .Wait() silently blocks the calling thread.");

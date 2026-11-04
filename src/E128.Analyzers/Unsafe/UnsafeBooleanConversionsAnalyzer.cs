@@ -16,7 +16,7 @@ public sealed class UnsafeBooleanConversionsAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not reinterpret between bool and int",
         "Unsafe.As between bool and int reinterprets a one-byte value as four bytes. Use a comparison or a ternary.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

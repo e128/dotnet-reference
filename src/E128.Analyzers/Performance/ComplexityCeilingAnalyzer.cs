@@ -34,7 +34,7 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Nested loops exceed the configured complexity ceiling",
         "This loop nesting is at tier `{0}`, past the configured ceiling `{1}`. Hoist the outer work or track the inner iteration on a set-based collection.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 
@@ -42,7 +42,7 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Recursion exceeds the configured complexity ceiling",
         "This recursion splits into several calls on a smaller argument, so its tier is `exponential`, past the configured ceiling `{0}`. Add memoization or restructure into iteration.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

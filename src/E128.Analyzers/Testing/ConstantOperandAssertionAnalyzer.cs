@@ -20,7 +20,7 @@ public sealed class ConstantOperandAssertionAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Assertion with literal operands",
         "Every operand of this assertion is a literal, so the assertion cannot depend on the code under test",
-        "Testing",
+        "E128-Testing",
         DiagnosticSeverity.Warning,
         true,
         "An xUnit Assert call whose operands are all literals always passes or always fails. " +

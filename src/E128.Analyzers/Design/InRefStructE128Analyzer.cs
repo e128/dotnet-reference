@@ -22,7 +22,7 @@ public sealed class InRefStructE128Analyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not use 'in' modifier with ref struct parameters",
         "Parameter '{0}' uses 'in {1}' — ref structs are already passed by reference; remove the 'in' modifier",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Error,
         true,
         "Ref structs (Span<T>, ReadOnlySpan<T>, etc.) are always passed by reference on the stack. " +

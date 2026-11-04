@@ -25,7 +25,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Concrete-only DI registration with available interface",
         "'{0}' implements '{1}'. Register as Add{2}<{3}, {0}>() for testability and loose coupling.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "Registering a concrete type via AddSingleton<T>(), AddScoped<T>(), or AddTransient<T>() " +

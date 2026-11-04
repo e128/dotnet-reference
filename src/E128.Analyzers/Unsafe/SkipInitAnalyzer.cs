@@ -16,7 +16,7 @@ public sealed class SkipInitAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not skip local initialization without a measured reason",
         "Unsafe.SkipInit leaves the local uninitialized. Initialize the local unless a benchmark shows a win.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

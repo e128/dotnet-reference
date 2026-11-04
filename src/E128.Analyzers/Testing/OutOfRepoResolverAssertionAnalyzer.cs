@@ -31,7 +31,7 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Test method calls an out-of-repo resolver without a skip guard",
         "Test method '{0}' calls out-of-repo resolver '{1}' without a skip guard",
-        "Testing",
+        "E128-Testing",
         DiagnosticSeverity.Warning,
         true,
         "A test that resolves a resource outside the repository fails wherever that resource is absent. " +

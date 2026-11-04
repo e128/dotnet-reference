@@ -23,7 +23,7 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use a span bulk method instead of an element loop",
         "This loop copies one element at a time. {0} moves the block in one bounds-checked call.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

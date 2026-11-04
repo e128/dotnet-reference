@@ -19,7 +19,7 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use CollectionsMarshal.AsSpan with Slice instead of List.GetRange",
         "List<T>.GetRange allocates an intermediate list; use CollectionsMarshal.AsSpan(list).Slice(start, count).ToArray()",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "List<T>.GetRange(start, count) allocates an intermediate List<T>. " +

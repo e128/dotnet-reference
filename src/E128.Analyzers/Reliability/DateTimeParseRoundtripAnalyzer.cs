@@ -16,7 +16,7 @@ public sealed class DateTimeParseRoundtripAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "DateTime.Parse/ParseExact missing DateTimeStyles parameter",
         "{0}.{1} is missing a DateTimeStyles parameter — add DateTimeStyles.RoundtripKind to preserve UTC kind from ISO 8601 strings",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

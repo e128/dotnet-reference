@@ -16,7 +16,7 @@ public sealed class UnsafeAsPointerEscapeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Pin the object explicitly with fixed",
         "Unsafe.AsPointer takes no pin. The object can move while the pointer is live. Use a fixed block.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

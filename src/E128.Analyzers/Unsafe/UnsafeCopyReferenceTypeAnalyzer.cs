@@ -16,7 +16,7 @@ public sealed class UnsafeCopyReferenceTypeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not bulk-copy a type that holds references",
         "Unsafe.Copy bypasses the write barrier. A copied reference can miss a GC update. Use a managed assignment.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

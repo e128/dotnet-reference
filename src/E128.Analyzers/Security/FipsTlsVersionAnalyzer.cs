@@ -38,7 +38,7 @@ public sealed class FipsTlsVersionAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use TLS 1.2 or later",
         "{0}",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "SSL 2.0, SSL 3.0, TLS 1.0 and TLS 1.1 are not permitted. Use TLS 1.2 or 1.3, or SslProtocols.None " +

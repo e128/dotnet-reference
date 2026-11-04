@@ -26,7 +26,7 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Zero a pooled buffer in a finally block before Return",
         "Zero '{0}' with CryptographicOperations.ZeroMemory (whole array) in the same finally block before Return",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "A rented array is oversized and keeps its old contents. Call CryptographicOperations.ZeroMemory on the " +
@@ -37,7 +37,7 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         UseAfterReturnDiagnosticId,
         "Do not use a pooled buffer after Return",
         "'{0}' is used after it is returned to the pool",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "After Return the pool may hand the array to another caller. A later read or write is a use-after-free. " +

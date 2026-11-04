@@ -18,7 +18,7 @@ public sealed class AsyncDisposableWithoutDisposableAnalyzer : DiagnosticAnalyze
         DiagnosticId,
         "Type implements IAsyncDisposable but not IDisposable",
         "Type '{0}' implements IAsyncDisposable but not IDisposable — consumers using sync 'using' will silently skip disposal",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

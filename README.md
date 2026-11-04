@@ -14,6 +14,30 @@ The package holds Roslyn analyzers and code fixes. The rules enforce opinionated
 dotnet add package E128.Analyzers
 ```
 
+### Install With a Coding Agent
+
+Paste this prompt into a coding agent inside the repository you want to check:
+
+```text
+Install the latest E128.Analyzers NuGet package in this repository and make every E128 rule an error. Leave every other analyzer at its current severity.
+
+1. Run `dotnet add package E128.Analyzers` on each C# project. If the repository uses Central Package Management, add one `PackageVersion` to `Directory.Packages.props` and one `PackageReference` with `PrivateAssets="all"` to each project instead.
+2. Add these lines to the root `.editorconfig` under `[*.cs]`. Create the file with `root = true` when it does not exist:
+
+   dotnet_analyzer_diagnostic.category-E128-Design.severity = error
+   dotnet_analyzer_diagnostic.category-E128-Maintainability.severity = error
+   dotnet_analyzer_diagnostic.category-E128-Performance.severity = error
+   dotnet_analyzer_diagnostic.category-E128-Reliability.severity = error
+   dotnet_analyzer_diagnostic.category-E128-Security.severity = error
+   dotnet_analyzer_diagnostic.category-E128-Style.severity = error
+   dotnet_analyzer_diagnostic.category-E128-Testing.severity = error
+   dotnet_analyzer_diagnostic.category-E128-Unsafe.severity = error
+   e128_max_complexity = linear
+
+   `e128_max_complexity` sets the algorithm level. `linear` is the strictest tier. It reports linearithmic or worse code. Other tiers: linearithmic, quadratic, cubic, exponential.
+3. Run `dotnet build`. Report the number of errors per rule ID. Do not suppress, downgrade, or fix any rule without my approval.
+```
+
 - Analyzers: [`src/E128.Analyzers/`](src/E128.Analyzers/). The [README](src/E128.Analyzers/README.md) lists every rule.
 - Code fixes: [`src/E128.Analyzers.CodeFixers/`](src/E128.Analyzers.CodeFixers/)
 - Packaging: the package ships `E128.Analyzers.dll` and `E128.Analyzers.CodeFixers.dll` under `analyzers/dotnet/cs`.

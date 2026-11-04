@@ -41,7 +41,6 @@ The analyzer targets `netstandard2.0` for maximum Roslyn host compatibility. As 
 | E128017 | Use primary constructor parameter directly                            | Yes |
 | E128019 | Do not pass `CancellationToken` by `in` reference                     | Yes |
 | E128021 | Do not use `in` with ref struct parameters (Error)                    | Yes |
-| E128022 | Remove `ConfigureAwait(false)` in application code                    | Yes |
 | E128030 | Do not compare `FileSystemInfo` by reference (Info)                   | Yes |
 | E128032 | Concrete-only DI registration with available interface                | Yes |
 | E128036 | `Task.Run` wrapping async lambda — unnecessary hop                    | Yes |

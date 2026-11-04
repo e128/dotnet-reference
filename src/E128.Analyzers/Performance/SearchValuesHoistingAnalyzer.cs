@@ -17,7 +17,7 @@ public sealed class SearchValuesHoistingAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Cache SearchValues in a static readonly field",
         "SearchValues.Create builds an immutable table on each call. Move it to a static readonly field.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

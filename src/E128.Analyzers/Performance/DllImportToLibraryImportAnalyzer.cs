@@ -33,7 +33,7 @@ public sealed class DllImportToLibraryImportAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use LibraryImport instead of DllImport",
         "LibraryImport generates the marshalling code at compile time. DllImport resolves it at run time.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

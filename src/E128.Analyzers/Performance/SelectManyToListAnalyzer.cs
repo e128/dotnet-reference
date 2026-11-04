@@ -18,7 +18,7 @@ public sealed class SelectManyToListAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use foreach+AddRange instead of SelectMany.ToList",
         ".SelectMany(lambda).ToList() allocates LINQ iterators; use foreach + AddRange instead",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         ".SelectMany(lambda).ToList() creates intermediate LINQ iterator allocations and " +

@@ -20,7 +20,7 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not use a cipher excluded by policy",
         "Type '{0}' is blocked by organizational policy because its name matches an excluded cipher (Blowfish, RC4, Arcfour, CAST5, CAST6, IDEA or Skipjack)",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "Third-party libraries such as BouncyCastle expose these ciphers. The organizational policy blocks " +

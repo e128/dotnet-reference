@@ -22,7 +22,7 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "AddSingleton factory returns IDisposable",
         "Factory singleton '{0}' implements IDisposable but will not be disposed automatically by the DI container — register with AddSingleton<TService, TImpl>() or manage lifetime explicitly",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Factory-lambda AddSingleton registrations (services.AddSingleton(sp => ...)) " +

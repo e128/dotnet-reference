@@ -21,7 +21,7 @@ public sealed class GuidNewGuidTempPathE128Analyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Guid.NewGuid() used in temp file path — use Path.GetRandomFileName()",
         "Use Path.GetRandomFileName() instead of Guid.NewGuid() for temp file names",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Warning,
         true,
         "Guid.NewGuid() in temp file path construction should be replaced with " +

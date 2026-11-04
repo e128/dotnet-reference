@@ -17,7 +17,7 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Pool Rent() capacity must be bounded",
         "Rent({0}) may allocate an excessive buffer — guard with Math.Min(value, cap) to prevent OOM",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

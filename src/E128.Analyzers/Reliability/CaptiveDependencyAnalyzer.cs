@@ -29,7 +29,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Singleton service depends on a scoped service",
         "'{0}' is registered as a singleton and depends on the scoped service '{1}'",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "A singleton is built once and keeps every dependency for the lifetime of the application. " +

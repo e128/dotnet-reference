@@ -17,7 +17,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "ArrayPool buffer used as SqliteParameter value without Size",
         "Set SqliteParameter.Size when passing an ArrayPool-rented buffer -- pooled buffers are oversized and will write garbage bytes to the BLOB column",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "ArrayPool<byte>.Shared.Rent() returns a buffer with Length >= requested size. Without explicit .Size, SQLite reads the full buffer including padding bytes, corrupting BLOB data.");

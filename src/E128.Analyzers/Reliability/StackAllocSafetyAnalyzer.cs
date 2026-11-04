@@ -38,7 +38,7 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "stackalloc must be bounded and outside loops",
         "stackalloc is unsafe here: {0}",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Stack space is not reclaimed until the method returns. Keep stackalloc out of loops, cap it at " +

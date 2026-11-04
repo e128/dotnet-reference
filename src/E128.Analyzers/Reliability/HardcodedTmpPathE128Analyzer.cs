@@ -24,7 +24,7 @@ public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Avoid hardcoded /tmp path",
         "Hardcoded path '{0}' is not portable — use Path.GetTempPath() instead",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "String literals equal to \"/tmp\" or starting with \"/tmp/\" (or Windows equivalents) are not portable. Use Path.Combine with the temp directory API instead.");

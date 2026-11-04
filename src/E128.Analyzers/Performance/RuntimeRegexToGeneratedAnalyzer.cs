@@ -16,7 +16,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use GeneratedRegex for a constant pattern",
         "This Regex is built at run time. [GeneratedRegex] builds the matcher at compile time and keeps the pattern in source.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

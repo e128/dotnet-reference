@@ -17,7 +17,7 @@ public sealed class OrderByFirstAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use MinBy/MaxBy instead of OrderBy().First()",
         "Replace OrderBy/OrderByDescending + First/FirstOrDefault with MinBy/MaxBy for O(n) instead of O(n log n)",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

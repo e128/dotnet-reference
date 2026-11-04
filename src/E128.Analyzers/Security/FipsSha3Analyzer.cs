@@ -43,7 +43,7 @@ public sealed class FipsSha3Analyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not use SHA-3, SHAKE or KMAC",
         "'{0}' is blocked by policy; use SHA-256, SHA-384 or SHA-512",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "This organization's policy blocks SHA-3 and SHAKE. The rule is organizational policy, not a " +

@@ -20,7 +20,7 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Replace multi-string OR-chain with HashSet.Contains",
         "Replace {0} '||'-chained string equality tests on '{1}' with a HashSet<string>.Contains() check",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

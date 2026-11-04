@@ -30,7 +30,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Write-then-read round-trip via disk — use the in-memory value",
         "Disk round-trip: {0} write followed by {1} read on the same path — use the in-memory value directly instead of reading from disk",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Writing a value to disk and immediately reading it back in the same method is wasted I/O and a reliability hazard (another process may change or lock the file between the write and the read). The in-memory value is the authoritative source; use it directly.");

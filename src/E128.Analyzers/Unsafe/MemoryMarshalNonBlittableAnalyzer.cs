@@ -17,7 +17,7 @@ public sealed class MemoryMarshalNonBlittableAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not reinterpret bytes as a non-blittable type",
         "MemoryMarshal.{0} treats the type as a raw bit pattern. {1} is not blittable, so the result is not portable.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

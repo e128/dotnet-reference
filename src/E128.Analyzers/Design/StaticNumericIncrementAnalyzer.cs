@@ -16,7 +16,7 @@ public sealed class StaticNumericIncrementAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Static numeric field should not be incremented with ++/--",
         "Static field '{0}' is mutated with {1} — use Interlocked or remove the 'static' keyword",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "Static numeric fields mutated across invocations are a concurrency smell. The operation is not atomic, " +

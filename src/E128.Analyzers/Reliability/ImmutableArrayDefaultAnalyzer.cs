@@ -30,7 +30,7 @@ public sealed class ImmutableArrayDefaultAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "ImmutableArray field left at its default",
         "'{0}' is never assigned, so it stays at the default ImmutableArray",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "The default ImmutableArray holds a null inner array, and every operation that reads it " +

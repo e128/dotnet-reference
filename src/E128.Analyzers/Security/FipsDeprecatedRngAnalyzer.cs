@@ -20,7 +20,7 @@ public sealed class FipsDeprecatedRngAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "RNGCryptoServiceProvider is deprecated",
         "RNGCryptoServiceProvider is obsolete (SYSLIB0023); use the static RandomNumberGenerator methods, such as GetBytes or GetInt32",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "RNGCryptoServiceProvider is obsolete in .NET 6 and later. Use the static RandomNumberGenerator " +

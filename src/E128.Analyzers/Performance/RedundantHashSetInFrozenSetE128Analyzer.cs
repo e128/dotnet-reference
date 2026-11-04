@@ -22,7 +22,7 @@ public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Redundant HashSet allocation in FrozenSet creation",
         "Intermediate HashSet<{0}> allocation is unnecessary — pass the collection directly to ToFrozenSet()",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "Creating a HashSet<T> only to immediately call .ToFrozenSet() allocates an intermediate collection " +

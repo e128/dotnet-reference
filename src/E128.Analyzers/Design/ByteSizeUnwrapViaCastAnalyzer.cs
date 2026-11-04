@@ -17,7 +17,7 @@ public sealed class ByteSizeUnwrapViaCastAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not unwrap ByteSize via cast",
         "Cast to '{0}' unwraps ByteSize.{1}, defeating type safety. Use ByteSize comparison operators or formatting instead.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "Casting a ByteSize unit property (Bytes, Kilobytes, etc.) to a numeric type defeats the type safety " +

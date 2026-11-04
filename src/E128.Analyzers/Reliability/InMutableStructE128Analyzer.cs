@@ -16,7 +16,7 @@ public sealed class InMutableStructE128Analyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not use 'in' modifier with mutable structs",
         "Parameter '{0}' should not use the 'in' modifier — '{1}' is a mutable struct and 'in' causes hidden defensive copies",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "The 'in' modifier on a mutable (non-readonly) struct parameter causes the compiler to " +

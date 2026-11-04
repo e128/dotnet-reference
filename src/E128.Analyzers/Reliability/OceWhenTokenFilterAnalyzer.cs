@@ -17,7 +17,7 @@ public sealed class OceWhenTokenFilterAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Catch filter reads negated token state on OperationCanceledException",
         "Catch filter reads !token.IsCancellationRequested — the token-state read races with the throw; rethrow unconditionally instead",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

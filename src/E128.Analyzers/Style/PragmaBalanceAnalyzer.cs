@@ -25,7 +25,7 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Unbalanced pragma warning disable",
         "Unbalanced pragma: '{0}' is disabled but never restored",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Warning,
         true,
         "Every #pragma warning disable should have a matching #pragma warning restore to limit the scope of the suppression.");

@@ -24,7 +24,7 @@ public sealed class AsyncFileIoAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use the async File.*Async overload",
         "'{0}' has an async sibling '{1}' -- use it and make the containing method async instead of blocking synchronously",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "System.IO.File synchronous methods block the calling thread. CA1849/VSTHRD103 only flag this inside an already-async method; this rule also flags it in a fully synchronous method, where those analyzers give no signal at all.");

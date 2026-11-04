@@ -68,12 +68,11 @@ e128_minimum_framework_version = 100
 e128_registered_services = ITerminal, IPreferenceStore
 ```
 
-### ConfigureAwait scoping (CA2007 + E128022)
+### ConfigureAwait scoping (CA2007)
 
 ```ini
 dotnet_diagnostic.CA2007.severity = error
 dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary  # libraries only
-# E128022 flags ConfigureAwait(false) in app code (Exe projects)
 ```
 
 ## Common Test-Project Overrides (`tests/.globalconfig`)

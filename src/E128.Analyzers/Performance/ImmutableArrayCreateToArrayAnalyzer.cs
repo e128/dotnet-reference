@@ -31,7 +31,7 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use ImmutableCollectionsMarshal.AsImmutableArray instead of ImmutableArray.Create/CreateRange with ToArray",
         "'{0}' copies the array; use 'ImmutableCollectionsMarshal.AsImmutableArray' for zero-copy wrapping",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "ImmutableArray.Create(x.ToArray()) and ImmutableArray.CreateRange(x.ToArray()) each copy the array. " +

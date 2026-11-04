@@ -17,7 +17,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Keep the delegate alive while native code holds its function pointer",
         "Marshal.GetFunctionPointerForDelegate does not root the delegate. Native code can call a collected delegate.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

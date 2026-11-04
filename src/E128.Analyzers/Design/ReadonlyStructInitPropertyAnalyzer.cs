@@ -21,7 +21,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Readonly struct property should use init accessor",
         "Property '{0}' in readonly struct '{1}' has only a get accessor — use 'init' to make immutability explicit",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "Properties in readonly structs that have only a get accessor should use 'init' instead. " +

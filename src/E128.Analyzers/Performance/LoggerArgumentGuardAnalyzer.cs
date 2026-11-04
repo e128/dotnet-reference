@@ -18,7 +18,7 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Guard an expensive log argument with IsEnabled",
         "This log call builds its message before the level check. Wrap it in an IsEnabled guard or use [LoggerMessage].",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

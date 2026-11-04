@@ -21,7 +21,7 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use an alternate lookup instead of a temporary string key",
         "The lookup builds a string from a span. Use GetAlternateLookup<ReadOnlySpan<char>> instead.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "A key of the form 'new string(span)' allocates a string on every lookup. " +
