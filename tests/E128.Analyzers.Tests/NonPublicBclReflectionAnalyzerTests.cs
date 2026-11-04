@@ -13,7 +13,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
         return new CSharpAnalyzerTest<NonPublicBclReflectionAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         }.RunAsync();
     }
 
@@ -68,6 +68,31 @@ public sealed class NonPublicBclReflectionAnalyzerTests
                                }
                            }
                            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenAUserAssemblyIsNamedLikeAFrameworkAssembly()
+    {
+        var test = new CSharpAnalyzerTest<NonPublicBclReflectionAnalyzer, DefaultVerifier>
+        {
+            TestCode = """
+                       using System.Reflection;
+                       class C
+                       {
+                           object M()
+                           {
+                               return typeof(Foo.Widget).GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
+                           }
+                       }
+                       """,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+
+        test.TestState.AdditionalProjects["System.Foo"].Sources.Add("namespace Foo { public class Widget { } }");
+        test.TestState.AdditionalProjectReferences.Add("System.Foo");
+
+        return test.RunAsync();
     }
 
     [Fact]

@@ -132,4 +132,119 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ShortSha384Key_Reports_E128151()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var hmac = {|E128151:new HMACSHA384(new byte[32])|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FullSha384Key_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var hmac = new HMACSHA384(new byte[48]);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ShortTryHashData_Reports_E128151()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(byte[] destination)
+                               {
+                                   {|E128151:HMACSHA256.TryHashData(new byte[16], new byte[1], destination, out var written)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ShortHashDataAsync_Reports_E128151()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(Stream source)
+                               {
+                                   var mac = {|E128151:HMACSHA256.HashDataAsync(new byte[16], source)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ShortKeyPropertyAssignment_Reports_E128151()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var hmac = new HMACSHA256();
+                                   {|E128151:hmac.Key = new byte[16]|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FullKeyPropertyAssignment_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var hmac = new HMACSHA256();
+                                   hmac.Key = new byte[32];
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NonConstantKeyLength_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(byte[] key)
+                               {
+                                   using var hmac = new HMACSHA256(key);
+                               }
+                           }
+                           """);
+    }
 }

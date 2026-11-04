@@ -11,6 +11,17 @@ E128160 | E128-Reliability | Warning | A WaitForExit call in a method that redir
 E128161 | E128-Reliability | Warning | A Path.Combine call with a constant rooted or parent segment is reported. A rooted segment discards every earlier segment.
 E128162 | E128-Reliability | Warning | A read of a local after the same block calls Dispose on it is reported. The object throws ObjectDisposedException on the next member call that reads its state.
 E128163 | E128-Reliability | Warning | An ImmutableArray field that no initializer and no assignment reaches is reported. The default array throws NullReferenceException on read.
+E128164 | E128-Security | Warning | A string literal that starts with http:// or https:// and carries a host is reported outside a test compilation. Attribute arguments, namespace and schema hosts, and example hosts are not reported.
+E128165 | E128-Security | Warning | A credential-named string literal of 8 or more characters, and a connection string that holds a password, are reported outside a test compilation. An empty value and a format placeholder are not reported.
+E128166 | E128-Security | Warning | An ILogger call that passes a value, or an interpolated hole, named for a credential or personal-data word is reported outside a test compilation. Cancellation tokens and metadata names such as TokenCount are not reported.
+E128167 | E128-Style | Warning | A TODO, FIXME, or HACK comment that does not match e128_tracked_ref_pattern is reported. The default pattern accepts AB#123 and #123.
+E128168 | E128-Testing | Warning | A Fact or Theory Skip reason that does not match e128_tracked_ref_pattern is reported.
+E128169 | E128-Style | Warning | An Obsolete attribute with no message, or an empty message, is reported.
+E128170 | E128-Reliability | Warning | A constant index of 1 or more taken from a string.Split result with no Length read in the member is reported. Index 0 and from-end indexes are not reported.
+E128171 | E128-Testing | Warning | An xUnit test whose whole body is one Assert.Fail call is reported.
+E128172 | E128-Testing | Warning | A catch of Exception or XunitException with no rethrow, around a try block that calls Assert, is reported.
+E128173 | E128-Style | Warning | A SuppressMessage or ExcludeFromCodeCoverage attribute with no Justification, or a blank one, is reported.
+E128174 | E128-Design | Warning | A constructor or primary constructor with more class or interface parameters than e128_max_ctor_dependencies is reported. The default ceiling is 7.
 
 ### Changed Rules
 

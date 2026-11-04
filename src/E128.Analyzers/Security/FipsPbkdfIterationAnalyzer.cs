@@ -52,7 +52,7 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
         }
 
         // Key derivation settings are reported in generated code too, because a generated PBKDF2 call is a real
-        // policy defect. FIPS0005 parity requires this opt-in.
+        // policy defect. The rule therefore analyzes and reports in generated code.
         context.ConfigureGeneratedCodeAnalysis(
             GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();

@@ -35,14 +35,20 @@ while IFS= read -r id; do
     source_ids+=("$id")
 done < <(rg -o '"E128\d{3}"' "$ANALYZER_DIR/" --no-filename 2>/dev/null | tr -d '"' | sort -u)
 
-# 2. Extract IDs from the New Rules section of Unshipped.md.
+# 2. Extract IDs from the table rows of the New Rules section.
 # A rule under Changed Rules is already shipped, so its old Shipped entry is
-# expected and must not count as a duplicate.
+# expected and must not count as a duplicate. Only the first column of a row
+# counts, so an ID named in a Notes cell is never read as a rule. A file that
+# has neither header is not a release file, so the check fails.
 unshipped_ids=()
 if [[ -f "$UNSHIPPED" ]]; then
+    if ! rg -q '^### (New|Changed) Rules\s*$' "$UNSHIPPED"; then
+        err "$UNSHIPPED has neither a New Rules nor a Changed Rules header."
+        exit 1
+    fi
     while IFS= read -r id; do
         unshipped_ids+=("$id")
-    done < <(awk '/^### Changed Rules/ { exit } { print }' "$UNSHIPPED" | rg -o 'E128\d{3}' | sort -u)
+    done < <(awk '/^### / { in_new = ($0 ~ /^### New Rules[[:space:]]*$/); next } in_new && /^E128[0-9][0-9][0-9][[:space:]]*\|/ { print $1 }' "$UNSHIPPED" | sort -u)
 fi
 
 # 3. Extract IDs from Shipped.md

@@ -98,4 +98,90 @@ public sealed class FipsTlsVersionAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WeakSslProtocolsMembers_Report_E128146()
+    {
+        return VerifyAsync("""
+                           using System.Security.Authentication;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var ssl2 = {|E128146:SslProtocols.Ssl2|};
+                                   var ssl3 = {|E128146:SslProtocols.Ssl3|};
+                                   var tls11 = {|E128146:SslProtocols.Tls11|};
+                                   var other = {|E128146:SslProtocols.Default|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WeakSecurityProtocolTypeMembers_Report_E128146()
+    {
+        return VerifyAsync("""
+                           using System.Net;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var ssl3 = {|E128146:SecurityProtocolType.Ssl3|};
+                                   var tls = {|E128146:SecurityProtocolType.Tls|};
+                                   var tls11 = {|E128146:SecurityProtocolType.Tls11|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplementOfAllowedProtocol_Reports_E128146()
+    {
+        return VerifyAsync("""
+                           using System.Security.Authentication;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var all = {|E128146:~SslProtocols.None|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ProtocolComparison_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Authentication;
+                           class C
+                           {
+                               bool M(SslProtocols protocols)
+                               {
+                                   return protocols == SslProtocols.Tls11;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MaskRemoval_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Authentication;
+                           class C
+                           {
+                               SslProtocols M(SslProtocols protocols)
+                               {
+                                   protocols &= ~SslProtocols.Tls11;
+                                   return protocols;
+                               }
+                           }
+                           """);
+    }
 }

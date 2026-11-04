@@ -31,7 +31,7 @@
     <!-- CLI -->
     <PackageVersion Include="System.CommandLine" Version="2.0.14" />
     <!-- Transitive pins -->
-    <!-- CSharp.Workspaces: required transitively by Microsoft.CodeAnalysis.CSharp + Workspaces.Common -->
+    <!-- CSharp.Workspaces: required transitively by Microsoft.CodeAnalysis.CSharp -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
     <!-- Microsoft.Extensions.*: pulled transitively by Hosting, Mvc.Testing, and Extensions.Hosting -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />

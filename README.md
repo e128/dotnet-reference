@@ -19,9 +19,11 @@ dotnet add package E128.Analyzers
 Paste this prompt into a coding agent in the repository you want to check:
 
 ```text
-Add the latest stable E128.Analyzers package from the configured NuGet sources to every tracked C# project in this repository.
+Add the latest stable E128.Analyzers package from the configured NuGet sources to this repository.
 
-If this repository uses Central Package Management, add exactly one `PackageVersion` entry to `Directory.Packages.props` and one direct `PackageReference` with `PrivateAssets="all"` to every `.csproj`. Never duplicate a version entry.
+Add one `<PackageReference Include="E128.Analyzers" PrivateAssets="all" />` to the root `Directory.Build.props`, inside an existing analyzer `ItemGroup` when one exists, in alphabetical position. Create the file if it is missing. Leave every other analyzer where it is.
+
+If this repository uses Central Package Management, add one `PackageVersion` entry to `Directory.Packages.props`. Never duplicate a version entry. Otherwise set `Version` on the reference.
 
 In the root `.editorconfig`, under `[*.cs]`, set these categories to `error` and set `e128_max_complexity = linear`:
 
@@ -39,7 +41,7 @@ If the root `.editorconfig` does not exist, create it with `root = true`. Preser
 
 Do not fix source findings, suppress or downgrade E128 rules, or change other analyzer severities.
 
-Run the Release build of the solution at the repository root. Report the package version, the project count, the build status, the warning and error totals, and the error count per E128 rule ID. Count each diagnostic once when the output repeats it. Leave every finding unfixed unless I approve a fix.
+Run the Release build of the solution at the repository root. Report the package version, the project count, and the build status. Report the warning and error totals, and the error count per E128 rule ID. Count each diagnostic once when the output repeats it. Leave every finding unfixed unless I approve a fix.
 ```
 
 `e128_max_complexity` sets the algorithm level. `linear` is the strictest tier and reports linearithmic or worse code. Other tiers: linearithmic, quadratic, cubic, exponential.
@@ -89,7 +91,7 @@ scripts/podman.sh test
 | **E128.Reference.Web**        | Minimal API web app with Kestrel and a health endpoint                         |
 | **E128.Reference.Cli**        | System.CommandLine CLI with a `--name` option                                  |
 | **E128.Reference.Core**       | Shared library (Greeter service, models, repositories, services)               |
-| **E128.Analyzers**            | Roslyn analyzers (E128001 to E128163), published to nuget.org                  |
+| **E128.Analyzers**            | Roslyn analyzers (E128001 to E128174), published to nuget.org                  |
 | **E128.Analyzers.CodeFixers** | Code fix providers for the analyzer rules, shipped in the same package         |
 | **E128.Reference.Tests**      | xUnit v3 and MTP with the CI, Podman, and Manual test categories               |
 | **Architecture.Tests**        | ArchUnitNET structural invariant tests (layers, naming, sealed)                |

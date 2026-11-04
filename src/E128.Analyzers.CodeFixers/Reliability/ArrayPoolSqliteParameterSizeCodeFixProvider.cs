@@ -31,7 +31,9 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is InvocationExpressionSyntax)
+        // The fix needs the length the code requested from the pool. Without it, no fix is offered.
+        if (node is InvocationExpressionSyntax addWithValue
+            && TryGetRequestedLength(node, GetAddWithValueArgument(addWithValue)) is not null)
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
@@ -40,7 +42,8 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
                     nameof(ArrayPoolSqliteParameterSizeCodeFixProvider) + ".AddWithValue"),
                 diagnostic);
         }
-        else if (node is AssignmentExpressionSyntax)
+        else if (node is AssignmentExpressionSyntax valueAssignment
+                 && TryGetRequestedLength(node, valueAssignment.Right) is not null)
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
@@ -80,6 +83,12 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
                         && assign.Left is IdentifierNameSyntax discardId
                         && string.Equals(discardId.Identifier.ValueText, "_", StringComparison.Ordinal);
 
+        var length = TryGetRequestedLength(invocation, GetAddWithValueArgument(invocation));
+        if (length is null)
+        {
+            return document;
+        }
+
         var paramVarName = GenerateUniqueParameterName(block);
 
         var declaration = BuildParameterDeclaration(
@@ -87,6 +96,7 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
 
         var sizeStatement = CreateSizeAssignmentStatement(
             SyntaxFactory.IdentifierName(paramVarName),
+            length,
             containingStatement.GetLeadingTrivia());
 
         var replacement = new List<StatementSyntax> { declaration, sizeStatement };
@@ -159,7 +169,13 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
             memberAccess.Expression.WithoutTrivia(),
             SyntaxFactory.IdentifierName("Size"));
 
-        var sizeStatement = CreateSizeAssignmentStatement(sizeAccess, containingStatement.GetLeadingTrivia());
+        var length = TryGetRequestedLength(assignment, assignment.Right);
+        if (length is null)
+        {
+            return document;
+        }
+
+        var sizeStatement = CreateSizeAssignmentStatement(sizeAccess, length, containingStatement.GetLeadingTrivia());
 
         var stmtIndex = block.Statements.IndexOf(containingStatement);
         var newStatements = block.Statements.Insert(stmtIndex + 1, sizeStatement);
@@ -171,6 +187,7 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
 
     private static ExpressionStatementSyntax CreateSizeAssignmentStatement(
         ExpressionSyntax target,
+        ExpressionSyntax length,
         SyntaxTriviaList leadingTrivia)
     {
         var sizeAccess = target is MemberAccessExpressionSyntax
@@ -184,12 +201,50 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     sizeAccess,
-                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0))))
+                    length.WithoutTrivia()))
             .WithLeadingTrivia(leadingTrivia)
-            .WithTrailingTrivia(
-                SyntaxFactory.Space,
-                SyntaxFactory.Comment("// TODO: set to actual byte count"),
-                SyntaxFactory.ElasticLineFeed);
+            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
+    }
+
+    private static ExpressionSyntax? GetAddWithValueArgument(InvocationExpressionSyntax invocation)
+    {
+        return invocation.ArgumentList.Arguments.Count == 2
+            ? invocation.ArgumentList.Arguments[1].Expression
+            : null;
+    }
+
+    /// <summary>
+    ///     Returns the length passed to `ArrayPool.Rent` for the buffer that <paramref name="value"/>
+    ///     names, or null when the code does not show it. Only a literal or a plain identifier qualifies,
+    ///     so the copied expression has no side effect and means the same at the new statement.
+    /// </summary>
+    private static ExpressionSyntax? TryGetRequestedLength(SyntaxNode scope, ExpressionSyntax? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        var rent = value as InvocationExpressionSyntax;
+        if (rent is null && value is IdentifierNameSyntax bufferName)
+        {
+            var member = scope.FirstAncestorOrSelf<MemberDeclarationSyntax>();
+            var declarator = member?.DescendantNodes()
+                .OfType<VariableDeclaratorSyntax>()
+                .FirstOrDefault(v => string.Equals(
+                    v.Identifier.ValueText, bufferName.Identifier.ValueText, StringComparison.Ordinal));
+            rent = declarator?.Initializer?.Value as InvocationExpressionSyntax;
+        }
+
+        if (rent is null
+            || rent.Expression is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Rent" }
+            || rent.ArgumentList.Arguments.Count != 1)
+        {
+            return null;
+        }
+
+        var length = rent.ArgumentList.Arguments[0].Expression;
+        return length is LiteralExpressionSyntax or IdentifierNameSyntax ? length : null;
     }
 
     private static string GenerateUniqueParameterName(BlockSyntax block)

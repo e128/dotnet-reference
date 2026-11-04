@@ -21,6 +21,26 @@ public sealed class FipsDirectInstantiationAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NameMatchedCipherInCryptographyNamespace_SkippedToAvoidDoubleReport()
+    {
+        return VerifyAsync("""
+                           namespace System.Security.Cryptography;
+                           class BlowfishManaged
+                           {
+                           }
+
+                           class C
+                           {
+                               void M()
+                               {
+                                   var c = new BlowfishManaged();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task UnmappableConstructorArguments_FallBackToBaseFactoryMessage()
     {
         return VerifyAsync("""
@@ -85,6 +105,93 @@ public sealed class FipsDirectInstantiationAnalyzerTests
                                void M()
                                {
                                    using var h = SHA256.Create();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CngType_Reports_E128142()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var aes = {|E128142:new AesCng()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CngConstructorWithCngKey_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(CngKey key)
+                               {
+                                   using var rsa = new RSACng(key);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CngConstructorWithCngProvider_NoReport()
+    {
+        return VerifyAsync("""
+                           namespace System.Security.Cryptography;
+                           class CustomCng
+                           {
+                               public CustomCng(CngProvider provider)
+                               {
+                               }
+                           }
+
+                           class C
+                           {
+                               void M(CngProvider provider)
+                               {
+                                   var c = new CustomCng(provider);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RijndaelManaged_Reports_E128142()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var r = {|E128142:new RijndaelManaged()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TypeBlockedByE128071_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var h = new SHA1Managed();
                                }
                            }
                            """);

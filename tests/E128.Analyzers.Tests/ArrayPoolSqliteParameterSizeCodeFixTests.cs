@@ -45,7 +45,7 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixTests
                                var buffer = ArrayPool<byte>.Shared.Rent(1024);
                                var cmd = new SqliteCommand();
                                var sqliteParam = cmd.Parameters.AddWithValue("@p", buffer);
-                               sqliteParam.Size = 0; // TODO: set to actual byte count
+                               sqliteParam.Size = 1024;
                            }
                        }
                        """);
@@ -75,7 +75,56 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixTests
                                var buffer = ArrayPool<byte>.Shared.Rent(1024);
                                var cmd = new SqliteCommand();
                                var sqliteParam = cmd.Parameters.AddWithValue("@p", buffer);
-                               sqliteParam.Size = 0; // TODO: set to actual byte count
+                               sqliteParam.Size = 1024;
+                           }
+                       }
+                       """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_UsesRequestedLengthIdentifier()
+    {
+        return VerifyFixAsync(
+            Preamble + """
+                       class C
+                       {
+                           void M(int dataLength)
+                           {
+                               var buffer = ArrayPool<byte>.Shared.Rent(dataLength);
+                               var cmd = new SqliteCommand();
+                               _ = {|E128086:cmd.Parameters.AddWithValue("@p", buffer)|};
+                           }
+                       }
+                       """,
+            Preamble + """
+                       class C
+                       {
+                           void M(int dataLength)
+                           {
+                               var buffer = ArrayPool<byte>.Shared.Rent(dataLength);
+                               var cmd = new SqliteCommand();
+                               var sqliteParam = cmd.Parameters.AddWithValue("@p", buffer);
+                               sqliteParam.Size = dataLength;
+                           }
+                       }
+                       """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoFix_WhenRequestedLengthIsNotShown()
+    {
+        return CodeFixTestRunner.NoFixAsync<ArrayPoolSqliteParameterSizeAnalyzer, ArrayPoolSqliteParameterSizeCodeFixProvider>(
+            Preamble + """
+                       class C
+                       {
+                           static int Compute() => 8;
+                           void M()
+                           {
+                               var buffer = ArrayPool<byte>.Shared.Rent(Compute());
+                               var cmd = new SqliteCommand();
+                               _ = {|E128086:cmd.Parameters.AddWithValue("@p", buffer)|};
                            }
                        }
                        """);
@@ -106,7 +155,7 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixTests
                                var buffer = ArrayPool<byte>.Shared.Rent(1024);
                                var param = new SqliteParameter();
                                param.Value = buffer;
-                               param.Size = 0; // TODO: set to actual byte count
+                               param.Size = 1024;
                            }
                        }
                        """);

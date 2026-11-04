@@ -1,0 +1,13 @@
+
+### E128170: `Split(...)[n]` index with no length guard
+
+Flags a constant index of 1 or more taken from the result of `string.Split`. The array comes from an inline call or from a local initialized by one. `Split` returns one element when the separator is absent, so the index throws `IndexOutOfRangeException` on unexpected input. Index 0 and a from-end index such as `[^1]` are safe and not reported. A local is not reported when the same member reads `Length` on it. The rule does not model control flow, so any such read counts as a guard. A `Split` method on another type is not reported. No code fix.
+
+```csharp
+// Before (warns)
+var value = line.Split(':')[1];
+
+// After
+var parts = line.Split(':');
+var value = parts.Length > 1 ? parts[1] : null;
+```

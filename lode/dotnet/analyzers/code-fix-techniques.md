@@ -1,5 +1,5 @@
 # Code Fix Techniques
-*Updated: 2026-11-03T03:14:50Z*
+*Updated: 2026-11-04T21:29:18Z*
 
 Techniques that prove a fix writes correct code. The shape rules live in
 [Code Fix Output](code-fix-output.md). The decision list lives in
@@ -185,6 +185,13 @@ It applies the fixes in this order:
 2. Sort the renames back to front within each document, so a span does not drift.
 3. Apply `Renamer.RenameSymbolAsync` once at a time to the evolving solution.
 4. Skip a rename whose symbol no longer matches the recorded name.
+
+A skipped rename is a stale span: the document is gone, the span lies past the
+end of the root, or the symbol name changed. The skip is silent and
+deterministic. The order is document id, then span start descending, so the same
+input skips the same renames. The diagnostic stays, and a second Fix All run
+renames it from a fresh snapshot. No test pins this path, because the
+back-to-front order keeps a span valid for ordinary input.
 
 ## Related
 

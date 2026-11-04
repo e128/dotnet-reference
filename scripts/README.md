@@ -40,7 +40,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | Script             | Purpose                                                                 | Key flags                                                                          |
 | ------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `status.sh`        | Git status with structured output                                       | `--json`, `--files`, `--cs-only`, `--classify`, `--history`                        |
-| `diff.sh`          | Diff summary                                                            | `--json`, `--files`, `--staged`, `--full`, `--commits N`, `--days N`               |
+| `diff.sh`          | Diff summary                                                            | `--json`, `--files`, `--staged`, `--full`, `--commits N`, `--days N`, `--max-lines [N]`            |
 | `branch.sh`        | Branch info vs base                                                     | `--json`, `--human`, `--base`, `--files`                                           |
 | `assert.sh`        | Fail-fast pre-commit gates                                              | `--build-pass`, `--clean-working-tree`, `--test-pass`, `--plan-complete`, `--json` |
 | `git-forensics.sh` | Git history forensics (churn, contributors, bugs, velocity, firefights) | `--since`, `--top`, `--json`                                                       |

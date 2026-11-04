@@ -157,4 +157,120 @@ public sealed class FipsSha3AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ShakeType_Reports_E128150()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var xof = {|E128150:Shake128.HashData(new byte[1], 16)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HmacSha3Type_Reports_E128150()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var mac = {|E128150:HMACSHA3_256.HashData(new byte[32], new byte[1])|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task KmacType_Reports_E128150()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var mac = {|E128150:Kmac128.HashData(new byte[32], new byte[1], 16)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Sha3HashNameInLocal_Reports_E128150()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void Use(HashAlgorithmName name)
+                               {
+                               }
+
+                               void M()
+                               {
+                                   var name = HashAlgorithmName.SHA3_256;
+                                   {|E128150:Use(name)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Sha3HashNameAssignedToField_Reports_E128150()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               private HashAlgorithmName name;
+
+                               void M()
+                               {
+                                   {|E128150:name = HashAlgorithmName.SHA3_384|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Sha3HashNameInMutableFieldInitializer_Reports_E128150()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               private HashAlgorithmName name = {|E128150:HashAlgorithmName.SHA3_512|};
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task IsSupportedRead_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               bool M()
+                               {
+                                   return SHA3_256.IsSupported;
+                               }
+                           }
+                           """);
+    }
 }

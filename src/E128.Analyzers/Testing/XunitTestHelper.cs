@@ -74,6 +74,12 @@ internal static class XunitTestHelper
                && IsFactOrTheoryType(containingType);
     }
 
+    // A compilation that references xUnit holds test code. Production-only rules skip it.
+    internal static bool IsTestCompilation(Compilation compilation)
+    {
+        return compilation.GetTypeByMetadataName("Xunit.FactAttribute") is not null;
+    }
+
     internal static bool IsXunitNamespace(INamespaceSymbol? ns)
     {
         return ns is not null && string.Equals(ns.ToDisplayString(), "Xunit", StringComparison.Ordinal);

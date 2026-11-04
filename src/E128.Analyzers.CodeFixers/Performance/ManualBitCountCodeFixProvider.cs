@@ -50,11 +50,11 @@ public sealed class ManualBitCountCodeFixProvider : E128CodeFixProviderBase
         ExpressionSyntax operand = valueIdentifier;
         if (valueType.SpecialType == SpecialType.System_Int32)
         {
-            operand = SyntaxFactory.CastExpression(SyntaxFactory.ParseTypeName("uint"), valueIdentifier);
+            operand = SyntaxFactory.CastExpression(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.UIntKeyword)), valueIdentifier);
         }
         else if (valueType.SpecialType == SpecialType.System_Int64)
         {
-            operand = SyntaxFactory.CastExpression(SyntaxFactory.ParseTypeName("ulong"), valueIdentifier);
+            operand = SyntaxFactory.CastExpression(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ULongKeyword)), valueIdentifier);
         }
 
         var replacement = SyntaxFactory.ExpressionStatement(

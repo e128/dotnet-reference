@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Git diff wrapper with structured output.
-# Usage: diff.sh [--json] [--full] [--files] [--staged] [--commits N | --days N]
+# Usage: diff.sh [--json] [--full] [--files] [--staged] [--commits N | --days N] [--max-lines [N]]
 # --commits N: scope to the last N commits plus the working tree.
 # --days N:    scope to commits newer than N days plus the working tree.
+# --max-lines [N]: warn when the branch changes more than N lines (default 400). The count
+#                  spans the merge base with main through the working tree and untracked files.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-JSON=false; FULL=false; FILES_ONLY=false; STAGED_ONLY=false; COMMITS=""; DAYS=""
+MAX_LINES=""; JSON=false; FULL=false; FILES_ONLY=false; STAGED_ONLY=false; COMMITS=""; DAYS=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -15,6 +17,7 @@ while [[ $# -gt 0 ]]; do
         --staged)  STAGED_ONLY=true ;;
         --commits) COMMITS="${2:-}"; shift ;;
         --days)    DAYS="${2:-}"; shift ;;
+        --max-lines) if [[ "${2:-}" =~ ^[1-9][0-9]*$ ]]; then MAX_LINES="$2"; shift; else MAX_LINES=400; fi ;;
         *)         err "Unknown flag: $1"; exit 1 ;;
     esac
     shift
@@ -38,6 +41,26 @@ fi
 
 if [[ "$FILES_ONLY" == true ]]; then
     git -C "$ROOT" diff --name-only "${BASE:-HEAD}" 2>/dev/null | sort -u
+    exit 0
+fi
+
+if [[ -n "$MAX_LINES" ]]; then
+    SIZE_BASE=$(git -C "$ROOT" merge-base HEAD main 2>/dev/null || echo "$EMPTY_TREE")
+    TRACKED=$(git -C "$ROOT" diff --numstat "$SIZE_BASE" 2>/dev/null | awk '$1 != "-" { n += $1 + $2 } END { print n + 0 }')
+    UNTRACKED=0
+    while IFS= read -r file; do
+        [[ -f "$ROOT/$file" ]] && UNTRACKED=$((UNTRACKED + $(wc -l < "$ROOT/$file")))
+    done < <(git -C "$ROOT" ls-files --others --exclude-standard)
+    TOTAL=$((TRACKED + UNTRACKED))
+    OVER=false
+    [[ "$TOTAL" -gt "$MAX_LINES" ]] && OVER=true
+    if [[ "$JSON" == true ]]; then
+        printf '{"changed_lines":%d,"max_lines":%d,"over":%s}\n' "$TOTAL" "$MAX_LINES" "$OVER"
+    elif [[ "$OVER" == true ]]; then
+        warn "Branch changes $TOTAL lines, over the limit of $MAX_LINES. Split the change."
+    else
+        printf "Branch changes %d lines, within the limit of %d.\n" "$TOTAL" "$MAX_LINES"
+    fi
     exit 0
 fi
 

@@ -76,6 +76,45 @@ self_test() {
 
     (cd "$scratch" && "$SELF" a.txt >/dev/null 2>&1) || { err "self-test: text mode must exit 0"; fails=$((fails + 1)); }
 
+    # PR resolution through a mock gh, so no network call happens.
+    local mock="$scratch/mock-gh.sh"
+    cat >"$mock" <<'MOCK'
+#!/usr/bin/env bash
+case "$1 $2" in
+    "pr view")
+        [[ "$3" == "404" ]] && exit 1
+        printf '{"number":%s,"baseRefName":"main","headRefName":"topic"}\n' "$3"
+        ;;
+    "api repos/{owner}/{repo}/pulls/7/files")
+        printf '%s\n' '"src/b.cs"' '"src/a.cs"' '"odd\nname.txt"' '"src/a.cs"'
+        ;;
+    *) exit 1 ;;
+esac
+MOCK
+    chmod +x "$mock"
+
+    out="$(cd "$scratch" && GH_CMD="$mock" "$SELF" --json 7 2>/dev/null)"
+    [[ "$(jq -r '.kind' <<<"$out")" == "pr" ]] || { err "self-test: PR kind wrong"; fails=$((fails + 1)); }
+    [[ "$(jq -c '.files' <<<"$out")" == '["src/a.cs","src/b.cs"]' ]] || { err "self-test: PR files not sorted, deduped, and newline-safe"; fails=$((fails + 1)); }
+    [[ "$(jq -r '.dotnet' <<<"$out")" == "true" ]] || { err "self-test: PR routing wrong"; fails=$((fails + 1)); }
+    if (cd "$scratch" && GH_CMD="$mock" "$SELF" --json 404 >/dev/null 2>&1); then
+        err "self-test: a failed gh pr view must fail"; fails=$((fails + 1))
+    fi
+    if (cd "$scratch" && GH_CMD="$scratch/missing-gh" "$SELF" --json 7 >/dev/null 2>&1); then
+        err "self-test: a missing gh must fail"; fails=$((fails + 1))
+    fi
+
+    # Critical only drops the adjacent pair and leaves a lone word as a target.
+    out="$(cd "$scratch" && "$SELF" --json a.txt critical only 2>/dev/null)"
+    [[ "$(jq -r '.critical_only' <<<"$out")" == "true" && "$(jq -r '.file_count' <<<"$out")" == "1" ]] || { err "self-test: critical only pair wrong"; fails=$((fails + 1)); }
+    out="$(cd "$scratch" && "$SELF" --json a.txt critical 2>/dev/null)"
+    [[ "$(jq -r '.critical_only' <<<"$out")" == "false" ]] || { err "self-test: a lone critical must not set the flag"; fails=$((fails + 1)); }
+
+    # A file name with a newline is skipped in component mode.
+    mkdir "$scratch/dir" && printf 'x\n' >"$scratch/dir/ok.txt" && printf 'x\n' >"$scratch/dir/bad"$'\n'"name.txt"
+    out="$(cd "$scratch" && "$SELF" --json dir 2>/dev/null)"
+    [[ "$(jq -c '.files' <<<"$out")" == '["dir/ok.txt"]' ]] || { err "self-test: newline name not skipped"; fails=$((fails + 1)); }
+
     rm -rf "$scratch"
     if (( fails == 0 )); then
         printf '✓ cr-target self-test passed\n'
@@ -117,15 +156,20 @@ for word in "${WORDS[@]+"${WORDS[@]}"}"; do
     esac
 done
 
-# A standalone flag word filters out at the word level. Dropping it when one
-# other word remains keeps a usable target for the match that follows.
+# The adjacent pair "critical" "only" sets the flag and drops both words. A
+# lone "critical" or "only" stays a target word, so a branch with that name
+# still resolves.
 ARGS=()
 if (( ${#TARGET_WORDS[@]} > 1 )); then
-    for word in "${TARGET_WORDS[@]}"; do
-        case "$word" in
-            critical | only) CRITICAL_ONLY=true ;;
-            *) ARGS+=("$word") ;;
-        esac
+    i=0
+    while (( i < ${#TARGET_WORDS[@]} )); do
+        if [[ "${TARGET_WORDS[i]}" == "critical" && "${TARGET_WORDS[i + 1]:-}" == "only" ]]; then
+            CRITICAL_ONLY=true
+            i=$((i + 2))
+        else
+            ARGS+=("${TARGET_WORDS[i]}")
+            i=$((i + 1))
+        fi
     done
 elif (( ${#TARGET_WORDS[@]} == 1 )); then
     ARGS=("${TARGET_WORDS[0]}")
@@ -201,13 +245,28 @@ BASE=""
 FILES=""
 DIFF_COMMAND=""
 
+# A file name that holds a newline cannot travel in a newline-delimited list.
+# Dropping it, with a warning, is safer than letting it fuse two entries.
+# Reads JSON-encoded names, one per line. Writes the safe names, one per line.
+filter_newline_names() {
+    local skipped
+    skipped="$(jq -s 'map(select(contains("\n"))) | length' <<<"$1")"
+    if (( skipped > 0 )); then
+        warn "Skipped $skipped file name(s) that contain a newline."
+    fi
+    jq -r 'select(contains("\n") | not)' <<<"$1"
+}
+
+# GH_CMD names the gh executable. The self-test points it at a mock.
+GH_CMD="${GH_CMD:-gh}"
+
 resolve_pr() {
-    local ref="$1" pr_json base_ref head_ref
-    if ! command -v gh >/dev/null 2>&1; then
+    local ref="$1" pr_json base_ref head_ref encoded
+    if ! command -v "$GH_CMD" >/dev/null 2>&1; then
         err "gh is not installed. Check the PR out as a branch and pass the branch name."
         exit 1
     fi
-    if ! pr_json="$(gh pr view "$ref" --json number,baseRefName,headRefName 2>/dev/null)"; then
+    if ! pr_json="$("$GH_CMD" pr view "$ref" --json number,baseRefName,headRefName 2>/dev/null)"; then
         err "gh pr view failed for the given reference."
         exit 1
     fi
@@ -225,11 +284,12 @@ resolve_pr() {
         fi
     fi
     # gh pr view --json files stops at 100 paths, so page the REST API instead.
-    if ! FILES="$(gh api "repos/{owner}/{repo}/pulls/$PR_NUMBER/files" --paginate -q '.[].filename' 2>/dev/null)"; then
+    # @json keeps each name on one line, so a newline in a name cannot fuse entries.
+    if ! encoded="$("$GH_CMD" api "repos/{owner}/{repo}/pulls/$PR_NUMBER/files" --paginate -q '.[].filename | @json' 2>/dev/null)"; then
         err "gh api failed to list the files of PR #$PR_NUMBER."
         exit 1
     fi
-    FILES="$(printf '%s\n' "$FILES" | sed '/^$/d' | sort -u)"
+    FILES="$(filter_newline_names "$encoded" | sed '/^$/d' | sort -u)"
     DIFF_COMMAND="gh pr diff $PR_NUMBER"
 }
 
@@ -310,7 +370,20 @@ elif [[ -n "$PATH_ARG" ]]; then
     if [[ -f "$PATH_ARG" ]]; then
         FILES="$(printf '%s\n' "$PATH_ARG" | rel)"
     else
-        FILES="$(fd -t f . -- "$PATH_ARG" 2>/dev/null | rel || true)"
+        # NUL-delimited read, so a name with a newline is skipped, not split.
+        FILES=""
+        skipped=0
+        while IFS= read -r -d '' pf; do
+            if [[ "$pf" == *$'\n'* ]]; then
+                skipped=$((skipped + 1))
+                continue
+            fi
+            FILES+="$pf"$'\n'
+        done < <(fd -0 -t f . -- "$PATH_ARG" 2>/dev/null)
+        if (( skipped > 0 )); then
+            warn "Skipped $skipped file name(s) that contain a newline."
+        fi
+        FILES="$(printf '%s' "$FILES" | rel)"
     fi
     FILES="$(printf '%s\n' "$FILES" | sed '/^$/d' | sort -u)"
 else

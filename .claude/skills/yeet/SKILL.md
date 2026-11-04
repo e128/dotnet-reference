@@ -157,16 +157,17 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
 ### 2. Stage + commit + push
 
 **Push-only path**: no working-tree changes (`has_changes` false and format made none) but `unpushed > 0`:
-- `ahead <= 1`: nothing to stage or squash, the single existing commit is already push-ready. Skip straight to **Push** and **Create PR** below.
-- `unpushed > 1`: the "single commit per push" rule still applies even with no new changes, squash the unpushed commits into one before pushing. Run `git reset --soft HEAD~<unpushed>`, which leaves commits the remote already has untouched. Then re-stage everything (`scripts/internal/stage.sh --include-new`), run the PII scan, craft a commit message from the full squashed diff, and commit, same as the squash sub-step in the normal path below, then continue to **Push** and **Create PR**.
+- `unpushed == 1`: nothing to stage or squash, the single existing commit is already push-ready. Skip straight to **Push** and **Create PR** below.
+- `unpushed > 1`: always squash the unpushed commits into one before pushing, even with no new changes. Run `git reset --soft HEAD~<unpushed>`, which leaves commits the remote already has untouched. Then re-stage everything (`scripts/internal/stage.sh --include-new`), run the PII scan, craft a commit message from the full squashed diff, and commit, same as the squash sub-step in the normal path below, then continue to **Push** and **Create PR**.
 
 **Normal path**: there are new working-tree changes to commit:
 - **Stage**: `scripts/internal/stage.sh --include-new` (stages all modified tracked + new untracked, excluding secrets)
 - **PII scan**: `scripts/internal/precommit.sh` (checks staged diff for home paths, email addresses, and secrets via gitleaks, stop if fail)
 - If lode files staged, show brief summary table (path + one-line change description)
-- **Squash**: use `unpushed` from cached step 0:
-    - `unpushed > 1`: `git reset --soft HEAD~<unpushed>` then re-stage and commit as one
-    - 1 or 0: proceed normally
+- **Squash (always)**: fold every unpushed local commit and the new changes into one commit. Use `unpushed` from cached step 0:
+    - `unpushed >= 1`: `git reset --soft HEAD~<unpushed>`, re-stage with `scripts/internal/stage.sh --include-new`, then commit as one. A new commit on top of an unpushed commit never ships as a second commit.
+    - `unpushed == 0`: commit normally. The new commit is the only one.
+    - Squash only commits the remote has never seen. Never squash a pushed commit, because that needs a force push.
 - **Craft commit message**: always generate a fresh message from the actual diff, never reuse a prior commit message:
     - Run `scripts/diff.sh --staged --json` to inspect staged stats
     - Synthesize a **conventional commit** summary: `type(scope): imperative summary` covering the full changeset
@@ -193,7 +194,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
 - **Fully autonomous**: no user prompts during execution. Invoking `/yeet` is the user's approval for the push and the PR (`.claude/rules/auto-approvals.md`).
 - **Stop on failure**: PII fail, build fail, or test fail halts the pipeline
 - **No email addresses**: never in a commit message, trailer, or PR body. The PII scan blocks real emails in the staged diff and `commit.sh` rejects an email in the message, `user@example.com` placeholders are allowed
-- **Single commit per push**: squash local commits when `ahead > 1`
+- **Single commit per push, always**: squash every unpushed local commit, with any new changes, into one commit before `git push`. Count with `unpushed`, never `ahead`. Skip the squash only when `unpushed == 1` and there are no new changes.
 - **Unpushed local commits always ship**: a clean working tree is not a reason to stop if `unpushed > 0`. Check `scripts/branch.sh --json` unconditionally. Never rely on working-tree state alone to decide whether a push is needed.
 - **Do NOT auto-commit or push again** after completing these steps, one-time action
 - **`--dry-run` stops after step 1**: quality check only, no file writes

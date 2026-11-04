@@ -179,7 +179,8 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         {
             FipsSymbolHelpers.ForEachAssignment(
                 context.Operation,
-                (target, value, syntax) => CheckXmlUriAssignment(context, target, value, syntax));
+                context,
+                static (state, target, value, syntax) => CheckXmlUriAssignment(state, target, value, syntax));
         }
     }
 

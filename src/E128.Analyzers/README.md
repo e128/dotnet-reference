@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.0.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.1.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -97,6 +97,11 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128161 | Path.Combine with a rooted or parent segment                                          | Yes      |
 | E128162 | Local used after an explicit Dispose                                                  | No       |
 | E128163 | ImmutableArray field left at its default                                              | Yes      |
+| E128170 | `Split(...)[n]` index with no length guard                                        | No       |
+| E128171 | Committed `Assert.Fail` red-phase stub                                         | No       |
+| E128172 | `catch` swallows an assertion failure                                          | No       |
+| E128173 | `[SuppressMessage]` or `[ExcludeFromCodeCoverage]` with no justification       | No       |
+| E128174 | Constructor past the `e128_max_ctor_dependencies` ceiling                      | No       |
 
 ### Performance
 
@@ -156,6 +161,12 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128151 | Use an HMAC key at least as long as the hash output                            | No       |
 | E128156 | HttpClient certificate validation accepts every certificate (default: Error)   | No       |
 | E128157 | Fixed-time comparison of a secret-derived value                                | Yes      |
+| E128164 | Hardcoded absolute URL in source                                               | No       |
+| E128165 | Hardcoded secret or connection string in source                                | No       |
+| E128166 | Sensitive value passed to a logger call                                        | No       |
+| E128167 | Deferred-work comment with no work-item reference                              | No       |
+| E128168 | Skipped test with no work-item reference in its reason                         | No       |
+| E128169 | `[Obsolete]` with no message                                                   | No       |
 
 ### Style
 
@@ -422,6 +433,8 @@ void DoThing() { }
 // After (option 2: remove)
 void DoThing() { }
 ```
+
+The analyzer is `NonXmlDocCommentE128Analyzer` in `Style/NonXmlDocCommentE128Analyzer.cs`. It skips a member whose leading trivia holds a `#pragma warning disable` directive (a `restore` does not skip), because the comment explains the suppression. The old review notes call this analyzer `XmlDocCommentAnalyzer`, which does not exist.
 
 ### E128025 &mdash; Guid.NewGuid() in temp paths
 
@@ -1052,6 +1065,8 @@ var param = new SqliteParameter("@data", buf) { Size = dataLength };
 cmd.Parameters.Add(param);
 ```
 
+The code fix sets `Size` to the length passed to `Rent` when that length is a literal or a plain identifier. It offers no fix when the code does not show the length.
+
 ### E128087 &mdash; Static numeric field should not be incremented with ++/--
 
 Flags `static` numeric fields mutated with `++`, `--`, `+=`, or `-=`. These operations are not atomic — concurrent invocations produce data races, and the accumulated value leaks across call contexts. Use `Interlocked.Increment`/`Decrement`/`Add` for int/long fields, or remove the `static` keyword.
@@ -1390,6 +1405,8 @@ Flags a `while (value != 0)` loop whose body is exactly `count += value & 1;` an
 
 The fix replaces the loop with `count += BitOperations.PopCount(value);` and casts a signed value to its unsigned width.
 
+The analyzer skips a loop whose counter is unsigned (`uint` or `ulong`) by design. The counter must be `int` or `long`. The test `Silent_WhenTheCountIsUnsigned` pins this behavior.
+
 ### E128135: Use `TensorPrimitives.Sum` instead of a sum loop
 
 Flags a `foreach` loop whose body is exactly `sum += value;` where both the sum and the element are `float` or `double`, and the source is an array, `Span<T>`, or `ReadOnlySpan<T>`. The loop adds one element per iteration.
@@ -1407,6 +1424,8 @@ No code fix. Replace the pair with a single `Span<T>` or `ReadOnlySpan<T>` param
 Flags `Type.GetMethod`, `GetField`, `GetProperty`, `GetEvent`, `GetMember`, `GetConstructor`, or `GetNestedType` when a `BindingFlags` argument names a non-public member and the receiver is `typeof(X)`. A private BCL member can change or disappear between runtime versions.
 
 No code fix. Use the public API, or a package that owns the access.
+
+The analyzer treats a type as a BCL type only when its assembly name starts with `System` or `Microsoft` and its public key token belongs to a known framework key. A user assembly named like `System.Foo` has no framework key and stays silent.
 
 ### E128138: Do not build dynamic methods with raw IL
 
@@ -1491,14 +1510,14 @@ using var rsa = RSA.Create(3072);
 
 ### E128144: Use an authenticated cipher mode
 
-Flags `CipherMode.ECB`, `CipherMode.OFB` and `CipherMode.CFB`, and the `EncryptEcb`, `DecryptEcb`, `EncryptCfb` and `DecryptCfb` methods. ECB reveals plaintext structure. A comparison reads the mode and is not reported.
+Flags `CipherMode.ECB`, `CipherMode.OFB` and `CipherMode.CFB`, and the `EncryptEcb`, `DecryptEcb`, `EncryptCfb` and `DecryptCfb` methods. ECB reveals plaintext structure. Use authenticated encryption such as AES-GCM. A comparison reads the mode and is not reported.
 
 ```csharp
 // Before (warns)
 aes.Mode = CipherMode.ECB;
 
 // After
-aes.Mode = CipherMode.CBC;
+using var gcm = new AesGcm(key, 16);
 ```
 
 ### E128145: Use a strong PBKDF2 configuration
@@ -1612,6 +1631,146 @@ return computedTag == expectedTag;
 
 // After
 return CryptographicOperations.FixedTimeEquals(computedTag, expectedTag);
+```
+
+### E128164: Hardcoded absolute URL in source
+
+Flags a string literal, or the text part of an interpolated string, that starts with `http://` or `https://` and carries a host. The project rules require a URL to come from an options class bound to configuration. The rule skips attribute arguments, the namespace and schema hosts `w3.org`, `schemas.microsoft.com`, `schemas.openxmlformats.org`, `schemas.xmlsoap.org`, and `json-schema.org`, and the reserved hosts `example.com`, `example.org`, and `example.net`. An interpolated host such as `$"https://{host}/items"` is not reported. The rule is silent in a compilation that references xUnit. No code fix.
+
+```csharp
+// Before (warns)
+var uri = new Uri("https://api.contoso.com/v1");
+
+// After
+var uri = options.Value.BaseAddress;
+```
+
+### E128165: Hardcoded secret or connection string in source
+
+Flags two shapes. The first is a string literal of 8 or more characters, with no whitespace, that is assigned to a name holding `password`, `passwd`, `pwd`, `secret`, `apikey`, `accesskey`, `privatekey`, or `connectionstring`. The assignment can be a variable, a property initializer, an expression-bodied property, a plain assignment, or a named argument. A name that ends in `Name`, `Header`, `Claim`, `Type`, `Prefix`, `Scheme`, `Path`, `Label`, `Format`, `Field`, `Param`, `Parameter`, or `Setting` names a lookup key and is not reported. The second shape is a connection string literal that holds a server key (`Server=`, `Data Source=`, or `Host=`) and a `Password=` or `Pwd=` value. An empty value or a `{0}` placeholder is not reported. The rule is silent in a compilation that references xUnit. No code fix.
+
+```csharp
+// Before (warns)
+const string AdminPassword = "hunter2hunter2";
+
+// After
+var password = options.Value.AdminPassword;
+```
+
+### E128166: Sensitive value passed to a logger call
+
+Flags an `ILogger` call, through `LoggerExtensions` or `ILogger.Log`, that passes a value named for a credential or personal-data word. The words are `password`, `passwd`, `pwd`, `secret`, `apikey`, `accesskey`, `privatekey`, `connectionstring`, `token`, `ssn`, `creditcard`, and `cardnumber`. The rule reads an identifier, the last segment of a member access, and each hole of an interpolated argument. A name that holds `cancellation`, or ends in `Name`, `Type`, `Count`, `Length`, `Expiry`, `Header`, `Id`, or `Hint`, is not reported. The rule is silent in a compilation that references xUnit. No code fix.
+
+```csharp
+// Before (warns)
+logger.LogInformation("Login {Password}", password);
+
+// After
+logger.LogInformation("Login for {UserId}", userId);
+```
+
+### E128167: Deferred-work comment with no work-item reference
+
+Flags a `//` or `/* */` comment that holds the word `TODO`, `FIXME`, or `HACK` in any case and carries no work-item reference. The word must stand alone, so `hackathon` is not reported. A reference counts when it matches the regex in the `e128_tracked_ref_pattern` option. The default pattern is `#\d+`, which accepts `AB#123` and `#123`. An invalid pattern falls back to the default. Sonar S1135 and S1134 report every marker, so keep them off when you turn this rule on. No code fix.
+
+```csharp
+// Before (warns)
+// TODO handle the empty case
+
+// After
+// TODO(AB#1234) handle the empty case
+```
+
+```ini
+# .editorconfig
+e128_tracked_ref_pattern = PROJ-\d+
+```
+
+### E128168: Skipped test with no work-item reference in its reason
+
+Flags an xUnit `[Fact]` or `[Theory]` whose `Skip` argument is a constant string that does not match `e128_tracked_ref_pattern`. An empty reason is reported. A `Skip` value that is not a constant is not reported. No code fix.
+
+```csharp
+// Before (warns)
+[Fact(Skip = "flaky on CI")]
+
+// After
+[Fact(Skip = "AB#4521 flaky on CI")]
+```
+
+### E128169: `[Obsolete]` with no message
+
+Flags `System.ObsoleteAttribute` with no positional argument, or with an empty or whitespace message. Named arguments such as `DiagnosticId` do not count as a message. No code fix.
+
+```csharp
+// Before (warns)
+[Obsolete]
+void Old() { }
+
+// After
+[Obsolete("Use New instead.")]
+void Old() { }
+```
+
+### E128170: `Split(...)[n]` index with no length guard
+
+Flags a constant index of 1 or more taken from the result of `string.Split`. The array comes from an inline call or from a local initialized by one. `Split` returns one element when the separator is absent, so the index throws `IndexOutOfRangeException` on unexpected input. Index 0 and a from-end index such as `[^1]` are safe and not reported. A local is not reported when the same member reads `Length` on it. The rule does not model control flow, so any such read counts as a guard. A `Split` method on another type is not reported. No code fix.
+
+```csharp
+// Before (warns)
+var value = line.Split(':')[1];
+
+// After
+var parts = line.Split(':');
+var value = parts.Length > 1 ? parts[1] : null;
+```
+
+### E128171: Committed `Assert.Fail` red-phase stub
+
+Flags an xUnit `[Fact]` or `[Theory]` whose only statement is a call to `Xunit.Assert.Fail`. The method can use a block body or an expression body. A `Fail` call after other assertions, and a `Fail` call in a method with no test attribute, are not reported. The stub marks unfinished work, so write the real assertions or remove the test before you commit. No code fix.
+
+```csharp
+// Before (warns)
+[Fact]
+public void ParsesEmptyInput() => Assert.Fail("RED");
+
+// After
+[Fact]
+public void ParsesEmptyInput() => Assert.Empty(Parser.Parse(string.Empty));
+```
+
+### E128172: `catch` swallows an assertion failure
+
+Flags a `catch` clause when its `try` block calls `Xunit.Assert` and the clause catches `Exception`, `XunitException`, or nothing in particular, and holds no `throw`. A failed assertion throws, so the catch turns a failing test into a passing one. A narrow exception type, such as `InvalidOperationException`, is not reported. No code fix.
+
+```csharp
+// Before (warns)
+try { Assert.Equal(1, value); }
+catch (Exception) { }
+
+// After
+Assert.Equal(1, value);
+```
+
+### E128173: `[SuppressMessage]` or `[ExcludeFromCodeCoverage]` with no justification
+
+Flags `System.Diagnostics.CodeAnalysis.SuppressMessageAttribute` and `ExcludeFromCodeCoverageAttribute` when the `Justification` argument is missing, empty, or blank. A reader needs the reason in the attribute to review or remove the suppression. A suppression still needs approval under the repository rules. No code fix.
+
+```csharp
+// Before (warns)
+[SuppressMessage("Design", "CA1000")]
+
+// After
+[SuppressMessage("Design", "CA1000", Justification = "The factory shape is part of the public API.")]
+```
+
+### E128174: Constructor past the `e128_max_ctor_dependencies` ceiling
+
+Flags a constructor, or a class or struct primary constructor, that takes more dependencies than the ceiling. A parameter counts as a dependency when its type is a class or an interface other than `string`. Values, enums, delegates, arrays, and `string` do not count. The default ceiling is 7. Set `e128_max_ctor_dependencies` in `.editorconfig` to change it. A record primary constructor is not checked. No code fix.
+
+```ini
+# .editorconfig
+e128_max_ctor_dependencies = 5
 ```
 
 ### E128076 &mdash; Materialize QuerySelectorAll result before iterating

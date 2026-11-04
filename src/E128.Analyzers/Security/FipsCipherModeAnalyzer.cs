@@ -26,12 +26,12 @@ public sealed class FipsCipherModeAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use an authenticated cipher mode",
-        "Cipher mode '{0}' is not permitted; use AES-GCM, or CBC with a random IV and a MAC",
+        "Cipher mode '{0}' is not permitted; use authenticated encryption such as AES-GCM",
         "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "ECB reveals plaintext structure. The OFB and CFB modes are not permitted by policy. Use " +
-        "authenticated encryption, or CBC with an explicit random IV and a MAC.");
+        "authenticated encryption such as AES-GCM.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

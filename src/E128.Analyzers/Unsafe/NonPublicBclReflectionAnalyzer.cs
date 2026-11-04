@@ -27,6 +27,20 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
         "A nonpublic base class library member is an implementation detail. A servicing release " +
         "can rename it, remove it, or change its shape. Use the public API instead.");
 
+    /// <summary>
+    ///     Public key tokens of framework assemblies: ECMA (b77a5c561934e089), Microsoft
+    ///     (b03f5f7f11d50a3a), Microsoft extensions (adb9793829ddae60), Microsoft product
+    ///     (31bf3856ad364e35), and the core library (7cec85d7bea7798e).
+    /// </summary>
+    private static readonly byte[][] FrameworkPublicKeyTokens =
+    [
+        [0xb7, 0x7a, 0x5c, 0x56, 0x19, 0x34, 0xe0, 0x89],
+        [0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a],
+        [0xad, 0xb9, 0x79, 0x38, 0x29, 0xdd, 0xae, 0x60],
+        [0x31, 0xbf, 0x38, 0x56, 0xad, 0x36, 0x4e, 0x35],
+        [0x7c, 0xec, 0x85, 0xd7, 0xbe, 0xa7, 0x79, 0x8e],
+    ];
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
     public override void Initialize(AnalysisContext context)
@@ -143,10 +157,31 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
 
     private static bool IsFrameworkType(ITypeSymbol type)
     {
-        var assemblyName = type.ContainingAssembly?.Identity.Name;
+        var identity = type.ContainingAssembly?.Identity;
 
-        return assemblyName is not null
-            && (assemblyName.StartsWith("System", StringComparison.Ordinal)
-                || assemblyName.StartsWith("Microsoft", StringComparison.Ordinal));
+        // The name prefix alone also selects a user assembly named System.Foo. The Microsoft public
+        // key token proves the assembly ships with the framework. An unsigned assembly has none.
+        return identity is not null
+            && (identity.Name.StartsWith("System", StringComparison.Ordinal)
+                || identity.Name.StartsWith("Microsoft", StringComparison.Ordinal))
+            && HasFrameworkPublicKeyToken(identity.PublicKeyToken);
+    }
+
+    private static bool HasFrameworkPublicKeyToken(ImmutableArray<byte> token)
+    {
+        if (token.IsDefaultOrEmpty)
+        {
+            return false;
+        }
+
+        foreach (var known in FrameworkPublicKeyTokens)
+        {
+            if (token.SequenceEqual(known))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

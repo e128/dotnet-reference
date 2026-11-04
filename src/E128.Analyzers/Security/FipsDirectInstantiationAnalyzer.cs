@@ -67,7 +67,8 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
         }
 
         // E128071 already blocks these types, so factory advice would contradict it.
-        if (FipsSymbolHelpers.IsCryptographyType(type, FipsForbiddenTypes.All))
+        if (FipsSymbolHelpers.IsCryptographyType(type, FipsForbiddenTypes.All) ||
+            FipsTypeClassifier.GetVerdict(context.Compilation, type) != TypeVerdict.Allowed)
         {
             return;
         }
