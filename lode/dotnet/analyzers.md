@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-11-04T01:14:53Z*
+*Updated: 2026-11-04T02:41:50Z*
 
 ## Strategy: Deny by Default
 
@@ -183,6 +183,8 @@ E128153 covers `list.RemoveAt(0)` in the same analyzer and with the same shiftin
 ### E128152: Complexity ceiling
 
 Reports a loop whose varying nesting depth, or a recursion whose argument shrinks by a constant step, passes the `e128_max_complexity` tier. Tiers run `linear`, `linearithmic`, `quadratic`, `cubic`, `exponential`. Constant-trip loops do not raise the depth, so `for (var i = 0; i < 4; i++)` inside a loop stays linear. Recursion that halves its argument stays silent. A cache counts only when the body reads and writes the same field or dictionary local.
+
+Two code actions serve this rule. `ComplexityCeilingSuppressionCodeFixProvider` wraps the reported loop, or the reported recursive method, in a `#pragma warning disable E128152` pair carrying a `// Justification:` comment that E128047 accepts. `ComplexityCeilingMembershipScanCodeFixProvider` rewrites a nested equality scan as a set lookup. It offers the rewrite only when the outer loop is top level and sits in a statement list, the inner body is one `==` guard that returns on a match without reading the inner variable, the elements compare by value without a floating point type, and the method never mentions the inner collection outside that loop.
 
 ### E128070: Pool Rent() capacity guard
 
