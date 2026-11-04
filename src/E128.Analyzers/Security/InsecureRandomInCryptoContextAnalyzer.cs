@@ -128,18 +128,8 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Returns true when the type is <c lang="csharp">System.Random</c> or derives from it.</summary>
-    private static bool IsRandomType(ITypeSymbol? type)
-    {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (FipsSymbolHelpers.IsType(current, "Random", "System"))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool IsRandomType(ITypeSymbol? type) =>
+        FipsSymbolHelpers.DerivesFromType(type, "Random", "System");
 
     private static void AnalyzePropertyReference(OperationAnalysisContext context, CryptographyUse cryptography)
     {

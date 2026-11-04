@@ -67,11 +67,31 @@ internal static class FipsTypeClassifier
         return verdict;
     }
 
+    /// <summary>
+    ///     Returns true only for a type that a framework reference defines. A vendored assembly that declares a
+    ///     System namespace does not qualify.
+    /// </summary>
+    private static bool IsBclType(ITypeSymbol type)
+    {
+        if (!FipsSymbolHelpers.IsBclType(type) || type.ContainingAssembly is not { } assembly)
+        {
+            return false;
+        }
+
+        var name = assembly.Name;
+
+        return string.Equals(name, "mscorlib", StringComparison.Ordinal) ||
+            string.Equals(name, "netstandard", StringComparison.Ordinal) ||
+            string.Equals(name, "System", StringComparison.Ordinal) ||
+            name.StartsWith("System.", StringComparison.Ordinal) ||
+            name.StartsWith("Microsoft.", StringComparison.Ordinal);
+    }
+
     private static TypeVerdict Classify(ITypeSymbol type)
     {
         // A framework type outside System.Security.Cryptography is never a forbidden algorithm, so skip the
         // string scans.
-        if (FipsSymbolHelpers.IsBclType(type) && !FipsSymbolHelpers.IsInCryptographyNamespaceTree(type))
+        if (IsBclType(type) && !FipsSymbolHelpers.IsInCryptographyNamespaceTree(type))
         {
             return TypeVerdict.Allowed;
         }

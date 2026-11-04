@@ -47,9 +47,15 @@ elif [[ ${#CLASSES[@]} -gt 0 ]]; then
         fi
         MTP_ARGS+=(--filter-class "$cls")
     done
-else
-    # Default: CI category only
+elif [[ -n "$TRAIT" ]]; then
+    # Default: CI category only. An empty --trait supplies no filter.
     MTP_ARGS+=(--filter-trait "$TRAIT")
+fi
+
+# A filter exists only when a class or a non-empty trait narrows the run.
+FILTERED=false
+if [[ "$ALL" != true && ( ${#CLASSES[@]} -gt 0 || -n "$TRAIT" ) ]]; then
+    FILTERED=true
 fi
 
 if [[ ${#MTP_ARGS[@]} -gt 0 ]]; then
@@ -89,15 +95,16 @@ total=${total:-0}; failed=${failed:-0}; succeeded=${succeeded:-0}; skipped=${ski
 # A filter that matches nothing is a typo, not a pass. MTP needs the fully
 # qualified class name, so a mistyped class would otherwise exit 0. With --all
 # no filter exists, so a zero total points at the summary parse, not a typo.
+# The same holds for an empty --trait, so the message keys on FILTERED.
 if [[ $total -eq 0 && $REAL_FAILED -eq 0 ]]; then
     if [[ "$VERBOSE" == true ]]; then
-        if [[ "$ALL" == true ]]; then
-            err "No test summary parsed. The MTP output format may have changed."
-        else
+        if [[ "$FILTERED" == true ]]; then
             err "No test matched the filter: ${CLASSES[*]:-trait $TRAIT}"
+        else
+            err "No test summary parsed. The MTP output format may have changed."
         fi
     else
-        json_object status=no-match total=0 passed=0 failed=0 skipped=0
+        json_object status="$([[ "$FILTERED" == true ]] && echo no-match || echo no-summary)" total=0 passed=0 failed=0 skipped=0
     fi
     exit 3
 fi

@@ -34,8 +34,6 @@ internal static class FipsSymbolHelpers
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IFieldSymbol, bool>> AssignedInConstructorCache = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<ILocalSymbol, bool>> NeverReassignedCache = new();
-
     /// <summary>
     ///     Returns the fully qualified type name without <c lang="csharp">global::</c>. Call this only when reporting,
     ///     because formatting allocates.
@@ -109,17 +107,25 @@ internal static class FipsSymbolHelpers
     }
 
     /// <summary>Returns true when the type, or one of its base types, is the named cryptography type.</summary>
-    public static bool DerivesFromCryptographyType(ITypeSymbol? type, string name)
+    public static bool DerivesFromCryptographyType(ITypeSymbol? type, string name) =>
+        DerivesFromType(type, name, Cryptography);
+
+    /// <summary>Returns true when the type, or one of its base types, is the named top-level type.</summary>
+    public static bool DerivesFromType(ITypeSymbol? type, string name, string dottedNamespace) =>
+        FindBaseType(type, name, dottedNamespace) is not null;
+
+    /// <summary>Returns the type or base type that is the named top-level type, or null.</summary>
+    public static ITypeSymbol? FindBaseType(ITypeSymbol? type, string name, string dottedNamespace)
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
-            if (IsCryptographyType(current, name))
+            if (IsType(current, name, dottedNamespace))
             {
-                return true;
+                return current;
             }
         }
 
-        return false;
+        return null;
     }
 
     /// <summary>
@@ -561,7 +567,7 @@ internal static class FipsSymbolHelpers
 
         if (operation is ICompoundAssignmentOperation compound)
         {
-            check(state, compound.Target, compound, compound.Syntax);
+            check(state, compound.Target, compound.Value, compound.Syntax);
 
             return;
         }
@@ -1159,27 +1165,8 @@ internal static class FipsSymbolHelpers
     ///     Returns true when no statement in the enclosing body assigns the local, passes it by <c lang="csharp">ref</c> or
     ///     <c lang="csharp">out</c>, or increments it.
     /// </summary>
-    private static bool IsNeverReassigned(ILocalReferenceOperation reference)
-    {
-        if (reference.SemanticModel is not { } model)
-        {
-            return ComputeIsNeverReassigned(reference);
-        }
-
-        var cache = NeverReassignedCache.GetValue(
-            model.Compilation,
-            static _ => new ConcurrentDictionary<ILocalSymbol, bool>(SymbolEqualityComparer.Default));
-
-        if (cache.TryGetValue(reference.Local, out var neverReassigned))
-        {
-            return neverReassigned;
-        }
-
-        neverReassigned = ComputeIsNeverReassigned(reference);
-        cache.TryAdd(reference.Local, neverReassigned);
-
-        return neverReassigned;
-    }
+    private static bool IsNeverReassigned(ILocalReferenceOperation reference) =>
+        ComputeIsNeverReassigned(reference);
 
     private static bool ComputeIsNeverReassigned(ILocalReferenceOperation reference)
     {

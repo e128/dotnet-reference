@@ -1,0 +1,856 @@
+diff --git a/tests/E128.Analyzers.Tests/FipsAesGcmTagSizeAnalyzerTests.cs b/tests/E128.Analyzers.Tests/FipsAesGcmTagSizeAnalyzerTests.cs
+index da29862..870edd3 100644
+--- a/tests/E128.Analyzers.Tests/FipsAesGcmTagSizeAnalyzerTests.cs
++++ b/tests/E128.Analyzers.Tests/FipsAesGcmTagSizeAnalyzerTests.cs
+@@ -82,4 +82,108 @@ public sealed class FipsAesGcmTagSizeAnalyzerTests
+                            }
+                            """);
+     }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ShortTagDecrypt_Reports_E128149()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(AesGcm aes)
++                               {
++                                   {|E128149:aes.Decrypt(new byte[12], new byte[1], new byte[12], new byte[1])|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task TagSizeInUnreassignedLocal_Reports_E128149()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var tagSize = 12;
++                                   using var aes = {|E128149:new AesGcm(new byte[16], tagSize)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task TagSizeInReadonlyField_Reports_E128149()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               private readonly int tagSize = 12;
++
++                               void M()
++                               {
++                                   using var aes = {|E128149:new AesGcm(new byte[16], tagSize)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task TagBufferInUnreassignedLocal_Reports_E128149()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(AesGcm aes)
++                               {
++                                   var tag = new byte[12];
++                                   {|E128149:aes.Encrypt(new byte[12], new byte[1], new byte[1], tag)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task TagBufferInReadonlyField_Reports_E128149()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               private readonly byte[] tag = new byte[12];
++
++                               void M(AesGcm aes)
++                               {
++                                   {|E128149:aes.Encrypt(new byte[12], new byte[1], new byte[1], tag)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task TagSizeInReassignedLocal_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var tagSize = 12;
++                                   tagSize = 16;
++                                   using var aes = new AesGcm(new byte[16], tagSize);
++                               }
++                           }
++                           """);
++    }
+ }
+diff --git a/tests/E128.Analyzers.Tests/FipsDirectInstantiationAnalyzerTests.cs b/tests/E128.Analyzers.Tests/FipsDirectInstantiationAnalyzerTests.cs
+index 2387919..7139cc4 100644
+--- a/tests/E128.Analyzers.Tests/FipsDirectInstantiationAnalyzerTests.cs
++++ b/tests/E128.Analyzers.Tests/FipsDirectInstantiationAnalyzerTests.cs
+@@ -89,4 +89,91 @@ public sealed class FipsDirectInstantiationAnalyzerTests
+                            }
+                            """);
+     }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task CngType_Reports_E128142()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var aes = {|E128142:new AesCng()|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task CngConstructorWithCngKey_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(CngKey key)
++                               {
++                                   using var rsa = new RSACng(key);
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task CngConstructorWithCngProvider_NoReport()
++    {
++        return VerifyAsync("""
++                           namespace System.Security.Cryptography;
++                           class CustomCng
++                           {
++                               public CustomCng(CngProvider provider)
++                               {
++                               }
++                           }
++
++                           class C
++                           {
++                               void M(CngProvider provider)
++                               {
++                                   var c = new CustomCng(provider);
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task RijndaelManaged_Reports_E128142()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var r = {|E128142:new RijndaelManaged()|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task TypeBlockedByE128071_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var h = new SHA1Managed();
++                               }
++                           }
++                           """);
++    }
+ }
+diff --git a/tests/E128.Analyzers.Tests/FipsHmacKeyLengthAnalyzerTests.cs b/tests/E128.Analyzers.Tests/FipsHmacKeyLengthAnalyzerTests.cs
+index dc05d97..9e981f1 100644
+--- a/tests/E128.Analyzers.Tests/FipsHmacKeyLengthAnalyzerTests.cs
++++ b/tests/E128.Analyzers.Tests/FipsHmacKeyLengthAnalyzerTests.cs
+@@ -132,4 +132,119 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
+                            }
+                            """);
+     }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ShortSha384Key_Reports_E128151()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var hmac = {|E128151:new HMACSHA384(new byte[32])|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task FullSha384Key_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var hmac = new HMACSHA384(new byte[48]);
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ShortTryHashData_Reports_E128151()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(byte[] destination)
++                               {
++                                   {|E128151:HMACSHA256.TryHashData(new byte[16], new byte[1], destination, out var written)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ShortHashDataAsync_Reports_E128151()
++    {
++        return VerifyAsync("""
++                           using System.IO;
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(Stream source)
++                               {
++                                   var mac = {|E128151:HMACSHA256.HashDataAsync(new byte[16], source)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ShortKeyPropertyAssignment_Reports_E128151()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var hmac = new HMACSHA256();
++                                   {|E128151:hmac.Key = new byte[16]|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task FullKeyPropertyAssignment_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var hmac = new HMACSHA256();
++                                   hmac.Key = new byte[32];
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task NonConstantKeyLength_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(byte[] key)
++                               {
++                                   using var hmac = new HMACSHA256(key);
++                               }
++                           }
++                           """);
++    }
+ }
+diff --git a/tests/E128.Analyzers.Tests/FipsPbkdfIterationAnalyzerTests.cs b/tests/E128.Analyzers.Tests/FipsPbkdfIterationAnalyzerTests.cs
+index 1bf6660..62f3eea 100644
+--- a/tests/E128.Analyzers.Tests/FipsPbkdfIterationAnalyzerTests.cs
++++ b/tests/E128.Analyzers.Tests/FipsPbkdfIterationAnalyzerTests.cs
+@@ -1,5 +1,6 @@
+ using System.Threading.Tasks;
+ using E128.Analyzers.Security;
++using Microsoft.CodeAnalysis;
+ using Microsoft.CodeAnalysis.CSharp.Testing;
+ using Microsoft.CodeAnalysis.Testing;
+ using Xunit;
+@@ -98,4 +99,73 @@ public sealed class FipsPbkdfIterationAnalyzerTests
+                            }
+                            """);
+     }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task DefaultIterationOverload_Reports_E128145()
++    {
++        return VerifyAsync(
++            """
++            using System.Security.Cryptography;
++            class C
++            {
++                void M()
++                {
++                    using var k = {|#0:new Rfc2898DeriveBytes("pw", new byte[16])|};
++                }
++            }
++            """,
++            new DiagnosticResult("E128145", DiagnosticSeverity.Error).WithLocation(0),
++            new DiagnosticResult("E128145", DiagnosticSeverity.Error).WithLocation(0));
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task UnreadableIterationCount_Reports_E128145()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(int iterations)
++                               {
++                                   using var k = {|E128145:new Rfc2898DeriveBytes("pw", new byte[16], iterations, HashAlgorithmName.SHA256)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task IterationCountAssignment_ReplacesDefaultCountReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var k = {|E128145:new Rfc2898DeriveBytes("pw", new byte[16])|};
++                                   k.IterationCount = 600_000;
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task LowIterationCountAssignment_Reports_E128145()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var k = {|E128145:new Rfc2898DeriveBytes("pw", new byte[16])|};
++                                   {|E128145:k.IterationCount = 1000|};
++                               }
++                           }
++                           """);
++    }
+ }
+diff --git a/tests/E128.Analyzers.Tests/FipsRsaKeySizeAnalyzerTests.cs b/tests/E128.Analyzers.Tests/FipsRsaKeySizeAnalyzerTests.cs
+index a86068a..00ba3b9 100644
+--- a/tests/E128.Analyzers.Tests/FipsRsaKeySizeAnalyzerTests.cs
++++ b/tests/E128.Analyzers.Tests/FipsRsaKeySizeAnalyzerTests.cs
+@@ -146,4 +146,213 @@ public sealed class FipsRsaKeySizeAnalyzerTests
+                            }
+                            """);
+     }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ShortKeySizeAssignment_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(RSA rsa)
++                               {
++                                   {|E128143:rsa.KeySize = 2048|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ShortEllipticCurveKeySize_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var key = {|E128143:new ECDsaCng(256)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ApprovedP521Curve_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var key = ECDsa.Create(ECCurve.NamedCurves.nistP521);
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task RsaCreatedByName_ReportsUnverifiableKeySize_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var rsa = {|E128143:CryptoConfig.CreateFromName("RSA")|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task RsaImportedFromParameters_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(RSA rsa, RSAParameters parameters)
++                               {
++                                   {|E128143:rsa.ImportParameters(parameters)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task RsaImportedFromHandle_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System;
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(IntPtr handle)
++                               {
++                                   using var rsa = {|E128143:new RSAOpenSsl(handle)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task RsaImportedFromBlob_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(RSA rsa, byte[] blob)
++                               {
++                                   {|E128143:rsa.ImportRSAPrivateKey(blob, out _)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task RsaImportedFromPem_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M(RSA rsa, string pem)
++                               {
++                                   {|E128143:rsa.ImportFromPem(pem)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task RsaFromCertificate_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography.X509Certificates;
++                           class C
++                           {
++                               void M(X509Certificate2 certificate)
++                               {
++                                   var rsa = {|E128143:certificate.GetRSAPublicKey()|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task CurveFromFriendlyName_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var key = {|E128143:ECDsa.Create(ECCurve.CreateFromFriendlyName("nistP256"))|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task CurveFromObjectIdentifier_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var key = {|E128143:ECDsa.Create(ECCurve.CreateFromOid(new Oid("1.2.840.10045.3.1.7")))|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task CurveInStructInitializer_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var parameters = new ECParameters { {|E128143:Curve = ECCurve.NamedCurves.nistP256|} };
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ConstructorWithoutCurve_Reports_E128143()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   using var key = {|E128143:new ECDsaCng()|};
++                               }
++                           }
++                           """);
++    }
+ }
+diff --git a/tests/E128.Analyzers.Tests/FipsSha3AnalyzerTests.cs b/tests/E128.Analyzers.Tests/FipsSha3AnalyzerTests.cs
+index 6b2132a..30ebffc 100644
+--- a/tests/E128.Analyzers.Tests/FipsSha3AnalyzerTests.cs
++++ b/tests/E128.Analyzers.Tests/FipsSha3AnalyzerTests.cs
+@@ -157,4 +157,120 @@ public sealed class FipsSha3AnalyzerTests
+                            }
+                            """);
+     }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ShakeType_Reports_E128150()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var xof = {|E128150:Shake128.HashData(new byte[1], 16)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task HmacSha3Type_Reports_E128150()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var mac = {|E128150:HMACSHA3_256.HashData(new byte[32], new byte[1])|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task KmacType_Reports_E128150()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var mac = {|E128150:Kmac128.HashData(new byte[32], new byte[1], 16)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task Sha3HashNameInLocal_Reports_E128150()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               void Use(HashAlgorithmName name)
++                               {
++                               }
++
++                               void M()
++                               {
++                                   var name = HashAlgorithmName.SHA3_256;
++                                   {|E128150:Use(name)|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task Sha3HashNameAssignedToField_Reports_E128150()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               private HashAlgorithmName name;
++
++                               void M()
++                               {
++                                   {|E128150:name = HashAlgorithmName.SHA3_384|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task Sha3HashNameInMutableFieldInitializer_Reports_E128150()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               private HashAlgorithmName name = {|E128150:HashAlgorithmName.SHA3_512|};
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task IsSupportedRead_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Cryptography;
++                           class C
++                           {
++                               bool M()
++                               {
++                                   return SHA3_256.IsSupported;
++                               }
++                           }
++                           """);
++    }
+ }
+diff --git a/tests/E128.Analyzers.Tests/FipsTlsVersionAnalyzerTests.cs b/tests/E128.Analyzers.Tests/FipsTlsVersionAnalyzerTests.cs
+index d1c1a96..e187412 100644
+--- a/tests/E128.Analyzers.Tests/FipsTlsVersionAnalyzerTests.cs
++++ b/tests/E128.Analyzers.Tests/FipsTlsVersionAnalyzerTests.cs
+@@ -98,4 +98,90 @@ public sealed class FipsTlsVersionAnalyzerTests
+                            }
+                            """);
+     }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task WeakSslProtocolsMembers_Report_E128146()
++    {
++        return VerifyAsync("""
++                           using System.Security.Authentication;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var ssl2 = {|E128146:SslProtocols.Ssl2|};
++                                   var ssl3 = {|E128146:SslProtocols.Ssl3|};
++                                   var tls11 = {|E128146:SslProtocols.Tls11|};
++                                   var other = {|E128146:SslProtocols.Default|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task WeakSecurityProtocolTypeMembers_Report_E128146()
++    {
++        return VerifyAsync("""
++                           using System.Net;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var ssl3 = {|E128146:SecurityProtocolType.Ssl3|};
++                                   var tls = {|E128146:SecurityProtocolType.Tls|};
++                                   var tls11 = {|E128146:SecurityProtocolType.Tls11|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ComplementOfAllowedProtocol_Reports_E128146()
++    {
++        return VerifyAsync("""
++                           using System.Security.Authentication;
++                           class C
++                           {
++                               void M()
++                               {
++                                   var all = {|E128146:~SslProtocols.None|};
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task ProtocolComparison_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Authentication;
++                           class C
++                           {
++                               bool M(SslProtocols protocols)
++                               {
++                                   return protocols == SslProtocols.Tls11;
++                               }
++                           }
++                           """);
++    }
++
++    [Fact]
++    [Trait("Category", "CI")]
++    public Task MaskRemoval_NoReport()
++    {
++        return VerifyAsync("""
++                           using System.Security.Authentication;
++                           class C
++                           {
++                               SslProtocols M(SslProtocols protocols)
++                               {
++                                   protocols &= ~SslProtocols.Tls11;
++                                   return protocols;
++                               }
++                           }
++                           """);
++    }
+ }

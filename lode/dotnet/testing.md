@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-11-01T20:55:29Z*
+*Updated: 2026-11-04T21:23:17Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -72,7 +72,9 @@ The `--` separator passes arguments to MTP. `--filter` (VSTest syntax) does not 
 `--filter-class` matches the fully qualified class name. A short name matches
 nothing. `scripts/test.sh` expands a name without a dot to a suffix wildcard,
 so `test.sh MyTests` reaches `*MyTests`. A name that matches no test returns
-`status: "no-match"` and exit code 3, so a typo cannot pass as a green run.
+`status: "no-match"` and exit code 3, so a typo cannot pass as a green run. A run with no filter (`--all` or an
+empty `--trait`) that parses zero tests returns `status: "no-summary"` and exit
+code 3.
 
 ## Test Categories
 

@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-11-03T03:14:50Z*
+*Updated: 2026-11-04T21:29:18Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 The emitted text rules live in [code-fix-output.md](code-fix-output.md). The
@@ -189,6 +189,15 @@ later call. E128017 did that, and the reference pass matched nothing.
 Rewrite the member name, not the whole member access. `Encoding.Default` may
 carry a qualified receiver such as `System.Text.Encoding`. E128006 swaps
 `Name` only.
+
+## Redundant Fix-All Overrides
+
+`E128CodeFixProviderBase.GetFixAllProvider` already returns
+`WellKnownFixAllProviders.BatchFixer`. Of the 47 fixer files that mention
+`GetFixAllProvider`, 37 repeat that exact body. The review backlog counted these
+copies as the duplicate fixer implementations. The count of 250 in that note did
+not reproduce. Remove a copy when you touch its file. Keep an override that
+returns a different provider or null.
 
 ## Related
 

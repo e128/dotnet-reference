@@ -38,6 +38,26 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task VendoredCipherInSystemNamespace_Reports_E128148()
+    {
+        return VerifyAsync("""
+                           namespace System.Vendor;
+                           class BlowfishEngine
+                           {
+                           }
+
+                           class C
+                           {
+                               void M()
+                               {
+                                   var cipher = {|E128148:new BlowfishEngine()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task BlowfishCreation_Reports_E128148()
     {
         return VerifyAsync("""

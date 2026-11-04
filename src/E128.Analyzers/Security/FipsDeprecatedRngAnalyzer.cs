@@ -44,23 +44,10 @@ public sealed class FipsDeprecatedRngAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeObjectCreation(OperationAnalysisContext context)
     {
         var creation = (IObjectCreationOperation)context.Operation;
-        if (FindCryptographyBase(creation.Type, "RNGCryptoServiceProvider") is { } rng && IsObsolete(rng))
+        if (FipsSymbolHelpers.FindBaseType(creation.Type, "RNGCryptoServiceProvider", FipsSymbolHelpers.Cryptography) is { } rng && IsObsolete(rng))
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, creation.Syntax.GetLocation()));
         }
-    }
-
-    private static ITypeSymbol? FindCryptographyBase(ITypeSymbol? type, string name)
-    {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (FipsSymbolHelpers.IsCryptographyType(current, name))
-            {
-                return current;
-            }
-        }
-
-        return null;
     }
 
     private static bool IsObsolete(ITypeSymbol type)

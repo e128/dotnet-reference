@@ -38,7 +38,7 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
-        var shared = root.FindNode(diagnostic.Location.SourceSpan);
+        var shared = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 
         // Random.Shared.Next(...): the diagnostic covers 'Random.Shared'.
         if (shared is not MemberAccessExpressionSyntax

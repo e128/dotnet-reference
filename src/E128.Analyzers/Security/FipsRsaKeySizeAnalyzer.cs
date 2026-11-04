@@ -100,7 +100,7 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         }
 
         // Cryptographic key creation is reported in generated code too, because a generated key setup is a real
-        // policy defect. FIPS0003 parity requires this opt-in.
+        // policy defect. The rule therefore analyzes and reports in generated code.
         context.ConfigureGeneratedCodeAnalysis(
             GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
