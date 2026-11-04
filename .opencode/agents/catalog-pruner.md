@@ -54,7 +54,7 @@ Also check: if Item A's description is a subset of B's → MERGE candidate.
 Items with zero trigger phrases → DORMANT (unreachable without manual typing).
 
 Never retire infrastructure agents (build-validator, smart-commit, lode-sync,
-knowledge-consolidator, weekly-learner) regardless of usage.
+weekly-learner) regardless of usage.
 
 ## Phase 3: Retirement Proposal
 

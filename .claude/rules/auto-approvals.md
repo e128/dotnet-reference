@@ -51,6 +51,10 @@ These actions reach outside the working copy or rewrite local history.
 `git push --force` also matches the `git push` ask rule. The deny rule wins on
 both harnesses, so a force push never reaches a prompt.
 
+**Exception.** The user who invokes `/yeet` authorizes one `git push` and one
+`gh pr create` for the current branch. The skill runs both without a prompt.
+This exception never covers a force push or any other ask-tier action.
+
 ## Auto Tier
 
 Apply these changes silently. They never require user confirmation:
@@ -84,4 +88,4 @@ deterministic script routing at execution time. The plugin
 `.opencode/plugins/e128-guardrails/index.ts` runs the same scripts on
 opencode, so both harnesses share one decision. The CI job named `harness`
 fails when the plugin names a hook script that does not exist. See
-[lode/infrastructure/opencode-guardrails.md](../../../lode/infrastructure/opencode-guardrails.md).
+[lode/infrastructure/opencode-guardrails.md](../../lode/infrastructure/opencode-guardrails.md).

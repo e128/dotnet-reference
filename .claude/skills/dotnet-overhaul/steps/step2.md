@@ -1,6 +1,6 @@
 # Step 2: Solution Infrastructure
 
-**Mandatory: executes immediately. No findings table, no approval gate.**
+**Mandatory: executes immediately. No findings table. Ask before any severity downgrade or suppression.**
 
 After all sub-steps: report what was done (or that everything was already in place), confirm build
 and tests pass, and proceed to Step 3.
@@ -121,8 +121,9 @@ Glob for `.editorconfig`.
   3. Flag any `dotnet_diagnostic.CA*.severity = none` that suppress security-critical rules (CA2300-CA2362, CA3001-CA3012, CA5350-CA5405) for review
 
 **Mandatory global `severity = none` entries.** Whenever the root `.globalconfig` or
-`.editorconfig` is created OR audited, ensure these rules are explicitly set to `none`
-(per `conventions.md` §Global Suppressions). Add any missing entries:
+`.editorconfig` is created OR audited, list any of these rules that are missing
+(per `conventions.md` §Global Suppressions). Ask the user before you add them,
+because a severity downgrade needs approval:
 
 ```ini
 dotnet_diagnostic.s4055.severity = none     # Literals as localized parameters — no L10N
@@ -131,7 +132,7 @@ dotnet_diagnostic.vsthrd111.severity = none # Add ConfigureAwait — VS extensio
 
 **After changes:**
 1. `scripts/build.sh`: expect new errors from previously unenforced rules. These are pre-existing issues, not regressions
-2. If new errors: **fix inline first**, these are real pre-existing issues now surfaced. If <= 10 errors and each is fixable in under 2 minutes, fix them now. Only fall back to temporary suppressions if >10 errors or if a fix requires architectural decisions. Track each suppression as a finding to resolve in Steps 3-8
+2. If new errors: **fix inline first**, these are real pre-existing issues now surfaced. If <= 10 errors and each is fixable in under 2 minutes, fix them now. When more than 10 errors exist or a fix needs an architectural decision, ask the user before you add any temporary suppression. Track each approved suppression as a finding to resolve in Steps 3-8
 
 **Child `.editorconfig` files** (e.g., in test projects) that suppress CA1707, CA1515, etc. for test
 conventions are expected: do not remove them.

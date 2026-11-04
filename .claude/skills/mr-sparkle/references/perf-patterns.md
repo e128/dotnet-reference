@@ -1,6 +1,6 @@
 # Performance Anti-Pattern Catalog (E128-Gap)
 
-Reference for the performance-focused review agent and the `--perf` flag on `/mr-sparkle`. ~15 patterns NOT enforced by E128 build-time analyzers.
+Reference for the `--perf` flag on `/mr-sparkle`. ~15 patterns NOT enforced by E128 build-time analyzers.
 
 **E128-covered patterns are excluded**: patterns already flagged by the repo's E128 build-time performance analyzers do not belong here. Skip them silently.
 
@@ -41,5 +41,5 @@ Reference for the performance-focused review agent and the `--perf` flag on `/mr
 - **Cold paths.** Do not flag patterns in startup code, CLI argument parsing, or error handlers. Focus on request-processing and batch-processing paths.
 - **M1 capacity hint.** Only a finding when the surrounding method knows the size (loop bound, `.Count`, parameter). Grep alone cannot determine this, manual review required.
 - **M4 IGrouping.Count() exclusion.** LINQ `GroupBy` materializes groups eagerly into `Grouping<K,V>` which implements `ICollection<T>`. `.Count()` on `IGrouping` resolves to O(1) via fast-path, never a performance anti-pattern. Skip all `.Count()` on GroupBy results.
-- **E128 dedup.** If a finding overlaps with an E128 rule (see exclusion list), skip it silently.
-- **Agent modes.** The performance-focused review agent supports `--high` (HIGH-only, ~10 turns), `--medium` (MEDIUM-only, ~20 turns), and full scan (~30 turns). For 300+ file scopes, prefer a split mode over full scan.
+- **E128 dedup.** If a finding overlaps with an E128 rule, skip it silently.
+- **Large scopes.** For 300+ file scopes, split the file list across reviewers.

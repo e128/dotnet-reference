@@ -48,7 +48,7 @@ Style: present tense, concrete code examples for patterns, under 5 lines per cap
 ### 6. Timestamp the file
 
 ```bash
-scripts/ts.sh lode/path/to/file.md
+scripts/lode-ts.sh lode/path/to/file.md
 ```
 
 ### 7. Report

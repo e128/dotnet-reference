@@ -1,6 +1,6 @@
 ---
 name: tech-writing
-description: Write and review prose (docs, READMEs, PR bodies, commit bodies, release notes, error messages, code comments, runbooks, never code) to Google Developer Style plus house overrides and the repo writing rules. Use before writing or editing any non-code text. Triggers include "write docs", "write a README", "PR description", "make this clearer", "tighten this", "edit this prose", "tech writing", and "review my writing".
+description: Write and review prose (docs, READMEs, PR bodies, commit bodies, release notes, error messages, code comments, runbooks, never code) to Google Developer Style plus house overrides and the repo writing rules. Use before writing or editing any non-code text. Triggers on requests to write, edit, tighten, or review any non-code prose.
 ---
 
 # tech-writing
@@ -31,7 +31,7 @@ Order of authority:
 3. Put the condition or goal before the instruction.
 4. Put the key point first. Cover one idea per paragraph.
 5. Use plain words and short sentences. Keep articles.
-6. Use "must" for a requirement, "can" for an option, "we recommend" for advice.
+6. Use "must" for a requirement and "can" for an option. For advice, write "Use X when..." or "X is the better choice when...".
 7. Use the serial comma.
 8. Write link text that stands alone. Never "click here" or a bare URL.
 9. Make examples safe: reserved example domains, `user@example.com`, no real people.

@@ -8,12 +8,12 @@ description: >
   automated. Produces actionable recommendations for new skills, agent improvements,
   and configuration updates. Repo-agnostic, works in any project with .claude/.
   For quarterly/comprehensive reviews, invoke with --days 90.
+  Three modes: a 7-day pattern digest (default), a live current-session pass
+  (--current), and a 48h token-waste pass that creates scored plans (--tokens).
   Triggers on: weekly learning, session analysis, pattern analysis, what am I repeating,
-  workflow audit, efficiency audit, learn from sessions, session audit, quarterly review,
-  what should become a skill, what should be an agent,
-  analyze this session.
-  Not for: single-session debugging, real-time workflow monitoring, manual code review,
-  or token plan creation (use token-optimizer).
+  workflow audit, efficiency audit, learn from sessions, quarterly review,
+  what should become a skill, analyze this session, token plan, token waste.
+  Not for: single-session debugging, real-time workflow monitoring, or manual code review.
 tools: Bash, Glob, Grep, Read, Write, Agent
 maxTurns: 25
 memory: project
@@ -28,6 +28,7 @@ workflow itself better over time.
 **Default window: 7 days.** All session queries use `--days 7`. Do NOT override this
 to a larger value unless the user explicitly requests a wider window (e.g. `--days 14`).
 The 7-day window produces a focused, actionable digest, wider windows dilute signal.
+Token mode is the one exception: it uses a 2-day window.
 
 ## Phase 0+1+1.5: Read Memory, Gather Data, Version Check (parallel)
 
@@ -43,16 +44,13 @@ Issue all of the following in the same turn, they are independent reads:
 
 **Claude Code version**, Run `claude --version` and compare against `last_claude_version` in memory. **If the version is unchanged, skip the changelog entirely.** Only when the version differs, run `claude changelog 2>/dev/null | head -80`. If the version changed, scan the changelog for new or changed capabilities that would affect tool types, hook events, agent/skill frontmatter, CLI flags, or permission/settings behavior. Cross-reference against current friction points (Phase 2.2), dead skills/agents, configuration rules, and settings.json patterns. Flag findings as **Version Upgrade Opportunity** in Phase 3 recommendations.
 
-## Session Analysis Mode (`--current` or "analyze this session")
+## Modes
 
-When triggered by "analyze this session":
+Pick the mode from the prompt.
 
-1. Use `--sessions 1` for all `session-health.sh` calls (current session only)
-2. Cross-reference tool counts against `.claude/rules/token-efficiency.md`
-3. Skip plan creation: return a findings table with recommendations
-4. Suggest improvements to skills, agents, and scripts, not just new scripts
-
-This is a lightweight pass (~10 turns). For scored plan creation, use token-optimizer instead.
+- **Digest** (default, or "weekly"): run every phase below over a 7-day window.
+- **Current session** (`--current`, "analyze this session"): use `--sessions 1` for every `session-health.sh` call. Cross-reference tool counts against `.claude/rules/token-efficiency.md`. Skip plan creation and return a findings table with recommendations for skills, agents and scripts: batching, inline questions that should use AskUserQuestion, read-before-edit violations, agent spawns that a direct tool call would replace, and Bash calls that could combine.
+- **Tokens** (`--tokens`, "token plan", "token waste"): run the Token Mode section after Phase 1 and skip Phases 2 to 4.5.
 
 ## Phase 2: Pattern Analysis
 
@@ -130,6 +128,23 @@ Recommendations that do NOT get plans, apply inline:
 - Anything already covered by an existing plan in `plans/`
 
 
+## Token Mode
+
+Find scriptable ways to cut token use by creating or editing `scripts/*.sh`. Use a 2-day window (`--days 2`).
+
+1. Gather: `scripts/session-health.sh stats --days 2 --json`, `scripts/session-mine.sh all --days 2 --json`, `scripts/session-health.sh tool-counts --days 2 --json`, `scripts/session-health.sh bash-commands --days 2 --json`, `scripts/violation-scan.sh --json`. Read `.claude/rules/token-efficiency.md`: a violation of a documented rule scores higher than a novel pattern.
+2. Group findings as rule violations (from `violation-scan.sh`), error-causing commands, redundant tool sequences (repeated Read calls, Bash sequences that fit one script), and script flag misuse (check `scripts/help.sh`).
+3. Score each finding from 0 to 9:
+
+| Dimension       | 0       | 1            | 2               | 3              |
+| --------------- | ------- | ------------ | --------------- | -------------- |
+| **Frequency**   | 1 time  | 2 to 4 times | 5 to 9 times    | 10+ times      |
+| **Token cost**  | Trivial | 1 extra call | 2 to 3 extra    | 4+ extra calls |
+| **Feasibility** | Hard    | Medium       | Easy            | Trivial        |
+
+4. A finding that scores 5 or more becomes a plan per the 3-file convention in `lode/infrastructure/agent-patterns.md`. Slug: `token-opt-{short-description}`. Create one plan per pattern. Create none for a pattern that no session showed. Lower scores go in the report as "Below Threshold".
+5. Write the report to `plans/token-report-{date}.md` (date from `scripts/ts.sh`) and stage it with `scripts/internal/stage.sh`. Sections: Plans Created, Below Threshold, Top Violations, Session Stats. Stage plan files for the next `/yeet`. Never commit them alone.
+
 ## Phase 5: Report
 
 Write the full report to `plans/weekly-digest-{date}.md` (if `lode/` exists) or `.claude/tmp/weekly-learner/weekly-digest.md` otherwise:
@@ -161,6 +176,6 @@ Write findings to `.claude/tmp/weekly-learner/memory.md` with sections: Active P
 - **Actionable recommendations only**: "code could be better" is not actionable; "create /quick-fix skill to chain format+build+commit" is
 - **Respect dismissed patterns**: if a recommendation was previously dismissed, do not re-suggest unless the evidence has significantly changed (2x+ frequency increase)
 - **Repo-agnostic**: never assume specific directory structures (lode/, etc.) exist. Always detect and adapt
-- **Plans over reports for non-trivial work**: any recommendation needing >5 min to implement must produce a plan, not just a text suggestion
+- **Plans over reports for non-trivial work**: any recommendation with effort above trivial must produce a plan, not just a text suggestion
 - **No duplicate plans**: check `plans/` before creating. If a plan already covers the pattern, add a note in the report and skip
 - **Trivial and dead-weight items: apply inline**: do not create a plan for a one-line config change. Do it during this run. Report a file deletion for user approval instead of deleting it

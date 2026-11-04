@@ -17,10 +17,7 @@ Orchestrates research via the `sme-researcher` agent and persists findings.
 
 ## Bounds
 
-- **Research time**: ~2-3 minutes maximum
-- **Sources**: Stop after 6 quality sources found
-- **Tell sme-researcher in the prompt** to stop after 5 tool turns
-- If sources found quickly, stop early, do not hunt for more
+Research official docs until the main claims have a source, then stop. Tell sme-researcher in the prompt to return as soon as it has them.
 
 ## Steps
 
@@ -50,12 +47,7 @@ Check if `lode/` exists (`Glob: lode/lode-map.md`):
 
 ### 3. Research via sme-researcher
 
-**Bounds:**
-- Stop after 6 quality sources (~2-3 minutes max)
-- Tell sme-researcher in the prompt to stop after 5 tool turns
-- If sources found quickly, stop early
-
-Spawn the `sme-researcher` agent with this prompt. Limit it to 5 tool turns in the prompt text:
+Spawn the `sme-researcher` agent with this prompt, within the bounds above:
 
 > Research `<topic>` for use in this project. Focus on official documentation. {output-specific instructions, see below}
 >
@@ -91,7 +83,7 @@ On user approval:
    - .NET patterns/tools -> `lode/dotnet/<topic>.md`
    - Infrastructure/tooling -> `lode/infrastructure/<topic>.md`
    - Cross-cutting concerns -> `lode/<topic>.md` (root level)
-2. Update `lode/lode-map.md` to include the new entry in both Quick Reference and Directory Structure
+2. Add the new entry to the matching directory section of `lode/lode-map.md`
 3. Delete the tmp draft
 
 Never create `lode/research/`: research findings are integrated into domain-specific directories.
@@ -119,19 +111,8 @@ Sources: <count> URLs scraped
 Saved to: <path>   (or: Draft in lode/tmp/<topic>.md — awaiting promotion)
 ```
 
-## Self-Improvement
-
-After completing any research session:
-
-1. **Record failed or blocked topics**: If a research topic returned no useful sources (paywalled, undocumented, too new), add a Troubleshooting note with the date and reason so future sessions do not repeat the search.
-2. **Note already-covered topics**: If the user asked to research a topic already fully in lode/, add a Troubleshooting note (topic name + lode path) so future sessions surface the existing doc immediately.
-3. **Update sme-researcher retry guidance**: If the empty-result resume pattern required more than one retry, or a different prompt formulation worked better, update the Troubleshooting section.
-4. **Log source quality patterns**: If a particular site consistently provides high or low quality content for this domain, note it in Troubleshooting so sme-researcher can be guided accordingly.
-
 ## Troubleshooting
 
-- **sme-researcher returns empty result**: this is normal. Resume with the returned agentId and prompt: "Please provide your complete synthesized findings on [topic]". Do not ask the user
 - **Topic maps to an existing lode file**, read the existing file first to identify gaps. The researcher should focus on what is not yet documented, not re-document existing content
-- **Draft file would exceed 250 lines**, split at a natural topic boundary into two focused sub-files and write both to `lode/tmp/`. Never write a lode file over 250 lines
 - **No lode/ directory found and no --skill flag**, prompt the user for their preferred output: create lode/, create as skill, or create as global skill
 - **--global flag used without --skill**: global output only applies to skill files. Prompt for clarification or treat as `--skill --global`

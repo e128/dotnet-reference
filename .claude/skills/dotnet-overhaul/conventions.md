@@ -81,7 +81,7 @@ These fixes align with common auto-approval policies, apply without prompting:
 
 ## Global Suppressions (Always `severity = none`)
 
-These rules must be set to `severity = none` in the root `.globalconfig` (or `.editorconfig`)
+With user approval, set these rules to `severity = none` in the root `.globalconfig` (or `.editorconfig`)
 whenever the overhaul creates or audits analyzer configuration. They apply repo-wide, not just
 to tests.
 

@@ -25,7 +25,7 @@ Execute these phases in order. Stop research as soon as you have a confident ans
 
 Check curated sources in priority order — stop as soon as you have a confident answer. Prefer existing knowledge over web searches.
 
-- **CLAUDE.md**: architectural decisions, coding standards, workflow conventions.
+- **AGENTS.md and `.claude/rules/*.md`**: coding standards and workflow conventions.
 - **Lode docs**: read `lode/lode-map.md` to find relevant docs, then read matching files.
 - **Active plans**: `Glob: plans/*/` — read context.md/plan.md for matching features (exclude roadmap.md).
 - **Learned skills**: `Glob: .claude/skills/*/SKILL.md` and `~/.claude/skills/*/SKILL.md`.

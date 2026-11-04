@@ -64,7 +64,7 @@ deletion.
 ## Step 4: Verify Build (skip in DRY_RUN)
 
 ```bash
-scripts/check.sh --no-format --json
+scripts/check.sh --json
 ```
 
 One run covers all deletions. If the build fails:

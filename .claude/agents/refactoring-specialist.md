@@ -5,7 +5,6 @@ description: >
   Refactor code preserving behavior with safety guarantees. Triggers on: refactor, extract method, find usages, impact analysis.
 tools: Read, Write, Edit, Bash, Glob, Grep, mcp__cwm-roslyn-navigator__find_callers, mcp__cwm-roslyn-navigator__find_references, mcp__cwm-roslyn-navigator__get_type_hierarchy, mcp__cwm-roslyn-navigator__find_dead_code
 maxTurns: 30
-effort: high
 memory: project
 isolation: worktree
 ---
@@ -68,7 +67,7 @@ Concerns:   [what's unclear — empty for LOW]
 
 ## Context Seed (before any source reads)
 
-Run `scripts/lode-summary.sh dotnet` to load SOLID principles, coding standards, performance patterns, and anti-patterns from the lode before analyzing source. Use the returned file list to read the relevant standards files as needed, they calibrate the analysis lens in Phase 1 without loading the full lode-map.
+Run `scripts/lode-summary.sh dotnet` to load SOLID principles, coding standards, performance patterns, and anti-patterns from the lode before analyzing source. Use the returned file list to read the relevant standards files as needed, they calibrate the analysis lens in Analysis (step 1) without loading the full lode-map.
 
 ## Workflow
 
@@ -76,7 +75,7 @@ Run `scripts/lode-summary.sh dotnet` to load SOLID principles, coding standards,
 
 When applying multi-step refactorings to the same file, **re-Read the file** before each subsequent Edit if it was modified in a previous step. Never apply a second refactoring based on a stale Read.
 
-### 0. Impact Analysis (mandatory Phase 1)
+### 0. Impact Analysis (mandatory first phase)
 
 Before any refactoring, produce an impact report for the target symbol(s):
 

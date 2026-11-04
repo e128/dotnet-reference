@@ -4,11 +4,7 @@ description: >
   Recursively analyze the codebase and generate nested Mermaid architecture diagrams
   with structured annotations. Includes dependency mapping (NuGet packages, infrastructure,
   runtime pinning) for .NET projects.
-when_to_use: >
-  architecture diagram, mermaid scan, generate architecture, codebase diagram,
-  scan architecture, arch scan, architecture scan, refresh architecture, arch diagram,
-  visualize architecture, dependency map, map dependencies, dep map, what depends on what,
-  package dependencies, infrastructure dependencies, runtime versions, docker images.
+when_to_use: Generate Mermaid architecture and dependency diagrams for a project scope. For dependency maps across repos, use dep-map.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
@@ -142,7 +138,6 @@ Before writing, verify each Mermaid code block passes a structural self-check:
 
 If any check fails, fix the diagram before proceeding. Do not write syntactically invalid diagrams to files.
 
-> **Note:** The `mcp__claude_ai_Mermaid_Chart` MCP is not available in this environment. This structural self-check is the substitute.
 
 ### Step 5 — Write Output Files
 

@@ -20,8 +20,6 @@ Ship it. Quality gate + commit + push in one autonomous pass.
 | `/yeet --skip-tests` | Fast path: PII + format only. Skips build+test  |
 | `/yeet --dry-run`    | Quality gate only: no commit or push            |
 
-`--dry-run` replaces the retired `/preflight` skill.
-
 ## Steps
 
 ### 0. Gather context (parallel batch)
@@ -54,13 +52,10 @@ D reads the refs that C just refreshed, so C must complete first.
 **`unpushed` (from C) is not optional to check.** A branch can have a clean working tree and still carry local commits the remote has never seen (no upstream configured, or commits made after the last push). `unpushed > 0` always means step 2's push (and PR creation) must run, even when there is nothing new to commit.
 
 **Staleness guard (from D).** A branch cut from a stale local `main` produces a
-pull request that conflicts on every file both sides touched. Measure the gap:
+pull request that conflicts on every file both sides touched. Read `behind`
+from the D output (`scripts/branch.sh --json`).
 
-```bash
-git rev-list --count "$(git merge-base HEAD origin/main)..origin/main"
-```
-
-A count above zero means `origin/main` moved on after this branch was cut.
+A `behind` above zero means `origin/main` moved on after this branch was cut.
 Report the count and the branches that landed. Stop and ask before you ship.
 Do not rebase or force-push on your own initiative: both rewrite published
 history.
@@ -188,7 +183,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
   gh pr create --title "<commit subject line>" --body "<body>"
   ```
     - Title: reuse the commit subject line (the `type(scope): summary` part)
-    - Body: generate a `## Summary` with 1-3 bullet points covering the changeset, a `## Test plan` with bulleted checklist, and the Claude Code footer, never include an email address anywhere in the body
+    - Body: use these sections, and omit one that does not apply: `## Executive Summary` (problem, cause, fix, and measured results with test conditions), `## Code Changes`, `## Tests and Tooling` (name what did not run), `## Review Guide`, `## Rollback`, and `## Links` for work items. Do not invent causes, measurements, or test results. End with the Claude Code footer. Never include an email address anywhere in the body
     - If a PR already exists for this branch, skip PR creation silently
     - Report the PR URL at the end
 

@@ -25,7 +25,7 @@ Rules for inclusive language, accessibility, prescriptive wording, future featur
 ## Prescriptive Wording
 
 - Use "must" for a requirement. Do not use "should", because it is ambiguous.
-- Use "we recommend" for advice and "can" for an option.
+- Use "Use X when..." or "X is the better choice when..." for advice, and "can" for an option.
 - Use "can" or "might" for a possible outcome: "The process can take 30 minutes".
 - Show the common case first and move optional parameters to a reference.
 

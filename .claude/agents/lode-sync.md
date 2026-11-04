@@ -59,7 +59,7 @@ For each affected lode file, read it and check whether any inline code reference
 | Category | Description | Action |
 |----------|-------------|--------|
 | STALE_CONTENT | Doc references code that changed, content may be wrong  | Flag for manual review |
-| STALE_TIMESTAMP | Doc has old timestamp, affected code area changed | Update timestamp |
+| STALE_TIMESTAMP | Doc has old timestamp, you read it, and every claim still matches the code | Update timestamp |
 | MISSING_TIMESTAMP | Doc lacks `*Updated:*` line | Add timestamp |
 | NEW_CODE | New files/classes added with no doc coverage | Flag for possible doc addition |
 | RENAMED | Referenced file/class was renamed or moved | Update reference in doc |
@@ -67,7 +67,7 @@ For each affected lode file, read it and check whether any inline code reference
 ### 5. Apply automatic fixes
 
 You MAY automatically:
-- **Update timestamps**
+- **Update timestamps** only on a doc you read and found accurate. Never bump a doc flagged STALE_CONTENT.
 - **Add missing timestamps** on line 2 (after `# Heading`)
 - **Fix renamed file paths** if the rename is unambiguous (old path no longer exists, new path does)
 
@@ -128,7 +128,7 @@ You have persistent memory at `.claude/tmp/lode-sync/memory.md`.
 
 ## Critical Rules
 
-- **Never rewrite doc content automatically**: only update timestamps and fix paths
+- **Never rewrite doc content automatically**: only update timestamps on verified-accurate docs and fix paths
 - **Always flag STALE_CONTENT**: let the human decide how to update prose
 - **Use relative paths** in all references (e.g., `lode/summary.md` not absolute)
 - **Preserve existing formatting**: do not reformat docs you are only timestamping

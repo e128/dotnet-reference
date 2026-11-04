@@ -1,7 +1,7 @@
 ---
 name: dep-map
 description: "Generates or updates a lode dependency map for a scope. Scans all repos under a path for NuGet, npm/yarn, Maven, Go, Rust, and Python dependencies; detects infrastructure from config files; writes lode/<scope>/dep-map.md with per-repo Mermaid service-layer diagrams and a cross-repo dependency heat map."
-when_to_use: "Trigger on: 'dep-map <scope>', 'map the dependencies for <scope>', 'generate a dep map for <path>', 'document the deps for <scope>', 'create a lode dependency doc for X', 'update the dependency map for Y', 'build a dependency map'."
+when_to_use: "Use when the user wants to create or refresh a lode dependency map, or dependency documentation, for a scope or set of repos, or invokes /dep-map."
 argument-hint: "<scope-label> [<path>]"
 arguments: scope path
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
@@ -109,7 +109,7 @@ For unusual repo structures, see [`references/edge-cases.md`](references/edge-ca
 Write to `lode/<scope>/dep-map.md`. See [`references/output-template.md`](references/output-template.md) for the full document structure and writing rules.
 
 Key rules:
-- UTC timestamp on last line: `*Updated: 2026-04-25T14:32:00Z*`
+- Run `scripts/lode-ts.sh <file>` after the write. It sets the `*Updated: <ISO 8601 UTC>*` line. Keep that line last.
 - If updating, rewrite the file entirely — lode captures current state, not a diff
 - Never embed absolute home-directory paths
 

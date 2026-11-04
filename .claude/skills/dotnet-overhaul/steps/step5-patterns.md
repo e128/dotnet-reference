@@ -51,9 +51,8 @@ catch\s*\(.*\)\s*\{[^}]*return   # catch-and-return as branching
 | 7 | Unnecessary ToList()/ToArray() before iteration | MEDIUM |
 | 8 | Reflection in hot paths (cache delegates or use source generators) | MEDIUM |
 | 9 | Exception-driven control flow (TryParse instead of Parse+catch) | MEDIUM |
-| 10 | Missing ConfigureAwait(false) in library code | LOW |
-| 11 | Task.FromResult where ValueTask would avoid allocation | LOW |
-| 12 | params arrays in frequently called methods | LOW |
+| 10 | Task.FromResult where ValueTask would avoid allocation | LOW |
+| 11 | params arrays in frequently called methods | LOW |
 
 ## Severity Definitions
 

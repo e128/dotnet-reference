@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-04T13:45:03Z*
+*Updated: 2026-11-04T15:05:29Z*
 
 ## Generated Docs
 
@@ -57,7 +57,6 @@
 - [opencode-guardrails.md](infrastructure/opencode-guardrails.md): opencode v2 plugin hook mapping for Claude Code guardrails, permission and shell hook contracts
 - [claude-code-upstream.md](infrastructure/claude-code-upstream.md): Claude Code upstream reference: versions, agent/skill frontmatter fields
 - [code-generation-quality.md](infrastructure/code-generation-quality.md): Mechanisms that drive better AI code generation, ranked by impact, plus the review-to-rule loop
-- [claude-revision-log.md](infrastructure/claude-revision-log.md): Revision log: dated entries from `/claude-revision` runs
 - [podman.md](infrastructure/podman.md): Podman build commands, Dockerfile structure, smoke test patterns
 - [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md): OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging
 - [agent-patterns.md](infrastructure/agent-patterns.md): Shared agent patterns: plan convention, budget exhaustion, reflection loop

@@ -54,7 +54,7 @@ A vendored reviewer is one file in `references/`. Three files exist:
 - [references/code-reviewer.md](references/code-reviewer.md)
 - [references/adversarial-review.md](references/adversarial-review.md)
 
-Run a vendored reviewer as one subagent, `subagent_type: "general-purpose"`. Give the subagent the reference file path, the target description, and the delivered diff path. The subagent reads the file and follows it.
+Run a vendored reviewer as one subagent, `subagent_type: "general-purpose"`. The `devex:` plugin ships agents with the same names. Never use them in this repo. Give the subagent the reference file path, the target description, and the delivered diff path. The subagent reads the file and follows it.
 
 Run `adversarial-review` in the main context instead. It launches its own subagents, and a subagent cannot launch one.
 
@@ -69,7 +69,7 @@ It returns `kind`, `target`, `base`, `files`, `file_count`, `empty`, `agents`, `
 1. Stop and say so when `empty` is true.
 2. Say so and continue with care when `shallow` is true. History is incomplete and the base may be a graft boundary.
 3. Pass `target`, `base`, and `files` to every reviewer unchanged.
-4. Run the agents in `agents` as subagents, and the skills in `skills` through the Skill tool. Run no other reviewer.
+4. Run each name in `agents` as a vendored reviewer (see Vendor a Reviewer) with `subagent_type: "general-purpose"`. Never pass an agent name as `subagent_type`, and never invoke a `devex:` agent or skill, including `devex:code-reviewer` and `devex:security-reviewer`. Run the skills in `skills` through the Skill tool. Run no other reviewer.
 5. Take the diff with `diff_command`. Deliver it through `scripts/internal/cr-diff-deliver.sh <difffile>`. Follow the strategy it prints. Never paste a large diff into more prompts than the strategy names.
 6. Carry `perf`, `test_quality`, `no_plan`, and `critical_only` into the phases that use them.
 
@@ -79,7 +79,7 @@ A returned `kind` of `path` is component mode. It has no diff. Group the returne
 
 ## Run the Reviewers
 
-1. Send every agent call in one message so they run in parallel. Ask each for severity-rated findings with `file:line` references.
+1. Send every vendored reviewer call in one message so they run in parallel. Ask each for severity-rated findings with `file:line` references.
 2. Invoke each skill in `skills` with the Skill tool and the target description. Start `adversarial-review` first, because it is the longest.
 3. Invoke `code-review` with the effort level `high` and the target. Never pass `--comment` or `--fix`, because this skill reviews only.
 4. Pass `perf` and `test_quality` from the record to `mr-sparkle-dotnet`. That skill owns the performance lens and the test rubric. It runs the Roslyn vector on every dispatch.
@@ -96,7 +96,7 @@ A returned `kind` of `path` is component mode. It has no diff. Group the returne
 
 Use one severity vocabulary: Critical, High, Medium, Low.
 
-The build is ground truth. When a build check reports zero warnings and zero errors, lower an unconfirmed Medium or Low compliance finding to advisory and mark it `(advisory, build clean)`.
+The build is ground truth. When a build check reports zero warnings and zero errors, lower an unconfirmed Medium or Low compliance finding to advisory and mark it `(advisory, build clean)`. The build result comes from `mr-sparkle-dotnet`, see [references/compliance-and-format.md](references/compliance-and-format.md).
 
 ## Defend
 
@@ -178,9 +178,9 @@ Return these exit codes:
 - When a reviewer slice exceeds its context, split the diff by file and merge the sub-slice findings under the one reviewer name.
 - No git, a shallow clone, an empty range, or no matching files: state the condition, then exit with the matching code. See [references/error-handling.md](references/error-handling.md).
 
-## Improve After Each Run
+## Reference Fixes
 
-Refine this skill from every run. See [references/self-improvement.md](references/self-improvement.md).
+Fix a defect in a reference file when a run exposes one.
 
 ## References
 
@@ -188,6 +188,6 @@ Refine this skill from every run. See [references/self-improvement.md](reference
 - [references/cross-file-consistency.md](references/cross-file-consistency.md): multi-file consistency rubric
 - [references/perf-patterns.md](references/perf-patterns.md): the anti-pattern catalog for `--perf`
 - [references/clanker-patterns.md](references/clanker-patterns.md): the AI-slop pattern catalog
-- [references/compliance-and-format.md](references/compliance-and-format.md): repo compliance rules and the build tiebreaker
+- [references/compliance-and-format.md](references/compliance-and-format.md): the build tiebreaker
 - [references/error-handling.md](references/error-handling.md): failure paths and exit codes
 - [references/implementation.md](references/implementation.md): sub-slicing, component mode, and plan file format

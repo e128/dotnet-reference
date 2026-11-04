@@ -57,17 +57,7 @@ The overhaul may have fixed issues that originally motivated a suppression.
 4. Remove duplicate rules (same ID with conflicting severity in different sections, keep most specific)
 
 **Child `.editorconfig` files (test projects):**
-These expected suppressions should NOT be removed:
-
-| Rule | Why it is suppressed in tests |
-|------|------------------------------|
-| CA1707 | Underscores in test method names |
-| CA1515 | Public test classes (test runners require public) |
-| CA1062 | Null guards not needed in test methods |
-| CA1812 | Instantiated by test framework, not directly |
-| CA2007 / MA0004 / VSTHRD111 | `ConfigureAwait(false)` not needed in test context |
-| VSTHRD200 | `Async` suffix not conventional in tests |
-| CA1034 | Nested public types for test organization |
+Do not remove the expected test suppressions listed under Test Project Relaxations in `conventions.md`.
 
 However, check test `.editorconfig` files for suppressions beyond this expected set:
 - Rules unrelated to test conventions: may be hiding real issues in test helper code

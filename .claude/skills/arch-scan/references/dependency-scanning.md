@@ -5,20 +5,6 @@ Scoped to a .NET solution using Central Package Management.
 
 ---
 
-## NuGet Manifest Parsing
-
-For each source directory in the scan scope:
-
-1. `Glob("src/{Project}/**/*.csproj")` — locate all project files
-2. Skip test/bench projects: `*.Tests.csproj`, `*.Benchmarks.csproj`
-3. Read each `.csproj`. Extract `<PackageReference Include="..." Version="...">` lines
-4. If `Directory.Packages.props` exists at solution root, resolve versions from there (Central Package Management)
-5. Classify each package and build two lists per project:
-   - **External service integrations** -- client packages
-   - **Key third-party** -- messaging, ORM/DB, DI, auth, observability, scheduler libs
-
----
-
 ## Package Classification
 
 | Package pattern | Classification |
@@ -72,37 +58,9 @@ Record: **confirmed** (pattern found in config) vs **inferred** (implied by pack
 
 ---
 
-## Runtime & Docker Image Detection
+## Runtime Pinning
 
-Collect runtime pinning from these files:
-
-| File | Provides |
-|------|----------|
-| `**/Dockerfile`, `**/Dockerfile.*` | Base runtime + SDK build image |
-| `**/global.json` | .NET SDK version pin |
-| `**/*.csproj` (`<TargetFramework>`) | .NET target framework per project |
-| `**/.github/workflows/*.yml` | CI SDK versions (`actions/setup-dotnet` → `dotnet-version`) |
-
-### Dockerfile Parsing
-
-Extract every `FROM` instruction. Distinguish:
-- **Runtime stages** -- contains `aspnet`, `runtime`, `alpine` without `sdk`
-- **Build stages** -- contains `sdk`, `build`
-
-Use the final `FROM` (or stage named `runtime`/`final`) as the production image.
-
-| Image pattern | Runtime |
-|---------------|---------|
-| `mcr.microsoft.com/dotnet/aspnet:<ver>` | .NET runtime (production) |
-| `mcr.microsoft.com/dotnet/sdk:<ver>` | .NET SDK (build stage) |
-
-### CI Pipeline SDK Versions
-
-Grep `.github/workflows/*.yml` for `actions/setup-dotnet` — extract the `dotnet-version` field.
-
-### global.json Roll-Forward Policy
-
-Record `sdk.version` + `rollForward`. `patch`/`latestPatch` = safe; `major`/`latestMajor` = permissive, flag it.
+`scripts/runtime-matrix.sh --json` collects the SDK pin, `rollForward`, per-project `TargetFramework`, and Dockerfile `FROM` tags. Add CI SDK versions yourself: grep `.github/workflows/*.yml` for `actions/setup-dotnet` and extract `dotnet-version`.
 
 ---
 

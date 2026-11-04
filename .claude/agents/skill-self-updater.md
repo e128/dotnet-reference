@@ -50,7 +50,7 @@ In this mode:
 
 | Flag | Mechanical fix |
 |------|---------------|
-| `APPROVAL_CONFLICT` | Find the prompt gate described in Details. Remove it or replace with a comment noting the operation is auto-approved per CLAUDE.md |
+| `APPROVAL_CONFLICT` | Find the prompt gate described in Details. Remove it or replace with a comment noting the operation is auto-approved per `.claude/rules/auto-approvals.md` |
 | `ABSOLUTE_PATH` | Find `/Users/...` or `/home/...` paths. Replace with relative paths or `~/repos/<name>/` notation |
 | `SERIAL_BOTTLENECK` | Find the sequential operations described in Details. Add "Launch these in parallel, no dependencies between them" instruction  |
 | `GATE_HEAVY` | Find prompt gates on always-safe operations (reads, `.claude/tmp/` writes, grep, git status/log/diff). Remove only those gates, preserve gates on destructive or ambiguous operations  |
@@ -154,6 +154,5 @@ Re-read the modified section. Check:
 - **One skill per invocation**: never update multiple skills in one run
 - **Always re-read before editing**: never edit from memory of a previously read file
 - **Self-referential safety**: if updating this agent's own file, verify the rules section is preserved
-- **Preserve self-improvement sections**: keep `## Self-Improvement` blocks in skills intact
 - **No reformatting**: do not change header levels, bullet styles, or code fence language unless the fix specifically requires it
 - **Step files go in steps/**: if a new step exceeds ~30 lines, write it to `steps/` and reference it from the main SKILL.md

@@ -31,7 +31,7 @@ in the index entries. Report matching files with their descriptions.
 ### 3. If a single file matches strongly
 
 Read the most relevant file and present the section that matches the query.
-Keep output under 40 lines — link to the full file for more detail.
+Return the best matching section and link to the full file for more detail.
 
 ### 4. If multiple files match
 
@@ -53,7 +53,7 @@ See full files: `lode/dotnet/testing.md`, `lode/infrastructure/ci.md`
 
 ## Rules
 
-- **No agents** — this must be fast (under 3 seconds of tool time)
+- **No agents**: use Grep and Read only
 - **No edits** — read-only search
-- **Truncate long results** — max 40 lines of output, link to files for full content
+- **Return the best match**: link to files for the rest
 - **If no arguments**: read and display `lode/lode-map.md` as the index

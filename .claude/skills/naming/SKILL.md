@@ -3,11 +3,7 @@ name: naming
 description: >
   Manage C# naming rules and bulk-rename violations. --rule edits .editorconfig,
   --migrate bulk-renames IDE1006 violations.
-when_to_use: >
-  naming rules, show naming rules, edit naming rule, change naming style,
-  naming convention, ide1006 rule, naming severity, symbol category, camelCase rule,
-  PascalCase rule, prefix rule, _camelCase, s_camelCase,
-  naming migration, fix naming, ide1006, bulk rename, rename sweep, fix naming violations.
+when_to_use: Edit C# naming rules in .editorconfig, or bulk-rename IDE1006 violations.
 argument-hint: "[--rule | --migrate] [args]"
 ---
 
@@ -15,12 +11,12 @@ argument-hint: "[--rule | --migrate] [args]"
 
 Two modes for managing C# naming conventions. Mode auto-detected from user prompt.
 
-| Mode | Keywords | Behavior |
-|------|----------|----------|
-| `--rule` | naming rule, naming style, naming convention, severity, symbol category, prefix, camelCase, PascalCase, `_camelCase` | Read/modify naming rules in `.editorconfig` |
-| `--migrate` | fix naming, bulk rename, rename sweep, ide1006, naming violations | Spawn `naming-migrate` agent to bulk-rename symbols to match `.editorconfig` rules |
+| Mode | Behavior |
+|------|----------|
+| `--rule` | Read/modify naming rules in `.editorconfig` |
+| `--migrate` | Spawn `naming-migrate` agent to bulk-rename symbols to match `.editorconfig` rules |
 
-Default: `--rule` if no migrate keyword. `--migrate` when "fix naming", "bulk rename", or "rename sweep" is present.
+Default: `--rule`. Use `--migrate` to fix violations.
 
 The two modes are sequential steps: change the rule first (`--rule`), then fix violations (`--migrate`).
 
@@ -91,5 +87,3 @@ The agent collects violations, renames each symbol across `src/` and `tests/`, l
 build until clean, and returns a migration report. Relay its report to the user verbatim, 
 do not re-run the rename inline.
 
-**When this mode fires:** "fix naming", "bulk rename", "rename sweep", or an explicit
-`/naming --migrate`.

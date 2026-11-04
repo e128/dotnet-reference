@@ -5,7 +5,6 @@ description: >
   Bulk-rename C# symbols to satisfy IDE1006 naming rules. Triggers on: fix naming, bulk rename, rename sweep, naming violations.
 tools: Bash, Read, Edit, Glob, Grep, mcp__cwm-roslyn-navigator__find_references, mcp__cwm-roslyn-navigator__find_callers
 maxTurns: 20
-effort: medium
 memory: project
 isolation: worktree
 ---

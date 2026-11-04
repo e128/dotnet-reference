@@ -1,7 +1,7 @@
-# Martinizing: Scoring Rubric & Finding Catalog
+# Strategy Audit: Scoring Rubric and Finding Catalog
 
 Detailed finding categories, the capability classification rubric, Phase 3 agent prompt template,
-and the full Phase 4 report format. Loaded on demand from the main `martinizing` skill.
+and the full Phase 4 report format. Loaded on demand from the main `strategy-audit` skill.
 
 ## Finding Categories
 
@@ -84,7 +84,7 @@ For each area you examine, assess:
 
 Return findings as:
 - Finding ID: S[N]
-- Category: INVESTMENT_MISMATCH | DEAD_CAPABILITY | CHAIN_BREAK | ROBUSTNESS | OVER_ENGINEERED | ARCHITECTURE | CLARITY
+- Category: INVESTMENT_MISMATCH | DEAD_CAPABILITY | CHAIN_BREAK | ROBUSTNESS | OVER_ENGINEERED | ARCHITECTURE | CLARITY | DEPENDENCY_LEVERAGE | BARNACLE
 - Severity: HIGH | MEDIUM | LOW
 - Description: [what's wrong]
 - File: [path:line]
@@ -98,7 +98,7 @@ Do NOT return full file contents. Return only findings with file paths and line 
 ## Phase 4: Full Report Format
 
 ```markdown
-# Martinizing Report
+# Strategy Audit Report
 
 **Codebase:** [repo-path]
 **Audit Areas:** [N] agents covering [list]
