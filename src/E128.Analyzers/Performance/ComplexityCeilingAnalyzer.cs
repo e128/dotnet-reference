@@ -5,15 +5,17 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Text;
 
 namespace E128.Analyzers.Performance;
 
 /// <summary>
 ///     E128152: Reports code whose inferred algorithmic complexity exceeds a configurable ceiling.
 ///     Loop nesting counts only loops whose trip count varies, so a loop bounded by a constant does
-///     not raise the tier. Two varying loops infer `quadratic`, three infer `cubic`. Recursion that
-///     branches on a shrinking argument infers `exponential` unless the method memoizes the result.
-///     The ceiling is a named tier set by the `e128_max_complexity` option.
+///     not raise the tier. A coordinate step, whose trip count depends on the element the enclosing
+///     loop produced, adds no depth either. Two varying loops infer `quadratic`, three infer `cubic`.
+///     Recursion that branches on a shrinking argument infers `exponential` unless the method
+///     memoizes the result. The ceiling is a named tier set by the `e128_max_complexity` option.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
@@ -91,13 +93,91 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
                 return 0;
             }
 
-            if (current is ILoopOperation enclosing && !HasConstantTripCount(enclosing))
+            if (current is ILoopOperation enclosing
+                && !HasConstantTripCount(enclosing)
+                && !IsCoordinateStep(loop, enclosing))
             {
                 degree++;
             }
         }
 
         return degree;
+    }
+
+    /// <summary>
+    ///     A coordinate step walks a second dimension of the data the enclosing loop produced, such as
+    ///     a cell inside a row. Its trip count depends on that element, so the enclosing loop adds no
+    ///     depth: the pair costs one visit per element, not one visit per element pair.
+    /// </summary>
+    private static bool IsCoordinateStep(ILoopOperation loop, ILoopOperation enclosing)
+    {
+        var source = GetTripCountSource(loop);
+
+        if (source is null)
+        {
+            return false;
+        }
+
+        var bodySpan = GetBodySpan(enclosing, out var bodySyntaxTree);
+
+        foreach (var operation in source.DescendantsAndSelf())
+        {
+            var symbol = operation switch
+            {
+                ILocalReferenceOperation local => (ISymbol)local.Local,
+                IParameterReferenceOperation parameter => parameter.Parameter,
+                _ => null,
+            };
+
+            if (symbol is null || loop.Locals.Contains(symbol, SymbolEqualityComparer.Default))
+            {
+                continue;
+            }
+
+            if (enclosing is IForEachLoopOperation
+                && enclosing.Locals.Contains(symbol, SymbolEqualityComparer.Default))
+            {
+                return true;
+            }
+
+            foreach (var reference in symbol.DeclaringSyntaxReferences)
+            {
+                if (reference.SyntaxTree == bodySyntaxTree && bodySpan.Contains(reference.Span))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static IOperation? GetTripCountSource(ILoopOperation loop) => loop switch
+    {
+        IForEachLoopOperation forEachLoop => forEachLoop.Collection,
+        IForLoopOperation forLoop => forLoop.Condition,
+        IWhileLoopOperation whileLoop => whileLoop.Condition,
+        _ => null,
+    };
+
+    private static TextSpan GetBodySpan(ILoopOperation loop, out SyntaxTree? syntaxTree)
+    {
+        var body = loop switch
+        {
+            IForEachLoopOperation forEachLoop => forEachLoop.Body,
+            IForLoopOperation forLoop => forLoop.Body,
+            IWhileLoopOperation whileLoop => whileLoop.Body,
+            _ => null,
+        };
+
+        if (body is null)
+        {
+            syntaxTree = null;
+            return default;
+        }
+
+        syntaxTree = body.Syntax.SyntaxTree;
+        return body.Syntax.Span;
     }
 
     private static bool HasConstantTripCount(ILoopOperation loop) => loop switch

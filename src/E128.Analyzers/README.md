@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="1.67.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="1.68.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -1905,7 +1905,7 @@ var cells = Enumerable.Range(0, columns.Count)
 
 ### E128152: Complexity ceiling: nested loops and non-memoized recursion
 
-Flags two shapes whose cost grows past the configured ceiling. Loop depth counts only loops whose trip count varies. A loop bounded by a constant, an array created with a constant length, or a constant collection expression does not raise the tier. Two varying loops infer `quadratic`, three infer `cubic`, and four or more infer `cubic or worse`. A method that calls itself two or more times and passes a parameter made smaller by a constant step infers `exponential`. Recursion that halves its argument, such as binary search, stays silent. Recursion counts as memoized only when the body both reads and writes the same field or `IDictionary`-typed local. Reach is direct same-type recursion only. A single self-call such as tree or tail recursion stays silent, and a single loop stays silent. The diagnostic anchors on the inner loop or on the recursive method declaration. No code fix.
+Flags two shapes whose cost grows past the configured ceiling. Loop depth counts only loops whose trip count varies. A loop bounded by a constant, an array created with a constant length, or a constant collection expression does not raise the tier. A coordinate step adds no depth either: when an inner loop's trip count reads an element the enclosing loop produced, such as a cell inside a row, the enclosing loop does not count, because the pair costs one visit per element rather than one per pair. Two varying loops infer `quadratic`, three infer `cubic`, and four or more infer `cubic or worse`. A method that calls itself two or more times and passes a parameter made smaller by a constant step infers `exponential`. Recursion that halves its argument, such as binary search, stays silent. Recursion counts as memoized only when the body both reads and writes the same field or `IDictionary`-typed local. Reach is direct same-type recursion only. A single self-call such as tree or tail recursion stays silent, and a single loop stays silent. The diagnostic anchors on the inner loop or on the recursive method declaration. No code fix.
 
 Set the allowed ceiling with `e128_max_complexity` in `.globalconfig` or `.editorconfig`. Named tiers: `linear`, `linearithmic`, `quadratic`, `cubic`, `exponential`. Default `linear`, so linearithmic and worse fires. In-loop lookups, sorts, insertions, and string concatenation keep their dedicated rules (E128066, E128067, E128068, E128069, E128153) and stay out of this rule. At ceiling `exponential` neither shape can fire.
 
