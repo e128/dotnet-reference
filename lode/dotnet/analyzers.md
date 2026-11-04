@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-11-03T03:07:49Z*
+*Updated: 2026-11-03T12:59:34Z*
 
 ## Strategy: Deny by Default
 
@@ -39,7 +39,7 @@ In `Directory.Build.props`:
 ```
 
 Key interactions:
-- `AnalysisLevel=latest-all` enables rules; per-category `AnalysisMode` overrides specifics
+- `AnalysisLevel=latest-all` sets mode `All` in every category. A compound `AnalysisLevel` wins over `AnalysisMode` and over `AnalysisMode<Category>`, so the three category lines above change nothing. Use `<AnalysisLevel>latest</AnalysisLevel>` or a version such as `10.0` to let the category overrides apply.
 - `EnforceCodeStyleInBuild` makes IDE rules (IDE*) fire during `dotnet build`
 - `TreatWarningsAsErrors` promotes all enabled warnings to errors
 

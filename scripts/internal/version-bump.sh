@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Increment the <Version> in a project's .csproj file (patch version).
-# Usage: version-bump.sh <ProjectName>
+# Increment the <Version> in a project's .csproj file.
+# Usage: version-bump.sh <ProjectName> [patch|minor]
 # Example: version-bump.sh E128.Analyzers
+# Example: version-bump.sh E128.Analyzers minor
 #
-# Increments 1.17.0 → 1.17.1, 2.0.3 → 2.0.4, etc.
+# Patch (default) increments 1.17.0 → 1.17.1, 2.0.3 → 2.0.4, etc.
+# Minor increments 1.17.3 → 1.18.0, 2.0.4 → 2.1.0, etc.
 # Only increments if there are .cs file changes in the project directory.
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
@@ -49,9 +51,20 @@ if [[ -z "$CURRENT" ]]; then
     exit 1
 fi
 
+LEVEL="${2:-patch}"
+case "$LEVEL" in
+    patch | minor) ;;
+    *) err "Invalid level '$LEVEL'. Use patch or minor."; exit 1 ;;
+esac
+
 # Parse major.minor.patch
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-PATCH=$((PATCH + 1))
+if [[ "$LEVEL" == "minor" ]]; then
+    MINOR=$((MINOR + 1))
+    PATCH=0
+else
+    PATCH=$((PATCH + 1))
+fi
 NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
 # Replace in file

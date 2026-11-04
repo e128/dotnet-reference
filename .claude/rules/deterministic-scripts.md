@@ -55,7 +55,7 @@ terse JSON by default. Pass `--verbose` for the full log.
 | a build with `--verbose` piped through a grep for errors         | `scripts/build.sh --errors`                                     |
 | hand-editing an `*Updated:*` timestamp in a lode file            | `scripts/lode-ts.sh [--changed] [--stale] [FILE...]`            |
 | a manual clean-tree, build-pass, or test-pass check              | `scripts/assert.sh [--clean-working-tree] [--build-pass]`       |
-| hand-editing `<Version>` in a `.csproj`                          | `scripts/internal/version-bump.sh <ProjectName>`                |
+| hand-editing `<Version>` in a `.csproj`                          | `scripts/internal/version-bump.sh <ProjectName> [minor]`        |
 | manual analyzer release file checks                              | `scripts/internal/analyzer-release-check.sh [--json]`           |
 | manual trigger-phrase overlap checks                             | `scripts/internal/overlap-detect.sh [--json]`                   |
 | manual plan-age checks                                           | `scripts/internal/stale-plans.sh [--days N] [--json]`           |

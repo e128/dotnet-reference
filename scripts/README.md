@@ -126,4 +126,4 @@ These are invoked by skills and agents only — not intended for direct use:
 | `internal/settings-gap.sh`           | Diff catalog commands against settings.json allow-list; classify gaps by safety tier       |
 | `internal/stage.sh`                  | Stage modified + new files, excluding secrets                                              |
 | `internal/stale-plans.sh`            | List plan directories older than N days with no recent modifications                       |
-| `internal/version-bump.sh`           | Increment \<Version\> in a project's .csproj                                               |
+| `internal/version-bump.sh`           | Increment \<Version\> in a project's .csproj (patch by default, `minor` for a feature release) |
