@@ -1,5 +1,5 @@
 # Secret Scanning
-*Updated: 2026-11-01T20:54:56Z*
+*Updated: 2026-11-04T01:07:49Z*
 
 The repository scans for secrets with gitleaks in two places: locally before each commit, and in CI over the full git history. Both use the default gitleaks ruleset plus the allowlist in `.gitleaks.toml`.
 
@@ -27,7 +27,7 @@ flowchart LR
 
 ## Allowlist
 
-`.gitleaks.toml` extends the default ruleset (`useDefault = true`). It holds one allowlist entry for the analyzer option key constants, such as `ThresholdOptionKey`. These strings name an editorconfig key and are not credentials.
+`.gitleaks.toml` extends the default ruleset (`useDefault = true`). It holds one allowlist entry for the analyzer option key constants, such as `ThresholdOptionKey` and `CeilingOptionKey`. The entry matches any `<Name>OptionKey = "..."` line. These strings name an editorconfig key and are not credentials.
 
 Add an allowlist entry only for a proven false positive. Match the narrowest line pattern you can.
 

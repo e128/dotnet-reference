@@ -5,4 +5,4 @@ useDefault = true
 [[allowlists]]
 description = "Analyzer editorconfig option key constants"
 regexTarget = "line"
-regexes = ['''ThresholdOptionKey\s*=\s*"[a-z0-9_.]+"''']
+regexes = ['''[A-Za-z]*OptionKey\s*=\s*"[a-z0-9_.]+"''']
