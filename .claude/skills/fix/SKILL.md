@@ -55,7 +55,7 @@ errors in the same file, fix them all in one Edit call.
 ## Step 4: Validate
 
 ```bash
-scripts/check.sh --all --no-format --json
+scripts/check.sh --all --json
 ```
 
 ## Step 5: Report

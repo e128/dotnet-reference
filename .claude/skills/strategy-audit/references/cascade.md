@@ -2,7 +2,7 @@
 
 Detailed breakdown of each cascade question, the operating imperatives distinction, application
 to product/tech strategy, common mistakes, and why the definition changed.
-Loaded on demand from the main `five-elements-of-strategy` skill.
+Loaded on demand from the main `strategy-audit` skill.
 
 ## The Strategy Choice Cascade: Five Questions
 

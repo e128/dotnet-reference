@@ -6,9 +6,7 @@ description: >
   boundary, maps to concrete attack patterns, and produces a prioritized
   threat register.
 when_to_use: >
-  threat model, security assessment, STRIDE analysis, attack surface,
-  threat register, CAPEC analysis, threat assessment, security model,
-  data flow diagram, trust boundary analysis.
+  STRIDE or CAPEC threat modeling, data flow diagrams, and trust-boundary analysis.
 ---
 
 # Threat Model

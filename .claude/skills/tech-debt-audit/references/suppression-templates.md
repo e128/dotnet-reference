@@ -1,8 +1,8 @@
 # Remediation Templates
 
-Templates for Step 5 (fix proposals) and Step 6 (planning output) of the suppression review workflow.
+Templates for fix proposals and planning output in the `suppressions` mode of tech-debt-audit.
 
-## Fix Proposal Template (Step 5)
+## Fix Proposal Template
 
 For each suppression identified for remediation, propose a fix based on the
 [Microsoft Code Analysis Rules reference](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/):
@@ -31,7 +31,7 @@ For each suppression identified for remediation, propose a fix based on the
 - ... (13 more)
 ```
 
-## Planning Output Template (Step 6)
+## Planning Output Template
 
 Format findings for the dev-planning skill:
 

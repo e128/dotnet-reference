@@ -21,10 +21,6 @@ Shrink without changing unit test assertions. Flag these separately from structu
 - `if (x == null) return null; else return x.Foo` -> `x?.Foo`
 - Interfaces with exactly one implementation and no test doubles
 - Remove redundant local alias of parameter
-- Inline single-use private method (called in exactly one place)
-- Remove catch-rethrow (replace try/catch with direct call)
-- Collapse LINQ chain (`.Where(p).First(p)`, `.OrderBy().First()` -> `.MinBy()`)
-- Collapse null-check to null-conditional (`?.`, `??`, `??=`)
 
 ## Core Refactoring Catalog
 

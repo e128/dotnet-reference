@@ -6,14 +6,11 @@ description: >
   capability reinforcement. Produces a prioritized findings report and feeds actionable
   refactorings into dev-planning. Use for code review through a strategy lens, feature gap
   analysis, investment mismatch detection, or surfacing undocumented strategic choices.
-  Triggers on: strategy audit, strategic audit, strategy review, investment mismatch, capability analysis,
-  strategic alignment, where should I invest, code investment audit, feature gap analysis,
-  over-engineered, dead code strategy, what's table stakes.
 argument-hint: "<repo-path> [--resume]"
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
 ---
 
-# Martinizing
+# Strategy Audit
 
 Reads the **code as strategy**: what do investment levels, architecture, and capability chains
 reveal about the project's actual strategic choices? Roger Martin's "not stupid on its face" test

@@ -100,31 +100,10 @@ existing `docs/*.md` files directly -- the repo is already documented. Convert e
 files to `.html` rather than regenerating content from scratch. Investigation agents in this
 mode should focus on summarising `lode/` sections rather than exploring unfamiliar source trees.
 
-Launch 2-3 Explore agents in parallel to gather raw data. Each agent should investigate
-deeply and report back structured findings. The goal is to understand:
-
-**Agent 1 — Core Architecture:**
-- Solution files (.sln), project files (.csproj)
-- Entry points (Program.cs, Startup.cs)
-- API controllers — list each with route, namespace, key actions
-- DI/IoC registration
-- Middleware pipeline
-- Configuration patterns (appsettings, Key Vault, environment variables)
-- CLAUDE.md or README.md files in repos
-
-**Agent 2 — Data & Integration:**
-- Data access patterns (ORM, connection strings, stored procedures)
-- Messaging infrastructure (queues, topics, message types)
-- External service integrations (auth providers, email, analytics)
-- Background processing (WebJobs, Functions, Workers, Quartz, Hangfire)
-- Real-time communication (SignalR, WebSockets)
-
-**Agent 3 — Frontend & Supporting Repos:**
-- Frontend framework, package.json, routing
-- Supporting services (AD agents, extraction tools, etc.)
-- Infrastructure-as-code (Terraform, Bicep, ARM)
-- Automation scripts (PowerShell, Bash)
-- CI/CD pipeline configuration
+Launch parallel Explore agents, as many as the product area's independent parts justify. Each
+agent investigates one part and reports structured findings. Together they cover architecture and
+entry points, data and integration, frontend and supporting repos, infrastructure as code, and
+CI/CD.
 
 ### 4. Synthesis & Planning
 
@@ -132,7 +111,7 @@ After agents return, synthesise findings into a content plan:
 
 1. **Identify the product's purpose** — one-paragraph description of what the platform does
 2. **Count key metrics** — repos, controllers, connectors, modules, message types
-3. **Map business modules** — what domain areas exist (e.g., ARM, Audit Trail, Certifications)
+3. **Map business modules** — what domain areas exist
 4. **Identify service boundaries** — which repos/projects form logical services
 5. **Determine per-service doc placement** — architecture docs for structural analysis,
    engineering docs for operational/runbook content

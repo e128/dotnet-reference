@@ -6,9 +6,8 @@ description: >
   Produces a staleness table with git-verified findings, then makes targeted updates only
   on the sections you approve. Use after large refactors, renames, or when the lode feels
   out of sync with the code.
-  Triggers on: audit lode, lode out of date, lode accuracy check,
-  is the lode correct, lode stale, lode content review, audit documentation,
-  check lode, lode drift, lode wrong, lode inaccurate, lode needs correction.
+  Triggers on requests to check whether lode docs still match the code: audit, drift,
+  staleness, accuracy.
   Not for: updating a single known lode file (just edit it directly), or checking timestamps
   only (use lode-sync agent).
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write, Agent

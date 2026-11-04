@@ -17,7 +17,7 @@ Applies to both HTML (default) and markdown output formats.
 ```html
 <header>
   <h1>System Architecture</h1>
-  <p class="subtitle">Two core services backed by PostgreSQL and RabbitMQ, deployed to Azure via Bicep. -- Updated 2026-04-08</p>
+  <p class="subtitle">Two core services backed by PostgreSQL and RabbitMQ, deployed to Azure via Bicep. Updated 2026-04-08</p>
 </header>
 ```
 

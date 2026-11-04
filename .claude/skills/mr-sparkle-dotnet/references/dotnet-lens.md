@@ -41,7 +41,7 @@ The core `mr-sparkle` skill owns the report and the plan. This overlay produces 
 
 1. A suppression needs user approval under the quality gate. Report it, never justify it.
 2. Generated code is out of scope. Skip it and say so.
-3. `scripts/check.sh` is the only build, format and test gate. Never run `dotnet` directly.
+3. Run build, format and test only through `scripts/check.sh`. A read-only `dotnet list ... --include-transitive` is allowed.
 4. A repeated manual fix becomes an analyzer candidate in prose. Never write a plan file.
 5. Report a missing bounds check for `Span`, `stackalloc`, or `unsafe` code as a security finding, not a style finding.
 6. Report a pooled buffer that returns without a zero fill as Critical. Analyzer rule E128110 covers `ArrayPool<T>` only.

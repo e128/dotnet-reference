@@ -3,7 +3,7 @@ name: readme-auditor
 description: >
   Audits all README.md files for staleness against current repo state and auto-fixes
   drift. Checks analyzer rule tables, script tables, version snippets, and project
-  tables. Used by /yeet and /readme-check as a callable agent (avoids the Skill
+  tables. Used by /yeet as a callable agent (avoids the Skill
   context-replacement issue).
   Triggers on: audit readmes, readme drift, fix readme tables.
 tools: Read, Edit, Bash, Glob, Grep

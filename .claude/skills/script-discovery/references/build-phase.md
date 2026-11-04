@@ -19,11 +19,6 @@ For each of the top N candidates:
 Add an entry to `.claude/rules/keyword-shortcuts.md` in the appropriate row.
 Update the timestamp via `scripts/ts.sh`.
 
-## 5c. Update token-efficiency rules
-
-If the script replaces a routed raw command, add a row to
-`.claude/rules/deterministic-scripts.md`.
-
 ## 5d. Register in the routing table
 
 If the script is a top-level (non-internal) tool, add a row to the table in

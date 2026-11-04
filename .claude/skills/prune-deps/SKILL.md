@@ -6,13 +6,9 @@ description: >
   references, reviews every .csproj for PackageReference and ProjectReference entries
   the project's code no longer uses, then removes approved entries and verifies the
   build. Avoids the false-positive traps (transitive pins, analyzers, runtime-only
-  packages). Triggers on: unused packages, prune dependencies, dead dependencies,
-  remove unused packages, unused package references, unused project references, stale
-  references, clean up Directory.Packages.props, unneeded references, dependency prune,
-  orphaned packages, are these packages still used.
+  packages). Triggers on requests to find or remove unused NuGet packages, package references, or project references.
 argument-hint: "[--report-only] [--no-mcp] [--project NAME]"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Agent, AskUserQuestion
-effort: high
 ---
 
 # Prune Dependencies
@@ -39,7 +35,7 @@ Three targets:
 
 Phase 1-3 are read-only (file reads, grep, `dotnet list`, MCP queries), pre-approved
 per the auto-approval policy. Proceed without prompting. **Removals (Phase 5) require a
-single `AskUserQuestion` approval gate** per the repo's "ask before fixing" convention.
+single `AskUserQuestion` approval gate**.
 `--report-only` skips Phases 4-5 entirely.
 
 ---
@@ -51,8 +47,7 @@ Gather the raw facts. Read-only.
 1. **Projects**: `scripts/solution-inventory.sh --json` → solution file, every project
    (`path`, `kind` = src/test, `packable`). If `solution` is empty, error and stop.
 2. **Central package versions**: Read `Directory.Packages.props`. Extract every
-   `PackageVersion Include="X"`. Note `CentralPackageTransitivePinningEnabled` (it is
-   `true` here: see Directory.Build.props), which changes how orphans are judged.
+   `PackageVersion Include="X"`. Note `CentralPackageTransitivePinningEnabled` (read its value from the build props), which changes how orphans are judged.
    Capture the comment immediately above each entry: `<!-- Transitive pins -->` and
    similar markers signal intentional pin-only entries.
 3. **Direct package references**: Grep all `.csproj` **and** `Directory.Build.props`

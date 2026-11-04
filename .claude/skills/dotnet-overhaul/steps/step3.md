@@ -19,13 +19,12 @@ FIRST: check if project targets latest stable .NET:
   checks should target the new TFM.
 
 THEN check remaining infrastructure:
-- Outdated packages: `dotnet list <solution-file> package --outdated`
-- Deprecated packages: `dotnet list <solution-file> package --deprecated`
+- Outdated packages: `scripts/dep-check.sh --outdated --json`
+- Deprecated packages: `dotnet list <solution-file> package --deprecated` (no script covers this flag)
   For each deprecated System.* or Microsoft.* package, determine correct action:
   - Project targets .NET 6+ only AND types are in shared framework → REMOVE the reference
   - Replacement package exists → MIGRATE (e.g., System.Data.SqlClient → Microsoft.Data.SqlClient)
   - Multi-target and .NET Framework needs it → conditional <ItemGroup>
-  Reference the `dotnet-maintenance-packages` skill for known migration paths.
 
 Common deprecated packages absorbed into .NET 6+:
   System.Memory, System.Buffers, System.ValueTuple, System.Runtime.CompilerServices.Unsafe,
@@ -141,7 +140,7 @@ Search for `String.IsNullOrEmpty` / `IsNullOrWhiteSpace` where `is [not] null or
 Search for `.Count() == 0` / `.Count() > 0` / `.Any()` on types with `.Count` or `.Length`.
 Search for `Enum.Parse` without the generic overload.
 Search for manual `StringBuilder` loops where `string.Join` or `string.Create` works.
-Search for `DateTime.Now` where `DateTime.UtcNow` or `TimeProvider` is more correct.
+Search for `DateTime.Now` and `DateTime.UtcNow` used directly. Fix: inject `TimeProvider`.
 Search for `""` empty string literals → `string.Empty`.
 ```
 

@@ -11,7 +11,6 @@ description: >
   fix all warnings, language modernization, primary constructors, collection expressions, overhaul solution.
 argument-hint: "[solution-file or directory]"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write, Agent
-effort: high
 ---
 
 # .NET Overhaul
@@ -23,7 +22,7 @@ effort: high
 > run again. For maintained codebases, run periodically to catch drift.
 
 Systematic overhaul loop combining language modernization, design review, and specialist analysis.
-Every step produces findings for user approval before any code is changed.
+Steps 3-7 produce findings for user approval before any code changes. Steps 2 and 8 apply mechanical changes immediately.
 
 **Step detail files:** When you reach a step marked `-> read steps/stepN.md`, Read that file from
 `${CLAUDE_SKILL_DIR}/steps/stepN.md` before proceeding.
@@ -210,12 +209,11 @@ After user approves findings: create a plan (if dev-planning available and >=8 f
 
 After each cycle, fold durable learnings back in: new modernization patterns and analyzer
 fix patterns → `conventions.md`. False positives and compiler edge cases → `lessons/*.md`
-(read during Step R). Note format:
-`- [dotnet-overhaul YYYY-MM-DD] Added: <pattern/API> — before: <old> -> after: <new>`
+(read during Step R). Add a line only when it would help most future runs. State the rule, not the incident or date.
 
 ## CLI Gotcha
 
-`dotnet list` does **not** accept `--solution`. Use the positional argument form: `dotnet list <solution-file> package --outdated`.
+`dotnet list` does **not** accept `--solution`. Use the positional argument form: `dotnet list <solution-file> package --deprecated`.
 
 ## Guidelines
 

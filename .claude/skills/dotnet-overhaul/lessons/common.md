@@ -10,7 +10,7 @@ These apply to any .NET project, not just a specific codebase.
 
 ## Compiler Limitations
 
-- After `if (a is null || b is null) { (a, b) = Compute(); }`, the compiler still sees `b` as `string?` even though both paths guarantee non-null. Use `b!` at the call site and document why. This is a flow-analysis limitation, the compiler does not track that the re-assignment inside the `if` body guarantees non-null on exit.
+- After `if (a is null || b is null) { (a, b) = Compute(); }`, the compiler still sees `b` as `string?` even though both paths guarantee non-null. Restructure with a local non-null variable or an `is null` guard. Do not add `!`. This is a flow-analysis limitation, the compiler does not track that the re-assignment inside the `if` body guarantees non-null on exit.
 
 ## Analyzer Notes
 

@@ -58,7 +58,7 @@ Below the table, describe the top 3 candidates in detail:
 
 ### Phase 2: Approval gate
 
-Ask: "Build these 3? (y/n)" — single gate, not per-candidate.
+Ask once with AskUserQuestion: build these 3? One gate, not one per candidate.
 
 ### Phase 3: Build (only if approved)
 
@@ -66,14 +66,14 @@ For each of the top 3:
 1. Create the bash script in `scripts/{name}.sh`
 2. Add hook entries to `.claude/settings.json` (via the settings gate workflow)
 3. Add keyword shortcut to `.claude/rules/keyword-shortcuts.md`
-4. Update `.claude/rules/token-efficiency.md` with the new script's usage line
-5. Validate with `bash -n scripts/{name}.sh` and `shellcheck scripts/{name}.sh`
+4. Add a routing row to `.claude/rules/deterministic-scripts.md`, then confirm with `scripts/help.sh` and `scripts/readme-table-diff.sh`
+5. Validate with `scripts/lint-shell.sh scripts/{name}.sh`
 
 No plan needed — these are small, self-contained scripts, not features.
 
 ## Constraints
 
-- Scripts must be bash 5+ (`.sh`), following existing `scripts/*.sh` conventions
+- Scripts must be bash 4.0 or later (`.sh`), per `scripts/README.md`, following existing `scripts/*.sh` conventions
 - Scripts must accept `--json` flag for structured output
 - Scripts must accept `--help` flag
 - Never duplicate functionality that an existing script already covers

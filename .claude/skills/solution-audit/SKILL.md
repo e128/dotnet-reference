@@ -11,7 +11,6 @@ description: >
   solution health, audit projects, check solution.
 argument-hint: "[--no-graph] [--min-severity LEVEL] [--dry-run]"
 allowed-tools: Read, Glob, Grep, Bash, Agent
-effort: high
 ---
 
 # Solution Audit

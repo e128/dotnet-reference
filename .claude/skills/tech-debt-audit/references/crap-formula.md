@@ -1,9 +1,3 @@
----
-name: crap-analysis
-description: Analyze code coverage and CRAP (Change Risk Anti-Patterns) scores to identify high-risk code. Use OpenCover + ReportGenerator for Risk Hotspots. Covers the correct CRAP formula, C#-specific CC counting (async/await IL inflation, LINQ, null-conditional), manual estimation fallback, and project constraints.
-invocable: true
----
-
 # CRAP Score Analysis
 
 ## When to Use This Skill
@@ -14,14 +8,6 @@ invocable: true
 - Prioritizing which code to test based on risk
 
 ---
-
-## Project Notes (Read First)
-
-This project uses `dotnet-coverage collect` (not Coverlet). Two limitations apply:
-
-1. **No automated CRAP scores.** Cobertura format (produced by `dotnet-coverage collect`) does not include cyclomatic complexity. OpenCover format (Coverlet) is required for ReportGenerator Risk Hotspots with CRAP scores. Adding Coverlet to test projects would enable OpenCover output.
-
-2. **Profiler fails on macOS ARM64 + MTP.** `dotnet-coverage collect` cannot attach its profiler to MTP-based test processes on macOS ARM64. The profiler initializes successfully on Linux CI.
 
 ### Manual CRAP Analysis (Current Fallback)
 

@@ -18,7 +18,7 @@ Rename residue (stale references after rename):
   [HIGH] Agent/skill/script referencing a source directory, project name, or domain that
          was renamed — grep for the old name across .claude/, lode/, and scripts/
   [HIGH] Domain example list in an agent prompt containing a domain that no longer exists
-         (e.g., cruisesearch after rename to travelsearch)
+         (e.g., a domain name that no longer exists after a rename)
   [MEDIUM] Lode files using old class/project/domain names in prose — the code was renamed
            but the documentation was not swept
 
@@ -47,8 +47,7 @@ Extension method dead-code false positives:
 domain names, the reviewer should verify:
 1. `rg -i "OldName" .claude/ lode/ scripts/`: catches agent/skill/config references
 2. `rg -i "OldName" tests/ -g "*.cs"`: catches test fixture anchors
-3. Domain routing tables (arch-scan, keyword-shortcuts) updated
-4. Lode domain directories and lode-map entries updated
+3. Lode domain directories and lode-map entries updated
 
 **Activation heuristic:** Include this rubric when: diff touches 3+ files under `.claude/`,
 `lode/`, or `scripts/`. Commit message contains "rename", "migrate", "move", or "consolidate", 

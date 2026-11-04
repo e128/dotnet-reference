@@ -32,14 +32,15 @@ Why 40KB: a subagent has a limited tool budget. A larger diff costs turns on pag
 Include this text verbatim in every reviewer prompt.
 
 ```text
-IMPORTANT: Review ONLY the diff provided below. Do not use Read or Grep
-to investigate files beyond these changes. If a changed line calls into
-existing code that looks suspicious, note it as "adjacent concern, not
-in diff" but do NOT spend tool calls reading that code. Your tool budget
-is limited; spend it analyzing the diff, not exploring the codebase.
+Review the diff provided below. Read each changed file in full and the
+few files next to it that you need for context. Do not explore the rest
+of the codebase. If a changed line calls into existing code that looks
+suspicious, note it as "adjacent concern, not in diff" and read that code
+only when the finding depends on it. Your tool budget is limited, so
+spend it on the changed files.
 ```
 
-Without this constraint, a reviewer reads whole files to learn context and exhausts its budget before it reports.
+Without this bound, a reviewer explores the codebase and exhausts its budget before it reports. The bound still lets the reviewer read the changed files, because a defect often depends on code the diff does not show.
 
 ## 2. Component Mode
 

@@ -21,7 +21,7 @@ In Claude Code, in the .NET repo you want audited:
 /tech-debt-audit src/Core           # Scope to specific module
 ```
 
-Output goes to `plans/TECH_DEBT_AUDIT.md`. First run takes 5–20 minutes depending on repo size; subsequent runs in repeat-run mode are faster.
+Output goes to `plans/TECH_DEBT_AUDIT.md`.
 
 ## Philosophy
 

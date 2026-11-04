@@ -3,9 +3,8 @@ name: dependency-manager
 description: >
   Manage NuGet dependencies in a .NET repo with CPM. Updates versions in
   Directory.Packages.props (Central Package Management), audits outdated and vulnerable
-  packages, and verifies the build after changes. Use for version bumps and health checks
-  on packages already in use. For evaluating whether to add a NEW package, use
-  this agent for both.
+  packages, and verifies the build after changes. Use for version bumps, health checks,
+  and pre-adoption audits of a new package.
   Triggers on: update packages, outdated packages, vulnerable packages, nuget update,
   bump version, dependency conflict, central package management, upgrade package,
   update NuGet, version bump, add package, new dependency, nuget audit, license check,
@@ -98,7 +97,7 @@ When evaluating a NEW package (not already in `Directory.Packages.props`):
 3. **Check security**: `scripts/dep-check.sh --vulnerable --json` + search for CVEs
 4. **Assess health**: Last publish date, download count, source repo activity
 5. **Check transitive deps**: Temporarily add the package, inspect transitive tree, verify no GPL transitives
-6. **Check conflicts**: `dotnet restore the solution file` — look for version conflicts or downgrades
+6. **Check conflicts**: run `scripts/build.sh` and look for NU1605 and NU1608 restore warnings (version conflicts or downgrades)
 7. **Report**: Produce a verdict (APPROVED/REJECTED/NEEDS_REVIEW) with license, security, health, and dependency details
 
 **License is a hard gate** — prohibited license = REJECTED regardless of other factors. Clean up any test installs before finishing.

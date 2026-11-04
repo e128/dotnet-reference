@@ -5,8 +5,7 @@ description: >
   last audit, then WCAG 2.2 A/AA conformance, Core Web Vitals, responsive usability, Baseline CSS
   features, color, typography, layout, interaction, and pinned CDN dependencies. Writes a dated
   report and an unapplied patch. Does not auto-invoke.
-  Triggers on: design audit, UI audit, WCAG check, accessibility audit, CSS review,
-  responsive audit, Core Web Vitals check, Baseline check, audit the frontend.
+  Use when asked to audit a web UI for accessibility, responsiveness, CSS, or performance.
 ---
 
 # Design Audit
@@ -230,9 +229,7 @@ self-hosting. If it was weighed, mark the finding `Repeat`.
 
 ### Topic 7: Performance and Stability
 
-Verify the current Core Web Vitals thresholds from web.dev on each run and cite the access date. At
-the time of writing, good targets are LCP at or below 2.5 s, INP at or below 200 ms, and CLS at or
-below 0.1. Do not assume they stay current.
+Verify the current Core Web Vitals thresholds from web.dev on each run and cite the access date.
 
 - Label lab measurements as lab data. Record tool, browser version, page, viewport, emulation,
   throttling, and results.
@@ -264,7 +261,7 @@ that the audit maps technical criteria only and claims no legal compliance.
 
 ## Modern CSS Baseline Review
 
-Check each feature against current MDN or web.dev data. Report one row per feature under
+Check each CSS feature the code uses or considers against current MDN or web.dev Baseline data. Report one row per feature under
 `## Modern CSS Baseline Review`: Baseline tier, Newly available date, current use in the code, and the
 fallback or the reason not to adopt it. Use `Not Baseline` when no status exists. A Newly available
 feature needs an `@supports` fallback unless consumer needs make it unnecessary. State why. `@supports`

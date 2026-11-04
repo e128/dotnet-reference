@@ -1,24 +1,21 @@
 # Code Review Rubrics
 
-Reference checklist tables for the code review workflow. Each section is injected into agent prompts
-based on the diff content (controllers → security, classes → SOLID, test files → test quality, etc.).
+Reference checklist tables for the code review workflow. The correctness reviewer reads the sections that match the diff (see each section's "include when" line).
 
 ## Security Checklist (Controllers & Business Logic)
 
-Include when the diff touches controllers, command handlers, or business logic. Multi-tenant repo, tenant isolation is the highest-leverage check.
+Include when the diff touches controllers, command handlers, or business logic.
 
 ```
 SECURITY RULES (include when diff touches controllers/handlers/business logic):
 
-  [CRITICAL] Public action missing [Authorize] attribute
+  [CRITICAL] Public endpoint missing an authorization check
   [CRITICAL] Returning raw entity instead of DTO
   [CRITICAL] Hardcoded secrets or credentials
   [CRITICAL] SQL built with string concatenation — must use parameterized queries
-  [HIGH] ID not validated against current user's tenant — multi-tenant isolation
-  [HIGH] Missing tenant isolation in repo calls
   [HIGH] Mass assignment from input (binding directly to entity)
-  [HIGH] Missing FluentValidation
-  [HIGH] Multi-step DB ops without TransactionScope
+  [HIGH] Missing input validation
+  [HIGH] Multi-step data operations without a transaction
   [HIGH] No null checks on inputs
   [HIGH] TODO/HACK/FIXME comments in new code
   [MEDIUM] Exceptions without context (generic messages)
@@ -140,7 +137,7 @@ TEST QUALITY RULES (include when diff touches test files):
   [HIGH] Flakiness indicators — Thread.Sleep/Task.Delay for synchronization, DateTime.Now
          without abstraction, Random without seed, environment-dependent paths
   [HIGH] Test ordering dependency — static mutable fields modified across tests,
-         [ClassInitialize] that does not fully reset state, tests that fail individually
+         shared fixtures or static state that is not fully reset, tests that fail individually
          but pass in suite (or vice versa)
 
   MEDIUM — Should fix for maintainability:
@@ -311,8 +308,7 @@ Suppression scope:
 Challenge questions (apply to every suppression):
   1. "Can the code be restructured to eliminate the warning entirely?"
      → If yes: [HIGH] — restructure instead of suppress
-  2. "Is this a framework/tooling limitation (Dapper requires long, Blazor DTO shape,
-     pre-DI startup) or a design choice?"
+  2. "Is this a framework/tooling limitation (for example pre-DI startup) or a design choice?"
      → Framework limitation: acceptable if stated explicitly
      → Design choice: [MEDIUM] — challenge whether the design is correct
   3. "Does the suppressed analyzer catch a real bug category in this codebase?"

@@ -38,7 +38,7 @@ read them first. Then match each error to a known divergence pattern:
 | Path separator       | `\\` in hardcoded paths fails on Linux              |
 
 For each error, explain the local-vs-CI gap, apply the fix, then validate with
-`scripts/check.sh --all --no-format --json`. If the divergence type is new and
+`scripts/check.sh --all --json`. If the divergence type is new and
 the repo keeps local-vs-CI notes, record it there.
 
 ---

@@ -12,9 +12,7 @@ description: >
 
 # Bash Scripting Patterns
 
-Bash 5+. Scripts live in `scripts/` (`.sh`), must pass `shellcheck` before commit.
-
-Generic bash idioms (control flow, string/array ops, functions, built-ins): see `references/bash-reference.md`. This file covers only project conventions and gotchas.
+Bash 4.0 minimum (5.3 current). `scripts/lib.sh` re-execs under Homebrew Bash. Scripts live in `scripts/` (`.sh`), must pass `shellcheck` before commit.
 
 ## Naming Conventions
 
@@ -119,30 +117,15 @@ check_prerequisites() {
 }
 ```
 
-### Shared Library Pattern
+### Shared Library
+
+Source `scripts/lib.sh` for shared helpers:
 
 ```bash
-# In scripts/lib.sh
-#!/usr/bin/env bash
-
-# Shared utility functions sourced by other scripts.
-
-get_repo_root() {
-  git rev-parse --show-toplevel
-}
-
-log_info() {
-  echo "[INFO] $*" >&2
-}
-
-log_error() {
-  echo "[ERROR] $*" >&2
-}
-
-# In consumer script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 ```
+
+It provides `info`, `ok`, `warn`, `err`, `find_repo_root`, `has_flag`, `get_option`, `json_object`, and `iso_timestamp`. Read `lib.sh` before you add a helper.
 
 ## Command Design Rules
 
@@ -179,9 +162,4 @@ scripts/lint-shell.sh scripts/my-script.sh
 
 ## Self-Improvement
 
-After writing or fixing any Bash script:
-
-1. **Add new pitfalls to the quick reference** — If a new error was hit that isn't in the Pitfalls Quick Reference table, add a row immediately (Symptom | Root cause | Fix).
-2. **Update version-specific guidance** — If a Bash feature requires a specific version (e.g., associative arrays require Bash 4+), note the version requirement.
-3. **Record project-specific patterns** — If a pattern emerged specific to this project's scripts, add it here.
-4. **Fix stale instructions immediately** — If any instruction in this skill contradicted what actually worked, correct it before the session ends.
+After writing or fixing a Bash script, add a row to the Pitfalls Quick Reference (Symptom | Root cause | Fix) only when the issue would affect most future scripts. State the rule, not the incident or date. Correct any instruction in this skill that contradicted what worked.

@@ -17,7 +17,7 @@ Compare result to baseline: same or higher count, no new failures or skips.
 scripts/format.sh --check
 ```
 
-If files need reformatting, fix them before proceeding. Format compliance is non-negotiable.
+If files need reformatting, fix them before proceeding.
 
 ## IDE Diagnostics (Enhanced Layer)
 

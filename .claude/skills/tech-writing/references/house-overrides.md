@@ -30,7 +30,7 @@ Chat replies are out of scope. `lode/practices.md` (Chat Style) governs chat.
 
 ## Where Google Wins
 
-- Use "you" for the reader. Use "must" for a requirement, "can" for an option, and "we recommend" for advice.
+- Use "you" for the reader. Use "must" for a requirement and "can" for an option. For advice, write "Use X when..." or "X is the better choice when...".
 - Put the condition before the instruction.
 - Keep the serial comma, active voice and present tense.
 - Plain words beat long words. Exact technical terms stay.

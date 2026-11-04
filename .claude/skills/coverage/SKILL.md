@@ -79,7 +79,7 @@ AskUserQuestion({
 
 - Never lower an existing threshold without approval
 - Use `AskUserQuestion` for approval before writing workflow changes
-- If `coverage.config.xml` is missing, warn: run config-audit first
+- If `coverage.config.xml` is missing, report that and stop.
 
 ---
 

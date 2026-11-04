@@ -2,14 +2,10 @@
 name: tech-debt-audit
 description: >
   Tech debt and architecture audit for .NET repos. Produces plans/TECH_DEBT_AUDIT.md with file-cited
-  findings, severity, and effort estimates. Supports module scoping and focused-mode shortcuts
+  findings, severity, and effort ratings. Supports module scoping and focused-mode shortcuts
   (crap, dead-code, duplicates, suppressions, solid) for single-dimension audits. Does not auto-invoke.
-  Triggers on: tech debt audit, debt audit, codebase health check, architecture review,
-  code quality assessment, audit tech debt, tech debt scan, code health, crap analysis,
-  crap score, dead code audit, find dead code, unused types, dup-scan, code duplication,
-  duplicate code, find duplicates, DRY violations, review code suppressions,
-  audit pragma warnings, pragma warning disable, suppression cleanup, code hygiene,
-  SOLID violations, solid review.
+  Use for tech debt or code-health audits and single-dimension scans: CRAP test risk, dead code,
+  duplication, pragma and suppression review, and SOLID.
 argument-hint: "[scope path] [crap | dead-code | duplicates | suppressions | solid | all]"
 ---
 
@@ -39,7 +35,7 @@ When a mode argument is provided, skip Phase 1 orientation and Phase 2 full audi
 
 **CRAP formula:** `CRAP = CC² × (1 − cov/100)³ + CC` — source-level cyclomatic complexity, not IL-level. C#-specific counting rules: [references/crap-formula.md](references/crap-formula.md).
 
-**Suppression policy:** Default stance is fix, don't suppress. Move recurring test suppressions to `tests/.editorconfig`. All suppressions require explicit user approval per CLAUDE.md. See [references/suppression-policy.md](references/suppression-policy.md).
+**Suppression policy:** Default stance is fix, don't suppress. Move recurring test suppressions to `tests/.editorconfig`. All suppressions require explicit user approval per `.claude/rules/auto-approvals.md`. See [references/suppression-policy.md](references/suppression-policy.md).
 
 ---
 

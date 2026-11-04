@@ -69,7 +69,8 @@ Include this script block in `<head>`:
 
 ```html
 <script type="module">
-import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+// Mermaid pin verified 2026-11-04T15:24:36Z (latest release at least two weeks old)
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@12.2.0/dist/mermaid.esm.min.mjs';
 mermaid.initialize({startOnLoad:true,theme:'dark'});
 document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('pre.mermaid').forEach(p=>p.setAttribute('data-src',p.textContent));

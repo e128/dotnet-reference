@@ -116,14 +116,14 @@ graph TB
 
 ---
 
-*Updated: <UTC timestamp — 2026-04-21T00:00:00Z>*
+*Updated: <ISO 8601 UTC timestamp>*
 ```
 
 ---
 
 ## Writing rules
 
-- UTC timestamp on the last line: `*Updated: 2026-04-21T14:32:00Z*`
+- Run `scripts/lode-ts.sh <file>` after the write. It sets the `*Updated: <ISO 8601 UTC>*` line. Keep that line last.
 - If updating an existing file, rewrite it entirely — the lode captures current state, not a diff.
 - Omit empty sections entirely.
 - For repos with > 30 third-party packages, list only architecturally significant ones. Add: `> N additional packages omitted. See <relative path to manifest>.`

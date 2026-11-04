@@ -1,7 +1,7 @@
 # Clanker Discipline: Pattern Examples
 
 Detailed before/after code examples for each state & mutation discipline rule.
-Referenced from [review-rubrics.md](review-rubrics.md) § State & Mutation Discipline.
+Referenced from [review-rubrics.md](review-rubrics.md) § State & Mutation Discipline. The examples are TypeScript and illustrative. Apply each rule to C# the same way.
 
 ---
 
@@ -9,7 +9,7 @@ Referenced from [review-rubrics.md](review-rubrics.md) § State & Mutation Disci
 
 ### Before: cached flags
 
-An agent was asked to show a footer only when the assistant finishes naturally. It invented four flags:
+Cached flags that restate state the code already holds:
 
 ```ts
 type ThreadState = {

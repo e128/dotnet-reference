@@ -7,12 +7,10 @@ description: >
   hook + optional keyword shortcut). Scores candidates on token-savings potential
   and builds the top N if approved. Supports --scan-skills mode to statically
   analyze agent/skill files for inline bash that should be extracted to scripts.
-  Triggers on: script discovery, find script candidates, what should be a script,
-  repeated patterns, deterministic scripts, automate patterns, session patterns,
-  discover scripts, what keeps repeating, find automations, script opportunities,
-  review agents for scripts, extract scripts from skills, deterministic portions.
-  Not for: token optimization plans (use token-optimizer), weekly session analysis
-  (use weekly-learner), or single-session review (use token-optimizer --current).
+  Triggers on requests to find repeated behavior worth a script, or to extract inline
+  bash from agents and skills.
+  Not for: token optimization plans, weekly session analysis, or single-session
+  review (use weekly-learner).
 argument-hint: "[--days N] [--top N] [--report-only] [--scan-skills]"
 ---
 
@@ -169,22 +167,3 @@ See [references/build-phase.md](references/build-phase.md). No plan needed: smal
 - Read before editing. Re-read after any `format.sh` run
 - Use `scripts/ts.sh` for timestamps. Run post-change verification on affected lode files
 
-## Self-Improvement
-
-At end of run, build this payload. Spawn `skill-self-updater` only if ≥1 section is non-empty.
-
-```markdown
-## Self-Improvement Report: script-discovery
-*Run: {one-line description of what was done}*
-
-### Errors Encountered
-- {error type}: {root cause} — {what triggered it}
-
-### User Corrections / Redirects
-- {what the user corrected} — {what assumption in SKILL.md was wrong}
-
-### Undocumented Edge Cases
-- {input/state not covered by SKILL.md} — {how it was handled} — {suggested addition}
-```
-
-Spawn passes this block as the prompt. Clean run (all sections empty) → do not spawn.
