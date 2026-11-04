@@ -18,7 +18,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>1.66.0</Version>
+    <Version>1.67.0</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>

@@ -15,6 +15,8 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
 
     internal const string InsertAtZeroDiagnosticId = "E128069";
 
+    internal const string RemoveAtZeroDiagnosticId = "E128153";
+
     private const string ListMetadataName = "System.Collections.Generic.List`1";
     private const string ArrayMetadataName = "System.Array";
     private const string EnumerableMetadataName = "System.Linq.Enumerable";
@@ -35,6 +37,14 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         true);
 
+    private static readonly DiagnosticDescriptor RemoveAtZeroRule = new(
+        RemoveAtZeroDiagnosticId,
+        "List.RemoveAt(0) in loop creates O(n²) complexity",
+        "RemoveAt(0) shifts all remaining elements on every call — use a Queue<T>, LinkedList<T>, or index forward instead",
+        "Performance",
+        DiagnosticSeverity.Warning,
+        true);
+
     private static readonly ImmutableHashSet<string> SortMethods = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "Sort",
@@ -44,7 +54,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         "ThenByDescending");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        [SortRule, InsertAtZeroRule];
+        [SortRule, InsertAtZeroRule, RemoveAtZeroRule];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -88,7 +98,13 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
 
         if (string.Equals(methodName, "Insert", StringComparison.Ordinal))
         {
-            AnalyzeInsertAtZero(context, invocation, listType);
+            AnalyzeShiftAtZero(context, invocation, listType, InsertAtZeroRule);
+            return;
+        }
+
+        if (string.Equals(methodName, "RemoveAt", StringComparison.Ordinal))
+        {
+            AnalyzeShiftAtZero(context, invocation, listType, RemoveAtZeroRule);
             return;
         }
 
@@ -123,13 +139,14 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(SortRule, invocation.GetLocation(), methodName));
     }
 
-    private static void AnalyzeInsertAtZero(
+    private static void AnalyzeShiftAtZero(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,
-        INamedTypeSymbol? listType)
+        INamedTypeSymbol? listType,
+        DiagnosticDescriptor rule)
     {
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count < 2)
+        if (args.Count < 1)
         {
             return;
         }
@@ -153,7 +170,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(InsertAtZeroRule, invocation.GetLocation()));
+        context.ReportDiagnostic(Diagnostic.Create(rule, invocation.GetLocation()));
     }
 
     private static bool TryGetMethodName(

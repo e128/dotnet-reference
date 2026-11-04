@@ -1,3 +1,17 @@
+## Release 1.67.0
+
+### New Rules
+
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|------
+E128153 | Performance | Warning  | List.RemoveAt(0) in loop creates O(n²) complexity
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------
+E128152 | Performance  | Warning      | Performance  | Warning      | Loop depth counts only varying trip counts, `cubic` becomes a tier, recursion is classified by argument contraction, and memoization needs a read and a write.
+
 ## Release 1.66.0
 
 ### New Rules

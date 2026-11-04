@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-04T00:52:22Z*
+*Updated: 2026-11-04T01:16:43Z*
 
 ## Overview
 
@@ -135,6 +135,7 @@ is missing from either file blocks the ship, even on a docs-only change set.
 | 1.42.3  | (none)      | Symbol matching and API gating in E128018, 028, 032, 051, 056, 068, 072, 081, 083, 090, 102. Fix providers move to `UsingDirectives.AddIfMissing`. |
 | 1.60.4  | E128131-141 | Interop, span-bulk, and reflection rules. First new-rule release since 1.42.1. |
 | 1.66.0  | E128142-152 | FIPS cryptography policy rules and the complexity ceiling. E128071 and E128075 move to Error. |
+| 1.67.0  | E128153 | `List.RemoveAt(0)` in a loop. E128152 gains constant-trip exclusion, a `cubic` tier, argument-contraction recursion classification, and read-plus-write memoization. |
 
 ## Sources
 

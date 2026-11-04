@@ -128,6 +128,46 @@ public sealed class SortInLoopE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task RemoveAtZero_InForeach_Fires_E128153()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var result = new List<int> { 1, 2, 3 };
+                                   while (result.Count > 0)
+                                   {
+                                       {|E128153:result.RemoveAt(0)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemoveAtNonZero_InForeach_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var result = new List<int> { 1, 2, 3 };
+                                   while (result.Count > 0)
+                                   {
+                                       result.RemoveAt(1);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Sort_OutsideLoop_DoesNotFire()
     {
         return VerifyAsync("""

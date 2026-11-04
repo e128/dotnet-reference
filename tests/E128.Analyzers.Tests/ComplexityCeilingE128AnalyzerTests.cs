@@ -290,4 +290,100 @@ public sealed class ComplexityCeilingE128AnalyzerTests
     {
         return VerifyAsync(LocalDictionaryMemoizedRecursionCode);
     }
+
+    private const string ConstantInnerLoopCode = """
+                                                 class C
+                                                 {
+                                                     void M(string[] items)
+                                                     {
+                                                         foreach (var a in items)
+                                                         {
+                                                             for (var i = 0; i < 4; i++)
+                                                             {
+                                                                 _ = a.Length + i;
+                                                             }
+                                                         }
+                                                     }
+                                                 }
+                                                 """;
+
+    private const string ConstantCollectionLoopCode = """
+                                                      class C
+                                                      {
+                                                          void M()
+                                                          {
+                                                              foreach (var a in new[] { 1, 2, 3 })
+                                                              {
+                                                                  foreach (var b in new[] { 4, 5 })
+                                                                  {
+                                                                      _ = a + b;
+                                                                  }
+                                                              }
+                                                          }
+                                                      }
+                                                      """;
+
+    private const string DivisiveRecursionCode = """
+                                                 class C
+                                                 {
+                                                     int Count(int n)
+                                                     {
+                                                         return n < 2 ? n : Count(n / 2) + Count(n / 2);
+                                                     }
+                                                 }
+                                                 """;
+
+    private const string WriteOnlyCacheRecursionCode = """
+                                                       class C
+                                                       {
+                                                           int[] cache = new int[64];
+
+                                                           int Fib(int n)
+                                                           {
+                                                               if (n < 2)
+                                                               {
+                                                                   return n;
+                                                               }
+                                                               cache[n] = Fib(n - 1) + Fib(n - 2);
+                                                               return 0;
+                                                           }
+                                                       }
+                                                       """;
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenInnerLoopHasConstantBound()
+    {
+        return VerifyAsync(ConstantInnerLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopsRunOverConstantCollections()
+    {
+        return VerifyAsync(ConstantCollectionLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionHalvesTheArgument()
+    {
+        return VerifyAsync(DivisiveRecursionCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_FlagsBranchingRecursion_WhenCacheIsWrittenAndNeverRead()
+    {
+        return VerifyAsync(WriteOnlyCacheRecursionCode,
+            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(5, 5));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenCubicLoopMatchesCubicCeiling()
+    {
+        return VerifyWithCeilingAsync("cubic", DepthThreeLoopCode);
+    }
 }
