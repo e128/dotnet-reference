@@ -386,4 +386,75 @@ public sealed class ComplexityCeilingE128AnalyzerTests
     {
         return VerifyWithCeilingAsync("cubic", DepthThreeLoopCode);
     }
+
+    private const string CoordinateLoopCode = """
+                                              class C
+                                              {
+                                                  void M(string[][] rows)
+                                                  {
+                                                      foreach (var row in rows)
+                                                      {
+                                                          foreach (var cell in row)
+                                                          {
+                                                              _ = cell;
+                                                          }
+                                                      }
+                                                  }
+                                              }
+                                              """;
+
+    private const string IndexedCoordinateLoopCode = """
+                                                     class C
+                                                     {
+                                                         void M(string[][] rows)
+                                                         {
+                                                             foreach (var row in rows)
+                                                             {
+                                                                 for (var i = 0; i < row.Length; i++)
+                                                                 {
+                                                                     _ = row[i];
+                                                                 }
+                                                             }
+                                                         }
+                                                     }
+                                                     """;
+
+    private const string TriangularLoopCode = """
+                                              class C
+                                              {
+                                                  void M(string[] items)
+                                                  {
+                                                      for (var i = 0; i < items.Length; i++)
+                                                      {
+                                                          for (var j = 0; j < i; j++)
+                                                          {
+                                                              _ = items[i].Length + items[j].Length;
+                                                          }
+                                                      }
+                                                  }
+                                              }
+                                              """;
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenInnerLoopRunsOverOuterElement()
+    {
+        return VerifyAsync(CoordinateLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenIndexedLoopBoundIsOuterElement()
+    {
+        return VerifyAsync(IndexedCoordinateLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_FlagsNestedLoop_WhenInnerBoundReadsOuterCounter()
+    {
+        return VerifyAsync(TriangularLoopCode,
+            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(7, 13));
+    }
 }
