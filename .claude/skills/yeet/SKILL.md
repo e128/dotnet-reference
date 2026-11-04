@@ -183,7 +183,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
   gh pr create --title "<commit subject line>" --body "<body>"
   ```
     - Title: reuse the commit subject line (the `type(scope): summary` part)
-    - Body: generate a `## Summary` with 1-3 bullet points covering the changeset, a `## Test plan` with bulleted checklist, and the Claude Code footer, never include an email address anywhere in the body
+    - Body: use these sections, and omit one that does not apply: `## Executive Summary` (problem, cause, fix, and measured results with test conditions), `## Code Changes`, `## Tests and Tooling` (name what did not run), `## Review Guide`, `## Rollback`, and `## Links` for work items. Do not invent causes, measurements, or test results. End with the Claude Code footer. Never include an email address anywhere in the body
     - If a PR already exists for this branch, skip PR creation silently
     - Report the PR URL at the end
 
