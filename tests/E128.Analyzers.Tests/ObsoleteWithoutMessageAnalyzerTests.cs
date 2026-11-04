@@ -78,6 +78,48 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NullMessage_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               [{|E128169:Obsolete(null)|}]
+                               void Old() { }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReorderedNamedArgumentsWithEmptyMessage_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               [{|E128169:Obsolete(error: true, message: "")|}]
+                               void Old() { }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReorderedNamedArgumentsWithMessage_Silent()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               [Obsolete(error: true, message: "Use New instead.")]
+                               void Old() { }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task OtherAttribute_Silent()
     {
         return VerifyAsync("""

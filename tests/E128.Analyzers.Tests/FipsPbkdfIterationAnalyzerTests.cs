@@ -22,7 +22,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task CompoundAssignmentWithLargeOperand_ChecksOperandNotOperator()
+    public Task CompoundAssignment_IsSkipped()
     {
         return VerifyAsync("""
                            using System.Security.Cryptography;
@@ -30,7 +30,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
                            {
                                void M(Rfc2898DeriveBytes k)
                                {
-                                   k.IterationCount += 700_000;
+                                   k.IterationCount += 1;
                                }
                            }
                            """);

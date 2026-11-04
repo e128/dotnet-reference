@@ -98,6 +98,48 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task SameFieldOnOtherInstance_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private readonly List<int> _children = new();
+
+                               void M(C other)
+                               {
+                                   foreach (var child in _children)
+                                   {
+                                       other._children.Add(child);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SameFieldThroughThis_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               private readonly List<int> _children = new();
+
+                               void M()
+                               {
+                                   foreach (var child in {|E128155:_children|})
+                                   {
+                                       this._children.Add(child);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ImmutableCollection_DoesNotFire()
     {
         return VerifyAsync("""
@@ -171,6 +213,83 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
                                    {
                                        _ = items.Count;
                                        _ = items.Contains(item);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ArrayElementWriteInOwnLoop_Silent()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               void M(int[] items)
+                               {
+                                   foreach (var item in items)
+                                   {
+                                       items[0] = item;
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemoveThenBreak_Silent()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M(List<int> items)
+                               {
+                                   foreach (var item in items)
+                                   {
+                                       items.Remove(item);
+                                       break;
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemoveThenReturn_Silent()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M(List<int> items)
+                               {
+                                   foreach (var item in items)
+                                   {
+                                       items.Remove(item);
+                                       return;
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PlainRemoveInOwnLoop_StillFires()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           class C
+                           {
+                               void M(List<int> items)
+                               {
+                                   foreach (var item in {|E128155:items|})
+                                   {
+                                       items.Remove(item);
                                    }
                                }
                            }

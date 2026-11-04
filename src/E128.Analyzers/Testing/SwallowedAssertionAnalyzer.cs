@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -37,34 +38,70 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeTry, SyntaxKind.TryStatement);
+        context.RegisterCompilationStartAction(OnCompilationStart);
     }
 
-    private static void AnalyzeTry(SyntaxNodeAnalysisContext context)
+    private static void OnCompilationStart(CompilationStartAnalysisContext context)
+    {
+        // Two references can declare the same type, so the lookup keeps every match.
+        var assertTypes = context.Compilation.GetTypesByMetadataName("Xunit.Assert");
+
+        if (assertTypes.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        var types = new KnownTypes(
+            assertTypes,
+            context.Compilation.GetTypeByMetadataName("System.Exception"),
+            context.Compilation.GetTypesByMetadataName("Xunit.Sdk.XunitException"));
+
+        context.RegisterSyntaxNodeAction(ctx => AnalyzeTry(ctx, types), SyntaxKind.TryStatement);
+    }
+
+    private static void AnalyzeTry(SyntaxNodeAnalysisContext context, KnownTypes types)
     {
         var tryStatement = (TryStatementSyntax)context.Node;
 
-        if (!tryStatement.Block.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(call => IsAssertCall(call, context)))
+        if (!tryStatement.Block.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(call => IsAssertCall(call, context, types, null)))
         {
             return;
         }
 
         foreach (var catchClause in tryStatement.Catches)
         {
-            if (CatchesAssertionFailure(catchClause, context) && !Rethrows(catchClause))
+            // An exception filter narrows the catch, so the catch does not swallow every failure.
+            if (catchClause.Filter is null
+                && CatchesAssertionFailure(catchClause, context, types)
+                && !Rethrows(catchClause)
+                && !CallsAssertFail(catchClause, context, types))
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, catchClause.CatchKeyword.GetLocation()));
             }
         }
     }
 
-    private static bool IsAssertCall(InvocationExpressionSyntax call, SyntaxNodeAnalysisContext context)
+    private static bool IsAssertCall(InvocationExpressionSyntax call, SyntaxNodeAnalysisContext context, KnownTypes types, string? methodName)
     {
         return context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol is IMethodSymbol method
-               && string.Equals(method.ContainingType.ToDisplayString(), "Xunit.Assert", StringComparison.Ordinal);
+               && (methodName is null || string.Equals(method.Name, methodName, StringComparison.Ordinal))
+               && ContainsType(types.AssertTypes, method.ContainingType);
     }
 
-    private static bool CatchesAssertionFailure(CatchClauseSyntax catchClause, SyntaxNodeAnalysisContext context)
+    private static bool ContainsType(ImmutableArray<INamedTypeSymbol> candidates, ITypeSymbol? type)
+    {
+        foreach (var candidate in candidates)
+        {
+            if (SymbolEqualityComparer.Default.Equals(candidate, type))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool CatchesAssertionFailure(CatchClauseSyntax catchClause, SyntaxNodeAnalysisContext context, KnownTypes types)
     {
         if (catchClause.Declaration is null)
         {
@@ -72,14 +109,43 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
         }
 
         var type = context.SemanticModel.GetTypeInfo(catchClause.Declaration.Type, context.CancellationToken).Type;
-        var name = type?.ToDisplayString();
 
-        return string.Equals(name, "System.Exception", StringComparison.Ordinal)
-               || string.Equals(name, "Xunit.Sdk.XunitException", StringComparison.Ordinal);
+        return SymbolEqualityComparer.Default.Equals(type, types.ExceptionType)
+               || ContainsType(types.XunitExceptionTypes, type);
     }
 
     private static bool Rethrows(CatchClauseSyntax catchClause)
     {
-        return catchClause.Block.DescendantNodes().Any(node => node is ThrowStatementSyntax or ThrowExpressionSyntax);
+        return OwnNodes(catchClause).Any(node => node is ThrowStatementSyntax or ThrowExpressionSyntax);
+    }
+
+    private static bool CallsAssertFail(CatchClauseSyntax catchClause, SyntaxNodeAnalysisContext context, KnownTypes types)
+    {
+        return OwnNodes(catchClause).OfType<InvocationExpressionSyntax>().Any(call => IsAssertCall(call, context, types, "Fail"));
+    }
+
+    // A throw or a call inside a nested lambda or local function does not run when the catch runs.
+    private static IEnumerable<SyntaxNode> OwnNodes(CatchClauseSyntax catchClause)
+    {
+        return catchClause.Block.DescendantNodes(node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax));
+    }
+
+    private sealed class KnownTypes
+    {
+        internal KnownTypes(
+            ImmutableArray<INamedTypeSymbol> assertTypes,
+            INamedTypeSymbol? exceptionType,
+            ImmutableArray<INamedTypeSymbol> xunitExceptionTypes)
+        {
+            AssertTypes = assertTypes;
+            ExceptionType = exceptionType;
+            XunitExceptionTypes = xunitExceptionTypes;
+        }
+
+        internal ImmutableArray<INamedTypeSymbol> AssertTypes { get; }
+
+        internal INamedTypeSymbol? ExceptionType { get; }
+
+        internal ImmutableArray<INamedTypeSymbol> XunitExceptionTypes { get; }
     }
 }

@@ -42,7 +42,7 @@ public sealed class ByteSizeUnwrapViaCastAnalyzer : DiagnosticAnalyzer
     {
         var castExpression = (CastExpressionSyntax)context.Node;
 
-        var inner = UnwrapParentheses(castExpression.Expression);
+        var inner = ExpressionUnwrapper.Parentheses(castExpression.Expression);
 
         if (inner is not MemberAccessExpressionSyntax memberAccess)
         {
@@ -70,16 +70,6 @@ public sealed class ByteSizeUnwrapViaCastAnalyzer : DiagnosticAnalyzer
             castExpression.GetLocation(),
             castExpression.Type.ToString(),
             memberName));
-    }
-
-    private static ExpressionSyntax UnwrapParentheses(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parens)
-        {
-            expression = parens.Expression;
-        }
-
-        return expression;
     }
 
     private static bool IsUnitProperty(string name)

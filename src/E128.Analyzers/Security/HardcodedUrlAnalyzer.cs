@@ -97,9 +97,12 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        var host = uri.Host;
         foreach (var suffix in AllowedHostSuffixes)
         {
-            if (uri.Host.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            // Match the host itself or a subdomain. A bare suffix match would allow evilexample.com.
+            if (string.Equals(host, suffix, StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith("." + suffix, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }

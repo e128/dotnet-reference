@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace E128.Analyzers.Reliability;
 
@@ -82,32 +83,73 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var methodName = memberAccess.Name.Identifier.ValueText;
-        var isScoped = string.Equals(methodName, "AddScoped", StringComparison.Ordinal);
-        var isSingleton = string.Equals(methodName, "AddSingleton", StringComparison.Ordinal);
+        var lifetime = GetLifetime(memberAccess.Name.Identifier.ValueText);
 
-        if (!isScoped && !isSingleton)
+        if (lifetime == Lifetime.None)
         {
             return;
         }
 
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol method)
+        if (context.SemanticModel.GetOperation(invocation, context.CancellationToken)
+            is not IInvocationOperation operation)
         {
             return;
         }
 
-        if (isScoped)
+        var method = operation.TargetMethod;
+        var typeOfRegistrations = ReadTypeOfArguments(operation, out var hasFactoryOrInstance);
+
+        if (lifetime == Lifetime.Scoped)
         {
-            AddTypeArguments(method, scopedServices);
+            CollectScopedServices(method, typeOfRegistrations, scopedServices);
+
             return;
         }
 
-        // Any argument makes the registration an instance or a factory call. The container then picks
-        // the constructor at run time, or receives a built instance, so the type arguments alone do
-        // not name the object the container holds.
-        if (invocation.ArgumentList.Arguments.Count > 0)
+        // A factory or an instance argument means the container receives a built object, so the type
+        // arguments alone do not name the object the container holds. A service key is not such an
+        // argument, so a keyed registration stays in scope.
+        if (hasFactoryOrInstance)
         {
+            return;
+        }
+
+        CollectSingletonCandidate(invocation, method, typeOfRegistrations, singletonCandidates);
+    }
+
+    private static void CollectScopedServices(
+        IMethodSymbol method,
+        List<TypeOfRegistration> typeOfRegistrations,
+        ConcurrentBag<INamedTypeSymbol> scopedServices)
+    {
+        AddTypeArguments(method, scopedServices);
+
+        foreach (var registration in typeOfRegistrations)
+        {
+            if (registration.Type is INamedTypeSymbol namedType)
+            {
+                scopedServices.Add(namedType);
+            }
+        }
+    }
+
+    private static void CollectSingletonCandidate(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        List<TypeOfRegistration> typeOfRegistrations,
+        ConcurrentBag<SingletonCandidate> singletonCandidates)
+    {
+        if (typeOfRegistrations.Count > 0)
+        {
+            var typeOfImplementation = GetTypeOfImplementation(typeOfRegistrations);
+
+            if (typeOfImplementation is not null)
+            {
+                singletonCandidates.Add(new SingletonCandidate(
+                    typeOfImplementation.Location,
+                    (INamedTypeSymbol)typeOfImplementation.Type));
+            }
+
             return;
         }
 
@@ -119,6 +161,108 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
                 GetRegistrationLocation(invocation, method),
                 implementation));
         }
+    }
+
+    private static Lifetime GetLifetime(string methodName)
+    {
+        // The rule covers Add, TryAdd, AddKeyed, and TryAddKeyed. AddHostedService registers a singleton.
+        if (string.Equals(methodName, "AddHostedService", StringComparison.Ordinal))
+        {
+            return Lifetime.Singleton;
+        }
+
+        var name = methodName.StartsWith("Try", StringComparison.Ordinal) ? methodName.Substring(3) : methodName;
+        name = name.StartsWith("AddKeyed", StringComparison.Ordinal)
+            ? name.Substring("AddKeyed".Length)
+            : name.StartsWith("Add", StringComparison.Ordinal)
+                ? name.Substring("Add".Length)
+                : string.Empty;
+
+        return name switch
+        {
+            "Scoped" => Lifetime.Scoped,
+            "Singleton" => Lifetime.Singleton,
+            _ => Lifetime.None
+        };
+    }
+
+    private static List<TypeOfRegistration> ReadTypeOfArguments(IInvocationOperation operation, out bool hasFactoryOrInstance)
+    {
+        var registrations = new List<TypeOfRegistration>();
+        hasFactoryOrInstance = false;
+
+        foreach (var argument in operation.Arguments)
+        {
+            var parameter = argument.Parameter;
+
+            if (parameter is null
+                || argument.ArgumentKind == ArgumentKind.DefaultValue
+                || (operation.TargetMethod.IsExtensionMethod && parameter.Ordinal == 0)
+                || string.Equals(parameter.Name, "serviceKey", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var value = argument.Value;
+
+            while (value is IConversionOperation conversion)
+            {
+                value = conversion.Operand;
+            }
+
+            if (value is ITypeOfOperation typeOf)
+            {
+                registrations.Add(new TypeOfRegistration(parameter.Name, typeOf.TypeOperand, typeOf.Syntax.GetLocation()));
+            }
+            else
+            {
+                hasFactoryOrInstance = true;
+            }
+        }
+
+        return registrations;
+    }
+
+    private static TypeOfRegistration? GetTypeOfImplementation(List<TypeOfRegistration> registrations)
+    {
+        // The implementationType argument names the object. A lone serviceType argument names it only
+        // when the type is a concrete class, because an interface has no constructor.
+        TypeOfRegistration? service = null;
+
+        foreach (var registration in registrations)
+        {
+            if (string.Equals(registration.ParameterName, "implementationType", StringComparison.Ordinal))
+            {
+                return registration.Type is INamedTypeSymbol ? registration : null;
+            }
+
+            service = registration;
+        }
+
+        return service is { Type: INamedTypeSymbol { TypeKind: TypeKind.Class, IsAbstract: false } } ? service : null;
+    }
+
+    private enum Lifetime
+    {
+        None = 0,
+        Scoped = 1,
+        Singleton = 2
+    }
+
+    private sealed class TypeOfRegistration
+    {
+        internal TypeOfRegistration(string parameterName, ITypeSymbol type, Location location)
+        {
+            ParameterName = parameterName;
+            Type = type;
+            Location = location;
+        }
+
+        internal string ParameterName { get; }
+
+        internal ITypeSymbol Type { get; }
+
+        internal Location Location { get; }
     }
 
     private static void AddTypeArguments(IMethodSymbol method, ConcurrentBag<INamedTypeSymbol> target)

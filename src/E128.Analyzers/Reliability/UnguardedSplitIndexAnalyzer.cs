@@ -97,8 +97,10 @@ public sealed class UnguardedSplitIndexAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // A read of the local's Length anywhere in the enclosing member counts as a guard. The rule
-    // does not model control flow, so it prefers silence over a false report.
+    // A length check on the local before the index access, inside the enclosing member, counts as a
+    // guard. The check can be a Length read, a null-conditional Length read, a property pattern on
+    // Length, or a list pattern. A check after the access cannot guard it. The rule does not model
+    // control flow, so it prefers silence over a false report.
     private static bool LengthIsRead(ILocalSymbol local, SyntaxNode access, OperationAnalysisContext context)
     {
         var member = access.FirstAncestorOrSelf<MemberDeclarationSyntax>();
@@ -107,10 +109,38 @@ public sealed class UnguardedSplitIndexAnalyzer : DiagnosticAnalyzer
         return member is null
                || model is null
                || member.DescendantNodes()
-            .OfType<MemberAccessExpressionSyntax>()
-            .Any(memberAccess => string.Equals(memberAccess.Name.Identifier.ValueText, "Length", StringComparison.Ordinal)
-                                 && SymbolEqualityComparer.Default.Equals(
-                                     model.GetSymbolInfo(memberAccess.Expression, context.CancellationToken).Symbol,
-                                     local));
+            .Any(node => node.SpanStart < access.SpanStart
+                         && GuardedExpression(node) is { } guarded
+                         && SymbolEqualityComparer.Default.Equals(
+                             model.GetSymbolInfo(guarded, context.CancellationToken).Symbol,
+                             local));
+    }
+
+    private static ExpressionSyntax? GuardedExpression(SyntaxNode node)
+    {
+        return node switch
+        {
+            MemberAccessExpressionSyntax memberAccess when IsLengthName(memberAccess.Name) => memberAccess.Expression,
+            ConditionalAccessExpressionSyntax { WhenNotNull: MemberBindingExpressionSyntax binding } conditional
+                when IsLengthName(binding.Name) => conditional.Expression,
+            IsPatternExpressionSyntax isPattern when IsLengthPattern(isPattern.Pattern) => isPattern.Expression,
+            _ => null
+        };
+    }
+
+    private static bool IsLengthName(SimpleNameSyntax name)
+    {
+        return string.Equals(name.Identifier.ValueText, "Length", StringComparison.Ordinal);
+    }
+
+    private static bool IsLengthPattern(PatternSyntax pattern)
+    {
+        return pattern switch
+        {
+            ListPatternSyntax => true,
+            RecursivePatternSyntax { PropertyPatternClause: { } clause } => clause.Subpatterns.Any(subpattern =>
+                subpattern.ExpressionColon?.Expression is IdentifierNameSyntax { Identifier.ValueText: "Length" }),
+            _ => false
+        };
     }
 }

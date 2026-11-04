@@ -9,7 +9,10 @@ namespace E128.Analyzers.Tests;
 public sealed class CaptiveDependencyAnalyzerTests
 {
     private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
-        .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
+        .AddPackages([
+            new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6"),
+            new PackageIdentity("Microsoft.Extensions.Hosting.Abstractions", "10.0.6")
+        ]);
 
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
@@ -39,6 +42,102 @@ public sealed class CaptiveDependencyAnalyzerTests
                                {
                                    services.AddScoped<Repository>();
                                    services.AddSingleton<{|E128154:Worker|}>();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TryAddSingleton_DependsOnScoped_Fires()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.DependencyInjection;
+                           using Microsoft.Extensions.DependencyInjection.Extensions;
+                           class Repository { }
+                           class Worker
+                           {
+                               public Worker(Repository repository) { }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.TryAddScoped<Repository>();
+                                   services.TryAddSingleton<{|E128154:Worker|}>();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AddKeyedSingleton_DependsOnKeyedScoped_Fires()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.DependencyInjection;
+                           class Repository { }
+                           interface IWorker { }
+                           class Worker : IWorker
+                           {
+                               public Worker(Repository repository) { }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddKeyedScoped<Repository>("repo");
+                                   services.AddKeyedSingleton<IWorker, {|E128154:Worker|}>("worker");
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TypeOfOverloads_DependsOnScoped_Fires()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.DependencyInjection;
+                           class Repository { }
+                           interface IWorker { }
+                           class Worker : IWorker
+                           {
+                               public Worker(Repository repository) { }
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddScoped(typeof(Repository));
+                                   services.AddSingleton(typeof(IWorker), {|E128154:typeof(Worker)|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AddHostedService_DependsOnScoped_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Threading;
+                           using System.Threading.Tasks;
+                           using Microsoft.Extensions.DependencyInjection;
+                           using Microsoft.Extensions.Hosting;
+                           class Repository { }
+                           class Worker : BackgroundService
+                           {
+                               public Worker(Repository repository) { }
+
+                               protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.CompletedTask;
+                           }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddScoped<Repository>();
+                                   services.AddHostedService<{|E128154:Worker|}>();
                                }
                            }
                            """);

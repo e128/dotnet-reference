@@ -65,22 +65,12 @@ public sealed class OceWhenTokenFilterAnalyzer : DiagnosticAnalyzer
 
     private static bool IsNegatedCancellationRequestedFilter(SyntaxNodeAnalysisContext context, ExpressionSyntax filterExpression)
     {
-        return Unwrap(filterExpression) is PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.LogicalNotExpression } notExpression
-               && Unwrap(notExpression.Operand) is MemberAccessExpressionSyntax
+        return ExpressionUnwrapper.Parentheses(filterExpression) is PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.LogicalNotExpression } notExpression
+               && ExpressionUnwrapper.Parentheses(notExpression.Operand) is MemberAccessExpressionSyntax
                {
                    Name.Identifier.ValueText: "IsCancellationRequested"
                } tokenAccess
                && IsCancellationTokenTyped(context, tokenAccess.Expression);
-    }
-
-    private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
     }
 
     private static bool IsCancellationTokenTyped(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)

@@ -50,4 +50,61 @@ public sealed class ImmutableArrayDefaultCodeFixTests
 
         return VerifyFixAsync(source, fixedCode);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StructInstanceField_NoFix()
+    {
+        const string source = """
+                              using System.Collections.Immutable;
+
+                              struct S
+                              {
+                                  private ImmutableArray<int> {|E128163:values|};
+
+                                  internal int M() => values.Length;
+                              }
+                              """;
+
+        return new CSharpCodeFixTest<ImmutableArrayDefaultAnalyzer, ImmutableArrayDefaultCodeFixProvider,
+            DefaultVerifier>
+        {
+            TestCode = source,
+            FixedCode = source,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            NumberOfFixAllIterations = 0,
+            NumberOfFixAllInDocumentIterations = 0,
+            // CompilationEnd diagnostics are non-local by design.
+            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck
+        }.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StructStaticField_FixInitializesToEmpty()
+    {
+        const string source = """
+                              using System.Collections.Immutable;
+
+                              struct S
+                              {
+                                  private static ImmutableArray<int> {|E128163:values|};
+
+                                  internal int M() => values.Length;
+                              }
+                              """;
+
+        const string fixedCode = """
+                                 using System.Collections.Immutable;
+
+                                 struct S
+                                 {
+                                     private static ImmutableArray<int> values = ImmutableArray<int>.Empty;
+
+                                     internal int M() => values.Length;
+                                 }
+                                 """;
+
+        return VerifyFixAsync(source, fixedCode);
+    }
 }

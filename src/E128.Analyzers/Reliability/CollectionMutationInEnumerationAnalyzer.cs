@@ -83,12 +83,12 @@ public sealed class CollectionMutationInEnumerationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var mutated = statement.Statement.DescendantNodes(IsVisibleNode).Any(node => node switch
+        var mutated = statement.Statement.DescendantNodes(IsVisibleNode).Any(node => !IsFollowedByExit(node) && node switch
         {
             InvocationExpressionSyntax invocation => IsMutatingCall(
-                invocation, collectionSymbol, model, context.CancellationToken),
+                invocation, collection, collectionSymbol, model, context.CancellationToken),
             AssignmentExpressionSyntax assignment => IsMutatingAssignment(
-                assignment, collectionSymbol, model, context.CancellationToken),
+                assignment, collection, collectionSymbol, model, context.CancellationToken),
             _ => false
         });
 
@@ -96,6 +96,25 @@ public sealed class CollectionMutationInEnumerationAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, collection.GetLocation(), collectionSymbol.Name));
         }
+    }
+
+    /// <summary>
+    ///     True when the statement that holds the node is followed by a break or a return in the
+    ///     same block. The enumerator is not used again, so the mutation is safe.
+    /// </summary>
+    private static bool IsFollowedByExit(SyntaxNode node)
+    {
+        if (node is not (InvocationExpressionSyntax or AssignmentExpressionSyntax)
+            || node.FirstAncestorOrSelf<ExpressionStatementSyntax>() is not { Parent: BlockSyntax block } statement)
+        {
+            return false;
+        }
+
+        var index = block.Statements.IndexOf(statement);
+
+        return index >= 0
+               && index + 1 < block.Statements.Count
+               && block.Statements[index + 1] is BreakStatementSyntax or ReturnStatementSyntax;
     }
 
     /// <summary>
@@ -130,34 +149,51 @@ public sealed class CollectionMutationInEnumerationAnalyzer : DiagnosticAnalyzer
 
     private static bool IsMutatingCall(
         InvocationExpressionSyntax invocation,
+        ExpressionSyntax loopCollection,
         ISymbol collectionSymbol,
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
-            || !MutatingMethodNames.Contains(memberAccess.Name.Identifier.ValueText))
-        {
-            return false;
-        }
-
-        var receiverSymbol = model.GetSymbolInfo(memberAccess.Expression, cancellationToken).Symbol;
-
-        return SymbolEqualityComparer.Default.Equals(receiverSymbol, collectionSymbol);
+        return invocation.Expression is MemberAccessExpressionSyntax memberAccess
+               && MutatingMethodNames.Contains(memberAccess.Name.Identifier.ValueText)
+               && IsSameCollection(memberAccess.Expression, loopCollection, collectionSymbol, model, cancellationToken);
     }
 
     private static bool IsMutatingAssignment(
         AssignmentExpressionSyntax assignment,
+        ExpressionSyntax loopCollection,
         ISymbol collectionSymbol,
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        if (assignment.Left is not ElementAccessExpressionSyntax elementAccess)
-        {
-            return false;
-        }
+        // An array element write does not bump a version, so it is legal.
+        return assignment.Left is ElementAccessExpressionSyntax elementAccess
+               && model.GetTypeInfo(elementAccess.Expression, cancellationToken).Type is not IArrayTypeSymbol
+               && IsSameCollection(elementAccess.Expression, loopCollection, collectionSymbol, model, cancellationToken);
+    }
 
-        var receiverSymbol = model.GetSymbolInfo(elementAccess.Expression, cancellationToken).Symbol;
+    /// <summary>
+    ///     True when the receiver is the loop collection itself. A same-named member on another
+    ///     instance is a different collection, so <c lang="csharp">this.items</c> matches
+    ///     <c lang="csharp">items</c> and <c lang="csharp">other.items</c> does not.
+    /// </summary>
+    private static bool IsSameCollection(
+        ExpressionSyntax receiver,
+        ExpressionSyntax loopCollection,
+        ISymbol collectionSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return SymbolEqualityComparer.Default.Equals(
+                   model.GetSymbolInfo(receiver, cancellationToken).Symbol,
+                   collectionSymbol)
+               && string.Equals(StripThis(receiver).ToString(), StripThis(loopCollection).ToString(), StringComparison.Ordinal);
+    }
 
-        return SymbolEqualityComparer.Default.Equals(receiverSymbol, collectionSymbol);
+    private static ExpressionSyntax StripThis(ExpressionSyntax expression)
+    {
+        return expression is MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } access
+            ? access.Name
+            : expression;
     }
 }

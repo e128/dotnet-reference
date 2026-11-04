@@ -148,4 +148,88 @@ public sealed class ProcessOutputDrainAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StartInfoLocalPassedToProcessStart_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var psi = new ProcessStartInfo("tool") { RedirectStandardOutput = true };
+                                   var process = Process.Start(psi);
+                                   {|E128160:process.WaitForExit()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StartInfoLocalAssignedToProcess_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process process)
+                               {
+                                   var psi = new ProcessStartInfo("tool");
+                                   psi.RedirectStandardError = true;
+                                   process.StartInfo = psi;
+                                   process.Start();
+                                   {|E128160:process.WaitForExit()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task InitializerFlagOnOtherProcess_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(Process plain)
+                               {
+                                   var redirected = new Process
+                                   {
+                                       StartInfo = new ProcessStartInfo("tool") { RedirectStandardOutput = true }
+                                   };
+                                   plain.Start();
+                                   plain.WaitForExit();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HelperReceivesOutputStream_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Diagnostics;
+                           using System.IO;
+                           class C
+                           {
+                               static void Drain(StreamReader reader)
+                               {
+                                   _ = reader.ReadToEnd();
+                               }
+
+                               void M(Process process)
+                               {
+                                   process.StartInfo.RedirectStandardOutput = true;
+                                   process.Start();
+                                   Drain(process.StandardOutput);
+                                   process.WaitForExit();
+                               }
+                           }
+                           """);
+    }
 }

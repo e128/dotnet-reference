@@ -59,7 +59,7 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var effectiveType = UnwrapNullable(type);
+        var effectiveType = TypeSymbols.UnwrapNullable(type);
 
         if (!IsNumericType(effectiveType))
         {
@@ -91,7 +91,7 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var type = UnwrapNullable(local.Type);
+        var type = TypeSymbols.UnwrapNullable(local.Type);
 
         if (!IsNumericType(type) || IsByteSizeType(type))
         {
@@ -113,14 +113,6 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, location, local.Name));
         }
-    }
-
-    private static ITypeSymbol UnwrapNullable(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } named
-               && named.TypeArguments.Length == 1
-            ? named.TypeArguments[0]
-            : type;
     }
 
     private static bool IsNumericType(ITypeSymbol type)

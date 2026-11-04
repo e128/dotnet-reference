@@ -42,6 +42,12 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --json) JSON=true ;;
         --self-test) SELF_TEST=true ;;
+        --test-gh)
+            # Test hook for the self-test only. It swaps the gh executable.
+            [[ $# -ge 2 ]] || { err "--test-gh needs a path"; exit 2; }
+            GH_CMD="$2"
+            shift
+            ;;
         --help | -h) usage; exit 0 ;;
         *) ARGS+=("$1") ;;
     esac
@@ -93,14 +99,14 @@ esac
 MOCK
     chmod +x "$mock"
 
-    out="$(cd "$scratch" && GH_CMD="$mock" "$SELF" --json 7 2>/dev/null)"
+    out="$(cd "$scratch" && "$SELF" --test-gh "$mock" --json 7 2>/dev/null)"
     [[ "$(jq -r '.kind' <<<"$out")" == "pr" ]] || { err "self-test: PR kind wrong"; fails=$((fails + 1)); }
     [[ "$(jq -c '.files' <<<"$out")" == '["src/a.cs","src/b.cs"]' ]] || { err "self-test: PR files not sorted, deduped, and newline-safe"; fails=$((fails + 1)); }
     [[ "$(jq -r '.dotnet' <<<"$out")" == "true" ]] || { err "self-test: PR routing wrong"; fails=$((fails + 1)); }
-    if (cd "$scratch" && GH_CMD="$mock" "$SELF" --json 404 >/dev/null 2>&1); then
+    if (cd "$scratch" && "$SELF" --test-gh "$mock" --json 404 >/dev/null 2>&1); then
         err "self-test: a failed gh pr view must fail"; fails=$((fails + 1))
     fi
-    if (cd "$scratch" && GH_CMD="$scratch/missing-gh" "$SELF" --json 7 >/dev/null 2>&1); then
+    if (cd "$scratch" && "$SELF" --test-gh "$scratch/missing-gh" --json 7 >/dev/null 2>&1); then
         err "self-test: a missing gh must fail"; fails=$((fails + 1))
     fi
 

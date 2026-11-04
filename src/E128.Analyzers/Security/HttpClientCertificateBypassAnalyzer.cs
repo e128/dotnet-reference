@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace E128.Analyzers.Security;
 
@@ -26,6 +27,14 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
     private const string HandlerMetadataName = "System.Net.Http.HttpClientHandler";
 
     private const string CallbackPropertyName = "ServerCertificateCustomValidationCallback";
+
+    private const string SslOptionsMetadataName = "System.Net.Security.SslClientAuthenticationOptions";
+
+    private const string SslStreamMetadataName = "System.Net.Security.SslStream";
+
+    private const string SslCallbackPropertyName = "RemoteCertificateValidationCallback";
+
+    private const string SslStreamCallbackParameterName = "userCertificateValidationCallback";
 
     private const string DangerousValidatorName = "DangerousAcceptAnyServerCertificateValidator";
 
@@ -57,32 +66,72 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
         var handlerTypes = MetadataTypes.Find(context.Compilation, HandlerMetadataName);
+        var sslOptionsTypes = MetadataTypes.Find(context.Compilation, SslOptionsMetadataName);
+        var sslStreamTypes = MetadataTypes.Find(context.Compilation, SslStreamMetadataName);
 
-        if (handlerTypes.IsEmpty)
+        if (handlerTypes.IsEmpty && sslOptionsTypes.IsEmpty && sslStreamTypes.IsEmpty)
         {
             return;
         }
 
         context.RegisterSyntaxNodeAction(
-            ctx => AnalyzeAssignment(ctx, handlerTypes),
+            ctx => AnalyzeAssignment(ctx, handlerTypes, sslOptionsTypes),
             SyntaxKind.SimpleAssignmentExpression);
+
+        if (!sslStreamTypes.IsEmpty)
+        {
+            context.RegisterSyntaxNodeAction(
+                ctx => AnalyzeSslStreamCreation(ctx, sslStreamTypes),
+                SyntaxKind.ObjectCreationExpression,
+                SyntaxKind.ImplicitObjectCreationExpression);
+        }
+    }
+
+    private static void AnalyzeSslStreamCreation(
+        SyntaxNodeAnalysisContext context,
+        ImmutableArray<INamedTypeSymbol> sslStreamTypes)
+    {
+        if (context.SemanticModel.GetOperation(context.Node, context.CancellationToken)
+            is not IObjectCreationOperation creation
+            || !MetadataTypes.Contains(sslStreamTypes, creation.Constructor?.ContainingType))
+        {
+            return;
+        }
+
+        foreach (var argument in creation.Arguments)
+        {
+            if (argument.Parameter is { Name: SslStreamCallbackParameterName }
+                && argument.Value.Syntax is ExpressionSyntax value
+                && AcceptsEveryCertificate(
+                    value,
+                    context.SemanticModel,
+                    depth: 0,
+                    context.CancellationToken))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Rule, creation.Syntax.GetLocation()));
+                return;
+            }
+        }
     }
 
     private static void AnalyzeAssignment(
         SyntaxNodeAnalysisContext context,
-        ImmutableArray<INamedTypeSymbol> handlerTypes)
+        ImmutableArray<INamedTypeSymbol> handlerTypes,
+        ImmutableArray<INamedTypeSymbol> sslOptionsTypes)
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
         if (GetAssignedMemberName(assignment.Left) is not { } memberName
-            || !string.Equals(memberName, CallbackPropertyName, StringComparison.Ordinal))
+            || (!string.Equals(memberName, CallbackPropertyName, StringComparison.Ordinal)
+                && !string.Equals(memberName, SslCallbackPropertyName, StringComparison.Ordinal)))
         {
             return;
         }
 
         if (context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol
             is not IPropertySymbol property
-            || !MetadataTypes.Contains(handlerTypes, property.ContainingType))
+            || !(MetadataTypes.Contains(handlerTypes, property.ContainingType)
+                 || MetadataTypes.Contains(sslOptionsTypes, property.ContainingType)))
         {
             return;
         }
@@ -113,11 +162,11 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
         int depth,
         CancellationToken cancellationToken)
     {
-        var unwrapped = Unwrap(value);
+        var unwrapped = ExpressionUnwrapper.Parentheses(value);
 
-        if (unwrapped is LiteralExpressionSyntax literal)
+        if (IsAlwaysTrue(unwrapped, model, cancellationToken))
         {
-            return literal.IsKind(SyntaxKind.TrueLiteralExpression);
+            return true;
         }
 
         if (unwrapped is MemberAccessExpressionSyntax memberAccess
@@ -138,7 +187,7 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
             {
                 ExpressionSyntax expressionBody => AcceptsEveryCertificate(
                     expressionBody, model, depth + 1, cancellationToken),
-                BlockSyntax block => BlockReturnsTrue(block),
+                BlockSyntax block => BlockReturnsTrue(block, model, cancellationToken),
                 _ => false
             };
         }
@@ -197,31 +246,41 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
     {
         return source switch
         {
-            BlockSyntax block => BlockReturnsTrue(block),
+            BlockSyntax block => BlockReturnsTrue(block, model, cancellationToken),
             ExpressionSyntax expression => AcceptsEveryCertificate(
                 expression, model, depth: 1, cancellationToken: cancellationToken),
             _ => false
         };
     }
 
-    private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
-    {
-        var current = expression;
-
-        while (current is ParenthesizedExpressionSyntax parenthesized)
-        {
-            current = parenthesized.Expression;
-        }
-
-        return current;
-    }
-
-    private static bool BlockReturnsTrue(BlockSyntax block)
+    private static bool BlockReturnsTrue(
+        BlockSyntax block,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
         // A block with one return statement is the only block shape the rule can decide. Any extra
         // statement can reject a certificate, and the rule cannot read its intent.
         return block.Statements.Count == 1
-               && block.Statements[0] is ReturnStatementSyntax { Expression: LiteralExpressionSyntax literal }
-               && literal.IsKind(SyntaxKind.TrueLiteralExpression);
+               && block.Statements[0] is ReturnStatementSyntax { Expression: { } returned }
+               && IsAlwaysTrue(ExpressionUnwrapper.Parentheses(returned), model, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Returns true when the expression is a constant <c lang="csharp">true</c>, or an
+    ///     <c lang="csharp">||</c> with one side that is always true. The right side then decides the
+    ///     result alone, whatever the other side holds.
+    /// </summary>
+    private static bool IsAlwaysTrue(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        var unwrapped = ExpressionUnwrapper.Parentheses(expression);
+
+        return model.GetConstantValue(unwrapped, cancellationToken).Value is true
+               || (unwrapped is BinaryExpressionSyntax binary
+                   && binary.IsKind(SyntaxKind.LogicalOrExpression)
+                   && (IsAlwaysTrue(binary.Left, model, cancellationToken)
+                       || IsAlwaysTrue(binary.Right, model, cancellationToken)));
     }
 }

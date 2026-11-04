@@ -83,9 +83,9 @@ public sealed class AsyncDisposableWithoutDisposableAnalyzer : DiagnosticAnalyze
         }
 
         var ns = iface.ContainingNamespace;
-        return ns != null
+        return ns is not null
                && string.Equals(ns.Name, "System", StringComparison.Ordinal)
-               && ns.ContainingNamespace != null
+               && ns.ContainingNamespace is not null
                && ns.ContainingNamespace.IsGlobalNamespace;
     }
 }

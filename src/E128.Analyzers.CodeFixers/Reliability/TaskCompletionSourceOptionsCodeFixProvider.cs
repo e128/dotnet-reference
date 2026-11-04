@@ -83,9 +83,24 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
         var flag = SyntaxFactory.ParseExpression(flagText);
 
         var arguments = argumentList.Arguments;
-        var newArguments = index >= 0 && index < arguments.Count
-            ? arguments.Replace(arguments[index], WithFlag(arguments[index], flagText))
-            : arguments.Add(SyntaxFactory.Argument(flag));
+        SeparatedSyntaxList<ArgumentSyntax> newArguments;
+
+        if (index >= 0 && index < arguments.Count)
+        {
+            newArguments = arguments.Replace(arguments[index], WithFlag(arguments[index], flagText));
+        }
+        else if (IsContinuationOptionsState(arguments, semanticModel, cancellationToken))
+        {
+            // The enum binds to the object state parameter. Replace it, because a second argument would
+            // leave the wrong enum in place as the state.
+            newArguments = arguments.Replace(
+                arguments[0],
+                arguments[0].WithExpression(flag.WithTriviaFrom(arguments[0].Expression)));
+        }
+        else
+        {
+            newArguments = arguments.Add(SyntaxFactory.Argument(flag));
+        }
 
         var newCreation = creation.WithArgumentList(argumentList.WithArguments(newArguments));
         var newRoot = UsingDirectives.AddIfMissing(
@@ -93,6 +108,24 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
             "System.Threading.Tasks");
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static bool IsContinuationOptionsState(
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (arguments.Count != 1)
+        {
+            return false;
+        }
+
+        var continuationOptions = semanticModel.Compilation.GetTypeByMetadataName(
+            "System.Threading.Tasks.TaskContinuationOptions");
+        var argumentType = semanticModel.GetTypeInfo(arguments[0].Expression, cancellationToken).Type;
+
+        return continuationOptions is not null
+               && SymbolEqualityComparer.Default.Equals(argumentType, continuationOptions);
     }
 
     private static ArgumentSyntax WithFlag(ArgumentSyntax argument, string flagText)

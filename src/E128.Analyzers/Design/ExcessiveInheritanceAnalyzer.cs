@@ -77,7 +77,7 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
         var depth = 0;
         var current = type.BaseType;
 
-        while (current != null && current.SpecialType != SpecialType.System_Object)
+        while (current is not null && current.SpecialType != SpecialType.System_Object)
         {
             if (IsUserDefined(current, compilation))
             {

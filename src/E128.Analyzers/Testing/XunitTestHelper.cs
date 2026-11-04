@@ -7,7 +7,7 @@ namespace E128.Analyzers.Testing;
 
 /// <summary>
 ///     Shared detection of xUnit <c lang="csharp">[Fact]</c> and <c lang="csharp">[Theory]</c> test methods for every
-///     test-quality rule.
+///     test-quality rule. It also detects NUnit and MSTest test compilations.
 /// </summary>
 internal static class XunitTestHelper
 {
@@ -74,10 +74,16 @@ internal static class XunitTestHelper
                && IsFactOrTheoryType(containingType);
     }
 
-    // A compilation that references xUnit holds test code. Production-only rules skip it.
+    /// <summary>
+    ///     True when the compilation references xUnit, NUnit, or MSTest. Such a compilation holds test
+    ///     code, so production-only rules skip it. <c lang="csharp">GetTypeByMetadataName</c> returns
+    ///     null when two references declare the type, so the check reads every match.
+    /// </summary>
     internal static bool IsTestCompilation(Compilation compilation)
     {
-        return compilation.GetTypeByMetadataName("Xunit.FactAttribute") is not null;
+        return compilation.GetTypesByMetadataName("Xunit.FactAttribute").Length > 0
+               || compilation.GetTypesByMetadataName("NUnit.Framework.TestAttribute").Length > 0
+               || compilation.GetTypesByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute").Length > 0;
     }
 
     internal static bool IsXunitNamespace(INamespaceSymbol? ns)

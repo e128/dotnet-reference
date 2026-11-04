@@ -35,15 +35,27 @@ public sealed class ObsoleteWithoutMessageAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeAttribute, SyntaxKind.Attribute);
+        context.RegisterCompilationStartAction(OnCompilationStart);
     }
 
-    private static void AnalyzeAttribute(SyntaxNodeAnalysisContext context)
+    private static void OnCompilationStart(CompilationStartAnalysisContext context)
+    {
+        var obsoleteType = context.Compilation.GetTypeByMetadataName("System.ObsoleteAttribute");
+
+        if (obsoleteType is null)
+        {
+            return;
+        }
+
+        context.RegisterSyntaxNodeAction(ctx => AnalyzeAttribute(ctx, obsoleteType), SyntaxKind.Attribute);
+    }
+
+    private static void AnalyzeAttribute(SyntaxNodeAnalysisContext context, INamedTypeSymbol obsoleteType)
     {
         var attribute = (AttributeSyntax)context.Node;
 
         if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol is not IMethodSymbol constructor
-            || !string.Equals(constructor.ContainingType.ToDisplayString(), "System.ObsoleteAttribute", StringComparison.Ordinal))
+            || !SymbolEqualityComparer.Default.Equals(constructor.ContainingType, obsoleteType))
         {
             return;
         }
@@ -61,16 +73,27 @@ public sealed class ObsoleteWithoutMessageAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        foreach (var argument in attribute.ArgumentList.Arguments)
+        var arguments = attribute.ArgumentList.Arguments;
+
+        for (var index = 0; index < arguments.Count; index++)
         {
-            if (argument.NameEquals is not null)
+            var argument = arguments[index];
+
+            // The message is the first positional argument, or the argument named "message" in any order.
+            var isMessage = argument.NameEquals is null
+                            && (argument.NameColon is { } nameColon
+                                ? string.Equals(nameColon.Name.Identifier.ValueText, "message", StringComparison.Ordinal)
+                                : index == 0);
+
+            if (!isMessage)
             {
                 continue;
             }
 
             var constant = context.SemanticModel.GetConstantValue(argument.Expression, context.CancellationToken);
 
-            return !constant.HasValue || constant.Value is not string text || !string.IsNullOrWhiteSpace(text);
+            // A null or blank constant names no replacement. A non-constant expression counts as a message.
+            return !constant.HasValue || (constant.Value is string text && !string.IsNullOrWhiteSpace(text));
         }
 
         return false;

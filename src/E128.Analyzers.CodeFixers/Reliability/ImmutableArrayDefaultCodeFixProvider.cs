@@ -32,6 +32,16 @@ public sealed class ImmutableArrayDefaultCodeFixProvider : E128CodeFixProviderBa
             return Task.CompletedTask;
         }
 
+        // A struct instance field cannot have an initializer on older language versions.
+        // Register the fix only for a static field or a field in a non-struct type.
+        if (declaration.Parent is FieldDeclarationSyntax field
+            && field.Parent is TypeDeclarationSyntax owner
+            && owner.Kind() is SyntaxKind.StructDeclaration or SyntaxKind.RecordStructDeclaration
+            && !field.Modifiers.Any(SyntaxKind.StaticKeyword))
+        {
+            return Task.CompletedTask;
+        }
+
         var typeText = declaration.Type.ToString();
 
         context.RegisterCodeFix(

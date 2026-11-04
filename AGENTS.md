@@ -30,7 +30,9 @@ of what is portable versus Claude-only.
   Platform (MTP).
 - **TDD** — follow Red-Green-Refactor. A RED-phase stub calls
   `Assert.Fail(message)`. Never use `Assert.True(false)` or
-  `NotImplementedException`.
+  `NotImplementedException`. Analyzer E128171 reports a test whose whole body
+  is `Assert.Fail`, so a RED stub exists only in the working tree. Write the
+  real assertion before you run `scripts/check.sh` or commit.
 - **Build** — `scripts/check.sh` is the single shell lint, format, build, and
   test gate. It runs `scripts/lint-shell.sh` first. Never call raw
   `shellcheck` in a gate.
@@ -70,6 +72,13 @@ of what is portable versus Claude-only.
   rules live in `.claude/rules/analyzer-authoring.md`.
 - Implicit usings are disabled (`<ImplicitUsings>disable</ImplicitUsings>`).
   Give every `.cs` file explicit `using` directives.
+- Target .NET 10 and later, plus `netstandard2.0` for analyzer assemblies.
+  Nothing else is supported.
+- Ban everything specific to .NET Framework (net48 and any `net4x`). Never
+  write a `net4x` target framework, a `ReferenceAssemblies.NetFramework`
+  test, a `#if NET48` branch, a Framework-only API, or a polyfill for one.
+  Never write code or tests that exist only to support .NET Framework. Reject
+  such code in review.
 - Seal by default. Every non-abstract class is sealed. E128005 and
   ArchUnitNET enforce this.
 - Design order: Immutability > Memory > CPU > Parallelism. See

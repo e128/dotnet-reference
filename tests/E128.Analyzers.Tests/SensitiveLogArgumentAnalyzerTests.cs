@@ -119,6 +119,148 @@ public sealed class SensitiveLogArgumentAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task LoggerMessageMethod_Fires()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.Logging;
+                           static partial class Log
+                           {
+                               [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Login {Password}")]
+                               static partial void LoggedIn(ILogger logger, string password);
+
+                               public static void Run(ILogger logger, string password)
+                               {
+                                   LoggedIn(logger, {|E128166:password|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LoggerMessageMethodWithSafeArgument_Silent()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.Logging;
+                           static partial class Log
+                           {
+                               [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Login {UserId}")]
+                               static partial void LoggedIn(ILogger logger, string userId);
+
+                               public static void Run(ILogger logger, string userId)
+                               {
+                                   LoggedIn(logger, userId);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConditionalAccess_Fires()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.Logging;
+                           class User { public string? Password { get; set; } }
+                           class C
+                           {
+                               void M(ILogger logger, User? user)
+                               {
+                                   logger.LogInformation("Login {Value}", {|E128166:user?.Password|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WrappedArguments_Fire()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.Logging;
+                           class User { public string Password { get; set; } = ""; }
+                           class C
+                           {
+                               void M(ILogger logger, User user, object password)
+                               {
+                                   logger.LogInformation("A {Value}", {|E128166:(string)password|});
+                                   logger.LogInformation("B {Value}", {|E128166:(user.Password)|});
+                                   logger.LogInformation("C {Value}", {|E128166:user.Password.Trim()|});
+                                   logger.LogInformation("D {Value}", {|E128166:user.Password.ToString()|});
+                                   logger.LogInformation("E {Value}", {|E128166:user?.Password?.Trim()|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ExplicitParamsArray_Fires()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.Logging;
+                           class C
+                           {
+                               void M(ILogger logger, string password)
+                               {
+                                   logger.LogInformation("Login {Password}", new object[] { {|E128166:password|} });
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task EventIdExceptionAndTemplateArguments_Silent()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using Microsoft.Extensions.Logging;
+                           class C
+                           {
+                               void M(ILogger logger, EventId tokenEvent, Exception secretException, string passwordMessage)
+                               {
+                                   logger.LogError(tokenEvent, secretException, "Failed");
+                                   logger.LogInformation(passwordMessage);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ShortWordInsideLongerWord_Silent()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.Logging;
+                           class C
+                           {
+                               void M(ILogger logger, int processNumber, int accessNumber)
+                               {
+                                   logger.LogInformation("Run {Process} {Access}", processNumber, accessNumber);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WholeWordShortNames_Fire()
+    {
+        return VerifyAsync("""
+                           using Microsoft.Extensions.Logging;
+                           class C
+                           {
+                               void M(ILogger logger, string ssn, string userSsn, string dbPwd)
+                               {
+                                   logger.LogInformation("A {Value} {Other} {Third}", {|E128166:ssn|}, {|E128166:userSsn|}, {|E128166:dbPwd|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task TestCompilation_Silent()
     {
         return VerifyAsync("""

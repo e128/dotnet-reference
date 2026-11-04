@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.1.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.1.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -87,7 +87,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128100 | Catch filter reads negated token state on `OperationCanceledException`                | Yes      |
 | E128101 | Verify process output file exists before use                                          | Yes      |
 | E128103 | DI resolve without a registration in the compilation                                  | No       |
-| E128109 | `stackalloc` must be bounded and outside loops                                         | Yes      |
+| E128109 | `stackalloc` must be bounded and outside loops                                        | Yes      |
 | E128110 | Zero a pooled buffer in a `finally` block before `Return`                             | Yes      |
 | E128111 | Pooled buffer used after `Return`                                                     | No       |
 | E128154 | Singleton service depends on a scoped service                                         | No       |
@@ -97,11 +97,11 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128161 | Path.Combine with a rooted or parent segment                                          | Yes      |
 | E128162 | Local used after an explicit Dispose                                                  | No       |
 | E128163 | ImmutableArray field left at its default                                              | Yes      |
-| E128170 | `Split(...)[n]` index with no length guard                                        | No       |
-| E128171 | Committed `Assert.Fail` red-phase stub                                         | No       |
-| E128172 | `catch` swallows an assertion failure                                          | No       |
-| E128173 | `[SuppressMessage]` or `[ExcludeFromCodeCoverage]` with no justification       | No       |
-| E128174 | Constructor past the `e128_max_ctor_dependencies` ceiling                      | No       |
+| E128170 | `Split(...)[n]` index with no length guard                                            | No       |
+| E128171 | Committed `Assert.Fail` red-phase stub                                                | No       |
+| E128172 | `catch` swallows an assertion failure                                                 | No       |
+| E128173 | `[SuppressMessage]` or `[ExcludeFromCodeCoverage]` with no justification              | No       |
+| E128174 | Constructor past the `e128_max_ctor_dependencies` ceiling                             | No       |
 
 ### Performance
 
@@ -1608,7 +1608,7 @@ using var hmac = new HMACSHA256(new byte[32]);
 
 ### E128156: HttpClient certificate validation accepts every certificate
 
-Flags a `ServerCertificateCustomValidationCallback` on `HttpClientHandler` that accepts every certificate. The `SocketsHttpHandler.SslOptions` callback is out of scope. The rule reads three shapes: a `true` literal, the framework `DangerousAcceptAnyServerCertificateValidator` member, and a function that returns `true`. The function may be a lambda, an anonymous method, or a method, local, or field that resolves to one. A callback that reads the certificate chain or the policy errors is not reported. This rule is an error, so the build fails.
+Flags a certificate validation callback that accepts every certificate. The rule reads three callback targets: `HttpClientHandler.ServerCertificateCustomValidationCallback`, `SslClientAuthenticationOptions.RemoteCertificateValidationCallback` (for example `SocketsHttpHandler.SslOptions`), and the `userCertificateValidationCallback` argument of the `SslStream` constructor. The rule reads three accepting shapes: an expression whose constant value is `true` (including `x || true`), the framework `DangerousAcceptAnyServerCertificateValidator` member, and a function that returns such an expression. The function may be a lambda, an anonymous method, or a method, local, or field that resolves to one. A callback that reads the certificate chain or the policy errors is not reported. This rule is an error, so the build fails.
 
 ```csharp
 // Before (warns)
@@ -1623,7 +1623,7 @@ var handler = new HttpClientHandler();
 
 ### E128157: Fixed-time comparison of a secret-derived value
 
-Flags `==` or `!=` over a `Span<byte>` or a `ReadOnlySpan<byte>`, and `SequenceEqual` over a byte array or a span, when one side holds a secret. The equality operator on a byte array compares references, so the rule does not report that shape. A value counts as a secret in three cases: the name ends with `Mac`, `Hmac`, `Tag`, or `Signature` in any case, the name holds one of those words as a segment, or an HMAC type produced the value, directly or through `AsSpan`. A content hash comparison is not reported, because it is not a forgery check.
+Flags `SequenceEqual` over a byte array or a span (the extension form and the static `Enumerable` and `MemoryExtensions` forms), and a string `==`, `!=`, or `Equals`, when one side holds a secret. The equality operator on a span or a byte array compares address and length, not content, in constant time, so the rule does not report that shape. A value counts as a secret in three cases: the name ends with `Mac`, `Hmac`, `Tag`, or `Signature` in any case, the name holds one of those words as a segment, or an HMAC produced the value. An HMAC type call (including `ComputeHash` on an HMAC instance), the `Hash` property of an HMAC, an `IncrementalHash.CreateHMAC` result, and a hex or base64 encoding of such a value all count. Two string names that each hold `token`, `digest`, `expected`, `computed`, or `hash` also count, unless both hold only `hash`. A string comparison with a constant is not reported. A content hash comparison is not reported, because it is not a forgery check. The code fix handles `SequenceEqual` only and declines when an operand may be null.
 
 ```csharp
 // Before (warns)
@@ -1635,7 +1635,7 @@ return CryptographicOperations.FixedTimeEquals(computedTag, expectedTag);
 
 ### E128164: Hardcoded absolute URL in source
 
-Flags a string literal, or the text part of an interpolated string, that starts with `http://` or `https://` and carries a host. The project rules require a URL to come from an options class bound to configuration. The rule skips attribute arguments, the namespace and schema hosts `w3.org`, `schemas.microsoft.com`, `schemas.openxmlformats.org`, `schemas.xmlsoap.org`, and `json-schema.org`, and the reserved hosts `example.com`, `example.org`, and `example.net`. An interpolated host such as `$"https://{host}/items"` is not reported. The rule is silent in a compilation that references xUnit. No code fix.
+Flags a string literal, or the text part of an interpolated string, that starts with `http://` or `https://` and carries a host. The project rules require a URL to come from an options class bound to configuration. The rule skips attribute arguments, the namespace and schema hosts `w3.org`, `schemas.microsoft.com`, `schemas.openxmlformats.org`, `schemas.xmlsoap.org`, and `json-schema.org`, and the reserved hosts `example.com`, `example.org`, and `example.net`. An interpolated host such as `$"https://{host}/items"` is not reported. The rule is silent in a compilation that references xUnit, NUnit, or MSTest. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1647,7 +1647,7 @@ var uri = options.Value.BaseAddress;
 
 ### E128165: Hardcoded secret or connection string in source
 
-Flags two shapes. The first is a string literal of 8 or more characters, with no whitespace, that is assigned to a name holding `password`, `passwd`, `pwd`, `secret`, `apikey`, `accesskey`, `privatekey`, or `connectionstring`. The assignment can be a variable, a property initializer, an expression-bodied property, a plain assignment, or a named argument. A name that ends in `Name`, `Header`, `Claim`, `Type`, `Prefix`, `Scheme`, `Path`, `Label`, `Format`, `Field`, `Param`, `Parameter`, or `Setting` names a lookup key and is not reported. The second shape is a connection string literal that holds a server key (`Server=`, `Data Source=`, or `Host=`) and a `Password=` or `Pwd=` value. An empty value or a `{0}` placeholder is not reported. The rule is silent in a compilation that references xUnit. No code fix.
+Flags two shapes. The first is a string literal of 8 or more characters, with no whitespace, that is assigned to a name holding `password`, `passwd`, `pwd`, `secret`, `apikey`, `accesskey`, `privatekey`, `connectionstring`, `token`, `credential`, or `bearer`. The assignment can be a variable, a property initializer, an expression-bodied property, a property getter return, a plain assignment, an indexer key such as `["Password"]`, or a named argument. The rule looks through parentheses, `??`, and `?:`. It also reads `u8` literals. A name that ends in `Name`, `Header`, `Claim`, `Type`, `Prefix`, `Scheme`, `Path`, `Label`, `Format`, `Field`, `Param`, `Parameter`, `Setting`, `Pattern`, `Regex`, `Arn`, `Id`, `Count`, `Length`, `Expiry`, or `Hint` names a lookup key and is not reported. A literal that looks like a header name (`X-Api-Key`, `Some-Header`) or a config path (`Auth:Password`) is not reported. The second shape is a connection string literal of `key=value` pairs separated by `;` that holds a `Server`, `Data Source`, or `Host` key and a `Password` or `Pwd` value. Space around `=` is allowed. A URL query string is not a connection string. An empty value or a `{0}` placeholder is not reported. The rule is silent in a compilation that references xUnit, NUnit, or MSTest. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1659,7 +1659,7 @@ var password = options.Value.AdminPassword;
 
 ### E128166: Sensitive value passed to a logger call
 
-Flags an `ILogger` call, through `LoggerExtensions` or `ILogger.Log`, that passes a value named for a credential or personal-data word. The words are `password`, `passwd`, `pwd`, `secret`, `apikey`, `accesskey`, `privatekey`, `connectionstring`, `token`, `ssn`, `creditcard`, and `cardnumber`. The rule reads an identifier, the last segment of a member access, and each hole of an interpolated argument. A name that holds `cancellation`, or ends in `Name`, `Type`, `Count`, `Length`, `Expiry`, `Header`, `Id`, or `Hint`, is not reported. The rule is silent in a compilation that references xUnit. No code fix.
+Flags an `ILogger` call, through `LoggerExtensions`, `ILogger.Log`, or a `[LoggerMessage]` method, that passes a value named for a credential or personal-data word. The words are `password`, `passwd`, `pwd`, `secret`, `apikey`, `accesskey`, `privatekey`, `connectionstring`, `token`, `ssn`, `creditcard`, and `cardnumber`. The short words `pwd` and `ssn` match only as a whole word, so `processNumber` is not reported. The rule reads an identifier, the last segment of a member access or conditional access, and each hole of an interpolated message. It looks through a cast, parentheses, and a `ToString()` or `Trim()` call with no arguments. It reads the elements of the `params object[]` array. It skips the `EventId`, `Exception`, and message template arguments. A name that holds `cancellation`, or ends in `Name`, `Type`, `Count`, `Length`, `Expiry`, `Header`, `Id`, or `Hint`, is not reported. The rule is silent in a compilation that references xUnit, NUnit, or MSTest. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1671,7 +1671,7 @@ logger.LogInformation("Login for {UserId}", userId);
 
 ### E128167: Deferred-work comment with no work-item reference
 
-Flags a `//` or `/* */` comment that holds the word `TODO`, `FIXME`, or `HACK` in any case and carries no work-item reference. The word must stand alone, so `hackathon` is not reported. A reference counts when it matches the regex in the `e128_tracked_ref_pattern` option. The default pattern is `#\d+`, which accepts `AB#123` and `#123`. An invalid pattern falls back to the default. Sonar S1135 and S1134 report every marker, so keep them off when you turn this rule on. No code fix.
+Flags a `//` or `/* */` comment that holds the word `TODO`, `FIXME`, or `HACK` in any case and carries no work-item reference. The word must stand alone, so `hackathon` is not reported. A reference counts when it matches the regex in the `e128_tracked_ref_pattern` option. The default pattern is `#\d+`, which accepts `AB#123` and `#123`. An invalid pattern falls back to the default pattern. A match that exceeds the one-second timeout counts the text as tracked, so the rule stays silent. Sonar S1135 and S1134 report every marker, so keep them off when you turn this rule on. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1688,7 +1688,7 @@ e128_tracked_ref_pattern = PROJ-\d+
 
 ### E128168: Skipped test with no work-item reference in its reason
 
-Flags an xUnit `[Fact]` or `[Theory]` whose `Skip` argument is a constant string that does not match `e128_tracked_ref_pattern`. An empty reason is reported. A `Skip` value that is not a constant is not reported. No code fix.
+Flags an xUnit `[Fact]` or `[Theory]` whose `Skip` argument is a constant string that does not match `e128_tracked_ref_pattern`. An invalid pattern falls back to the default `#\d+`. A match that exceeds the one-second timeout counts the reason as tracked, so the rule stays silent. An empty reason is reported. A `Skip` value that is not a constant is not reported. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1700,7 +1700,7 @@ Flags an xUnit `[Fact]` or `[Theory]` whose `Skip` argument is a constant string
 
 ### E128169: `[Obsolete]` with no message
 
-Flags `System.ObsoleteAttribute` with no positional argument, or with an empty or whitespace message. Named arguments such as `DiagnosticId` do not count as a message. No code fix.
+Flags `System.ObsoleteAttribute` with no message argument, or with a null, empty, or whitespace message. The rule finds the message by position or by the name `message`, so `[Obsolete(error: true, message: "")]` is reported. Named arguments such as `DiagnosticId` do not count as a message. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1714,7 +1714,7 @@ void Old() { }
 
 ### E128170: `Split(...)[n]` index with no length guard
 
-Flags a constant index of 1 or more taken from the result of `string.Split`. The array comes from an inline call or from a local initialized by one. `Split` returns one element when the separator is absent, so the index throws `IndexOutOfRangeException` on unexpected input. Index 0 and a from-end index such as `[^1]` are safe and not reported. A local is not reported when the same member reads `Length` on it. The rule does not model control flow, so any such read counts as a guard. A `Split` method on another type is not reported. No code fix.
+Flags a constant index of 1 or more taken from the result of `string.Split`. The array comes from an inline call or from a local initialized by one. `Split` returns one element when the separator is absent, so the index throws `IndexOutOfRangeException` on unexpected input. Index 0 and a from-end index such as `[^1]` are safe and not reported. A local is not reported when the same member reads `Length` on it before the index access. A `Length` read after the access does not count. The rule does not model control flow, so any earlier read counts as a guard, even one in a different branch. The rule does not track a `Split` result held in a field or a property, or one taken apart by deconstruction. A `Split` method on another type is not reported. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1741,7 +1741,7 @@ public void ParsesEmptyInput() => Assert.Empty(Parser.Parse(string.Empty));
 
 ### E128172: `catch` swallows an assertion failure
 
-Flags a `catch` clause when its `try` block calls `Xunit.Assert` and the clause catches `Exception`, `XunitException`, or nothing in particular, and holds no `throw`. A failed assertion throws, so the catch turns a failing test into a passing one. A narrow exception type, such as `InvalidOperationException`, is not reported. No code fix.
+Flags a `catch` clause when its `try` block calls `Xunit.Assert` and the clause catches `Exception`, `XunitException`, or nothing in particular, and holds no `throw`. A failed assertion throws, so the catch turns a failing test into a passing one. A narrow exception type, such as `InvalidOperationException`, is not reported. A catch with a `when` filter is not reported. A catch that calls `Assert.Fail` is not reported. A `throw` inside a lambda or a local function does not count as a rethrow. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1754,7 +1754,7 @@ Assert.Equal(1, value);
 
 ### E128173: `[SuppressMessage]` or `[ExcludeFromCodeCoverage]` with no justification
 
-Flags `System.Diagnostics.CodeAnalysis.SuppressMessageAttribute` and `ExcludeFromCodeCoverageAttribute` when the `Justification` argument is missing, empty, or blank. A reader needs the reason in the attribute to review or remove the suppression. A suppression still needs approval under the repository rules. No code fix.
+Flags `System.Diagnostics.CodeAnalysis.SuppressMessageAttribute` and `ExcludeFromCodeCoverageAttribute` when the `Justification` argument is missing, null, empty, or blank. The rule skips `ExcludeFromCodeCoverageAttribute` on a target framework where the attribute has no `Justification` property, which is any framework before .NET 5. A reader needs the reason in the attribute to review or remove the suppression. A suppression still needs approval under the repository rules. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1766,7 +1766,7 @@ Flags `System.Diagnostics.CodeAnalysis.SuppressMessageAttribute` and `ExcludeFro
 
 ### E128174: Constructor past the `e128_max_ctor_dependencies` ceiling
 
-Flags a constructor, or a class or struct primary constructor, that takes more dependencies than the ceiling. A parameter counts as a dependency when its type is a class or an interface other than `string`. Values, enums, delegates, arrays, and `string` do not count. The default ceiling is 7. Set `e128_max_ctor_dependencies` in `.editorconfig` to change it. A record primary constructor is not checked. No code fix.
+Flags a constructor, or a class or struct primary constructor, that takes more dependencies than the ceiling. A parameter counts as a dependency when its type is a service-like class or interface. Values, enums, delegates, arrays (including a `params` array), `string`, `object`, `Uri`, exceptions, record types, and collection types such as `IReadOnlyList<T>` and `List<T>` do not count. The default ceiling is 7. Set `e128_max_ctor_dependencies` in `.editorconfig` to change it. A record primary constructor is not checked. No code fix.
 
 ```ini
 # .editorconfig
@@ -2113,7 +2113,7 @@ foreach (var a in items)
 
 ### E128154: Singleton service depends on a scoped service
 
-Flags an `AddSingleton` registration whose implementation type takes a constructor parameter of a type that an `AddScoped` call registers in the same compilation. The container builds the singleton once, so it keeps the first scoped instance for the life of the application. The rule reads a direct constructor dependency only. A parameter typed `IServiceProvider`, `IServiceScopeFactory`, or `IServiceScope` is not reported. A registration with any argument is not reported, because the container then receives a built instance or picks the constructor at run time.
+Flags an `AddSingleton` registration whose implementation type takes a constructor parameter of a type that an `AddScoped` call registers in the same compilation. The rule also reads `TryAddSingleton`, `TryAddScoped`, `AddKeyedSingleton`, `AddKeyedScoped`, `AddHostedService<T>`, and the `typeof(...)` overloads. The container builds the singleton once, so it keeps the first scoped instance for the life of the application. The rule reads a direct constructor dependency only. A parameter typed `IServiceProvider`, `IServiceScopeFactory`, or `IServiceScope` is not reported. A registration with a factory or an instance argument is not reported, because the container then receives a built instance or picks the constructor at run time. A service key argument does not count as such an argument.
 
 ```csharp
 // Before (warns)
@@ -2127,7 +2127,7 @@ services.AddScoped<Worker>();
 
 ### E128155: Mutating the loop source inside its own foreach
 
-Flags a call in a `foreach` body that mutates the collection the loop enumerates. The rule reads a local, a field, or a parameter as the loop source. A mutating call includes `Add`, `AddRange`, `Clear`, `Insert`, `Remove`, `RemoveAt`, `RemoveAll`, `RemoveRange`, `Reverse`, and `Sort`. An assignment to an index of that collection is reported too. The enumerator throws `InvalidOperationException` on the next step. An immutable, frozen, or concurrent collection is not reported. A mutation inside a lambda or a local function is not reported, because it runs after the loop. The report sits on the loop source, so one loop reports once. The code fix materializes the source with `ToArray()`.
+Flags a call in a `foreach` body that mutates the collection the loop enumerates. The rule reads a local, a field, or a parameter as the loop source. A mutating call includes `Add`, `AddRange`, `Clear`, `Insert`, `Remove`, `RemoveAt`, `RemoveAll`, `RemoveRange`, `Reverse`, and `Sort`. An assignment to an index of a non-array collection is reported too, but an array element write is not. A mutation directly followed by `break` or `return` in the same block is not reported. The enumerator throws `InvalidOperationException` on the next step. An immutable, frozen, or concurrent collection is not reported. A mutation inside a lambda or a local function is not reported, because it runs after the loop. The report sits on the loop source, so one loop reports once. The code fix materializes the source with `ToArray()`.
 
 ```csharp
 // Before (warns)
@@ -2145,7 +2145,7 @@ foreach (var item in items.ToArray())
 
 ### E128159: TaskCompletionSource without RunContinuationsAsynchronously
 
-Flags a `TaskCompletionSource` creation that omits `TaskCreationOptions.RunContinuationsAsynchronously`. Without the flag, the awaiting continuation runs inside the thread that calls `SetResult`. That thread then runs foreign code, which can deadlock or stall a pool thread. A computed options value is not reported, because the rule cannot decide it. The code fix adds the flag, or combines it with an existing value by `|`.
+Flags a `TaskCompletionSource` creation that omits `TaskCreationOptions.RunContinuationsAsynchronously`. Without the flag, the awaiting continuation runs inside the thread that calls `SetResult`. That thread then runs foreign code, which can deadlock or stall a pool thread. A computed options value is not reported, because the rule cannot decide it. The code fix adds the flag, or combines it with an existing value by `|`. A `TaskContinuationOptions` argument binds to the `state` parameter, so the fix replaces it with the `TaskCreationOptions` flag.
 
 ```csharp
 // Before (warns)
@@ -2174,7 +2174,7 @@ process.WaitForExit();
 
 ### E128161: Path.Combine with a rooted or parent segment
 
-Flags a `System.IO.Path.Combine` call with a constant segment that starts from a root or climbs to a parent directory. A rooted segment drops every earlier segment, so the result escapes the base directory. The rule reads both separators and the drive-letter form. A segment that is exactly `".."` is not reported, because a caller uses it on purpose. The code fix replaces the call with `Path.Join` for a rooted segment only. A parent segment still escapes under `Path.Join`, so a report on that shape offers no fix.
+Flags a `System.IO.Path.Combine` call with a constant segment that starts from a root or climbs to a parent directory. A rooted segment drops every earlier segment, so the result escapes the base directory. The message for a rooted segment advises `Path.Join`. The message for a parent segment advises `Path.GetFullPath` on the result, then a check that it starts with the base directory, because `Path.Join` keeps `..` and does not stop traversal. The rule reads both separators and the drive-letter form. A multi-part segment is reported when its `..` parts climb above its start, so `"a/../../b"` is reported and `"a/../b"` is not. A segment that is exactly `".."` is not reported, because a caller uses it on purpose. The code fix replaces the call with `Path.Join` for a rooted segment only. A parent segment still escapes under `Path.Join`, so a report on that shape offers no fix.
 
 ```csharp
 // Before (warns)
@@ -2186,7 +2186,7 @@ var path = Path.Join("base", "/etc/passwd");
 
 ### E128162: Local used after an explicit Dispose
 
-Flags a read of a local after the same block calls `Dispose()` on it. The object throws `ObjectDisposedException` on the next member call that reads its state. A second `Dispose` call is not reported. An assignment to the local ends the disposed state, so the reads that follow are not reported. A dispose at the end of a `using` scope is not reported. A read inside a nested lambda or local function is not reported, because the block order does not give the time that body runs.
+Flags a member call on a local after the same block calls `Dispose()` on it. The `Dispose()` statement must sit directly in the block. A `Dispose()` in a braceless `if`, `else`, loop, or `switch` section is not reported, and neither is a read in a branch that excludes the `Dispose()`. A `nameof(a)`, `a is null`, and `a == null` are not reads. The object throws `ObjectDisposedException` on the next member call that reads its state. A second `Dispose` call is not reported. An assignment to the local ends the disposed state, so the reads that follow are not reported. A dispose at the end of a `using` scope is not reported. A read inside a nested lambda or local function is not reported, because the block order does not give the time that body runs.
 
 ```csharp
 // Before (warns)
@@ -2202,7 +2202,7 @@ stream.Dispose();
 
 ### E128163: ImmutableArray field left at its default
 
-Flags an `ImmutableArray<T>` field that no initializer and no assignment reaches. The field keeps its default value, and the default array holds a null inner array. Every operation that reads it throws `NullReferenceException`. The rule collects assignments across the whole compilation, so a partial type that assigns the field in another file is not reported. The code fix initializes the field to `ImmutableArray<T>.Empty`.
+Flags an `ImmutableArray<T>` field that no initializer and no assignment reaches. The field keeps its default value, and the default array holds a null inner array. Every operation that reads it throws `NullReferenceException`. The rule collects assignments across the whole compilation, including a deconstruction, a `ref` or `out` argument, and an `ImmutableInterlocked` call, so a partial type that assigns the field in another file is not reported. The code fix initializes the field to `ImmutableArray<T>.Empty`.
 
 ```csharp
 // Before (warns)

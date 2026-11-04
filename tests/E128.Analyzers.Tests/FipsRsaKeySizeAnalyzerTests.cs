@@ -165,6 +165,22 @@ public sealed class FipsRsaKeySizeAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task CompoundKeySizeAssignment_NoReport()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M(RSA rsa)
+                               {
+                                   rsa.KeySize += 1;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ShortEllipticCurveKeySize_Reports_E128143()
     {
         return VerifyAsync("""

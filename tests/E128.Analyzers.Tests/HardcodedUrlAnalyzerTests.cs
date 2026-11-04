@@ -70,6 +70,19 @@ public sealed class HardcodedUrlAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task HostThatOnlyEndsWithAllowedSuffix_Fires()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               string A = {|E128164:"https://evilexample.com/x"|};
+                               string B = {|E128164:"https://notw3.org/x"|};
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NamespaceAndSchemaHosts_Silent()
     {
         return VerifyAsync("""
@@ -78,6 +91,7 @@ public sealed class HardcodedUrlAnalyzerTests
                                string A = "http://www.w3.org/2001/XMLSchema";
                                string B = "http://schemas.microsoft.com/winfx/2006/xaml";
                                string C2 = "https://example.com/docs";
+                               string D = "https://www.example.com/docs";
                            }
                            """);
     }

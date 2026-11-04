@@ -61,7 +61,7 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var effectiveType = UnwrapNullable(type);
+        var effectiveType = TypeSymbols.UnwrapNullable(type);
 
         if (!IsNumericDurationType(effectiveType))
         {
@@ -74,14 +74,6 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, location, name));
-    }
-
-    private static ITypeSymbol UnwrapNullable(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } named
-               && named.TypeArguments.Length == 1
-            ? named.TypeArguments[0]
-            : type;
     }
 
     private static bool IsNumericDurationType(ITypeSymbol type)

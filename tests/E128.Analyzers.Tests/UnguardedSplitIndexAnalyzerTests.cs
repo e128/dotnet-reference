@@ -47,6 +47,23 @@ public sealed class UnguardedSplitIndexAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task LengthReadAfterIndex_Fires()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               int M(string line)
+                               {
+                                   var parts = line.Split(':');
+                                   var value = {|E128170:parts[1]|};
+                                   return parts.Length + value.Length;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task IndexZero_Silent()
     {
         return VerifyAsync("""
@@ -116,6 +133,76 @@ public sealed class UnguardedSplitIndexAnalyzerTests
                            class C
                            {
                                string M(Splitter s) => s.Split(',')[1];
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PropertyPatternOnLength_Silent()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               string M(string line)
+                               {
+                                   var parts = line.Split(':');
+                                   return parts is { Length: >= 2 } ? parts[1] : "";
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ListPattern_Silent()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               string M(string line)
+                               {
+                                   var parts = line.Split(':');
+                                   return parts is [_, _, ..] ? parts[1] : "";
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NullConditionalLengthRead_Silent()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               string M(string line)
+                               {
+                                   var parts = line.Split(':');
+                                   if (parts?.Length < 2)
+                                   {
+                                       return "";
+                                   }
+
+                                   return parts[1];
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PatternGuardAfterIndex_Fires()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               bool M(string line)
+                               {
+                                   var parts = line.Split(':');
+                                   var value = {|E128170:parts[1]|};
+                                   return parts is { Length: >= 2 } && value.Length > 0;
+                               }
                            }
                            """);
     }

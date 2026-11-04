@@ -124,9 +124,9 @@ public sealed class StringFormatToInterpolationAnalyzer : DiagnosticAnalyzer
         }
 
         var ns = type.ContainingNamespace;
-        return ns != null
+        return ns is not null
                && string.Equals(ns.Name, "System", StringComparison.Ordinal)
-               && ns.ContainingNamespace != null
+               && ns.ContainingNamespace is not null
                && ns.ContainingNamespace.IsGlobalNamespace;
     }
 }

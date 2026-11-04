@@ -130,6 +130,30 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixTests
                        """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoFix_WhenBufferNameIsDeclaredTwice()
+    {
+        return CodeFixTestRunner.NoFixAsync<ArrayPoolSqliteParameterSizeAnalyzer, ArrayPoolSqliteParameterSizeCodeFixProvider>(
+            Preamble + """
+                       class C
+                       {
+                           void M()
+                           {
+                               var cmd = new SqliteCommand();
+                               {
+                                   var buffer = ArrayPool<byte>.Shared.Rent(8);
+                               }
+
+                               {
+                                   var buffer = ArrayPool<byte>.Shared.Rent(16);
+                                   _ = {|E128086:cmd.Parameters.AddWithValue("", buffer)|};
+                               }
+                           }
+                       }
+                       """);
+    }
+
     /// <summary>VB7: Code fix inserts .Size after .Value assignment.</summary>
     [Fact]
     [Trait("Category", "CI")]

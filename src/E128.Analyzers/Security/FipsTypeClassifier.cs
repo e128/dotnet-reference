@@ -68,23 +68,13 @@ internal static class FipsTypeClassifier
     }
 
     /// <summary>
-    ///     Returns true only for a type that a framework reference defines. A vendored assembly that declares a
-    ///     System namespace does not qualify.
+    ///     Returns true only for a type that a framework assembly defines. The assembly public key token proves it.
+    ///     A vendored assembly named System.Foo has no framework token and does not qualify.
     /// </summary>
     private static bool IsBclType(ITypeSymbol type)
     {
-        if (!FipsSymbolHelpers.IsBclType(type) || type.ContainingAssembly is not { } assembly)
-        {
-            return false;
-        }
-
-        var name = assembly.Name;
-
-        return string.Equals(name, "mscorlib", StringComparison.Ordinal) ||
-            string.Equals(name, "netstandard", StringComparison.Ordinal) ||
-            string.Equals(name, "System", StringComparison.Ordinal) ||
-            name.StartsWith("System.", StringComparison.Ordinal) ||
-            name.StartsWith("Microsoft.", StringComparison.Ordinal);
+        return FipsSymbolHelpers.IsBclType(type) &&
+            FrameworkAssemblyIdentity.IsFrameworkAssembly(type.ContainingAssembly);
     }
 
     private static TypeVerdict Classify(ITypeSymbol type)

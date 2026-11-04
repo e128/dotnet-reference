@@ -79,7 +79,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         System.Threading.CancellationToken cancellationToken)
     {
-        var inner = Unwrap(expression);
+        var inner = ExpressionUnwrapper.ParenthesesAndCasts(expression);
 
         var symbol = model.GetSymbolInfo(inner, cancellationToken).Symbol;
 
@@ -87,24 +87,6 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
         return inner is ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax or AnonymousFunctionExpressionSyntax
             || symbol is IMethodSymbol
             || (symbol is ILocalSymbol or IParameterSymbol && !IsRooted(inner, model, cancellationToken));
-    }
-
-    private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
-    {
-        while (true)
-        {
-            switch (expression)
-            {
-                case ParenthesizedExpressionSyntax parenthesized:
-                    expression = parenthesized.Expression;
-                    break;
-                case CastExpressionSyntax cast:
-                    expression = cast.Expression;
-                    break;
-                default:
-                    return expression;
-            }
-        }
     }
 
     // A local or parameter is safe when it is stored in a field, property or element, or passed to another call.
@@ -149,7 +131,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
         System.Threading.CancellationToken cancellationToken)
     {
         return SymbolEqualityComparer.Default.Equals(
-            model.GetSymbolInfo(Unwrap(expression), cancellationToken).Symbol,
+            model.GetSymbolInfo(ExpressionUnwrapper.ParenthesesAndCasts(expression), cancellationToken).Symbol,
             symbol);
     }
 }

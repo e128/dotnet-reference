@@ -64,22 +64,25 @@ public sealed class UntrackedTodoAnalyzer : DiagnosticAnalyzer
 
     private static string? FindMarker(string text)
     {
-        foreach (var marker in Markers)
+        // A marker counts only at the start of a comment line, so prose such as
+        // "this avoids a hack" does not report.
+        foreach (var line in text.Split('\n'))
         {
-            var index = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            var body = line.TrimStart(' ', '\t', '\r', '/', '*');
 
-            while (index >= 0)
+            foreach (var marker in Markers)
             {
-                var end = index + marker.Length;
-                var startsWord = index == 0 || !char.IsLetterOrDigit(text[index - 1]);
-                var endsWord = end == text.Length || !char.IsLetterOrDigit(text[end]);
+                if (!body.StartsWith(marker, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
 
-                if (startsWord && endsWord)
+                var end = marker.Length;
+
+                if (end == body.Length || !char.IsLetterOrDigit(body[end]))
                 {
                     return marker;
                 }
-
-                index = text.IndexOf(marker, end, StringComparison.OrdinalIgnoreCase);
             }
         }
 
