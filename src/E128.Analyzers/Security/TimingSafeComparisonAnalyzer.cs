@@ -42,7 +42,7 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Fixed-time comparison of a secret-derived value",
         "Compare '{0}' in fixed time",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Warning,
         true,
         "An equality test on an authentication tag or a signature returns as soon as two bytes " +

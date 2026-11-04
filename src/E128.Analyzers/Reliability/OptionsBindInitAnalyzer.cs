@@ -23,7 +23,7 @@ public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Options class bound via .Bind() has init-only property",
         "Property '{0}' on Bind()-target '{1}' uses 'init' — the config binder requires 'set'",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Options classes bound via .Bind(config.GetSection(...)) must use 'set' accessors. " +

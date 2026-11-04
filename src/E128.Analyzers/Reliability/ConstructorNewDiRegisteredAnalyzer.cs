@@ -24,7 +24,7 @@ public sealed class ConstructorNewDiRegisteredAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Constructor news a DI-registered type — inject via DI instead",
         "'{0}' is registered in DI — inject it via the constructor parameter list instead of using 'new'",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "When a type is registered in the DI container via AddSingleton<T>, AddScoped<T>, " +

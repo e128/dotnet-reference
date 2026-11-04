@@ -22,7 +22,7 @@ public sealed class ListAsReadOnlyAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Return List<T> via .AsReadOnly() when exposing as IReadOnlyList<T>",
         "Returning a mutable List<T> as IReadOnlyList<T> leaks the internal list — use .AsReadOnly() to prevent callers from casting back to List<T>",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "Returning a mutable List<T> directly as IReadOnlyList<T> allows callers to cast back to List<T> and mutate the internal collection. Return .AsReadOnly() instead.");

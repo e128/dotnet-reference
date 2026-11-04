@@ -16,7 +16,7 @@ public sealed class UntimedProcessExitAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Wait for process exit with a provable timeout",
         "{0}",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

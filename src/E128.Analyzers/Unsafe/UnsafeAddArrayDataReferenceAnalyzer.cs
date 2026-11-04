@@ -16,7 +16,7 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Index the array instead of bypassing its bounds check",
         "Unsafe.Add over MemoryMarshal.GetArrayDataReference removes the bounds check. Use an indexer and let the JIT elide the check.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

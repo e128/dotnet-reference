@@ -21,7 +21,7 @@ public sealed class MissingTraitCategoryAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Test method missing [Trait(\"Category\", ...)] attribute",
         "Test method '{0}' is missing a [Trait(\"Category\", ...)] attribute — tests without a category may be excluded from CI",
-        "Testing",
+        "E128-Testing",
         DiagnosticSeverity.Warning,
         true,
         "Every [Fact] and [Theory] method should have a [Trait(\"Category\", \"...\")] attribute " +

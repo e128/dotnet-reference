@@ -24,7 +24,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Unbounded Task.WhenAll over async Select",
         "Task.WhenAll fans out all items concurrently with no throttle — add SemaphoreSlim or use bounded parallelism",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

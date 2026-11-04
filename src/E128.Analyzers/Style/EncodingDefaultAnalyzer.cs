@@ -16,7 +16,7 @@ public sealed class EncodingDefaultAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use Encoding.UTF8 instead of Encoding.Default",
         "Use Encoding.UTF8 instead of Encoding.Default — Encoding.Default is platform-specific",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Warning,
         true);
 

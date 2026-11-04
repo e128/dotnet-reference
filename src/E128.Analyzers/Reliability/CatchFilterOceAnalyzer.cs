@@ -24,7 +24,7 @@ public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Catch filter must exclude OperationCanceledException",
         "Catch filter does not exclude OperationCanceledException — swallowing cancellation breaks cooperative cancellation",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Filtered catch blocks that exclude specific exception types (e.g., OutOfMemoryException) " +

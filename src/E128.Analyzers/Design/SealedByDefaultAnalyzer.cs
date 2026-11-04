@@ -21,7 +21,7 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Seal classes that have no subclasses",
         "Class '{0}' has no derived types in this compilation — mark it sealed or add an explicit suppression if inheritance is intentional",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         null,

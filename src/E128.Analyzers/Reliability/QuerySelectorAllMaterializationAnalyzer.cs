@@ -17,7 +17,7 @@ public sealed class QuerySelectorAllMaterializationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Materialize QuerySelectorAll result before iterating",
         "QuerySelectorAll returns a live DOM collection — add .ToList() before iterating to prevent mutation errors",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "AngleSharp's QuerySelectorAll returns a live HTMLCollection that reflects DOM mutations. " +

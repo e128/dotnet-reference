@@ -17,7 +17,7 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Linear lookup inside loop creates O(n²) complexity",
         "'{0}' on '{1}' inside a loop is O(n) per iteration — use a HashSet<T> or Dictionary<K,V> for O(1) lookup",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

@@ -31,7 +31,7 @@ public sealed class CollectionMutationInEnumerationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Collection mutated during its own foreach",
         "'{0}' is modified inside the loop that enumerates it",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "A foreach loop holds an enumerator over the collection. A structural change to that " +

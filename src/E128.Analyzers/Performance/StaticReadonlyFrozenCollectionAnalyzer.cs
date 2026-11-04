@@ -25,7 +25,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use FrozenSet/FrozenDictionary for static readonly collections",
         "Static readonly '{0}' should be '{1}' for optimized read performance",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "Static readonly HashSet<T> and Dictionary<TKey, TValue> fields initialized at declaration " +

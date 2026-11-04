@@ -18,7 +18,7 @@ public sealed class IndexOfAnyToSearchValuesAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use SearchValues<char> for IndexOfAny scans",
         "string.IndexOfAny/LastIndexOfAny scans char by char without SIMD — use SearchValues<char> with a span IndexOfAny",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

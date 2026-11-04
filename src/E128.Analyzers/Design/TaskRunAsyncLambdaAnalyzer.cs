@@ -16,7 +16,7 @@ public sealed class TaskRunAsyncLambdaAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Task.Run wrapping async lambda — unnecessary thread pool hop for I/O-bound work",
         "Task.Run wrapping an async lambda queues I/O-bound work to the thread pool unnecessarily — await the async method directly unless the work is CPU-bound",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

@@ -141,3 +141,7 @@ E128.Analyzers.Unsafe.UnsafeUnalignedNonBlittableCodeFixProvider
 E128.Analyzers.Unsafe.UnsafeUnalignedNonBlittableCodeFixProvider.UnsafeUnalignedNonBlittableCodeFixProvider() -> void
 E128.Analyzers.Performance.ComplexityCeilingAnalyzer
 E128.Analyzers.Performance.ComplexityCeilingAnalyzer.ComplexityCeilingAnalyzer() -> void
+*REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider
+*REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider.ConfigureAwaitFalseCodeFixProvider() -> void
+*REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseE128Analyzer
+*REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseE128Analyzer.ConfigureAwaitFalseE128Analyzer() -> void

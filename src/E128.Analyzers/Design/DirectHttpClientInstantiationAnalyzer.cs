@@ -16,7 +16,7 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use IHttpClientFactory instead of new HttpClient()",
         "Use IHttpClientFactory.CreateClient() instead of new HttpClient() — register via DI",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

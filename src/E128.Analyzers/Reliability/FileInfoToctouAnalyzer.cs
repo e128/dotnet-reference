@@ -27,7 +27,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "File existence check TOCTOU race condition",
         "File read on '{0}' follows an existence check without a try/catch guard. Another process may delete the file between the check and the read.",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "Checking FileInfo.Exists before reading a file creates a TOCTOU race. Guard the read with try/catch(IOException) instead of relying on the existence check.");

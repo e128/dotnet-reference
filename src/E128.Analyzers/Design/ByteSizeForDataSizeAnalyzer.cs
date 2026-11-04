@@ -22,7 +22,7 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use ByteSize for data-size values to avoid unit ambiguity",
         "'{0}' is numeric but its name suggests a data size. Use ByteSize instead to eliminate unit ambiguity at call sites.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Error,
         true,
         "Numeric properties, parameters, and fields whose names imply a data size (e.g., MaxSizeBytes, " +

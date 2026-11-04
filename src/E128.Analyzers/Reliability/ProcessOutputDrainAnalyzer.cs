@@ -49,7 +49,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Redirected process output never read before WaitForExit",
         "Read the redirected output before WaitForExit",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "A process with a redirected stream writes into a pipe with a fixed buffer. When the " +

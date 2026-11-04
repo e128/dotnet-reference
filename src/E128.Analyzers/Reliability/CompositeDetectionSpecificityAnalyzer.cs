@@ -16,7 +16,7 @@ public sealed class CompositeDetectionSpecificityAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "CompositeDetection with single generic ID selector lacks specificity",
         "CompositeDetection has a single ResourceDetection branch with generic ID selector '{0}' -- add domain or additional detection signals to avoid false positives",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "A CompositeDetection with only one ResourceDetection branch using a generic CSS ID selector " +

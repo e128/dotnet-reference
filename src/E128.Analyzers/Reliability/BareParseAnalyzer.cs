@@ -16,7 +16,7 @@ public sealed class BareParseAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Avoid bare .Parse() — use TryParse to handle invalid input",
         "Call {0}.Parse() without TryParse — use TryParse to avoid FormatException on untrusted input",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

@@ -1,19 +1,40 @@
 #!/usr/bin/env bash
-# Increment the <Version> in a project's .csproj file.
-# Usage: version-bump.sh <ProjectName> [patch|minor]
+# Set the <Version> in a project's .csproj to the next semantic version.
+# Usage: version-bump.sh <ProjectName> [auto|patch|minor|major] [--dry-run]
 # Example: version-bump.sh E128.Analyzers
-# Example: version-bump.sh E128.Analyzers minor
+# Example: version-bump.sh E128.Analyzers major --dry-run
 #
-# Patch (default) increments 1.17.0 → 1.17.1, 2.0.3 → 2.0.4, etc.
-# Minor increments 1.17.3 → 1.18.0, 2.0.4 → 2.1.0, etc.
-# Only increments if there are .cs file changes in the project directory.
+# The target is computed from the version on the merge base with main, never from
+# the working copy. Running the script twice therefore gives the same result,
+# and a branch that bumps once ships one version step, however many commits it has.
+#
+# Level `auto` (default) takes the strongest signal found since the merge base:
+#   major  a commit subject `type!:` or a `BREAKING CHANGE:` footer,
+#          or a rule added to `### Removed Rules` in AnalyzerReleases.Unshipped.md
+#   minor  a `feat:` commit, or a rule added to `### New Rules` or `### Changed Rules`
+#   patch  any other change to a .cs file in the project
+# A 0.y.z version treats a major signal as minor, per semver section 4.
+# An explicit level overrides the signals. No .cs change since the merge base
+# skips the bump.
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
 set -euo pipefail
 
-[[ $# -lt 1 ]] && { err "Usage: version-bump.sh <ProjectName>"; exit 1; }
+usage() { err "Usage: version-bump.sh <ProjectName> [auto|patch|minor|major] [--dry-run]"; }
 
-PROJECT="$1"
+PROJECT=""
+LEVEL="auto"
+DRY_RUN=false
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run) DRY_RUN=true ;;
+        auto | patch | minor | major) LEVEL="$arg" ;;
+        -*) usage; exit 1 ;;
+        *) [[ -z "$PROJECT" ]] && PROJECT="$arg" || { usage; exit 1; } ;;
+    esac
+done
+[[ -z "$PROJECT" ]] && { usage; exit 1; }
+
 CSPROJ=""
 for f in src/"$PROJECT"/"$PROJECT".csproj src/"$PROJECT"/*.csproj; do
     if [[ -f "$f" ]]; then
@@ -21,53 +42,99 @@ for f in src/"$PROJECT"/"$PROJECT".csproj src/"$PROJECT"/*.csproj; do
         break
     fi
 done
-
 [[ -z "$CSPROJ" ]] && { err "No .csproj found for $PROJECT"; exit 1; }
-
-# Check if any .cs files changed in the project directory (recursive). The commit that last
-# touched the csproj is the commit that last bumped the version, so .cs changes committed since
-# then count too. Without that range the guard reads only the working tree and skips the bump
-# when the source change already landed in an earlier commit.
 PROJECT_DIR=$(dirname "$CSPROJ")
-CS_MODIFIED=$(git diff --name-only -- "$PROJECT_DIR/" | { grep '\.cs$' || true; } | head -1)
-CS_STAGED=$(git diff --cached --name-only -- "$PROJECT_DIR/" | { grep '\.cs$' || true; } | head -1)
-UNTRACKED=$(git ls-files --others --exclude-standard -- "$PROJECT_DIR/" | { grep '\.cs$' || true; } | head -1)
 
-LAST_BUMP=$(git log -1 --format=%H -- "$CSPROJ")
-CS_SINCE_BUMP=""
-if [[ -n "$LAST_BUMP" ]]; then
-    CS_SINCE_BUMP=$(git diff --name-only "$LAST_BUMP..HEAD" -- "$PROJECT_DIR/" | { grep '\.cs$' || true; } | head -1)
-fi
+# Merge base with the main branch. Without one, fall back to HEAD.
+BASE=""
+for ref in origin/main main; do
+    if git rev-parse --verify -q "$ref^{commit}" > /dev/null; then
+        BASE=$(git merge-base "$ref" HEAD)
+        break
+    fi
+done
+[[ -z "$BASE" ]] && BASE=$(git rev-parse HEAD)
 
-if [[ -z "$CS_MODIFIED" && -z "$CS_STAGED" && -z "$UNTRACKED" && -z "$CS_SINCE_BUMP" ]]; then
-    dim "No .cs changes in $PROJECT — skipping version bump"
+# Guard: a .cs change in the project since the merge base, committed or not.
+CS_CHANGED=$({
+    git diff --name-only "$BASE" -- "$PROJECT_DIR/"
+    git ls-files --others --exclude-standard -- "$PROJECT_DIR/"
+} | { grep '\.cs$' || true; } | head -1)
+if [[ -z "$CS_CHANGED" ]]; then
+    dim "No .cs changes in $PROJECT since the merge base, skipping version bump"
     exit 0
 fi
 
-# Extract current version
-CURRENT=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' "$CSPROJ" | head -1)
-if [[ -z "$CURRENT" ]]; then
-    err "No <Version> found in $CSPROJ"
-    exit 1
+read_version() { rg -o -r '$1' -m1 '<Version>([^<]+)</Version>' || true; }
+SEMVER_RE='^([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+
+CURRENT=$(read_version < "$CSPROJ")
+[[ -z "$CURRENT" ]] && { err "No <Version> found in $CSPROJ"; exit 1; }
+[[ "$CURRENT" =~ $SEMVER_RE ]] || { err "Current version '$CURRENT' is not semver"; exit 1; }
+
+BASE_VERSION=$(git show "$BASE:$CSPROJ" 2> /dev/null | read_version)
+[[ -z "$BASE_VERSION" ]] && BASE_VERSION="$CURRENT"
+[[ "$BASE_VERSION" =~ $SEMVER_RE ]] || { err "Base version '$BASE_VERSION' is not semver"; exit 1; }
+MAJOR=${BASH_REMATCH[1]} MINOR=${BASH_REMATCH[2]} PATCH=${BASH_REMATCH[3]}
+
+# Auto level: strongest signal wins.
+REASON="explicit level"
+if [[ "$LEVEL" == "auto" ]]; then
+    LEVEL="patch"
+    REASON="a .cs change"
+
+    # Commit signals since the merge base.
+    while IFS= read -r -d $'\x1e' record; do
+        subject=${record%%$'\n'*}
+        if [[ "$subject" =~ ^[a-z]+(\([^\)]*\))?!: || "$record" =~ (^|$'\n')BREAKING[\ -]CHANGE: ]]; then
+            LEVEL="major"; REASON="breaking commit: $subject"; break
+        elif [[ "$subject" =~ ^feat(\([^\)]*\))?: && "$LEVEL" == "patch" ]]; then
+            LEVEL="minor"; REASON="feat commit: $subject"
+        fi
+    done < <(git log --format='%s%n%b%x1e' "$BASE..HEAD" -- "$PROJECT_DIR/")
+
+    # Release-notes signals: rows added to the unshipped file since the merge base.
+    UNSHIPPED="$PROJECT_DIR/AnalyzerReleases.Unshipped.md"
+    if [[ -f "$UNSHIPPED" ]]; then
+        release_rows() {
+            awk '/^### /{sec=$0; sub(/^### /, "", sec); next}
+                 /^[A-Za-z]+[0-9]+ *\|/{id=$0; sub(/ *\|.*/, "", id); print sec "|" id}' | sort -u
+        }
+        ADDED=$(comm -13 \
+            <(git show "$BASE:$UNSHIPPED" 2> /dev/null | release_rows) \
+            <(release_rows < "$UNSHIPPED"))
+        if [[ "$ADDED" == *"Removed Rules|"* ]]; then
+            LEVEL="major"; REASON="rule removed in $UNSHIPPED"
+        elif [[ "$LEVEL" == "patch" && "$ADDED" == *"New Rules|"* ]]; then
+            LEVEL="minor"; REASON="rule added in $UNSHIPPED"
+        elif [[ "$LEVEL" == "patch" && "$ADDED" == *"Changed Rules|"* ]]; then
+            LEVEL="minor"; REASON="rule changed in $UNSHIPPED"
+        fi
+    fi
 fi
 
-LEVEL="${2:-patch}"
+# Semver section 4: a 0.y.z API is unstable, so a breaking change raises y.
+if [[ "$LEVEL" == "major" && "$MAJOR" -eq 0 ]]; then
+    LEVEL="minor"
+fi
+
 case "$LEVEL" in
-    patch | minor) ;;
-    *) err "Invalid level '$LEVEL'. Use patch or minor."; exit 1 ;;
+    major) TARGET="$((MAJOR + 1)).0.0" ;;
+    minor) TARGET="${MAJOR}.$((MINOR + 1)).0" ;;
+    patch) TARGET="${MAJOR}.${MINOR}.$((PATCH + 1))" ;;
 esac
 
-# Parse major.minor.patch
-IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-if [[ "$LEVEL" == "minor" ]]; then
-    MINOR=$((MINOR + 1))
-    PATCH=0
-else
-    PATCH=$((PATCH + 1))
+# Idempotent: keep a current version that already meets or passes the target.
+CURRENT_CORE="${CURRENT%%[-+]*}"
+if [[ "$CURRENT" == "$CURRENT_CORE" && "$(printf '%s\n%s\n' "$CURRENT" "$TARGET" | sort -V | tail -1)" == "$CURRENT" ]]; then
+    dim "$PROJECT is already at $CURRENT (target $TARGET from base $BASE_VERSION, $LEVEL), no bump"
+    exit 0
 fi
-NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
-# Replace in file
-sed -i '' "s|<Version>${CURRENT}</Version>|<Version>${NEW_VERSION}</Version>|" "$CSPROJ"
+if [[ "$DRY_RUN" == true ]]; then
+    ok "Would bump $PROJECT: $CURRENT → $TARGET ($LEVEL from base $BASE_VERSION, $REASON)"
+    exit 0
+fi
 
-ok "Bumped $PROJECT: ${CURRENT} → ${NEW_VERSION}"
+perl -i -pe "s|<Version>\Q${CURRENT}\E</Version>|<Version>${TARGET}</Version>|" "$CSPROJ"
+ok "Bumped $PROJECT: $CURRENT → $TARGET ($LEVEL from base $BASE_VERSION, $REASON)"

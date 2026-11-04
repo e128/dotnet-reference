@@ -35,7 +35,7 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use a strong PBKDF2 configuration",
         "{0}",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "PBKDF2 must use at least 600,000 iterations, and policy prefers a SHA-2 PRF. A value that is not a " +

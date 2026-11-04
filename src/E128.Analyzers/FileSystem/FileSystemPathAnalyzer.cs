@@ -34,7 +34,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use FileInfo or DirectoryInfo instead of string for file system paths",
         "Parameter '{0}' appears to represent a {1}. Consider using '{2}' instead of 'string'.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 
@@ -43,7 +43,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use Option<FileInfo> or Option<DirectoryInfo> instead of Option<string> for file system path options",
         "Option '{0}' appears to represent a {1}. Consider using {2} instead of 'Option<string>'.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 
@@ -52,7 +52,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use Argument<FileInfo> or Argument<DirectoryInfo> instead of Argument<string> for file system path arguments",
         "Argument '{0}' appears to represent a {1}. Consider using {2} instead of 'Argument<string>'.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

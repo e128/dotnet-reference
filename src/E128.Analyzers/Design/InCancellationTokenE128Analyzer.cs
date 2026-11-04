@@ -16,7 +16,7 @@ public sealed class InCancellationTokenE128Analyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not pass CancellationToken by 'in' reference",
         "Parameter '{0}' uses 'in CancellationToken' — remove the 'in' modifier",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "The 'in' modifier makes CancellationToken a by-ref parameter (CancellationToken&). " +

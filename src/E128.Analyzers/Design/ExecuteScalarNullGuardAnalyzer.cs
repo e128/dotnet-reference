@@ -21,7 +21,7 @@ public sealed class ExecuteScalarNullGuardAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Convert.ToInt32/ToInt64 wrapping ExecuteScalar without null guard",
         "Convert.{0} wraps {1} without a null check — ExecuteScalar returns null for empty result sets, and Convert.{0}(null) silently returns 0",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

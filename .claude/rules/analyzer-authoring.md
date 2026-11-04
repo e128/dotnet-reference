@@ -5,6 +5,10 @@ in [dotnet-testing.md](dotnet-testing.md).
 
 ## Rule Registration
 
+- Pass a category string of the form `"E128-<Area>"` to the `DiagnosticDescriptor`,
+  such as `"E128-Security"`. The prefix lets a consumer select one area with
+  `category-E128-Security`. List the same value in
+  `AnalyzerReleases.Unshipped.md`.
 - Declare `internal const string DiagnosticId = "E128NNN"` in the analyzer
   class. The value is unique and continues the last assigned number.
 - Add the rule to `src/E128.Analyzers/AnalyzerReleases.Unshipped.md`.

@@ -45,7 +45,7 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use an HMAC key at least as long as the hash output",
         "{0} key is {1} bytes; policy requires at least {2} bytes (the hash output length)",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "Policy requires an HMAC key at least as long as the hash output: 32 bytes for SHA-256, 48 for " +

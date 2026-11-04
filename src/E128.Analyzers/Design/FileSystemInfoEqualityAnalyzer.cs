@@ -16,7 +16,7 @@ public sealed class FileSystemInfoEqualityAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not compare FileSystemInfo types by reference",
         "'{0}' compares FileSystemInfo by reference — compare .FullName instead",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Info,
         true,
         "FileInfo and DirectoryInfo do not override Equals or operator==. " +

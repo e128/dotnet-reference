@@ -22,7 +22,7 @@ public sealed class PragmaFileScopedNamespaceAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Pragma warning disable placed before a file-scoped namespace declaration",
         "#pragma warning disable precedes the file-scoped namespace declaration — move it below the namespace or IDE0079 will remove it during format",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Error,
         true,
         "A #pragma warning disable above a file-scoped namespace declaration sits outside the namespace it was meant to scope. IDE0079 treats it as unnecessary and removes it during format, silently disabling the suppression.");

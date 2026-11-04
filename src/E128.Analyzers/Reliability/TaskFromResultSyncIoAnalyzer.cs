@@ -33,7 +33,7 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Task.FromResult wraps sync I/O that has an async alternative",
         "Method '{0}' calls sync I/O '{1}' and wraps the result in {2} — use the async equivalent instead",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "When a method returns Task.FromResult or ValueTask.FromResult but also calls " +

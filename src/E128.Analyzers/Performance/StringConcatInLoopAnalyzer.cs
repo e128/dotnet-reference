@@ -16,7 +16,7 @@ public sealed class StringConcatInLoopAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "String concatenation in loop creates O(n²) allocations",
         "String concatenation (+=) in a loop allocates a new string per iteration — use StringBuilder",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

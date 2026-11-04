@@ -25,7 +25,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Sort operation inside loop creates O(n² log n) complexity",
         "'{0}' inside a loop re-sorts on every iteration — sort once before the loop or use an ordered collection",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 
@@ -33,7 +33,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         InsertAtZeroDiagnosticId,
         "List.Insert(0, ...) in loop creates O(n²) complexity",
         "Insert(0, ...) shifts all elements on every call — use LinkedList<T> or collect and reverse",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 
@@ -41,7 +41,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         RemoveAtZeroDiagnosticId,
         "List.RemoveAt(0) in loop creates O(n²) complexity",
         "RemoveAt(0) shifts all remaining elements on every call — use a Queue<T>, LinkedList<T>, or index forward instead",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

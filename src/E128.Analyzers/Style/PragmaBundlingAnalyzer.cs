@@ -21,7 +21,7 @@ public sealed class PragmaBundlingAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Bundled pragma warning disable",
         "#pragma warning disable lists {0} IDs; each ID requires independent justification — use one pragma per ID",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Warning,
         true,
         "Bundling multiple diagnostic IDs on one #pragma warning disable hides weak suppression reasoning. " +

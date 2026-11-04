@@ -87,7 +87,7 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use RandomNumberGenerator instead of Random in security-adjacent code",
         "{0}",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "System.Random is not a cryptographically secure generator. Generate keys, tokens, nonces, IVs and " +

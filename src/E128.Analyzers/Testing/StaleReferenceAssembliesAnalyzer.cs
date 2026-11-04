@@ -40,7 +40,7 @@ public sealed class StaleReferenceAssembliesAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Test uses outdated ReferenceAssemblies — does not match project target framework",
         "ReferenceAssemblies.Net.{0} is outdated — use Net{1} to match the project target framework",
-        "Testing",
+        "E128-Testing",
         DiagnosticSeverity.Warning,
         true,
         "Tests using older ReferenceAssemblies (e.g., Net80 when the project targets net10.0) " +

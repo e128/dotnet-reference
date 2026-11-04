@@ -33,7 +33,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "DI resolve without a registration in the compilation",
         "'{0}' is resolved but has no DI registration in this compilation",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "A service type resolved through GetRequiredService<T>() or a constructor parameter of a " +

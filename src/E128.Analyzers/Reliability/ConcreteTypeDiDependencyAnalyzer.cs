@@ -26,7 +26,7 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Concrete-type DI dependency without direct registration",
         "'{0}' is only registered via interface — add a direct DI registration (e.g., AddSingleton<{0}>()) or resolve via the interface instead",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "When a constructor parameter is a concrete type that is registered in DI only via " +

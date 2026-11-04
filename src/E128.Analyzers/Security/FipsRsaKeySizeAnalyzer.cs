@@ -83,7 +83,7 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use an RSA key of at least 3072 bits or an approved curve",
         "{0}",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "Policy requires RSA keys of at least 3072 bits and elliptic curves of at least 384 bits (P-384 or " +

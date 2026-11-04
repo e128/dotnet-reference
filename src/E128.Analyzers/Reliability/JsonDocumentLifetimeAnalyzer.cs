@@ -24,7 +24,7 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "JsonDocument.RootElement must not escape the document's using scope",
         "JsonDocument.Parse() result is not in a 'using' scope — RootElement accesses may read from returned-to-pool memory. Wrap in 'using' and call .Clone() if the element must escape.",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

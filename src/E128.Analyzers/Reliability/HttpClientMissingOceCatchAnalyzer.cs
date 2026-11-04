@@ -33,7 +33,7 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Broad catch in async HttpClient method missing OperationCanceledException handler",
         "Broad catch (Exception) swallows OperationCanceledException — add catch (OperationCanceledException) before this catch to handle cancellation explicitly",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "An async method that calls HttpClient methods and uses a broad catch (Exception) " +

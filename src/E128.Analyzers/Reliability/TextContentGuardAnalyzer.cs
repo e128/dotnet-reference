@@ -23,7 +23,7 @@ public sealed class TextContentGuardAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "TextContent string match requires a preceding length guard",
         "TextContent.{0}() must be preceded by a TextContent.Length guard (> {1} chars) in the same && expression to prevent matching ancestor elements",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "TextContent aggregates all descendant text. Without a length guard before the string match, " +

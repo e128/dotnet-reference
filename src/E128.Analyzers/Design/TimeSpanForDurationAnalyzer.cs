@@ -26,7 +26,7 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use TimeSpan for time-duration values to avoid unit ambiguity",
         "'{0}' is numeric but its name suggests a time duration. Use TimeSpan instead to eliminate unit ambiguity at call sites.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Error,
         true,
         "Numeric properties and parameters whose names imply a time duration (e.g., TimeoutSeconds, " +

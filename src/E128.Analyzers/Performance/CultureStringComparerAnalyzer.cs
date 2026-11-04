@@ -33,7 +33,7 @@ public sealed class CultureStringComparerAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use an ordinal comparer for a string collection",
         "StringComparer.{0} is culture-sensitive. Use StringComparer.{1}.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "The current-culture and invariant-culture comparers cost more than an ordinal comparer " +

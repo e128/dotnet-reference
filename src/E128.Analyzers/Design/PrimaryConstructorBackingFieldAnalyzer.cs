@@ -16,7 +16,7 @@ public sealed class PrimaryConstructorBackingFieldAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use primary constructor parameter directly",
         "Field '{0}' is an identity assignment from primary constructor parameter '{1}' — use the parameter directly in method bodies",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true,
         "When a primary constructor parameter is assigned unchanged to a backing field " +

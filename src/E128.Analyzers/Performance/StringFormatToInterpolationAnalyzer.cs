@@ -16,7 +16,7 @@ public sealed class StringFormatToInterpolationAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use string interpolation instead of string.Format",
         "Replace string.Format with string interpolation ($\"...\") for better performance and readability",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

@@ -22,7 +22,7 @@ public sealed class FipsAesGcmTagSizeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use the full 16-byte AES-GCM tag",
         "AES-GCM tag size {0} bytes ({1} bits) is below the policy minimum of 16 bytes (128 bits)",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "NIST SP 800-38D permits shorter tags in some cases, but policy requires the full 16-byte tag. A " +

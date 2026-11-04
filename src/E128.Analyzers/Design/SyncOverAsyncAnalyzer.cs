@@ -16,7 +16,7 @@ public sealed class SyncOverAsyncAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Avoid sync-over-async (.Result / .GetAwaiter().GetResult())",
         "Avoid blocking on async code with {0} — use await instead",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

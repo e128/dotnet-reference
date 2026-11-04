@@ -20,7 +20,7 @@ public sealed class RawIlEmitAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not emit raw IL with ILGenerator",
         "'{0}' emits raw IL. Use a source generator, or [UnsafeAccessor] for a private member.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true,
         "Raw IL bypasses the type system and the memory safety checks. A source generator is " +

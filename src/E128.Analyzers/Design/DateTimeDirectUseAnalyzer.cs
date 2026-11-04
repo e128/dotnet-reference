@@ -16,7 +16,7 @@ public sealed class DateTimeDirectUseAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use TimeProvider instead of DateTime/DateTimeOffset direct access",
         "Use TimeProvider instead of {0}.{1} — inject TimeProvider via DI",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

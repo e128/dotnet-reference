@@ -24,7 +24,7 @@ public sealed class TestCodeCommentAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Comment inside test code",
         "Test code carries a comment — remove it, or express the intent through a better test or method name",
-        "Testing",
+        "E128-Testing",
         DiagnosticSeverity.Warning,
         true,
         "A type that declares an xUnit [Fact] or [Theory] method should carry no // or /// comments. " +

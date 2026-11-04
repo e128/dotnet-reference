@@ -34,7 +34,7 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "TaskCompletionSource without RunContinuationsAsynchronously",
         "Pass TaskCreationOptions.RunContinuationsAsynchronously to the TaskCompletionSource",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "A TaskCompletionSource without TaskCreationOptions.RunContinuationsAsynchronously runs " +

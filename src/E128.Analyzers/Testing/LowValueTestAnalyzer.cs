@@ -49,7 +49,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         SuggestionDiagnosticId,
         "Test matches one low-value test condition",
         "Test '{0}' matches the low-value condition {1} and may lock in an implementation detail",
-        "Testing",
+        "E128-Testing",
         DiagnosticSeverity.Info,
         false,
         "A short test that asserts on an implementation detail fails on every honest refactor. " +
@@ -59,7 +59,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         WarningDiagnosticId,
         "Test matches several low-value test conditions",
         "Test '{0}' matches the low-value conditions {1} and locks in implementation details",
-        "Testing",
+        "E128-Testing",
         DiagnosticSeverity.Warning,
         false,
         "A short test that asserts on several implementation details fails on every honest refactor. " +

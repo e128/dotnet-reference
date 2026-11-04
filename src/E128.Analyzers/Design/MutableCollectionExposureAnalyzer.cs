@@ -48,7 +48,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use immutable collection interface instead of mutable concrete type",
         "'{0}' exposes mutable '{1}' — use '{2}' instead",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Info,
         true,
         "Public and internal API surfaces should expose immutable collection interfaces " +

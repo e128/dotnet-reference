@@ -26,7 +26,7 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Class has excessive user-defined inheritance depth",
         "Class '{0}' has {1} user-defined inheritance level(s), meeting or exceeding the threshold of {2}. Prefer composition over deep inheritance.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

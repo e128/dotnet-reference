@@ -17,7 +17,7 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Avoid async void methods",
         "Method '{0}' is async void — use async Task instead",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

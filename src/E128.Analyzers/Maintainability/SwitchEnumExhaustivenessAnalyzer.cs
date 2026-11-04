@@ -28,7 +28,7 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Switch over an enum does not case every member",
         "Switch over '{0}' does not case member '{1}' and has no default arm — a new member falls through silently",
-        "Maintainability",
+        "E128-Maintainability",
         DiagnosticSeverity.Warning,
         true,
         "A switch over an enum type should case every member, or add a default arm or discard pattern " +

@@ -21,7 +21,7 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use TensorPrimitives.Sum instead of a sum loop",
         "The loop adds the elements one at a time. Use TensorPrimitives.Sum.",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "TensorPrimitives.Sum reads the span in vector-width blocks. The loop adds one element " +

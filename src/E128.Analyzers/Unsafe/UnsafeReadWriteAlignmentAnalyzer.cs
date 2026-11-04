@@ -16,7 +16,7 @@ public sealed class UnsafeReadWriteAlignmentAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use the unaligned Unsafe read and write methods",
         "Unsafe.{0} assumes aligned memory. Use Unsafe.{0}Unaligned unless the address is provably aligned.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

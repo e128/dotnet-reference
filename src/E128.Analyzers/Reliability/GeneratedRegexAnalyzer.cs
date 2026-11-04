@@ -21,7 +21,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
         TimeoutDiagnosticId,
         "[GeneratedRegex] attribute is missing 'matchTimeoutMilliseconds'",
         "[GeneratedRegex] attribute is missing 'matchTimeoutMilliseconds' — add a timeout to prevent catastrophic backtracking",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 
@@ -29,7 +29,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
         CompiledDiagnosticId,
         "RegexOptions.Compiled is redundant in [GeneratedRegex]",
         "RegexOptions.Compiled is ignored by the source generator — remove it to avoid confusion",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 
@@ -37,7 +37,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
         OverlappingQuantifierDiagnosticId,
         "[GeneratedRegex] pattern has overlapping quantifiers that risk catastrophic backtracking",
         "[GeneratedRegex] pattern contains '\\s*' or '\\s+' adjacent to a quantifier with overlapping character set (e.g., '.*', '.+') — this causes exponential backtracking",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 
@@ -45,7 +45,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
         NestedQuantifierDiagnosticId,
         "[GeneratedRegex] pattern has nested quantifiers that cause exponential backtracking",
         "[GeneratedRegex] pattern contains a quantified group with an inner quantifier (e.g., '(.+)+', '(\\w+)+', '(a*)*') — this causes exponential backtracking",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

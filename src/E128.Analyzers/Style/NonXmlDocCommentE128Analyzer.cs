@@ -21,7 +21,7 @@ public sealed class NonXmlDocCommentE128Analyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Non-XML-doc comment above method declaration",
         "Use /// XML doc comment or remove — // comments above methods are not allowed",
-        "Style",
+        "E128-Style",
         DiagnosticSeverity.Warning,
         true,
         "Non-XML-doc // comments immediately before method declarations are prohibited. " +

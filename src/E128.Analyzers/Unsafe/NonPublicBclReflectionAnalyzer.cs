@@ -21,7 +21,7 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not reach a nonpublic BCL member",
         "Do not read or write a nonpublic member of '{0}'. It is an implementation detail.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true,
         "A nonpublic base class library member is an implementation detail. A servicing release " +

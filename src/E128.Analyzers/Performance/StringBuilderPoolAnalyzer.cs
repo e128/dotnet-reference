@@ -22,7 +22,7 @@ public sealed class StringBuilderPoolAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use StringBuilderPool instead of new StringBuilder()",
         "Use StringBuilderPool.Shared.Rent() instead of new StringBuilder() to reduce allocation pressure",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Info,
         true,
         "Direct StringBuilder allocations can be replaced with StringBuilderPool.Shared.Rent() " +

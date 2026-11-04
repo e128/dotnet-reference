@@ -24,7 +24,7 @@ public sealed class ConsoleDirectUseAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Avoid direct System.Console usage",
         "Use ILogger (services) or ITerminalWriter/ITerminalPrompt (CLI) instead of System.Console.{0}",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

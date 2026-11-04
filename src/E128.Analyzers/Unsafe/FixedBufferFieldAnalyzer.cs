@@ -17,7 +17,7 @@ public sealed class FixedBufferFieldAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use an inline array instead of a fixed-size buffer",
         "A fixed-size buffer has no bounds checks and no default zeroing. Use an [InlineArray] struct instead.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 

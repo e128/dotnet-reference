@@ -118,7 +118,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use an approved cryptographic algorithm",
         "'{0}' is blocked by the cryptography policy; use SHA-256, SHA-384 or SHA-512 for hashing and AES for encryption",
-        "Security",
+        "E128-Security",
         DiagnosticSeverity.Error,
         true,
         "The policy blocks MD5, SHA-1, RIPEMD-160, DES, RC2, Triple DES, the MAC types built on them, " +

@@ -17,7 +17,7 @@ public sealed class ChainedStringReplaceAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Collapse chained or looped string Replace calls into a single pass",
         "{0}",
-        "Performance",
+        "E128-Performance",
         DiagnosticSeverity.Warning,
         true);
 

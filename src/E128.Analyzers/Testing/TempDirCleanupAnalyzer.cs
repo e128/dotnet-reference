@@ -25,7 +25,7 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Class creates temp directory without cleanup interface",
         "Class '{0}' calls Path.GetTempPath() but does not implement IDisposable, IAsyncDisposable, or IAsyncLifetime",
-        "Testing",
+        "E128-Testing",
         DiagnosticSeverity.Warning,
         true,
         "Classes that allocate temp directories in field initializers or constructors must implement a cleanup interface to avoid resource leaks.");

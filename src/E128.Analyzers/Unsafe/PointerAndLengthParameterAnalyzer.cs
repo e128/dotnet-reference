@@ -19,7 +19,7 @@ public sealed class PointerAndLengthParameterAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use Span<T> instead of a pointer and a length",
         "'{0}' takes a pointer and a length. Pass Span<T> or ReadOnlySpan<T> instead.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true,
         "A pointer parameter paired with a length parameter has no bounds check and no lifetime " +

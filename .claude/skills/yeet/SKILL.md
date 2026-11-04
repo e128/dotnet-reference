@@ -115,7 +115,7 @@ Only if staged or unstaged `.cs` files changed under `<AnalyzerProject>`.
 ```bash
 scripts/internal/version-bump.sh <AnalyzerProject>
 ```
-This increments the `<Version>` in the analyzer csproj so the NuGet package ships with a new version. Skip with "Analyzer version bump skipped, no analyzer source changes" if no `.cs` files changed.
+The script picks the level (major, minor, or patch) from commit subjects and from rules added to `AnalyzerReleases.Unshipped.md`. It computes the target from the merge base with `main`, so a second run changes nothing. Pass `major`, `minor`, or `patch` to override. Skip with "Analyzer version bump skipped, no analyzer source changes" if no `.cs` files changed.
 
 If the version was bumped, re-read the csproj before any subsequent edits.
 

@@ -24,7 +24,7 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Use collection of FileInfo or DirectoryInfo instead of collection of string for file system paths",
         "Parameter '{0}' appears to represent a collection of {1}. Consider using '{2}' instead of '{3}'.",
-        "Design",
+        "E128-Design",
         DiagnosticSeverity.Warning,
         true);
 

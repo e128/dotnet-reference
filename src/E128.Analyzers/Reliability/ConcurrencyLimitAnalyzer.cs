@@ -22,7 +22,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Concurrency limit must be positive",
         "Concurrency limit is {0} — zero or negative values produce cryptic runtime errors. Use a positive integer (or -1 for MaxDegreeOfParallelism to mean unlimited).",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 

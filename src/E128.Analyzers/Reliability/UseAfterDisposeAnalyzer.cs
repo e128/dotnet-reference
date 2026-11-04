@@ -29,7 +29,7 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Local used after an explicit Dispose",
         "'{0}' is used after it is disposed",
-        "Reliability",
+        "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
         "An object that Dispose already released throws ObjectDisposedException on the next " +

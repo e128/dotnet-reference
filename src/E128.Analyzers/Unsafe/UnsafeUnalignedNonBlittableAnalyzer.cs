@@ -21,7 +21,7 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         "Do not move a non-blittable type through an unaligned access",
         "Unsafe.{0}<{1}> treats the memory as a raw bit pattern. {1} is not blittable, so the result is not portable.",
-        "Unsafe",
+        "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
 
