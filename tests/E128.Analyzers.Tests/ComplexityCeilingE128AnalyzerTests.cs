@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -8,59 +9,35 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ComplexityCeilingE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ComplexityCeilingAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
-
-    private static Task VerifyWithCeilingAsync(string ceiling, string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ComplexityCeilingAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.AnalyzerConfigFiles.Add(
-            ("/.editorconfig", "is_global = true\ne128_max_complexity = " + ceiling));
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
-
     private const string NestedLoopCode = """
-                                         class C
-                                         {
-                                             void M(string[] items)
-                                             {
-                                                 foreach (var a in items)
-                                                 {
-                                                     foreach (var b in items)
-                                                     {
-                                                         _ = a.Length + b.Length;
-                                                     }
-                                                 }
-                                             }
-                                         }
-                                         """;
+                                          class C
+                                          {
+                                              void M(string[] items)
+                                              {
+                                                  foreach (var a in items)
+                                                  {
+                                                      foreach (var b in items)
+                                                      {
+                                                          _ = a.Length + b.Length;
+                                                      }
+                                                  }
+                                              }
+                                          }
+                                          """;
 
     private const string SortInLoopCode = """
-                                         using System.Collections.Generic;
-                                         class C
-                                         {
-                                             void M(List<int> items)
-                                             {
-                                                 foreach (var item in items)
-                                                 {
-                                                     items.Sort();
-                                                 }
-                                             }
-                                         }
-                                         """;
+                                          using System.Collections.Generic;
+                                          class C
+                                          {
+                                              void M(List<int> items)
+                                              {
+                                                  foreach (var item in items)
+                                                  {
+                                                      items.Sort();
+                                                  }
+                                              }
+                                          }
+                                          """;
 
     private const string SuppressedNestedLoopCode = """
                                                     #pragma warning disable E128152
@@ -79,47 +56,24 @@ public sealed class ComplexityCeilingE128AnalyzerTests
                                                     }
                                                     """;
 
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_FlagsNestedLoop_WhenDepthExceedsCeiling()
-    {
-        return VerifyAsync(NestedLoopCode,
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-                .WithLocation(7, 13));
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenExistingRuleCoversShape()
-    {
-        return VerifyAsync(SortInLoopCode);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_UsesCeilingOption_WhenEditorconfigSetsTier()
-    {
-        return VerifyWithCeilingAsync("quadratic", NestedLoopCode);
-    }
-
     private const string DepthThreeLoopCode = """
-                                         class C
-                                         {
-                                             void M(string[] items)
-                                             {
-                                                 foreach (var a in items)
-                                                 {
-                                                     foreach (var b in items)
-                                                     {
-                                                         foreach (var c in items)
-                                                         {
-                                                             _ = a.Length + b.Length + c.Length;
-                                                         }
-                                                     }
-                                                 }
-                                             }
-                                         }
-                                         """;
+                                              class C
+                                              {
+                                                  void M(string[] items)
+                                                  {
+                                                      foreach (var a in items)
+                                                      {
+                                                          foreach (var b in items)
+                                                          {
+                                                              foreach (var c in items)
+                                                              {
+                                                                  _ = a.Length + b.Length + c.Length;
+                                                              }
+                                                          }
+                                                      }
+                                                  }
+                                              }
+                                              """;
 
     private const string LoopInsideLambdaLoopCode = """
                                                     class C
@@ -162,18 +116,18 @@ public sealed class ComplexityCeilingE128AnalyzerTests
                                                            """;
 
     private const string BranchingRecursionCode = """
-                                                 class C
-                                                 {
-                                                     int Fib(int n)
-                                                     {
-                                                         if (n < 2)
-                                                         {
-                                                             return n;
-                                                         }
-                                                         return Fib(n - 1) + Fib(n - 2);
-                                                     }
-                                                 }
-                                                 """;
+                                                  class C
+                                                  {
+                                                      int Fib(int n)
+                                                      {
+                                                          if (n < 2)
+                                                          {
+                                                              return n;
+                                                          }
+                                                          return Fib(n - 1) + Fib(n - 2);
+                                                      }
+                                                  }
+                                                  """;
 
     private const string LocalDictionaryMemoizedRecursionCode = """
                                                                 using System.Collections.Generic;
@@ -208,88 +162,6 @@ public sealed class ComplexityCeilingE128AnalyzerTests
                                                      }
                                                  }
                                                  """;
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_FlagsBranchingRecursion_WhenNoMemoization()
-    {
-        return VerifyAsync(BranchingRecursionCode,
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-                .WithLocation(3, 5));
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionMemoizes()
-    {
-        return VerifyAsync(MemoizedRecursionCode);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_FallsBackToDefault_WhenOptionMalformed()
-    {
-        return VerifyWithCeilingAsync("not-a-tier", NestedLoopCode,
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-                .WithLocation(7, 13));
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenSuppressionAttributePresent()
-    {
-        return VerifyAsync(SuppressedNestedLoopCode);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_ReportsDepthThreeNesting_AtMiddleAndInnerLoops()
-    {
-        return VerifyAsync(DepthThreeLoopCode,
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-                .WithLocation(7, 13),
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-                .WithLocation(9, 17));
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_FiresAtLinearithmicCeiling_WhenDepthTwoLoopsPresent()
-    {
-        return VerifyWithCeilingAsync("linearithmic", NestedLoopCode,
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-                .WithLocation(7, 13));
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_QuadraticCeiling_StillFlagsDepthThreeLoop()
-    {
-        return VerifyWithCeilingAsync("quadratic", DepthThreeLoopCode,
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-                .WithLocation(9, 17));
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopLivesOnlyInsideLambda()
-    {
-        return VerifyAsync(LoopInsideLambdaLoopCode);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopLivesOnlyInsideLocalFunction()
-    {
-        return VerifyAsync(LoopInsideLocalFunctionLoopCode);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionMemoizesIntoLocalDictionary()
-    {
-        return VerifyAsync(LocalDictionaryMemoizedRecursionCode);
-    }
 
     private const string ConstantInnerLoopCode = """
                                                  class C
@@ -350,43 +222,6 @@ public sealed class ComplexityCeilingE128AnalyzerTests
                                                        }
                                                        """;
 
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenInnerLoopHasConstantBound()
-    {
-        return VerifyAsync(ConstantInnerLoopCode);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopsRunOverConstantCollections()
-    {
-        return VerifyAsync(ConstantCollectionLoopCode);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionHalvesTheArgument()
-    {
-        return VerifyAsync(DivisiveRecursionCode);
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_FlagsBranchingRecursion_WhenCacheIsWrittenAndNeverRead()
-    {
-        return VerifyAsync(WriteOnlyCacheRecursionCode,
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-                .WithLocation(5, 5));
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public Task ComplexityCeilingAnalyzer_Silent_WhenCubicLoopMatchesCubicCeiling()
-    {
-        return VerifyWithCeilingAsync("cubic", DepthThreeLoopCode);
-    }
-
     private const string CoordinateLoopCode = """
                                               class C
                                               {
@@ -435,6 +270,172 @@ public sealed class ComplexityCeilingE128AnalyzerTests
                                               }
                                               """;
 
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        var test = new CSharpAnalyzerTest<ComplexityCeilingAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+        test.ExpectedDiagnostics.AddRange(expected);
+        return test.RunAsync();
+    }
+
+    private static Task VerifyWithCeilingAsync(string ceiling, string code, params DiagnosticResult[] expected)
+    {
+        var test = new CSharpAnalyzerTest<ComplexityCeilingAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+        test.TestState.AnalyzerConfigFiles.Add(
+            ("/.editorconfig", "is_global = true\ne128_max_complexity = " + ceiling));
+        test.ExpectedDiagnostics.AddRange(expected);
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_FlagsNestedLoop_WhenDepthExceedsCeiling()
+    {
+        return VerifyAsync(NestedLoopCode,
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
+                .WithLocation(7, 13));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenExistingRuleCoversShape()
+    {
+        return VerifyAsync(SortInLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_UsesCeilingOption_WhenEditorconfigSetsTier()
+    {
+        return VerifyWithCeilingAsync("quadratic", NestedLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_FlagsBranchingRecursion_WhenNoMemoization()
+    {
+        return VerifyAsync(BranchingRecursionCode,
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
+                .WithLocation(3, 5));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionMemoizes()
+    {
+        return VerifyAsync(MemoizedRecursionCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_FallsBackToDefault_WhenOptionMalformed()
+    {
+        return VerifyWithCeilingAsync("not-a-tier", NestedLoopCode,
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
+                .WithLocation(7, 13));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenPragmaDisablesDiagnostic()
+    {
+        return VerifyAsync(SuppressedNestedLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_ReportsDepthThreeNesting_AtMiddleAndInnerLoops()
+    {
+        return VerifyAsync(DepthThreeLoopCode,
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
+                .WithLocation(7, 13),
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
+                .WithLocation(9, 17));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_FiresAtLinearithmicCeiling_WhenDepthTwoLoopsPresent()
+    {
+        return VerifyWithCeilingAsync("linearithmic", NestedLoopCode,
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
+                .WithLocation(7, 13));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_QuadraticCeiling_StillFlagsDepthThreeLoop()
+    {
+        return VerifyWithCeilingAsync("quadratic", DepthThreeLoopCode,
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
+                .WithLocation(9, 17));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopLivesOnlyInsideLambda()
+    {
+        return VerifyAsync(LoopInsideLambdaLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopLivesOnlyInsideLocalFunction()
+    {
+        return VerifyAsync(LoopInsideLocalFunctionLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionMemoizesIntoLocalDictionary()
+    {
+        return VerifyAsync(LocalDictionaryMemoizedRecursionCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenInnerLoopHasConstantBound()
+    {
+        return VerifyAsync(ConstantInnerLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenLoopsRunOverConstantCollections()
+    {
+        return VerifyAsync(ConstantCollectionLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenRecursionHalvesTheArgument()
+    {
+        return VerifyAsync(DivisiveRecursionCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_FlagsBranchingRecursion_WhenCacheIsWrittenAndNeverRead()
+    {
+        return VerifyAsync(WriteOnlyCacheRecursionCode,
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
+                .WithLocation(5, 5));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenCubicLoopMatchesCubicCeiling()
+    {
+        return VerifyWithCeilingAsync("cubic", DepthThreeLoopCode);
+    }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task ComplexityCeilingAnalyzer_Silent_WhenInnerLoopRunsOverOuterElement()
@@ -454,7 +455,7 @@ public sealed class ComplexityCeilingE128AnalyzerTests
     public Task ComplexityCeilingAnalyzer_FlagsNestedLoop_WhenInnerBoundReadsOuterCounter()
     {
         return VerifyAsync(TriangularLoopCode,
-            new DiagnosticResult("E128152", Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            new DiagnosticResult("E128152", DiagnosticSeverity.Warning)
                 .WithLocation(7, 13));
     }
 }
