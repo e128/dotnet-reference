@@ -8,7 +8,7 @@
 ## E128.Analyzers
 
 This repository is the source for [**E128.Analyzers**](https://www.nuget.org/packages/E128.Analyzers/).
-The package holds Roslyn analyzers and code fixes. The rules enforce opinionated .NET conventions at compile time.
+The package holds Roslyn analyzers and code fixes that enforce opinionated .NET conventions at compile time.
 
 ```bash
 dotnet add package E128.Analyzers
@@ -16,27 +16,33 @@ dotnet add package E128.Analyzers
 
 ### Install With a Coding Agent
 
-Paste this prompt into a coding agent inside the repository you want to check:
+Paste this prompt into a coding agent in the repository you want to check:
 
 ```text
-Install the latest E128.Analyzers NuGet package in this repository and make every E128 rule an error. Leave every other analyzer at its current severity.
+Add the latest stable E128.Analyzers package from the configured NuGet sources to every tracked C# project in this repository.
 
-1. Run `dotnet add package E128.Analyzers` on each C# project. If the repository uses Central Package Management, add one `PackageVersion` to `Directory.Packages.props` and one `PackageReference` with `PrivateAssets="all"` to each project instead.
-2. Add these lines to the root `.editorconfig` under `[*.cs]`. Create the file with `root = true` when it does not exist:
+If this repository uses Central Package Management, add exactly one `PackageVersion` entry to `Directory.Packages.props` and one direct `PackageReference` with `PrivateAssets="all"` to every `.csproj`. Never duplicate a version entry.
 
-   dotnet_analyzer_diagnostic.category-E128-Design.severity = error
-   dotnet_analyzer_diagnostic.category-E128-Maintainability.severity = error
-   dotnet_analyzer_diagnostic.category-E128-Performance.severity = error
-   dotnet_analyzer_diagnostic.category-E128-Reliability.severity = error
-   dotnet_analyzer_diagnostic.category-E128-Security.severity = error
-   dotnet_analyzer_diagnostic.category-E128-Style.severity = error
-   dotnet_analyzer_diagnostic.category-E128-Testing.severity = error
-   dotnet_analyzer_diagnostic.category-E128-Unsafe.severity = error
-   e128_max_complexity = linear
+In the root `.editorconfig`, under `[*.cs]`, set these categories to `error` and set `e128_max_complexity = linear`:
 
-   `e128_max_complexity` sets the algorithm level. `linear` is the strictest tier. It reports linearithmic or worse code. Other tiers: linearithmic, quadratic, cubic, exponential.
-3. Run `dotnet build`. Report the number of errors per rule ID. Do not suppress, downgrade, or fix any rule without my approval.
+dotnet_analyzer_diagnostic.category-E128-Design.severity = error
+dotnet_analyzer_diagnostic.category-E128-Maintainability.severity = error
+dotnet_analyzer_diagnostic.category-E128-Performance.severity = error
+dotnet_analyzer_diagnostic.category-E128-Reliability.severity = error
+dotnet_analyzer_diagnostic.category-E128-Security.severity = error
+dotnet_analyzer_diagnostic.category-E128-Style.severity = error
+dotnet_analyzer_diagnostic.category-E128-Testing.severity = error
+dotnet_analyzer_diagnostic.category-E128-Unsafe.severity = error
+e128_max_complexity = linear
+
+If the root `.editorconfig` does not exist, create it with `root = true`. Preserve the existing settings and every non-E128 analyzer severity.
+
+Do not fix source findings, suppress or downgrade E128 rules, or change other analyzer severities.
+
+Run the Release build of the solution at the repository root. Report the package version, the project count, the build status, the warning and error totals, and the error count per E128 rule ID. Count each diagnostic once when the output repeats it. Leave every finding unfixed unless I approve a fix.
 ```
+
+`e128_max_complexity` sets the algorithm level. `linear` is the strictest tier and reports linearithmic or worse code. Other tiers: linearithmic, quadratic, cubic, exponential.
 
 - Analyzers: [`src/E128.Analyzers/`](src/E128.Analyzers/). The [README](src/E128.Analyzers/README.md) lists every rule.
 - Code fixes: [`src/E128.Analyzers.CodeFixers/`](src/E128.Analyzers.CodeFixers/)
@@ -49,11 +55,11 @@ Report an analyzer defect, or ask for a new rule, in the [issues](https://github
 
 ## Summary
 
-The rest of the repository is a .NET 10 reference application. It runs the analyzers on its own code.
-It shows modern conventions for web, CLI, and container applications.
+The rest of the repository is a .NET 10 reference application that runs the analyzers on its own code.
+It shows conventions for web, CLI, and container applications.
 The build uses deny-by-default code analysis with third-party Roslyn analyzers.
 Tests run on xUnit v3 with the Microsoft Testing Platform. ArchUnitNET tests check structural invariants.
-Central Package Management pins transitive versions. Renovate updates dependencies.
+Central Package Management pins transitive versions, and Renovate updates dependencies.
 GitHub Actions publishes the package with OIDC trusted publishing.
 
 The repository also includes a Claude Code development harness with bash scripts, rules, skills, and agents.
@@ -121,13 +127,13 @@ scripts/podman.sh test
 | dotnet-outdated    | NuGet update checker                | `dotnet tool install -g dotnet-outdated-tool`            |
 | jb (ReSharper CLI) | Semantic code cleanup (`format.sh`) | `dotnet tool install -g JetBrains.ReSharper.GlobalTools` |
 
-> **Note (jb):** `scripts/format.sh` runs `jb cleanupcode` before `dotnet format` when `jb` is on `$PATH`. If `jb` is not installed, the script skips that step. The `--check` mode always skips `jb`, because `jb` has no verify-only mode.
+> **Note (jb):** `scripts/format.sh` runs `jb cleanupcode` before `dotnet format` when `jb` is on `$PATH`, and skips that step when it is absent. `--check` always skips `jb` because `jb` has no verify-only mode.
 
-> **Note (macOS):** The default `/bin/bash` on macOS is version 3.2 from 2007. Install bash 5 or later with Homebrew. Put `/opt/homebrew/bin/bash` before `/bin/bash` in `$PATH`.
+> **Note (macOS):** The default `/bin/bash` on macOS is version 3.2. Install bash 5 or later with Homebrew and put `/opt/homebrew/bin/bash` before `/bin/bash` in `$PATH`.
 
-> **Note (Ubuntu):** The `fd` package is named `fd-find`. The binary is `fdfind`. Create an alias: `ln -s $(which fdfind) ~/.local/bin/fd`.
+> **Note (Ubuntu):** The `fd` package is named `fd-find` and its binary is `fdfind`. Create an alias: `ln -s $(which fdfind) ~/.local/bin/fd`.
 
-> **Note (macOS and Podman):** Podman needs a Linux VM on macOS. Docker Desktop bundles a VM, Podman does not. After install, run `podman machine init && podman machine start`.
+> **Note (macOS and Podman):** Podman needs a Linux VM on macOS and does not bundle one. After install, run `podman machine init && podman machine start`.
 
 ## Project Structure
 
@@ -182,11 +188,11 @@ scripts/podman.sh test
 
 ## Analyzer Configuration
 
-This repository uses a **deny-by-default** analyzer strategy:
+The repository uses a **deny-by-default** analyzer strategy:
 
 - `dotnet_analyzer_diagnostic.severity = error` makes each diagnostic an error unless a rule overrides it
 - Third-party analyzer packages (see [`Directory.Packages.props`](./Directory.Packages.props)) add more than 1000 rules
-- The `.globalconfig` file documents each rule that is disabled or set to `suggestion`.
+- `.globalconfig` documents each rule that is disabled or set to `suggestion`
 - Test projects use a separate `tests/.globalconfig` at `global_level = 101` for test overrides
 
 ### Analyzer Packages
@@ -221,6 +227,7 @@ scripts/test.sh --verbose
 ```
 
 Test categories:
+
 - `[Trait("Category", "CI")]`: runs in the CI pipeline. Each test must be fast and deterministic.
 - `[Trait("Category", "Podman")]`: builds and tests the container image. Podman must be installed.
 - `[Trait("Category", "Manual")]`: needs an external dependency or a manual setup step.
@@ -254,12 +261,12 @@ podman compose down
 
 ## dotnet-overhaul Skill
 
-The [`dotnet-overhaul`](.claude/skills/dotnet-overhaul/) skill is a portable .NET code overhaul loop.
-Copy it into any .NET repository and run it with Claude Code.
-The skill modernizes language usage and enforces strict code analysis.
+The [`dotnet-overhaul`](.claude/skills/dotnet-overhaul/) skill is a portable .NET overhaul loop for Claude Code.
+It modernizes language usage and enforces strict code analysis.
 It also reviews performance, concurrency, and security, and it verifies that all tests pass.
+Copy it into any .NET repository and run it there.
 
-**Opinionated.** The skill enforces set conventions: deny-by-default analyzers, immutability, the MTP test runner, and strict code analysis. Edit `conventions.md` after you copy the skill to match the preferences of your project.
+**Opinionated.** The skill enforces fixed conventions: deny-by-default analyzers, immutability, the MTP test runner, and strict analysis. Edit `conventions.md` after you copy the skill to match your project.
 
 **Iterative.** For a first large overhaul, run the skill several times. Approve a subset of findings per run, commit, then run again. After the codebase is clean, run the skill periodically to catch drift from new code, updated analyzers, or a TFM upgrade.
 
@@ -294,7 +301,7 @@ After you copy the skill, you can edit these files in `.claude/skills/dotnet-ove
 | `lessons/*.md`   | Known false positives and compiler edge cases found during overhaul runs                    |
 
 The skill detects the test framework, the solution format, and the analyzer configuration.
-The external agents (`build-validator`, `sme-researcher`, `tdd-loop-optimizer`) are optional. The skill works without them.
+The external agents (`build-validator`, `sme-researcher`, `tdd-loop-optimizer`) are optional, so the skill works without them.
 
 ## Contributing
 
