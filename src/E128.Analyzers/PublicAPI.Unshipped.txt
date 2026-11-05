@@ -187,6 +187,12 @@ E128.Analyzers.Reliability.MonthTimeSpanAnalyzer
 E128.Analyzers.Reliability.MonthTimeSpanAnalyzer.MonthTimeSpanAnalyzer() -> void
 E128.Analyzers.Reliability.SubstringLengthUnderflowAnalyzer
 E128.Analyzers.Reliability.SubstringLengthUnderflowAnalyzer.SubstringLengthUnderflowAnalyzer() -> void
+E128.Analyzers.Maintainability.ConditionalDirectiveCeilingAnalyzer
+E128.Analyzers.Maintainability.ConditionalDirectiveCeilingAnalyzer.ConditionalDirectiveCeilingAnalyzer() -> void
+E128.Analyzers.Maintainability.DirectRecursionAnalyzer
+E128.Analyzers.Maintainability.DirectRecursionAnalyzer.DirectRecursionAnalyzer() -> void
+E128.Analyzers.Unsafe.FunctionPointerTypeAnalyzer
+E128.Analyzers.Unsafe.FunctionPointerTypeAnalyzer.FunctionPointerTypeAnalyzer() -> void
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider.ConfigureAwaitFalseCodeFixProvider() -> void
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseE128Analyzer

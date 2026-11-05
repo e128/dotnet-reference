@@ -226,6 +226,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | ------- | ------------------------------------------------ | -------- |
 | E128088 | Switch over an enum does not case every member   | Yes      |
 | E128090 | Avoid reflection in test methods (default: Info) | No       |
+| E128199 | Method calls itself directly                     | No       |
+| E128201 | Conditional directives past the ceiling          | No       |
 
 ### Unsafe
 
@@ -247,6 +249,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128137 | Do not bind to a non-public BCL member through reflection                                            | No       |
 | E128138 | Do not build dynamic methods with raw IL                                                             | No       |
 | E128139 | Do not move a non-blittable type through an unaligned access                                         | Yes      |
+| E128200 | Do not declare a function pointer type                                                               | No       |
 
 ## What each rule catches
 
@@ -2645,6 +2648,61 @@ private ImmutableArray<int> values;
 private ImmutableArray<int> values = ImmutableArray<int>.Empty;
 ```
 
+### E128199: Method calls itself directly
+
+Flags a method whose body invokes the same method. The call graph becomes
+cyclic, so the stack depth grows with the input. The rule matches the callee
+symbol, so an overload or a same-name method on another type is not reported.
+A local function that calls the outer method is reported, because that call
+also re-enters the method. No code fix.
+
+```csharp
+// Before (warns)
+int Down(int n) => n <= 0 ? 0 : Down(n - 1);
+
+// After
+int Down(int n)
+{
+    var total = 0;
+    for (; n > 0; n--)
+    {
+        total += n;
+    }
+
+    return total;
+}
+```
+
+### E128200: Do not declare a function pointer type
+
+Flags a `delegate*` type in a field, a parameter, a return type, or a local.
+This covers the managed and the `unmanaged` forms. A function pointer carries
+no lifetime or calling-convention guarantee, and native code can call a
+collected target. Use a delegate type. No code fix.
+
+```csharp
+// Before (warns)
+delegate*<int, int> twice = &Twice;
+
+// After
+Func<int, int> twice = Twice;
+```
+
+### E128201: Conditional directives past the ceiling
+
+Flags a file that holds more `#if` directives than the configured ceiling. Each
+directive multiplies the set of build variants, so the test matrix grows past
+what a team can verify. The rule reports the first directive past the ceiling.
+The option `e128_max_conditional_directives` sets the ceiling and defaults to
+4. A missing or non-numeric value falls back to the default. No code fix.
+
+```csharp
+// Before (warns when the file holds more than four #if directives)
+#if FEATURE_A
+    int A() => 1;
+#endif
+```
+
 ## Configuration
 
 Override severity per rule in `.editorconfig`:
@@ -2658,6 +2716,9 @@ dotnet_diagnostic.E128005.severity = none
 
 # Set the complexity ceiling for E128152 (linear, linearithmic, quadratic, cubic, exponential)
 e128_max_complexity = linearithmic
+
+# Set the conditional directive ceiling for E128201
+e128_max_conditional_directives = 4
 
 # Accept configuration keys that no appsettings file defines (E128195)
 e128_added_configuration_keys = FeatureFlags:Beta, External:Endpoint
