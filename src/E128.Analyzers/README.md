@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.1.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.1.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -1635,7 +1635,7 @@ return CryptographicOperations.FixedTimeEquals(computedTag, expectedTag);
 
 ### E128164: Hardcoded absolute URL in source
 
-Flags a string literal, or the text part of an interpolated string, that starts with `http://` or `https://` and carries a host. The project rules require a URL to come from an options class bound to configuration. The rule skips attribute arguments, the namespace and schema hosts `w3.org`, `schemas.microsoft.com`, `schemas.openxmlformats.org`, `schemas.xmlsoap.org`, and `json-schema.org`, and the reserved hosts `example.com`, `example.org`, and `example.net`. An interpolated host such as `$"https://{host}/items"` is not reported. The rule is silent in a compilation that references xUnit, NUnit, or MSTest. No code fix.
+Flags a string literal, or the text part of an interpolated string, that starts with `http://` or `https://` and carries a host. The project rules require a URL to come from an options class bound to configuration. The rule skips attribute arguments, the namespace and schema hosts `w3.org`, `schemas.microsoft.com`, `schemas.openxmlformats.org`, `schemas.xmlsoap.org`, and `json-schema.org`, and the reserved hosts `example.com`, `example.org`, and `example.net`. It also skips a property initializer on a type whose name ends in `Options`, and a `const` or `static readonly` string field: each declares one fixed value in one place, which is the shape the rule asks for. A local `const` inside a method is still reported, because it hides a value in a code path. An interpolated host such as `$"https://{host}/items"` is not reported. The rule is silent in a compilation that references xUnit, NUnit, or MSTest. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1647,7 +1647,7 @@ var uri = options.Value.BaseAddress;
 
 ### E128165: Hardcoded secret or connection string in source
 
-Flags two shapes. The first is a string literal of 8 or more characters, with no whitespace, that is assigned to a name holding `password`, `passwd`, `pwd`, `secret`, `apikey`, `accesskey`, `privatekey`, `connectionstring`, `token`, `credential`, or `bearer`. The assignment can be a variable, a property initializer, an expression-bodied property, a property getter return, a plain assignment, an indexer key such as `["Password"]`, or a named argument. The rule looks through parentheses, `??`, and `?:`. It also reads `u8` literals. A name that ends in `Name`, `Header`, `Claim`, `Type`, `Prefix`, `Scheme`, `Path`, `Label`, `Format`, `Field`, `Param`, `Parameter`, `Setting`, `Pattern`, `Regex`, `Arn`, `Id`, `Count`, `Length`, `Expiry`, or `Hint` names a lookup key and is not reported. A literal that looks like a header name (`X-Api-Key`, `Some-Header`) or a config path (`Auth:Password`) is not reported. The second shape is a connection string literal of `key=value` pairs separated by `;` that holds a `Server`, `Data Source`, or `Host` key and a `Password` or `Pwd` value. Space around `=` is allowed. A URL query string is not a connection string. An empty value or a `{0}` placeholder is not reported. The rule is silent in a compilation that references xUnit, NUnit, or MSTest. No code fix.
+Flags two shapes. The first is a string literal of 8 or more characters, with no whitespace, that is assigned to a name holding `password`, `passwd`, `pwd`, `secret`, `apikey`, `accesskey`, `privatekey`, `connectionstring`, `token`, `credential`, or `bearer`. The assignment can be a variable, a property initializer, an expression-bodied property, a property getter return, a plain assignment, an indexer key such as `["Password"]`, or a named argument. The rule looks through parentheses, `??`, and `?:`. It also reads `u8` literals. A name that ends in `Name`, `Header`, `Claim`, `Type`, `Prefix`, `Scheme`, `Path`, `Label`, `Format`, `Field`, `Param`, `Parameter`, `Setting`, `Pattern`, `Regex`, `Arn`, `Id`, `Count`, `Length`, `Expiry`, or `Hint` names a lookup key and is not reported. A literal that looks like a header name (`X-Api-Key`, `Some-Header`) or a config path (`Auth:Password`) is not reported, and neither is a value of uppercase letters joined by underscores such as `BRAVE_API_KEY`, which names a setting rather than holding a credential. The second shape is a connection string literal of `key=value` pairs separated by `;` that holds a `Server`, `Data Source`, or `Host` key and a `Password` or `Pwd` value. Space around `=` is allowed. A URL query string is not a connection string. An empty value or a `{0}` placeholder is not reported. The rule is silent in a compilation that references xUnit, NUnit, or MSTest. No code fix.
 
 ```csharp
 // Before (warns)

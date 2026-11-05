@@ -148,4 +148,44 @@ public sealed class HardcodedUrlAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task OptionsClassInitializer_Silent()
+    {
+        return VerifyAsync("""
+                           class OllamaOptions
+                           {
+                               string BaseUrl { get; init; } = "http://localhost:11434";
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConstFieldInitializer_Silent()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               private const string BaseUrl = "https://api.contoso.com";
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LocalConstInitializer_Fires()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               string M()
+                               {
+                                   const string Url = {|E128164:"https://api.contoso.com"|};
+                                   return Url;
+                               }
+                           }
+                           """);
+    }
 }
