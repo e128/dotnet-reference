@@ -18,6 +18,8 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeStyle" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.9.0" />
     <PackageVersion Include="PolySharp" Version="1.16.0" />
+    <!-- Reads appsettings.json from AdditionalFiles in E128.Analyzers -->
+    <PackageVersion Include="System.Text.Json" Version="10.0.14" />
     <!-- Architecture Testing -->
     <PackageVersion Include="TngTech.ArchUnitNET.xUnitV3" Version="0.13.5" />
     <!-- Testing -->

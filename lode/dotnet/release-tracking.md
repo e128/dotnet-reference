@@ -1,11 +1,11 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-04T01:16:43Z*
+*Updated: 2026-11-05T13:32:58Z*
 
 ## Overview
 
 Two manually-maintained Markdown files track analyzer rule lifecycle for NuGet consumers and build-time validation. Enforced by the release tracking analyzer (RS2000-RS2008) which ships inside `Microsoft.CodeAnalysis.Analyzers`, activated by `<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>`.
 
-**No MSBuild target generates or migrates these files.** Content moves from Unshipped to Shipped manually at release time.
+**No MSBuild target generates or migrates these files.** `scripts/internal/analyzer-promote.sh` moves the rows at release time. The `/yeet` skill runs it after the version bump and before the squash commit.
 
 ## File Format
 
@@ -76,16 +76,22 @@ E128099 | Design | Warning | No longer needed
 ## Release Workflow
 
 1. During development: add all new/changed/removed rules to `Unshipped.md`
-2. At NuGet publish: cut content from `Unshipped.md` into new `## Release X.Y` section at top of `Shipped.md`
-3. Leave `Unshipped.md` empty (or with empty section headers) after migration
-4. Commit as part of release
+2. Bump the package version with `scripts/internal/version-bump.sh`
+3. At NuGet publish: run `scripts/internal/analyzer-promote.sh`. It moves every New Rules row and every Changed Rules row into a `## Release X.Y` section at the top of `Shipped.md`
+4. Leave `Unshipped.md` with its table headers and no rows. A `Removed Rules` row stays there for a hand-written note
+5. Commit as part of release
+
+The promote script refuses a version that already has a section at the top of
+`Shipped.md`. Bump the version first, then promote. Run it with `--dry-run` to
+see the counts before it writes.
 
 **Pre-first-release:** keep all rules in `Unshipped.md`; `Shipped.md` starts with `; No shipped releases yet.`
 
-The `/yeet` skill enforces the first step on every run. It calls
-`scripts/internal/analyzer-release-check.sh` for the release files and
-`scripts/readme-table-diff.sh --analyzer` for the analyzer README. A rule that
-is missing from either file blocks the ship, even on a docs-only change set.
+The `/yeet` skill enforces the whole workflow on every run. It calls
+`scripts/internal/analyzer-release-check.sh` for the release files,
+`scripts/readme-table-diff.sh --analyzer` for the analyzer README, and
+`scripts/internal/analyzer-promote.sh` after the version bump. A rule that is
+missing from either file blocks the ship, even on a docs-only change set.
 
 ## Consumers
 

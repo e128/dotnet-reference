@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
+using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -33,7 +34,8 @@ public sealed class TaskCompletionSourceOptionsCodeFixTests
                                  """;
 
         return CodeFixTestRunner.RunAsync<TaskCompletionSourceOptionsAnalyzer,
-            TaskCompletionSourceOptionsCodeFixProvider>(source, fixedCode);
+            TaskCompletionSourceOptionsCodeFixProvider>(source, fixedCode,
+            markupOptions: MarkupOptions.UseFirstDescriptor);
     }
 
     [Fact]
@@ -63,7 +65,8 @@ public sealed class TaskCompletionSourceOptionsCodeFixTests
                                  """;
 
         return CodeFixTestRunner.RunAsync<TaskCompletionSourceOptionsAnalyzer,
-            TaskCompletionSourceOptionsCodeFixProvider>(source, fixedCode);
+            TaskCompletionSourceOptionsCodeFixProvider>(source, fixedCode,
+            markupOptions: MarkupOptions.UseFirstDescriptor);
     }
 
     [Fact]
@@ -93,6 +96,7 @@ public sealed class TaskCompletionSourceOptionsCodeFixTests
                                  """;
 
         return CodeFixTestRunner.RunAsync<TaskCompletionSourceOptionsAnalyzer,
-            TaskCompletionSourceOptionsCodeFixProvider>(source, fixedCode);
+            TaskCompletionSourceOptionsCodeFixProvider>(source, fixedCode,
+            markupOptions: MarkupOptions.UseFirstDescriptor);
     }
 }

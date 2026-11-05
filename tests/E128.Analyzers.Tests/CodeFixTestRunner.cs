@@ -20,7 +20,8 @@ internal static class CodeFixTestRunner
         ReferenceAssemblies? references = null,
         int? fixAllIterations = null,
         CompilerDiagnostics? compilerDiagnostics = null,
-        DiagnosticResult[]? expected = null)
+        DiagnosticResult[]? expected = null,
+        MarkupOptions markupOptions = MarkupOptions.None)
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TFixer : CodeFixProvider, new()
     {
@@ -29,6 +30,7 @@ internal static class CodeFixTestRunner
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = references ?? ReferenceAssemblies.Net.Net100,
+            MarkupOptions = markupOptions,
         };
 
         if (fixAllIterations is not null)

@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.1.2" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.2.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -86,11 +86,11 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128099 | Wait for process exit with a provable timeout                                         | Yes      |
 | E128100 | Catch filter reads negated token state on `OperationCanceledException`                | Yes      |
 | E128101 | Verify process output file exists before use                                          | Yes      |
-| E128103 | DI resolve without a registration in the compilation                                  | No       |
+| E128103 | DI resolve or named HttpClient resolve with no registration                           | No       |
 | E128109 | `stackalloc` must be bounded and outside loops                                        | Yes      |
 | E128110 | Zero a pooled buffer in a `finally` block before `Return`                             | Yes      |
 | E128111 | Pooled buffer used after `Return`                                                     | No       |
-| E128154 | Singleton service depends on a scoped service                                         | No       |
+| E128154 | Singleton service depends on a scoped service or DbContext                            | No       |
 | E128155 | Mutating the loop source inside its own foreach                                       | Yes      |
 | E128159 | TaskCompletionSource without RunContinuationsAsynchronously                           | Yes      |
 | E128160 | Redirected process output never read before WaitForExit                               | No       |
@@ -102,6 +102,30 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128172 | `catch` swallows an assertion failure                                                 | No       |
 | E128173 | `[SuppressMessage]` or `[ExcludeFromCodeCoverage]` with no justification              | No       |
 | E128174 | Constructor past the `e128_max_ctor_dependencies` ceiling                             | No       |
+| E128175 | `SemaphoreSlim` wait with no `finally` release guarantee                              | No       |
+| E128176 | Event subscription that keeps the subscriber alive                                    | No       |
+| E128177 | Report a record member with a mutable collection type                                 | No       |
+| E128178 | Report two members that map to one JSON property name                                 | No       |
+| E128179 | Options type bound from configuration with no validation call                         | No       |
+| E128180 | Entity Framework Core query executed inside a loop                                    | No       |
+| E128181 | HttpClient.Timeout set to an infinite value hangs the caller                          | No       |
+| E128182 | IAsyncEnumerable value enumerated twice                                               | No       |
+| E128183 | Task.WhenAny result is never awaited                                                  | No       |
+| E128184 | Recursive delete outside a proven safe root                                           | No       |
+| E128185 | Entity Framework Core SaveChanges inside a loop                                       | No       |
+| E128186 | Await inside a finally block                                                          | No       |
+| E128187 | Parallel.ForEachAsync without a degree cap                                            | No       |
+| E128188 | Exception filter reads the message text                                               | No       |
+| E128189 | GCHandle with no Free call                                                            | No       |
+| E128190 | FileStream created without asynchronous I/O                                           | No       |
+| E128191 | PFX import without EphemeralKeySet                                                    | No       |
+| E128192 | GetBuffer on a MemoryStream with a hidden buffer                                      | No       |
+| E128193 | Disposable field overwritten in a loop without a dispose                              | No       |
+| E128194 | Lazy<T> field without thread safety                                                   | No       |
+| E128195 | Configuration key absent from the appsettings files                                   | No       |
+| E128196 | JsonSerializerOptions mutated after first use                                         | No       |
+| E128197 | Fixed day count used as a calendar month                                              | No       |
+| E128198 | Substring count built from a length minus a constant                                  | No       |
 
 ### Performance
 
@@ -838,7 +862,7 @@ private static ReadOnlySpan<byte> Magic => [0x50, 0x4B, 0x03, 0x04];
 
 ### E128066 &mdash; Linear lookup in loop (O(n²))
 
-Flags linear-time methods (`.Contains`, `.Any`, `.IndexOf`, `.Remove`, `.Exists`, `.Find`, `.FindAll`, `.FindIndex`) called on list/array/`IEnumerable<T>` types inside loops or LINQ lambdas. Also detects `.Where(...).Count()` chains. Excludes O(1) types (`HashSet<T>`, `Dictionary<K,V>`, `FrozenSet<T>`, etc.) and constant-bound `for` loops.
+Flags linear-time methods (`.Contains`, `.Any`, `.IndexOf`, `.Remove`, `.Exists`, `.Find`, `.FindAll`, `.FindIndex`) called on list/array/`IEnumerable<T>` types inside loops or LINQ lambdas. Also detects `.Where(...).Count()` chains. Excludes O(1) types (`HashSet<T>`, `Dictionary<K,V>`, `FrozenSet<T>`, etc.), an `IQueryable<T>` receiver that E128180 owns, and constant-bound `for` loops.
 
 ```csharp
 // Before (warns)
@@ -1773,6 +1797,392 @@ Flags a constructor, or a class or struct primary constructor, that takes more d
 e128_max_ctor_dependencies = 5
 ```
 
+### E128175: `SemaphoreSlim` wait with no `finally` release guarantee
+
+Flags a `SemaphoreSlim.Wait` or `WaitAsync` call that no later `try`/`finally` pairs with a `Release` call on the same semaphore. An exception between the wait and the release leaves the permit held. The rule reads the plain overloads only. A timeout overload supports the try-acquire shape, where no permit is held on the false path, so the rule skips it. The rule stays silent when an enclosing `try` already releases. No code fix.
+
+```csharp
+// Before (warns)
+await _sem.WaitAsync();
+await WorkAsync();
+
+// After
+await _sem.WaitAsync();
+try
+{
+    await WorkAsync();
+}
+finally
+{
+    _sem.Release();
+}
+```
+
+### E128176: Event subscription that keeps the subscriber alive
+
+Flags an event subscription in a disposable type where the handler reads the subscriber instance and no dispose method removes the same event. The publisher holds the delegate, and the delegate holds the subscriber, so the subscriber stays reachable after its owner drops it. A handler that reads only a parameter or a local does not keep the subscriber alive, so the rule skips it. A static handler is skipped for the same reason. Any `-=` on the same event inside `Dispose` or `DisposeAsync` clears the report. The rule does not compare the handler expression. No code fix.
+
+```csharp
+// Before (warns)
+_publisher.Changed += (s, e) => _count++;
+
+// After
+_publisher.Changed += OnChanged;
+
+public void Dispose() => _publisher.Changed -= OnChanged;
+```
+
+### E128177: Record member with a mutable collection type
+
+Flags a record member whose type is a mutable collection, such as `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `ICollection<T>`, `IList<T>`, or an array. The generated equality compares that member by reference, so two records with equal contents compare unequal. The rule reads a positional parameter, an auto-property, and a field, because all three join the generated equality. An immutable collection, an abstract property, a computed property, a static member, and a const field are skipped. Both a record class and a record struct are checked. No code fix.
+
+```csharp
+// Before (warns)
+public record Order(List<int> Lines);
+
+// After
+public record Order(ImmutableArray<int> Lines);
+```
+
+### E128178: Duplicate `JsonPropertyName` value
+
+Flags two members of one type that carry the same `[JsonPropertyName]` value, including a collision between a member on the derived type and one it inherits. System.Text.Json throws `InvalidOperationException` at the first serialize or deserialize call, so the failure lands far from the declaration. The rule matches the attribute by symbol, so a lookalike attribute never triggers it. An ignored member, an indexer, a static member, and an override of the base member are skipped. The whole rule stays off when System.Text.Json is absent from the compilation. No code fix.
+
+```csharp
+// Before (warns on the second member)
+[JsonPropertyName("id")] public int Id { get; init; }
+[JsonPropertyName("id")] public int Key { get; init; }
+
+// After
+[JsonPropertyName("id")] public int Id { get; init; }
+[JsonPropertyName("key")] public int Key { get; init; }
+```
+
+### E128179: Options type bound from configuration with no validation
+
+Flags `services.AddOptions<T>().Bind(...)`, `AddOptions<T>().BindConfiguration(...)`, and `services.Configure<T>(configuration)` when the same chain carries no `Validate`, `ValidateDataAnnotations`, `ValidateOnStart`, or `ValidateAllProperties` call. A missing or malformed configuration value then reaches the consumer and fails at the point of use. A bare `AddOptions<T>()` and the `Configure<T>(Action<T>)` overload are skipped, because neither reads configuration. The rule matches the registration, the bind, and the validation through the option and DI extension symbols, so a user type with the same method name never triggers it. No code fix.
+
+```csharp
+// Before (warns)
+services.AddOptions<RetryOptions>().Bind(configuration.GetSection("Retry"));
+
+// After
+services.AddOptions<RetryOptions>()
+    .Bind(configuration.GetSection("Retry"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
+### E128180: Entity Framework Core query executed inside a loop
+
+Flags an Entity Framework Core query that executes inside a `for`, `foreach`, `while`, or `do` body. Each iteration runs one database round trip, which is the N+1 query problem. The rule reads the materializing calls only, such as `ToList`, `FirstOrDefaultAsync`, `CountAsync`, and `ExecuteDelete`. The receiver must be a `DbSet<T>`, an EF queryable, or an `IQueryable<T>` chain rooted in an EF type. The `foreach` source expression and the `for` initializer run once, so neither counts as a loop body. The whole rule stays off when EF Core is absent from the compilation. No code fix.
+
+```csharp
+// Before (warns)
+foreach (var id in ids)
+{
+    var row = await db.Rows.FirstOrDefaultAsync(r => r.Id == id);
+}
+
+// After
+var rows = await db.Rows.Where(r => ids.Contains(r.Id)).ToListAsync();
+```
+
+### E128181: `HttpClient.Timeout` set to an infinite value
+
+Flags an assignment of `Timeout.InfiniteTimeSpan`, `TimeSpan.MaxValue`, or `TimeSpan.FromMilliseconds(-1)` to `HttpClient.Timeout`. The request then never times out, so a stalled server blocks the caller and its thread pool slot. The assignment is reported in an object initializer, in a property assignment, and inside a `ConfigureHttpClient` lambda. A computed value is skipped, because the rule cannot prove it is infinite. No code fix.
+
+```csharp
+// Before (warns)
+client.Timeout = Timeout.InfiniteTimeSpan;
+
+// After
+client.Timeout = TimeSpan.FromSeconds(30);
+```
+
+### E128182: `IAsyncEnumerable` value enumerated twice
+
+Flags a second enumeration of one `IAsyncEnumerable<T>` value inside one method body. The sequence holds one enumerator position, so the second loop sees the tail of the sequence or a different sequence. An inline-created sequence is skipped, because a factory call may return a fresh sequence. A parameter marked `[EnumeratorCancellation]` is skipped. An iterator body that carries `yield` is skipped, because it hands items onward. No code fix.
+
+```csharp
+// Before (warns)
+await foreach (var row in rows) { Count(row); }
+await foreach (var row in rows) { Store(row); }
+
+// After
+var materialized = await rows.ToListAsync();
+foreach (var row in materialized) { Count(row); }
+foreach (var row in materialized) { Store(row); }
+```
+
+### E128183: `Task.WhenAny` result is never awaited
+
+Flags a `Task.WhenAny` call whose result is discarded or stored in a local that the enclosing block never reads. The returned task never completes faulted, so a fault in every task in the set stays unobserved. An awaited, returned, yielded, stored, or passed result is skipped, because the caller may observe it there. A `WhenAny` declared on another type is skipped. No code fix.
+
+```csharp
+// Before (warns)
+Task.WhenAny(first, second);
+
+// After
+var winner = await Task.WhenAny(first, second);
+await winner;
+```
+
+### E128184: Recursive delete outside a proven safe root
+
+Flags a recursive `Directory.Delete` or `DirectoryInfo.Delete` when the path is a parameter, a field read, a property read, or a `Path.Combine` over one of those. The severity is Info, because a false positive on a build gate blocks work for no gain. A path under `Path.GetTempPath()`, a string literal, a const field, and a path guarded by a `StartsWith` test in the same block are skipped. An unknown shape stays silent. No code fix.
+
+```csharp
+// Before (reports)
+Directory.Delete(root, recursive: true);
+
+// After
+var temp = Path.GetTempPath();
+Directory.Delete(Path.Combine(temp, "build"), recursive: true);
+```
+
+### E128185: Entity Framework Core `SaveChanges` inside a loop
+
+Flags a `SaveChanges` or `SaveChangesAsync` call on an Entity Framework Core context inside a `for`, `foreach`, `while`, or `do` body. Each iteration costs one database round trip per row. A call in a `foreach` source expression or a `for` initializer is skipped, because it runs once. A `DbContext` type from another namespace is skipped. The rule stays off when EF Core is absent from the compilation. No code fix.
+
+```csharp
+// Before (warns)
+foreach (var row in rows)
+{
+    context.Rows.Add(row);
+    context.SaveChanges();
+}
+
+// After
+foreach (var row in rows)
+{
+    context.Rows.Add(row);
+}
+
+context.SaveChanges();
+```
+
+### E128186: `await` inside a `finally` block
+
+Flags an `await` expression in the body of a `finally` clause. The awaited call runs while the original exception propagates, so a fault there replaces the original failure. An `await` in a `try` block or a `catch` clause is skipped. An `await` in a local function or a lambda declared in the `finally` body is skipped. An `await` inside a nested `try` is skipped, and an `await` inside a nested `finally` reports once, at the inner clause. No code fix.
+
+```csharp
+// Before (warns)
+finally
+{
+    await flushing.DisposeAsync();
+}
+
+// After
+try
+{
+    await flushing.FlushAsync();
+}
+finally
+{
+    flushing.Dispose();
+}
+```
+
+### E128187: `Parallel.ForEachAsync` without a degree cap
+
+Flags a `Parallel.ForEachAsync` call that passes no `ParallelOptions` argument, or an inline `new ParallelOptions` initializer that sets no `MaxDegreeOfParallelism` member. The call then starts one task per item, so a large sequence floods the thread pool. A `MaxDegreeOfParallelism` assignment of any expression silences the rule, including `-1` and a computed value. Options held in a variable, a parameter, a field, or a factory call are not reported. A user type named `Parallel` is not reported. No code fix.
+
+```csharp
+// Before (warns)
+await Parallel.ForEachAsync(urls, async (url, ct) => await FetchAsync(url, ct));
+
+// After
+await Parallel.ForEachAsync(
+    urls,
+    new ParallelOptions { MaxDegreeOfParallelism = 8 },
+    async (url, ct) => await FetchAsync(url, ct));
+```
+
+### E128188: Exception filter reads the message text
+
+Flags a `when` filter that reads `Message`, `StackTrace`, or `ToString` on the caught exception. The filter runs before any `catch` clause, so a formatted member costs work on the fault path and can throw inside the filter itself. A filter that reads `HResult` or `InnerException` is skipped. A read on another object, a method call such as `ex.GetType()`, and a catch clause with no variable are skipped. No code fix.
+
+```csharp
+// Before (warns)
+catch (HttpRequestException ex) when (ex.Message.Contains("timeout", StringComparison.Ordinal))
+{
+    retry = true;
+}
+
+// After
+catch (HttpRequestException ex) when (ex.InnerException is TimeoutException)
+{
+    retry = true;
+}
+```
+
+### E128189: `GCHandle` with no `Free` call
+
+Flags a local that stores a `GCHandle.Alloc` result in the same body and never calls `Free` on it. The handle pins the target object, so a missing `Free` keeps the object reachable and pinned. The rule also reads a later assignment to the same local. A local passed to a method, returned, or stored in a field, a property, another local, or a collection is not reported, because it may leave the method. An allocation assigned directly to a field or an element, and a discarded allocation, are not reported. The rule stops when `GCHandle` is absent from the compilation or resolves to a user type. No code fix.
+
+```csharp
+// Before (warns)
+var handle = GCHandle.Alloc(payload, GCHandleType.Pinned);
+IntPtr address = handle.AddrOfPinnedObject();
+
+// After
+var handle = GCHandle.Alloc(payload, GCHandleType.Pinned);
+try
+{
+    IntPtr address = handle.AddrOfPinnedObject();
+}
+finally
+{
+    handle.Free();
+}
+```
+
+### E128190: `FileStream` created without asynchronous I/O
+
+Flags a `FileStream` construction that cannot run asynchronous I/O. The call either omits `useAsync` or passes `false`, and it passes no `FileOptions.Asynchronous` bit. An async read then runs as blocking work on a pool thread. A `useAsync` value of `true`, an options value with `FileOptions.Asynchronous`, and a non-constant argument are skipped. The `SafeFileHandle` overload has no asynchronous switch, so the rule skips it. A user type named `FileStream` is skipped. No code fix.
+
+```csharp
+// Before (warns)
+using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+// After
+using var stream = new FileStream(
+    path,
+    FileMode.Open,
+    FileAccess.Read,
+    FileShare.Read,
+    bufferSize: 4096,
+    useAsync: true);
+```
+
+### E128191: PFX import without `EphemeralKeySet`
+
+Flags an `X509Certificate2` constructor that imports a PFX file, and an `X509CertificateLoader.LoadPkcs12` call, when the flags omit `X509KeyStorageFlags.EphemeralKeySet`. Without the flag, Windows writes the private key into the machine key store. A flags constant that includes `EphemeralKeySet` and a non-constant flags value are skipped. A constructor that takes a byte array, and a constructor with no flags parameter, are skipped. No code fix.
+
+```csharp
+// Before (warns)
+using var certificate = new X509Certificate2(path, password);
+
+// After
+using var certificate = new X509Certificate2(
+    path,
+    password,
+    X509KeyStorageFlags.EphemeralKeySet);
+```
+
+### E128192: `GetBuffer` on a `MemoryStream` with a hidden buffer
+
+Flags a `MemoryStream.GetBuffer()` call whose receiver was created without `publiclyVisible: true`. The call throws `UnauthorizedAccessException` for such a stream. The rule follows a local to its creation in the same body, and a parameter to an in-body assignment. A stream created with `publiclyVisible: true`, a non-constant flag, and a receiver that is a field, a property, or a method result are skipped. No code fix.
+
+```csharp
+// Before (warns)
+var buffer = new MemoryStream();
+byte[] raw = buffer.GetBuffer();
+
+// After
+var buffer = new MemoryStream();
+byte[] raw = buffer.ToArray();
+```
+
+### E128193: Disposable field overwritten in a loop without a dispose
+
+Flags an assignment to a field whose type implements `IDisposable` or `IAsyncDisposable` inside a loop body, when no earlier dispose call on the same field appears in the enclosing member. The overwritten instance keeps its unmanaged resources until the finalizer runs. A dispose call on the same field before the assignment clears the report, including `field?.Dispose()` and `this.field?.Dispose()`. A local, a parameter, a property, a compound assignment, a value type, and an assignment outside a loop are skipped. No code fix.
+
+```csharp
+// Before (warns)
+foreach (var item in items)
+{
+    _current = new Subscription(item);
+}
+
+// After
+foreach (var item in items)
+{
+    _current?.Dispose();
+    _current = new Subscription(item);
+}
+```
+
+### E128194: `Lazy<T>` field without thread safety
+
+Flags a `Lazy<T>` field whose initializer passes `LazyThreadSafetyMode.None`. Two threads can then build the value twice, and each caller gets a different instance. An omitted mode, `ExecutionAndPublication`, `PublicationOnly`, and a non-constant mode are skipped, because the default is thread safe. The rule reads a field declarator only, so a local, a parameter, and a property initializer are skipped. A user type named `Lazy<T>` is skipped. No code fix.
+
+```csharp
+// Before (warns)
+private static readonly Lazy<Cache> Shared =
+    new(() => new Cache(), LazyThreadSafetyMode.None);
+
+// After
+private static readonly Lazy<Cache> Shared = new(() => new Cache());
+```
+
+### E128195: Configuration key absent from the appsettings files
+
+Flags a constant configuration key that no JSON additional file defines. The rule reads the key from an `IConfiguration` indexer, from `GetSection` or `GetRequiredSection`, and from `GetConnectionString`, which maps to `ConnectionStrings:<name>`. A section read needs the section prefix, not a leaf. A key comparison ignores case, because the configuration provider ignores case. A non-constant key, a receiver that is not an `IConfiguration`, and a file that fails to parse are skipped. The rule stays off when the project passes no parsable JSON additional file.
+
+The project must pass the file in. A key from an environment variable, a user secret, or a file outside the project is not visible to the rule.
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="appsettings.json" />
+</ItemGroup>
+```
+
+A key that a run-time source supplies needs an entry in the `e128_added_configuration_keys` option. The option holds comma-separated keys.
+
+```ini
+# .editorconfig
+e128_added_configuration_keys = FeatureFlags:Beta, External:Endpoint
+```
+
+```csharp
+// Before (warns when no appsettings file defines the key)
+var level = configuration["Logging:LogLevel:Default"];
+
+// After
+var level = configuration.GetRequiredSection("Logging:LogLevel")["Default"];
+```
+
+### E128196: JsonSerializerOptions mutated after first use
+
+Flags a write to a `JsonSerializerOptions` member after the same method body passes the instance to `JsonSerializer.Serialize` or `JsonSerializer.Deserialize`. The serializer freezes the instance on first use, so the next write to `WriteIndented`, `PropertyNamingPolicy`, a converter, or any other member throws `InvalidOperationException`. A write before the first call is not reported, and a write to an instance that the body never uses is not reported. The rule reads a local, a parameter, and a field. A property receiver is skipped, because the getter can return a new instance on each read. A use in one method and a write in another method stay silent, because the rule reads one body at a time.
+
+```csharp
+// Before (warns)
+var options = new JsonSerializerOptions();
+var json = JsonSerializer.Serialize(value, options);
+options.WriteIndented = true;
+
+// After
+var options = new JsonSerializerOptions { WriteIndented = true };
+var json = JsonSerializer.Serialize(value, options);
+```
+
+### E128197: Fixed day count used as a calendar month
+
+Flags a `TimeSpan.FromDays(28)` to `TimeSpan.FromDays(31)` call added to or subtracted from a `DateTime` or a `DateTimeOffset`. The span stands in for a calendar month, and a calendar month holds 28 to 31 days, so the result drifts from the calendar. The rule reads the `Add` and `Subtract` methods and the `+` and `-` operators. It reads an inline call with a constant argument only. A span held in a variable, a constant field, or a computed value is not reported, because the rule cannot tell a month from a 30 day window. `DateTime.AddDays(30)` is not reported either, because the caller asked for days.
+
+```csharp
+// Before (warns)
+var due = today.Add(TimeSpan.FromDays(30));
+
+// After
+var due = today.AddMonths(1);
+```
+
+### E128198: Substring count built from a length minus a constant
+
+Flags a two-argument `string.Substring` call whose count is a `Length` value minus a positive constant. A string shorter than the constant makes the count negative, and the call throws `ArgumentOutOfRangeException`. The count shapes are `Length - k`, `Length - start - k`, and the same forms in parentheses. A length test on the same string in an enclosing `if` condition or conditional expression clears the report. The rule reads one call site, so a guard in a caller method does not clear it. A subtraction whose right side is a variable is not reported, because a `start` index that `IndexOf` returns needs its own check.
+
+```csharp
+// Before (warns)
+var body = text.Substring(0, text.Length - 1);
+
+// After
+var body = text.Length > 0 ? text.Substring(0, text.Length - 1) : text;
+```
+
 ### E128076 &mdash; Materialize QuerySelectorAll result before iterating
 
 Flags a `foreach` over an AngleSharp `QuerySelectorAll` result that does not pass through `ToList()` or `ToArray()`. The loop also reports when it reads a local variable initialized from an unmaterialized call. A call inside a lambda in the initializer is not reported. The collection is live, so a DOM change inside the loop moves elements that the loop has not visited yet.
@@ -2019,21 +2429,22 @@ if (!File.Exists(outputFile))
 var report = File.ReadAllText(outputFile);
 ```
 
-### E128103 &mdash; DI resolve without a registration in the compilation
+### E128103 &mdash; DI resolve or named HttpClient resolve with no registration
 
 Flags `GetRequiredService<T>()` and constructor parameters of registered types when no `Add*` or `TryAdd*` call in the same compilation registers the type. The rule reports at compilation end. `GetService<T>()` is not flagged, because it returns null on a miss.
 
-Registration in another assembly needs an entry in the `e128_registered_services` option. The option holds comma-separated simple type names. Framework services such as `ILogger`, `IHttpClientFactory`, and `IConfiguration` need no entry. An open-generic registration matches by name. No code fix.
+Registration in another assembly needs an entry in the `e128_registered_services` option. The option holds comma-separated simple type names. Framework services such as `ILogger`, `IHttpClientFactory`, and `IConfiguration` need no entry. An open-generic registration matches by name.
+
+The rule also flags `IHttpClientFactory.CreateClient(name)` when no `AddHttpClient(name, ...)` call in the compilation registers that name. An empty name and the unnamed overload are skipped, because both select the default client. A non-constant name is skipped. The rule reports one diagnostic per name, at the first use. No code fix.
 
 ```csharp
 // Before (warns)
-services.AddSingleton<IReportWriter, ReportWriter>();
-var exporter = provider.GetRequiredService<IReportExporter>();
+services.AddHttpClient("billing", client => client.BaseAddress = billingUri);
+var http = factory.CreateClient("bililng");
 
 // After
-services.AddSingleton<IReportWriter, ReportWriter>();
-services.AddSingleton<IReportExporter, ReportExporter>();
-var exporter = provider.GetRequiredService<IReportExporter>();
+services.AddHttpClient("billing", client => client.BaseAddress = billingUri);
+var http = factory.CreateClient("billing");
 ```
 
 ### E128104 &mdash; Assertion with literal operands
@@ -2125,6 +2536,16 @@ services.AddScoped<Repository>();
 services.AddScoped<Worker>();
 ```
 
+The rule also carries a second descriptor on the same id. Flags a `Microsoft.EntityFrameworkCore.DbContext` registered through `AddSingleton`, `TryAddSingleton`, `AddKeyedSingleton`, or a `typeof(...)` overload. The rule also flags `AddDbContext<T>` or `AddDbContextPool<T>` with a constant `ServiceLifetime.Singleton` lifetime. A `DbContext` tracks every entity it materializes, so a singleton context keeps those entities for the life of the application and shares them across requests. The default `AddDbContext<T>()` registration stays silent, because it registers the context as scoped. A lifetime held in a variable or a parameter is not reported. The rule stays off when EF Core is absent from the compilation.
+
+```csharp
+// Before (warns)
+services.AddSingleton<AppDbContext>();
+
+// After
+services.AddDbContext<AppDbContext>();
+```
+
 ### E128155: Mutating the loop source inside its own foreach
 
 Flags a call in a `foreach` body that mutates the collection the loop enumerates. The rule reads a local, a field, or a parameter as the loop source. A mutating call includes `Add`, `AddRange`, `Clear`, `Insert`, `Remove`, `RemoveAt`, `RemoveAll`, `RemoveRange`, `Reverse`, and `Sort`. An assignment to an index of a non-array collection is reported too, but an array element write is not. A mutation directly followed by `break` or `return` in the same block is not reported. The enumerator throws `InvalidOperationException` on the next step. An immutable, frozen, or concurrent collection is not reported. A mutation inside a lambda or a local function is not reported, because it runs after the loop. The report sits on the loop source, so one loop reports once. The code fix materializes the source with `ToArray()`.
@@ -2153,6 +2574,18 @@ var source = new TaskCompletionSource<int>();
 
 // After
 var source = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+```
+
+The rule reports a second shape. A `SetResult`, `SetException`, or `SetCanceled` call on a source stored in a field throws `InvalidOperationException` when a second caller completes the same source. A local, a parameter, a property, and a method result are not reported, because the rule cannot prove the source is shared. The safe forms `TrySetResult`, `TrySetException`, and `TrySetCanceled` return false instead of throwing.
+
+```csharp
+// Before (warns)
+private readonly TaskCompletionSource<int> source = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+void Complete() => source.SetResult(1);
+
+// After
+void Complete() => source.TrySetResult(1);
 ```
 
 ### E128160: Redirected process output never read before WaitForExit
@@ -2225,6 +2658,18 @@ dotnet_diagnostic.E128005.severity = none
 
 # Set the complexity ceiling for E128152 (linear, linearithmic, quadratic, cubic, exponential)
 e128_max_complexity = linearithmic
+
+# Accept configuration keys that no appsettings file defines (E128195)
+e128_added_configuration_keys = FeatureFlags:Beta, External:Endpoint
+```
+
+E128195 reads the `appsettings*.json` files that the project passes through `AdditionalFiles`. Add each file to the project:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="appsettings.json" />
+  <AdditionalFiles Include="appsettings.Development.json" />
+</ItemGroup>
 ```
 
 ## Requirements

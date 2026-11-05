@@ -1,0 +1,320 @@
+using System;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text.Json;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+
+namespace E128.Analyzers.Reliability;
+
+/// <summary>
+///     E128195: Reports a configuration key read through <c lang="csharp">IConfiguration</c> when no
+///     JSON additional file defines the key. The rule reads the <c lang="csharp">appsettings*.json</c>
+///     files that a consumer passes through <c lang="csharp">AdditionalFiles</c>. Without at least one
+///     parsable JSON file the rule stays off.
+/// </summary>
+/// <remarks>
+///     A consumer contract is required. Add
+///     <c lang="csharp">&lt;AdditionalFiles Include="appsettings.json" /&gt;</c> to the project file. A
+///     key from an environment variable, a user secret, or a file outside the project is not visible
+///     to the rule. Add such a key to the JSON file, or set the option
+///     <c lang="csharp">e128_added_configuration_keys</c> to a comma-separated list of keys that the
+///     rule must accept.
+/// </remarks>
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
+{
+    internal const string DiagnosticId = "E128195";
+
+    private const string AddedKeysOptionKey = "e128_added_configuration_keys";
+
+    private static readonly DiagnosticDescriptor Rule = new(
+        DiagnosticId,
+        "Configuration key absent from the appsettings files",
+        "'{0}' is read from configuration but no appsettings file defines the key",
+        "E128-Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "A configuration key read through IConfiguration must exist in an appsettings*.json file that " +
+        "the project passes through AdditionalFiles. A missing key returns null or throws at startup.");
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+
+    public override void Initialize(AnalysisContext context)
+    {
+        if (context is null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.EnableConcurrentExecution();
+        context.RegisterCompilationStartAction(OnCompilationStart);
+    }
+
+    private static void OnCompilationStart(CompilationStartAnalysisContext context)
+    {
+        var configurationType = context.Compilation.GetTypeByMetadataName(
+            "Microsoft.Extensions.Configuration.IConfiguration");
+        if (configurationType is null)
+        {
+            return;
+        }
+
+        var connectionStringExtensions = context.Compilation.GetTypeByMetadataName(
+            "Microsoft.Extensions.Configuration.ConfigurationExtensions");
+
+        var keys = ConfigurationKeys.TryCreate(
+            context.Options.AdditionalFiles,
+            context.Options.AnalyzerConfigOptionsProvider.GlobalOptions,
+            AddedKeysOptionKey,
+            context.CancellationToken);
+        if (keys is null)
+        {
+            return;
+        }
+
+        context.RegisterSyntaxNodeAction(
+            nodeContext => AnalyzeElementAccess(nodeContext, configurationType, keys),
+            SyntaxKind.ElementAccessExpression);
+
+        context.RegisterSyntaxNodeAction(
+            nodeContext => AnalyzeInvocation(
+                nodeContext,
+                configurationType,
+                connectionStringExtensions,
+                keys),
+            SyntaxKind.InvocationExpression);
+    }
+
+    private static void AnalyzeElementAccess(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol configurationType,
+        ConfigurationKeys keys)
+    {
+        var elementAccess = (ElementAccessExpressionSyntax)context.Node;
+        if (elementAccess.ArgumentList.Arguments.Count != 1)
+        {
+            return;
+        }
+
+        var receiverType = context.SemanticModel.GetTypeInfo(
+            elementAccess.Expression,
+            context.CancellationToken).Type;
+        if (!IsConfiguration(receiverType, configurationType))
+        {
+            return;
+        }
+
+        var argument = elementAccess.ArgumentList.Arguments[0].Expression;
+        var key = ReadConstantKey(context, argument);
+        if (key is null)
+        {
+            return;
+        }
+
+        Report(context, keys, key, elementAccess.GetLocation());
+    }
+
+    private static void AnalyzeInvocation(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol configurationType,
+        INamedTypeSymbol? connectionStringExtensions,
+        ConfigurationKeys keys)
+    {
+        var invocation = (InvocationExpressionSyntax)context.Node;
+        if (invocation.ArgumentList.Arguments.Count == 0)
+        {
+            return;
+        }
+
+        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
+            is not IMethodSymbol method)
+        {
+            return;
+        }
+
+        if (string.Equals(method.Name, "GetConnectionString", StringComparison.Ordinal)
+            && SymbolEqualityComparer.Default.Equals(method.ContainingType, connectionStringExtensions))
+        {
+            var name = ReadConstantKey(context, invocation.ArgumentList.Arguments[0].Expression);
+            if (name is null)
+            {
+                return;
+            }
+
+            Report(context, keys, "ConnectionStrings:" + name, invocation.GetLocation());
+            return;
+        }
+
+        if ((!string.Equals(method.Name, "GetSection", StringComparison.Ordinal)
+                && !string.Equals(method.Name, "GetRequiredSection", StringComparison.Ordinal))
+            || !SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationType))
+        {
+            return;
+        }
+
+        var section = ReadConstantKey(context, invocation.ArgumentList.Arguments[0].Expression);
+        if (section is null)
+        {
+            return;
+        }
+
+        Report(context, keys, section, invocation.GetLocation());
+    }
+
+    private static bool IsConfiguration(ITypeSymbol? type, INamedTypeSymbol configurationType)
+    {
+        return type is not null
+               && (SymbolEqualityComparer.Default.Equals(type, configurationType)
+                   || type.AllInterfaces.Any(
+                       implemented => SymbolEqualityComparer.Default.Equals(
+                           implemented,
+                           configurationType)));
+    }
+
+    private static string? ReadConstantKey(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
+    {
+        var constant = context.SemanticModel.GetConstantValue(
+            expression,
+            context.CancellationToken);
+        return !constant.HasValue || constant.Value is not string key || key.Length == 0
+            ? null
+            : key;
+    }
+
+    private static void Report(
+        SyntaxNodeAnalysisContext context,
+        ConfigurationKeys keys,
+        string key,
+        Location location)
+    {
+        if (keys.Contains(key))
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, location, key));
+    }
+
+    private sealed class ConfigurationKeys
+    {
+        private readonly ImmutableHashSet<string> keys;
+
+        private ConfigurationKeys(ImmutableHashSet<string> keys)
+        {
+            this.keys = keys;
+        }
+
+        internal static ConfigurationKeys? TryCreate(
+            ImmutableArray<AdditionalText> files,
+            AnalyzerConfigOptions options,
+            string addedKeysOptionKey,
+            System.Threading.CancellationToken cancellationToken)
+        {
+            var builder = ImmutableHashSet.CreateBuilder(
+                StringComparer.OrdinalIgnoreCase);
+            var parsedAny = false;
+
+            foreach (var file in files)
+            {
+                if (!file.Path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var text = file.GetText(cancellationToken);
+                if (text is null)
+                {
+                    continue;
+                }
+
+                if (!TryAddDocument(text.ToString(), builder))
+                {
+                    continue;
+                }
+
+                parsedAny = true;
+            }
+
+            if (options.TryGetValue(addedKeysOptionKey, out var addedKeys)
+                && addedKeys is not null)
+            {
+                foreach (var key in addedKeys.Split(','))
+                {
+                    var trimmed = key.Trim();
+                    if (trimmed.Length > 0)
+                    {
+                        builder.Add(trimmed);
+                    }
+                }
+            }
+
+            return !parsedAny && builder.Count == 0
+                ? null
+                : new ConfigurationKeys(builder.ToImmutable());
+        }
+
+        internal bool Contains(string key)
+        {
+            return keys.Contains(key);
+        }
+
+        private static bool TryAddDocument(
+            string json,
+            ImmutableHashSet<string>.Builder builder)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(json);
+                Flatten(document.RootElement, string.Empty, builder, 0);
+
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static void Flatten(
+            JsonElement element,
+            string prefix,
+            ImmutableHashSet<string>.Builder builder,
+            int depth)
+        {
+            if (depth > 64)
+            {
+                return;
+            }
+
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in element.EnumerateObject())
+                {
+                    var path = prefix.Length == 0
+                        ? property.Name
+                        : prefix + ":" + property.Name;
+                    builder.Add(path);
+                    Flatten(property.Value, path, builder, depth + 1);
+                }
+
+                return;
+            }
+
+            if (element.ValueKind == JsonValueKind.Array)
+            {
+                var index = 0;
+                foreach (var item in element.EnumerateArray())
+                {
+                    var path = prefix + ":" + index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    builder.Add(path);
+                    Flatten(item, path, builder, depth + 1);
+                    index++;
+                }
+            }
+        }
+    }
+}

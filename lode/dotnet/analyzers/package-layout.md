@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-03T03:13:32Z*
+*Updated: 2026-11-05T13:32:58Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
@@ -95,6 +95,22 @@ A consumer inside this repository references the analyzer project directly:
 `Directory.Build.targets` adds that item for every project except the analyzer
 itself. A consumer outside the repository takes a plain `PackageReference`,
 because the DLL sits under `analyzers/dotnet/cs`.
+
+## Analyzer Dependency Closure
+
+The analyzer reads `System.Text.Json` 10.0.14 for the planned configuration-key
+rule. The compiler host supplies the Roslyn assemblies, so the package must not
+carry them, and it must carry every other dependency the analyzer loads.
+
+- `CopyLocalLockFileAssemblies` is true, so restore copies the whole closure
+  beside the analyzer DLL. The output folder is not the pack source without it.
+- An `AnalyzerDependency` item lists the closure. A `None` item maps each DLL
+  into `analyzers/dotnet/cs`.
+- The `System.Text.Json` reference sets `PrivateAssets="all"`, so the nuspec
+  lists no dependency. `SuppressDependenciesWhenPacking` already holds that
+  guarantee.
+- A `dotnet pack` listing showed 17 files: the analyzer DLL, the code fixer DLL,
+  the README, and the closure. No Roslyn assembly is in the package.
 
 ## Related
 

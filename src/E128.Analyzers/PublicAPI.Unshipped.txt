@@ -141,6 +141,52 @@ E128.Analyzers.Unsafe.UnsafeUnalignedNonBlittableCodeFixProvider
 E128.Analyzers.Unsafe.UnsafeUnalignedNonBlittableCodeFixProvider.UnsafeUnalignedNonBlittableCodeFixProvider() -> void
 E128.Analyzers.Performance.ComplexityCeilingAnalyzer
 E128.Analyzers.Performance.ComplexityCeilingAnalyzer.ComplexityCeilingAnalyzer() -> void
+E128.Analyzers.Performance.EfQueryInLoopAnalyzer
+E128.Analyzers.Performance.EfQueryInLoopAnalyzer.EfQueryInLoopAnalyzer() -> void
+E128.Analyzers.Reliability.DuplicateJsonPropertyNameAnalyzer
+E128.Analyzers.Reliability.DuplicateJsonPropertyNameAnalyzer.DuplicateJsonPropertyNameAnalyzer() -> void
+E128.Analyzers.Reliability.EventSubscriptionLeakAnalyzer
+E128.Analyzers.Reliability.EventSubscriptionLeakAnalyzer.EventSubscriptionLeakAnalyzer() -> void
+E128.Analyzers.Reliability.HttpClientInfiniteTimeoutAnalyzer
+E128.Analyzers.Reliability.HttpClientInfiniteTimeoutAnalyzer.HttpClientInfiniteTimeoutAnalyzer() -> void
+E128.Analyzers.Design.OptionsValidationMissingAnalyzer
+E128.Analyzers.Design.OptionsValidationMissingAnalyzer.OptionsValidationMissingAnalyzer() -> void
+E128.Analyzers.Reliability.RecordMutableCollectionEqualityAnalyzer
+E128.Analyzers.Reliability.RecordMutableCollectionEqualityAnalyzer.RecordMutableCollectionEqualityAnalyzer() -> void
+E128.Analyzers.Reliability.WhenAnyResultUnobservedAnalyzer
+E128.Analyzers.Reliability.WhenAnyResultUnobservedAnalyzer.WhenAnyResultUnobservedAnalyzer() -> void
+E128.Analyzers.Reliability.AsyncEnumerableConsumedTwiceAnalyzer
+E128.Analyzers.Reliability.AsyncEnumerableConsumedTwiceAnalyzer.AsyncEnumerableConsumedTwiceAnalyzer() -> void
+E128.Analyzers.Security.RecursiveDeleteRootAnalyzer
+E128.Analyzers.Security.RecursiveDeleteRootAnalyzer.RecursiveDeleteRootAnalyzer() -> void
+E128.Analyzers.Performance.SaveChangesInLoopAnalyzer
+E128.Analyzers.Performance.SaveChangesInLoopAnalyzer.SaveChangesInLoopAnalyzer() -> void
+E128.Analyzers.Reliability.AwaitInFinallyAnalyzer
+E128.Analyzers.Reliability.AwaitInFinallyAnalyzer.AwaitInFinallyAnalyzer() -> void
+E128.Analyzers.Reliability.CatchFilterMessageAnalyzer
+E128.Analyzers.Reliability.CatchFilterMessageAnalyzer.CatchFilterMessageAnalyzer() -> void
+E128.Analyzers.Reliability.GcHandleFreeAnalyzer
+E128.Analyzers.Reliability.GcHandleFreeAnalyzer.GcHandleFreeAnalyzer() -> void
+E128.Analyzers.Reliability.ConfigurationKeyMissingAnalyzer
+E128.Analyzers.Reliability.ConfigurationKeyMissingAnalyzer.ConfigurationKeyMissingAnalyzer() -> void
+E128.Analyzers.Performance.FileStreamWithoutUseAsyncAnalyzer
+E128.Analyzers.Performance.FileStreamWithoutUseAsyncAnalyzer.FileStreamWithoutUseAsyncAnalyzer() -> void
+E128.Analyzers.Security.PfxImportEphemeralKeySetAnalyzer
+E128.Analyzers.Security.PfxImportEphemeralKeySetAnalyzer.PfxImportEphemeralKeySetAnalyzer() -> void
+E128.Analyzers.Reliability.GetBufferNotVisibleAnalyzer
+E128.Analyzers.Reliability.GetBufferNotVisibleAnalyzer.GetBufferNotVisibleAnalyzer() -> void
+E128.Analyzers.Reliability.DisposableFieldInLoopAnalyzer
+E128.Analyzers.Reliability.DisposableFieldInLoopAnalyzer.DisposableFieldInLoopAnalyzer() -> void
+E128.Analyzers.Reliability.LazyFieldThreadSafetyAnalyzer
+E128.Analyzers.Reliability.LazyFieldThreadSafetyAnalyzer.LazyFieldThreadSafetyAnalyzer() -> void
+E128.Analyzers.Reliability.SemaphoreSlimReleaseAnalyzer
+E128.Analyzers.Reliability.SemaphoreSlimReleaseAnalyzer.SemaphoreSlimReleaseAnalyzer() -> void
+E128.Analyzers.Reliability.JsonSerializerOptionsMutationAnalyzer
+E128.Analyzers.Reliability.JsonSerializerOptionsMutationAnalyzer.JsonSerializerOptionsMutationAnalyzer() -> void
+E128.Analyzers.Reliability.MonthTimeSpanAnalyzer
+E128.Analyzers.Reliability.MonthTimeSpanAnalyzer.MonthTimeSpanAnalyzer() -> void
+E128.Analyzers.Reliability.SubstringLengthUnderflowAnalyzer
+E128.Analyzers.Reliability.SubstringLengthUnderflowAnalyzer.SubstringLengthUnderflowAnalyzer() -> void
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider.ConfigureAwaitFalseCodeFixProvider() -> void
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseE128Analyzer

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -32,6 +33,8 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
         "FindAll",
         "FindIndex");
 
+    private const string QueryableMetadataName = "System.Linq.IQueryable`1";
+
     private static readonly ImmutableArray<string> O1MetadataNames =
     [
         "System.Collections.Generic.ISet`1",
@@ -59,11 +62,20 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(compilationContext =>
         {
             var o1Types = ResolveO1Types(compilationContext.Compilation);
+            var queryableType = compilationContext.Compilation.GetTypeByMetadataName(QueryableMetadataName);
 
             compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, o1Types),
+                nodeContext => AnalyzeInvocation(nodeContext, o1Types, queryableType),
                 SyntaxKind.InvocationExpression);
         });
+    }
+
+    private static bool IsQueryable(ITypeSymbol type, INamedTypeSymbol? queryableType)
+    {
+        return queryableType is not null
+               && (SymbolEqualityComparer.Default.Equals(type.OriginalDefinition, queryableType)
+                   || type.AllInterfaces.Any(
+                       candidate => SymbolEqualityComparer.Default.Equals(candidate.OriginalDefinition, queryableType)));
     }
 
     private static ImmutableArray<INamedTypeSymbol> ResolveO1Types(Compilation compilation)
@@ -83,7 +95,8 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeInvocation(
         SyntaxNodeAnalysisContext context,
-        ImmutableArray<INamedTypeSymbol> o1Types)
+        ImmutableArray<INamedTypeSymbol> o1Types,
+        INamedTypeSymbol? queryableType)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -123,6 +136,12 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
 
         if (IsO1LookupType(receiverType, o1Types))
         {
+            return;
+        }
+
+        if (IsQueryable(receiverType, queryableType))
+        {
+            // A query source costs a database round trip, not an in-memory scan. E128180 owns it.
             return;
         }
 

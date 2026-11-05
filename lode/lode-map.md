@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-04T15:05:29Z*
+*Updated: 2026-11-05T13:32:58Z*
 
 ## Generated Docs
 
@@ -29,6 +29,7 @@
 - [performance.md](dotnet/performance.md): Runtime knobs, profiling ladder, safe C# hot-path tips, ASP.NET Core
 - [unsafe-code.md](dotnet/unsafe-code.md): No-unsafe-code policy, E128 rule coverage map, known gaps
 - [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes
+- [analyzer-candidates-external-sweep.md](dotnet/analyzer-candidates-external-sweep.md): Thirty open candidates from the 2026-11-05 external rule-set sweep
 
 ### dotnet/analyzers/
 
@@ -46,6 +47,10 @@
 - [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
 - [fips-rules.md](dotnet/analyzers/fips-rules.md): FIPS rule map, policy values, shared symbol and constant helpers
 - [rule-details.md](dotnet/analyzers/rule-details.md): Per-rule detection shape, exclusions, and code-fix behavior for the E128 rules
+- [rule-details-performance.md](dotnet/analyzers/rule-details-performance.md): Detection shape for the performance rules
+- [rule-details-reliability.md](dotnet/analyzers/rule-details-reliability.md): Detection shape for the reliability rules
+- [rule-details-reliability-concurrency.md](dotnet/analyzers/rule-details-reliability-concurrency.md): Detection shape for the async and concurrent reliability rules
+- [rule-details-reliability-resources.md](dotnet/analyzers/rule-details-reliability-resources.md): Detection shape for the resource lifetime and shared state rules
 
 ## dotnet-reference/
 
@@ -60,6 +65,7 @@
 - [podman.md](infrastructure/podman.md): Podman build commands, Dockerfile structure, smoke test patterns
 - [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md): OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging
 - [agent-patterns.md](infrastructure/agent-patterns.md): Shared agent patterns: plan convention, budget exhaustion, reflection loop
+- [agent-worktree-builds.md](infrastructure/agent-worktree-builds.md): The nested-worktree .globalconfig collision and how a delegated build avoids it
 - [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md): Simplification-agent heuristic definitions (H1-H6)
 - [scoring-rubric.md](infrastructure/scoring-rubric.md): Shared four-dimension scoring rubric for strategic analysis agents
 - [secret-scanning.md](infrastructure/secret-scanning.md): gitleaks scan in precommit.sh and the CI secrets job
