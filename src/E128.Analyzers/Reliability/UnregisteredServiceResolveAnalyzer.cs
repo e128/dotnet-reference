@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -14,13 +15,17 @@ namespace E128.Analyzers.Reliability;
 ///     E128103: Reports a service type resolved through <c lang="csharp">GetRequiredService&lt;T&gt;()</c>
 ///     or a constructor parameter of a DI-registered type when no <c lang="csharp">Add*</c> or
 ///     <c lang="csharp">TryAdd*</c> registration for that type exists in the same compilation. The container
-///     throws <c lang="csharp">InvalidOperationException</c> at runtime for such a resolve.
+///     throws <c lang="csharp">InvalidOperationException</c> at runtime for such a resolve. Also reports a
+///     named <c lang="csharp">HttpClient</c> resolved through <c lang="csharp">CreateClient("name")</c> when no
+///     <c lang="csharp">AddHttpClient("name", ...)</c> call registers that name.
 /// </summary>
 /// <remarks>
 ///     The option <c lang="csharp">e128_registered_services</c> holds comma-separated simple type names. A name in
 ///     the option counts as registered, so a service whose <c lang="csharp">Add*</c> registration lives in another
 ///     assembly does not report. Framework types that only a non-generic extension registers, such as
-///     <c lang="csharp">HttpClient</c> and <c lang="csharp">HybridCache</c>, need no option entry.
+///     <c lang="csharp">HttpClient</c> and <c lang="csharp">HybridCache</c>, need no option entry. A named client
+///     registration is matched on the <c lang="csharp">AddHttpClient</c> extension type, so an unrelated method
+///     with the same name never counts. The empty name and the unnamed overload count as the default client.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
@@ -40,6 +45,23 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         "DI-registered type must have an Add* or TryAdd* registration in the same compilation. Without " +
         "one the DI container throws InvalidOperationException at runtime.",
         customTags: WellKnownDiagnosticTags.CompilationEnd);
+
+    private static readonly DiagnosticDescriptor ClientNameRule = new(
+        DiagnosticId,
+        "Named HttpClient resolve without a registration in the compilation",
+        "'{0}' is resolved as a named HttpClient but has no AddHttpClient registration in this compilation",
+        "E128-Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "A named HttpClient resolved through IHttpClientFactory.CreateClient(name) must have a matching " +
+        "AddHttpClient(name, ...) registration in the same compilation. Without one the client carries no " +
+        "registered configuration and the name is likely a typo.",
+        customTags: WellKnownDiagnosticTags.CompilationEnd);
+
+    private const string HttpClientFactoryTypeName = "System.Net.Http.IHttpClientFactory";
+
+    private const string HttpClientExtensionsTypeName =
+        "Microsoft.Extensions.DependencyInjection.HttpClientFactoryServiceCollectionExtensions";
 
     // GetService<T>() is deliberately absent. It returns null on a miss rather than throwing, and a
     // null probe is a legitimate way to ask whether a service exists, so the rule would be wrong on
@@ -71,7 +93,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         "IHostEnvironment",
         "IEnumerable");
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule, ClientNameRule];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -93,7 +115,14 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         var registeredOpenGenerics = new ConcurrentBag<string>();
         var resolveCandidates = new ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)>();
         var parameterCandidates = new ConcurrentBag<(Location Location, INamedTypeSymbol ParameterType, INamedTypeSymbol ContainingType)>();
+        var registeredClientNames = new ConcurrentBag<string>();
+        var clientResolveCandidates = new ConcurrentBag<(Location Location, string Name)>();
         var configuredServices = ReadConfiguredServices(context.Options.AnalyzerConfigOptionsProvider);
+
+        // Both types ship in Microsoft.Extensions.Http. Without either one the named-client check cannot
+        // tell a registration from a resolve, so it stays silent rather than guess.
+        var httpClientFactoryType = context.Compilation.GetTypeByMetadataName(HttpClientFactoryTypeName);
+        var httpClientExtensionsType = context.Compilation.GetTypeByMetadataName(HttpClientExtensionsTypeName);
 
         context.RegisterSyntaxNodeAction(
             ctx => CollectRegistrations(ctx, registeredServices, registeredOpenGenerics),
@@ -107,13 +136,26 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             ctx => CollectConstructorParameters(ctx, parameterCandidates),
             SyntaxKind.ConstructorDeclaration);
 
+        if (httpClientFactoryType is not null && httpClientExtensionsType is not null)
+        {
+            context.RegisterSyntaxNodeAction(
+                ctx => CollectClientRegistrations(ctx, httpClientExtensionsType, registeredClientNames),
+                SyntaxKind.InvocationExpression);
+
+            context.RegisterSyntaxNodeAction(
+                ctx => CollectClientResolves(ctx, httpClientFactoryType, clientResolveCandidates),
+                SyntaxKind.InvocationExpression);
+        }
+
         context.RegisterCompilationEndAction(ctx => ReportUnregisteredResolves(
             ctx,
             registeredServices,
             registeredOpenGenerics,
             resolveCandidates,
             parameterCandidates,
-            configuredServices));
+            configuredServices,
+            registeredClientNames,
+            clientResolveCandidates));
     }
 
     private static void CollectRegistrations(
@@ -221,13 +263,109 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private static void CollectClientRegistrations(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol extensionsType,
+        ConcurrentBag<string> registeredClientNames)
+    {
+        var invocation = (InvocationExpressionSyntax)context.Node;
+
+        if (GetInvokedMethodName(invocation) is not "AddHttpClient")
+        {
+            return;
+        }
+
+        // The name AddHttpClient belongs to several unrelated types. Matching the declaring type keeps a
+        // local helper with the same name from counting as a registration.
+        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
+                is not IMethodSymbol method
+            || !IsDeclaredOn(method, extensionsType))
+        {
+            return;
+        }
+
+        if (TryGetStringArgument(invocation, method, context.SemanticModel, context.CancellationToken, out var name)
+            && name.Length > 0)
+        {
+            registeredClientNames.Add(name);
+        }
+    }
+
+    private static void CollectClientResolves(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol factoryType,
+        ConcurrentBag<(Location Location, string Name)> clientResolveCandidates)
+    {
+        var invocation = (InvocationExpressionSyntax)context.Node;
+
+        if (GetInvokedMethodName(invocation) is not "CreateClient")
+        {
+            return;
+        }
+
+        // The parameterless CreateClient is an extension method on its own type, so it never matches the
+        // interface member and stays silent. It resolves the default client, which needs no registration.
+        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
+                is not IMethodSymbol method
+            || !IsDeclaredOn(method, factoryType))
+        {
+            return;
+        }
+
+        // The empty name is the default client, which AddHttpClient() always supplies.
+        if (TryGetStringArgument(invocation, method, context.SemanticModel, context.CancellationToken, out var name)
+            && name.Length > 0)
+        {
+            clientResolveCandidates.Add((invocation.GetLocation(), name));
+        }
+    }
+
+    private static bool IsDeclaredOn(IMethodSymbol method, INamedTypeSymbol type)
+    {
+        return SymbolEqualityComparer.Default.Equals(method.ContainingType, type)
+               || (method.ReducedFrom is { } reduced
+                   && SymbolEqualityComparer.Default.Equals(reduced.ContainingType, type));
+    }
+
+    private static bool TryGetStringArgument(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out string name)
+    {
+        name = string.Empty;
+
+        // The named-client APIs carry exactly one string parameter, the client name. Reading the constant of
+        // the matching argument keeps the check independent of parameter order and reduced receiver removal.
+        if (!method.Parameters.Any(parameter => parameter.Type.SpecialType == SpecialType.System_String))
+        {
+            return false;
+        }
+
+        foreach (var argument in invocation.ArgumentList.Arguments)
+        {
+            var constant = semanticModel.GetConstantValue(argument.Expression, cancellationToken);
+
+            if (constant.HasValue && constant.Value is string value)
+            {
+                name = value;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static void ReportUnregisteredResolves(
         CompilationAnalysisContext context,
         ConcurrentBag<INamedTypeSymbol> registeredServices,
         ConcurrentBag<string> registeredOpenGenerics,
         ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)> resolveCandidates,
         ConcurrentBag<(Location Location, INamedTypeSymbol ParameterType, INamedTypeSymbol ContainingType)> parameterCandidates,
-        ImmutableHashSet<string> configuredServices)
+        ImmutableHashSet<string> configuredServices,
+        ConcurrentBag<string> registeredClientNames,
+        ConcurrentBag<(Location Location, string Name)> clientResolveCandidates)
     {
         var registered = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (var type in registeredServices)
@@ -252,6 +390,25 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, location, parameterType.Name));
             }
+        }
+
+        var registeredClientNameSet = ImmutableHashSet.CreateRange(StringComparer.Ordinal, registeredClientNames);
+
+        // One diagnostic per name, reported at the first use. A bag enumerates in no fixed order, so the
+        // location is picked by file and span to keep repeated runs identical.
+        var unregisteredClientNames = clientResolveCandidates
+            .Where(candidate => !registeredClientNameSet.Contains(candidate.Name))
+            .GroupBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .Select(group => group
+                .OrderBy(candidate => candidate.Location.GetLineSpan().Path, StringComparer.Ordinal)
+                .ThenBy(candidate => candidate.Location.SourceSpan.Start)
+                .First())
+            .OrderBy(candidate => candidate.Location.GetLineSpan().Path, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Location.SourceSpan.Start);
+
+        foreach (var (location, name) in unregisteredClientNames)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(ClientNameRule, location, name));
         }
     }
 

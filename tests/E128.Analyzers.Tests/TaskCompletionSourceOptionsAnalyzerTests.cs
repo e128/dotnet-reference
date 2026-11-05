@@ -13,7 +13,8 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
         var test = new CSharpAnalyzerTest<TaskCompletionSourceOptionsAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -95,6 +96,155 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                object M()
                                {
                                    return new List<int>();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SetResultOnField_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               private readonly TaskCompletionSource<int> source =
+                                   new(TaskCreationOptions.RunContinuationsAsynchronously);
+                               void M()
+                               {
+                                   {|E128159:source.SetResult(1)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SetExceptionOnStaticField_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               private static readonly TaskCompletionSource<int> Source =
+                                   new(TaskCreationOptions.RunContinuationsAsynchronously);
+                               static void M()
+                               {
+                                   {|E128159:C.Source.SetException(new InvalidOperationException())|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SetCanceledOnField_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               private readonly TaskCompletionSource<int> source =
+                                   new(TaskCreationOptions.RunContinuationsAsynchronously);
+                               void M()
+                               {
+                                   {|E128159:this.source.SetCanceled()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TrySetResultOnField_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               private readonly TaskCompletionSource<int> source =
+                                   new(TaskCreationOptions.RunContinuationsAsynchronously);
+                               void M()
+                               {
+                                   source.TrySetResult(1);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SetResultOnLocal_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var source =
+                                       new TaskCompletionSource<int>(
+                                           TaskCreationOptions.RunContinuationsAsynchronously);
+                                   source.SetResult(1);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SetResultOnParameter_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               static void M(TaskCompletionSource<int> source)
+                               {
+                                   source.SetResult(1);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SetResultOnProperty_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               private TaskCompletionSource<int> Source { get; } =
+                                   new(TaskCreationOptions.RunContinuationsAsynchronously);
+                               void M()
+                               {
+                                   Source.SetResult(1);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SetResultOnUserType_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           class Source
+                           {
+                               internal void SetResult(int value)
+                               {
+                               }
+                           }
+
+                           class C
+                           {
+                               private readonly Source source = new();
+                               void M()
+                               {
+                                   source.SetResult(1);
                                }
                            }
                            """);

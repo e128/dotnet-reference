@@ -14,7 +14,9 @@ namespace E128.Analyzers.Reliability;
 ///     E128154: Reports a singleton registration whose implementation type takes a constructor
 ///     parameter of a type that an <c lang="csharp">AddScoped</c> call registers in the same
 ///     compilation. The container builds the singleton once, so it captures the first scoped
-///     instance for the lifetime of the application.
+///     instance for the lifetime of the application. The rule also reports an Entity Framework Core
+///     <c lang="csharp">DbContext</c> registered as a singleton, because a context is scoped by
+///     contract and a singleton context tracks every entity it materializes.
 /// </summary>
 /// <remarks>
 ///     The rule reads direct dependencies only. A singleton that depends on another singleton that
@@ -25,6 +27,10 @@ namespace E128.Analyzers.Reliability;
 public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128154";
+
+    private const string DbContextMetadataName = "Microsoft.EntityFrameworkCore.DbContext";
+
+    private const string ServiceLifetimeMetadataName = "Microsoft.Extensions.DependencyInjection.ServiceLifetime";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -38,13 +44,25 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         "across requests. Use a scope factory, or register the dependent type as scoped.",
         customTags: WellKnownDiagnosticTags.CompilationEnd);
 
+    private static readonly DiagnosticDescriptor DbContextRule = new(
+        DiagnosticId,
+        "DbContext registered as a singleton",
+        "'{0}' is an Entity Framework Core DbContext registered as a singleton",
+        "E128-Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "A DbContext is scoped by contract and tracks every entity it materializes. A singleton context " +
+        "keeps those entities for the lifetime of the application, grows without bound, and is shared " +
+        "across requests. Register the context as scoped, or resolve it from a created scope.",
+        customTags: WellKnownDiagnosticTags.CompilationEnd);
+
     private static readonly ImmutableHashSet<string> ScopeAccessorNames = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "IServiceProvider",
         "IServiceScopeFactory",
         "IServiceScope");
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule, DbContextRule];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -60,21 +78,28 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
+        var efCore = EfCoreTypes.Resolve(context.Compilation);
         var scopedServices = new ConcurrentBag<INamedTypeSymbol>();
         var singletonCandidates = new ConcurrentBag<SingletonCandidate>();
+        var dbContextCandidates = new ConcurrentBag<DbContextCandidate>();
 
         context.RegisterSyntaxNodeAction(
-            ctx => CollectRegistrations(ctx, scopedServices, singletonCandidates),
+            ctx => CollectRegistrations(ctx, scopedServices, singletonCandidates, dbContextCandidates, efCore),
             SyntaxKind.InvocationExpression);
 
         context.RegisterCompilationEndAction(ctx =>
-            ReportCaptiveDependencies(ctx, scopedServices, singletonCandidates));
+        {
+            ReportCaptiveDependencies(ctx, scopedServices, singletonCandidates);
+            ReportDbContextSingletons(ctx, dbContextCandidates);
+        });
     }
 
     private static void CollectRegistrations(
         SyntaxNodeAnalysisContext context,
         ConcurrentBag<INamedTypeSymbol> scopedServices,
-        ConcurrentBag<SingletonCandidate> singletonCandidates)
+        ConcurrentBag<SingletonCandidate> singletonCandidates,
+        ConcurrentBag<DbContextCandidate> dbContextCandidates,
+        EfCoreTypes efCore)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -83,9 +108,11 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var lifetime = GetLifetime(memberAccess.Name.Identifier.ValueText);
+        var methodName = memberAccess.Name.Identifier.ValueText;
+        var lifetime = GetLifetime(methodName);
+        var isDbContextRegistration = efCore.IsDbContextRegistration(methodName);
 
-        if (lifetime == Lifetime.None)
+        if (lifetime == Lifetime.None && !isDbContextRegistration)
         {
             return;
         }
@@ -93,6 +120,13 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         if (context.SemanticModel.GetOperation(invocation, context.CancellationToken)
             is not IInvocationOperation operation)
         {
+            return;
+        }
+
+        if (isDbContextRegistration)
+        {
+            CollectDbContextRegistration(invocation, operation, dbContextCandidates, efCore);
+
             return;
         }
 
@@ -106,6 +140,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        CollectDbContextSingleton(invocation, method, typeOfRegistrations, dbContextCandidates, efCore);
+
         // A factory or an instance argument means the container receives a built object, so the type
         // arguments alone do not name the object the container holds. A service key is not such an
         // argument, so a keyed registration stays in scope.
@@ -115,6 +151,152 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
 
         CollectSingletonCandidate(invocation, method, typeOfRegistrations, singletonCandidates);
+    }
+
+    private static void CollectDbContextSingleton(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        List<TypeOfRegistration> typeOfRegistrations,
+        ConcurrentBag<DbContextCandidate> dbContextCandidates,
+        EfCoreTypes efCore)
+    {
+        // The container builds one context for the application. The type arguments name that context
+        // even when a factory or an instance supplies it, because the container stores the result of
+        // the factory in the singleton slot.
+        if (!efCore.IsAvailable)
+        {
+            return;
+        }
+
+        foreach (var typeArgument in method.TypeArguments)
+        {
+            if (typeArgument is INamedTypeSymbol namedType && efCore.DerivesFromDbContext(namedType))
+            {
+                dbContextCandidates.Add(new DbContextCandidate(
+                    GetRegistrationLocation(invocation, method),
+                    namedType));
+
+                return;
+            }
+        }
+
+        foreach (var registration in typeOfRegistrations)
+        {
+            if (registration.Type is INamedTypeSymbol namedType && efCore.DerivesFromDbContext(namedType))
+            {
+                dbContextCandidates.Add(new DbContextCandidate(registration.Location, namedType));
+
+                return;
+            }
+        }
+    }
+
+    private static void CollectDbContextRegistration(
+        InvocationExpressionSyntax invocation,
+        IInvocationOperation operation,
+        ConcurrentBag<DbContextCandidate> dbContextCandidates,
+        EfCoreTypes efCore)
+    {
+        // AddDbContext registers a context with the scoped lifetime by default. Only an explicit
+        // Singleton argument makes the registration a singleton.
+        var contextType = GetDbContextType(operation, efCore);
+
+        if (contextType is null || !HasSingletonLifetime(operation, efCore))
+        {
+            return;
+        }
+
+        dbContextCandidates.Add(new DbContextCandidate(
+            GetDbContextRegistrationLocation(invocation, operation),
+            contextType));
+    }
+
+    private static INamedTypeSymbol? GetDbContextType(IInvocationOperation operation, EfCoreTypes efCore)
+    {
+        foreach (var typeArgument in operation.TargetMethod.TypeArguments)
+        {
+            if (typeArgument is INamedTypeSymbol namedType && efCore.DerivesFromDbContext(namedType))
+            {
+                return namedType;
+            }
+        }
+
+        foreach (var argument in operation.Arguments)
+        {
+            if (argument.Parameter is not null
+                && UnwrapConversions(argument.Value) is ITypeOfOperation typeOf
+                && typeOf.TypeOperand is INamedTypeSymbol namedType
+                && efCore.DerivesFromDbContext(namedType))
+            {
+                return namedType;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool HasSingletonLifetime(IInvocationOperation operation, EfCoreTypes efCore)
+    {
+        // contextLifetime controls the context itself. optionsLifetime controls the options object and
+        // stays scoped in a normal application. Prefer the named parameter so an explicit singleton
+        // options lifetime does not report a scoped context.
+        IArgumentOperation? contextLifetime = null;
+        IArgumentOperation? trailing = null;
+
+        foreach (var argument in operation.Arguments)
+        {
+            if (argument.Parameter is not { } parameter
+                || argument.ArgumentKind == ArgumentKind.DefaultValue
+                || !SymbolEqualityComparer.Default.Equals(parameter.Type, efCore.ServiceLifetime))
+            {
+                continue;
+            }
+
+            trailing = argument;
+
+            if (string.Equals(parameter.Name, "contextLifetime", StringComparison.Ordinal))
+            {
+                contextLifetime = argument;
+            }
+        }
+
+        var selected = contextLifetime ?? trailing;
+
+        return selected is not null
+               && UnwrapConversions(selected.Value).ConstantValue is { HasValue: true } constant
+               && Equals(constant.Value, efCore.SingletonValue);
+    }
+
+    private static Location GetDbContextRegistrationLocation(InvocationExpressionSyntax invocation, IInvocationOperation operation)
+    {
+        var genericName = (invocation.Expression as MemberAccessExpressionSyntax)?.Name as GenericNameSyntax;
+
+        if (genericName is { TypeArgumentList.Arguments.Count: > 0 })
+        {
+            return genericName.TypeArgumentList.Arguments[0].GetLocation();
+        }
+
+        foreach (var argument in operation.Arguments)
+        {
+            if (argument.Parameter is not null && UnwrapConversions(argument.Value) is ITypeOfOperation typeOf)
+            {
+                return typeOf.Syntax.GetLocation();
+            }
+        }
+
+        return invocation.GetLocation();
+    }
+
+    private static IOperation UnwrapConversions(IOperation operation)
+    {
+        var current = operation;
+
+        while (current is IConversionOperation conversion)
+        {
+            current = conversion.Operand;
+        }
+
+        return current;
     }
 
     private static void CollectScopedServices(
@@ -338,6 +520,19 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private static void ReportDbContextSingletons(
+        CompilationAnalysisContext context,
+        ConcurrentBag<DbContextCandidate> dbContextCandidates)
+    {
+        foreach (var candidate in dbContextCandidates)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DbContextRule,
+                candidate.Location,
+                candidate.ContextType.Name));
+        }
+    }
+
     private static string? FindScopedDependency(INamedTypeSymbol implementation, HashSet<INamedTypeSymbol> scoped)
     {
         foreach (var constructor in implementation.InstanceConstructors)
@@ -367,5 +562,84 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         internal Location Location { get; }
 
         internal INamedTypeSymbol Implementation { get; }
+    }
+
+    private sealed class DbContextCandidate
+    {
+        internal DbContextCandidate(Location location, INamedTypeSymbol contextType)
+        {
+            Location = location;
+            ContextType = contextType;
+        }
+
+        internal Location Location { get; }
+
+        internal INamedTypeSymbol ContextType { get; }
+    }
+
+    private sealed class EfCoreTypes
+    {
+        private readonly INamedTypeSymbol? dbContext;
+
+        private EfCoreTypes(INamedTypeSymbol? dbContext, INamedTypeSymbol? serviceLifetime, object? singletonValue)
+        {
+            this.dbContext = dbContext;
+            ServiceLifetime = serviceLifetime;
+            SingletonValue = singletonValue;
+        }
+
+        internal INamedTypeSymbol? ServiceLifetime { get; }
+
+        internal object? SingletonValue { get; }
+
+        internal bool IsAvailable => dbContext is not null && ServiceLifetime is not null && SingletonValue is not null;
+
+        internal static EfCoreTypes Resolve(Compilation compilation)
+        {
+            // EF Core ships DbContext, and its dependency graph ships ServiceLifetime. Resolve both
+            // once, and turn the rule off when either type is absent.
+            var contextType = compilation.GetTypeByMetadataName(DbContextMetadataName);
+            var serviceLifetime = compilation.GetTypeByMetadataName(ServiceLifetimeMetadataName);
+
+            return new EfCoreTypes(contextType, serviceLifetime, ReadSingletonValue(serviceLifetime));
+        }
+
+        internal bool IsDbContextRegistration(string methodName)
+        {
+            return IsAvailable
+                   && (string.Equals(methodName, "AddDbContext", StringComparison.Ordinal)
+                       || string.Equals(methodName, "AddDbContextPool", StringComparison.Ordinal));
+        }
+
+        internal bool DerivesFromDbContext(INamedTypeSymbol type)
+        {
+            for (var current = (INamedTypeSymbol?)type; current is not null; current = current.BaseType)
+            {
+                if (SymbolEqualityComparer.Default.Equals(current, dbContext))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static object? ReadSingletonValue(INamedTypeSymbol? serviceLifetime)
+        {
+            if (serviceLifetime is null)
+            {
+                return null;
+            }
+
+            foreach (var member in serviceLifetime.GetMembers("Singleton"))
+            {
+                if (member is IFieldSymbol { HasConstantValue: true } field)
+                {
+                    return field.ConstantValue;
+                }
+            }
+
+            return null;
+        }
     }
 }

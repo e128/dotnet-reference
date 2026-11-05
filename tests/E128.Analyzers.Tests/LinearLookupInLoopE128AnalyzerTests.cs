@@ -434,6 +434,27 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task QueryableAny_InForeach_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections;
+                           using System.Collections.Generic;
+                           using System.Linq;
+                           class C
+                           {
+                               void M(IEnumerable<int> ids, IQueryable<int> query)
+                               {
+                                   foreach (var id in ids)
+                                   {
+                                       var found = query.Any(x => x == id);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task StringContains_InLinqWhere_DoesNotFire()
     {
         return VerifyAsync("""

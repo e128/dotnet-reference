@@ -119,6 +119,19 @@ The script picks the level (major, minor, or patch) from commit subjects and fro
 
 If the version was bumped, re-read the csproj before any subsequent edits.
 
+**C.4) Release promotion (every run that promotes rules):**
+
+```bash
+scripts/internal/analyzer-promote.sh --json
+```
+
+This step runs after C.3 and before the squash commit. It moves every `### New Rules` row and every `### Changed Rules` row from `AnalyzerReleases.Unshipped.md` into a `## Release <version>` section at the top of `AnalyzerReleases.Shipped.md`, then leaves Unshipped with its table headers and no rows.
+
+- Parse `status`. `promoted` and `empty` both pass.
+- A non-zero exit with "already has a release section" means C.3 did not bump. Bump first, then run this step again.
+- A `Removed Rules` row stays in Unshipped. Add the release note by hand.
+- Verify with `scripts/internal/analyzer-release-check.sh --json` and expect `"status":"clean"`.
+
 If any fixes are needed, apply them silently (auto-approval per project rules). Log what was fixed.
 
 **D) README freshness (conditional):**
@@ -200,7 +213,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
 - **`--dry-run` stops after step 1**: quality check only, no file writes
 - **Format is scoped to changed files**: `scripts/format.sh --changed` runs only when `.cs` files changed. Skipped on docs-only/config-only changes.
 - **Re-read gate**: if format ran (step 1A), all `.cs` file contents are stale. Do NOT Edit any `.cs` file after step 1 without re-reading first.
-- **Analyzer release files and README ship accurate on every run**: `AnalyzerReleases.Shipped.md`, `AnalyzerReleases.Unshipped.md`, and `src/E128.Analyzers/README.md` are checked on every yeet, even a docs-only change set. A new rule that is missing from either file blocks the ship.
+- **Analyzer release files and README ship accurate on every run**: `AnalyzerReleases.Shipped.md`, `AnalyzerReleases.Unshipped.md`, and `src/E128.Analyzers/README.md` are checked on every yeet, even a docs-only change set. A new rule that is missing from either file blocks the ship. The squash commit carries no rule row in Unshipped: step C.4 moves every row to Shipped under the bumped version first.
 
 ## Troubleshooting
 

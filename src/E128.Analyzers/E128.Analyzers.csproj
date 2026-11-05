@@ -5,6 +5,9 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <IsRoslynComponent>true</IsRoslynComponent>
+    <!-- Copy the System.Text.Json dependency set beside the analyzer DLL, so the package
+         can carry it into analyzers/dotnet/cs. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!-- RS2007: the Roslyn 4.14.0 meta-analyzer rejects valid unshipped.md content -->
     <!-- RS0016/RS0017: inherited override members (Initialize, SupportedDiagnostics, etc.) are
@@ -18,7 +21,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>2.1.2</Version>
+    <Version>2.2.0</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -39,6 +42,9 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
     <PackageReference Include="PolySharp" PrivateAssets="all" />
+    <!-- The JSON reader for appsettings.json keys. PrivateAssets keeps it out of the
+         package dependency list. The DLL set is packed explicitly below. -->
+    <PackageReference Include="System.Text.Json" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -65,6 +71,28 @@
           PackagePath="analyzers/dotnet/cs"
           Visible="false" />
     <None Include="$(CodeFixersOutputPath)"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+  </ItemGroup>
+
+  <!-- The System.Text.Json closure. The compiler host provides the Roslyn assemblies,
+       so those stay out of the package. Every other copied DLL rides along. -->
+  <ItemGroup>
+    <AnalyzerDependency Include="System.Text.Json" />
+    <AnalyzerDependency Include="System.Text.Encodings.Web" />
+    <AnalyzerDependency Include="System.Text.Encoding.CodePages" />
+    <AnalyzerDependency Include="System.IO.Pipelines" />
+    <AnalyzerDependency Include="System.Memory" />
+    <AnalyzerDependency Include="System.Buffers" />
+    <AnalyzerDependency Include="System.Numerics.Vectors" />
+    <AnalyzerDependency Include="System.Runtime.CompilerServices.Unsafe" />
+    <AnalyzerDependency Include="System.Threading.Tasks.Extensions" />
+    <AnalyzerDependency Include="Microsoft.Bcl.AsyncInterfaces" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="@(AnalyzerDependency->'$(OutputPath)\%(Identity).dll')"
           Pack="true"
           PackagePath="analyzers/dotnet/cs"
           Visible="false" />

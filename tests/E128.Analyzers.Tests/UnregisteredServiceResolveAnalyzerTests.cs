@@ -8,15 +8,31 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UnregisteredServiceResolveAnalyzerTests
 {
-    private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
-        .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
+    private static readonly ReferenceAssemblies Net100WithDiAndHttp = ReferenceAssemblies.Net.Net100
+        .AddPackages([
+                         new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6"),
+                         new PackageIdentity("Microsoft.Extensions.Http", "10.0.6")
+                     ]);
 
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
         var test = new CSharpAnalyzerTest<UnregisteredServiceResolveAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = Net100WithDi
+            ReferenceAssemblies = Net100WithDiAndHttp,
+            MarkupOptions = MarkupOptions.UseFirstDescriptor
+        };
+        test.ExpectedDiagnostics.AddRange(expected);
+        return test.RunAsync();
+    }
+
+    private static Task VerifyWithoutHttpAsync(string code, params DiagnosticResult[] expected)
+    {
+        var test = new CSharpAnalyzerTest<UnregisteredServiceResolveAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+            MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
@@ -30,7 +46,8 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
         var test = new CSharpAnalyzerTest<UnregisteredServiceResolveAnalyzer, DefaultVerifier>
         {
             TestCode = code,
-            ReferenceAssemblies = Net100WithDi
+            ReferenceAssemblies = Net100WithDiAndHttp,
+            MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.TestState.AnalyzerConfigFiles.Add(
             ("/.editorconfig", "is_global = true\ne128_registered_services = " + registeredServices));
@@ -218,6 +235,170 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     }
 
     #endregion Does Not Fire
+
+    #region Named HttpClient
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNamedClientResolve_WhenNoAddHttpClientRegistrationExists()
+    {
+        return VerifyAsync("""
+                           using System.Net.Http;
+                           class Consumer
+                           {
+                               void Resolve(IHttpClientFactory factory)
+                               {
+                                   var client = {|E128103:factory.CreateClient("api")|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenNamedClientIsRegistered()
+    {
+        return VerifyAsync("""
+                           using System.Net.Http;
+                           using Microsoft.Extensions.DependencyInjection;
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddHttpClient("api");
+                               }
+                           }
+                           class Consumer
+                           {
+                               void Resolve(IHttpClientFactory factory)
+                               {
+                                   var client = factory.CreateClient("api");
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenNamedClientIsRegisteredForATypedClient()
+    {
+        return VerifyAsync("""
+                           using System.Net.Http;
+                           using Microsoft.Extensions.DependencyInjection;
+                           class ApiClient { }
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services)
+                               {
+                                   services.AddHttpClient<ApiClient>("api");
+                               }
+                           }
+                           class Consumer
+                           {
+                               void Resolve(IHttpClientFactory factory)
+                               {
+                                   var client = factory.CreateClient("api");
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenClientNameIsEmpty()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Net.Http;
+                           class Consumer
+                           {
+                               void Resolve(IHttpClientFactory factory)
+                               {
+                                   var fromEmptyConstant = factory.CreateClient(string.Empty);
+                                   var fromEmptyLiteral = factory.CreateClient("");
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenClientIsUnnamed()
+    {
+        return VerifyAsync("""
+                           using System.Net.Http;
+                           class Consumer
+                           {
+                               void Resolve(IHttpClientFactory factory)
+                               {
+                                   var client = factory.CreateClient();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenIHttpClientFactoryIsNotReferenced()
+    {
+        return VerifyWithoutHttpAsync("""
+                                      using System.Net.Http;
+                                      namespace Stubs
+                                      {
+                                          interface IHttpClientFactory
+                                          {
+                                              HttpClient CreateClient(string name);
+                                          }
+                                      }
+                                      class Consumer
+                                      {
+                                          void Resolve(Stubs.IHttpClientFactory factory)
+                                          {
+                                              var client = factory.CreateClient("api");
+                                          }
+                                      }
+                                      """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNamedClientResolve_OncePerName()
+    {
+        return VerifyAsync("""
+                           using System.Net.Http;
+                           class Consumer
+                           {
+                               void Resolve(IHttpClientFactory factory)
+                               {
+                                   var first = {|E128103:factory.CreateClient("api")|};
+                                   var second = factory.CreateClient("api");
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UnregisteredServiceResolveAnalyzer_ReportsNamedClientResolve_WhenAddHttpClientIsDeclaredOnAnotherType()
+    {
+        return VerifyAsync("""
+                           using System.Net.Http;
+                           class Registrations
+                           {
+                               public void AddHttpClient(string name) { }
+                           }
+                           class Consumer
+                           {
+                               void Resolve(IHttpClientFactory factory, Registrations registrations)
+                               {
+                                   registrations.AddHttpClient("api");
+                                   var client = {|E128103:factory.CreateClient("api")|};
+                               }
+                           }
+                           """);
+    }
+
+    #endregion Named HttpClient
 
     #region Acceptance Contract
 

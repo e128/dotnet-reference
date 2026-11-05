@@ -17,7 +17,8 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 /// <remarks>
 ///     The rule reads a constant options value only. A computed value carries no decision, so the
-///     call stays silent.
+///     call stays silent. A second shape reports a throwing completer on a source stored in a
+///     field, because two callers can then complete it once each.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
@@ -41,7 +42,19 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
         "the awaiting continuation inside the thread that completes the task. That thread then " +
         "executes foreign code, which can deadlock or stall a pool thread.");
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+    private static readonly DiagnosticDescriptor SharedCompletionRule = new(
+        DiagnosticId,
+        "SetResult on a shared TaskCompletionSource",
+        "Use TrySetResult or TrySetException on a TaskCompletionSource stored in a field",
+        "E128-Reliability",
+        DiagnosticSeverity.Warning,
+        true,
+        "A TaskCompletionSource stored in a field outlives one caller. A second caller that calls " +
+        "SetResult, SetException, or SetCanceled throws InvalidOperationException. The TrySet " +
+        "forms return false instead.");
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+        [Rule, SharedCompletionRule];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -72,6 +85,45 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(
             ctx => AnalyzeCreation(ctx, sources),
             SyntaxKind.ImplicitObjectCreationExpression);
+        context.RegisterSyntaxNodeAction(
+            ctx => AnalyzeSharedCompletion(ctx, sources),
+            SyntaxKind.InvocationExpression);
+    }
+
+    private static void AnalyzeSharedCompletion(
+        SyntaxNodeAnalysisContext context,
+        List<INamedTypeSymbol> sources)
+    {
+        var invocation = (InvocationExpressionSyntax)context.Node;
+
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
+            || !IsThrowingCompleter(memberAccess.Name.Identifier.ValueText))
+        {
+            return;
+        }
+
+        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
+                is not IMethodSymbol method
+            || !IsCompletionSourceType(method.ContainingType, sources))
+        {
+            return;
+        }
+
+        if (context.SemanticModel.GetSymbolInfo(memberAccess.Expression, context.CancellationToken)
+                .Symbol is not IFieldSymbol)
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(SharedCompletionRule, invocation.GetLocation()));
+    }
+
+    private static bool IsThrowingCompleter(string name)
+    {
+        return string.Equals(name, "SetResult", StringComparison.Ordinal)
+               || string.Equals(name, "SetException", StringComparison.Ordinal)
+               || string.Equals(name, "SetCanceled", StringComparison.Ordinal);
     }
 
     private static void AddDefinitions(Compilation compilation, string metadataName, List<INamedTypeSymbol> target)
@@ -102,12 +154,19 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        if (model.GetTypeInfo(creation, cancellationToken).Type is not INamedTypeSymbol created)
+        return IsCompletionSourceType(
+            model.GetTypeInfo(creation, cancellationToken).Type as INamedTypeSymbol,
+            sources);
+    }
+
+    private static bool IsCompletionSourceType(INamedTypeSymbol? type, List<INamedTypeSymbol> sources)
+    {
+        if (type is null)
         {
             return false;
         }
 
-        var definition = created.OriginalDefinition;
+        var definition = type.OriginalDefinition;
 
         foreach (var source in sources)
         {

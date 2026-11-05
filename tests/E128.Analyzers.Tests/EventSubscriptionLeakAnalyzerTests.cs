@@ -1,0 +1,284 @@
+using System.Threading.Tasks;
+using E128.Analyzers.Reliability;
+using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Testing;
+using Xunit;
+
+namespace E128.Analyzers.Tests;
+
+public sealed class EventSubscriptionLeakAnalyzerTests
+{
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        var test = new CSharpAnalyzerTest<EventSubscriptionLeakAnalyzer, DefaultVerifier>
+        {
+            TestCode = code,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+        test.ExpectedDiagnostics.AddRange(expected);
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LambdaThatReadsAField_WithNoRemoval_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   {|E128176:_publisher.Changed += (s, e) => _count++|};
+                               }
+                               public void Dispose()
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LambdaThatReadsAField_RemovedInDispose_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   _publisher.Changed += (s, e) => _count++;
+                               }
+                               public void Dispose()
+                               {
+                                   _publisher.Changed -= (s, e) => _count++;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StaticHandler_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               public void Start()
+                               {
+                                   _publisher.Changed += Handle;
+                               }
+                               public void Dispose()
+                               {
+                               }
+                               private static void Handle(object? sender, EventArgs e)
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task InstanceMethodGroup_WithNoRemoval_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               public void Start()
+                               {
+                                   {|E128176:_publisher.Changed += Handle|};
+                               }
+                               public void Dispose()
+                               {
+                               }
+                               private void Handle(object? sender, EventArgs e)
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ThisQualifiedMethodGroup_WithNoRemoval_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               public void Start()
+                               {
+                                   {|E128176:_publisher.Changed += this.Handle|};
+                               }
+                               public void Dispose()
+                               {
+                               }
+                               private void Handle(object? sender, EventArgs e)
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task TypeWithoutDispose_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   _publisher.Changed += (s, e) => _count++;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LambdaWithoutAnInstanceRead_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               public void Start(int limit)
+                               {
+                                   _publisher.Changed += (s, e) => Console.WriteLine(limit);
+                               }
+                               public void Dispose()
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemovalOutsideDispose_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   {|E128176:_publisher.Changed += (s, e) => _count++|};
+                               }
+                               public void Stop()
+                               {
+                                   _publisher.Changed -= (s, e) => _count++;
+                               }
+                               public void Dispose()
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemovalInDisposeAsync_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Threading.Tasks;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IAsyncDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   _publisher.Changed += (s, e) => _count++;
+                               }
+                               public ValueTask DisposeAsync()
+                               {
+                                   _publisher.Changed -= (s, e) => _count++;
+                                   return default;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemovalOfADifferentEvent_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                               public event EventHandler? Closed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   {|E128176:_publisher.Changed += (s, e) => _count++|};
+                                   _publisher.Closed += (s, e) => _count++;
+                               }
+                               public void Dispose()
+                               {
+                                   _publisher.Closed -= (s, e) => _count++;
+                               }
+                           }
+                           """);
+    }
+}
