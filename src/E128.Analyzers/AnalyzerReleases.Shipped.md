@@ -1,3 +1,20 @@
+## Release 2.3.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128199 | E128-Maintainability | Info | Direct recursion in a method.
+E128200 | E128-Unsafe | Warning | Function pointer type instead of a delegate.
+E128201 | E128-Maintainability | Info | Conditional directive count past the ceiling.
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------
+E128187 | E128-Performance | Info | E128-Performance | Warning | Severity lowered. The default cap is the processor count, not one task per item.
+E128197 | E128-Reliability | Info | E128-Reliability | Warning | Severity lowered. A 28 to 31 day span is often a fixed retention window, not a calendar month.
+
 ## Release 2.2.0
 
 ### New Rules

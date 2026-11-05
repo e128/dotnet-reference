@@ -30,7 +30,7 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
         "Fixed day count used as a calendar month",
         "Use AddMonths instead of adding or subtracting TimeSpan.FromDays({0})",
         "E128-Reliability",
-        DiagnosticSeverity.Warning,
+        DiagnosticSeverity.Info,
         true,
         "A calendar month holds 28 to 31 days. A fixed span drifts from the calendar, so a monthly " +
         "boundary moves a day or more over time. AddMonths keeps the day of the month.");
@@ -71,6 +71,10 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
             ctx => AnalyzeOperator(ctx, timeSpanType, targets),
             SyntaxKind.AddExpression,
             SyntaxKind.SubtractExpression);
+        context.RegisterSyntaxNodeAction(
+            ctx => AnalyzeCompoundAssignment(ctx, timeSpanType, targets),
+            SyntaxKind.AddAssignmentExpression,
+            SyntaxKind.SubtractAssignmentExpression);
     }
 
     private static void AnalyzeCall(
@@ -110,6 +114,19 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
             && IsTarget(model.GetTypeInfo(binary.Right, token).Type, targets))
         {
             ReportIfMonth(context, binary.Left, timeSpanType);
+        }
+    }
+
+    private static void AnalyzeCompoundAssignment(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol timeSpanType,
+        INamedTypeSymbol?[] targets)
+    {
+        var assignment = (AssignmentExpressionSyntax)context.Node;
+
+        if (IsTarget(context.SemanticModel.GetTypeInfo(assignment.Left, context.CancellationToken).Type, targets))
+        {
+            ReportIfMonth(context, assignment.Right, timeSpanType);
         }
     }
 

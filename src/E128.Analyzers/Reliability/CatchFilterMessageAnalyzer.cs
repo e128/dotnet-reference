@@ -50,8 +50,9 @@ public sealed class CatchFilterMessageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var variableName = catchClause.Declaration.Identifier.ValueText;
-        if (variableName.Length == 0)
+        // Bind by symbol, so a lambda parameter or a local with the same name is not the catch variable.
+        var variable = context.SemanticModel.GetDeclaredSymbol(catchClause.Declaration, context.CancellationToken);
+        if (variable is null)
         {
             return;
         }
@@ -60,7 +61,7 @@ public sealed class CatchFilterMessageAnalyzer : DiagnosticAnalyzer
                      .DescendantNodesAndSelf()
                      .OfType<MemberAccessExpressionSyntax>())
         {
-            if (IsFormattedMemberAccess(memberAccess, variableName))
+            if (IsFormattedMemberAccess(memberAccess, variable, context))
             {
                 context.ReportDiagnostic(
                     Diagnostic.Create(Rule, memberAccess.GetLocation(), memberAccess.Name.Identifier.ValueText));
@@ -68,10 +69,15 @@ public sealed class CatchFilterMessageAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsFormattedMemberAccess(MemberAccessExpressionSyntax memberAccess, string variableName)
+    private static bool IsFormattedMemberAccess(
+        MemberAccessExpressionSyntax memberAccess,
+        ISymbol variable,
+        SyntaxNodeAnalysisContext context)
     {
         return FormattedMembers.Contains(memberAccess.Name.Identifier.ValueText)
             && memberAccess.Expression is IdentifierNameSyntax receiver
-            && string.Equals(receiver.Identifier.ValueText, variableName, StringComparison.Ordinal);
+            && SymbolEqualityComparer.Default.Equals(
+                context.SemanticModel.GetSymbolInfo(receiver, context.CancellationToken).Symbol,
+                variable);
     }
 }

@@ -47,7 +47,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task ForeachOverwrite_WithThisQualifiedDisposeBeforeTheLoop_DoesNotFire()
+    public Task ForeachOverwrite_WithThisQualifiedDisposeBeforeTheLoop_Fires()
     {
         return VerifyAsync("""
                            using System;
@@ -65,7 +65,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
                                    this._current?.Dispose();
                                    foreach (var item in items)
                                    {
-                                       _current = new Res();
+                                       {|E128193:_current|} = new Res();
                                    }
                                }
                            }
@@ -245,6 +245,26 @@ public sealed class DisposableFieldInLoopAnalyzerTests
                                    {
                                        _current?.Dispose();
                                        _current = new Res();
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConstrainedTypeParameterField_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C<T> where T : IDisposable, new()
+                           {
+                               private T _current = new();
+                               public void Run(string[] items)
+                               {
+                                   foreach (var item in items)
+                                   {
+                                       {|E128193:_current|} = new T();
                                    }
                                }
                            }

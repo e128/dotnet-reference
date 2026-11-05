@@ -43,7 +43,7 @@ if [[ ! -f "$SHIPPED" || ! -f "$UNSHIPPED" ]]; then
     if $JSON_MODE; then
         printf '{"status":"skip","reason":"no analyzer release files"}\n'
     else
-        dim "No analyzer release files under src/$PROJECT — skipping"
+        dim "No analyzer release files under src/$PROJECT: skipping"
     fi
     exit 0
 fi
@@ -92,7 +92,7 @@ if [[ -z "$NEW_ROWS" && -z "$CHANGED_ROWS" && -z "$REMOVED_ROWS" ]]; then
     if $JSON_MODE; then
         printf '{"status":"empty","version":"%s","new":0,"changed":0}\n' "$VERSION"
     else
-        ok "Unshipped.md holds no rule rows — nothing to promote"
+        ok "Unshipped.md holds no rule rows, nothing to promote"
     fi
     exit 0
 fi
@@ -106,11 +106,14 @@ if $DRY_RUN; then
             "$VERSION" "${NEW_COUNT:-0}" "${CHANGED_COUNT:-0}" "$([[ -n "$REMOVED_ROWS" ]] && echo 1 || echo 0)"
     else
         info "Would move to release $VERSION: ${NEW_COUNT:-0} new, ${CHANGED_COUNT:-0} changed"
-        [[ -n "$REMOVED_ROWS" ]] && warn "Removed Rules rows stay in Unshipped.md and need a hand-written release note"
+        if [[ -n "$REMOVED_ROWS" ]]; then
+            warn "Removed Rules rows stay in Unshipped.md and need a hand-written release note"
+        fi
     fi
     exit 0
 fi
 
+mkdir -p "$ROOT/.claude/tmp"
 WORK=$(mktemp -d "$ROOT/.claude/tmp/release-promote.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT
 
@@ -155,5 +158,7 @@ if $JSON_MODE; then
         "$VERSION" "${NEW_COUNT:-0}" "${CHANGED_COUNT:-0}"
 else
     ok "Promoted ${NEW_COUNT:-0} new and ${CHANGED_COUNT:-0} changed rules into release $VERSION"
-    [[ -n "$REMOVED_ROWS" ]] && warn "Removed Rules rows stay in Unshipped.md and need a hand-written release note"
+    if [[ -n "$REMOVED_ROWS" ]]; then
+        warn "Removed Rules rows stay in Unshipped.md and need a hand-written release note"
+    fi
 fi

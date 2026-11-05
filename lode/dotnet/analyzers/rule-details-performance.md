@@ -1,5 +1,5 @@
 # Performance Rule Details
-*Updated: 2026-11-05T04:39:50Z*
+*Updated: 2026-11-05T15:20:29Z*
 
 Behavior notes for the performance rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -39,7 +39,10 @@ E128153 covers `list.RemoveAt(0)` in the same analyzer and with the same shiftin
 
 Severity: **Warning**. Flags a materializing Entity Framework Core call inside a
 `for`, `foreach`, `while`, or `do` body. Each iteration costs one database round
-trip.
+trip. The call names include `Find`, `Contains`, `Last`, `ElementAt`, `Average`,
+`LongCount`, `ToDictionary`, and `ToHashSet`, which E128066 skips on an
+`IQueryable<T>` receiver. A `foreach` with a deconstruction pattern counts as a
+loop.
 
 **Exclusions**:
 

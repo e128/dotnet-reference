@@ -29,10 +29,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
 
     internal const string AsyncDisposableTypeName = "System.IAsyncDisposable";
 
-    private const string DisposeName = "Dispose";
-
-    private const string DisposeAsyncName = "DisposeAsync";
-
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Disposable field overwritten in a loop without a dispose",
@@ -93,12 +89,12 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsInsideLoopBody(assignment))
+        if (FindEnclosingLoop(assignment) is not { } loop)
         {
             return;
         }
 
-        if (HasEarlierDispose(assignment, field, context.SemanticModel, context.CancellationToken))
+        if (HasEarlierDispose(loop, assignment, field, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
@@ -111,6 +107,20 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         ImmutableArray<INamedTypeSymbol> disposableTypes,
         ImmutableArray<INamedTypeSymbol> asyncDisposableTypes)
     {
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            // A constraint such as "where T : IDisposable" makes the field disposable.
+            foreach (var constraint in typeParameter.ConstraintTypes)
+            {
+                if (IsDisposable(constraint, disposableTypes, asyncDisposableTypes))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         if (type.IsValueType || type is not INamedTypeSymbol namedType)
         {
             return false;
@@ -134,16 +144,16 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsInsideLoopBody(SyntaxNode node)
+    private static SyntaxNode? FindEnclosingLoop(SyntaxNode node)
     {
         for (var current = node.Parent; current is not null; current = current.Parent)
         {
-            if (current is ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
+            if (current is ForStatementSyntax or CommonForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
             {
                 // A loop source, condition, initializer, or incrementor runs outside the body.
                 if (!IsInLoopHeader(current, node))
                 {
-                    return true;
+                    return current;
                 }
 
                 continue;
@@ -154,16 +164,16 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
             if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or AccessorDeclarationSyntax
                 or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax or BaseTypeDeclarationSyntax)
             {
-                return false;
+                return null;
             }
         }
 
-        return false;
+        return null;
     }
 
     private static bool IsInLoopHeader(SyntaxNode loop, SyntaxNode node)
     {
-        return (loop is ForEachStatementSyntax forEach && forEach.Expression.Span.Contains(node.Span))
+        return (loop is CommonForEachStatementSyntax forEach && forEach.Expression.Span.Contains(node.Span))
                || (loop is ForStatementSyntax forStatement
                    && (ContainsSpan(forStatement.Declaration, node)
                        || ContainsSpan(forStatement.Condition, node)
@@ -191,27 +201,23 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
+    // Only a dispose inside the same loop releases the value that the previous iteration stored.
+    // A dispose before the loop releases the first value only.
     private static bool HasEarlierDispose(
+        SyntaxNode loop,
         AssignmentExpressionSyntax assignment,
         IFieldSymbol field,
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        var scope = FindEnclosingScope(assignment);
-
-        if (scope is null)
-        {
-            return false;
-        }
-
-        foreach (var node in scope.DescendantNodes())
+        foreach (var node in loop.DescendantNodes())
         {
             if (node is not InvocationExpressionSyntax invocation || invocation.SpanStart >= assignment.SpanStart)
             {
                 continue;
             }
 
-            if (GetDisposeReceiver(invocation) is not { } receiver)
+            if (DisposeCalls.GetReceiver(invocation) is not { } receiver)
             {
                 continue;
             }
@@ -226,44 +232,4 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static SyntaxNode? FindEnclosingScope(SyntaxNode node)
-    {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or AccessorDeclarationSyntax
-                or LocalFunctionStatementSyntax)
-            {
-                return current;
-            }
-
-            if (current is BaseTypeDeclarationSyntax)
-            {
-                return null;
-            }
-        }
-
-        return null;
-    }
-
-    private static ExpressionSyntax? GetDisposeReceiver(InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is MemberAccessExpressionSyntax access
-            && IsDisposeName(access.Name.Identifier.ValueText))
-        {
-            return access.Expression;
-        }
-
-        // A conditional call such as field?.Dispose() holds the receiver on the conditional access.
-        return invocation.Expression is MemberBindingExpressionSyntax binding
-               && invocation.Parent is ConditionalAccessExpressionSyntax conditional
-               && IsDisposeName(binding.Name.Identifier.ValueText)
-            ? conditional.Expression
-            : null;
-    }
-
-    private static bool IsDisposeName(string name)
-    {
-        return string.Equals(name, DisposeName, StringComparison.Ordinal)
-               || string.Equals(name, DisposeAsyncName, StringComparison.Ordinal);
-    }
 }

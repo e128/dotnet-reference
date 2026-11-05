@@ -178,7 +178,7 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
     {
         for (var current = node.Parent; current is not null; current = current.Parent)
         {
-            if (current is ForEachStatementSyntax forEach)
+            if (current is CommonForEachStatementSyntax forEach)
             {
                 // The source expression evaluates once, so it is not the loop body.
                 if (IsWithin(forEach.Expression, node))

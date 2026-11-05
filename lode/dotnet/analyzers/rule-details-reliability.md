@@ -1,5 +1,5 @@
 # Reliability Rule Details
-*Updated: 2026-11-05T12:57:52Z*
+*Updated: 2026-11-05T15:20:29Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -24,8 +24,8 @@ Two descriptors share the `E128103` id. A test harness then needs
 ### E128176: Event subscription that keeps the subscriber alive
 
 Severity: **Warning**. Flags an event subscription inside a disposable type
-where the handler reads the subscriber instance and no dispose method removes
-the same event. The publisher holds the delegate and the delegate holds the
+where the handler reads the subscriber instance and no `Dispose`,
+`DisposeAsync`, or `DisposeAsyncCore` method removes the same event. The publisher holds the delegate and the delegate holds the
 subscriber, so the subscriber stays reachable after its owner drops it.
 
 **Exclusions**:
@@ -33,6 +33,8 @@ subscriber, so the subscriber stays reachable after its owner drops it.
 - A type that implements neither `IDisposable` nor `IAsyncDisposable`. The type
   has no cleanup site to compare against, so the remedy is a new lifetime.
 - A static handler, which holds no subscriber instance.
+- A subscription to an event on this instance, which dies with the subscriber.
+- A subscription to an event on an instance field that a dispose method disposes.
 - A handler that reads only a parameter or a local.
 - A member read on another receiver, such as `other.Field`, which does not
   reach this instance.
@@ -71,9 +73,11 @@ System.Text.Json throws `InvalidOperationException` at the first serialize or
 deserialize call.
 
 An ignored member, an indexer, a static member, and an explicit interface
-implementation are skipped. A derived member that overrides the base member it
-would collide with is skipped, because the override replaces the base member in
-the contract. The comparison uses `StringComparer.Ordinal`, so a name pair that
+implementation are skipped. A member that is not public is skipped unless it
+carries `[JsonInclude]`. A `[JsonIgnore]` with a condition other than `Always`
+keeps the member in the contract. A derived member that overrides or hides the
+base member it would collide with is skipped, because it replaces the base member
+in the contract. The comparison uses `StringComparer.Ordinal`, so a name pair that
 differs only by case does not report. The rule registers a named-type symbol
 action, so a partial type is read once.
 
@@ -81,10 +85,11 @@ No code fix. The rename choice belongs to the caller.
 
 ### E128181: `HttpClient.Timeout` set to an infinite value
 
-Severity: **Warning**. Flags an assignment of `Timeout.InfiniteTimeSpan`,
-`TimeSpan.MaxValue`, or `TimeSpan.FromMilliseconds(-1)` to
-`HttpClient.Timeout`. A stalled server then holds the caller and its thread pool
-slot.
+Severity: **Warning**. Flags an assignment of `Timeout.InfiniteTimeSpan` or
+`TimeSpan.FromMilliseconds(-1)` to `HttpClient.Timeout`. A stalled server then
+holds the caller and its thread pool slot. `TimeSpan.MaxValue` is not reported,
+because the setter throws `ArgumentOutOfRangeException` for any value above
+`int.MaxValue` milliseconds.
 
 The rule reads the left side as the `Timeout` property declared on exactly
 `System.Net.Http.HttpClient`, so a user type with its own `Timeout` is silent.
@@ -156,8 +161,9 @@ The rule reads the key from three sites:
 - `GetConnectionString(name)` on `ConfigurationExtensions`, which maps to
   `ConnectionStrings:name`.
 
-At compilation start the rule parses each `*.json` additional file with
-`System.Text.Json`. It flattens each document to colon-separated paths and adds
+At compilation start the rule reads each `*.json` additional file with
+`AppSettingsKeyReader`, a hand-written scanner that accepts comments and a
+trailing comma. It flattens each document to colon-separated paths and adds
 every intermediate node, so a section read matches a prefix and an array element
 matches its index. The comparison ignores case, because the configuration
 provider ignores case.
@@ -166,6 +172,8 @@ provider ignores case.
 
 - A non-constant key.
 - A receiver whose type is not `IConfiguration`, or that does not implement it.
+- A receiver that is an `IConfigurationSection`. Its keys are relative to the section.
+- An indexer assignment such as `configuration["Key"] = value`, which defines the key.
 - A compilation with no parsable JSON additional file. The rule then cannot
   know the key set, so it stays off.
 - A key in the `e128_added_configuration_keys` option.
@@ -179,10 +187,11 @@ No code fix. The repair adds the key to a file, or reads a default.
 
 ### E128197: Fixed day count used as a calendar month
 
-Severity: **Warning**. Flags an inline `TimeSpan.FromDays(k)` call whose constant
+Severity: **Info**. Flags an inline `TimeSpan.FromDays(k)` call whose constant
 `k` is 28 to 31 and whose value flows into `DateTime` or `DateTimeOffset`
-arithmetic. The rule reads the `Add` and `Subtract` methods and the `+` and `-`
-operators.
+arithmetic. The rule reads the `Add` and `Subtract` methods, the `+` and `-`
+operators, and the `+=` and `-=` assignments. A 30-day span is often a fixed
+retention window, so the severity stays low.
 
 **Exclusions**:
 
@@ -201,7 +210,10 @@ negative, and the call throws.
 
 The count shapes are `Length - k`, `Length - start - k`, and the parenthesized
 forms. A length read on the same string in an enclosing `if` condition or
-conditional expression clears the report.
+conditional expression clears the report. So does a preceding `if` with no
+`else` that returns, throws, continues, or breaks after a length test. A plain
+comparison decides the branch: `Length > k` guards the then branch, and
+`Length < k` guards the else branch. Any other condition guards both.
 
 **Exclusions**:
 

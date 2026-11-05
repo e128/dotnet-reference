@@ -131,20 +131,7 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
                                         && SymbolEqualityComparer.Default.Equals(
                                             method.Parameters[0].Type, cancellationTokenType));
 
-        return isNamedWait && takesPlainOrTokenOnly && DerivesFromAny(method.ContainingType, semaphores);
-    }
-
-    private static bool DerivesFromAny(ITypeSymbol type, ImmutableArray<INamedTypeSymbol> bases)
-    {
-        foreach (var candidate in bases)
-        {
-            if (TypeSymbols.DerivesFrom(type, candidate))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return isNamedWait && takesPlainOrTokenOnly && semaphores.Any(semaphore => TypeSymbols.DerivesFrom(method.ContainingType, semaphore));
     }
 
     /// <summary>

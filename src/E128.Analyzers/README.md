@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.2.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.3.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -1823,7 +1823,7 @@ finally
 
 ### E128176: Event subscription that keeps the subscriber alive
 
-Flags an event subscription in a disposable type where the handler reads the subscriber instance and no dispose method removes the same event. The publisher holds the delegate, and the delegate holds the subscriber, so the subscriber stays reachable after its owner drops it. A handler that reads only a parameter or a local does not keep the subscriber alive, so the rule skips it. A static handler is skipped for the same reason. Any `-=` on the same event inside `Dispose` or `DisposeAsync` clears the report. The rule does not compare the handler expression. No code fix.
+Flags an event subscription in a disposable type where the handler reads the subscriber instance and no dispose method removes the same event. The publisher holds the delegate, and the delegate holds the subscriber, so the subscriber stays reachable after its owner drops it. A handler that reads only a parameter or a local does not keep the subscriber alive, so the rule skips it. A static handler is skipped for the same reason. A subscription to an event on this instance is skipped, because the publisher dies with the subscriber. So is a subscription to an event on an instance field that `Dispose`, `DisposeAsync`, or `DisposeAsyncCore` disposes. Any `-=` on the same event inside `Dispose`, `DisposeAsync`, or `DisposeAsyncCore` clears the report. The rule does not compare the handler expression. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1837,7 +1837,7 @@ public void Dispose() => _publisher.Changed -= OnChanged;
 
 ### E128177: Record member with a mutable collection type
 
-Flags a record member whose type is a mutable collection, such as `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `ICollection<T>`, `IList<T>`, or an array. The generated equality compares that member by reference, so two records with equal contents compare unequal. The rule reads a positional parameter, an auto-property, and a field, because all three join the generated equality. An immutable collection, an abstract property, a computed property, a static member, and a const field are skipped. Both a record class and a record struct are checked. No code fix.
+Flags a record member whose type is a mutable collection, such as `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `ICollection<T>`, `IList<T>`, or an array. The generated equality compares that member by reference, so two records with equal contents compare unequal. A record that declares its own `GetHashCode` is skipped, because it owns its equality. The rule reads a positional parameter, an auto-property, and a field, because all three join the generated equality. An immutable collection, an abstract property, a computed property, a static member, and a const field are skipped. Both a record class and a record struct are checked. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1849,7 +1849,7 @@ public record Order(ImmutableArray<int> Lines);
 
 ### E128178: Duplicate `JsonPropertyName` value
 
-Flags two members of one type that carry the same `[JsonPropertyName]` value, including a collision between a member on the derived type and one it inherits. System.Text.Json throws `InvalidOperationException` at the first serialize or deserialize call, so the failure lands far from the declaration. The rule matches the attribute by symbol, so a lookalike attribute never triggers it. An ignored member, an indexer, a static member, and an override of the base member are skipped. The whole rule stays off when System.Text.Json is absent from the compilation. No code fix.
+Flags two members of one type that carry the same `[JsonPropertyName]` value, including a collision between a member on the derived type and one it inherits. System.Text.Json throws `InvalidOperationException` at the first serialize or deserialize call, so the failure lands far from the declaration. The rule matches the attribute by symbol, so a lookalike attribute never triggers it. An ignored member, an indexer, a static member, a member that is not public and has no `[JsonInclude]`, and a member that overrides or hides the base member are skipped. A `[JsonIgnore]` with a condition other than `Always` keeps the member in the contract. The whole rule stays off when System.Text.Json is absent from the compilation. No code fix.
 
 ```csharp
 // Before (warns on the second member)
@@ -1878,7 +1878,7 @@ services.AddOptions<RetryOptions>()
 
 ### E128180: Entity Framework Core query executed inside a loop
 
-Flags an Entity Framework Core query that executes inside a `for`, `foreach`, `while`, or `do` body. Each iteration runs one database round trip, which is the N+1 query problem. The rule reads the materializing calls only, such as `ToList`, `FirstOrDefaultAsync`, `CountAsync`, and `ExecuteDelete`. The receiver must be a `DbSet<T>`, an EF queryable, or an `IQueryable<T>` chain rooted in an EF type. The `foreach` source expression and the `for` initializer run once, so neither counts as a loop body. The whole rule stays off when EF Core is absent from the compilation. No code fix.
+Flags an Entity Framework Core query that executes inside a `for`, `foreach`, `while`, or `do` body. Each iteration runs one database round trip, which is the N+1 query problem. The rule reads the materializing calls only, such as `ToList`, `FirstOrDefaultAsync`, `CountAsync`, `Find`, `Contains`, `Last`, `Average`, and `ExecuteDelete`. A `foreach` with a deconstruction pattern counts as a loop. E128066 defers every `IQueryable` receiver to this rule. The receiver must be a `DbSet<T>`, an EF queryable, or an `IQueryable<T>` chain rooted in an EF type. The `foreach` source expression and the `for` initializer run once, so neither counts as a loop body. The whole rule stays off when EF Core is absent from the compilation. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1893,7 +1893,7 @@ var rows = await db.Rows.Where(r => ids.Contains(r.Id)).ToListAsync();
 
 ### E128181: `HttpClient.Timeout` set to an infinite value
 
-Flags an assignment of `Timeout.InfiniteTimeSpan`, `TimeSpan.MaxValue`, or `TimeSpan.FromMilliseconds(-1)` to `HttpClient.Timeout`. The request then never times out, so a stalled server blocks the caller and its thread pool slot. The assignment is reported in an object initializer, in a property assignment, and inside a `ConfigureHttpClient` lambda. A computed value is skipped, because the rule cannot prove it is infinite. No code fix.
+Flags an assignment of `Timeout.InfiniteTimeSpan` or `TimeSpan.FromMilliseconds(-1)` to `HttpClient.Timeout`. The request then never times out, so a stalled server blocks the caller and its thread pool slot. The assignment is reported in an object initializer, in a property assignment, and inside a `ConfigureHttpClient` lambda. A computed value is skipped, because the rule cannot prove it is infinite. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1905,7 +1905,7 @@ client.Timeout = TimeSpan.FromSeconds(30);
 
 ### E128182: `IAsyncEnumerable` value enumerated twice
 
-Flags a second enumeration of one `IAsyncEnumerable<T>` value inside one method body. The sequence holds one enumerator position, so the second loop sees the tail of the sequence or a different sequence. An inline-created sequence is skipped, because a factory call may return a fresh sequence. A parameter marked `[EnumeratorCancellation]` is skipped. An iterator body that carries `yield` is skipped, because it hands items onward. No code fix.
+Flags a second enumeration of one `IAsyncEnumerable<T>` value inside one method body. A second loop can re-run the source, and a single-pass source such as a channel reader yields nothing the second time. Enumerations in the two branches of one `if` are skipped, and an assignment to the value between two loops starts a new count. An inline-created sequence is skipped, because a factory call may return a fresh sequence. An iterator body that carries `yield` is skipped, because it hands items onward. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1933,7 +1933,7 @@ await winner;
 
 ### E128184: Recursive delete outside a proven safe root
 
-Flags a recursive `Directory.Delete` or `DirectoryInfo.Delete` when the path is a parameter, a field read, a property read, or a `Path.Combine` over one of those. The severity is Info, because a false positive on a build gate blocks work for no gain. A path under `Path.GetTempPath()`, a string literal, a const field, and a path guarded by a `StartsWith` test in the same block are skipped. An unknown shape stays silent. No code fix.
+Flags a recursive `Directory.Delete` or `DirectoryInfo.Delete` when the path is a parameter, a field read, a property read, or a `Path.Combine` over one of those. The severity is Info, because a false positive on a build gate blocks work for no gain. A path under `Path.GetTempPath()`, a string literal, a const field, and a path guarded by a `StartsWith` test in the same block are skipped. A guard counts only when it proves the test passed: an enclosing `if` that holds the call alone or joined by `&&`, or a preceding `if` with no `else` that exits when the call is false. A negated test around the delete, an `||` condition, and a guard root that is a mutable field or settable property do not count. A literal that names a filesystem root, such as `"/"` or `"C:\"`, is reported. A `Path.Combine` under a temp path stays silent even when a later segment comes from a variable. The rule cannot see a `..` or a rooted value in that segment. An unknown shape stays silent. No code fix.
 
 ```csharp
 // Before (reports)
@@ -1967,7 +1967,7 @@ context.SaveChanges();
 
 ### E128186: `await` inside a `finally` block
 
-Flags an `await` expression in the body of a `finally` clause. The awaited call runs while the original exception propagates, so a fault there replaces the original failure. An `await` in a `try` block or a `catch` clause is skipped. An `await` in a local function or a lambda declared in the `finally` body is skipped. An `await` inside a nested `try` is skipped, and an `await` inside a nested `finally` reports once, at the inner clause. No code fix.
+Flags an `await` expression in the body of a `finally` clause. The awaited call runs while the original exception propagates, so a fault there replaces the original failure. `await using` and `await foreach` count too, and the report sits on the `await` keyword. An `await` in a `try` block or a `catch` clause is skipped. An `await` in a local function or a lambda declared in the `finally` body is skipped. An `await` inside a nested `try` is skipped, and an `await` inside a nested `finally` reports once, at the inner clause. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1989,7 +1989,7 @@ finally
 
 ### E128187: `Parallel.ForEachAsync` without a degree cap
 
-Flags a `Parallel.ForEachAsync` call that passes no `ParallelOptions` argument, or an inline `new ParallelOptions` initializer that sets no `MaxDegreeOfParallelism` member. The call then starts one task per item, so a large sequence floods the thread pool. A `MaxDegreeOfParallelism` assignment of any expression silences the rule, including `-1` and a computed value. Options held in a variable, a parameter, a field, or a factory call are not reported. A user type named `Parallel` is not reported. No code fix.
+Flags a `Parallel.ForEachAsync` call that passes no `ParallelOptions` argument, or an inline `new ParallelOptions` initializer that sets no `MaxDegreeOfParallelism` member. The call then runs at most `Environment.ProcessorCount` operations at once, which is the default cap. An I/O-bound body can need a different cap, so the rule reports at Info severity. A `MaxDegreeOfParallelism` assignment of any expression silences the rule, including `-1` and a computed value. Options held in a variable, a parameter, a field, or a factory call are not reported. A user type named `Parallel` is not reported. No code fix.
 
 ```csharp
 // Before (warns)
@@ -2004,7 +2004,7 @@ await Parallel.ForEachAsync(
 
 ### E128188: Exception filter reads the message text
 
-Flags a `when` filter that reads `Message`, `StackTrace`, or `ToString` on the caught exception. The filter runs before any `catch` clause, so a formatted member costs work on the fault path and can throw inside the filter itself. A filter that reads `HResult` or `InnerException` is skipped. A read on another object, a method call such as `ex.GetType()`, and a catch clause with no variable are skipped. No code fix.
+Flags a `when` filter that reads `Message`, `StackTrace`, or `ToString` on the caught exception. The filter runs before any `catch` clause, so a formatted member costs work on the fault path and can throw inside the filter itself. A filter that reads `HResult` or `InnerException` is skipped. A read on another object, a method call such as `ex.GetType()`, and a catch clause with no variable are skipped. The rule binds the receiver to the catch variable by symbol, so a lambda parameter or a local with the same name is skipped. No code fix.
 
 ```csharp
 // Before (warns)
@@ -2022,7 +2022,7 @@ catch (HttpRequestException ex) when (ex.InnerException is TimeoutException)
 
 ### E128189: `GCHandle` with no `Free` call
 
-Flags a local that stores a `GCHandle.Alloc` result in the same body and never calls `Free` on it. The handle pins the target object, so a missing `Free` keeps the object reachable and pinned. The rule also reads a later assignment to the same local. A local passed to a method, returned, or stored in a field, a property, another local, or a collection is not reported, because it may leave the method. An allocation assigned directly to a field or an element, and a discarded allocation, are not reported. The rule stops when `GCHandle` is absent from the compilation or resolves to a user type. No code fix.
+Flags a local that stores a `GCHandle.Alloc` result in the same body and never calls `Free` on it. The handle pins the target object, so a missing `Free` keeps the object reachable and pinned. The rule also reads a later assignment to the same local. A local passed to a method, returned, or stored in a field, a property, another local, or a collection is not reported, because it may leave the method. An allocation assigned directly to a field or an element, and a discarded allocation, are not reported. A bare `Alloc(x)` call that binds through `using static` is read as well. The rule stops when `GCHandle` is absent from the compilation or resolves to a user type. No code fix.
 
 ```csharp
 // Before (warns)
@@ -2043,11 +2043,11 @@ finally
 
 ### E128190: `FileStream` created without asynchronous I/O
 
-Flags a `FileStream` construction that cannot run asynchronous I/O. The call either omits `useAsync` or passes `false`, and it passes no `FileOptions.Asynchronous` bit. An async read then runs as blocking work on a pool thread. A `useAsync` value of `true`, an options value with `FileOptions.Asynchronous`, and a non-constant argument are skipped. The `SafeFileHandle` overload has no asynchronous switch, so the rule skips it. A user type named `FileStream` is skipped. No code fix.
+Flags a `FileStream` construction that cannot run asynchronous I/O. The call passes `useAsync: false` or a `FileOptions` value with no `FileOptions.Asynchronous` bit. A constructor that has neither parameter, such as `new FileStream(path, mode, access, share)`, is not reported. An async read then runs as blocking work on a pool thread. A `useAsync` value of `true`, an options value with `FileOptions.Asynchronous`, and a non-constant argument are skipped. The `SafeFileHandle` overload has no asynchronous switch, so the rule skips it. A user type named `FileStream` is skipped. No code fix.
 
 ```csharp
 // Before (warns)
-using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, false);
 
 // After
 using var stream = new FileStream(
@@ -2061,7 +2061,7 @@ using var stream = new FileStream(
 
 ### E128191: PFX import without `EphemeralKeySet`
 
-Flags an `X509Certificate2` constructor that imports a PFX file, and an `X509CertificateLoader.LoadPkcs12` call, when the flags omit `X509KeyStorageFlags.EphemeralKeySet`. Without the flag, Windows writes the private key into the machine key store. A flags constant that includes `EphemeralKeySet` and a non-constant flags value are skipped. A constructor that takes a byte array, and a constructor with no flags parameter, are skipped. No code fix.
+Flags an `X509Certificate2` constructor that imports a PFX file, and an `X509CertificateLoader.LoadPkcs12` call, when the flags omit `X509KeyStorageFlags.EphemeralKeySet`. Without the flag, the import persists the private key in the key store, and the key outlives the process. The flag is not supported for PFX loading on macOS. A flags constant that includes `EphemeralKeySet` and a non-constant flags value are skipped. A constructor that takes a byte array, and a constructor with no flags parameter, are skipped. No code fix.
 
 ```csharp
 // Before (warns)
@@ -2076,21 +2076,21 @@ using var certificate = new X509Certificate2(
 
 ### E128192: `GetBuffer` on a `MemoryStream` with a hidden buffer
 
-Flags a `MemoryStream.GetBuffer()` call whose receiver was created without `publiclyVisible: true`. The call throws `UnauthorizedAccessException` for such a stream. The rule follows a local to its creation in the same body, and a parameter to an in-body assignment. A stream created with `publiclyVisible: true`, a non-constant flag, and a receiver that is a field, a property, or a method result are skipped. No code fix.
+Flags a `MemoryStream.GetBuffer()` call whose receiver was created from a `byte[]` without `publiclyVisible: true`. The call throws `UnauthorizedAccessException` for such a stream. The empty and capacity constructors expose the buffer, so the rule skips them. The rule follows a local to its creation in the same body, and a parameter to an in-body assignment. A stream created with `publiclyVisible: true`, a non-constant flag, and a receiver that is a field, a property, or a method result are skipped. No code fix.
 
 ```csharp
 // Before (warns)
-var buffer = new MemoryStream();
+var buffer = new MemoryStream(new byte[8]);
 byte[] raw = buffer.GetBuffer();
 
 // After
-var buffer = new MemoryStream();
+var buffer = new MemoryStream(new byte[8]);
 byte[] raw = buffer.ToArray();
 ```
 
 ### E128193: Disposable field overwritten in a loop without a dispose
 
-Flags an assignment to a field whose type implements `IDisposable` or `IAsyncDisposable` inside a loop body, when no earlier dispose call on the same field appears in the enclosing member. The overwritten instance keeps its unmanaged resources until the finalizer runs. A dispose call on the same field before the assignment clears the report, including `field?.Dispose()` and `this.field?.Dispose()`. A local, a parameter, a property, a compound assignment, a value type, and an assignment outside a loop are skipped. No code fix.
+Flags an assignment to a field whose type implements `IDisposable` or `IAsyncDisposable` inside a loop body, when no earlier dispose call on the same field appears inside the same loop. A field whose type is a type parameter with an `IDisposable` constraint counts as disposable. The overwritten instance keeps its unmanaged resources until the finalizer runs. A dispose call on the same field before the assignment, inside the same loop, clears the report, including `field?.Dispose()` and `this.field?.Dispose()`. A dispose call before the loop releases only the first value, so it does not clear the report. A local, a parameter, a property, a compound assignment, a value type, and an assignment outside a loop are skipped. No code fix.
 
 ```csharp
 // Before (warns)
@@ -2109,7 +2109,7 @@ foreach (var item in items)
 
 ### E128194: `Lazy<T>` field without thread safety
 
-Flags a `Lazy<T>` field whose initializer passes `LazyThreadSafetyMode.None`. Two threads can then build the value twice, and each caller gets a different instance. An omitted mode, `ExecutionAndPublication`, `PublicationOnly`, and a non-constant mode are skipped, because the default is thread safe. The rule reads a field declarator only, so a local, a parameter, and a property initializer are skipped. A user type named `Lazy<T>` is skipped. No code fix.
+Flags a `Lazy<T>` field whose initializer passes `LazyThreadSafetyMode.None`. Two threads can then build the value twice, and each caller gets a different instance. The `Lazy<T>(factory, false)` overload means the same thing and is reported too. An omitted mode, `ExecutionAndPublication`, `PublicationOnly`, and a non-constant mode are skipped, because the default is thread safe. The rule reads a field declarator only, so a local, a parameter, and a property initializer are skipped. A user type named `Lazy<T>` is skipped. No code fix.
 
 ```csharp
 // Before (warns)
@@ -2122,7 +2122,7 @@ private static readonly Lazy<Cache> Shared = new(() => new Cache());
 
 ### E128195: Configuration key absent from the appsettings files
 
-Flags a constant configuration key that no JSON additional file defines. The rule reads the key from an `IConfiguration` indexer, from `GetSection` or `GetRequiredSection`, and from `GetConnectionString`, which maps to `ConnectionStrings:<name>`. A section read needs the section prefix, not a leaf. A key comparison ignores case, because the configuration provider ignores case. A non-constant key, a receiver that is not an `IConfiguration`, and a file that fails to parse are skipped. The rule stays off when the project passes no parsable JSON additional file.
+Flags a constant configuration key that no JSON additional file defines. The rule reads the key from an `IConfiguration` indexer, from `GetSection` or `GetRequiredSection`, and from `GetConnectionString`, which maps to `ConnectionStrings:<name>`. A section read needs the section prefix, not a leaf. A read through an `IConfigurationSection` is relative to that section, and an indexer assignment defines a key, so the rule skips both. The JSON reader accepts comments and trailing commas. A key comparison ignores case, because the configuration provider ignores case. A non-constant key, a receiver that is not an `IConfiguration`, and a file that fails to parse are skipped. The rule stays off when the project passes no parsable JSON additional file.
 
 The project must pass the file in. A key from an environment variable, a user secret, or a file outside the project is not visible to the rule.
 
@@ -2149,7 +2149,7 @@ var level = configuration.GetRequiredSection("Logging:LogLevel")["Default"];
 
 ### E128196: JsonSerializerOptions mutated after first use
 
-Flags a write to a `JsonSerializerOptions` member after the same method body passes the instance to `JsonSerializer.Serialize` or `JsonSerializer.Deserialize`. The serializer freezes the instance on first use, so the next write to `WriteIndented`, `PropertyNamingPolicy`, a converter, or any other member throws `InvalidOperationException`. A write before the first call is not reported, and a write to an instance that the body never uses is not reported. The rule reads a local, a parameter, and a field. A property receiver is skipped, because the getter can return a new instance on each read. A use in one method and a write in another method stay silent, because the rule reads one body at a time.
+Flags a write to a `JsonSerializerOptions` member after the same method body passes the instance to `JsonSerializer.Serialize` or `JsonSerializer.Deserialize`. The serializer freezes the instance on first use, so the next write to `WriteIndented`, `PropertyNamingPolicy`, a converter, or any other member throws `InvalidOperationException`. A write before the first call is not reported, and a write to an instance that the body never uses is not reported. The rule reads a local, a parameter, and a field. A serializer call inside a lambda or a local function, and a call in the other branch of the same `if`, do not count as an earlier use. Assigning a new instance to the same variable between the call and the write resets the check. A property receiver is skipped, because the getter can return a new instance on each read. A use in one method and a write in another method stay silent, because the rule reads one body at a time.
 
 ```csharp
 // Before (warns)
@@ -2164,7 +2164,7 @@ var json = JsonSerializer.Serialize(value, options);
 
 ### E128197: Fixed day count used as a calendar month
 
-Flags a `TimeSpan.FromDays(28)` to `TimeSpan.FromDays(31)` call added to or subtracted from a `DateTime` or a `DateTimeOffset`. The span stands in for a calendar month, and a calendar month holds 28 to 31 days, so the result drifts from the calendar. The rule reads the `Add` and `Subtract` methods and the `+` and `-` operators. It reads an inline call with a constant argument only. A span held in a variable, a constant field, or a computed value is not reported, because the rule cannot tell a month from a 30 day window. `DateTime.AddDays(30)` is not reported either, because the caller asked for days.
+Flags a `TimeSpan.FromDays(28)` to `TimeSpan.FromDays(31)` call added to or subtracted from a `DateTime` or a `DateTimeOffset`. The span stands in for a calendar month, and a calendar month holds 28 to 31 days, so the result drifts from the calendar. The rule reads the `Add` and `Subtract` methods, the `+` and `-` operators, and the `+=` and `-=` assignments. The severity is Info, because a 30-day span is often a fixed retention window. It reads an inline call with a constant argument only. A span held in a variable, a constant field, or a computed value is not reported, because the rule cannot tell a month from a 30 day window. `DateTime.AddDays(30)` is not reported either, because the caller asked for days.
 
 ```csharp
 // Before (warns)
@@ -2176,7 +2176,7 @@ var due = today.AddMonths(1);
 
 ### E128198: Substring count built from a length minus a constant
 
-Flags a two-argument `string.Substring` call whose count is a `Length` value minus a positive constant. A string shorter than the constant makes the count negative, and the call throws `ArgumentOutOfRangeException`. The count shapes are `Length - k`, `Length - start - k`, and the same forms in parentheses. A length test on the same string in an enclosing `if` condition or conditional expression clears the report. The rule reads one call site, so a guard in a caller method does not clear it. A subtraction whose right side is a variable is not reported, because a `start` index that `IndexOf` returns needs its own check.
+Flags a two-argument `string.Substring` call whose count is a `Length` value minus a positive constant. A string shorter than the constant makes the count negative, and the call throws `ArgumentOutOfRangeException`. The count shapes are `Length - k`, `Length - start - k`, and the same forms in parentheses. A length test on the same string in an enclosing `if` condition or conditional expression clears the report. So does a preceding `if` with no `else` that returns, throws, continues, or breaks after a length test on the same string. A plain comparison decides the branch: `Length > k` guards the then branch, and `Length < k` guards the else branch. The rule reads one call site, so a guard in a caller method does not clear it. A subtraction whose right side is a variable is not reported, because a `start` index that `IndexOf` returns needs its own check.
 
 ```csharp
 // Before (warns)

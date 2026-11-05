@@ -24,6 +24,13 @@ public sealed class ConfigurationKeyMissingAnalyzerTests
 
                                                  public static class ConfigurationExtensions
                                                  {
+                                                     public static IConfigurationSection GetRequiredSection(
+                                                         this IConfiguration configuration,
+                                                         string key)
+                                                     {
+                                                         return configuration.GetSection(key);
+                                                     }
+
                                                      public static string? GetConnectionString(
                                                          this IConfiguration configuration,
                                                          string name)
@@ -147,6 +154,106 @@ public sealed class ConfigurationKeyMissingAnalyzerTests
             //lang=json
             """
             { "Logging": { "LogLevel": { "Default": "Warning" } } }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MissingKey_InFileWithCommentsAndTrailingComma_Fires()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static string? M(IConfiguration configuration)
+                                {
+                                    return {|E128195:configuration["Logging:Missing"]|};
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            //lang=json
+            """
+            {
+              // The loader accepts this comment.
+              "Logging": { "Level": "Information", },
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SectionRelativeKey_IsSilent()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static string? M(IConfiguration configuration)
+                                {
+                                    var section = configuration.GetSection("Logging");
+                                    return section["Level"] + section.GetSection("Child")["Leaf"];
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            //lang=json
+            """
+            { "Logging": { "Level": "Information" } }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task IndexerAssignment_IsSilent()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static void M(IConfiguration configuration)
+                                {
+                                    configuration["Logging:Created"] = "value";
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            //lang=json
+            """
+            { "Logging": { "Level": "Information" } }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MissingRequiredSection_Fires()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static IConfigurationSection M(IConfiguration configuration)
+                                {
+                                    return {|E128195:configuration.GetRequiredSection("Logging:Missing")|};
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            //lang=json
+            """
+            { "Logging": { "Level": "Information" } }
             """);
     }
 

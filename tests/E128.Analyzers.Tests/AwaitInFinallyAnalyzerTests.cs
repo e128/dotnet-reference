@@ -271,4 +271,54 @@ public sealed class AwaitInFinallyAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AwaitUsingInFinally_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               static async Task M(IAsyncDisposable d)
+                               {
+                                   try
+                                   {
+                                   }
+                                   finally
+                                   {
+                                       {|E128186:await|} using (d)
+                                       {
+                                       }
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AwaitForeachInFinally_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               static async Task M(IAsyncEnumerable<int> items)
+                               {
+                                   try
+                                   {
+                                   }
+                                   finally
+                                   {
+                                       {|E128186:await|} foreach (var item in items)
+                                       {
+                                       }
+                                   }
+                               }
+                           }
+                           """);
+    }
 }

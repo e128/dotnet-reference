@@ -224,4 +224,121 @@ public sealed class RecursiveDeleteRootAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NegatedGuardAroundDelete_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   if (!path.StartsWith(Path.GetTempPath()))
+                                   {
+                                       {|E128184:Directory.Delete(path, true)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GuardOrCondition_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path, bool force)
+                               {
+                                   if (path.StartsWith(Path.GetTempPath()) || force)
+                                   {
+                                       {|E128184:Directory.Delete(path, true)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PrecedingGuardWithoutExit_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   if (path.StartsWith(Path.GetTempPath()))
+                                   {
+                                       System.Console.WriteLine(path);
+                                   }
+
+                                   {|E128184:Directory.Delete(path, true)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PrecedingNegatedGuardThatReturns_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   if (!path.StartsWith(Path.GetTempPath()))
+                                   {
+                                       return;
+                                   }
+
+                                   Directory.Delete(path, true);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MutablePropertyAsGuardRoot_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               public string Root { get; set; } = "";
+
+                               void M(string path)
+                               {
+                                   if (path.StartsWith(Root))
+                                   {
+                                       {|E128184:Directory.Delete(path, true)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FilesystemRootLiteral_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   {|E128184:Directory.Delete("/", true)|};
+                               }
+                           }
+                           """);
+    }
 }

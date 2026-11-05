@@ -53,7 +53,7 @@ public sealed class DirectRecursionAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(Rule, method.Locations[0], method.Name));
+            context.ReportDiagnostic(Diagnostic.Create(Rule, method.Locations.Length > 0 ? method.Locations[0] : Location.None, method.Name));
             return;
         }
     }

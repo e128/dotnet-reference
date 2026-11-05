@@ -93,7 +93,7 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         receiver = null;
         constant = 0;
 
-        if (Unwrap(count) is not BinaryExpressionSyntax subtract
+        if (ExpressionUnwrapper.Parentheses(count) is not BinaryExpressionSyntax subtract
             || !subtract.IsKind(SyntaxKind.SubtractExpression))
         {
             return false;
@@ -108,13 +108,13 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
 
         var root = subtract.Left;
 
-        while (Unwrap(root) is BinaryExpressionSyntax inner
+        while (ExpressionUnwrapper.Parentheses(root) is BinaryExpressionSyntax inner
                && inner.IsKind(SyntaxKind.SubtractExpression))
         {
             root = inner.Left;
         }
 
-        if (Unwrap(root) is not MemberAccessExpressionSyntax length
+        if (ExpressionUnwrapper.Parentheses(root) is not MemberAccessExpressionSyntax length
             || !string.Equals(length.Name.Identifier.ValueText, "Length", StringComparison.Ordinal))
         {
             return false;
@@ -124,13 +124,6 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         constant = value;
 
         return true;
-    }
-
-    private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
-    {
-        return expression is ParenthesizedExpressionSyntax parenthesized
-            ? Unwrap(parenthesized.Expression)
-            : expression;
     }
 
     /// <summary>
@@ -154,13 +147,112 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
                 return false;
             }
 
-            if (ancestor is IfStatementSyntax andIf && ReadsLength(andIf.Condition, receiver, model, token))
+            if (ancestor is IfStatementSyntax andIf
+                && GuardsBranch(andIf.Condition, andIf.Statement, andIf.Else, invocation, receiver, model, token))
             {
                 return true;
             }
 
             if (ancestor is ConditionalExpressionSyntax conditional
-                && ReadsLength(conditional.Condition, receiver, model, token))
+                && GuardsBranch(conditional.Condition, conditional.WhenTrue, conditional.WhenFalse, invocation, receiver, model, token))
+            {
+                return true;
+            }
+
+            if (ancestor is BlockSyntax block
+                && HasEarlyExitGuard(block, invocation, receiver, model, token))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // A condition that reads the length guards the branch that holds the long string. A plain
+    // comparison of the length says which branch that is. Any other shape guards both branches.
+    private static bool GuardsBranch(
+        ExpressionSyntax condition,
+        SyntaxNode thenBranch,
+        SyntaxNode? elseBranch,
+        SyntaxNode use,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        if (!ReadsLength(condition, receiver, model, token))
+        {
+            return false;
+        }
+
+        var inThen = thenBranch.Span.Contains(use.Span);
+        var inElse = elseBranch is not null && elseBranch.Span.Contains(use.Span);
+
+        return LongStringBranch(condition, receiver, model, token) switch
+        {
+            Branch.Then => inThen,
+            Branch.Else => inElse,
+            Branch.Both => true,
+            _ => true
+        };
+    }
+
+    private static Branch LongStringBranch(
+        ExpressionSyntax condition,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        if (ExpressionUnwrapper.Parentheses(condition) is not BinaryExpressionSyntax comparison
+            || !comparison.IsKind(SyntaxKind.GreaterThanExpression)
+            && !comparison.IsKind(SyntaxKind.GreaterThanOrEqualExpression)
+            && !comparison.IsKind(SyntaxKind.LessThanExpression)
+            && !comparison.IsKind(SyntaxKind.LessThanOrEqualExpression))
+        {
+            return Branch.Both;
+        }
+
+        var lengthOnLeft = ReadsLength(comparison.Left, receiver, model, token);
+        var lengthOnRight = ReadsLength(comparison.Right, receiver, model, token);
+
+        if (lengthOnLeft == lengthOnRight)
+        {
+            return Branch.Both;
+        }
+
+        var isGreater = comparison.IsKind(SyntaxKind.GreaterThanExpression)
+                        || comparison.IsKind(SyntaxKind.GreaterThanOrEqualExpression);
+
+        // length > k and k < length keep the long string in the then branch.
+        return lengthOnLeft == isGreater ? Branch.Then : Branch.Else;
+    }
+
+    private enum Branch
+    {
+        Both = 0,
+        Then = 1,
+        Else = 2
+    }
+
+    // A preceding if with no else that returns or throws when the length is short guards every
+    // statement after it in the block.
+    private static bool HasEarlyExitGuard(
+        BlockSyntax block,
+        InvocationExpressionSyntax invocation,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        foreach (var statement in block.Statements)
+        {
+            if (statement.SpanStart >= invocation.SpanStart || statement.Span.Contains(invocation.Span))
+            {
+                break;
+            }
+
+            if (statement is IfStatementSyntax { Else: null } guard
+                && StatementExits.EndsInExit(guard.Statement)
+                && ReadsLength(guard.Condition, receiver, model, token))
             {
                 return true;
             }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -66,6 +65,10 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         var connectionStringExtensions = context.Compilation.GetTypeByMetadataName(
             "Microsoft.Extensions.Configuration.ConfigurationExtensions");
 
+        // A section read uses keys relative to the section, so the rule leaves those reads alone.
+        var sectionType = context.Compilation.GetTypeByMetadataName(
+            "Microsoft.Extensions.Configuration.IConfigurationSection");
+
         var keys = ConfigurationKeys.TryCreate(
             context.Options.AdditionalFiles,
             context.Options.AnalyzerConfigOptionsProvider.GlobalOptions,
@@ -77,7 +80,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         }
 
         context.RegisterSyntaxNodeAction(
-            nodeContext => AnalyzeElementAccess(nodeContext, configurationType, keys),
+            nodeContext => AnalyzeElementAccess(nodeContext, configurationType, sectionType, keys),
             SyntaxKind.ElementAccessExpression);
 
         context.RegisterSyntaxNodeAction(
@@ -85,6 +88,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
                 nodeContext,
                 configurationType,
                 connectionStringExtensions,
+                sectionType,
                 keys),
             SyntaxKind.InvocationExpression);
     }
@@ -92,6 +96,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeElementAccess(
         SyntaxNodeAnalysisContext context,
         INamedTypeSymbol configurationType,
+        INamedTypeSymbol? sectionType,
         ConfigurationKeys keys)
     {
         var elementAccess = (ElementAccessExpressionSyntax)context.Node;
@@ -100,10 +105,18 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // A write such as config["Key"] = value defines the key, so it is not a read.
+        if (elementAccess.Parent is AssignmentExpressionSyntax assignment
+            && ReferenceEquals(assignment.Left, elementAccess))
+        {
+            return;
+        }
+
         var receiverType = context.SemanticModel.GetTypeInfo(
             elementAccess.Expression,
             context.CancellationToken).Type;
-        if (!IsConfiguration(receiverType, configurationType))
+        if (!IsOrImplements(receiverType, configurationType)
+            || IsOrImplements(receiverType, sectionType))
         {
             return;
         }
@@ -122,6 +135,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         INamedTypeSymbol configurationType,
         INamedTypeSymbol? connectionStringExtensions,
+        INamedTypeSymbol? sectionType,
         ConfigurationKeys keys)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
@@ -149,9 +163,22 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if ((!string.Equals(method.Name, "GetSection", StringComparison.Ordinal)
-                && !string.Equals(method.Name, "GetRequiredSection", StringComparison.Ordinal))
-            || !SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationType))
+        // GetSection is an interface member. GetRequiredSection is an extension method.
+        var isSectionCall =
+            (string.Equals(method.Name, "GetSection", StringComparison.Ordinal)
+             && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationType))
+            || (string.Equals(method.Name, "GetRequiredSection", StringComparison.Ordinal)
+                && SymbolEqualityComparer.Default.Equals(method.ContainingType, connectionStringExtensions));
+        if (!isSectionCall)
+        {
+            return;
+        }
+
+        // A call on a section reads a key that is relative to that section.
+        if (invocation.Expression is MemberAccessExpressionSyntax access
+            && IsOrImplements(
+                context.SemanticModel.GetTypeInfo(access.Expression, context.CancellationToken).Type,
+                sectionType))
         {
             return;
         }
@@ -165,14 +192,13 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         Report(context, keys, section, invocation.GetLocation());
     }
 
-    private static bool IsConfiguration(ITypeSymbol? type, INamedTypeSymbol configurationType)
+    private static bool IsOrImplements(ITypeSymbol? type, INamedTypeSymbol? target)
     {
         return type is not null
-               && (SymbolEqualityComparer.Default.Equals(type, configurationType)
+               && target is not null
+               && (SymbolEqualityComparer.Default.Equals(type, target)
                    || type.AllInterfaces.Any(
-                       implemented => SymbolEqualityComparer.Default.Equals(
-                           implemented,
-                           configurationType)));
+                       implemented => SymbolEqualityComparer.Default.Equals(implemented, target)));
     }
 
     private static string? ReadConstantKey(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
@@ -231,7 +257,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
-                if (!TryAddDocument(text.ToString(), builder))
+                if (!AppSettingsKeyReader.TryRead(text.ToString(), builder))
                 {
                     continue;
                 }
@@ -260,61 +286,6 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         internal bool Contains(string key)
         {
             return keys.Contains(key);
-        }
-
-        private static bool TryAddDocument(
-            string json,
-            ImmutableHashSet<string>.Builder builder)
-        {
-            try
-            {
-                using var document = JsonDocument.Parse(json);
-                Flatten(document.RootElement, string.Empty, builder, 0);
-
-                return true;
-            }
-            catch (JsonException)
-            {
-                return false;
-            }
-        }
-
-        private static void Flatten(
-            JsonElement element,
-            string prefix,
-            ImmutableHashSet<string>.Builder builder,
-            int depth)
-        {
-            if (depth > 64)
-            {
-                return;
-            }
-
-            if (element.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var property in element.EnumerateObject())
-                {
-                    var path = prefix.Length == 0
-                        ? property.Name
-                        : prefix + ":" + property.Name;
-                    builder.Add(path);
-                    Flatten(property.Value, path, builder, depth + 1);
-                }
-
-                return;
-            }
-
-            if (element.ValueKind == JsonValueKind.Array)
-            {
-                var index = 0;
-                foreach (var item in element.EnumerateArray())
-                {
-                    var path = prefix + ":" + index.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    builder.Add(path);
-                    Flatten(item, path, builder, depth + 1);
-                    index++;
-                }
-            }
         }
     }
 }

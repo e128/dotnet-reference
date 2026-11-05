@@ -173,7 +173,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             if (typeArgument is INamedTypeSymbol namedType && efCore.DerivesFromDbContext(namedType))
             {
                 dbContextCandidates.Add(new DbContextCandidate(
-                    GetRegistrationLocation(invocation, method),
+                    GetRegistrationLocation(invocation),
                     namedType));
 
                 return;
@@ -238,10 +238,9 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     private static bool HasSingletonLifetime(IInvocationOperation operation, EfCoreTypes efCore)
     {
         // contextLifetime controls the context itself. optionsLifetime controls the options object and
-        // stays scoped in a normal application. Prefer the named parameter so an explicit singleton
-        // options lifetime does not report a scoped context.
+        // stays scoped in a normal application. Read only the contextLifetime parameter, so an
+        // explicit singleton options lifetime does not report a scoped context.
         IArgumentOperation? contextLifetime = null;
-        IArgumentOperation? trailing = null;
 
         foreach (var argument in operation.Arguments)
         {
@@ -252,18 +251,14 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            trailing = argument;
-
             if (string.Equals(parameter.Name, "contextLifetime", StringComparison.Ordinal))
             {
                 contextLifetime = argument;
             }
         }
 
-        var selected = contextLifetime ?? trailing;
-
-        return selected is not null
-               && UnwrapConversions(selected.Value).ConstantValue is { HasValue: true } constant
+        return contextLifetime is not null
+               && UnwrapConversions(contextLifetime.Value).ConstantValue is { HasValue: true } constant
                && Equals(constant.Value, efCore.SingletonValue);
     }
 
@@ -340,7 +335,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         if (implementation is not null)
         {
             singletonCandidates.Add(new SingletonCandidate(
-                GetRegistrationLocation(invocation, method),
+                GetRegistrationLocation(invocation),
                 implementation));
         }
     }
@@ -473,7 +468,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static Location GetRegistrationLocation(InvocationExpressionSyntax invocation, IMethodSymbol method)
+    private static Location GetRegistrationLocation(InvocationExpressionSyntax invocation)
     {
         // The report belongs on the registered type, not on the whole call. The type argument list is
         // absent for an expression-bodied generic call, so the invocation location is the fallback.
@@ -485,8 +480,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             ? genericName.TypeArgumentList.Arguments.Last()
             : null;
 
-        return registeredType?.GetLocation()
-               ?? (method.Locations.Length > 0 ? method.Locations[0] : invocation.GetLocation());
+        return registeredType?.GetLocation() ?? invocation.GetLocation();
     }
 
     private static void ReportCaptiveDependencies(

@@ -29,6 +29,10 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128179";
 
     private const string ServiceCollectionExtensionsMetadataName = "Microsoft.Extensions.DependencyInjection.OptionsServiceCollectionExtensions";
+
+    // Configure<T>(IConfiguration) lives in Microsoft.Extensions.Options.ConfigurationExtensions, on its
+    // own extension class, apart from AddOptions<T> and Configure<T>(Action<T>).
+    private const string ConfigurationExtensionsMetadataName = "Microsoft.Extensions.DependencyInjection.OptionsConfigurationServiceCollectionExtensions";
     private const string ServiceCollectionMetadataName = "Microsoft.Extensions.DependencyInjection.IServiceCollection";
     private const string ConfigurationMetadataName = "Microsoft.Extensions.Configuration.IConfiguration";
     private const string OptionsBuilderMetadataName = "Microsoft.Extensions.Options.OptionsBuilder`1";
@@ -91,7 +95,9 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
     {
         // Without the framework registration type the rule has no symbol to match, so it stays off
         // rather than falling back to a method name.
-        if (context.Compilation.GetTypeByMetadataName(ServiceCollectionExtensionsMetadataName) is not { } serviceCollectionExtensions)
+        var serviceCollectionExtensions = MetadataTypes.Find(context.Compilation, ServiceCollectionExtensionsMetadataName)
+            .AddRange(MetadataTypes.Find(context.Compilation, ConfigurationExtensionsMetadataName));
+        if (serviceCollectionExtensions.IsEmpty)
         {
             return;
         }
@@ -117,7 +123,7 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeInvocation(
         SyntaxNodeAnalysisContext context,
-        INamedTypeSymbol serviceCollectionExtensions,
+        ImmutableArray<INamedTypeSymbol> serviceCollectionExtensions,
         INamedTypeSymbol? serviceCollectionType,
         INamedTypeSymbol? configurationType,
         INamedTypeSymbol? optionsBuilderType,
@@ -152,12 +158,13 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                if (SymbolEqualityComparer.Default.Equals(method.ContainingType, serviceCollectionExtensions)
+                if (MetadataTypes.Contains(serviceCollectionExtensions, method.ContainingType)
                     && IsOptionsRegistration(method, serviceCollectionType, configurationType, out var bindsConfiguration))
                 {
+                    // The outermost registration wins, so its bind flag must win too.
+                    registrationBindsConfiguration = registration is null ? bindsConfiguration : registrationBindsConfiguration;
                     registration ??= invocation;
                     registrationMethod ??= method;
-                    registrationBindsConfiguration = bindsConfiguration;
                 }
                 else if (IsBindCall(method, builderExtensionTypes))
                 {
