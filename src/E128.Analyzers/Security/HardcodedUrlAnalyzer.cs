@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using E128.Analyzers.Testing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -76,12 +77,46 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
 
     private static void Report(SyntaxNodeAnalysisContext context, string value)
     {
-        if (!IsHardcodedUrl(value) || IsAttributeArgument(context.Node))
+        if (!IsHardcodedUrl(value) || IsAttributeArgument(context.Node) || IsExemptDeclaration(context.Node))
         {
             return;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, context.Node.GetLocation(), value));
+    }
+
+    // A property initializer on an options class, and a const or static readonly field, each declare
+    // one fixed value in one place. The rule asks for exactly that shape, so neither is the endpoint
+    // per environment it exists to catch. A local const stays reported: it hides a value in a code path.
+    private static bool IsExemptDeclaration(SyntaxNode node)
+    {
+        var declaration = node.Ancestors().FirstOrDefault(static ancestor =>
+            ancestor is PropertyDeclarationSyntax
+                or VariableDeclaratorSyntax
+                or MethodDeclarationSyntax
+                or LocalFunctionStatementSyntax
+                or AccessorDeclarationSyntax);
+
+        return declaration switch
+        {
+            PropertyDeclarationSyntax { Initializer: not null } property => IsOptionsClass(property),
+            VariableDeclaratorSyntax declarator => IsConstantField(declarator),
+            _ => false
+        };
+    }
+
+    private static bool IsOptionsClass(PropertyDeclarationSyntax property)
+    {
+        return property.Parent is TypeDeclarationSyntax type
+               && type.Identifier.ValueText.EndsWith("Options", StringComparison.Ordinal);
+    }
+
+    private static bool IsConstantField(VariableDeclaratorSyntax declarator)
+    {
+        return declarator.Parent?.Parent is FieldDeclarationSyntax field
+               && (field.Modifiers.Any(SyntaxKind.ConstKeyword)
+                   || (field.Modifiers.Any(SyntaxKind.StaticKeyword)
+                       && field.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)));
     }
 
     private static bool IsHardcodedUrl(string value)

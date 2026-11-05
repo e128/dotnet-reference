@@ -344,6 +344,18 @@ public sealed class HardcodedSecretAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task EnvironmentVariableNameValue_Silent()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               public const string BraveApiKey = "BRAVE_API_KEY";
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public async Task TestCompilationWithTwoXunitReferences_Silent()
     {
         var references = await ReferenceAssemblies.Net.Net100.ResolveAsync(LanguageNames.CSharp, CancellationToken.None);

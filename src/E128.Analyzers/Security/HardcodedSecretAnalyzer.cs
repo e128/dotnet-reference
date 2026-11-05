@@ -212,7 +212,7 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
     // setting. It is not the secret. A secret mixes digits and symbols or uses lowercase words.
     private static bool LooksLikeKeyName(string value)
     {
-        if (value.StartsWith("X-", StringComparison.OrdinalIgnoreCase))
+        if (value.StartsWith("X-", StringComparison.OrdinalIgnoreCase) || IsScreamingSnakeCase(value))
         {
             return true;
         }
@@ -232,6 +232,32 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         }
 
         return hasPathSeparator || IsTitleCaseHyphenated(value);
+    }
+
+    // "BRAVE_API_KEY" names the setting a credential is read from. The underscore requirement keeps
+    // a plain uppercase secret, such as "LETMEIN", in scope for the rule.
+    private static bool IsScreamingSnakeCase(string value)
+    {
+        var hasLetter = false;
+        var hasUnderscore = false;
+
+        foreach (var character in value)
+        {
+            if (character == '_')
+            {
+                hasUnderscore = true;
+                continue;
+            }
+
+            if (!char.IsLetter(character) || !char.IsUpper(character))
+            {
+                return false;
+            }
+
+            hasLetter = true;
+        }
+
+        return hasLetter && hasUnderscore;
     }
 
     private static bool IsTitleCaseHyphenated(string value)
