@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-05T13:32:58Z*
+*Updated: 2026-11-05T14:06:17Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
@@ -111,6 +111,9 @@ carry them, and it must carry every other dependency the analyzer loads.
   guarantee.
 - A `dotnet pack` listing showed 17 files: the analyzer DLL, the code fixer DLL,
   the README, and the closure. No Roslyn assembly is in the package.
+- `Microsoft.Bcl.AsyncInterfaces` is pinned to the `System.Text.Json` version in
+  `Directory.Packages.props`. The Roslyn workspace packages request an older
+  version. The mismatch raises MSB3277 in the code fixer build.
 
 ## Related
 
