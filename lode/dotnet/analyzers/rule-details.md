@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-05T13:32:58Z*
+*Updated: 2026-11-05T14:14:46Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -125,6 +125,40 @@ enum symbol.
 - A user type that shadows a BCL name.
 
 No code fix. The flag set is a caller policy.
+
+### E128199: Method calls itself directly
+
+Severity: **Info**. Flags a method whose operation block holds an invocation of
+the same method. The rule compares `OriginalDefinition`, so a constructed
+generic call still matches.
+
+The rule reports a local function or a lambda that calls the outer method,
+because that call re-enters the method. It reports one diagnostic per method.
+
+**Silent**: a call to another method, an overload on another type, and two
+methods that never call themselves. Mutual recursion stays out of scope,
+because it needs a compilation-wide call graph.
+
+No code fix. The iterative replacement depends on the method contract.
+
+### E128200: Do not declare a function pointer type
+
+Severity: **Warning**. Flags every `SyntaxKind.FunctionPointerType` node. The
+managed and the `unmanaged` forms both report. The node appears in a field, a
+parameter, a return type, a local, and a cast.
+
+S6640 reports the enclosing unsafe block only. This rule names the pointer type.
+
+No code fix. The delegate signature depends on the call site.
+
+### E128201: Conditional directives past the ceiling
+
+Severity: **Info**. Counts `#if` directives per source tree and reports the
+first directive past the ceiling. The option `e128_max_conditional_directives`
+sets the ceiling and defaults to 4. A missing, non-numeric, or negative value
+falls back to the default. `#elif` does not add to the count.
+
+No code fix. Splitting a build variant is a project decision.
 
 ## Related
 

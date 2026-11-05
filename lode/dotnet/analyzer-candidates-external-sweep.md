@@ -1,5 +1,5 @@
 # External Analyzer Candidate Sweep
-*Updated: 2026-11-05T13:32:58Z*
+*Updated: 2026-11-05T14:14:46Z*
 
 Source: a research scroll on e128.info, snapshotted 2026-11-05. The scroll lists
 thirty defect shapes. Each was checked against the E128 set and six third-party
@@ -18,11 +18,16 @@ rule text.
 
 ## Standing
 
-No shape stays open. An E128 rule closes every candidate: twenty-four new rules
-and three extensions, of E128103, E128154, and E128159. Three shapes have a real
-owner and are rejected below. The sweep is complete.
+No shape from the thirty-shape scroll stays open. An E128 rule closes every
+candidate: twenty-four new rules and three extensions, of E128103, E128154, and
+E128159. Three shapes have a real owner and are rejected below. That sweep is
+complete.
 
-The next free ID is **E128199**. E128095, E128130, and E128158 are also free.
+The NASA Power of Ten read on 2026-11-05 is a separate source. It seeded three
+rules, E128199 to E128201. The pointer-depth row stays unshipped. See
+[NASA Power of Ten](#nasa-power-of-ten).
+
+The next free ID is **E128202**. E128095, E128130, and E128158 are also free.
 E128022 is retired and stays out of use.
 
 The ownership check reads rule metadata, not a compiled run. Test each candidate
@@ -73,6 +78,49 @@ and the sorted collection types.
 
 Two slivers stay open after a rejection. `List.Sort()` and `Array.Sort()` on
 strings have no owner. Both are thin, so neither earns its own rule yet.
+
+## NASA Power of Ten
+
+Source: Holzmann, "The Power of Ten: Rules for Developing Safety Critical
+Code" (NASA/JPL Laboratory for Reliable Software), read 2026-11-05. The rules
+target C. Each row below maps one rule to a C# owner. A probe project with the
+installed analyzer set confirmed every verdict.
+
+| #  | NASA rule                                      | C# owner                                                            | Verdict   |
+| --- | ---------------------------------------------- | ------------------------------------------------------------------- | --------- |
+| 1  | No `goto`, `setjmp`, `longjmp`, or recursion   | S907 owns `goto`. E128199 owns the self-call.                       | Covered   |
+| 2  | Every loop has a provable fixed upper bound     | No owner. The Tier 2 row "Loop with no exit path" covers `while (true)`. | Tier 2 |
+| 3  | No allocation after initialization             | No owner. The compiler cannot see an initialization phase.          | Document  |
+| 4  | Function shorter than about 60 lines           | MA0051                                                              | Rejected  |
+| 5  | Two assertions per function                    | No owner for production code. The count is a metric.                | Rejected  |
+| 6  | Data declared at the smallest scope            | IDE0059 and RCS1212 cover dead stores only.                         | Low value |
+| 7  | Check every return value and every parameter   | IDE0058 at suggestion, S2201, CA1806, MA0060. CA1062 covers parameters and is off by default. | Rejected |
+| 8  | Limit the preprocessor                         | E128201 owns the directive ceiling.                                 | Covered   |
+| 9  | One dereference, and no function pointers      | E128200 owns the function pointer type. S6640 sees the unsafe block only. | Covered |
+| 10 | Pedantic warnings, zero warnings               | `TreatWarningsAsErrors` and `AnalysisLevel` in the build.           | Existing  |
+
+### Shipped Rules
+
+| ID      | Shape                                       | Detection                                                                 | Severity |
+| ------- | ------------------------------------------- | ------------------------------------------------------------------------- | -------- |
+| E128199 | Method calls itself directly                | Operation block action. Compare each invocation symbol to the enclosing method. | Info |
+| E128200 | `delegate*` function pointer type           | Syntax action on `SyntaxKind.FunctionPointerType`.                        | Warning |
+| E128201 | Conditional directive count past a ceiling  | Count `#if` per file. Option `e128_max_conditional_directives`.           | Info |
+
+E128152 reports recursion only when it infers exponential cost. A direct
+self-call with linear cost stayed silent. E128199 reports that call. It reports
+a lambda or a local function that calls the outer method too, because that call
+re-enters the method.
+
+E128200 covers rule 9 at the type level. `delegate*` appears in a field, a
+parameter, or a local. S6640 reports the enclosing unsafe context, not the
+pointer type.
+
+E128201 covers rule 8. A ceiling of four directives is the default. `#if DEBUG`
+pairs are legitimate, so the default severity is Info.
+
+The pointer-depth row stays unshipped. `T**` is rare in C#, so a dedicated rule
+costs more than it earns.
 
 ## Detection Notes
 
