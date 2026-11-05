@@ -53,55 +53,55 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        var optionsType = context.Compilation.GetTypeByMetadataName(OptionsMetadataName);
+        var optionsTypes = MetadataTypes.Find(context.Compilation, OptionsMetadataName);
 
-        if (optionsType is null)
+        if (optionsTypes.IsEmpty)
         {
             return;
         }
 
-        var serializerType = context.Compilation.GetTypeByMetadataName(SerializerMetadataName);
+        var serializerTypes = MetadataTypes.Find(context.Compilation, SerializerMetadataName);
 
         context.RegisterSyntaxNodeAction(
-            ctx => AnalyzeAssignment(ctx, optionsType, serializerType),
+            ctx => AnalyzeAssignment(ctx, optionsTypes, serializerTypes),
             SyntaxKind.SimpleAssignmentExpression);
         context.RegisterSyntaxNodeAction(
-            ctx => AnalyzeConvertersCall(ctx, optionsType, serializerType),
+            ctx => AnalyzeConvertersCall(ctx, optionsTypes, serializerTypes),
             SyntaxKind.InvocationExpression);
     }
 
     private static void AnalyzeAssignment(
         SyntaxNodeAnalysisContext context,
-        INamedTypeSymbol optionsType,
-        INamedTypeSymbol? serializerType)
+        ImmutableArray<INamedTypeSymbol> optionsTypes,
+        ImmutableArray<INamedTypeSymbol> serializerTypes)
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
         if (assignment.Left is not MemberAccessExpressionSyntax access
-            || !TryGetTrackedSymbol(access.Expression, optionsType, context, out var symbol))
+            || !TryGetTrackedSymbol(access.Expression, optionsTypes, context, out var symbol))
         {
             return;
         }
 
-        ReportIfUsedBefore(context, assignment, symbol, serializerType);
+        ReportIfUsedBefore(context, assignment, symbol, serializerTypes);
     }
 
     private static void AnalyzeConvertersCall(
         SyntaxNodeAnalysisContext context,
-        INamedTypeSymbol optionsType,
-        INamedTypeSymbol? serializerType)
+        ImmutableArray<INamedTypeSymbol> optionsTypes,
+        ImmutableArray<INamedTypeSymbol> serializerTypes)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
         if (invocation.Expression is not MemberAccessExpressionSyntax call
-            || !IsConverterList(call, optionsType, context)
+            || !IsConverterList(call, optionsTypes, context)
             || call.Expression is not MemberAccessExpressionSyntax converters
-            || !TryGetTrackedSymbol(converters.Expression, optionsType, context, out var symbol))
+            || !TryGetTrackedSymbol(converters.Expression, optionsTypes, context, out var symbol))
         {
             return;
         }
 
-        ReportIfUsedBefore(context, invocation, symbol, serializerType);
+        ReportIfUsedBefore(context, invocation, symbol, serializerTypes);
     }
 
     /// <summary>
@@ -109,7 +109,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static bool IsConverterList(
         MemberAccessExpressionSyntax call,
-        INamedTypeSymbol optionsType,
+        ImmutableArray<INamedTypeSymbol> optionsTypes,
         SyntaxNodeAnalysisContext context)
     {
         var name = call.Name.Identifier.ValueText;
@@ -125,7 +125,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
                && string.Equals(converters.Name.Identifier.ValueText, "Converters", StringComparison.Ordinal)
                && context.SemanticModel.GetSymbolInfo(converters, context.CancellationToken).Symbol
                    is IPropertySymbol property
-               && SymbolEqualityComparer.Default.Equals(property.ContainingType, optionsType);
+               && MetadataTypes.Contains(optionsTypes, property.ContainingType);
     }
 
     /// <summary>
@@ -134,15 +134,15 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static bool TryGetTrackedSymbol(
         ExpressionSyntax receiver,
-        INamedTypeSymbol optionsType,
+        ImmutableArray<INamedTypeSymbol> optionsTypes,
         SyntaxNodeAnalysisContext context,
         [NotNullWhen(true)] out ISymbol? symbol)
     {
         symbol = context.SemanticModel.GetSymbolInfo(receiver, context.CancellationToken).Symbol;
 
         return symbol is ILocalSymbol or IParameterSymbol or IFieldSymbol
-               && SymbolEqualityComparer.Default.Equals(
-                   optionsType,
+               && MetadataTypes.Contains(
+                   optionsTypes,
                    context.SemanticModel.GetTypeInfo(receiver, context.CancellationToken).Type);
     }
 
@@ -150,41 +150,79 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         SyntaxNode mutation,
         ISymbol symbol,
-        INamedTypeSymbol? serializerType)
+        ImmutableArray<INamedTypeSymbol> serializerTypes)
     {
-        var body = FindEnclosingBody(mutation);
+        var body = EnclosingBody.Find(mutation);
 
         if (body is null)
         {
             return;
         }
 
+        var used = false;
+
         foreach (var node in body.DescendantNodes())
         {
             if (node.SpanStart >= mutation.SpanStart)
             {
+                break;
+            }
+
+            if (IsInNestedFunction(node, body) || ExclusiveBranches.Are(node, mutation))
+            {
                 continue;
             }
 
-            if (node is InvocationExpressionSyntax invocation
-                && IsSerializerCall(invocation, serializerType, context)
-                && PassesSymbol(invocation, symbol, context))
+            // A new instance assigned to the same variable starts a fresh, unfrozen options object.
+            if (node is AssignmentExpressionSyntax assignment
+                && SymbolEqualityComparer.Default.Equals(
+                    context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol,
+                    symbol))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, mutation.GetLocation()));
-                return;
+                used = false;
+            }
+            else if (node is InvocationExpressionSyntax invocation
+                     && IsSerializerCall(invocation, serializerTypes, context)
+                     && PassesSymbol(invocation, symbol, context))
+            {
+                used = true;
             }
         }
+
+        if (used)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(Rule, mutation.GetLocation()));
+        }
+    }
+
+    // A lambda or a local function can run later or never, so a call inside one is not a use
+    // that precedes the write.
+    private static bool IsInNestedFunction(SyntaxNode node, SyntaxNode body)
+    {
+        foreach (var ancestor in node.Ancestors())
+        {
+            if (ReferenceEquals(ancestor, body))
+            {
+                return false;
+            }
+
+            if (ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsSerializerCall(
         InvocationExpressionSyntax invocation,
-        INamedTypeSymbol? serializerType,
+        ImmutableArray<INamedTypeSymbol> serializerTypes,
         SyntaxNodeAnalysisContext context)
     {
-        return serializerType is not null
-               && context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
+        return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
                is IMethodSymbol method
-               && SymbolEqualityComparer.Default.Equals(method.ContainingType, serializerType);
+               && MetadataTypes.Contains(serializerTypes, method.ContainingType);
     }
 
     private static bool PassesSymbol(
@@ -203,38 +241,5 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static BlockSyntax? FindEnclosingBody(SyntaxNode node)
-    {
-        foreach (var ancestor in node.Ancestors())
-        {
-            if (ancestor is MethodDeclarationSyntax method)
-            {
-                return method.Body;
-            }
-
-            if (ancestor is ConstructorDeclarationSyntax constructor)
-            {
-                return constructor.Body;
-            }
-
-            if (ancestor is LocalFunctionStatementSyntax localFunction)
-            {
-                return localFunction.Body;
-            }
-
-            if (ancestor is AccessorDeclarationSyntax accessor)
-            {
-                return accessor.Body;
-            }
-
-            if (ancestor is AnonymousFunctionExpressionSyntax anonymous)
-            {
-                return anonymous.Block;
-            }
-        }
-
-        return null;
     }
 }

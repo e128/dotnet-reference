@@ -32,6 +32,23 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task RecordThatDeclaresGetHashCode_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Linq;
+
+                           record Person(List<string> Names)
+                           {
+                               public virtual bool Equals(Person? other) => other is not null && Names.SequenceEqual(other.Names);
+
+                               public override int GetHashCode() => Names.Count;
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NominalRecordClass_DictionaryProperty_Fires()
     {
         return VerifyAsync("""

@@ -1,5 +1,5 @@
 # External Analyzer Candidate Sweep
-*Updated: 2026-11-05T14:14:46Z*
+*Updated: 2026-11-05T15:20:29Z*
 
 Source: a research scroll on e128.info, snapshotted 2026-11-05. The scroll lists
 thirty defect shapes. Each was checked against the E128 set and six third-party
@@ -129,10 +129,10 @@ method-scoped so the cost stays bounded. Candidate 28 shipped as E128198.
 
 Compilation candidates need `RegisterCompilationStartAction` and a symbol table
 built once per compilation. Candidate 21 shipped as E128195. It reads
-`context.Options.AdditionalFiles`, parses each `*.json` file with
-`System.Text.Json` 10.0.14, and requires a documented consumer contract
-(`<AdditionalFiles Include="appsettings.json" />`). The package carries the JSON
-DLL closure in `analyzers/dotnet/cs`.
+`context.Options.AdditionalFiles`, reads each `*.json` file with
+a hand-written scanner, `AppSettingsKeyReader`, and requires a documented consumer
+contract (`<AdditionalFiles Include="appsettings.json" />`). The package carries no
+third-party DLL.
 
 A destructive-path rule defaults to `Info`. A false positive on a build error
 blocks work for no gain.

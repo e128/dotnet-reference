@@ -21,6 +21,78 @@ public sealed class EventSubscriptionLeakAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task SubscriptionToOwnInstanceEvent_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C : IDisposable
+                           {
+                               public event EventHandler? Changed;
+                               private int _count;
+                               public void Start()
+                               {
+                                   Changed += (s, e) => _count++;
+                                   this.Changed += (s, e) => _count++;
+                               }
+                               public void Dispose()
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SubscriptionToOwnStaticEvent_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C : IDisposable
+                           {
+                               public static event EventHandler? Changed;
+                               private int _count;
+                               public void Start()
+                               {
+                                   {|E128176:Changed += (s, e) => _count++|};
+                               }
+                               public void Dispose()
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemovalInDisposeAsyncCore_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Threading.Tasks;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IAsyncDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   _publisher.Changed += (s, e) => _count++;
+                               }
+                               public ValueTask DisposeAsync() => DisposeAsyncCore();
+                               protected virtual ValueTask DisposeAsyncCore()
+                               {
+                                   _publisher.Changed -= null;
+                                   return default;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task LambdaThatReadsAField_WithNoRemoval_Fires()
     {
         return VerifyAsync("""
@@ -277,6 +349,35 @@ public sealed class EventSubscriptionLeakAnalyzerTests
                                public void Dispose()
                                {
                                    _publisher.Closed -= (s, e) => _count++;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task OwnedPublisherFieldDisposedInDispose_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher : IDisposable
+                           {
+                               public event EventHandler? Changed;
+                               public void Dispose()
+                               {
+                               }
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   _publisher.Changed += (s, e) => _count++;
+                               }
+                               public void Dispose()
+                               {
+                                   _publisher.Dispose();
                                }
                            }
                            """);

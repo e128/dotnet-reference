@@ -45,6 +45,63 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task EnumeratedInSeparateBranches_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(IAsyncEnumerable<int> source, bool first)
+                               {
+                                   if (first)
+                                   {
+                                       await foreach (var item in source)
+                                       {
+                                       }
+                                   }
+                                   else
+                                   {
+                                       await foreach (var item in source)
+                                       {
+                                       }
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReassignedBetweenEnumerations_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               static IAsyncEnumerable<int> Create() => default!;
+
+                               async Task M()
+                               {
+                                   var source = Create();
+                                   await foreach (var item in source)
+                                   {
+                                   }
+
+                                   source = Create();
+                                   await foreach (var item in source)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task LocalEnumeratedTwice_Fires()
     {
         return VerifyAsync("""

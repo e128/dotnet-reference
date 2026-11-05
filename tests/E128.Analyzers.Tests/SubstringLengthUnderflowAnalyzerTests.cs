@@ -21,6 +21,110 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task EarlyReturnLengthGuard_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               static string M(string value)
+                               {
+                                   if (value.Length < 2)
+                                   {
+                                       return value;
+                                   }
+
+                                   return value.Substring(0, value.Length - 2);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LengthGuardThatDoesNotExit_Fires()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               static string M(string value)
+                               {
+                                   if (value.Length < 2)
+                                   {
+                                       System.Console.WriteLine(value);
+                                   }
+
+                                   return {|E128198:value.Substring(0, value.Length - 2)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ElseBranchOfLongerThanTest_Fires()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               static string M(string value)
+                               {
+                                   if (value.Length > 10)
+                                   {
+                                       return value;
+                                   }
+                                   else
+                                   {
+                                       return {|E128198:value.Substring(0, value.Length - 2)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ThenBranchOfLongerThanTest_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               static string M(string value)
+                               {
+                                   if (value.Length > 10)
+                                   {
+                                       return value.Substring(0, value.Length - 2);
+                                   }
+
+                                   return value;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ElseBranchOfShorterThanTest_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               static string M(string value)
+                               {
+                                   if (value.Length < 3)
+                                   {
+                                       return value;
+                                   }
+                                   else
+                                   {
+                                       return value.Substring(0, value.Length - 2);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task LengthMinusOne_Fires()
     {
         return VerifyAsync("""

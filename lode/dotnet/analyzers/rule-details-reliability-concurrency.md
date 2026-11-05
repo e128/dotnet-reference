@@ -1,5 +1,5 @@
 # Reliability Rule Details: Concurrency
-*Updated: 2026-11-05T12:57:52Z*
+*Updated: 2026-11-05T15:20:29Z*
 
 Behavior notes for the reliability rules that cover async and concurrent code.
 The complete rule table, the severity, and the code-fix status live in
@@ -35,8 +35,8 @@ block, and the statement range depends on intent.
 ### E128182: `IAsyncEnumerable` value enumerated twice
 
 Severity: **Warning**. Flags a second enumeration of one `IAsyncEnumerable<T>`
-value inside one method body. The value holds one enumerator position, so the
-second loop sees the tail or a different sequence.
+value inside one method body. A second loop can re-run the source, and a
+single-pass source such as a channel reader yields nothing the second time.
 
 The rule tracks a local, a parameter, and a field, grouped through
 `SymbolEqualityComparer.Default`. An enumeration site is an `await foreach`
@@ -47,6 +47,8 @@ site.
 **Exclusions**:
 
 - An inline-created sequence, which resolves to no tracked symbol.
+- Two enumerations in the two branches of one `if`, which never run together.
+- An enumeration after an assignment to the same value, which starts a new count.
 - A parameter that carries `EnumeratorCancellationAttribute`.
 - An iterator body that carries `yield return` or `yield break`.
 - A field read on another instance.
@@ -98,10 +100,11 @@ No code fix. Flush before the `try`, and dispose synchronously in the `finally`.
 
 ### E128187: `Parallel.ForEachAsync` without a degree cap
 
-Severity: **Warning**. Flags a `Parallel.ForEachAsync` call that passes no
+Severity: **Info**. Flags a `Parallel.ForEachAsync` call that passes no
 `ParallelOptions` argument, or an inline `new ParallelOptions` initializer that
-sets no `MaxDegreeOfParallelism` member. The call then starts one task per item,
-so a large sequence floods the thread pool.
+sets no `MaxDegreeOfParallelism` member. The call then runs at most
+`Environment.ProcessorCount` operations at once, which is the documented default.
+An I/O-bound body can need a different cap, so the rule asks for an explicit one.
 
 The rule resolves `System.Threading.Tasks.Parallel` and `ParallelOptions` once.
 It reads the initializer syntactically, so it needs no semantic model call.

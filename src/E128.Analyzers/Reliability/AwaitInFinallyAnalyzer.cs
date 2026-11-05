@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -46,15 +45,28 @@ public sealed class AwaitInFinallyAnalyzer : DiagnosticAnalyzer
     {
         var finallyClause = (FinallyClauseSyntax)context.Node;
 
-        foreach (var awaitExpression in finallyClause.Block.DescendantNodes().OfType<AwaitExpressionSyntax>())
+        foreach (var node in finallyClause.Block.DescendantNodes())
         {
-            if (!BelongsToFinally(awaitExpression, finallyClause))
-            {
-                continue;
-            }
+            var location = GetAwaitLocation(node);
 
-            context.ReportDiagnostic(Diagnostic.Create(Rule, awaitExpression.GetLocation()));
+            if (location is not null && BelongsToFinally(node, finallyClause))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Rule, location));
+            }
         }
+    }
+
+    // An await expression, "await using", and "await foreach" all suspend the finally clause.
+    private static Location? GetAwaitLocation(SyntaxNode node)
+    {
+        return node switch
+        {
+            AwaitExpressionSyntax expression => expression.GetLocation(),
+            UsingStatementSyntax { AwaitKeyword.RawKind: not 0 } statement => statement.AwaitKeyword.GetLocation(),
+            LocalDeclarationStatementSyntax { AwaitKeyword.RawKind: not 0 } declaration => declaration.AwaitKeyword.GetLocation(),
+            CommonForEachStatementSyntax { AwaitKeyword.RawKind: not 0 } loop => loop.AwaitKeyword.GetLocation(),
+            _ => null
+        };
     }
 
     /// <summary>
@@ -63,9 +75,9 @@ public sealed class AwaitInFinallyAnalyzer : DiagnosticAnalyzer
     ///     catch runs under that construct, and an await inside a local function or a lambda runs
     ///     only when code calls that member.
     /// </summary>
-    private static bool BelongsToFinally(AwaitExpressionSyntax awaitExpression, FinallyClauseSyntax finallyClause)
+    private static bool BelongsToFinally(SyntaxNode awaitNode, FinallyClauseSyntax finallyClause)
     {
-        for (var current = awaitExpression.Parent; current is not null; current = current.Parent)
+        for (var current = awaitNode.Parent; current is not null; current = current.Parent)
         {
             if (current == finallyClause)
             {

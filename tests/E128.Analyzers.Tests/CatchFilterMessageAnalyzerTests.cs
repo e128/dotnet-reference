@@ -42,6 +42,29 @@ public sealed class CatchFilterMessageAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Silent_WhenALambdaParameterShadowsTheName()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Linq;
+                           class Item { public string Message => ""; }
+                           class C
+                           {
+                               void M(Item[] items)
+                               {
+                                   try
+                                   {
+                                   }
+                                   catch (Exception ex) when (items.Any(ex => ex.Message.Length > 0))
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_StackTraceMember()
     {
         return VerifyAsync("""

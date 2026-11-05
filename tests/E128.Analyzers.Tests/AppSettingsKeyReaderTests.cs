@@ -1,0 +1,83 @@
+using System;
+using System.Collections.Immutable;
+using System.Linq;
+using E128.Analyzers.Reliability;
+using Xunit;
+
+namespace E128.Analyzers.Tests;
+
+public sealed class AppSettingsKeyReaderTests
+{
+    private static bool TryRead(string json, out string[] keys)
+    {
+        var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+        var isValid = AppSettingsKeyReader.TryRead(json, builder);
+
+        keys = [.. builder.ToImmutable().Order(StringComparer.Ordinal)];
+
+        return isValid;
+    }
+
+    private static string[] Read(string json)
+    {
+        Assert.True(TryRead(json, out var keys));
+
+        return keys;
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void NestedObjectsAndArrays_YieldColonPaths()
+    {
+        var keys = Read(
+            //lang=json
+            """{ "A": { "B": [ 1, { "C": true } ], "D": null }, "E": "x" }""");
+
+        Assert.Equal(["A", "A:B", "A:B:0", "A:B:1", "A:B:1:C", "A:D", "E"], keys);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void CommentsTrailingCommasAndBom_AreAccepted()
+    {
+        var keys = Read("﻿{ // line\n \"A\": /* block */ [1, 2,], \"B\": { \"C\": 1.5e3, }, }");
+
+        Assert.Equal(["A", "A:0", "A:1", "B", "B:C"], keys);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void EscapedKeyNames_AreDecoded()
+    {
+        var keys = Read(
+            //lang=json
+            """{ "AB\"\\": 1, "tab\t": 2 }""");
+
+        Assert.Equal(["AB\"\\", "tab\t"], keys);
+    }
+
+    [Theory]
+    [Trait("Category", "CI")]
+    [InlineData("")]
+    [InlineData("{")]
+    [InlineData("""{ "A": }""")]
+    [InlineData("""{ "A" 1 }""")]
+    [InlineData("""{ "A": 1,, }""")]
+    [InlineData("""{ "A": nope }""")]
+    [InlineData("""{ "A": "unterminated }""")]
+    [InlineData("""{ "A": 1 } trailing""")]
+    [InlineData("{ /* open comment ")]
+    public void MalformedText_IsRejected(string json)
+    {
+        Assert.False(TryRead(json, out _));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void NestingPastSixtyFourLevels_IsRejected()
+    {
+        var json = new string('[', 70) + new string(']', 70);
+
+        Assert.False(TryRead(json, out _));
+    }
+}

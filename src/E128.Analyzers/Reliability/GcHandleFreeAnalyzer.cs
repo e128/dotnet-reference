@@ -58,9 +58,9 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol gcHandleType)
     {
+        // The bare form "Alloc(x)" binds through "using static System.Runtime.InteropServices.GCHandle".
         if (context.Node is not InvocationExpressionSyntax invocation
-            || invocation.Expression is not MemberAccessExpressionSyntax access
-            || !string.Equals(access.Name.Identifier.ValueText, "Alloc", StringComparison.Ordinal))
+            || !IsAllocName(invocation.Expression))
         {
             return;
         }
@@ -79,7 +79,7 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var body = FindEnclosingBody(invocation);
+        var body = EnclosingBody.Find(invocation);
         if (body is null)
         {
             return;
@@ -103,6 +103,18 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), invocation.ToString()));
+    }
+
+    private static bool IsAllocName(ExpressionSyntax expression)
+    {
+        var name = expression switch
+        {
+            MemberAccessExpressionSyntax access => access.Name,
+            IdentifierNameSyntax identifier => identifier,
+            _ => null
+        };
+
+        return name is not null && string.Equals(name.Identifier.ValueText, "Alloc", StringComparison.Ordinal);
     }
 
     // A local declaration such as "var handle = GCHandle.Alloc(x)" or a later assignment such as
@@ -154,38 +166,5 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
         return parent is ArgumentSyntax or ReturnStatementSyntax or ArrowExpressionClauseSyntax
                    or EqualsValueClauseSyntax or InitializerExpressionSyntax
                || (parent is AssignmentExpressionSyntax assignment && !ReferenceEquals(assignment.Left, identifier));
-    }
-
-    private static BlockSyntax? FindEnclosingBody(SyntaxNode node)
-    {
-        foreach (var ancestor in node.Ancestors())
-        {
-            if (ancestor is MethodDeclarationSyntax method)
-            {
-                return method.Body;
-            }
-
-            if (ancestor is ConstructorDeclarationSyntax constructor)
-            {
-                return constructor.Body;
-            }
-
-            if (ancestor is LocalFunctionStatementSyntax localFunction)
-            {
-                return localFunction.Body;
-            }
-
-            if (ancestor is AccessorDeclarationSyntax accessor)
-            {
-                return accessor.Body;
-            }
-
-            if (ancestor is AnonymousFunctionExpressionSyntax anonymous)
-            {
-                return anonymous.Block;
-            }
-        }
-
-        return null;
     }
 }

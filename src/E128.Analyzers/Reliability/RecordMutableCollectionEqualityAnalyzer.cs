@@ -93,6 +93,12 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
     {
         var record = (RecordDeclarationSyntax)context.Node;
 
+        // A record that declares GetHashCode owns its equality, which is the fix this rule asks for.
+        if (DeclaresGetHashCode(record))
+        {
+            return;
+        }
+
         AnalyzePositionalParameters(context, record, mutableTypes);
 
         foreach (var member in record.Members)
@@ -106,6 +112,20 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
                 AnalyzeField(context, field, mutableTypes);
             }
         }
+    }
+
+    private static bool DeclaresGetHashCode(RecordDeclarationSyntax record)
+    {
+        foreach (var member in record.Members)
+        {
+            if (member is MethodDeclarationSyntax { ParameterList.Parameters.Count: 0 } method
+                && string.Equals(method.Identifier.ValueText, "GetHashCode", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void AnalyzePositionalParameters(

@@ -53,6 +53,44 @@ public sealed class EfQueryInLoopAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Contains_OnDbSetInForeach_Fires()
+    {
+        return VerifyAsync("""
+                           class Item { public int Id { get; set; } }
+                           class C
+                           {
+                               void M(DbSet<Item> items, Item[] known)
+                               {
+                                   foreach (var item in known)
+                                   {
+                                       var exists = {|E128180:items.Contains(item)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ToList_OnDbSetInDeconstructionForeach_Fires()
+    {
+        return VerifyAsync("""
+                           class Item { public int Id { get; set; } }
+                           class C
+                           {
+                               void M(DbSet<Item> items, (int Id, int Count)[] pairs)
+                               {
+                                   foreach (var (id, count) in pairs)
+                                   {
+                                       var rows = {|E128180:items.ToList()|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ToList_OnDbSetInForeach_Fires()
     {
         return VerifyAsync("""

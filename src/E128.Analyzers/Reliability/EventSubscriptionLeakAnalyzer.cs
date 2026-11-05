@@ -8,6 +8,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
+using Subscription = (Microsoft.CodeAnalysis.IEventSymbol Event, Microsoft.CodeAnalysis.IFieldSymbol? Publisher, Microsoft.CodeAnalysis.Location Location);
+
 namespace E128.Analyzers.Reliability;
 
 /// <summary>
@@ -33,6 +35,8 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
     private const string DisposeName = "Dispose";
 
     private const string DisposeAsyncName = "DisposeAsync";
+
+    private const string DisposeAsyncCoreName = "DisposeAsyncCore";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -76,8 +80,9 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var subscriptions = new ConcurrentQueue<(IEventSymbol Event, Location Location)>();
+        var subscriptions = new ConcurrentQueue<Subscription>();
         var removals = new ConcurrentDictionary<IEventSymbol, bool>(SymbolEqualityComparer.Default);
+        var disposedFields = new ConcurrentDictionary<IFieldSymbol, bool>(SymbolEqualityComparer.Default);
 
         context.RegisterSyntaxNodeAction(
             ctx => CollectSubscription(ctx, subscriber, subscriptions),
@@ -87,13 +92,17 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             ctx => CollectRemoval(ctx, removals),
             SyntaxKind.SubtractAssignmentExpression);
 
-        context.RegisterSymbolEndAction(ctx => Report(subscriptions, removals, ctx));
+        context.RegisterSyntaxNodeAction(
+            ctx => CollectDisposedField(ctx, disposedFields),
+            SyntaxKind.InvocationExpression);
+
+        context.RegisterSymbolEndAction(ctx => Report(subscriptions, removals, disposedFields, ctx));
     }
 
     private static void CollectSubscription(
         SyntaxNodeAnalysisContext context,
         INamedTypeSymbol subscriber,
-        ConcurrentQueue<(IEventSymbol Event, Location Location)> subscriptions)
+        ConcurrentQueue<Subscription> subscriptions)
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
         var model = context.SemanticModel;
@@ -104,9 +113,44 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // A subscription to an event on this instance dies with the instance, so nothing leaks.
+        if (!eventSymbol.IsStatic && IsOwnInstanceEvent(assignment.Left))
+        {
+            return;
+        }
+
         if (CapturesSubscriber(assignment.Right, model, subscriber, token))
         {
-            subscriptions.Enqueue((eventSymbol, assignment.GetLocation()));
+            subscriptions.Enqueue((eventSymbol, GetPublisherField(assignment.Left, model, token), assignment.GetLocation()));
+        }
+    }
+
+    private static bool IsOwnInstanceEvent(ExpressionSyntax left)
+    {
+        return left is IdentifierNameSyntax
+            or MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax };
+    }
+
+    // The field that holds the publisher in "field.Event += handler", or null for any other receiver.
+    private static IFieldSymbol? GetPublisherField(ExpressionSyntax left, SemanticModel model, CancellationToken token)
+    {
+        return left is MemberAccessExpressionSyntax access
+               && model.GetSymbolInfo(access.Expression, token).Symbol is IFieldSymbol { IsStatic: false } field
+            ? field
+            : null;
+    }
+
+    private static void CollectDisposedField(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<IFieldSymbol, bool> disposedFields)
+    {
+        var invocation = (InvocationExpressionSyntax)context.Node;
+
+        if (IsInDisposeMethod(invocation)
+            && DisposeCalls.GetReceiver(invocation) is { } receiver
+            && context.SemanticModel.GetSymbolInfo(receiver, context.CancellationToken).Symbol is IFieldSymbol field)
+        {
+            disposedFields[field] = true;
         }
     }
 
@@ -129,13 +173,17 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
     }
 
     private static void Report(
-        ConcurrentQueue<(IEventSymbol Event, Location Location)> subscriptions,
+        ConcurrentQueue<Subscription> subscriptions,
         ConcurrentDictionary<IEventSymbol, bool> removals,
+        ConcurrentDictionary<IFieldSymbol, bool> disposedFields,
         SymbolAnalysisContext context)
     {
-        foreach (var (eventSymbol, location) in subscriptions)
+        foreach (var (eventSymbol, publisher, location) in subscriptions)
         {
-            if (!removals.ContainsKey(eventSymbol))
+            // A publisher field that the subscriber owns and disposes dies with the subscriber.
+            var ownedAndDisposed = publisher is not null && disposedFields.ContainsKey(publisher);
+
+            if (!ownedAndDisposed && !removals.ContainsKey(eventSymbol))
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, location, eventSymbol.Name));
             }
@@ -212,7 +260,8 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             if (current is MethodDeclarationSyntax method)
             {
                 return string.Equals(method.Identifier.ValueText, DisposeName, StringComparison.Ordinal)
-                       || string.Equals(method.Identifier.ValueText, DisposeAsyncName, StringComparison.Ordinal);
+                       || string.Equals(method.Identifier.ValueText, DisposeAsyncName, StringComparison.Ordinal)
+                       || string.Equals(method.Identifier.ValueText, DisposeAsyncCoreName, StringComparison.Ordinal);
             }
 
             if (current is AccessorDeclarationSyntax or LocalFunctionStatementSyntax or BaseTypeDeclarationSyntax)

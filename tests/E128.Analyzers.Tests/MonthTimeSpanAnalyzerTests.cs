@@ -21,6 +21,24 @@ public sealed class MonthTimeSpanAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task CompoundAddAssignment_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class C
+                           {
+                               static DateTime M(DateTime date)
+                               {
+                                   date += {|E128197:TimeSpan.FromDays(30)|};
+                                   return date;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task DateTimeAddThirtyDays_Fires()
     {
         return VerifyAsync("""

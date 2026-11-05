@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-05T14:14:46Z*
+*Updated: 2026-11-05T15:20:29Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -100,15 +100,26 @@ whose first argument is one of those.
 
 **Silent**: a path under `Path.GetTempPath()`, a string literal, a const field, a
 `Path.GetFullPath` over a safe value, an unknown shape, a non-recursive call, and
-a delete guarded by a `StartsWith` test on the same path in the same block.
+a delete guarded by a proving `StartsWith` test on the same path in the same
+block.
+
+A guard proves the test passed in two shapes. An enclosing `if` holds the call
+alone or joined by `&&`. A preceding `if` with no `else` ends in `return`,
+`throw`, `continue`, or `break`, and holds the call under one `!` joined by `||`.
+A negated test around the delete, an `||` condition, and a guard root that is a
+mutable field or a settable property do not count. A literal that names a
+filesystem root, such as `"/"` or `"C:\"`, is reported. A `Path.Combine` under a
+temp path stays silent when a later segment comes from a variable, because the
+rule cannot see a `..` or a rooted value in it.
 
 No code fix. The safe root belongs to the caller.
 
 ### E128191: PFX import without `EphemeralKeySet`
 
 Severity: **Warning**. Flags a certificate import whose flags omit
-`X509KeyStorageFlags.EphemeralKeySet`. Without the flag, Windows writes the
-private key into the machine key store.
+`X509KeyStorageFlags.EphemeralKeySet`. Without the flag, the import persists the
+private key in the key store, and the key outlives the process. The flag is not
+supported for PFX loading on macOS.
 
 The rule reports two shapes: an `X509Certificate2` constructor with a `fileName`
 parameter, and `X509CertificateLoader.LoadPkcs12` or `LoadPkcs12FromFile`. It

@@ -34,8 +34,6 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
 
     private const string InfiniteTimeSpanFieldName = "InfiniteTimeSpan";
 
-    private const string MaxValueFieldName = "MaxValue";
-
     private const string FromMillisecondsMethodName = "FromMilliseconds";
 
     private const int InfiniteMilliseconds = -1;
@@ -48,9 +46,10 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         true,
         "HttpClient.Timeout defaults to 100 seconds. Setting it to Timeout.InfiniteTimeSpan, " +
-        "TimeSpan.FromMilliseconds(-1), TimeSpan.FromMilliseconds(Timeout.Infinite), or TimeSpan.MaxValue " +
+        "TimeSpan.FromMilliseconds(-1), or TimeSpan.FromMilliseconds(Timeout.Infinite) " +
         "removes the request deadline. A stalled server then holds the caller and its thread pool slot " +
-        "with no recovery.");
+        "with no recovery. TimeSpan.MaxValue is not reported, because the setter throws " +
+        "ArgumentOutOfRangeException for it.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -125,8 +124,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
 
         if (symbol is IFieldSymbol field)
         {
-            return IsInfiniteTimeSpanField(field, timeoutTypes)
-                || IsTimeSpanMaxValueField(field, timeSpanTypes);
+            return IsInfiniteTimeSpanField(field, timeoutTypes);
         }
 
         if (symbol is not IMethodSymbol method
@@ -148,14 +146,6 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
     {
         return string.Equals(field.Name, InfiniteTimeSpanFieldName, StringComparison.Ordinal)
             && MetadataTypes.Contains(timeoutTypes, field.ContainingType);
-    }
-
-    private static bool IsTimeSpanMaxValueField(
-        IFieldSymbol field,
-        ImmutableArray<INamedTypeSymbol> timeSpanTypes)
-    {
-        return string.Equals(field.Name, MaxValueFieldName, StringComparison.Ordinal)
-            && MetadataTypes.Contains(timeSpanTypes, field.ContainingType);
     }
 
     private static bool IsInfiniteMilliseconds(object? value)

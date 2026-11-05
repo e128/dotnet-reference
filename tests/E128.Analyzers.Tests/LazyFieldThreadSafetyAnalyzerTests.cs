@@ -36,6 +36,34 @@ public sealed class LazyFieldThreadSafetyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task StaticField_IsThreadSafeFalse_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class Holder
+                           {
+                               private static readonly Lazy<int> {|E128194:Value = new Lazy<int>(() => 1, false)|};
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StaticField_IsThreadSafeTrue_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class Holder
+                           {
+                               private static readonly Lazy<int> Value = new Lazy<int>(() => 1, true);
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task InstanceField_None_Fires()
     {
         return VerifyAsync("""

@@ -47,6 +47,83 @@ public sealed class DuplicateJsonPropertyNameAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NonPublicMemberWithSameName_IsSilent()
+    {
+        return VerifyAsync("""
+                           using System.Text.Json.Serialization;
+
+                           public sealed class Widget
+                           {
+                               [JsonPropertyName("id")]
+                               public int First { get; set; }
+
+                               [JsonPropertyName("id")]
+                               private int Second { get; set; }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NonPublicMemberWithJsonInclude_FiresOnSecond()
+    {
+        return VerifyAsync("""
+                           using System.Text.Json.Serialization;
+
+                           public sealed class Widget
+                           {
+                               [JsonPropertyName("id")]
+                               public int First { get; set; }
+
+                               [{|E128178:JsonPropertyName("id")|}]
+                               [JsonInclude]
+                               private int Second { get; set; }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConditionalJsonIgnore_KeepsTheMemberInTheContract()
+    {
+        return VerifyAsync("""
+                           using System.Text.Json.Serialization;
+
+                           public sealed class Widget
+                           {
+                               [JsonPropertyName("id")]
+                               public int First { get; set; }
+
+                               [{|E128178:JsonPropertyName("id")|}]
+                               [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+                               public int? Second { get; set; }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NewMemberHidingTheBaseMember_IsSilent()
+    {
+        return VerifyAsync("""
+                           using System.Text.Json.Serialization;
+
+                           public class Base
+                           {
+                               [JsonPropertyName("id")]
+                               public int Id { get; set; }
+                           }
+
+                           public sealed class Derived : Base
+                           {
+                               [JsonPropertyName("id")]
+                               public new int Id { get; set; }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ThreePropertiesWithSameName_FiresOnSecondAndThird()
     {
         return VerifyAsync("""

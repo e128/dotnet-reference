@@ -26,6 +26,8 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
     private const string JsonPropertyNameMetadataName = "System.Text.Json.Serialization.JsonPropertyNameAttribute";
     private const string JsonIgnoreMetadataName = "System.Text.Json.Serialization.JsonIgnoreAttribute";
 
+    private const string JsonIncludeAttributeName = "JsonIncludeAttribute";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Duplicate JsonPropertyName Value",
@@ -166,8 +168,10 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
     }
 
     // A static member and an indexer never reach the JSON contract. An explicit interface
-    // implementation is not public, so System.Text.Json skips it. A member marked JsonIgnore is
-    // removed from the contract, so it cannot collide with another member.
+    // implementation is not public, so System.Text.Json skips it. A member that is not public stays
+    // out of the contract unless JsonInclude opts it in. A member marked JsonIgnore without a
+    // condition, or with the Always condition, is removed from the contract, so it cannot collide
+    // with another member. A conditional JsonIgnore keeps the member in the contract.
     private static bool IsExcluded(ISymbol member, ImmutableArray<INamedTypeSymbol> jsonIgnoreTypes)
     {
         if (member.IsStatic)
@@ -181,15 +185,38 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
+        var isIncluded = false;
+
         foreach (var attribute in member.GetAttributes())
         {
             if (MetadataTypes.Contains(jsonIgnoreTypes, attribute.AttributeClass))
             {
-                return true;
+                if (IgnoresAlways(attribute))
+                {
+                    return true;
+                }
+            }
+            else if (string.Equals(attribute.AttributeClass?.Name, JsonIncludeAttributeName, StringComparison.Ordinal))
+            {
+                isIncluded = true;
             }
         }
 
-        return false;
+        return member.DeclaredAccessibility != Accessibility.Public && !isIncluded;
+    }
+
+    // JsonIgnoreCondition.Always is 1 and is the default when the attribute names no condition.
+    private static bool IgnoresAlways(AttributeData attribute)
+    {
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (string.Equals(argument.Key, "Condition", StringComparison.Ordinal))
+            {
+                return argument.Value.Value is int condition && condition == 1;
+            }
+        }
+
+        return true;
     }
 
     private static bool TryReadName(AttributeData attribute, out string jsonName)
@@ -207,10 +234,16 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    // An override replaces the base member in the contract, so the two members never coexist. Walk
-    // the override chain because the attribute can sit on a virtual ancestor of the base member.
+    // An override or a member that hides the base member by name replaces it in the contract, so the
+    // two members never coexist. Walk the override chain because the attribute can sit on a virtual
+    // ancestor of the base member. A member with the same name as the base member hides it.
     private static bool IsOverrideOf(ISymbol member, ISymbol baseMember)
     {
+        if (string.Equals(member.Name, baseMember.Name, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
         if (member is not IPropertySymbol property)
         {
             return false;

@@ -216,7 +216,14 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
 
         if (visibleArgument is null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+            // Only the byte[] constructors default to a hidden buffer. The empty and capacity
+            // constructors expose it, so GetBuffer works on them.
+            if (constructor.Parameters.Length > 0
+                && constructor.Parameters[0].Type is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte })
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+            }
+
             return;
         }
 

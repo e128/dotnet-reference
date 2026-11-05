@@ -53,12 +53,6 @@ public sealed class OptionsValidationMissingAnalyzerTests
                                              return new OptionsBuilder<TOptions>();
                                          }
 
-                                         public static IServiceCollection Configure<TOptions>(this IServiceCollection services, IConfiguration configuration)
-                                             where TOptions : class
-                                         {
-                                             return services;
-                                         }
-
                                          public static IServiceCollection Configure<TOptions>(this IServiceCollection services, Action<TOptions> configureOptions)
                                              where TOptions : class
                                          {
@@ -66,6 +60,15 @@ public sealed class OptionsValidationMissingAnalyzerTests
                                          }
 
                                          public static IServiceCollection PostConfigure<TOptions>(this IServiceCollection services, Action<TOptions> configureOptions)
+                                             where TOptions : class
+                                         {
+                                             return services;
+                                         }
+                                     }
+
+                                     public static class OptionsConfigurationServiceCollectionExtensions
+                                     {
+                                         public static IServiceCollection Configure<TOptions>(this IServiceCollection services, IConfiguration configuration)
                                              where TOptions : class
                                          {
                                              return services;

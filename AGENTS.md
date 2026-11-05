@@ -138,6 +138,14 @@ of what is portable versus Claude-only.
 - Fix the root cause the second time a friction point repeats.
 - Keep a change focused and simple. Avoid an unrelated edit, an
   unnecessary abstraction, and a low-signal test.
+- Reuse before you write. Before you add new code, search for code that
+  already does the job. Call it. When existing code almost fits, refactor it
+  so both callers share it. Never copy a helper into a second file. Search
+  steps: `.claude/rules/reuse-before-write.md`.
+- Refactor internal code freely. Moving shared logic into an `internal` class
+  or function is a good change. Do it when two callers need the same logic.
+  Keep the new member `internal` and add `[InternalsVisibleTo]` for tests. Do
+  not widen a public API to share code.
 - Test observable behavior. Validate user-facing work in the real
   interface when applicable.
 - Keep unrelated work intact. Never take a destructive, production, or

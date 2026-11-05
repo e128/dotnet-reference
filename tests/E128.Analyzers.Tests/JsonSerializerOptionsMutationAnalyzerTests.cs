@@ -82,6 +82,53 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task SerializeInsideLambdaBeforeWrite_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Text.Json;
+
+                           class C
+                           {
+                               static Func<string> M(object value)
+                               {
+                                   var options = new JsonSerializerOptions();
+                                   Func<string> later = () => JsonSerializer.Serialize(value, options);
+                                   options.WriteIndented = true;
+                                   return later;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SerializeAndWriteInSeparateBranches_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Text.Json;
+
+                           class C
+                           {
+                               static string M(object value, bool compact)
+                               {
+                                   var options = new JsonSerializerOptions();
+                                   if (compact)
+                                   {
+                                       return JsonSerializer.Serialize(value, options);
+                                   }
+                                   else
+                                   {
+                                       options.WriteIndented = true;
+                                       return string.Empty;
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task PropertyWriteBeforeUse_DoesNotFire()
     {
         return VerifyAsync("""
@@ -232,6 +279,27 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
                                {
                                    var options = new Options();
                                    var json = Serializer.Serialize(value, options);
+                                   options.WriteIndented = true;
+                                   return json;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WriteAfterReassignment_Silent()
+    {
+        return VerifyAsync("""
+                           using System.Text.Json;
+
+                           class C
+                           {
+                               static string M(object value)
+                               {
+                                   var options = new JsonSerializerOptions();
+                                   var json = JsonSerializer.Serialize(value, options);
+                                   options = new JsonSerializerOptions();
                                    options.WriteIndented = true;
                                    return json;
                                }

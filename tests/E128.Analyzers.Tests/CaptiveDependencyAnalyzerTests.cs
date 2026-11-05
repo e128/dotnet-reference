@@ -387,6 +387,42 @@ public sealed class CaptiveDependencyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task AddDbContext_SingletonOptionsLifetimeOnly_DoesNotFire()
+    {
+        return VerifyEfCoreAsync("""
+                                 using Microsoft.EntityFrameworkCore;
+                                 using Microsoft.Extensions.DependencyInjection;
+                                 class StoreContext : DbContext { }
+                                 class Startup
+                                 {
+                                     void Configure(IServiceCollection services)
+                                     {
+                                         services.AddDbContext<StoreContext>(options => { }, optionsLifetime: ServiceLifetime.Singleton);
+                                     }
+                                 }
+                                 """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AddDbContext_NamedSingletonContextLifetime_Fires()
+    {
+        return VerifyEfCoreAsync("""
+                                 using Microsoft.EntityFrameworkCore;
+                                 using Microsoft.Extensions.DependencyInjection;
+                                 class StoreContext : DbContext { }
+                                 class Startup
+                                 {
+                                     void Configure(IServiceCollection services)
+                                     {
+                                         services.AddDbContext<{|E128154:StoreContext|}>(options => { }, contextLifetime: ServiceLifetime.Singleton);
+                                     }
+                                 }
+                                 """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task AddDbContext_DefaultLifetime_DoesNotFire()
     {
         return VerifyEfCoreAsync("""

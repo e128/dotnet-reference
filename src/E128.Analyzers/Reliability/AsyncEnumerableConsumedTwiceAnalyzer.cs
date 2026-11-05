@@ -30,13 +30,13 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "IAsyncEnumerable is consumed twice",
-        "The async sequence '{0}' is already consumed on an earlier line, so the second enumeration sees a different or empty sequence",
+        "The async sequence '{0}' is already consumed on an earlier line, so a second enumeration can re-run the source or see an empty sequence",
         "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
-        "An IAsyncEnumerable<T> value holds one enumerator position. A second enumeration of the "
-        + "same value starts at the end or replays a different sequence, so the loop body sees "
-        + "different or empty data. Materialize the sequence once, or call the source factory again.");
+        "A second enumeration of an IAsyncEnumerable<T> value can re-run the source, and a single-pass "
+        + "source such as a channel reader yields nothing the second time. Materialize the sequence "
+        + "once, or call the source factory again.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -90,36 +90,70 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
 
         var model = context.SemanticModel;
         var cancellationToken = context.CancellationToken;
-        var firstSites = new Dictionary<ISymbol, Location>(SymbolEqualityComparer.Default);
+        var firstSites = new Dictionary<ISymbol, ExpressionSyntax>(SymbolEqualityComparer.Default);
 
         foreach (var node in body.DescendantNodesAndSelf(IsFunctionBoundary))
         {
-            if (!TryGetEnumerationSource(node, out var source))
+            // An assignment gives the symbol a new sequence, so earlier enumerations no longer count.
+            if (node is AssignmentExpressionSyntax assignment
+                && model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is { } assigned)
+            {
+                firstSites.Remove(assigned);
+            }
+
+            if (!TryGetEnumeratedSequence(node, model, asyncEnumerableType, cancellationToken, out var expression, out var symbol))
             {
                 continue;
             }
 
-            var expression = Unwrap(source);
-            if (!TryGetTrackedSymbol(model, expression, cancellationToken, out var symbol)
-                || IsEnumeratorCancellationParameter(symbol)
-                || !IsAsyncEnumerable(symbol, asyncEnumerableType))
+            if (!firstSites.TryGetValue(symbol, out var first))
             {
+                firstSites.Add(symbol, expression);
                 continue;
             }
 
-            var location = expression.GetLocation();
-            if (!firstSites.TryGetValue(symbol, out var firstLocation))
+            // Two enumerations in the two branches of one if never run in the same pass.
+            if (ExclusiveBranches.Are(first, expression))
             {
-                firstSites.Add(symbol, location);
                 continue;
             }
 
             context.ReportDiagnostic(Diagnostic.Create(
                 Rule,
-                location,
-                ImmutableArray.Create(firstLocation),
+                expression.GetLocation(),
+                ImmutableArray.Create(first.GetLocation()),
                 symbol.Name));
         }
+    }
+
+    private static bool TryGetEnumeratedSequence(
+        SyntaxNode node,
+        SemanticModel model,
+        INamedTypeSymbol asyncEnumerableType,
+        CancellationToken cancellationToken,
+        [NotNullWhen(true)] out ExpressionSyntax? expression,
+        [NotNullWhen(true)] out ISymbol? symbol)
+    {
+        expression = null;
+        symbol = null;
+
+        if (!TryGetEnumerationSource(node, out var source))
+        {
+            return false;
+        }
+
+        var unwrapped = Unwrap(source);
+
+        if (!TryGetTrackedSymbol(model, unwrapped, cancellationToken, out var tracked)
+            || !IsAsyncEnumerable(tracked, asyncEnumerableType))
+        {
+            return false;
+        }
+
+        expression = unwrapped;
+        symbol = tracked;
+
+        return true;
     }
 
     private static bool IsFunctionBoundary(SyntaxNode node)
@@ -200,17 +234,6 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
         symbol = model.GetSymbolInfo(expression, cancellationToken).Symbol;
 
         return symbol is ILocalSymbol or IParameterSymbol or IFieldSymbol;
-    }
-
-    private static bool IsEnumeratorCancellationParameter(ISymbol symbol)
-    {
-        return symbol is IParameterSymbol parameter
-               && parameter.GetAttributes().Any(
-                   static attribute => attribute.AttributeClass is INamedTypeSymbol attributeClass
-                                       && string.Equals(
-                                           attributeClass.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                                           "global::System.Runtime.CompilerServices.EnumeratorCancellationAttribute",
-                                           StringComparison.Ordinal));
     }
 
     private static bool IsAsyncEnumerable(ISymbol symbol, INamedTypeSymbol asyncEnumerableType)

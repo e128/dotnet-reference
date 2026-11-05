@@ -227,6 +227,12 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
     {
         var unwrapped = ExpressionUnwrapper.ParenthesesAndCasts(expression);
 
+        // A filesystem root holds files that other programs own.
+        if (IsFilesystemRoot(unwrapped, model, cancellationToken))
+        {
+            return PathSafety.Unsafe;
+        }
+
         if (IsFixedRoot(unwrapped, model, cancellationToken)
             || IsTempRooted(unwrapped, model, pathTypes, cancellationToken))
         {
@@ -267,6 +273,26 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         return IsParameterOrMemberRead(unwrapped, model, cancellationToken)
             ? PathSafety.Unsafe
             : PathSafety.Unknown;
+    }
+
+    // A constant that names a drive root or the Unix root, such as "/", "\\", "C:\\" or "C:/".
+    private static bool IsFilesystemRoot(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        if (model.GetConstantValue(expression, cancellationToken).Value is not string value)
+        {
+            return false;
+        }
+
+        var trimmed = value.Trim();
+
+        return trimmed is "/" or "\\"
+               || (trimmed.Length is 2 or 3
+                   && char.IsLetter(trimmed[0])
+                   && trimmed[1] == ':'
+                   && (trimmed.Length == 2 || trimmed[2] is '\\' or '/'));
     }
 
     private static bool IsTempRooted(
@@ -362,12 +388,17 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         ImmutableArray<INamedTypeSymbol> pathTypes,
         CancellationToken cancellationToken)
     {
-        foreach (var ifStatement in CandidateGuards(deleteInvocation))
+        foreach (var (ifStatement, encloses) in CandidateGuards(deleteInvocation))
         {
             foreach (var invocation in ifStatement.Condition.DescendantNodesAndSelf()
                          .OfType<InvocationExpressionSyntax>())
             {
                 if (FindStartsWithSubject(invocation, model, cancellationToken) is not { } subject)
+                {
+                    continue;
+                }
+
+                if (!ProvesStartsWithTrue(invocation, ifStatement, encloses))
                 {
                     continue;
                 }
@@ -393,7 +424,60 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static IEnumerable<IfStatementSyntax> CandidateGuards(SyntaxNode deleteInvocation)
+    /// <summary>
+    ///     True when the delete can run only after the StartsWith call returned true. An enclosing
+    ///     then branch needs a condition that holds only when the call is true: the call alone, or
+    ///     joined by <c lang="csharp">&amp;&amp;</c>. A preceding if must end in an exit and must
+    ///     have no else branch. Its condition holds when the call is false, so the call appears
+    ///     under one <c lang="csharp">!</c>, joined by <c lang="csharp">||</c>.
+    /// </summary>
+    private static bool ProvesStartsWithTrue(
+        InvocationExpressionSyntax startsWith,
+        IfStatementSyntax ifStatement,
+        bool encloses)
+    {
+        if (!encloses && (ifStatement.Else is not null || !StatementExits.EndsInExit(ifStatement.Statement)))
+        {
+            return false;
+        }
+
+        var allowedBinary = encloses ? SyntaxKind.LogicalAndExpression : SyntaxKind.LogicalOrExpression;
+        var seenNot = false;
+        SyntaxNode node = startsWith;
+
+        while (!ReferenceEquals(node, ifStatement.Condition))
+        {
+            var parent = node.Parent;
+
+            if (parent is ParenthesizedExpressionSyntax)
+            {
+                // Parentheses never change the value.
+            }
+            else if (parent is PrefixUnaryExpressionSyntax prefix
+                     && prefix.IsKind(SyntaxKind.LogicalNotExpression)
+                     && !encloses
+                     && !seenNot)
+            {
+                seenNot = true;
+            }
+            else if (parent is BinaryExpressionSyntax binary
+                     && binary.IsKind(allowedBinary)
+                     && (encloses || seenNot))
+            {
+                // The other operand of this operator does not change what the call proves.
+            }
+            else
+            {
+                return false;
+            }
+
+            node = parent;
+        }
+
+        return encloses || seenNot;
+    }
+
+    private static IEnumerable<(IfStatementSyntax If, bool Encloses)> CandidateGuards(SyntaxNode deleteInvocation)
     {
         for (var current = deleteInvocation.Parent; current is not null; current = current.Parent)
         {
@@ -402,7 +486,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             if (current is IfStatementSyntax ancestor
                 && ancestor.Statement.Span.Contains(deleteInvocation.Span))
             {
-                yield return ancestor;
+                yield return (ancestor, true);
             }
 
             if (current is BlockSyntax block)
@@ -421,7 +505,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
 
                     if (statement is IfStatementSyntax preceding)
                     {
-                        yield return preceding;
+                        yield return (preceding, false);
                     }
                 }
             }
@@ -477,7 +561,8 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
                        model,
                        pathTypes,
                        cancellationToken))
-               || model.GetSymbolInfo(unwrapped, cancellationToken).Symbol is IFieldSymbol or IPropertySymbol;
+               || model.GetSymbolInfo(unwrapped, cancellationToken).Symbol
+                   is IFieldSymbol { IsReadOnly: true } or IPropertySymbol { SetMethod: null };
     }
 
     private static bool IsSameValue(

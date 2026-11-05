@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-05T14:06:17Z*
+*Updated: 2026-11-05T15:20:29Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
@@ -43,6 +43,9 @@ analyzers/{framework_name}{version}/{supported_architecture}/{language}/{name}.d
 - A supporting non-DLL file ships through a `.props` or `.targets` file. Put the
   `.props` file in `build/`.
 - The pack target names both DLLs with `PackagePath` set to `analyzers/dotnet/cs`.
+- An empty `_._` file packs to `lib/netstandard2.0`. The package has no runtime
+  assembly, so the placeholder gives nuget.org a framework to list on the
+  Supported Frameworks tab. The nuspec still lists no dependency.
 
 ## Per-Roslyn-Version Assemblies
 
@@ -96,24 +99,17 @@ A consumer inside this repository references the analyzer project directly:
 itself. A consumer outside the repository takes a plain `PackageReference`,
 because the DLL sits under `analyzers/dotnet/cs`.
 
-## Analyzer Dependency Closure
+## Analyzer Dependencies
 
-The analyzer reads `System.Text.Json` 10.0.14 for the planned configuration-key
-rule. The compiler host supplies the Roslyn assemblies, so the package must not
-carry them, and it must carry every other dependency the analyzer loads.
+The package carries no third-party assembly. The configuration-key rule reads
+appsettings files with `AppSettingsKeyReader`, a small hand-written scanner in
+`src/E128.Analyzers/Reliability`. It replaced a `System.Text.Json` reference and
+a closure of nine more DLLs. That closure risked a version clash with the
+copy that the compiler host loads.
 
-- `CopyLocalLockFileAssemblies` is true, so restore copies the whole closure
-  beside the analyzer DLL. The output folder is not the pack source without it.
-- An `AnalyzerDependency` item lists the closure. A `None` item maps each DLL
-  into `analyzers/dotnet/cs`.
-- The `System.Text.Json` reference sets `PrivateAssets="all"`, so the nuspec
-  lists no dependency. `SuppressDependenciesWhenPacking` already holds that
-  guarantee.
-- A `dotnet pack` listing showed 17 files: the analyzer DLL, the code fixer DLL,
-  the README, and the closure. No Roslyn assembly is in the package.
-- `Microsoft.Bcl.AsyncInterfaces` is pinned to the `System.Text.Json` version in
-  `Directory.Packages.props`. The Roslyn workspace packages request an older
-  version. The mismatch raises MSB3277 in the code fixer build.
+- A `dotnet pack` listing shows the analyzer DLL, the code fixer DLL, the README,
+  and the `lib/netstandard2.0/_._` placeholder.
+- `SuppressDependenciesWhenPacking` keeps the nuspec free of a dependency list.
 
 ## Related
 

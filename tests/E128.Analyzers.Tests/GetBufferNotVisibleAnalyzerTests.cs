@@ -23,7 +23,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Reports_WhenLocalIsCreatedWithoutTheFlag()
+    public Task Reports_WhenByteArrayLocalIsCreatedWithoutTheFlag()
     {
         return VerifyAsync("""
                            using System.IO;
@@ -31,7 +31,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
                            {
                                void M()
                                {
-                                   var stream = new MemoryStream();
+                                   var stream = new MemoryStream(new byte[8]);
                                    var buffer = {|E128192:stream.GetBuffer()|};
                                }
                            }
@@ -65,7 +65,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
                            {
                                void M()
                                {
-                                   MemoryStream stream = new();
+                                   MemoryStream stream = new(new byte[8]);
                                    var buffer = {|E128192:stream.GetBuffer()|};
                                }
                            }
@@ -82,7 +82,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
                            {
                                void M(MemoryStream stream)
                                {
-                                   stream = new MemoryStream();
+                                   stream = new MemoryStream(new byte[8]);
                                    var buffer = {|E128192:stream.GetBuffer()|};
                                }
                            }
@@ -92,6 +92,40 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     #endregion Fires
 
     #region Does Not Fire
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenStreamIsCreatedEmpty()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var stream = new MemoryStream();
+                                   var buffer = stream.GetBuffer();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenStreamIsCreatedWithACapacity()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var stream = new MemoryStream(16);
+                                   var buffer = stream.GetBuffer();
+                               }
+                           }
+                           """);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

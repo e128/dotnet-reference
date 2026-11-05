@@ -21,10 +21,13 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Parallel.ForEachAsync without a degree cap",
-        "'Parallel.ForEachAsync' runs one task per item because the call sets no 'MaxDegreeOfParallelism'",
+        "'Parallel.ForEachAsync' caps at the processor count because the call sets no 'MaxDegreeOfParallelism'",
         "E128-Performance",
-        DiagnosticSeverity.Warning,
-        true);
+        DiagnosticSeverity.Info,
+        true,
+        "Parallel.ForEachAsync runs at most Environment.ProcessorCount operations when " +
+        "MaxDegreeOfParallelism is unset. An I/O-bound body can use a larger or smaller cap, so " +
+        "set MaxDegreeOfParallelism to the value the workload needs.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

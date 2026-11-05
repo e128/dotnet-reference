@@ -259,4 +259,20 @@ public sealed class GcHandleFreeAnalyzerTests
                                             }
                                             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task BareAllocAfterUsingStatic_NotFreed_Fires()
+    {
+        return VerifyAsync("""
+                           using static System.Runtime.InteropServices.GCHandle;
+                           class C
+                           {
+                               void M(object payload)
+                               {
+                                   var handle = {|E128189:Alloc(payload)|};
+                               }
+                           }
+                           """);
+    }
 }

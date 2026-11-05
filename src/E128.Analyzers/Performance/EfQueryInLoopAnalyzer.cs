@@ -58,6 +58,26 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
         "MaxAsync",
         "Min",
         "MinAsync",
+        "Find",
+        "FindAsync",
+        "Contains",
+        "ContainsAsync",
+        "Last",
+        "LastAsync",
+        "LastOrDefault",
+        "LastOrDefaultAsync",
+        "ElementAt",
+        "ElementAtAsync",
+        "ElementAtOrDefault",
+        "ElementAtOrDefaultAsync",
+        "Average",
+        "AverageAsync",
+        "LongCount",
+        "LongCountAsync",
+        "ToDictionary",
+        "ToDictionaryAsync",
+        "ToHashSet",
+        "ToHashSetAsync",
         "AsEnumerable",
         "AsAsyncEnumerable",
         "Load",
@@ -137,7 +157,7 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
         for (var current = node.Parent; current is not null; current = current.Parent)
         {
             // A foreach source and a for initializer run once, so they are not a per-iteration query.
-            if ((current is ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
+            if ((current is ForStatementSyntax or CommonForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
                 && !IsInLoopHeader(current, node))
             {
                 return true;
@@ -157,7 +177,7 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
     {
         return loopNode switch
         {
-            ForEachStatementSyntax forEach => forEach.Expression.Span.Contains(node.Span),
+            CommonForEachStatementSyntax forEach => forEach.Expression.Span.Contains(node.Span),
             ForStatementSyntax forStatement => IsInForHeader(forStatement, node),
             _ => false
         };

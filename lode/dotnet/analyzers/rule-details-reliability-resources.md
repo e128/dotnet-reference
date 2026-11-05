@@ -1,5 +1,5 @@
 # Reliability Rule Details: Resources And Lifetime
-*Updated: 2026-11-05T13:11:46Z*
+*Updated: 2026-11-05T15:20:29Z*
 
 Behavior notes for the reliability rules that cover resource lifetime and shared
 state. The complete rule table, the severity, and the code-fix status live in
@@ -9,7 +9,7 @@ state. The complete rule table, the severity, and the code-fix status live in
 ### E128192: `GetBuffer` on a hidden `MemoryStream` buffer
 
 Severity: **Warning**. Flags a `MemoryStream.GetBuffer()` call whose receiver
-was created without `publiclyVisible: true`. The call throws
+was created from a `byte[]` without `publiclyVisible: true`. The call throws
 `UnauthorizedAccessException` for such a stream.
 
 The rule follows a local to its creation in the enclosing body. It follows a
@@ -19,6 +19,8 @@ constructor parameters, so positional and named forms both bind.
 **Exclusions**:
 
 - A creation with `publiclyVisible: true`.
+- A creation with no `byte[]` argument, such as `new MemoryStream()` or
+  `new MemoryStream(16)`. Those constructors expose the buffer.
 - A non-constant `publiclyVisible` value.
 - A receiver that is a field, a property, or a method result.
 - A creation in a field initializer or in another method.
@@ -86,6 +88,9 @@ The rule reads the receiver symbol as a local, a parameter, or a field.
 - A write before the first serializer call.
 - A write to an instance that the body never passes to the serializer.
 - A use in one body and a write in another body.
+- A serializer call inside a lambda or a local function.
+- A serializer call in the other branch of the same `if` as the write.
+- A new instance assigned to the same variable between the call and the write.
 - A user type with the same member names, or a serializer type outside
   `System.Text.Json`.
 

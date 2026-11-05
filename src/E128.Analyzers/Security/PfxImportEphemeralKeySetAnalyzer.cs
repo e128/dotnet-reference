@@ -9,8 +9,8 @@ namespace E128.Analyzers.Security;
 
 /// <summary>
 ///     E128191: Reports a PFX import whose key storage flags leave out
-///     <c lang="csharp">X509KeyStorageFlags.EphemeralKeySet</c>. The import then writes the private key to
-///     the machine key store, and the key outlives the process.
+///     <c lang="csharp">X509KeyStorageFlags.EphemeralKeySet</c>. The import then persists the private key in
+///     the key store, and the key outlives the process.
 /// </summary>
 /// <remarks>
 ///     The rule reads two shapes: an <c lang="csharp">X509Certificate2</c> constructor that takes a
@@ -42,13 +42,13 @@ public sealed class PfxImportEphemeralKeySetAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "PFX import without EphemeralKeySet",
-        "'{0}' imports a PFX file with no 'EphemeralKeySet', so the private key is written to the machine key store",
+        "'{0}' imports PFX data with no 'EphemeralKeySet', so the private key persists in the key store",
         "E128-Security",
         DiagnosticSeverity.Warning,
         true,
-        "A PFX import without X509KeyStorageFlags.EphemeralKeySet writes the private key to the " +
-        "machine key store. The key then outlives the process and any other account on the host can " +
-        "read it. Pass X509KeyStorageFlags.EphemeralKeySet on the import call.");
+        "A PFX import without X509KeyStorageFlags.EphemeralKeySet persists the private key in the " +
+        "key store, and the key outlives the process. Pass X509KeyStorageFlags.EphemeralKeySet on " +
+        "the import call. The flag is not supported for PFX loading on macOS, so test the change there.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

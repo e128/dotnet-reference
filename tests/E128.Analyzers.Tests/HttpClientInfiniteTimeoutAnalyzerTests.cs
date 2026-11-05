@@ -55,7 +55,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task TargetTypedObjectInitializer_WithTimeSpanMaxValue_Fires()
+    public Task TargetTypedObjectInitializer_WithTimeSpanMaxValue_IsSilent()
     {
         return VerifyAsync("""
                            using System;
@@ -64,7 +64,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
                            {
                                static HttpClient M()
                                {
-                                   HttpClient client = new() { {|E128181:Timeout = TimeSpan.MaxValue|} };
+                                   HttpClient client = new() { Timeout = TimeSpan.MaxValue };
                                    return client;
                                }
                            }

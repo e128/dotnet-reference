@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -123,14 +124,7 @@ public sealed class LazyFieldThreadSafetyAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (FindModeArgument(constructor, creation.ArgumentList, modeTypes) is not { } argument)
-            {
-                continue;
-            }
-
-            var constant = model.GetConstantValue(argument.Expression, token);
-
-            if (!constant.HasValue || constant.Value is not int mode || mode != noneValue)
+            if (!IsUnsynchronized(constructor, creation.ArgumentList, modeTypes, noneValue, model, token))
             {
                 continue;
             }
@@ -145,10 +139,28 @@ public sealed class LazyFieldThreadSafetyAnalyzer : DiagnosticAnalyzer
             && MetadataTypes.Contains(lazyTypes, named.OriginalDefinition);
     }
 
-    private static ArgumentSyntax? FindModeArgument(
+    // LazyThreadSafetyMode.None, and the isThreadSafe: false overload that means the same thing.
+    private static bool IsUnsynchronized(
         IMethodSymbol constructor,
         ArgumentListSyntax? argumentList,
-        ImmutableArray<INamedTypeSymbol> modeTypes)
+        ImmutableArray<INamedTypeSymbol> modeTypes,
+        int noneValue,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        return FindArgument(constructor, argumentList, parameter => MetadataTypes.Contains(modeTypes, parameter.Type))
+                   is { } modeArgument
+            ? model.GetConstantValue(modeArgument.Expression, token) is { HasValue: true, Value: int mode }
+              && mode == noneValue
+            : FindArgument(constructor, argumentList, parameter => string.Equals(parameter.Name, "isThreadSafe", StringComparison.Ordinal))
+                  is { } flagArgument
+              && model.GetConstantValue(flagArgument.Expression, token) is { HasValue: true, Value: false };
+    }
+
+    private static ArgumentSyntax? FindArgument(
+        IMethodSymbol constructor,
+        ArgumentListSyntax? argumentList,
+        Func<IParameterSymbol, bool> matches)
     {
         if (argumentList is null)
         {
@@ -157,7 +169,7 @@ public sealed class LazyFieldThreadSafetyAnalyzer : DiagnosticAnalyzer
 
         foreach (var parameter in constructor.Parameters)
         {
-            if (!MetadataTypes.Contains(modeTypes, parameter.Type))
+            if (!matches(parameter))
             {
                 continue;
             }
