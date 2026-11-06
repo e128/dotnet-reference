@@ -79,13 +79,17 @@ public sealed class EventSubscriptionLeakAnalyzerTests
                                private int _count;
                                public void Start()
                                {
-                                   _publisher.Changed += (s, e) => _count++;
+                                   _publisher.Changed += OnChanged;
                                }
                                public ValueTask DisposeAsync() => DisposeAsyncCore();
                                protected virtual ValueTask DisposeAsyncCore()
                                {
-                                   _publisher.Changed -= null;
+                                   _publisher.Changed -= OnChanged;
                                    return default;
+                               }
+                               private void OnChanged(object? sender, EventArgs e)
+                               {
+                                   _count++;
                                }
                            }
                            """);
@@ -271,7 +275,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task RemovalOutsideDispose_Fires()
+    public Task RemovalInAnOrdinaryMethod_DoesNotFire()
     {
         return VerifyAsync("""
                            using System;
@@ -285,7 +289,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
                                private int _count;
                                public void Start()
                                {
-                                   {|E128176:_publisher.Changed += (s, e) => _count++|};
+                                   _publisher.Changed += (s, e) => _count++;
                                }
                                public void Stop()
                                {
@@ -293,6 +297,68 @@ public sealed class EventSubscriptionLeakAnalyzerTests
                                }
                                public void Dispose()
                                {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemovalInAHelperCalledFromDispose_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _publisher = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   _publisher.Changed += OnChanged;
+                               }
+                               public void Dispose()
+                               {
+                                   Unsubscribe();
+                               }
+                               private void Unsubscribe()
+                               {
+                                   _publisher.Changed -= OnChanged;
+                               }
+                               private void OnChanged(object? sender, EventArgs e)
+                               {
+                                   _count++;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RemovalOnAnotherPublisherInstance_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Publisher
+                           {
+                               public event EventHandler? Changed;
+                           }
+                           class C : IDisposable
+                           {
+                               private readonly Publisher _first = new();
+                               private readonly Publisher _second = new();
+                               private int _count;
+                               public void Start()
+                               {
+                                   _first.Changed += (s, e) => _count++;
+                                   {|E128176:_second.Changed += (s, e) => _count++|};
+                               }
+                               public void Dispose()
+                               {
+                                   _first.Changed -= (s, e) => _count++;
                                }
                            }
                            """);

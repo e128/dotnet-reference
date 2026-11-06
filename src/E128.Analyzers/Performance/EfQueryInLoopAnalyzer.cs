@@ -78,14 +78,19 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
         "ToDictionaryAsync",
         "ToHashSet",
         "ToHashSetAsync",
-        "AsEnumerable",
-        "AsAsyncEnumerable",
         "Load",
         "LoadAsync",
         "ExecuteDelete",
         "ExecuteDeleteAsync",
         "ExecuteUpdate",
         "ExecuteUpdateAsync");
+
+    // These calls do not run a query. They report only as the source of a foreach that itself runs
+    // inside an outer loop, because that foreach enumerates the query once per outer iteration.
+    private static readonly ImmutableHashSet<string> DeferredMethodNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "AsEnumerable",
+        "AsAsyncEnumerable");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -128,12 +133,21 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
         }
 
         var methodName = memberAccess.Name.Identifier.ValueText;
-        if (!MaterializingMethodNames.Contains(methodName))
+        var isDeferred = DeferredMethodNames.Contains(methodName);
+
+        if (!isDeferred && !MaterializingMethodNames.Contains(methodName))
         {
             return;
         }
 
-        if (!IsInsideLoopBody(invocation))
+        if (isDeferred)
+        {
+            if (!FeedsNestedForEachSource(invocation))
+            {
+                return;
+            }
+        }
+        else if (!IsInsideLoopBody(invocation))
         {
             return;
         }
@@ -150,6 +164,24 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), methodName));
+    }
+
+    /// <summary>
+    ///     True when the call is the source of a foreach that runs inside another loop. The deferred
+    ///     call itself does no work, so only the per-iteration enumeration is a round trip.
+    /// </summary>
+    private static bool FeedsNestedForEachSource(InvocationExpressionSyntax invocation)
+    {
+        SyntaxNode current = invocation;
+
+        while (current.Parent is ParenthesizedExpressionSyntax)
+        {
+            current = current.Parent;
+        }
+
+        return current.Parent is CommonForEachStatementSyntax forEach
+               && ReferenceEquals(forEach.Expression, current)
+               && IsInsideLoopBody(forEach);
     }
 
     private static bool IsInsideLoopBody(SyntaxNode node)
@@ -291,6 +323,7 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
             {
                 InvocationExpressionSyntax invocation => GetReceiver(invocation),
                 MemberAccessExpressionSyntax access => access.Expression,
+                QueryExpressionSyntax query => query.FromClause.Expression,
                 _ => null
             }
             : stripped;

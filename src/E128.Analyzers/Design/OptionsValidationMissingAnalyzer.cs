@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -21,7 +23,9 @@ namespace E128.Analyzers.Design;
 ///     <c lang="csharp">services.AddOptions&lt;T&gt;()</c> carries no configuration source, and
 ///     <c lang="csharp">PostConfigure</c> is a different shape, so the rule skips both. The rule matches the
 ///     receiver chain through the framework extension method symbols, so it stays silent on a user type that
-///     reuses a method name. No code fix.
+///     reuses a method name. A separate <c lang="csharp">IValidateOptions&lt;T&gt;</c> registration for the
+///     same options type in the same member or file also clears the report, because that validator runs for
+///     the bound options. No code fix.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
@@ -36,6 +40,7 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
     private const string ServiceCollectionMetadataName = "Microsoft.Extensions.DependencyInjection.IServiceCollection";
     private const string ConfigurationMetadataName = "Microsoft.Extensions.Configuration.IConfiguration";
     private const string OptionsBuilderMetadataName = "Microsoft.Extensions.Options.OptionsBuilder`1";
+    private const string ValidateOptionsMetadataName = "Microsoft.Extensions.Options.IValidateOptions`1";
 
     // The validation methods live on the options builder and on four extension classes, and the
     // owning assembly differs by method. Resolve every candidate, so the name alone never decides.
@@ -105,29 +110,26 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
         var serviceCollectionType = context.Compilation.GetTypeByMetadataName(ServiceCollectionMetadataName);
         var configurationType = context.Compilation.GetTypeByMetadataName(ConfigurationMetadataName);
         var optionsBuilderType = context.Compilation.GetTypeByMetadataName(OptionsBuilderMetadataName);
+        var validateOptionsType = context.Compilation.GetTypeByMetadataName(ValidateOptionsMetadataName);
 
         var builderExtensionTypes = BuilderExtensionMetadataNames
             .SelectMany(metadataName => MetadataTypes.Find(context.Compilation, metadataName))
             .ToImmutableArray();
 
+        var types = new RuleTypes(
+            serviceCollectionExtensions,
+            serviceCollectionType,
+            configurationType,
+            optionsBuilderType,
+            validateOptionsType,
+            builderExtensionTypes);
+
         context.RegisterSyntaxNodeAction(
-            nodeContext => AnalyzeInvocation(
-                nodeContext,
-                serviceCollectionExtensions,
-                serviceCollectionType,
-                configurationType,
-                optionsBuilderType,
-                builderExtensionTypes),
+            nodeContext => AnalyzeInvocation(nodeContext, types),
             SyntaxKind.InvocationExpression);
     }
 
-    private static void AnalyzeInvocation(
-        SyntaxNodeAnalysisContext context,
-        ImmutableArray<INamedTypeSymbol> serviceCollectionExtensions,
-        INamedTypeSymbol? serviceCollectionType,
-        INamedTypeSymbol? configurationType,
-        INamedTypeSymbol? optionsBuilderType,
-        ImmutableArray<INamedTypeSymbol> builderExtensionTypes)
+    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, RuleTypes types)
     {
         var outermost = (InvocationExpressionSyntax)context.Node;
 
@@ -138,35 +140,73 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!ChainMentionsRegistration(outermost))
+        if (!ChainMentionsRegistration(outermost)
+            || !TryFindRegistration(
+                outermost,
+                types,
+                context.SemanticModel,
+                context.CancellationToken,
+                out var registration,
+                out var registrationMethod))
         {
             return;
         }
 
-        InvocationExpressionSyntax? registration = null;
-        IMethodSymbol? registrationMethod = null;
+        // A validator registered elsewhere for the same options type runs for the bound options.
+        if (HasSeparateValidator(
+                registration,
+                registrationMethod.TypeArguments[0],
+                types.ValidateOptions,
+                types.ServiceCollection,
+                context.SemanticModel,
+                context.CancellationToken))
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            registration.GetLocation(),
+            registrationMethod.TypeArguments[0].Name));
+    }
+
+    /// <summary>
+    ///     Finds the options registration in the chain and checks that it reads a configuration
+    ///     source. A validation call in the chain clears the report.
+    /// </summary>
+    private static bool TryFindRegistration(
+        InvocationExpressionSyntax outermost,
+        RuleTypes types,
+        SemanticModel model,
+        CancellationToken cancellationToken,
+        [NotNullWhen(true)] out InvocationExpressionSyntax? registration,
+        [NotNullWhen(true)] out IMethodSymbol? registrationMethod)
+    {
+        registration = null;
+        registrationMethod = null;
+
         var registrationBindsConfiguration = false;
         var hasBind = false;
 
         ExpressionSyntax? current = outermost;
         while (current is InvocationExpressionSyntax invocation)
         {
-            if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method)
+            if (model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol method)
             {
-                if (IsValidationCall(method, optionsBuilderType, builderExtensionTypes))
+                if (IsValidationCall(method, types.OptionsBuilder, types.BuilderExtensions))
                 {
-                    return;
+                    return false;
                 }
 
-                if (MetadataTypes.Contains(serviceCollectionExtensions, method.ContainingType)
-                    && IsOptionsRegistration(method, serviceCollectionType, configurationType, out var bindsConfiguration))
+                if (MetadataTypes.Contains(types.ServiceCollectionExtensions, method.ContainingType)
+                    && IsOptionsRegistration(method, types.ServiceCollection, types.Configuration, out var bindsConfiguration))
                 {
                     // The outermost registration wins, so its bind flag must win too.
                     registrationBindsConfiguration = registration is null ? bindsConfiguration : registrationBindsConfiguration;
                     registration ??= invocation;
                     registrationMethod ??= method;
                 }
-                else if (IsBindCall(method, builderExtensionTypes))
+                else if (IsBindCall(method, types.BuilderExtensions))
                 {
                     hasBind = true;
                 }
@@ -176,18 +216,116 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
         }
 
         // A bare AddOptions<T>() carries no configuration source here, so it needs a Bind call.
-        if (registration is null
-            || registrationMethod is null
-            || registrationMethod.TypeArguments.Length != 1
-            || (!hasBind && !registrationBindsConfiguration))
+        return registration is not null
+               && registrationMethod is not null
+               && registrationMethod.TypeArguments.Length == 1
+               && (hasBind || registrationBindsConfiguration);
+    }
+
+    private readonly struct RuleTypes
+    {
+        internal RuleTypes(
+            ImmutableArray<INamedTypeSymbol> serviceCollectionExtensions,
+            INamedTypeSymbol? serviceCollection,
+            INamedTypeSymbol? configuration,
+            INamedTypeSymbol? optionsBuilder,
+            INamedTypeSymbol? validateOptions,
+            ImmutableArray<INamedTypeSymbol> builderExtensions)
         {
-            return;
+            ServiceCollectionExtensions = serviceCollectionExtensions;
+            ServiceCollection = serviceCollection;
+            Configuration = configuration;
+            OptionsBuilder = optionsBuilder;
+            ValidateOptions = validateOptions;
+            BuilderExtensions = builderExtensions;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(
-            Rule,
-            registration.GetLocation(),
-            registrationMethod.TypeArguments[0].Name));
+        internal ImmutableArray<INamedTypeSymbol> ServiceCollectionExtensions { get; }
+
+        internal INamedTypeSymbol? ServiceCollection { get; }
+
+        internal INamedTypeSymbol? Configuration { get; }
+
+        internal INamedTypeSymbol? OptionsBuilder { get; }
+
+        internal INamedTypeSymbol? ValidateOptions { get; }
+
+        internal ImmutableArray<INamedTypeSymbol> BuilderExtensions { get; }
+    }
+
+    /// <summary>
+    ///     True when the same member, or failing that the same file, registers an
+    ///     <c lang="csharp">IValidateOptions&lt;T&gt;</c> implementation for the options type.
+    /// </summary>
+    private static bool HasSeparateValidator(
+        InvocationExpressionSyntax registration,
+        ITypeSymbol optionsType,
+        INamedTypeSymbol? validateOptionsType,
+        INamedTypeSymbol? serviceCollectionType,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        if (validateOptionsType is null || serviceCollectionType is null)
+        {
+            return false;
+        }
+
+        var member = registration.FirstAncestorOrSelf<MemberDeclarationSyntax>();
+        if (member is not null
+            && ContainsValidatorRegistration(
+                member,
+                optionsType,
+                validateOptionsType,
+                serviceCollectionType,
+                model,
+                cancellationToken))
+        {
+            return true;
+        }
+
+        var root = registration.SyntaxTree.GetRoot(cancellationToken);
+
+        return !ReferenceEquals(root, member)
+               && ContainsValidatorRegistration(
+                   root,
+                   optionsType,
+                   validateOptionsType,
+                   serviceCollectionType,
+                   model,
+                   cancellationToken);
+    }
+
+    private static bool ContainsValidatorRegistration(
+        SyntaxNode scope,
+        ITypeSymbol optionsType,
+        INamedTypeSymbol validateOptionsType,
+        INamedTypeSymbol serviceCollectionType,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        foreach (var invocation in scope.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.Expression is not MemberAccessExpressionSyntax access
+                || !SymbolEqualityComparer.Default.Equals(
+                    model.GetTypeInfo(access.Expression, cancellationToken).Type,
+                    serviceCollectionType)
+                || model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol method)
+            {
+                continue;
+            }
+
+            foreach (var typeArgument in method.TypeArguments)
+            {
+                if (typeArgument is INamedTypeSymbol { TypeArguments.Length: 1 } named
+                    && SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, validateOptionsType)
+                    && SymbolEqualityComparer.Default.Equals(named.TypeArguments[0], optionsType))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static bool ChainMentionsRegistration(InvocationExpressionSyntax outermost)
@@ -237,13 +375,29 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // Configure<T>(configuration) binds a configuration source. Configure<T>(Action<T>) does not.
-        bindsConfiguration = method.Parameters.Length > 0
-            && SymbolEqualityComparer.Default.Equals(
-                method.Parameters[method.Parameters.Length - 1].Type,
-                configurationType);
+        // Configure<T>(configuration, ...) binds a configuration source, and the source is not always
+        // the last parameter. Configure<T>(Action<T>) does not bind configuration.
+        bindsConfiguration = HasConfigurationParameter(method, configurationType);
 
         return bindsConfiguration;
+    }
+
+    private static bool HasConfigurationParameter(IMethodSymbol method, INamedTypeSymbol? configurationType)
+    {
+        if (configurationType is null)
+        {
+            return false;
+        }
+
+        foreach (var parameter in method.Parameters)
+        {
+            if (SymbolEqualityComparer.Default.Equals(parameter.Type, configurationType))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsBindCall(IMethodSymbol method, ImmutableArray<INamedTypeSymbol> builderExtensionTypes)

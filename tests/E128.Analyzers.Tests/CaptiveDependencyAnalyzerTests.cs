@@ -423,6 +423,30 @@ public sealed class CaptiveDependencyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task AddDbContextNameOnUserHelper_DoesNotFire()
+    {
+        return VerifyEfCoreAsync("""
+                                 using System;
+                                 using Microsoft.EntityFrameworkCore;
+                                 using Microsoft.Extensions.DependencyInjection;
+                                 class StoreContext : DbContext { }
+                                 class Registration
+                                 {
+                                     public Registration AddDbContext<T>(Action<object> configure, ServiceLifetime contextLifetime)
+                                         => this;
+                                 }
+                                 class Startup
+                                 {
+                                     void Configure(Registration registration)
+                                     {
+                                         registration.AddDbContext<StoreContext>(options => { }, ServiceLifetime.Singleton);
+                                     }
+                                 }
+                                 """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task AddDbContext_DefaultLifetime_DoesNotFire()
     {
         return VerifyEfCoreAsync("""

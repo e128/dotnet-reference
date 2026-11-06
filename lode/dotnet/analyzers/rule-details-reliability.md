@@ -1,5 +1,5 @@
 # Reliability Rule Details
-*Updated: 2026-11-05T15:20:29Z*
+*Updated: 2026-11-06T13:02:22Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -150,9 +150,10 @@ the method.
 
 ### E128195: Configuration key absent from the appsettings files
 
-Severity: **Warning**. Flags a constant configuration key that no JSON
-additional file defines. A missing key returns null, or throws at startup when
-the reader calls the required form.
+Severity: **Warning**. Flags a constant configuration key that no
+`appsettings*.json` additional file defines. A missing key returns null, or
+throws at startup when the reader calls the required form. The rule reads only
+those files.
 
 The rule reads the key from three sites:
 
@@ -161,12 +162,12 @@ The rule reads the key from three sites:
 - `GetConnectionString(name)` on `ConfigurationExtensions`, which maps to
   `ConnectionStrings:name`.
 
-At compilation start the rule reads each `*.json` additional file with
-`AppSettingsKeyReader`, a hand-written scanner that accepts comments and a
-trailing comma. It flattens each document to colon-separated paths and adds
-every intermediate node, so a section read matches a prefix and an array element
-matches its index. The comparison ignores case, because the configuration
-provider ignores case.
+At compilation start the rule reads each `appsettings*.json` additional file
+with `AppSettingsKeyReader`, a hand-written scanner that accepts comments and a
+trailing comma. A file that fails to parse is skipped. The reader flattens each
+document to colon-separated paths and adds every intermediate node, so a section
+read matches a prefix and an array element matches its index. The comparison
+ignores case, because the configuration provider ignores case.
 
 **Exclusions**:
 
@@ -174,9 +175,10 @@ provider ignores case.
 - A receiver whose type is not `IConfiguration`, or that does not implement it.
 - A receiver that is an `IConfigurationSection`. Its keys are relative to the section.
 - An indexer assignment such as `configuration["Key"] = value`, which defines the key.
-- A compilation with no parsable JSON additional file. The rule then cannot
-  know the key set, so it stays off.
-- A key in the `e128_added_configuration_keys` option.
+- A compilation with no parsable `appsettings*.json` additional file. The rule
+  then cannot know the key set, so it stays off.
+- A key in the `e128_added_configuration_keys` option. The option adds keys on
+  top of the parsed files and never activates the rule alone.
 
 The rule stays off without `Microsoft.Extensions.Configuration.IConfiguration`
 in the compilation. A project must pass its files through

@@ -74,7 +74,34 @@ public sealed class DisposableFieldInLoopAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task ForeachOverwrite_WithOnlyADisposeAfterTheAssignment_Fires()
+    public Task ForeachOverwrite_WithOnlyADisposeAfterTheAssignment_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class Res : IDisposable
+                           {
+                               public void Dispose()
+                               {
+                               }
+                           }
+                           class C
+                           {
+                               private IDisposable? _current;
+                               public void Run(string[] items)
+                               {
+                                   foreach (var item in items)
+                                   {
+                                       _current = new Res();
+                                       _current?.Dispose();
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ForeachOverwrite_WithAContinueBeforeTheDispose_Fires()
     {
         return VerifyAsync("""
                            using System;
@@ -92,6 +119,11 @@ public sealed class DisposableFieldInLoopAnalyzerTests
                                    foreach (var item in items)
                                    {
                                        {|E128193:_current|} = new Res();
+                                       if (item.Length == 0)
+                                       {
+                                           continue;
+                                       }
+
                                        _current?.Dispose();
                                    }
                                }

@@ -31,7 +31,10 @@ internal sealed class AppSettingsKeyReader
     /// </summary>
     internal static bool TryRead(string json, ImmutableHashSet<string>.Builder keys)
     {
-        var reader = new AppSettingsKeyReader(json, keys);
+        // Parse into a local set so a document that fails partway leaves the caller's set untouched.
+        // Configuration keys are case-insensitive, and the only caller builds its set that way.
+        var parsed = ImmutableHashSet.CreateBuilder(StringComparer.OrdinalIgnoreCase);
+        var reader = new AppSettingsKeyReader(json, parsed);
 
         if (reader.json.Length > 0 && reader.json[0] == '\uFEFF')
         {
@@ -45,7 +48,17 @@ internal sealed class AppSettingsKeyReader
 
         reader.SkipTrivia();
 
-        return reader.position == reader.json.Length;
+        if (reader.position != reader.json.Length)
+        {
+            return false;
+        }
+
+        foreach (var key in parsed)
+        {
+            keys.Add(key);
+        }
+
+        return true;
     }
 
     private bool ReadValue(string prefix, int depth)
@@ -135,7 +148,9 @@ internal sealed class AppSettingsKeyReader
                 return true;
             }
 
-            var path = prefix + ":" + index.ToString(CultureInfo.InvariantCulture);
+            var path = prefix.Length == 0
+                ? index.ToString(CultureInfo.InvariantCulture)
+                : prefix + ":" + index.ToString(CultureInfo.InvariantCulture);
             keys.Add(path);
             index++;
 
@@ -262,12 +277,116 @@ internal sealed class AppSettingsKeyReader
 
         var token = json.Substring(start, position - start);
 
-        return token is "true" or "false" or "null"
-               || double.TryParse(
-                   token,
-                   NumberStyles.Float,
-                   CultureInfo.InvariantCulture,
-                   out _);
+        // The token must be a JSON literal. double.TryParse would also accept NaN, Infinity, a
+        // leading plus sign, a leading zero, and a trailing dot.
+        return token is "true" or "false" or "null" || IsJsonNumber(token);
+    }
+
+    // Matches -?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?
+    private static bool IsJsonNumber(string token)
+    {
+        var index = SkipInteger(token, 0);
+
+        if (index < 0)
+        {
+            return false;
+        }
+
+        index = SkipFraction(token, index);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        index = SkipExponent(token, index);
+
+        return index == token.Length;
+    }
+
+    private static int SkipInteger(string token, int index)
+    {
+        if (index < token.Length && token[index] == '-')
+        {
+            index++;
+        }
+
+        if (index >= token.Length)
+        {
+            return -1;
+        }
+
+        if (token[index] == '0')
+        {
+            return index + 1;
+        }
+
+        if (token[index] is < '1' or > '9')
+        {
+            return -1;
+        }
+
+        index++;
+
+        while (index < token.Length && IsDigit(token[index]))
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static int SkipFraction(string token, int index)
+    {
+        if (index >= token.Length || token[index] != '.')
+        {
+            return index;
+        }
+
+        index++;
+
+        if (index >= token.Length || !IsDigit(token[index]))
+        {
+            return -1;
+        }
+
+        while (index < token.Length && IsDigit(token[index]))
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static int SkipExponent(string token, int index)
+    {
+        if (index >= token.Length || token[index] is not ('e' or 'E'))
+        {
+            return index;
+        }
+
+        index++;
+
+        if (index < token.Length && token[index] is '+' or '-')
+        {
+            index++;
+        }
+
+        if (index >= token.Length || !IsDigit(token[index]))
+        {
+            return -1;
+        }
+
+        while (index < token.Length && token[index] is >= '0' and <= '9')
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static bool IsDigit(char character)
+    {
+        return character is >= '0' and <= '9';
     }
 
     private static bool IsLiteralEnd(char character)

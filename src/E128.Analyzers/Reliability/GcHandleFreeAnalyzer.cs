@@ -11,9 +11,8 @@ namespace E128.Analyzers.Reliability;
 
 /// <summary>
 ///     E128189: A <c lang="csharp">GCHandle.Alloc</c> result stored in a local must be freed with
-///     <c lang="csharp">Free</c> in the
-///     same method. The rule stays silent when the local can leave the method through a call, a
-///     return, a field, or a collection.
+///     <c lang="csharp">Free</c> in the same member body. The rule stays silent when the local can
+///     leave that body through a call, a return, a field, or a collection.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
@@ -79,7 +78,7 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var body = EnclosingBody.Find(invocation);
+        var body = FindOutermostMemberBody(invocation);
         if (body is null)
         {
             return;
@@ -103,6 +102,34 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), invocation.ToString()));
+    }
+
+    // A lambda or local function body is too small a scope. The handle outlives that body, so the
+    // free can sit anywhere in the outermost member body.
+    private static BlockSyntax? FindOutermostMemberBody(SyntaxNode node)
+    {
+        BlockSyntax? body = null;
+
+        foreach (var ancestor in node.Ancestors())
+        {
+            var candidate = ancestor switch
+            {
+                MethodDeclarationSyntax method => method.Body,
+                ConstructorDeclarationSyntax constructor => constructor.Body,
+                DestructorDeclarationSyntax destructor => destructor.Body,
+                OperatorDeclarationSyntax operatorDeclaration => operatorDeclaration.Body,
+                ConversionOperatorDeclarationSyntax conversion => conversion.Body,
+                AccessorDeclarationSyntax accessor => accessor.Body,
+                _ => null
+            };
+
+            if (candidate is not null)
+            {
+                body = candidate;
+            }
+        }
+
+        return body;
     }
 
     private static bool IsAllocName(ExpressionSyntax expression)

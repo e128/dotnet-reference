@@ -11,14 +11,15 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Security;
 
 /// <summary>
-///     E128184: Reports a recursive directory delete whose target path the rule cannot prove safe.
-///     A path built from a parameter, a field, or a property can point outside the intended root.
+///     E128184: Reports a recursive directory delete whose target path the rule does not recognize
+///     as safe. A path built from a parameter, a field, or a property can point outside the intended
+///     root.
 /// </summary>
 /// <remarks>
-///     The rule reports only a shape it can prove unsafe, and it never follows a path across a
-///     method boundary. A path rooted at a temp directory, a literal, a proven
-///     <c lang="csharp">Path.GetFullPath</c> result, or a value guarded by a
-///     <c lang="csharp">StartsWith</c> check stays silent.
+///     The rule reports a path it cannot trace to a recognized safe root, and it never follows a
+///     path across a method boundary. A path rooted at a temp directory, a relative literal, a
+///     <c lang="csharp">Path.GetFullPath</c> result of either, or a value guarded by a
+///     <c lang="csharp">StartsWith</c> check against a directory-bounded root stays silent.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
@@ -36,12 +37,12 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "Recursive delete outside a proven safe root",
-        "'{0}' is deleted recursively, and the rule cannot prove the path stays inside a temp directory or a fixed root",
+        "Recursive delete outside a recognized safe root",
+        "'{0}' is deleted recursively, and the rule does not recognize the path as a temp directory or a fixed root",
         "E128-Security",
         DiagnosticSeverity.Info,
         true,
-        "A recursive delete of an unproven path can remove files outside the intended root. Build the path from Path.GetTempPath(), use a string literal, or guard it with StartsWith against a fixed root.");
+        "A recursive delete of a path the rule does not recognize as safe can remove files outside the intended root. Build the path from Path.GetTempPath(), use a relative string literal, or guard it with StartsWith against a fixed root.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -130,6 +131,13 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         path = invocation;
         recursive = invocation;
 
+        // Syntactic gate first. Most invocations are not a delete, so they must not pay for
+        // overload resolution.
+        if (!MentionsDeleteName(invocation))
+        {
+            return false;
+        }
+
         if (model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol method
             || !string.Equals(method.Name, DeleteMethodName, StringComparison.Ordinal))
         {
@@ -158,28 +166,46 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        if (MetadataTypes.Contains(directoryInfoTypes, method.ContainingType))
+        return MetadataTypes.Contains(directoryInfoTypes, method.ContainingType)
+               && TryGetDirectoryInfoArguments(invocation, method, out path, out recursive);
+    }
+
+    // DirectoryInfo.Delete(bool). The instance owns the path.
+    private static bool TryGetDirectoryInfoArguments(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        out ExpressionSyntax path,
+        out ExpressionSyntax recursive)
+    {
+        path = invocation;
+        recursive = invocation;
+
+        if (method.Parameters.Length != 1
+            || method.Parameters[0].Type.SpecialType != SpecialType.System_Boolean
+            || invocation.Expression is not MemberAccessExpressionSyntax memberAccess
+            || FindArgument(invocation, method, parameterIndex: 0) is not { } recursiveArgument)
         {
-            // DirectoryInfo.Delete(bool). The instance owns the path.
-            if (method.Parameters.Length != 1
-                || method.Parameters[0].Type.SpecialType != SpecialType.System_Boolean
-                || invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-            {
-                return false;
-            }
-
-            var recursiveArgument = FindArgument(invocation, method, parameterIndex: 0);
-            if (recursiveArgument is null)
-            {
-                return false;
-            }
-
-            path = memberAccess.Expression;
-            recursive = recursiveArgument;
-            return true;
+            return false;
         }
 
-        return false;
+        path = memberAccess.Expression;
+        recursive = recursiveArgument;
+        return true;
+    }
+
+    private static bool MentionsDeleteName(InvocationExpressionSyntax invocation)
+    {
+        var name = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            MemberBindingExpressionSyntax memberBinding => memberBinding.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
+
+        return name is not null
+               && (string.Equals(name, "Delete", StringComparison.Ordinal)
+                   || string.Equals(name, "DeleteAsync", StringComparison.Ordinal));
     }
 
     private static ExpressionSyntax? FindArgument(
@@ -217,9 +243,40 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     Decides whether the path provably stays inside a temp directory or a fixed root.
+    ///     Decides whether the path stays inside a temp directory or a fixed root. A local alias is
+    ///     followed first, so <c lang="csharp">var target = path</c> classifies as <c lang="csharp">path</c>.
     /// </summary>
     private static PathSafety ClassifyPath(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        ImmutableArray<INamedTypeSymbol> pathTypes,
+        CancellationToken cancellationToken)
+    {
+        var visited = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var current = expression;
+
+        while (true)
+        {
+            var unwrapped = ExpressionUnwrapper.ParenthesesAndCasts(current);
+            var symbol = model.GetSymbolInfo(unwrapped, cancellationToken).Symbol;
+
+            if (symbol is not ILocalSymbol local || !visited.Add(local))
+            {
+                break;
+            }
+
+            if (GetLocalInitializer(local, cancellationToken) is not { } initializer)
+            {
+                break;
+            }
+
+            current = initializer;
+        }
+
+        return ClassifyPathCore(current, model, pathTypes, cancellationToken);
+    }
+
+    private static PathSafety ClassifyPathCore(
         ExpressionSyntax expression,
         SemanticModel model,
         ImmutableArray<INamedTypeSymbol> pathTypes,
@@ -229,6 +286,13 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
 
         // A filesystem root holds files that other programs own.
         if (IsFilesystemRoot(unwrapped, model, cancellationToken))
+        {
+            return PathSafety.Unsafe;
+        }
+
+        // A rooted literal names an absolute location the rule cannot verify. Only a relative
+        // literal counts as a fixed root.
+        if (IsRootedLiteral(unwrapped, model, cancellationToken))
         {
             return PathSafety.Unsafe;
         }
@@ -293,6 +357,55 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
                    && char.IsLetter(trimmed[0])
                    && trimmed[1] == ':'
                    && (trimmed.Length == 2 || trimmed[2] is '\\' or '/'));
+    }
+
+    // A constant string that starts at a filesystem root: a leading separator, a UNC prefix, or a
+    // drive letter plus a colon.
+    private static bool IsRootedLiteral(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return model.GetConstantValue(expression, cancellationToken).Value is string value
+               && IsRootedPath(value);
+    }
+
+    private static bool IsRootedPath(string value)
+    {
+        return value.Length != 0
+               && (value[0] is '/' or '\\'
+                   || (value.Length >= 2 && char.IsLetter(value[0]) && value[1] == ':'));
+    }
+
+    private static bool EndsWithDirectorySeparator(string value)
+    {
+        return value.Length > 0 && value[value.Length - 1] is '/' or '\\';
+    }
+
+    private static ExpressionSyntax? GetLocalInitializer(ILocalSymbol local, CancellationToken cancellationToken)
+    {
+        foreach (var reference in local.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax(cancellationToken) is VariableDeclaratorSyntax declarator
+                && declarator.Initializer is { } initializer)
+            {
+                return initializer.Value;
+            }
+        }
+
+        return null;
+    }
+
+    private static ExpressionSyntax? GetLocalInitializer(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        var unwrapped = ExpressionUnwrapper.ParenthesesAndCasts(expression);
+
+        return model.GetSymbolInfo(unwrapped, cancellationToken).Symbol is ILocalSymbol local
+            ? GetLocalInitializer(local, cancellationToken)
+            : null;
     }
 
     private static bool IsTempRooted(
@@ -378,8 +491,9 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     Returns true when an if in the same block or an enclosing if tests the deleted path with
-    ///     <c lang="csharp">StartsWith</c> against a fixed root.
+    ///     Returns true when the statement directly before the delete, or an if that encloses it,
+    ///     tests the deleted path with <c lang="csharp">StartsWith</c> against a directory-bounded root
+    ///     using an ordinal comparison.
     /// </summary>
     private static bool IsGuarded(
         InvocationExpressionSyntax deleteInvocation,
@@ -403,18 +517,19 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
-                if (!IsSafeRoot(
-                        invocation.ArgumentList.Arguments.Count > 0
-                            ? invocation.ArgumentList.Arguments[0].Expression
-                            : null,
-                        model,
-                        pathTypes,
-                        cancellationToken))
+                // A culture-sensitive comparison and a bare prefix both prove too little to treat the
+                // path as contained.
+                var rootArgument = FindArgumentExpression(invocation, parameterIndex: 0, "value");
+                if (!IsOrdinalComparison(invocation, model, cancellationToken)
+                    || !IsSeparatorBoundedRoot(rootArgument, model, pathTypes, cancellationToken)
+                    || !IsSafeRoot(rootArgument, model, pathTypes, cancellationToken))
                 {
                     continue;
                 }
 
-                if (IsSameValue(subject, path, model, pathTypes, cancellationToken))
+                // A write to the checked value between the guard and the delete makes the guard stale.
+                if (IsSameValue(subject, path, model, pathTypes, cancellationToken)
+                    && !IsAssignedBetween(ifStatement, encloses, subject, deleteInvocation, model, cancellationToken))
                 {
                     return true;
                 }
@@ -491,21 +606,15 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
 
             if (current is BlockSyntax block)
             {
-                foreach (var statement in block.Statements)
+                // Only the statement directly before the delete can guard it. An earlier if is too
+                // far away to prove the value at the delete.
+                for (var index = 1; index < block.Statements.Count; index++)
                 {
-                    if (statement.SpanStart >= deleteInvocation.SpanStart)
-                    {
-                        break;
-                    }
-
-                    if (statement.Span.Contains(deleteInvocation.Span))
-                    {
-                        continue;
-                    }
-
-                    if (statement is IfStatementSyntax preceding)
+                    if (block.Statements[index].Span.Contains(deleteInvocation.Span)
+                        && block.Statements[index - 1] is IfStatementSyntax preceding)
                     {
                         yield return (preceding, false);
+                        break;
                     }
                 }
             }
@@ -533,6 +642,175 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             : null;
     }
 
+    private static ExpressionSyntax? FindArgumentExpression(
+        InvocationExpressionSyntax invocation,
+        int parameterIndex,
+        string parameterName)
+    {
+        var positionalIndex = 0;
+
+        foreach (var argument in invocation.ArgumentList.Arguments)
+        {
+            if (argument.NameColon is { } nameColon)
+            {
+                if (string.Equals(
+                        nameColon.Name.Identifier.ValueText,
+                        parameterName,
+                        StringComparison.Ordinal))
+                {
+                    return argument.Expression;
+                }
+
+                continue;
+            }
+
+            if (positionalIndex == parameterIndex)
+            {
+                return argument.Expression;
+            }
+
+            positionalIndex++;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     True when the call passes <c lang="csharp">StringComparison.Ordinal</c> or
+    ///     <c lang="csharp">StringComparison.OrdinalIgnoreCase</c>. The single-argument overload and a
+    ///     culture-sensitive comparison compare with the current culture, so neither proves a path
+    ///     boundary.
+    /// </summary>
+    private static bool IsOrdinalComparison(
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        var comparison = FindArgumentExpression(invocation, parameterIndex: 1, "comparisonType");
+
+        return comparison is not null
+               && model.GetSymbolInfo(comparison, cancellationToken).Symbol is IFieldSymbol field
+               && string.Equals(field.ContainingType.ToDisplayString(), "System.StringComparison", StringComparison.Ordinal)
+               && (string.Equals(field.Name, "Ordinal", StringComparison.Ordinal)
+                   || string.Equals(field.Name, "OrdinalIgnoreCase", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     True when the root ends at a directory boundary. A bare prefix such as /srv/app/data also
+    ///     matches /srv/app/data-backup, so the root must end in a separator or be built with one.
+    /// </summary>
+    private static bool IsSeparatorBoundedRoot(
+        ExpressionSyntax? expression,
+        SemanticModel model,
+        ImmutableArray<INamedTypeSymbol> pathTypes,
+        CancellationToken cancellationToken)
+    {
+        if (expression is null)
+        {
+            return false;
+        }
+
+        var unwrapped = ExpressionUnwrapper.ParenthesesAndCasts(expression);
+
+        // Path.GetTempPath returns a path that ends with a directory separator.
+        return FindPathInvocation(unwrapped, GetTempPathMethodName, pathTypes, model, cancellationToken) is not null
+               || (model.GetConstantValue(unwrapped, cancellationToken).Value is string constant
+                   && EndsWithDirectorySeparator(constant))
+               || (unwrapped is BinaryExpressionSyntax binary
+                   && binary.IsKind(SyntaxKind.AddExpression)
+                   && IsSeparatorExpression(binary.Right, pathTypes, model, cancellationToken))
+               || (GetLocalInitializer(unwrapped, model, cancellationToken) is { } initializer
+                   && IsSeparatorBoundedRoot(initializer, model, pathTypes, cancellationToken));
+    }
+
+    private static bool IsSeparatorExpression(
+        ExpressionSyntax expression,
+        ImmutableArray<INamedTypeSymbol> pathTypes,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        var unwrapped = ExpressionUnwrapper.ParenthesesAndCasts(expression);
+
+        if (model.GetConstantValue(unwrapped, cancellationToken).Value is string constant)
+        {
+            return EndsWithDirectorySeparator(constant);
+        }
+
+        if (unwrapped is not MemberAccessExpressionSyntax memberAccess)
+        {
+            return false;
+        }
+
+        var name = memberAccess.Name.Identifier.ValueText;
+
+        return (string.Equals(name, "DirectorySeparatorChar", StringComparison.Ordinal)
+                || string.Equals(name, "AltDirectorySeparatorChar", StringComparison.Ordinal))
+               && model.GetSymbolInfo(unwrapped, cancellationToken).Symbol is IFieldSymbol { ContainingType: { } type }
+               && MetadataTypes.Contains(pathTypes, type);
+    }
+
+    /// <summary>
+    ///     True when the guarded value is written between the guard and the delete. The write makes
+    ///     the guard stale, so it no longer proves anything about the path.
+    /// </summary>
+    private static bool IsAssignedBetween(
+        IfStatementSyntax guard,
+        bool encloses,
+        ExpressionSyntax subject,
+        InvocationExpressionSyntax deleteInvocation,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        var subjectSymbol = model.GetSymbolInfo(
+            ExpressionUnwrapper.ParenthesesAndCasts(subject),
+            cancellationToken).Symbol;
+
+        if (subjectSymbol is null)
+        {
+            return false;
+        }
+
+        // An enclosing guard proves the path from the end of its condition. A preceding guard proves
+        // it from the end of its statement.
+        var guardEnd = encloses ? guard.Condition.Span.End : guard.Span.End;
+        var deleteStart = deleteInvocation.SpanStart;
+        var scope = guard.Parent ?? guard;
+
+        foreach (var node in scope.DescendantNodes())
+        {
+            if (node.SpanStart >= guardEnd
+                && node.SpanStart < deleteStart
+                && IsWriteTo(node, subjectSymbol, model, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsWriteTo(
+        SyntaxNode node,
+        ISymbol subject,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        var target = node switch
+        {
+            AssignmentExpressionSyntax assignment => assignment.Left,
+            PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression)
+                                                    || prefix.IsKind(SyntaxKind.PreDecrementExpression) => prefix.Operand,
+            PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.PostIncrementExpression)
+                                                      || postfix.IsKind(SyntaxKind.PostDecrementExpression) => postfix.Operand,
+            _ => null
+        };
+
+        return target is not null
+               && SymbolEqualityComparer.Default.Equals(
+                   model.GetSymbolInfo(ExpressionUnwrapper.ParenthesesAndCasts(target), cancellationToken).Symbol,
+                   subject);
+    }
+
     private static bool IsSafeRoot(
         ExpressionSyntax? expression,
         SemanticModel model,
@@ -552,17 +830,29 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             model,
             cancellationToken);
 
-        return IsFixedRoot(unwrapped, model, cancellationToken)
-               || IsTempRooted(unwrapped, model, pathTypes, cancellationToken)
-               || (getFullPath is not null
-                   && getFullPath.ArgumentList.Arguments.Count > 0
-                   && IsSafeRoot(
-                       getFullPath.ArgumentList.Arguments[0].Expression,
-                       model,
-                       pathTypes,
-                       cancellationToken))
-               || model.GetSymbolInfo(unwrapped, cancellationToken).Symbol
-                   is IFieldSymbol { IsReadOnly: true } or IPropertySymbol { SetMethod: null };
+        // A run-time-computed value is not a recognized root, so a readonly field and a get-only
+        // property do not qualify. A local does, when its single initializer is a safe root.
+        if (IsFixedRoot(unwrapped, model, cancellationToken)
+            || IsTempRooted(unwrapped, model, pathTypes, cancellationToken))
+        {
+            return true;
+        }
+
+        if (getFullPath is { } invocation && invocation.ArgumentList.Arguments.Count > 0)
+        {
+            return IsSafeRoot(
+                invocation.ArgumentList.Arguments[0].Expression,
+                model,
+                pathTypes,
+                cancellationToken);
+        }
+
+        // root + separator still starts at the root.
+        return (unwrapped is BinaryExpressionSyntax binary
+                && binary.IsKind(SyntaxKind.AddExpression)
+                && IsSafeRoot(binary.Left, model, pathTypes, cancellationToken))
+               || (GetLocalInitializer(unwrapped, model, cancellationToken) is { } initializer
+                   && IsSafeRoot(initializer, model, pathTypes, cancellationToken));
     }
 
     private static bool IsSameValue(

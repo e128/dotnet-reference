@@ -63,9 +63,25 @@ public sealed class DirectRecursionAnalyzer : DiagnosticAnalyzer
         foreach (var operation in block.DescendantsAndSelf())
         {
             if (operation is IInvocationOperation invocation
+                && !IsInsideAnonymousFunction(operation)
                 && SymbolEqualityComparer.Default.Equals(
                     invocation.TargetMethod.OriginalDefinition,
                     method.OriginalDefinition))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // A call inside a lambda runs when the lambda runs, not inside the method frame that declares
+    // it. A deferred callback such as "queue.Post(() => Start())" is not direct recursion.
+    private static bool IsInsideAnonymousFunction(IOperation operation)
+    {
+        for (var current = operation.Parent; current is not null; current = current.Parent)
+        {
+            if (current is IAnonymousFunctionOperation)
             {
                 return true;
             }

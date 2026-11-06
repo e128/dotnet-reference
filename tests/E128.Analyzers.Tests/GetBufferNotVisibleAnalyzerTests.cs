@@ -74,6 +74,46 @@ public sealed class GetBufferNotVisibleAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenLocalIsReassignedFromAnExposingStream()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var stream = new MemoryStream();
+                                   stream = new MemoryStream(new byte[8]);
+                                   var buffer = {|E128192:stream.GetBuffer()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenLocalIsDeclaredAndUsedInsideALambda()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   Action use = () =>
+                                   {
+                                       var stream = new MemoryStream(new byte[8]);
+                                       var buffer = {|E128192:stream.GetBuffer()|};
+                                   };
+                                   use();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_WhenParameterIsAssignedInTheSameMethod()
     {
         return VerifyAsync("""
@@ -173,6 +213,46 @@ public sealed class GetBufferNotVisibleAnalyzerTests
                                {
                                    stream = new MemoryStream(new byte[8], 0, 8, true, true);
                                    var buffer = stream.GetBuffer();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenLocalIsReassignedToAnExposingStream()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var stream = new MemoryStream(new byte[8]);
+                                   stream = new MemoryStream(new byte[8], 0, 8, true, true);
+                                   var buffer = stream.GetBuffer();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenLocalIsDeclaredOutsideALambdaAndUsedInsideIt()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var stream = new MemoryStream(new byte[8]);
+                                   Action use = () =>
+                                   {
+                                       var buffer = stream.GetBuffer();
+                                   };
+                                   use();
                                }
                            }
                            """);

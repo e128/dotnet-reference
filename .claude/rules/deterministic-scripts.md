@@ -57,7 +57,7 @@ terse JSON by default. Pass `--verbose` for the full log.
 | a manual clean-tree, build-pass, or test-pass check              | `scripts/assert.sh [--clean-working-tree] [--build-pass]`       |
 | hand-editing `<Version>` in a `.csproj`                          | `scripts/internal/version-bump.sh <ProjectName> [minor]`        |
 | manual analyzer release file checks                              | `scripts/internal/analyzer-release-check.sh [--json]`           |
-| moving Unshipped rule rows into a Shipped release section        | `scripts/internal/analyzer-promote.sh [--dry-run]`      |
+| moving Unshipped rule rows into a Shipped release section        | `scripts/internal/analyzer-promote.sh [--dry-run]`              |
 | manual trigger-phrase overlap checks                             | `scripts/internal/overlap-detect.sh [--json]`                   |
 | manual plan-age checks                                           | `scripts/internal/stale-plans.sh [--days N] [--json]`           |
 | a manual `settings.json` allow-list gap scan                     | `scripts/internal/settings-gap.sh [--json]`                     |

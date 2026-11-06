@@ -1,5 +1,5 @@
 # Performance Rule Details
-*Updated: 2026-11-05T15:20:29Z*
+*Updated: 2026-11-06T13:02:22Z*
 
 Behavior notes for the performance rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -43,6 +43,11 @@ trip. The call names include `Find`, `Contains`, `Last`, `ElementAt`, `Average`,
 `LongCount`, `ToDictionary`, and `ToHashSet`, which E128066 skips on an
 `IQueryable<T>` receiver. A `foreach` with a deconstruction pattern counts as a
 loop.
+
+`AsEnumerable` and `AsAsyncEnumerable` do not run a query on their own. The rule
+reports either one only when it is the source of a `foreach` that runs inside
+another loop. A query syntax expression (`from ... select`) is read when a
+materializing call consumes it.
 
 **Exclusions**:
 

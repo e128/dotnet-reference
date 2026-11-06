@@ -158,6 +158,29 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task SetResultOnField_GuardedByInterlocked_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Threading;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               private readonly TaskCompletionSource<int> source =
+                                   new(TaskCreationOptions.RunContinuationsAsynchronously);
+                               private int _completed;
+                               void M(int value)
+                               {
+                                   if (Interlocked.CompareExchange(ref _completed, 1, 0) == 0)
+                                   {
+                                       source.SetResult(value);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task TrySetResultOnField_DoesNotFire()
     {
         return VerifyAsync("""

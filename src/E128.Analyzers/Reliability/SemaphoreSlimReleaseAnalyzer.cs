@@ -26,9 +26,9 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128175";
 
-    internal const string SemaphoreTypeName = "System.Threading.SemaphoreSlim";
+    private const string SemaphoreTypeName = "System.Threading.SemaphoreSlim";
 
-    internal const string CancellationTokenTypeName = "System.Threading.CancellationToken";
+    private const string CancellationTokenTypeName = "System.Threading.CancellationToken";
 
     private const string WaitName = "Wait";
 
@@ -208,7 +208,7 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
                 return true;
             }
 
-            if (CanLeaveTheBlock(next))
+            if (CanLeaveTheBlock(next, receiver, model, cancellationToken))
             {
                 return false;
             }
@@ -220,9 +220,14 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
     /// <summary>
     ///     True when the statement can leave the enclosing block, so a later release never runs. A
     ///     break or a continue exits only an inner loop, so neither counts. A continue in a loop body
-    ///     that skips a later release is a known gap.
+    ///     that skips a later release is a known gap. A release on the same semaphore before the exit
+    ///     statement hands the permit back, so that path is not an unguarded exit.
     /// </summary>
-    private static bool CanLeaveTheBlock(SyntaxNode statement)
+    private static bool CanLeaveTheBlock(
+        SyntaxNode statement,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
         foreach (var child in statement.ChildNodes())
         {
@@ -231,13 +236,15 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (child is ReturnStatementSyntax or ThrowStatementSyntax or GotoStatementSyntax
-                or YieldStatementSyntax)
+            var isExit = child is ReturnStatementSyntax or ThrowStatementSyntax
+                or GotoStatementSyntax or YieldStatementSyntax;
+
+            if (isExit && !ReleasesBefore(statement, child, receiver, model, cancellationToken))
             {
                 return true;
             }
 
-            if (CanLeaveTheBlock(child))
+            if (CanLeaveTheBlock(child, receiver, model, cancellationToken))
             {
                 return true;
             }
@@ -246,6 +253,30 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
+    private static bool ReleasesBefore(
+        SyntaxNode container,
+        SyntaxNode exit,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        foreach (var invocation in container.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.SpanStart < exit.SpanStart
+                && IsReleaseOf(invocation, receiver, model, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     True when the <see langword="finally" /> block hands the permit back on every path. A
+    ///     release under an <see langword="if" /> or a loop can be skipped, so it does not guarantee
+    ///     the release.
+    /// </summary>
     private static bool ReleasesInFinally(
         TryStatementSyntax tryStatement,
         ISymbol receiver,
@@ -259,30 +290,58 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
 
         foreach (var invocation in finallyBlock.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
-            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-            {
-                continue;
-            }
-
-            if (!string.Equals(memberAccess.Name.Identifier.ValueText, ReleaseName, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol release
-                || !string.Equals(release.Name, ReleaseName, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var releaseReceiver = model.GetSymbolInfo(memberAccess.Expression, cancellationToken).Symbol;
-
-            if (releaseReceiver is not null && SymbolEqualityComparer.Default.Equals(receiver, releaseReceiver))
+            if (IsReleaseOf(invocation, receiver, model, cancellationToken)
+                && IsUnconditional(invocation, finallyBlock))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool IsUnconditional(SyntaxNode node, BlockSyntax finallyBlock)
+    {
+        for (var current = node.Parent; current is not null && current != finallyBlock; current = current.Parent)
+        {
+            if (current is IfStatementSyntax or ConditionalExpressionSyntax or SwitchStatementSyntax
+                or ForStatementSyntax or CommonForEachStatementSyntax or WhileStatementSyntax
+                or DoStatementSyntax)
+            {
+                return false;
+            }
+
+            // A lambda or local function runs on its own schedule, so its release may never run here.
+            if (current is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+                or BaseMethodDeclarationSyntax or AccessorDeclarationSyntax)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsReleaseOf(
+        InvocationExpressionSyntax invocation,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
+            || !string.Equals(memberAccess.Name.Identifier.ValueText, ReleaseName, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol release
+            || !string.Equals(release.Name, ReleaseName, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var releaseReceiver = model.GetSymbolInfo(memberAccess.Expression, cancellationToken).Symbol;
+
+        return releaseReceiver is not null && SymbolEqualityComparer.Default.Equals(receiver, releaseReceiver);
     }
 }

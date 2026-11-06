@@ -15,11 +15,14 @@ namespace E128.Analyzers.Security;
 /// <remarks>
 ///     The rule reads two shapes: an <c lang="csharp">X509Certificate2</c> constructor that takes a
 ///     <c lang="csharp">fileName</c> argument, and a call to
-///     <c lang="csharp">X509CertificateLoader.LoadPkcs12</c> or
-///     <c lang="csharp">X509CertificateLoader.LoadPkcs12FromFile</c>. It reports a missing flags argument
-///     and a constant flags value with no <c lang="csharp">EphemeralKeySet</c> bit. A non-constant flags
-///     expression stays silent, because the rule cannot read its value. Constructor parameters come from
-///     the resolved constructor symbol, so a positional call and a named call behave the same.
+///     <c lang="csharp">X509CertificateLoader.LoadPkcs12</c>,
+///     <c lang="csharp">X509CertificateLoader.LoadPkcs12FromFile</c>,
+///     <c lang="csharp">X509CertificateLoader.LoadPkcs12Collection</c>, or
+///     <c lang="csharp">X509CertificateLoader.LoadPkcs12CollectionFromFile</c>. It reports a missing
+///     flags argument and a constant flags value with no <c lang="csharp">EphemeralKeySet</c> bit. A
+///     non-constant flags expression stays silent, because the rule cannot read its value. Constructor
+///     parameters come from the resolved constructor symbol, so a positional call and a named call
+///     behave the same.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PfxImportEphemeralKeySetAnalyzer : DiagnosticAnalyzer
@@ -164,7 +167,9 @@ public sealed class PfxImportEphemeralKeySetAnalyzer : DiagnosticAnalyzer
     private static bool IsPkcs12Loader(string methodName)
     {
         return string.Equals(methodName, "LoadPkcs12", StringComparison.Ordinal)
-               || string.Equals(methodName, "LoadPkcs12FromFile", StringComparison.Ordinal);
+               || string.Equals(methodName, "LoadPkcs12FromFile", StringComparison.Ordinal)
+               || string.Equals(methodName, "LoadPkcs12Collection", StringComparison.Ordinal)
+               || string.Equals(methodName, "LoadPkcs12CollectionFromFile", StringComparison.Ordinal);
     }
 
     private static bool TakesFileName(IMethodSymbol constructor)

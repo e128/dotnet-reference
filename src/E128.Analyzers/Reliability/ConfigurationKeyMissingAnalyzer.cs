@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -62,7 +63,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var connectionStringExtensions = context.Compilation.GetTypeByMetadataName(
+        var configurationExtensions = context.Compilation.GetTypeByMetadataName(
             "Microsoft.Extensions.Configuration.ConfigurationExtensions");
 
         // A section read uses keys relative to the section, so the rule leaves those reads alone.
@@ -87,7 +88,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             nodeContext => AnalyzeInvocation(
                 nodeContext,
                 configurationType,
-                connectionStringExtensions,
+                configurationExtensions,
                 sectionType,
                 keys),
             SyntaxKind.InvocationExpression);
@@ -134,12 +135,19 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(
         SyntaxNodeAnalysisContext context,
         INamedTypeSymbol configurationType,
-        INamedTypeSymbol? connectionStringExtensions,
+        INamedTypeSymbol? configurationExtensions,
         INamedTypeSymbol? sectionType,
         ConfigurationKeys keys)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (invocation.ArgumentList.Arguments.Count == 0)
+        {
+            return;
+        }
+
+        // A cheap name check runs before the semantic lookup, which costs more on every call.
+        if (invocation.Expression is not MemberAccessExpressionSyntax access
+            || !IsConfigurationMethodName(access.Name.Identifier.ValueText))
         {
             return;
         }
@@ -151,7 +159,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         }
 
         if (string.Equals(method.Name, "GetConnectionString", StringComparison.Ordinal)
-            && SymbolEqualityComparer.Default.Equals(method.ContainingType, connectionStringExtensions))
+            && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationExtensions))
         {
             var name = ReadConstantKey(context, invocation.ArgumentList.Arguments[0].Expression);
             if (name is null)
@@ -168,17 +176,16 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             (string.Equals(method.Name, "GetSection", StringComparison.Ordinal)
              && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationType))
             || (string.Equals(method.Name, "GetRequiredSection", StringComparison.Ordinal)
-                && SymbolEqualityComparer.Default.Equals(method.ContainingType, connectionStringExtensions));
+                && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationExtensions));
         if (!isSectionCall)
         {
             return;
         }
 
         // A call on a section reads a key that is relative to that section.
-        if (invocation.Expression is MemberAccessExpressionSyntax access
-            && IsOrImplements(
-                context.SemanticModel.GetTypeInfo(access.Expression, context.CancellationToken).Type,
-                sectionType))
+        if (IsOrImplements(
+            context.SemanticModel.GetTypeInfo(access.Expression, context.CancellationToken).Type,
+            sectionType))
         {
             return;
         }
@@ -190,6 +197,13 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         }
 
         Report(context, keys, section, invocation.GetLocation());
+    }
+
+    private static bool IsConfigurationMethodName(string name)
+    {
+        return string.Equals(name, "GetSection", StringComparison.Ordinal)
+               || string.Equals(name, "GetRequiredSection", StringComparison.Ordinal)
+               || string.Equals(name, "GetConnectionString", StringComparison.Ordinal);
     }
 
     private static bool IsOrImplements(ITypeSymbol? type, INamedTypeSymbol? target)
@@ -246,7 +260,9 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
 
             foreach (var file in files)
             {
-                if (!file.Path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                var fileName = Path.GetFileName(file.Path);
+                if (!fileName.StartsWith("appsettings", StringComparison.OrdinalIgnoreCase)
+                    || !fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -265,6 +281,13 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
                 parsedAny = true;
             }
 
+            // The option adds keys on top of a parsed file. It never activates the rule on its own,
+            // because without a file the rule cannot tell a missing key from an invisible source.
+            if (!parsedAny)
+            {
+                return null;
+            }
+
             if (options.TryGetValue(addedKeysOptionKey, out var addedKeys)
                 && addedKeys is not null)
             {
@@ -278,9 +301,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            return !parsedAny && builder.Count == 0
-                ? null
-                : new ConfigurationKeys(builder.ToImmutable());
+            return new ConfigurationKeys(builder.ToImmutable());
         }
 
         internal bool Contains(string key)

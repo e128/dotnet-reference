@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-04T22:19:26Z*
+*Updated: 2026-11-06T13:22:50Z*
 
 ## Design Principles
 
@@ -100,6 +100,15 @@ After any code change:
 
 `--check` mode skips `jb` (no verify-only equivalent). Pass `--no-jb` to run dotnet format only.
 Requires `jb` from `JetBrains.ReSharper.GlobalTools` (`dotnet tool install -g JetBrains.ReSharper.GlobalTools`); gracefully skipped if not installed.
+
+## JSON Test Data and the Format Gate
+
+`dotnet format` reports `JSON002` (probable JSON string) on a string literal that holds JSON text. It reports `JSON001` with a parse message when that literal carries a `//lang=json` marker. The analyzer ships inside the `dotnet-format` tool, so `.editorconfig` holds no setting for it.
+
+- For valid JSON test data, put a `//lang=json` marker line above the raw string literal.
+- For deliberately malformed JSON, build the text from parts, such as `"{ \"A\": " + value + " }"`.
+
+One literal token that holds malformed JSON fails the gate on every run.
 
 ## Cross-Platform File Paths
 

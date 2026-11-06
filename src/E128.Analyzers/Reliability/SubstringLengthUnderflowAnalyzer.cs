@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -67,7 +66,7 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!TryGetUnderflow(context, invocation.ArgumentList.Arguments[1].Expression, out var receiver, out var days))
+        if (!TryGetUnderflow(context, invocation.ArgumentList.Arguments[1].Expression, out var receiver, out var constant))
         {
             return;
         }
@@ -77,7 +76,7 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), days));
+        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), constant));
     }
 
     /// <summary>
@@ -193,7 +192,7 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
             Branch.Then => inThen,
             Branch.Else => inElse,
             Branch.Both => true,
-            _ => true
+            _ => throw new InvalidOperationException("Unknown branch value.")
         };
     }
 
@@ -267,21 +266,93 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken token)
     {
-        foreach (var access in condition.DescendantNodesAndSelf().OfType<MemberAccessExpressionSyntax>())
+        foreach (var node in condition.DescendantNodesAndSelf())
         {
-            if (!string.Equals(access.Name.Identifier.ValueText, "Length", StringComparison.Ordinal))
+            if (node is MemberAccessExpressionSyntax access
+                && string.Equals(access.Name.Identifier.ValueText, "Length", StringComparison.Ordinal)
+                && IsSameReceiver(access.Expression, receiver, model, token))
             {
-                continue;
+                return true;
             }
 
-            if (SymbolEqualityComparer.Default.Equals(
-                    model.GetSymbolInfo(access.Expression, token).Symbol,
-                    receiver))
+            if (node is InvocationExpressionSyntax invocation
+                && IsNonEmptyGuard(invocation, receiver, model, token))
+            {
+                return true;
+            }
+
+            if (node is BinaryExpressionSyntax comparison
+                && IsNonNegativeIndexOf(comparison, receiver, model, token))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    // A guard that proves the receiver holds at least one character.
+    private static bool IsNonEmptyGuard(
+        InvocationExpressionSyntax invocation,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax access
+               && invocation.ArgumentList.Arguments.Count > 0
+               && model.GetSymbolInfo(invocation, token).Symbol is IMethodSymbol method
+               && method.ContainingType.SpecialType == SpecialType.System_String
+               && (((string.Equals(method.Name, "IsNullOrEmpty", StringComparison.Ordinal)
+                     || string.Equals(method.Name, "IsNullOrWhiteSpace", StringComparison.Ordinal))
+                    && invocation.ArgumentList.Arguments.Count == 1
+                    && IsSameReceiver(invocation.ArgumentList.Arguments[0].Expression, receiver, model, token)
+                    && IsNegated(invocation))
+                   || ((string.Equals(method.Name, "EndsWith", StringComparison.Ordinal)
+                        || string.Equals(method.Name, "StartsWith", StringComparison.Ordinal)
+                        || string.Equals(method.Name, "Contains", StringComparison.Ordinal))
+                       && !IsNegated(invocation)
+                       && IsSameReceiver(access.Expression, receiver, model, token)));
+    }
+
+    // A guard of the form x.IndexOf(...) >= 0, which proves the receiver is non-empty.
+    private static bool IsNonNegativeIndexOf(
+        BinaryExpressionSyntax comparison,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        return comparison.IsKind(SyntaxKind.GreaterThanOrEqualExpression)
+               && model.GetConstantValue(comparison.Right, token) is { HasValue: true, Value: int zero }
+               && zero == 0
+               && ExpressionUnwrapper.Parentheses(comparison.Left) is InvocationExpressionSyntax invocation
+               && invocation.Expression is MemberAccessExpressionSyntax access
+               && string.Equals(access.Name.Identifier.ValueText, "IndexOf", StringComparison.Ordinal)
+               && model.GetSymbolInfo(invocation, token).Symbol is IMethodSymbol method
+               && method.ContainingType.SpecialType == SpecialType.System_String
+               && IsSameReceiver(access.Expression, receiver, model, token);
+    }
+
+    private static bool IsNegated(ExpressionSyntax expression)
+    {
+        var current = expression;
+
+        while (current.Parent is ParenthesizedExpressionSyntax parenthesized)
+        {
+            current = parenthesized;
+        }
+
+        return current.Parent is PrefixUnaryExpressionSyntax prefix
+               && prefix.IsKind(SyntaxKind.LogicalNotExpression);
+    }
+
+    private static bool IsSameReceiver(
+        ExpressionSyntax expression,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        return SymbolEqualityComparer.Default.Equals(
+            model.GetSymbolInfo(expression, token).Symbol,
+            receiver);
     }
 }

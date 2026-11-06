@@ -163,6 +163,8 @@ E128.Analyzers.Performance.SaveChangesInLoopAnalyzer
 E128.Analyzers.Performance.SaveChangesInLoopAnalyzer.SaveChangesInLoopAnalyzer() -> void
 E128.Analyzers.Reliability.AwaitInFinallyAnalyzer
 E128.Analyzers.Reliability.AwaitInFinallyAnalyzer.AwaitInFinallyAnalyzer() -> void
+E128.Analyzers.Performance.ParallelForEachAsyncCapAnalyzer
+E128.Analyzers.Performance.ParallelForEachAsyncCapAnalyzer.ParallelForEachAsyncCapAnalyzer() -> void
 E128.Analyzers.Reliability.CatchFilterMessageAnalyzer
 E128.Analyzers.Reliability.CatchFilterMessageAnalyzer.CatchFilterMessageAnalyzer() -> void
 E128.Analyzers.Reliability.GcHandleFreeAnalyzer

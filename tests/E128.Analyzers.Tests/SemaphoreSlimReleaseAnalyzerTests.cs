@@ -236,6 +236,66 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task ReleaseBeforeAnExitingReturn_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Threading;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               private readonly SemaphoreSlim _sem = new(1, 1);
+                               async Task M(bool stop)
+                               {
+                                   await _sem.WaitAsync();
+                                   if (stop)
+                                   {
+                                       _sem.Release();
+                                       return;
+                                   }
+                                   try
+                                   {
+                                       await Task.Yield();
+                                   }
+                                   finally
+                                   {
+                                       _sem.Release();
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReleaseUnderAConditionInFinally_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Threading;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               private readonly SemaphoreSlim _sem = new(1, 1);
+                               async Task M(bool failed)
+                               {
+                                   await {|E128175:_sem.WaitAsync()|};
+                                   try
+                                   {
+                                       await Task.Yield();
+                                   }
+                                   finally
+                                   {
+                                       if (failed)
+                                       {
+                                           _sem.Release();
+                                       }
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ReturnBetweenWaitAndTry_Fires()
     {
         return VerifyAsync("""

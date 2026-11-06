@@ -16,18 +16,19 @@ namespace E128.Analyzers.Reliability;
 /// <remarks>
 ///     The loop replaces the field value on each iteration, and the earlier value never reaches a
 ///     dispose call. The rule reads <c lang="csharp">System.IDisposable</c> and
-///     <c lang="csharp">System.IAsyncDisposable</c>. A dispose call counts when its receiver
-///     resolves to the same field symbol and starts before the assignment in the enclosing method,
-///     constructor, or accessor.
+///     <c lang="csharp">System.IAsyncDisposable</c>. The scan covers the loop body only. A dispose
+///     call counts when its receiver resolves to the same field symbol in the same function scope,
+///     either before the assignment or after it with no continue, break, return, throw, or goto in
+///     between.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128193";
 
-    internal const string DisposableTypeName = "System.IDisposable";
+    private const string DisposableTypeName = "System.IDisposable";
 
-    internal const string AsyncDisposableTypeName = "System.IAsyncDisposable";
+    private const string AsyncDisposableTypeName = "System.IAsyncDisposable";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -94,7 +95,8 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (HasEarlierDispose(loop, assignment, field, context.SemanticModel, context.CancellationToken))
+        if (HasEarlierDispose(loop, assignment, field, context.SemanticModel, context.CancellationToken)
+            || HasLaterDispose(loop, assignment, field, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
@@ -232,4 +234,86 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
+    // A dispose later in the same iteration releases the value that the assignment just stored, so
+    // the next iteration overwrites a disposed value. An exit statement before the dispose skips it
+    // on some paths, so the overwrite still leaks on those paths.
+    private static bool HasLaterDispose(
+        SyntaxNode loop,
+        AssignmentExpressionSyntax assignment,
+        IFieldSymbol field,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        var scope = FindFunctionScope(assignment);
+
+        foreach (var node in loop.DescendantNodes())
+        {
+            if (node is not InvocationExpressionSyntax invocation || invocation.SpanStart <= assignment.SpanStart)
+            {
+                continue;
+            }
+
+            if (DisposeCalls.GetReceiver(invocation) is not { } receiver)
+            {
+                continue;
+            }
+
+            if (model.GetSymbolInfo(receiver, cancellationToken).Symbol is not IFieldSymbol disposedField
+                || !SymbolEqualityComparer.Default.Equals(disposedField, field))
+            {
+                continue;
+            }
+
+            if (!ReferenceEquals(scope, FindFunctionScope(invocation)) || IsInLoopHeader(loop, invocation))
+            {
+                continue;
+            }
+
+            return !ExitsBetween(scope, assignment, invocation);
+        }
+
+        return false;
+    }
+
+    // A lambda or local function runs on its own schedule, so a dispose inside one does not pair
+    // with an assignment in the enclosing body.
+    private static SyntaxNode? FindFunctionScope(SyntaxNode node)
+    {
+        for (var current = node.Parent; current is not null; current = current.Parent)
+        {
+            if (current is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+                or BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or BaseTypeDeclarationSyntax)
+            {
+                return current;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool ExitsBetween(SyntaxNode? scope, SyntaxNode from, SyntaxNode to)
+    {
+        if (scope is null)
+        {
+            return false;
+        }
+
+        foreach (var node in scope.DescendantNodes(
+                     child => child is not AnonymousFunctionExpressionSyntax
+                              and not LocalFunctionStatementSyntax))
+        {
+            if (node.SpanStart < from.Span.End || node.SpanStart >= to.SpanStart)
+            {
+                continue;
+            }
+
+            if (node is ContinueStatementSyntax or BreakStatementSyntax or ReturnStatementSyntax
+                or ThrowStatementSyntax or GotoStatementSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

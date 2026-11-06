@@ -81,6 +81,23 @@ public sealed class ParallelForEachAsyncCapAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task DefaultOptionsArgument_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               Task M()
+                               {
+                                   return {|E128187:Parallel.ForEachAsync(new List<int>(), default(ParallelOptions), (item, token) => default)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task CappedInitializer_DoesNotFire()
     {
         return VerifyAsync("""

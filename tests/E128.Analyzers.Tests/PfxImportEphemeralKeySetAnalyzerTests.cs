@@ -261,6 +261,60 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task LoadPkcs12CollectionOmitsFlags_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography.X509Certificates;
+
+                           class C
+                           {
+                               X509Certificate2Collection M(byte[] data)
+                               {
+                                   return {|E128191:X509CertificateLoader.LoadPkcs12Collection(data, "pw")|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LoadPkcs12CollectionFromFileOmitsFlags_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography.X509Certificates;
+
+                           class C
+                           {
+                               X509Certificate2Collection M()
+                               {
+                                   return {|E128191:X509CertificateLoader.LoadPkcs12CollectionFromFile("cert.pfx", "pw")|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LoadPkcs12CollectionEphemeralKeySet_Silent()
+    {
+        return VerifyAsync("""
+                           using System.Security.Cryptography.X509Certificates;
+
+                           class C
+                           {
+                               X509Certificate2Collection M(byte[] data)
+                               {
+                                   return X509CertificateLoader.LoadPkcs12Collection(
+                                       data,
+                                       "pw",
+                                       X509KeyStorageFlags.EphemeralKeySet);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task LoadPkcs12MachineKeySet_Fires()
     {
         return VerifyAsync("""

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -8,7 +9,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-using Subscription = (Microsoft.CodeAnalysis.IEventSymbol Event, Microsoft.CodeAnalysis.IFieldSymbol? Publisher, Microsoft.CodeAnalysis.Location Location);
+using Removal = (Microsoft.CodeAnalysis.IEventSymbol Event, Microsoft.CodeAnalysis.ISymbol? Receiver);
+using Subscription = (Microsoft.CodeAnalysis.IEventSymbol Event, Microsoft.CodeAnalysis.ISymbol? Receiver, Microsoft.CodeAnalysis.Location Location);
 
 namespace E128.Analyzers.Reliability;
 
@@ -19,18 +21,21 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 /// <remarks>
 ///     The rule reads a disposable type only. A type that never disposes has no cleanup site to
-///     compare against, and the remedy is a new lifetime, not a missing line. Any removal in a
-///     dispose method counts, because handler identity is not part of the check. The analysis runs
-///     per named type, so a partial type that removes the subscription in another file is covered.
+///     compare against, and the remedy is a new lifetime, not a missing line. A removal in any
+///     method of the subscriber type counts, because the dispose path can call a helper that owns
+///     the cleanup. Handler identity is not part of the check. The removal must name the same event
+///     on the same publisher receiver, because another publisher instance holds its own handler
+///     list. The analysis runs per named type, so a partial type that removes the subscription in
+///     another file is covered.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128176";
 
-    internal const string DisposableTypeName = "System.IDisposable";
+    private const string DisposableTypeName = "System.IDisposable";
 
-    internal const string AsyncDisposableTypeName = "System.IAsyncDisposable";
+    private const string AsyncDisposableTypeName = "System.IAsyncDisposable";
 
     private const string DisposeName = "Dispose";
 
@@ -81,7 +86,7 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
         }
 
         var subscriptions = new ConcurrentQueue<Subscription>();
-        var removals = new ConcurrentDictionary<IEventSymbol, bool>(SymbolEqualityComparer.Default);
+        var removals = new ConcurrentDictionary<Removal, bool>(RemovalComparer.Instance);
         var disposedFields = new ConcurrentDictionary<IFieldSymbol, bool>(SymbolEqualityComparer.Default);
 
         context.RegisterSyntaxNodeAction(
@@ -89,7 +94,7 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             SyntaxKind.AddAssignmentExpression);
 
         context.RegisterSyntaxNodeAction(
-            ctx => CollectRemoval(ctx, removals),
+            ctx => CollectRemoval(ctx, subscriber, removals),
             SyntaxKind.SubtractAssignmentExpression);
 
         context.RegisterSyntaxNodeAction(
@@ -121,7 +126,8 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
 
         if (CapturesSubscriber(assignment.Right, model, subscriber, token))
         {
-            subscriptions.Enqueue((eventSymbol, GetPublisherField(assignment.Left, model, token), assignment.GetLocation()));
+            subscriptions.Enqueue(
+                (eventSymbol, GetReceiver(assignment.Left, model, token), assignment.GetLocation()));
         }
     }
 
@@ -131,12 +137,12 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             or MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax };
     }
 
-    // The field that holds the publisher in "field.Event += handler", or null for any other receiver.
-    private static IFieldSymbol? GetPublisherField(ExpressionSyntax left, SemanticModel model, CancellationToken token)
+    // The storage that holds the publisher in "publisher.Event += handler", or null for a member
+    // name that binds to this instance.
+    private static ISymbol? GetReceiver(ExpressionSyntax left, SemanticModel model, CancellationToken token)
     {
         return left is MemberAccessExpressionSyntax access
-               && model.GetSymbolInfo(access.Expression, token).Symbol is IFieldSymbol { IsStatic: false } field
-            ? field
+            ? model.GetSymbolInfo(access.Expression, token).Symbol
             : null;
     }
 
@@ -156,37 +162,96 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
 
     private static void CollectRemoval(
         SyntaxNodeAnalysisContext context,
-        ConcurrentDictionary<IEventSymbol, bool> removals)
+        INamedTypeSymbol subscriber,
+        ConcurrentDictionary<Removal, bool> removals)
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
+        var model = context.SemanticModel;
+        var token = context.CancellationToken;
 
-        if (!IsInDisposeMethod(assignment))
+        // A removal in another type, such as a nested type, does not clean up this subscriber.
+        if (!IsInSubscriber(assignment, subscriber, model, token))
         {
             return;
         }
 
-        if (context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol
-            is IEventSymbol eventSymbol)
+        if (model.GetSymbolInfo(assignment.Left, token).Symbol is IEventSymbol eventSymbol)
         {
-            removals[eventSymbol] = true;
+            removals[(eventSymbol, GetReceiver(assignment.Left, model, token))] = true;
         }
+    }
+
+    private static bool IsInSubscriber(
+        SyntaxNode node,
+        INamedTypeSymbol subscriber,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        return node.FirstAncestorOrSelf<TypeDeclarationSyntax>() is { } declaration
+               && SymbolEqualityComparer.Default.Equals(
+                   model.GetDeclaredSymbol(declaration, token),
+                   subscriber);
     }
 
     private static void Report(
         ConcurrentQueue<Subscription> subscriptions,
-        ConcurrentDictionary<IEventSymbol, bool> removals,
+        ConcurrentDictionary<Removal, bool> removals,
         ConcurrentDictionary<IFieldSymbol, bool> disposedFields,
         SymbolAnalysisContext context)
     {
-        foreach (var (eventSymbol, publisher, location) in subscriptions)
+        foreach (var (eventSymbol, receiver, location) in subscriptions)
         {
             // A publisher field that the subscriber owns and disposes dies with the subscriber.
-            var ownedAndDisposed = publisher is not null && disposedFields.ContainsKey(publisher);
+            var ownedAndDisposed = receiver is IFieldSymbol { IsStatic: false } publisher
+                                   && disposedFields.ContainsKey(publisher);
 
-            if (!ownedAndDisposed && !removals.ContainsKey(eventSymbol))
+            if (!ownedAndDisposed && !IsRemoved(removals, eventSymbol, receiver))
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, location, eventSymbol.Name));
             }
+        }
+    }
+
+    // A static event has one handler list for every caller, so any removal of it counts. An instance
+    // event sits on one publisher object, so the removal must name that same receiver.
+    private static bool IsRemoved(
+        ConcurrentDictionary<Removal, bool> removals,
+        IEventSymbol eventSymbol,
+        ISymbol? receiver)
+    {
+        foreach (var (removedEvent, removedReceiver) in removals.Keys)
+        {
+            if (!SymbolEqualityComparer.Default.Equals(removedEvent, eventSymbol))
+            {
+                continue;
+            }
+
+            if (eventSymbol.IsStatic || SymbolEqualityComparer.Default.Equals(removedReceiver, receiver))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private sealed class RemovalComparer : IEqualityComparer<Removal>
+    {
+        internal static readonly RemovalComparer Instance = new();
+
+        public bool Equals(Removal x, Removal y)
+        {
+            return SymbolEqualityComparer.Default.Equals(x.Event, y.Event)
+                   && SymbolEqualityComparer.Default.Equals(x.Receiver, y.Receiver);
+        }
+
+        public int GetHashCode(Removal obj)
+        {
+            var hash = SymbolEqualityComparer.Default.GetHashCode(obj.Event);
+
+            return obj.Receiver is null
+                ? hash
+                : (hash * 397) ^ SymbolEqualityComparer.Default.GetHashCode(obj.Receiver);
         }
     }
 

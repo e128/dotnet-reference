@@ -15,6 +15,12 @@ Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
 E128187 | E128-Performance | Info | E128-Performance | Warning | Severity lowered. The default cap is the processor count, not one task per item.
 E128197 | E128-Reliability | Info | E128-Reliability | Warning | Severity lowered. A 28 to 31 day span is often a fixed retention window, not a calendar month.
 
+### Removed Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128022 | Design | Warning | Removed. Other rules cover this check.
+
 ## Release 2.2.0
 
 ### New Rules
@@ -47,7 +53,7 @@ E128177 | E128-Reliability | Warning | A record member with a mutable collection
 E128178 | E128-Reliability | Error | Two members of one type that map to the same JsonPropertyName value are reported. An ignored member, an indexer, a static member, and an override of the base member are not reported. The rule stays off when System.Text.Json is absent from the compilation.
 E128179 | E128-Design | Warning | An AddOptions or Configure registration that binds configuration with no validation call is reported. A bare AddOptions, the delegate overload of Configure, and PostConfigure are not reported.
 E128180 | E128-Performance | Warning | An Entity Framework Core materializing call inside a loop body is reported. A call in a foreach source expression, a for initializer, or with no enclosing loop is not reported. The rule stays off when EF Core is absent from the compilation.
-E128181 | E128-Reliability | Warning | An assignment of Timeout.InfiniteTimeSpan, TimeSpan.MaxValue, or TimeSpan.FromMilliseconds(-1) to HttpClient.Timeout is reported. A computed value is not reported.
+E128181 | E128-Reliability | Warning | An assignment of Timeout.InfiniteTimeSpan or TimeSpan.FromMilliseconds(-1) to HttpClient.Timeout is reported. A computed value is not reported.
 E128182 | E128-Reliability | Warning | A second enumeration of one IAsyncEnumerable value in one method body is reported. An inline-created sequence, an EnumeratorCancellation parameter, and an iterator with yield are not reported.
 E128183 | E128-Reliability | Warning | A Task.WhenAny result that is discarded or stored in a local that the block never reads is reported. An awaited, returned, stored, or passed result is not reported.
 E128184 | E128-Security | Info | A recursive Directory.Delete or DirectoryInfo.Delete is reported when the path is a parameter, a member read, or a Path.Combine over either. A path under Path.GetTempPath, a literal, and a StartsWith guard are not reported.
@@ -59,7 +65,7 @@ E128189 | E128-Reliability | Warning | A GCHandle.Alloc result stored in a local
 E128190 | E128-Performance | Warning | A FileStream construction with no asynchronous switch is reported: useAsync omitted or false, and no FileOptions.Asynchronous. A useAsync value of true, an options value with Asynchronous, a non-constant argument, and the SafeFileHandle overload are not reported.
 E128191 | E128-Security | Warning | An X509Certificate2 PFX constructor or an X509CertificateLoader.LoadPkcs12 call is reported when the flags omit EphemeralKeySet. A constant flags value with EphemeralKeySet, a non-constant flags value, a byte array constructor, and a constructor with no flags parameter are not reported.
 E128192 | E128-Reliability | Warning | A MemoryStream.GetBuffer call is reported when the receiver was created without publiclyVisible: true. A creation with publiclyVisible: true, a non-constant flag, and a receiver that is a field, a property, or a method result are not reported.
-E128193 | E128-Reliability | Warning | An assignment to a disposable field inside a loop with no earlier dispose call on that field in the enclosing member is reported. A disposal before the assignment, a local, a parameter, a property, a compound assignment, and an assignment outside a loop are not reported.
+E128193 | E128-Reliability | Warning | An assignment to a disposable field inside a loop with no earlier dispose call on that field in that loop is reported. A disposal before the assignment, a local, a parameter, a property, a compound assignment, and an assignment outside a loop are not reported.
 E128194 | E128-Reliability | Warning | A Lazy<T> field initialized with LazyThreadSafetyMode.None is reported. An omitted mode, ExecutionAndPublication, PublicationOnly, a non-constant mode, and a local, parameter, or property initializer are not reported.
 E128195 | E128-Reliability | Warning | A constant configuration key read through IConfiguration, GetSection, or GetConnectionString is reported when no JSON additional file defines the key. The rule stays off when no parsable JSON additional file is present. A key in the e128_added_configuration_keys option is accepted.
 E128196 | E128-Reliability | Warning | A write to a JsonSerializerOptions member after the same body passes the instance to JsonSerializer is reported. The serializer freezes the instance on first use, so the write throws InvalidOperationException.

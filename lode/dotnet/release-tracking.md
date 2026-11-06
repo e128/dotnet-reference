@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-05T13:32:58Z*
+*Updated: 2026-11-06T13:24:11Z*
 
 ## Overview
 
@@ -142,6 +142,9 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 1.60.4  | E128131-141 | Interop, span-bulk, and reflection rules. First new-rule release since 1.42.1. |
 | 1.66.0  | E128142-152 | FIPS cryptography policy rules and the complexity ceiling. E128071 and E128075 move to Error. |
 | 1.67.0  | E128153 | `List.RemoveAt(0)` in a loop. E128152 gains constant-trip exclusion, a `cubic` tier, argument-contraction recursion classification, and read-plus-write memoization. |
+| 2.2.0   | E128154-198   | Review-practice and external sweep rules. E128187 and E128197 change severity in 2.3.0. |
+| 2.3.0   | E128199-201   | NASA Power of Ten rules. E128187 and E128197 lower to Info. E128022 removed. |
+| 2.3.1   | (none)        | Accuracy fixes across the E128176 to E128201 rules. The pack carries no third-party dependency. |
 
 ## Sources
 

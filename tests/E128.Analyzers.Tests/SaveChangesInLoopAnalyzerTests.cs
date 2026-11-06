@@ -166,6 +166,27 @@ public sealed class SaveChangesInLoopAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NullConditionalSaveChanges_InForeach_Fires()
+    {
+        return VerifyWithEfAsync("""
+                                 using System.Collections.Generic;
+                                 using Microsoft.EntityFrameworkCore;
+
+                                 class C
+                                 {
+                                     void M(DbContext db, List<int> rows)
+                                     {
+                                         foreach (var row in rows)
+                                         {
+                                             {|E128185:db?.SaveChanges()|};
+                                         }
+                                     }
+                                 }
+                                 """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ExtensionSaveChanges_InForeach_Fires()
     {
         return VerifyWithEfExtensionAsync("""
