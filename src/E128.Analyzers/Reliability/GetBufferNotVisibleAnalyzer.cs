@@ -15,9 +15,9 @@ namespace E128.Analyzers.Reliability;
 ///     <c lang="csharp">UnauthorizedAccessException</c> for such a stream.
 /// </summary>
 /// <remarks>
-///     The rule follows a local receiver to its declaration and a parameter receiver to the nearest
-///     simple assignment in the enclosing method body. A field, a property, a method result, and a
-///     creation outside the method body stay silent, because the scan stays method-local. A
+///     The rule follows a local receiver to its nearest preceding assignment or declaration and a
+///     parameter receiver to the nearest simple assignment in the enclosing body. A field, a property,
+///     a method result, and a creation outside the body stay silent, because the scan stays block-local. A
 ///     non-constant <c lang="csharp">publiclyVisible</c> argument also stays silent, since its value
 ///     is unknown at compile time.
 /// </remarks>
@@ -100,7 +100,7 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var body = FindEnclosingBody(invocation);
+        var body = EnclosingBody.Find(invocation);
 
         if (body is null)
         {
@@ -110,7 +110,7 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
         var creation = model.GetSymbolInfo(memberAccess.Expression, token).Symbol switch
         {
             ILocalSymbol local when IsMemoryStream(local.Type, memoryStreamType) =>
-                FindLocalCreation(local, body, token),
+                FindLocalCreation(local, body, invocation, model, token),
             IParameterSymbol parameter when IsMemoryStream(parameter.Type, memoryStreamType) =>
                 FindParameterCreation(parameter, body, invocation, model, token),
             _ => null
@@ -122,34 +122,19 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static BlockSyntax? FindEnclosingBody(SyntaxNode node)
-    {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            if (current is BaseMethodDeclarationSyntax { Body: { } methodBody })
-            {
-                return methodBody;
-            }
-
-            if (current is AccessorDeclarationSyntax { Body: { } accessorBody })
-            {
-                return accessorBody;
-            }
-
-            if (current is LocalFunctionStatementSyntax { Body: { } localBody })
-            {
-                return localBody;
-            }
-        }
-
-        return null;
-    }
-
     private static BaseObjectCreationExpressionSyntax? FindLocalCreation(
         ILocalSymbol local,
         BlockSyntax body,
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
         CancellationToken cancellationToken)
     {
+        var assignment = FindNearestAssignment(local, body, invocation, model, cancellationToken);
+        if (assignment is not null)
+        {
+            return assignment.Right as BaseObjectCreationExpressionSyntax;
+        }
+
         // A declaration outside the body, such as a field initializer, is invisible to the scan.
         foreach (var reference in local.DeclaringSyntaxReferences)
         {
@@ -170,7 +155,18 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        BaseObjectCreationExpressionSyntax? nearest = null;
+        return FindNearestAssignment(parameter, body, invocation, model, cancellationToken)?.Right
+            as BaseObjectCreationExpressionSyntax;
+    }
+
+    private static AssignmentExpressionSyntax? FindNearestAssignment(
+        ISymbol symbol,
+        BlockSyntax body,
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        AssignmentExpressionSyntax? nearest = null;
         var nearestStart = -1;
 
         foreach (var assignment in body.DescendantNodes().OfType<AssignmentExpressionSyntax>())
@@ -181,8 +177,8 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is not IParameterSymbol assigned
-                || !SymbolEqualityComparer.Default.Equals(assigned, parameter))
+            var assigned = model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol;
+            if (assigned is null || !SymbolEqualityComparer.Default.Equals(assigned, symbol))
             {
                 continue;
             }
@@ -190,7 +186,7 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
             if (assignment.SpanStart > nearestStart)
             {
                 nearestStart = assignment.SpanStart;
-                nearest = assignment.Right as BaseObjectCreationExpressionSyntax;
+                nearest = assignment;
             }
         }
 

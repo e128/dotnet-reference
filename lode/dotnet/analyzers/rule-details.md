@@ -98,19 +98,27 @@ set stays narrow.
 **Reported**: a parameter, a field read, a property read, and a `Path.Combine`
 whose first argument is one of those.
 
-**Silent**: a path under `Path.GetTempPath()`, a string literal, a const field, a
-`Path.GetFullPath` over a safe value, an unknown shape, a non-recursive call, and
-a delete guarded by a proving `StartsWith` test on the same path in the same
-block.
+**Silent**: a path under `Path.GetTempPath()`, a relative string literal, a const
+field, a `Path.GetFullPath` over a safe value, a local that holds one of those, an
+unknown shape, a non-recursive call, and a delete guarded by a proving
+`StartsWith` test on the same path in the same block.
 
-A guard proves the test passed in two shapes. An enclosing `if` holds the call
-alone or joined by `&&`. A preceding `if` with no `else` ends in `return`,
-`throw`, `continue`, or `break`, and holds the call under one `!` joined by `||`.
-A negated test around the delete, an `||` condition, and a guard root that is a
-mutable field or a settable property do not count. A literal that names a
-filesystem root, such as `"/"` or `"C:\"`, is reported. A `Path.Combine` under a
-temp path stays silent when a later segment comes from a variable, because the
-rule cannot see a `..` or a rooted value in it.
+**Reported literals**: a rooted literal, such as `"/etc/nginx"` or `"C:\Data"`.
+The rule cannot prove such a directory is disposable. A readonly field, a
+get-only property, and a mutable field report, because the value is computed at
+run time.
+
+A guard proves the test passed in two shapes, and the comparison must use
+`StringComparison.Ordinal` or `OrdinalIgnoreCase` with a root that ends at a
+separator boundary. An enclosing `if` holds the call alone or joined by `&&`. A
+preceding `if` with no `else` ends in `return`, `throw`, `continue`, or `break`,
+and holds the call under one `!` joined by `||`. The guard must be the statement
+before the delete, and a write to the guarded symbol voids it. A negated test
+around the delete and an `||` condition do not count.
+
+A local alias counts as the value it holds. A `Path.Combine` under a temp path
+stays silent when a later segment comes from a variable, because the rule cannot
+see a `..` or a rooted value in it.
 
 No code fix. The safe root belongs to the caller.
 
@@ -122,7 +130,9 @@ private key in the key store, and the key outlives the process. The flag is not
 supported for PFX loading on macOS.
 
 The rule reports two shapes: an `X509Certificate2` constructor with a `fileName`
-parameter, and `X509CertificateLoader.LoadPkcs12` or `LoadPkcs12FromFile`. It
+parameter, and one of the `X509CertificateLoader` methods `LoadPkcs12`,
+`LoadPkcs12FromFile`, `LoadPkcs12Collection`, or
+`LoadPkcs12CollectionFromFile`. It
 reads the flags parameter from the constructor or method symbol, so positional
 and named arguments both bind. It reads the `EphemeralKeySet` constant from the
 enum symbol.

@@ -15,9 +15,9 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 /// <remarks>
 ///     The rule reports the named infinite forms only: <c lang="csharp">Timeout.InfiniteTimeSpan</c>,
-///     <c lang="csharp">TimeSpan.FromMilliseconds(-1)</c>, <c lang="csharp">TimeSpan.FromMilliseconds(Timeout.Infinite)</c>,
-///     and <c lang="csharp">TimeSpan.MaxValue</c>. A computed value stays silent because the rule
-///     cannot prove it is infinite.
+///     <c lang="csharp">TimeSpan.FromMilliseconds(-1)</c>, and
+///     <c lang="csharp">TimeSpan.FromMilliseconds(Timeout.Infinite)</c>. A computed value stays
+///     silent because the rule cannot prove it is infinite.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
@@ -48,8 +48,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
         "HttpClient.Timeout defaults to 100 seconds. Setting it to Timeout.InfiniteTimeSpan, " +
         "TimeSpan.FromMilliseconds(-1), or TimeSpan.FromMilliseconds(Timeout.Infinite) " +
         "removes the request deadline. A stalled server then holds the caller and its thread pool slot " +
-        "with no recovery. TimeSpan.MaxValue is not reported, because the setter throws " +
-        "ArgumentOutOfRangeException for it.");
+        "with no recovery.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -155,8 +154,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
             || (value is double doubleValue && IsInfiniteDouble(doubleValue));
     }
 
-    // The marker is exactly -1 ms. A tolerance keeps the check off a floating point equality
-    // operator, and the smallest double still excludes every other value.
+    // The marker is exactly -1 ms, and the framework converts the argument without rounding.
     private static bool IsInfiniteDouble(double value)
     {
         return Math.Abs(value - InfiniteMilliseconds) < double.Epsilon;

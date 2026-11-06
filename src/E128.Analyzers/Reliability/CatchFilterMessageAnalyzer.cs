@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -57,27 +56,61 @@ public sealed class CatchFilterMessageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        foreach (var memberAccess in filter.FilterExpression
-                     .DescendantNodesAndSelf()
-                     .OfType<MemberAccessExpressionSyntax>())
+        foreach (var node in filter.FilterExpression.DescendantNodesAndSelf())
         {
-            if (IsFormattedMemberAccess(memberAccess, variable, context))
+            if (IsFormattedMemberAccess(node, variable, context, out var location, out var name))
             {
-                context.ReportDiagnostic(
-                    Diagnostic.Create(Rule, memberAccess.GetLocation(), memberAccess.Name.Identifier.ValueText));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, location, name));
             }
         }
     }
 
     private static bool IsFormattedMemberAccess(
-        MemberAccessExpressionSyntax memberAccess,
+        SyntaxNode node,
         ISymbol variable,
-        SyntaxNodeAnalysisContext context)
+        SyntaxNodeAnalysisContext context,
+        out Location location,
+        out string name)
     {
-        return FormattedMembers.Contains(memberAccess.Name.Identifier.ValueText)
-            && memberAccess.Expression is IdentifierNameSyntax receiver
-            && SymbolEqualityComparer.Default.Equals(
-                context.SemanticModel.GetSymbolInfo(receiver, context.CancellationToken).Symbol,
-                variable);
+        location = Location.None;
+        name = string.Empty;
+
+        ExpressionSyntax receiver;
+        Location memberLocation;
+
+        switch (node)
+        {
+            case MemberAccessExpressionSyntax memberAccess:
+                name = memberAccess.Name.Identifier.ValueText;
+                receiver = memberAccess.Expression;
+                memberLocation = memberAccess.GetLocation();
+                break;
+
+            // A conditional access such as "ex?.Message" holds the receiver on the conditional node.
+            case MemberBindingExpressionSyntax binding
+                when binding.Parent is ConditionalAccessExpressionSyntax conditional:
+                name = binding.Name.Identifier.ValueText;
+                receiver = conditional.Expression;
+                memberLocation = conditional.GetLocation();
+                break;
+
+            default:
+                return false;
+        }
+
+        if (!FormattedMembers.Contains(name) || receiver is not IdentifierNameSyntax identifier)
+        {
+            return false;
+        }
+
+        if (!SymbolEqualityComparer.Default.Equals(
+                context.SemanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol,
+                variable))
+        {
+            return false;
+        }
+
+        location = memberLocation;
+        return true;
     }
 }

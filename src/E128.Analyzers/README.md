@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.3.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.3.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -105,26 +105,21 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128175 | `SemaphoreSlim` wait with no `finally` release guarantee                              | No       |
 | E128176 | Event subscription that keeps the subscriber alive                                    | No       |
 | E128177 | Report a record member with a mutable collection type                                 | No       |
-| E128178 | Report two members that map to one JSON property name                                 | No       |
+| E128178 | Report two members that map to one JSON property name (default: Error)                | No       |
 | E128179 | Options type bound from configuration with no validation call                         | No       |
-| E128180 | Entity Framework Core query executed inside a loop                                    | No       |
 | E128181 | HttpClient.Timeout set to an infinite value hangs the caller                          | No       |
 | E128182 | IAsyncEnumerable value enumerated twice                                               | No       |
 | E128183 | Task.WhenAny result is never awaited                                                  | No       |
-| E128184 | Recursive delete outside a proven safe root                                           | No       |
-| E128185 | Entity Framework Core SaveChanges inside a loop                                       | No       |
 | E128186 | Await inside a finally block                                                          | No       |
-| E128187 | Parallel.ForEachAsync without a degree cap                                            | No       |
 | E128188 | Exception filter reads the message text                                               | No       |
 | E128189 | GCHandle with no Free call                                                            | No       |
 | E128190 | FileStream created without asynchronous I/O                                           | No       |
-| E128191 | PFX import without EphemeralKeySet                                                    | No       |
 | E128192 | GetBuffer on a MemoryStream with a hidden buffer                                      | No       |
 | E128193 | Disposable field overwritten in a loop without a dispose                              | No       |
 | E128194 | Lazy<T> field without thread safety                                                   | No       |
 | E128195 | Configuration key absent from the appsettings files                                   | No       |
 | E128196 | JsonSerializerOptions mutated after first use                                         | No       |
-| E128197 | Fixed day count used as a calendar month                                              | No       |
+| E128197 | Fixed day count used as a calendar month (default: Info)                              | No       |
 | E128198 | Substring count built from a length minus a constant                                  | No       |
 
 ### Performance
@@ -165,6 +160,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128141 | Use a `u8` literal instead of `Encoding.UTF8.GetBytes`                                                           | Yes      |
 | E128152 | Complexity past the `e128_max_complexity` ceiling (nested loops, recursion)                                      | Yes      |
 | E128153 | List.RemoveAt(0) in loop creates O(n²) complexity                                                               | No       |
+| E128180 | Entity Framework Core query executed inside a loop                                                               | No       |
+| E128185 | Entity Framework Core SaveChanges inside a loop                                                                  | No       |
+| E128187 | Parallel.ForEachAsync without a degree cap (default: Info)                                                       | No       |
 
 ### Security
 
@@ -191,6 +189,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128167 | Deferred-work comment with no work-item reference                              | No       |
 | E128168 | Skipped test with no work-item reference in its reason                         | No       |
 | E128169 | `[Obsolete]` with no message                                                   | No       |
+| E128184 | Recursive delete outside a proven safe root (default: Info)                    | No       |
+| E128191 | PFX import without EphemeralKeySet                                             | No       |
 
 ### Style
 
@@ -222,12 +222,12 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 ### Maintainability
 
-| Rule    | Title                                            | Code Fix |
-| ------- | ------------------------------------------------ | -------- |
-| E128088 | Switch over an enum does not case every member   | Yes      |
-| E128090 | Avoid reflection in test methods (default: Info) | No       |
-| E128199 | Method calls itself directly                     | No       |
-| E128201 | Conditional directives past the ceiling          | No       |
+| Rule    | Title                                                   | Code Fix |
+| ------- | ------------------------------------------------------- | -------- |
+| E128088 | Switch over an enum does not case every member          | Yes      |
+| E128090 | Avoid reflection in test methods (default: Info)        | No       |
+| E128199 | Method calls itself directly (default: Info)            | No       |
+| E128201 | Conditional directives past the ceiling (default: Info) | No       |
 
 ### Unsafe
 
@@ -1863,7 +1863,7 @@ Flags two members of one type that carry the same `[JsonPropertyName]` value, in
 
 ### E128179: Options type bound from configuration with no validation
 
-Flags `services.AddOptions<T>().Bind(...)`, `AddOptions<T>().BindConfiguration(...)`, and `services.Configure<T>(configuration)` when the same chain carries no `Validate`, `ValidateDataAnnotations`, `ValidateOnStart`, or `ValidateAllProperties` call. A missing or malformed configuration value then reaches the consumer and fails at the point of use. A bare `AddOptions<T>()` and the `Configure<T>(Action<T>)` overload are skipped, because neither reads configuration. The rule matches the registration, the bind, and the validation through the option and DI extension symbols, so a user type with the same method name never triggers it. No code fix.
+Flags `services.AddOptions<T>().Bind(...)`, `AddOptions<T>().BindConfiguration(...)`, and `services.Configure<T>(configuration)` when the same chain carries no `Validate`, `ValidateDataAnnotations`, `ValidateOnStart`, or `ValidateAllProperties` call. A missing or malformed configuration value then reaches the consumer and fails at the point of use. A bare `AddOptions<T>()` and the `Configure<T>(Action<T>)` overload are skipped, because neither reads configuration. The rule matches the registration, the bind, and the validation through the option and DI extension symbols, so a user type with the same method name never triggers it. A separate `services.AddSingleton<IValidateOptions<T>, ...>` registration for the same options type clears the report. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1878,7 +1878,7 @@ services.AddOptions<RetryOptions>()
 
 ### E128180: Entity Framework Core query executed inside a loop
 
-Flags an Entity Framework Core query that executes inside a `for`, `foreach`, `while`, or `do` body. Each iteration runs one database round trip, which is the N+1 query problem. The rule reads the materializing calls only, such as `ToList`, `FirstOrDefaultAsync`, `CountAsync`, `Find`, `Contains`, `Last`, `Average`, and `ExecuteDelete`. A `foreach` with a deconstruction pattern counts as a loop. E128066 defers every `IQueryable` receiver to this rule. The receiver must be a `DbSet<T>`, an EF queryable, or an `IQueryable<T>` chain rooted in an EF type. The `foreach` source expression and the `for` initializer run once, so neither counts as a loop body. The whole rule stays off when EF Core is absent from the compilation. No code fix.
+Flags an Entity Framework Core query that executes inside a `for`, `foreach`, `while`, or `do` body. Each iteration runs one database round trip, which is the N+1 query problem. The rule reads the materializing calls, such as `ToList`, `FirstOrDefaultAsync`, `CountAsync`, `Find`, `Contains`, `Last`, `Average`, and `ExecuteDelete`. It also covers `AsEnumerable` or `AsAsyncEnumerable` that feeds a nested `foreach`, and a query syntax expression (`from ... select`) that a materializing call consumes. A `foreach` with a deconstruction pattern counts as a loop. E128066 defers every `IQueryable` receiver to this rule. The receiver must be a `DbSet<T>`, an EF queryable, or an `IQueryable<T>` chain rooted in an EF type. The `foreach` source expression and the `for` initializer run once, so neither counts as a loop body. The whole rule stays off when EF Core is absent from the compilation. No code fix.
 
 ```csharp
 // Before (warns)
@@ -1931,9 +1931,15 @@ var winner = await Task.WhenAny(first, second);
 await winner;
 ```
 
-### E128184: Recursive delete outside a proven safe root
+### E128184: Recursive delete outside a recognized safe root
 
-Flags a recursive `Directory.Delete` or `DirectoryInfo.Delete` when the path is a parameter, a field read, a property read, or a `Path.Combine` over one of those. The severity is Info, because a false positive on a build gate blocks work for no gain. A path under `Path.GetTempPath()`, a string literal, a const field, and a path guarded by a `StartsWith` test in the same block are skipped. A guard counts only when it proves the test passed: an enclosing `if` that holds the call alone or joined by `&&`, or a preceding `if` with no `else` that exits when the call is false. A negated test around the delete, an `||` condition, and a guard root that is a mutable field or settable property do not count. A literal that names a filesystem root, such as `"/"` or `"C:\"`, is reported. A `Path.Combine` under a temp path stays silent even when a later segment comes from a variable. The rule cannot see a `..` or a rooted value in that segment. An unknown shape stays silent. No code fix.
+Flags a recursive `Directory.Delete` or `DirectoryInfo.Delete` when the path is a parameter, a field read, a property read, or a `Path.Combine` whose first argument is one of those. The severity is Info, because a false positive on a build gate blocks work for no gain.
+
+A path under `Path.GetTempPath()`, a relative string literal, a const field, and a `Path.GetFullPath` over a safe value are recognized as safe. A local that holds one of those is also safe, and a local alias counts as the value it holds. A rooted literal reports, for example `"/etc/nginx"` or `"C:\Data"`, because the rule cannot prove the directory is disposable. A readonly field, a get-only property, and a mutable field report, because the value is computed at run time.
+
+A guard counts only when it proves the test passed. The comparison must use `StringComparison.Ordinal` or `OrdinalIgnoreCase`, and the root must end at a separator boundary, so a prefix test cannot pass for a sibling directory. An enclosing `if` that holds the call alone or joined by `&&` counts, and so does a preceding `if` with no `else` that exits when the call is false. The guard must be the statement before the delete. A write to the guarded symbol between the guard and the delete voids the guard. A negated test around the delete and an `||` condition do not count.
+
+A `Path.Combine` under a temp path stays silent even when a later segment comes from a variable. The rule cannot see a `..` or a rooted value in that segment. An unknown shape stays silent. No code fix.
 
 ```csharp
 // Before (reports)
@@ -2061,11 +2067,14 @@ using var stream = new FileStream(
 
 ### E128191: PFX import without `EphemeralKeySet`
 
-Flags an `X509Certificate2` constructor that imports a PFX file, and an `X509CertificateLoader.LoadPkcs12` call, when the flags omit `X509KeyStorageFlags.EphemeralKeySet`. Without the flag, the import persists the private key in the key store, and the key outlives the process. The flag is not supported for PFX loading on macOS. A flags constant that includes `EphemeralKeySet` and a non-constant flags value are skipped. A constructor that takes a byte array, and a constructor with no flags parameter, are skipped. No code fix.
+Flags an `X509Certificate2` constructor that imports a PFX file, and an `X509CertificateLoader.LoadPkcs12`, `LoadPkcs12FromFile`, `LoadPkcs12Collection`, or `LoadPkcs12CollectionFromFile` call, when the flags omit `X509KeyStorageFlags.EphemeralKeySet`. Without the flag, the import persists the private key in the key store, and the key outlives the process. The flag is not supported for PFX loading on macOS. A flags constant that includes `EphemeralKeySet` and a non-constant flags value are skipped. A constructor that takes a byte array, and a constructor with no flags parameter, are skipped. No code fix.
 
 ```csharp
 // Before (warns)
-using var certificate = new X509Certificate2(path, password);
+using var certificate = new X509Certificate2(
+    path,
+    password,
+    X509KeyStorageFlags.MachineKeySet);
 
 // After
 using var certificate = new X509Certificate2(
@@ -2090,7 +2099,7 @@ byte[] raw = buffer.ToArray();
 
 ### E128193: Disposable field overwritten in a loop without a dispose
 
-Flags an assignment to a field whose type implements `IDisposable` or `IAsyncDisposable` inside a loop body, when no earlier dispose call on the same field appears inside the same loop. A field whose type is a type parameter with an `IDisposable` constraint counts as disposable. The overwritten instance keeps its unmanaged resources until the finalizer runs. A dispose call on the same field before the assignment, inside the same loop, clears the report, including `field?.Dispose()` and `this.field?.Dispose()`. A dispose call before the loop releases only the first value, so it does not clear the report. A local, a parameter, a property, a compound assignment, a value type, and an assignment outside a loop are skipped. No code fix.
+Flags an assignment to a field whose type implements `IDisposable` or `IAsyncDisposable` inside a loop body, when no earlier dispose call on the same field appears inside the same loop. A field whose type is a type parameter with an `IDisposable` constraint counts as disposable. The overwritten instance keeps its unmanaged resources until the finalizer runs. A dispose call on the same field before the assignment, inside the same loop, clears the report, including `field?.Dispose()` and `this.field?.Dispose()`. The suppression requires a dispose inside the same loop. A dispose before the loop, or anywhere outside the loop body, does not clear the report. A local, a parameter, a property, a compound assignment, a value type, and an assignment outside a loop are skipped. No code fix.
 
 ```csharp
 // Before (warns)
@@ -2122,7 +2131,7 @@ private static readonly Lazy<Cache> Shared = new(() => new Cache());
 
 ### E128195: Configuration key absent from the appsettings files
 
-Flags a constant configuration key that no JSON additional file defines. The rule reads the key from an `IConfiguration` indexer, from `GetSection` or `GetRequiredSection`, and from `GetConnectionString`, which maps to `ConnectionStrings:<name>`. A section read needs the section prefix, not a leaf. A read through an `IConfigurationSection` is relative to that section, and an indexer assignment defines a key, so the rule skips both. The JSON reader accepts comments and trailing commas. A key comparison ignores case, because the configuration provider ignores case. A non-constant key, a receiver that is not an `IConfiguration`, and a file that fails to parse are skipped. The rule stays off when the project passes no parsable JSON additional file.
+Flags a constant configuration key that no `appsettings*.json` additional file defines. The rule reads only those files, and a file that fails to parse is skipped. The rule reads the key from an `IConfiguration` indexer, from `GetSection` or `GetRequiredSection`, and from `GetConnectionString`, which maps to `ConnectionStrings:<name>`. A section read needs the section prefix, not a leaf. A read through an `IConfigurationSection` is relative to that section, and an indexer assignment defines a key, so the rule skips both. The JSON reader accepts comments and trailing commas. A key comparison ignores case, because the configuration provider ignores case. A non-constant key and a receiver that is not an `IConfiguration` are skipped. The rule stays off when the project passes no parsable `appsettings*.json` additional file.
 
 The project must pass the file in. A key from an environment variable, a user secret, or a file outside the project is not visible to the rule.
 
@@ -2132,7 +2141,7 @@ The project must pass the file in. A key from an environment variable, a user se
 </ItemGroup>
 ```
 
-A key that a run-time source supplies needs an entry in the `e128_added_configuration_keys` option. The option holds comma-separated keys.
+A key that a run-time source supplies needs an entry in the `e128_added_configuration_keys` option. The option holds comma-separated keys and adds them on top of the parsed files. The option never activates the rule on its own.
 
 ```ini
 # .editorconfig
@@ -2724,7 +2733,7 @@ e128_max_conditional_directives = 4
 e128_added_configuration_keys = FeatureFlags:Beta, External:Endpoint
 ```
 
-E128195 reads the `appsettings*.json` files that the project passes through `AdditionalFiles`. Add each file to the project:
+E128195 reads the `appsettings*.json` files that the project passes through `AdditionalFiles`. A file that fails to parse is skipped. The `e128_added_configuration_keys` option adds keys on top of the parsed files, so it never activates the rule alone. Add each file to the project:
 
 ```xml
 <ItemGroup>

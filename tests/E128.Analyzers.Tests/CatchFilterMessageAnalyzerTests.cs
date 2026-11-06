@@ -65,6 +65,27 @@ public sealed class CatchFilterMessageAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_MessageThroughAConditionalAccess()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   try
+                                   {
+                                   }
+                                   catch (Exception ex) when ({|E128188:ex?.Message|} is not null)
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_StackTraceMember()
     {
         return VerifyAsync("""

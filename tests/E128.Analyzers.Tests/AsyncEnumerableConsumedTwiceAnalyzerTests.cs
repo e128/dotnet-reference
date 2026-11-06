@@ -370,6 +370,97 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task EnumeratedTwiceInsideOneLambda_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               void M(IAsyncEnumerable<int> source)
+                               {
+                                   Func<Task> run = async () =>
+                                   {
+                                       await foreach (var item in source)
+                                       {
+                                       }
+
+                                       await foreach (var item in {|E128182:source|})
+                                       {
+                                       }
+                                   };
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task EnumeratedInDifferentSwitchSections_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(IAsyncEnumerable<int> source, int mode)
+                               {
+                                   switch (mode)
+                                   {
+                                       case 0:
+                                           await foreach (var item in source)
+                                           {
+                                           }
+
+                                           break;
+
+                                       default:
+                                           await foreach (var item in source)
+                                           {
+                                           }
+
+                                           break;
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task EnumeratedTwiceInsideOneAccessor_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               private readonly IAsyncEnumerable<int> _source = Build();
+
+                               private static async IAsyncEnumerable<int> Build()
+                               {
+                                   yield return 1;
+                                   await Task.Yield();
+                               }
+
+                               public IAsyncEnumerator<int> Enumerator
+                               {
+                                   get
+                                   {
+                                       _source.GetAsyncEnumerator();
+                                       return {|E128182:_source|}.GetAsyncEnumerator();
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NestedLocalFunctionBody_DoesNotFire()
     {
         return VerifyAsync("""

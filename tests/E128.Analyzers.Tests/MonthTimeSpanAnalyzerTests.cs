@@ -107,6 +107,97 @@ public sealed class MonthTimeSpanAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task DoubleLiteralThirtyDays_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class C
+                           {
+                               static DateTime M(DateTime today)
+                               {
+                                   return today.Add({|E128197:TimeSpan.FromDays(30d)|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DoubleConstantThirtyDays_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class C
+                           {
+                               private const double Days = 30.0;
+
+                               static DateTime M(DateTime today)
+                               {
+                                   return today.Add({|E128197:TimeSpan.FromDays(Days)|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FloatConstantThirtyDays_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class C
+                           {
+                               private const float Days = 30f;
+
+                               static DateTime M(DateTime today)
+                               {
+                                   return today.Add({|E128197:TimeSpan.FromDays(Days)|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LongConstantThirtyDays_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class C
+                           {
+                               private const long Days = 30;
+
+                               static DateTime M(DateTime today)
+                               {
+                                   return today.Add({|E128197:TimeSpan.FromDays(Days)|});
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FractionalDays_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+
+                           class C
+                           {
+                               static DateTime M(DateTime today)
+                               {
+                                   return today.Add(TimeSpan.FromDays(30.5));
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task SevenDaySpan_DoesNotFire()
     {
         return VerifyAsync("""

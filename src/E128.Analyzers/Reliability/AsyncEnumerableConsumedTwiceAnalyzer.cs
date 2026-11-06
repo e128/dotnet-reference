@@ -18,9 +18,10 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 /// <remarks>
 ///     The rule reads one member body. A value created inline, such as a call, stays out, because
-///     each call may return a fresh sequence. A lambda or local function body stays out of its
-///     enclosing body and runs as its own unit. An iterator declared with
-///     <c lang="csharp">yield return</c> stays out, because it hands items onward one at a time.
+///     each call may return a fresh sequence. A lambda, local function, or accessor body runs as
+///     its own unit, so an enumeration inside it does not pair with one outside it. An iterator
+///     declared with <c lang="csharp">yield return</c> stays out, because it hands items onward one
+///     at a time.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
@@ -55,27 +56,43 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
                 "System.Collections.Generic.IAsyncEnumerable`1");
 
             // A target framework without IAsyncEnumerable cannot hold the value this rule reads.
-            if (asyncEnumerableType is null)
-            {
-                return;
-            }
-
             compilationContext.RegisterSyntaxNodeAction(
                 nodeContext => AnalyzeBody(nodeContext, asyncEnumerableType),
                 SyntaxKind.MethodDeclaration,
-                SyntaxKind.LocalFunctionStatement);
+                SyntaxKind.LocalFunctionStatement,
+                SyntaxKind.SimpleLambdaExpression,
+                SyntaxKind.ParenthesizedLambdaExpression,
+                SyntaxKind.AnonymousMethodExpression,
+                SyntaxKind.GetAccessorDeclaration,
+                SyntaxKind.SetAccessorDeclaration,
+                SyntaxKind.InitAccessorDeclaration,
+                SyntaxKind.AddAccessorDeclaration,
+                SyntaxKind.RemoveAccessorDeclaration);
         });
     }
 
-    private static void AnalyzeBody(SyntaxNodeAnalysisContext context, INamedTypeSymbol asyncEnumerableType)
+    private static SyntaxNode? GetFunctionBody(SyntaxNode node)
     {
-        var body = context.Node switch
+        return node switch
         {
             MethodDeclarationSyntax method => (SyntaxNode?)method.Body ?? method.ExpressionBody?.Expression,
             LocalFunctionStatementSyntax localFunction => (SyntaxNode?)localFunction.Body
                                                           ?? localFunction.ExpressionBody?.Expression,
+            AccessorDeclarationSyntax accessor => (SyntaxNode?)accessor.Body
+                                                  ?? accessor.ExpressionBody?.Expression,
+            AnonymousFunctionExpressionSyntax anonymous => (SyntaxNode?)anonymous.Body,
             _ => null
         };
+    }
+
+    private static void AnalyzeBody(SyntaxNodeAnalysisContext context, INamedTypeSymbol? asyncEnumerableType)
+    {
+        if (asyncEnumerableType is null)
+        {
+            return;
+        }
+
+        var body = GetFunctionBody(context.Node);
 
         if (body is null)
         {

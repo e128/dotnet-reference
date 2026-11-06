@@ -171,7 +171,7 @@ public sealed class EfQueryInLoopAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task AsEnumerable_InForEachBody_Fires()
+    public Task AsEnumerable_AsNestedForEachSource_Fires()
     {
         return VerifyAsync("""
                            class Item { public int Id { get; set; } }
@@ -181,7 +181,66 @@ public sealed class EfQueryInLoopAnalyzerTests
                                {
                                    foreach (var id in ids)
                                    {
-                                       var rows = {|E128180:items.AsEnumerable()|};
+                                       foreach (var item in {|E128180:items.AsEnumerable()|})
+                                       {
+                                       }
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AsEnumerable_InLoopBodyWithoutForEach_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           class Item { public int Id { get; set; } }
+                           class C
+                           {
+                               void M(DbSet<Item> items, int[] ids)
+                               {
+                                   foreach (var id in ids)
+                                   {
+                                       var rows = items.AsEnumerable();
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AsEnumerable_AsForEachSourceWithoutLoop_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           class Item { public int Id { get; set; } }
+                           class C
+                           {
+                               void M(DbSet<Item> items)
+                               {
+                                   foreach (var item in items.AsEnumerable())
+                                   {
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task QuerySyntaxThenToList_InForeach_Fires()
+    {
+        return VerifyAsync("""
+                           class Item { public int Id { get; set; } }
+                           class Store { public DbSet<Item> Rows { get; set; } }
+                           class C
+                           {
+                               void M(Store db, int[] ids)
+                               {
+                                   foreach (var id in ids)
+                                   {
+                                       var rows = {|E128180:(from r in db.Rows where r.Id > id select r).ToList()|};
                                    }
                                }
                            }

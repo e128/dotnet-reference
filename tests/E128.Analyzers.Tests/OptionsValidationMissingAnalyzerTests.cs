@@ -13,6 +13,7 @@ public sealed class OptionsValidationMissingAnalyzerTests
     private const string Stubs = """
                                  using Microsoft.Extensions.Configuration;
                                  using Microsoft.Extensions.DependencyInjection;
+                                 using Microsoft.Extensions.Options;
 
                                  namespace Microsoft.Extensions.Configuration
                                  {
@@ -33,6 +34,21 @@ public sealed class OptionsValidationMissingAnalyzerTests
                                              return this;
                                          }
                                      }
+
+                                     public sealed class BinderOptions
+                                     {
+                                     }
+
+                                     public interface IValidateOptions<TOptions>
+                                         where TOptions : class
+                                     {
+                                         ValidateOptionsResult Validate(string name, TOptions options);
+                                     }
+
+                                     public sealed class ValidateOptionsResult
+                                     {
+                                         public static ValidateOptionsResult Success { get; } = new ValidateOptionsResult();
+                                     }
                                  }
 
                                  namespace Microsoft.Extensions.DependencyInjection
@@ -43,6 +59,16 @@ public sealed class OptionsValidationMissingAnalyzerTests
 
                                      public interface IServiceCollection
                                      {
+                                     }
+
+                                     public static class ServiceCollectionServiceExtensions
+                                     {
+                                         public static IServiceCollection AddSingleton<TService, TImplementation>(this IServiceCollection services)
+                                             where TService : class
+                                             where TImplementation : class, TService
+                                         {
+                                             return services;
+                                         }
                                      }
 
                                      public static class OptionsServiceCollectionExtensions
@@ -69,6 +95,12 @@ public sealed class OptionsValidationMissingAnalyzerTests
                                      public static class OptionsConfigurationServiceCollectionExtensions
                                      {
                                          public static IServiceCollection Configure<TOptions>(this IServiceCollection services, IConfiguration configuration)
+                                             where TOptions : class
+                                         {
+                                             return services;
+                                         }
+
+                                         public static IServiceCollection Configure<TOptions>(this IServiceCollection services, IConfiguration configuration, Action<BinderOptions> configureBinder)
                                              where TOptions : class
                                          {
                                              return services;
@@ -195,9 +227,88 @@ public sealed class OptionsValidationMissingAnalyzerTests
                            """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConfigureWithConfigurationAndBinderOptions_WithNoValidation_Fires()
+    {
+        return VerifyAsync("""
+                           class MyOptions
+                           {
+                               public string Name { get; set; } = "";
+                           }
+
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services, IConfiguration configuration)
+                               {
+                                   {|E128179:services.Configure<MyOptions>(configuration, binder => { })|};
+                               }
+                           }
+                           """);
+    }
+
     #endregion Fires
 
     #region Silent
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConfigureWithSeparateValidateOptions_NoDiagnostic()
+    {
+        return VerifyAsync("""
+                           class MyOptions
+                           {
+                               public string Name { get; set; } = "";
+                           }
+
+                           class MyOptionsValidator : IValidateOptions<MyOptions>
+                           {
+                               public ValidateOptionsResult Validate(string name, MyOptions options)
+                                   => ValidateOptionsResult.Success;
+                           }
+
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services, IConfiguration configuration)
+                               {
+                                   services.AddSingleton<IValidateOptions<MyOptions>, MyOptionsValidator>();
+                                   services.Configure<MyOptions>(configuration);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ConfigureWithSeparateValidatorForAnotherOptionsType_Fires()
+    {
+        return VerifyAsync("""
+                           class MyOptions
+                           {
+                               public string Name { get; set; } = "";
+                           }
+
+                           class OtherOptions
+                           {
+                               public string Name { get; set; } = "";
+                           }
+
+                           class OtherOptionsValidator : IValidateOptions<OtherOptions>
+                           {
+                               public ValidateOptionsResult Validate(string name, OtherOptions options)
+                                   => ValidateOptionsResult.Success;
+                           }
+
+                           class Startup
+                           {
+                               void Configure(IServiceCollection services, IConfiguration configuration)
+                               {
+                                   services.AddSingleton<IValidateOptions<OtherOptions>, OtherOptionsValidator>();
+                                   {|E128179:services.Configure<MyOptions>(configuration)|};
+                               }
+                           }
+                           """);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

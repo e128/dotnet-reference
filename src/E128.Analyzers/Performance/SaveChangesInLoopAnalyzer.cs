@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -82,16 +83,20 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var receiverType = invocation.Expression is MemberAccessExpressionSyntax memberAccess
-            ? context.SemanticModel.GetTypeInfo(memberAccess.Expression, context.CancellationToken).Type
-            : null;
+        var receiverType = GetReceiverType(invocation, context.SemanticModel, context.CancellationToken);
 
         if (!IsEfSaveChanges(method, receiverType, dbContextType))
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), method.Name));
+        // A null-conditional call reports the whole conditional access, so the location covers the
+        // receiver that may be null.
+        var location = invocation.Parent is ConditionalAccessExpressionSyntax conditionalAccess
+            ? conditionalAccess.GetLocation()
+            : invocation.GetLocation();
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, location, method.Name));
     }
 
     private static string GetMethodName(InvocationExpressionSyntax invocation)
@@ -99,9 +104,29 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
         return invocation.Expression switch
         {
             MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            MemberBindingExpressionSyntax memberBinding => memberBinding.Name.Identifier.ValueText,
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
             GenericNameSyntax generic => generic.Identifier.ValueText,
             _ => string.Empty
+        };
+    }
+
+    /// <summary>
+    ///     Returns the type of the receiver. A member binding names no receiver of its own, so the
+    ///     receiver comes from the enclosing conditional access.
+    /// </summary>
+    private static ITypeSymbol? GetReceiverType(
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess =>
+                model.GetTypeInfo(memberAccess.Expression, cancellationToken).Type,
+            MemberBindingExpressionSyntax when invocation.Parent is ConditionalAccessExpressionSyntax conditionalAccess =>
+                model.GetTypeInfo(conditionalAccess.Expression, cancellationToken).Type,
+            _ => null
         };
     }
 

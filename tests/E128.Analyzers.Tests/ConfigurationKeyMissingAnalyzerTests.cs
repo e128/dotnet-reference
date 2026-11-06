@@ -44,6 +44,8 @@ public sealed class ConfigurationKeyMissingAnalyzerTests
     private static Task VerifyAsync(
         string code,
         string? appSettings = null,
+        string? addedKeys = null,
+        (string Name, string Text)? extraFile = null,
         params DiagnosticResult[] expected)
     {
         var test = new CSharpAnalyzerTest<ConfigurationKeyMissingAnalyzer, DefaultVerifier>
@@ -55,6 +57,17 @@ public sealed class ConfigurationKeyMissingAnalyzerTests
         if (appSettings is not null)
         {
             test.TestState.AdditionalFiles.Add(("appsettings.json", SourceText.From(appSettings)));
+        }
+
+        if (addedKeys is not null)
+        {
+            test.TestState.AnalyzerConfigFiles.Add(
+                ("/.editorconfig", "is_global = true\ne128_added_configuration_keys = " + addedKeys));
+        }
+
+        if (extraFile is { } file)
+        {
+            test.TestState.AdditionalFiles.Add((file.Name, SourceText.From(file.Text)));
         }
 
         test.ExpectedDiagnostics.AddRange(expected);
@@ -463,5 +476,106 @@ public sealed class ConfigurationKeyMissingAnalyzerTests
             """
             { "Hosts": [ "one", "two" ] }
             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AddedKeysOption_SuppliesMissingKey()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static string? M(IConfiguration configuration)
+                                {
+                                    return configuration["Logging:External"];
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            //lang=json
+            """
+            { "Logging": { "Level": "Information" } }
+            """,
+            addedKeys: "Logging:External");
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AddedKeysOption_WithoutParsedFile_DoesNotActivateTheRule()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static string? M(IConfiguration configuration)
+                                {
+                                    return configuration["Logging:External"];
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            "{ not json",
+            addedKeys: "Logging:External");
+    }
+
+    /// <summary>
+    ///     Builds a JSON pair from parts, so the test data is not one JSON-looking literal token.
+    /// </summary>
+    private static string JsonPair(string key, string value)
+    {
+        return "{ \"" + key + "\": " + value + " }";
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task AppSettingsPrefixedFile_IsRead()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static string? M(IConfiguration configuration)
+                                {
+                                    return {|E128195:configuration["Logging:Missing"]|};
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            extraFile: ("appsettings.Development.json", JsonPair("Logging", JsonPair("Level", "\"Information\""))));
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NonAppSettingsJsonFile_IsIgnored()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static string? M(IConfiguration configuration)
+                                {
+                                    return {|E128195:configuration["Other"]|};
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            //lang=json
+            """
+            { "Logging": "Information" }
+            """,
+            extraFile: ("config.json", JsonPair("Other", "\"value\"")));
     }
 }

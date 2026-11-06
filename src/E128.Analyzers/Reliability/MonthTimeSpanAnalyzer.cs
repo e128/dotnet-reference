@@ -21,9 +21,9 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128197";
 
-    internal const int ShortestMonth = 28;
+    private const int ShortestMonth = 28;
 
-    internal const int LongestMonth = 31;
+    private const int LongestMonth = 31;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -197,15 +197,40 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (context.SemanticModel.GetConstantValue(
-                invocation.ArgumentList.Arguments[0].Expression,
-                context.CancellationToken) is not { HasValue: true, Value: int value })
+        var constant = context.SemanticModel.GetConstantValue(
+            invocation.ArgumentList.Arguments[0].Expression,
+            context.CancellationToken);
+        return constant.HasValue && TryGetWholeDays(constant.Value, out days);
+    }
+
+    // Accept a whole number in the month range from an int, long, double, or float constant.
+    private static bool TryGetWholeDays(object? value, out int days)
+    {
+        days = 0;
+
+        switch (value)
         {
-            return false;
+            case int intValue when intValue is >= ShortestMonth and <= LongestMonth:
+                days = intValue;
+                return true;
+            case long longValue when longValue is >= ShortestMonth and <= LongestMonth:
+                days = (int)longValue;
+                return true;
+            case double doubleValue when IsWholeDay(doubleValue):
+                days = (int)doubleValue;
+                return true;
+            case float floatValue when IsWholeDay(floatValue):
+                days = (int)floatValue;
+                return true;
+            default:
+                return false;
         }
+    }
 
-        days = value;
-
-        return days is >= ShortestMonth and <= LongestMonth;
+    private static bool IsWholeDay(double value)
+    {
+        return value >= ShortestMonth
+               && value <= LongestMonth
+               && Math.Abs(value - Math.Floor(value)) < double.Epsilon;
     }
 }

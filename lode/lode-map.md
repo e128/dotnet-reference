@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-05T13:32:58Z*
+*Updated: 2026-11-06T13:02:22Z*
 
 ## Generated Docs
 
@@ -29,7 +29,7 @@
 - [performance.md](dotnet/performance.md): Runtime knobs, profiling ladder, safe C# hot-path tips, ASP.NET Core
 - [unsafe-code.md](dotnet/unsafe-code.md): No-unsafe-code policy, E128 rule coverage map, known gaps
 - [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes
-- [analyzer-candidates-external-sweep.md](dotnet/analyzer-candidates-external-sweep.md): Thirty open candidates from the 2026-11-05 external rule-set sweep
+- [analyzer-candidates-external-sweep.md](dotnet/analyzer-candidates-external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 
 ### dotnet/analyzers/
 

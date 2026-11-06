@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -30,6 +31,8 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
     internal const string RunContinuationsFlag = "TaskCreationOptions.RunContinuationsAsynchronously";
 
     internal const int RunContinuationsValue = 0x40;
+
+    private const string InterlockedTypeName = "System.Threading.Interlocked";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -115,8 +118,72 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // An Interlocked exchange over a field elects one winning caller, so the completion runs at
+        // most once and the throwing form cannot see a second caller.
+        if (IsGuardedByInterlocked(invocation, context.SemanticModel, context.CancellationToken))
+        {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(SharedCompletionRule, invocation.GetLocation()));
+    }
+
+    private static bool IsGuardedByInterlocked(
+        InvocationExpressionSyntax completion,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        for (var node = completion.Parent; node is not null; node = node.Parent)
+        {
+            if (node is MemberDeclarationSyntax or AnonymousFunctionExpressionSyntax
+                or LocalFunctionStatementSyntax)
+            {
+                return false;
+            }
+
+            var condition = node switch
+            {
+                IfStatementSyntax ifStatement => ifStatement.Condition,
+                ConditionalExpressionSyntax conditional => conditional.Condition,
+                _ => null
+            };
+
+            if (condition is not null && CallsInterlockedExchange(condition, model, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool CallsInterlockedExchange(
+        ExpressionSyntax condition,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        foreach (var call in condition.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>())
+        {
+            if (model.GetSymbolInfo(call, cancellationToken).Symbol is not IMethodSymbol method
+                || !string.Equals(method.ContainingType?.ToDisplayString(), InterlockedTypeName, StringComparison.Ordinal)
+                || (!string.Equals(method.Name, "Exchange", StringComparison.Ordinal)
+                    && !string.Equals(method.Name, "CompareExchange", StringComparison.Ordinal)))
+            {
+                continue;
+            }
+
+            var arguments = call.ArgumentList.Arguments;
+
+            if (arguments.Count > 0
+                && arguments[0].RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
+                && model.GetSymbolInfo(arguments[0].Expression, cancellationToken).Symbol is IFieldSymbol)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsThrowingCompleter(string name)

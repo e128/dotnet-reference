@@ -12,4 +12,4 @@ Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|------
-E128022 | Design | Warning | Removed. Other rules cover this check.
+

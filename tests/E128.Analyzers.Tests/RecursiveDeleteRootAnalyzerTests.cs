@@ -171,7 +171,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task StringLiteral_DoesNotFire()
+    public Task RelativeStringLiteral_DoesNotFire()
     {
         return VerifyAsync("""
                            using System.IO;
@@ -179,7 +179,39 @@ public sealed class RecursiveDeleteRootAnalyzerTests
                            {
                                void M()
                                {
-                                   Directory.Delete("C:/data", true);
+                                   Directory.Delete("data/cache", true);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RootedStringLiteral_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   {|E128184:Directory.Delete("/etc/nginx", true)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DriveRootedStringLiteral_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   {|E128184:Directory.Delete(@"C:\data", true)|};
                                }
                            }
                            """);
@@ -206,6 +238,51 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     public Task StartsWithGuard_DoesNotFire()
     {
         return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   if (path.StartsWith(Path.GetTempPath(), StringComparison.Ordinal))
+                                   {
+                                       Directory.Delete(path, true);
+                                   }
+
+                                   if (Path.GetFullPath(path).StartsWith(Path.GetTempPath(), StringComparison.Ordinal))
+                                   {
+                                       Directory.Delete(path, true);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CultureSensitiveGuard_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   if (path.StartsWith(Path.GetTempPath(), StringComparison.CurrentCulture))
+                                   {
+                                       {|E128184:Directory.Delete(path, true)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GuardWithoutComparisonOverload_Fires()
+    {
+        return VerifyAsync("""
                            using System.IO;
                            class C
                            {
@@ -213,12 +290,173 @@ public sealed class RecursiveDeleteRootAnalyzerTests
                                {
                                    if (path.StartsWith(Path.GetTempPath()))
                                    {
-                                       Directory.Delete(path, true);
+                                       {|E128184:Directory.Delete(path, true)|};
                                    }
+                               }
+                           }
+                           """);
+    }
 
-                                   if (Path.GetFullPath(path).StartsWith(Path.GetTempPath()))
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SeparatorBoundedLiteralGuard_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   if (path.StartsWith("/srv/app/data/", StringComparison.Ordinal))
                                    {
                                        Directory.Delete(path, true);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SeparatorBoundedRootWithDirectorySeparatorChar_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   if (path.StartsWith("/srv/app/data" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                                   {
+                                       Directory.Delete(path, true);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PrefixWithoutSeparatorBoundary_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   if (path.StartsWith("/srv/app/data", StringComparison.Ordinal))
+                                   {
+                                       {|E128184:Directory.Delete(path, true)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LocalSafeRootGuard_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   var temp = Path.GetTempPath();
+
+                                   if (path.StartsWith(temp, StringComparison.Ordinal))
+                                   {
+                                       Directory.Delete(path, true);
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReadOnlyFieldGuardRoot_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               private readonly string root = "C:/data/";
+
+                               void M(string path)
+                               {
+                                   if (path.StartsWith(root, StringComparison.Ordinal))
+                                   {
+                                       {|E128184:Directory.Delete(path, true)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GetOnlyPropertyGuardRoot_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               private string Root => "C:/data/";
+
+                               void M(string path)
+                               {
+                                   if (path.StartsWith(Root, StringComparison.Ordinal))
+                                   {
+                                       {|E128184:Directory.Delete(path, true)|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LocalAliasOfParameter_Fires()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   var target = path;
+
+                                   {|E128184:Directory.Delete(target, true)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReassignedAfterGuard_Fires()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path, string other)
+                               {
+                                   if (path.StartsWith(Path.GetTempPath(), StringComparison.Ordinal))
+                                   {
+                                       path = other;
+
+                                       {|E128184:Directory.Delete(path, true)|};
                                    }
                                }
                            }
@@ -254,7 +492,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
                            {
                                void M(string path, bool force)
                                {
-                                   if (path.StartsWith(Path.GetTempPath()) || force)
+                                   if (path.StartsWith(Path.GetTempPath(), System.StringComparison.Ordinal) || force)
                                    {
                                        {|E128184:Directory.Delete(path, true)|};
                                    }
@@ -294,7 +532,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
                            {
                                void M(string path)
                                {
-                                   if (!path.StartsWith(Path.GetTempPath()))
+                                   if (!path.StartsWith(Path.GetTempPath(), System.StringComparison.Ordinal))
                                    {
                                        return;
                                    }
@@ -317,7 +555,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
 
                                void M(string path)
                                {
-                                   if (path.StartsWith(Root))
+                                   if (path.StartsWith(Root, System.StringComparison.Ordinal))
                                    {
                                        {|E128184:Directory.Delete(path, true)|};
                                    }

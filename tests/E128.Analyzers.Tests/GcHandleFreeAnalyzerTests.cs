@@ -114,6 +114,26 @@ public sealed class GcHandleFreeAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task AllocInsideALambdaFreedLaterInTheMethod_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Runtime.InteropServices;
+                           class C
+                           {
+                               void M(object payload)
+                               {
+                                   GCHandle handle = default;
+                                   Action allocate = () => handle = GCHandle.Alloc(payload);
+                                   allocate();
+                                   handle.Free();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task AllocPassedToMethod_DoesNotFire()
     {
         return VerifyAsync("""

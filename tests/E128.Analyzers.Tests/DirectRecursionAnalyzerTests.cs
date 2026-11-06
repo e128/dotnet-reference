@@ -74,6 +74,24 @@ public sealed class DirectRecursionAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Silent_WhenTheCallSitsInADeferredCallback()
+    {
+        return VerifyAsync("""
+                           class Queue
+                           {
+                               public void Post(System.Action action) => action();
+                           }
+                           class C
+                           {
+                               private readonly Queue _queue = new();
+
+                               void Start() => _queue.Post(() => Start());
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenTwoMethodsDoNotCallThemselves()
     {
         return VerifyAsync("""

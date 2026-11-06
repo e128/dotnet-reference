@@ -1,5 +1,5 @@
 # Reliability Rule Details: Resources And Lifetime
-*Updated: 2026-11-05T15:20:29Z*
+*Updated: 2026-11-06T13:02:22Z*
 
 Behavior notes for the reliability rules that cover resource lifetime and shared
 state. The complete rule table, the severity, and the code-fix status live in
@@ -32,18 +32,19 @@ raw buffer.
 ### E128193: Disposable field overwritten in a loop
 
 Severity: **Warning**. Flags an assignment to a disposable field inside a loop
-body when no earlier dispose call on the same field sits in the enclosing
-member. The overwritten instance keeps its unmanaged resources until the
-finalizer runs.
+body when no earlier dispose call on the same field sits in that loop. The
+overwritten instance keeps its unmanaged resources until the finalizer runs.
 
 The rule resolves `IDisposable` and `IAsyncDisposable`, then matches a simple
 assignment whose left symbol is a field of either type. It compares the dispose
-receiver to the field symbol and the spans to the assignment.
+receiver to the field symbol and the spans to the assignment. The suppression
+requires a dispose inside the same loop. A dispose before the loop releases only
+the first value, so it does not clear the report.
 
 **Exclusions**:
 
-- A dispose call on the same field before the assignment, including `?.` and
-  `this.`.
+- A dispose call on the same field before the assignment, inside the same loop,
+  including `?.` and `this.`.
 - A local, a parameter, or a property on the left side.
 - A compound assignment.
 - A value type or a non-disposable type.

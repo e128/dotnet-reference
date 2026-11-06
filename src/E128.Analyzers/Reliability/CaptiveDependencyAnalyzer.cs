@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,6 +32,10 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     private const string DbContextMetadataName = "Microsoft.EntityFrameworkCore.DbContext";
 
     private const string ServiceLifetimeMetadataName = "Microsoft.Extensions.DependencyInjection.ServiceLifetime";
+
+    private const string ServiceCollectionMetadataName = "Microsoft.Extensions.DependencyInjection.IServiceCollection";
+
+    private const string EntityFrameworkExtensionsMetadataName = "Microsoft.Extensions.DependencyInjection.EntityFrameworkServiceCollectionExtensions";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -125,7 +130,13 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         if (isDbContextRegistration)
         {
-            CollectDbContextRegistration(invocation, operation, dbContextCandidates, efCore);
+            CollectDbContextRegistration(
+                invocation,
+                operation,
+                dbContextCandidates,
+                efCore,
+                context.SemanticModel,
+                context.CancellationToken);
 
             return;
         }
@@ -195,8 +206,17 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         IInvocationOperation operation,
         ConcurrentBag<DbContextCandidate> dbContextCandidates,
-        EfCoreTypes efCore)
+        EfCoreTypes efCore,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
+        // The method name alone does not prove the registration. A user helper can carry the same
+        // name and a contextLifetime parameter.
+        if (!efCore.IsEntityFrameworkRegistration(invocation, operation, model, cancellationToken))
+        {
+            return;
+        }
+
         // AddDbContext registers a context with the scoped lifetime by default. Only an explicit
         // Singleton argument makes the registration a singleton.
         var contextType = GetDbContextType(operation, efCore);
@@ -380,12 +400,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var value = argument.Value;
-
-            while (value is IConversionOperation conversion)
-            {
-                value = conversion.Operand;
-            }
+            var value = UnwrapConversions(argument.Value);
 
             if (value is ITypeOfOperation typeOf)
             {
@@ -574,10 +589,19 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     private sealed class EfCoreTypes
     {
         private readonly INamedTypeSymbol? dbContext;
+        private readonly INamedTypeSymbol? serviceCollection;
+        private readonly INamedTypeSymbol? entityFrameworkExtensions;
 
-        private EfCoreTypes(INamedTypeSymbol? dbContext, INamedTypeSymbol? serviceLifetime, object? singletonValue)
+        private EfCoreTypes(
+            INamedTypeSymbol? dbContext,
+            INamedTypeSymbol? serviceLifetime,
+            object? singletonValue,
+            INamedTypeSymbol? serviceCollection,
+            INamedTypeSymbol? entityFrameworkExtensions)
         {
             this.dbContext = dbContext;
+            this.serviceCollection = serviceCollection;
+            this.entityFrameworkExtensions = entityFrameworkExtensions;
             ServiceLifetime = serviceLifetime;
             SingletonValue = singletonValue;
         }
@@ -595,7 +619,12 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             var contextType = compilation.GetTypeByMetadataName(DbContextMetadataName);
             var serviceLifetime = compilation.GetTypeByMetadataName(ServiceLifetimeMetadataName);
 
-            return new EfCoreTypes(contextType, serviceLifetime, ReadSingletonValue(serviceLifetime));
+            return new EfCoreTypes(
+                contextType,
+                serviceLifetime,
+                ReadSingletonValue(serviceLifetime),
+                compilation.GetTypeByMetadataName(ServiceCollectionMetadataName),
+                compilation.GetTypeByMetadataName(EntityFrameworkExtensionsMetadataName));
         }
 
         internal bool IsDbContextRegistration(string methodName)
@@ -603,6 +632,27 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             return IsAvailable
                    && (string.Equals(methodName, "AddDbContext", StringComparison.Ordinal)
                        || string.Equals(methodName, "AddDbContextPool", StringComparison.Ordinal));
+        }
+
+        /// <summary>
+        ///     True when the call is the framework registration. The helper lives on one extension
+        ///     class, and its receiver is an <c lang="csharp">IServiceCollection</c>.
+        /// </summary>
+        internal bool IsEntityFrameworkRegistration(
+            InvocationExpressionSyntax invocation,
+            IInvocationOperation operation,
+            SemanticModel model,
+            CancellationToken cancellationToken)
+        {
+            return (entityFrameworkExtensions is not null
+                    && SymbolEqualityComparer.Default.Equals(
+                        operation.TargetMethod.ContainingType,
+                        entityFrameworkExtensions))
+                   || (serviceCollection is not null
+                       && invocation.Expression is MemberAccessExpressionSyntax access
+                       && SymbolEqualityComparer.Default.Equals(
+                           model.GetTypeInfo(access.Expression, cancellationToken).Type,
+                           serviceCollection));
         }
 
         internal bool DerivesFromDbContext(INamedTypeSymbol type)
