@@ -1,4 +1,6 @@
 #nullable enable
+E128.Analyzers.Security.UnvalidatedJwtIdentityAnalyzer
+E128.Analyzers.Security.UnvalidatedJwtIdentityAnalyzer.UnvalidatedJwtIdentityAnalyzer() -> void
 E128.Analyzers.Reliability.CompositeDetectionSpecificityAnalyzer
 E128.Analyzers.Reliability.CompositeDetectionSpecificityAnalyzer.CompositeDetectionSpecificityAnalyzer() -> void
 E128.Analyzers.Reliability.GetAttributeElementTypeAnalyzer

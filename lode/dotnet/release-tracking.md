@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-06T13:24:11Z*
+*Updated: 2026-11-06T15:25:45Z*
 
 ## Overview
 
@@ -145,6 +145,7 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.2.0   | E128154-198   | Review-practice and external sweep rules. E128187 and E128197 change severity in 2.3.0. |
 | 2.3.0   | E128199-201   | NASA Power of Ten rules. E128187 and E128197 lower to Info. E128022 removed. |
 | 2.3.1   | (none)        | Accuracy fixes across the E128176 to E128201 rules. The pack carries no third-party dependency. |
+| 2.4.0   | E128202       | Unvalidated JWT claims used as an identity. Info severity. |
 
 ## Sources
 

@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.3.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.4.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -191,6 +191,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128169 | `[Obsolete]` with no message                                                   | No       |
 | E128184 | Recursive delete outside a proven safe root (default: Info)                    | No       |
 | E128191 | PFX import without EphemeralKeySet                                             | No       |
+| E128202 | Unvalidated JWT claims used as an identity                                     | No       |
 
 ### Style
 
@@ -2710,6 +2711,23 @@ The option `e128_max_conditional_directives` sets the ceiling and defaults to
 #if FEATURE_A
     int A() => 1;
 #endif
+```
+
+### E128202: Unvalidated JWT Claims Used as an Identity
+
+Reports decoded JWT claims that reach an authenticated identity in `HttpContext.User` or an `AuthenticationTicket`. Token readers (`ReadJwtToken`, `ReadJsonWebToken`, and `ReadToken`) and string token constructors decode without validation. The rule follows every decoded source through local claims, identity collections, conditional access, `foreach`, and lambda inputs. It tracks `AddClaim`, `AddClaims`, `Add`, `AddRange`, `AddIdentity`, and `AddIdentities`. An identity needs an authentication type that is not constant null or empty. Subclasses count too. Claim reads from a token (`Subject`, `Claims`, `Payload`, `GetClaim`, `TryGetClaim`, and other members) count. A pattern variable counts as a local, whether it comes from an `is` expression, a `switch` statement, or a `switch` expression.
+
+A synchronous `ValidateToken` call clears the report only when it precedes the sink and validates the same unchanged token. `ValidateTokenAsync` needs an `IsValid` check, including its `SecurityToken` overload. The rule accepts a true branch, an else branch after a failed check, or a failed-check branch that returns or throws. A bare async validation call does not clear the report. A write to the token between the validation and its check removes the clearance. A field or auto-property token, such as `request.Token`, clears only when the same receiver reads it again. A write to the member or its receiver voids the clearance. The synchronous `JsonWebTokenHandler.ValidateToken` call returns a result object, so it needs an unchanged `IsValid` check like the async form. A `ConfigureAwait` call on the validation task is accepted. A synchronous validation inside a `try` block clears the report when every catch returns or throws. A `goto` or label in the block stops the scan. Lambdas inherit earlier parent validation. Local functions inherit only parent guards that contain their declaration.
+
+A later local definition hides earlier definitions only when its block contains the use. Claims and identity additions count after the sink because the sink retains references. Compound assignment, deconstruction, and `ref` writes stop tracking the affected local after the write position. An `out` argument of a claim reader such as `TryGetClaim` defines the local instead. A `??=` assignment and a lambda write to a parent local count as definitions. A claim collection that a later `Add` or `AddRange` call fills does not reach an identity that already copied it. A captured local that the parent redefines after a lambda or local function counts. A conditional or coalesce principal reports per branch. A definition later in a shared loop reaches the sink on the next iteration, unless a later definition in the same loop replaces it or the loop declares the local. A token read after the sink needs validation before that read. A token rewritten after the sink voids a validation that sits outside the loop. The rule skips a local function that no call or method group reaches from the method body. It does not follow helper-method flows. No code fix applies because validation needs application policy.
+
+```csharp
+// Before (warns)
+var parsed = handler.ReadJwtToken(token);
+context.User = new ClaimsPrincipal(new ClaimsIdentity(parsed.Claims, "jwt"));
+
+// After
+context.User = handler.ValidateToken(token, parameters, out _);
 ```
 
 ## Configuration
