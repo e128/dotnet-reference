@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-11-05T14:14:46Z*
+*Updated: 2026-11-06T15:25:45Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three
@@ -7,7 +7,7 @@ candidates from that pass ships as a real analyzer. See the catalog table for th
 rule ID, and see `src/E128.Analyzers/README.md` for the current rule
 description. The Tier 2 table lists the candidates that wait for a real defect.
 
-The 2026-11-05 external sweep holds open candidates.
+The 2026-11-05 external sweep is complete.
 See [analyzer-candidates-external-sweep.md](analyzer-candidates-external-sweep.md).
 
 - `mutable-static-readonly-array` shipped as E128061.
@@ -50,7 +50,7 @@ rule description and the fix shape live in `src/E128.Analyzers/README.md`.
 | E128140-E128141 | Performance | every rule      | `Performance/`     |
 
 The unused IDs are E128095, E128130, and E128158. E128022 is retired. The next
-new rule takes E128202, after the last assigned ID.
+new rule takes E128203, after the last assigned ID.
 
 ## FIPS Cryptography Rules
 
@@ -176,7 +176,6 @@ These clear the same bar and wait for a real defect in review.
 | CORS wildcard with credentials                                     | one chain holds `AllowAnyOrigin` and `AllowCredentials`        | Low    |
 | Antiforgery missing on a state-changing action                     | verb attribute with no antiforgery attribute in scope          | Medium |
 | Token validation flag set to constant `false`                      | six `TokenValidationParameters` flags                          | Low    |
-| `[SuppressMessage]` without a justification                        | attribute with no named justification argument                 | Low    |
 | `readonly` field of a mutable struct                               | defensive copy on every member call                            | Low    |
 | Floating-point loop counter                                        | `for` loop steps a `float` or `double` local                   | Low    |
 | Enum cast outside the member set                                   | constant integral to enum conversion                           | Low    |
@@ -191,6 +190,7 @@ These shapes already have an owner. A second rule would report the same line.
 
 | Rule                                                        | Already covered by                                  |
 | ----------------------------------------------------------- | --------------------------------------------------- |
+| `[SuppressMessage]` without a justification                 | E128173                                             |
 | Shift count out of range                                    | S2183                                               |
 | Method length                                               | MA0051                                              |
 | Ignored `Try*` return value                                 | MA0060, with `enable_tryparse_pattern`              |
@@ -215,3 +215,28 @@ These shapes already have an owner. A second rule would report the same line.
 | `JsonDocument.RootElement` escape                           | CA2026                                              |
 | Object disposed twice                                       | CA2202 retired, and Dispose is idempotent by contract |
 | Assertion density, dead code, comment density               | Metric or judgment checks. IDE0051, IDE0052, and CS0162 cover the code shapes |
+
+## AI-Assisted Technical Debt Candidates
+
+Source: [Syncfusion technical debt article](https://www.syncfusion.com/blogs/post/vibe-coding-technical-debt).
+
+`decoded-jwt-authenticated-identity` shipped as E128202.
+Token readers and string token constructors decode tokens without validation.
+The rule tracks decoded claims into `ClaimsIdentity` with a nonempty or non-constant authentication type.
+It reports a flow into `HttpContext.User` or an `AuthenticationTicket`, including nested lambda and local function bodies.
+A preceding synchronous validation or a checked async validation on the same unchanged token clears the report.
+No automatic fix applies because validation needs application policy.
+See [rule-details.md](analyzers/rule-details.md) for the detection shape and the gaps.
+
+No other shipped E128 rule references these APIs.
+The installed Sonar S5659 source checks JWT.Net, not the Microsoft IdentityModel handlers.
+A static scan of the installed analyzer assemblies found no owner for this shape.
+
+Evidence: [Microsoft token reader](https://learn.microsoft.com/dotnet/api/system.identitymodel.tokens.jwt.jwtsecuritytokenhandler.readjwttoken),
+[authenticated identity contract](https://learn.microsoft.com/dotnet/api/system.security.claims.claimsidentity.isauthenticated),
+and [Sonar S5659 source](https://github.com/SonarSource/sonar-dotnet/blob/10.35.0.4138/analyzers/src/SonarAnalyzer.Core/Rules/JwtSignedBase.cs).
+
+Duplicate conditional branches and cognitive complexity have Sonar owners: S1871, S3923, and S3776.
+Test expectation changes, repeated file edits, and semantic duplication require review rather than a local diagnostic.
+Existing E128 testing rules catch concrete assertion and skip defects.
+A lone `Assert.NotNull` assertion does not prove a weak test.

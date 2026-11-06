@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-05T15:20:29Z*
+*Updated: 2026-11-06T15:25:45Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -180,6 +180,66 @@ sets the ceiling and defaults to 4. A missing, non-numeric, or negative value
 falls back to the default. `#elif` does not add to the count.
 
 No code fix. Splitting a build variant is a project decision.
+
+### E128202: Unvalidated JWT Claims Used as an Identity
+
+Severity: **Info**. Reports decoded JWT claims that reach an authenticated
+identity in `HttpContext.User` or an `AuthenticationTicket`.
+
+`BodyAnalysis` records definitions, writes, additions, sinks, and validation calls.
+`Search` follows each source once per local, value kind, and source position.
+It checks every decoded token that reaches the sink. Subclasses count too.
+
+Detection follows these sources and uses:
+
+- `ReadJwtToken`, `ReadJsonWebToken`, `ReadToken`, and string token constructors.
+- Any member read of a decoded token, such as `Claims`, `Payload`, or `GetClaim`.
+  `TryGetClaim`, `TryGetPayloadValue`, and `TryGetHeaderValue` define their `out` local.
+- `ClaimsIdentity` constructors with a nonempty or non-constant authentication type,
+  or a base identity that is authenticated.
+- Claims and identity collections, conditional access, and filtered local claims.
+- `AddClaim`, `AddClaims`, `Add`, `AddRange`, `AddIdentity`, and `AddIdentities`.
+- `foreach` collection inputs and lambda parameter inputs from the enclosing call.
+- Captured locals in lambda and local function bodies. Definitions after the capture count.
+- Pattern variables from `is`, `switch` statement, and `switch` expression patterns.
+- Conditional and coalesce principals, checked per branch.
+
+Additions after the sink count for an identity, because a principal or ticket
+retains identity references. A claim collection is copied when the identity is
+built, so only an earlier add reaches it. A local definition hides earlier
+definitions when its block contains the use. `??=` and lambda writes to a parent
+local count as definitions. Opaque writes stop tracking after their position:
+compound assignments, deconstruction, and `ref` arguments.
+
+Validation clears a report only for the same unchanged token:
+
+- A preceding synchronous `ValidateToken` call returns a `ClaimsPrincipal`.
+  The call occupies a statement, assignment, or single-variable initializer.
+  A `try` block that validates counts when every catch returns or throws.
+- An earlier failed `IsValid` check ends in `return`, `throw`, or `yield break`.
+  `yield return` does not exit. A `goto` or label in the block stops the scan.
+- The sink sits in a true `IsValid` branch or an else branch after a failed check.
+  True checks include `== true` and `&&` chains.
+- The result local holds one `ValidateTokenAsync` definition, with or without
+  `ConfigureAwait`. Both string and decoded `SecurityToken` arguments count.
+- A token write between the validation and its check removes the clearance.
+  A field or auto-property token clears only for the same receiver and no write.
+- `JsonWebTokenHandler.ValidateToken` returns a result, so it needs the same
+  unchanged `IsValid` check as the async form.
+- Lambdas inherit earlier parent validation and guards.
+  Local functions inherit only parent guards that contain their declaration.
+
+A bare `ValidateTokenAsync` call does not clear the report. The caller must
+check `IsValid`. An identity with constant null or empty authentication type
+is not authenticated by contract.
+
+A definition later in a shared loop reaches the sink on the next iteration,
+unless a later definition in that loop replaces it or the loop declares the local.
+A token read after the sink needs validation before that read. A token rewritten
+after the sink voids a validation that sits outside the loop. The rule skips a
+local function that no call or method group reaches. Helper-method flows stay out of scope. A probe found no installed analyzer with this shape.
+Sonar S5659 covers JWT.Net only. No code fix applies because validation needs
+application policy.
 
 ## Related
 

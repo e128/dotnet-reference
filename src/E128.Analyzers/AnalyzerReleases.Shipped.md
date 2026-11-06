@@ -1,3 +1,11 @@
+## Release 2.4.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128202 | E128-Security | Info | Unvalidated JWT claims used as an identity.
+
 ## Release 2.3.0
 
 ### New Rules

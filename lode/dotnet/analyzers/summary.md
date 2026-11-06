@@ -1,11 +1,11 @@
 # Analyzers Summary
-*Updated: 2026-11-04T14:42:07Z*
+*Updated: 2026-11-06T15:25:45Z*
 
 `src/E128.Analyzers` holds every E128 Roslyn rule. `src/E128.Analyzers.CodeFixers`
 holds the fix providers. The analyzer assembly targets `netstandard2.0` and
-holds no Workspaces reference. Each rule resolves its types once at compilation
-start, matches symbols rather than names, and reports only what its fix can
-repair.
+holds no Workspaces reference. Rules use semantic checks when the subject
+requires symbols. A rule with a code fix reports only the shapes that its fix
+can repair.
 
 ## Reading Order
 
