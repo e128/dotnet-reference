@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-11-07T17:31:31Z*
+*Updated: 2026-11-07T19:09:48Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three
@@ -13,6 +13,9 @@ See [analyzer-candidates-external-sweep.md](analyzer-candidates-external-sweep.m
 The twenty-practice performance sweep shipped fifteen rules and leaves one
 extension. See
 [analyzer-candidates-performance.md](analyzer-candidates-performance.md).
+
+The implicit state machine rule ships as E128218. See
+[implicit-state-machine-rule.md](implicit-state-machine-rule.md).
 
 - `mutable-static-readonly-array` shipped as E128061.
 - `test-reference-assemblies-tfm-mismatch` shipped as E128062.
@@ -28,6 +31,7 @@ extension. See
 | E128070 | pool-rent-capacity-guard               | implemented | n/a   | 2026-05-09 |
 | E128071 | fips-unapproved-hash                   | implemented | n/a   | 2026-05-10 |
 | E128072 | sha256-create-obsolete                 | implemented | n/a   | 2026-05-10 |
+| E128218 | implicit-state-machine                 | implemented | n/a   | 2026-11-07 |
 
 ## Rules From Guidance Documents
 

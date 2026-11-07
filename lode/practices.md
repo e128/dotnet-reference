@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-07T16:21:28Z*
+*Updated: 2026-11-07T19:46:15Z*
 
 ## Design Principles
 
@@ -27,6 +27,7 @@
 - Implicit usings disabled: every `.cs` file has explicit `using` directives
 - Primary constructors disabled (`csharp_style_prefer_primary_constructors = false`)
 - Collection expressions preferred (`dotnet_style_prefer_collection_expression = true`), aligned with the E128061 code fix output
+- Collection counts come from `.Count`, `.Length`, or a lookup property. Never a loop or a summation. See `.claude/rules/csharp-conventions.md`.
 
 ## AI Assistant Preferences
 

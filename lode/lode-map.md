@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-07T18:08:42Z*
+*Updated: 2026-11-07T19:09:48Z*
 
 ## Generated Docs
 
@@ -31,6 +31,8 @@
 - [performance.md](dotnet/performance.md): Runtime knobs, profiling ladder, safe C# hot-path tips, ASP.NET Core
 - [unsafe-code.md](dotnet/unsafe-code.md): No-unsafe-code policy, E128 rule coverage map, known gaps
 - [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes
+- [implicit-state-machine-rule.md](dotnet/implicit-state-machine-rule.md): E128218 contract, detector families, scope, and noise budget
+- [implicit-state-machine-rule-design.md](dotnet/implicit-state-machine-rule-design.md): Field rules, evidence, registration sketch, examples, and test coverage
 - [analyzer-candidates-external-sweep.md](dotnet/analyzer-candidates-external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 - [analyzer-candidates-performance.md](dotnet/analyzer-candidates-performance.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
 

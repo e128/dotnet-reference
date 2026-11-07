@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-07T18:44:05Z*
+*Updated: 2026-11-07T19:54:19Z*
 
 ## Overview
 
@@ -149,6 +149,7 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.4.1   | (none)        | Review-sweep accuracy fixes with no rule set change. |
 | 2.5.0   | E128203-217   | Performance rules from the twenty-practice sweep. |
 | 2.5.1   | (none)        | Shared-helper refactor across analyzers and code fixers. No rule set change. |
+| 2.6.0   | E128218       | Implicit state machine rule. Info severity. |
 
 ## Sources
 
