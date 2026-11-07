@@ -146,7 +146,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
 
         // The interface walk below scans every interface member and resolves each implementation.
         // It runs only for a method that would otherwise report.
-        if (IsInterfaceImplementation(method))
+        if (InterfaceMembers.ImplementsMember(method))
         {
             return;
         }
@@ -247,32 +247,6 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
             if (name.EndsWith(suffix, StringComparison.Ordinal))
             {
                 return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsInterfaceImplementation(IMethodSymbol method)
-    {
-        var containingType = method.ContainingType;
-        if (containingType is null)
-        {
-            return false;
-        }
-
-        foreach (var iface in containingType.AllInterfaces)
-        {
-            foreach (var member in iface.GetMembers())
-            {
-                if (member is IMethodSymbol interfaceMethod)
-                {
-                    var impl = containingType.FindImplementationForInterfaceMember(interfaceMethod);
-                    if (SymbolEqualityComparer.Default.Equals(impl, method))
-                    {
-                        return true;
-                    }
-                }
             }
         }
 

@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -48,20 +47,10 @@ public sealed class SwitchEnumExhaustivenessCodeFixProvider : E128CodeFixProvide
         switch (target)
         {
             case SwitchStatementSyntax switchStatement:
-                context.RegisterCodeFix(
-                    CodeAction.Create(
-                        "Add a throwing default arm",
-                        ct => AddDefaultSectionAsync(context.Document, switchStatement, ct),
-                        nameof(SwitchEnumExhaustivenessCodeFixProvider)),
-                    diagnostic);
+                CodeFixRegistration.Register(context, diagnostic, "Add a throwing default arm", nameof(SwitchEnumExhaustivenessCodeFixProvider), ct => AddDefaultSectionAsync(context.Document, switchStatement, ct));
                 return Task.CompletedTask;
             case SwitchExpressionSyntax switchExpression:
-                context.RegisterCodeFix(
-                    CodeAction.Create(
-                        "Add a throwing default arm",
-                        ct => AddDiscardArmAsync(context.Document, switchExpression, ct),
-                        nameof(SwitchEnumExhaustivenessCodeFixProvider)),
-                    diagnostic);
+                CodeFixRegistration.Register(context, diagnostic, "Add a throwing default arm", nameof(SwitchEnumExhaustivenessCodeFixProvider), ct => AddDiscardArmAsync(context.Document, switchExpression, ct));
                 return Task.CompletedTask;
             default:
                 return Task.CompletedTask;

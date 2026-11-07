@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -44,12 +43,7 @@ public sealed class ImmutableArrayDefaultCodeFixProvider : E128CodeFixProviderBa
 
         var typeText = declaration.Type.ToString();
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Initialize to {typeText}.Empty",
-                ct => InitializeAsync(context.Document, variable, typeText, ct),
-                nameof(ImmutableArrayDefaultCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, $"Initialize to {typeText}.Empty", nameof(ImmutableArrayDefaultCodeFixProvider), ct => InitializeAsync(context.Document, variable, typeText, ct));
 
         return Task.CompletedTask;
     }

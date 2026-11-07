@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -30,17 +29,12 @@ public sealed class EncodeInLoopCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                Title,
-                cancellationToken => ApplyFixAsync(
+        CodeFixRegistration.Register(context, diagnostic, Title, nameof(EncodeInLoopCodeFixProvider), cancellationToken => ApplyFixAsync(
                     context.Document,
                     lengthAccess,
                     access,
                     invocation.ArgumentList,
-                    cancellationToken),
-                nameof(EncodeInLoopCodeFixProvider)),
-            diagnostic);
+                    cancellationToken));
 
         return Task.CompletedTask;
     }

@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,12 +26,7 @@ public sealed class ToListInForeachCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace .ToList() with .ToArray()",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(ToListInForeachCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace .ToList() with .ToArray()", nameof(ToListInForeachCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
 
         return Task.CompletedTask;
     }

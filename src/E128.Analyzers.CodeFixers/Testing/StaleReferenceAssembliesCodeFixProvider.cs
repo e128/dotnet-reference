@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -35,12 +34,7 @@ public sealed class StaleReferenceAssembliesCodeFixProvider : E128CodeFixProvide
 
         var newName = $"Net{targetVersion}";
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Replace with ReferenceAssemblies.Net.{newName}",
-                ct => ReplaceVersionAsync(context.Document, root, memberAccess, newName, ct),
-                StaleReferenceAssembliesAnalyzer.DiagnosticId),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, $"Replace with ReferenceAssemblies.Net.{newName}", StaleReferenceAssembliesAnalyzer.DiagnosticId, ct => ReplaceVersionAsync(context.Document, root, memberAccess, newName, ct));
 
         return Task.CompletedTask;
     }

@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-07T17:31:31Z*
+*Updated: 2026-11-07T18:08:42Z*
 
 ## Generated Docs
 
@@ -20,6 +20,7 @@
 
 ## dotnet/
 
+- [build-performance.md](dotnet/build-performance.md): Build timing, analyzer cost, and the --fast path
 - [project-structure.md](dotnet/project-structure.md): .NET 10 solution format, CPM, build props/targets, global.json
 - [testing.md](dotnet/testing.md): MTP, xUnit v3, test configuration, categories, conventions
 - [code-coverage.md](dotnet/code-coverage.md): In-process MTP coverage, Cobertura reports, area mapping, and the CI floors
@@ -36,6 +37,7 @@
 ### dotnet/analyzers/
 
 - [summary.md](dotnet/analyzers/summary.md): Domain snapshot, reading order, shared invariants
+- [shared-helpers.md](dotnet/analyzers/shared-helpers.md): Shared analyzer and code fix helper inventory and contracts
 - [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md): Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
 - [configuration.md](dotnet/analyzers/configuration.md): Option surfaces, key naming, severity keys, MSBuild properties, additional files
 - [symbol-lookups.md](dotnet/analyzers/symbol-lookups.md): Documentation comment IDs, accessibility, interface implementation, data and control flow, scoped registration

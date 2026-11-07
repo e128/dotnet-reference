@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -80,12 +79,7 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProvi
             var title = $"Register as Add{methodSymbol.Name.Substring(3)}"
                         + $"<{iface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}, "
                         + $"{concreteType.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}>()";
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    title,
-                    ct => RewriteToInterfaceMappedAsync(context.Document, invocation, concreteType, iface, ct),
-                    $"E128032_{iface.ToDisplayString()}"),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, title, $"E128032_{iface.ToDisplayString()}", ct => DiRegistrationFix.RewriteToGenericAsync(context.Document, invocation, concreteType, iface, null, ct));
         }
     }
 
@@ -110,52 +104,5 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProvi
 
         return body is ObjectCreationExpressionSyntax creation
                && (creation.ArgumentList?.Arguments.Count ?? 0) == 0;
-    }
-
-    private static async Task<Document> RewriteToInterfaceMappedAsync(
-        Document document,
-        InvocationExpressionSyntax invocation,
-        ITypeSymbol concreteType,
-        INamedTypeSymbol targetInterface,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
-
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return document;
-        }
-
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return document;
-        }
-
-        // The minimal form qualifies a name only when it is out of scope, and it escapes a keyword
-        // identifier. It also matches the action title, so the preview shows the text that lands.
-        var newTypeArgs = SyntaxFactory.TypeArgumentList(
-            SyntaxFactory.SeparatedList(
-                [
-                    SyntaxFactory.ParseTypeName(
-                        targetInterface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)),
-                    SyntaxFactory.ParseTypeName(
-                        concreteType.ToMinimalDisplayString(semanticModel, invocation.SpanStart))
-                ]));
-
-        var newName = SyntaxFactory.GenericName(memberAccess.Name.Identifier)
-            .WithTypeArgumentList(newTypeArgs);
-
-        var newMemberAccess = memberAccess.WithName(newName);
-        var newInvocation = invocation
-            .WithExpression(newMemberAccess)
-            .WithArgumentList(SyntaxFactory.ArgumentList());
-
-        var newRoot = root.ReplaceNode(invocation, newInvocation);
-        return document.WithSyntaxRoot(newRoot);
     }
 }

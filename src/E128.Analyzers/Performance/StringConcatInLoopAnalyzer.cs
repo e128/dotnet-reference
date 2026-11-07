@@ -38,7 +38,7 @@ public sealed class StringConcatInLoopAnalyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
-        if (!IsInsideLoop(assignment))
+        if (!LoopContext.IsWithinAnyLoop(assignment))
         {
             return;
         }
@@ -50,23 +50,5 @@ public sealed class StringConcatInLoopAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation()));
-    }
-
-    private static bool IsInsideLoop(SyntaxNode node)
-    {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            if (current is ForEachStatementSyntax or ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
-            {
-                return true;
-            }
-
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or LocalFunctionStatementSyntax)
-            {
-                return false;
-            }
-        }
-
-        return false;
     }
 }

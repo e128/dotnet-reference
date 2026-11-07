@@ -1,10 +1,8 @@
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -70,27 +68,6 @@ public sealed class ManualBitCountCodeFixProvider : E128CodeFixProviderBase
                         SyntaxFactory.SingletonSeparatedList(
                             SyntaxFactory.Argument(operand))))));
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use BitOperations.PopCount",
-                ct => ReplaceLoopAsync(context.Document, loop, replacement, ct),
-                ManualBitCountAnalyzer.DiagnosticId),
-            context.Diagnostics[0]);
-    }
-
-    private static async Task<Document> ReplaceLoopAsync(
-        Document document,
-        WhileStatementSyntax loop,
-        StatementSyntax replacement,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
-
-        var newRoot = root.ReplaceNode(loop, replacement.WithTriviaFrom(loop));
-        return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, NumericsNamespace));
+        CodeFixRegistration.Register(context, context.Diagnostics[0], "Use BitOperations.PopCount", ManualBitCountAnalyzer.DiagnosticId, ct => FixSyntax.ReplaceLoopAsync(context.Document, loop, replacement, NumericsNamespace, ct));
     }
 }

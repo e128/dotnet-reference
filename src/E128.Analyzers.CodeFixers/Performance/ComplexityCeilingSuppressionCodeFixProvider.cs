@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -39,12 +38,7 @@ public sealed class ComplexityCeilingSuppressionCodeFixProvider : E128CodeFixPro
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Suppress with a justification comment",
-                _ => Task.FromResult(ApplySuppression(context.Document, root, anchor)),
-                nameof(ComplexityCeilingSuppressionCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Suppress with a justification comment", nameof(ComplexityCeilingSuppressionCodeFixProvider), _ => Task.FromResult(ApplySuppression(context.Document, root, anchor)));
 
         return Task.CompletedTask;
     }
@@ -68,7 +62,7 @@ public sealed class ComplexityCeilingSuppressionCodeFixProvider : E128CodeFixPro
 
     private static Document ApplySuppression(Document document, SyntaxNode root, SyntaxNode anchor)
     {
-        var indent = IndentationOf(anchor);
+        var indent = FixSyntax.TrailingWhitespace(anchor.GetLeadingTrivia()).ToString();
         var newAnchor = anchor
             .WithLeadingTrivia(LeadingWithDisable(anchor, indent))
             .WithTrailingTrivia(TrailingWithRestore(anchor, indent));
@@ -97,21 +91,6 @@ public sealed class ComplexityCeilingSuppressionCodeFixProvider : E128CodeFixPro
         }
 
         return trailing.AddRange(Directives(indent, RestoreDirective));
-    }
-
-    /// <summary>
-    ///     The indentation of the anchor line, read from the anchor's own leading whitespace.
-    ///     A statement at the head of a block carries that whitespace, so the value is the
-    ///     indent the surrounding block already uses.
-    /// </summary>
-    private static string IndentationOf(SyntaxNode anchor)
-    {
-        var leading = anchor.GetLeadingTrivia();
-        var lastIndex = leading.Count - 1;
-
-        return lastIndex >= 0 && leading[lastIndex].IsKind(SyntaxKind.WhitespaceTrivia)
-            ? leading[lastIndex].ToString()
-            : string.Empty;
     }
 
     /// <summary>

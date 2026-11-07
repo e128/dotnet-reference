@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,12 +30,7 @@ public sealed class MissingTraitCategoryCodeFixProvider : E128CodeFixProviderBas
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add [Trait(\"Category\", \"CI\")]",
-                ct => AddTraitAttributeAsync(context.Document, method, ct),
-                nameof(MissingTraitCategoryCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add [Trait(\"Category\", \"CI\")]", nameof(MissingTraitCategoryCodeFixProvider), ct => AddTraitAttributeAsync(context.Document, method, ct));
 
         return Task.CompletedTask;
     }
@@ -72,9 +66,7 @@ public sealed class MissingTraitCategoryCodeFixProvider : E128CodeFixProviderBas
 
         // The leading trivia holds the doc comment as well as the indentation. Copy only the
         // indentation, or the fix duplicates the comment on the new list.
-        var indentation = leadingTrivia.Count > 0 && leadingTrivia.Last().IsKind(SyntaxKind.WhitespaceTrivia)
-            ? SyntaxFactory.TriviaList(leadingTrivia.Last())
-            : default;
+        var indentation = FixSyntax.TrailingWhitespace(leadingTrivia);
 
         var traitAttrList = SyntaxFactory.AttributeList(
                 SyntaxFactory.SingletonSeparatedList(traitAttribute))

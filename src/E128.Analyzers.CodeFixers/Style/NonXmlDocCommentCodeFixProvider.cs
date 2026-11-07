@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -20,12 +19,7 @@ public sealed class NonXmlDocCommentCodeFixProvider : E128CodeFixProviderBase
     {
         foreach (var diagnostic in context.Diagnostics)
         {
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Remove comment",
-                    ct => RemoveCommentAsync(context.Document, root, diagnostic, ct),
-                    "RemoveNonXmlDocComment"),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, "Remove comment", "RemoveNonXmlDocComment", ct => RemoveCommentAsync(context.Document, root, diagnostic, ct));
         }
 
         return Task.CompletedTask;

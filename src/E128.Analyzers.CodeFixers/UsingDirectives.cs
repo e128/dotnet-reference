@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -58,5 +60,18 @@ internal static class UsingDirectives
         }
 
         return compilationUnit.WithUsings(usings.Insert(insertIndex, newUsing));
+    }
+
+    /// <summary>
+    ///     Adds a top-level using directive to the document when the file does not already have it.
+    /// </summary>
+    internal static async Task<Document> EnsureAddedAsync(
+        Document document,
+        string namespaceName,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+
+        return root is null ? document : document.WithSyntaxRoot(AddIfMissing(root, namespaceName));
     }
 }

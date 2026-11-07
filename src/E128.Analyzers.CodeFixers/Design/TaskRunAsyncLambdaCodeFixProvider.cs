@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -49,12 +48,7 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove Task.Run wrapper",
-                ct => RemoveTaskRunAsync(context.Document, root, invocation, innerExpression, ct),
-                nameof(TaskRunAsyncLambdaCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove Task.Run wrapper", nameof(TaskRunAsyncLambdaCodeFixProvider), ct => RemoveTaskRunAsync(context.Document, root, invocation, innerExpression, ct));
 
         return Task.CompletedTask;
     }

@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -65,12 +64,7 @@ public sealed class FileSystemPathCodeFixProvider : E128CodeFixProviderBase
         }
 
         var title = $"Change type to {typeName}";
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title,
-                ct => ApplyFixAsync(context.Document, node, typeName, ct),
-                $"{nameof(FileSystemPathCodeFixProvider)}_{typeName}"),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, title, $"{nameof(FileSystemPathCodeFixProvider)}_{typeName}", ct => ApplyFixAsync(context.Document, node, typeName, ct));
     }
 
     private static async Task<Document> ApplyFixAsync(

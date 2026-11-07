@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,12 +26,7 @@ public sealed class QuerySelectorAllMaterializationCodeFixProvider : E128CodeFix
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add .ToList() to materialize QuerySelectorAll result",
-                ct => ApplyFixAsync(context.Document, invocation, ct),
-                nameof(QuerySelectorAllMaterializationCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add .ToList() to materialize QuerySelectorAll result", nameof(QuerySelectorAllMaterializationCodeFixProvider), ct => ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

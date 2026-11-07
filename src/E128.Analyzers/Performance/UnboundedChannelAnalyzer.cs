@@ -33,17 +33,11 @@ public sealed class UnboundedChannelAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(startContext =>
-        {
-            var channel = startContext.Compilation.GetTypeByMetadataName("System.Threading.Channels.Channel");
-            if (channel is null)
-            {
-                return;
-            }
-
-            startContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, channel),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                startContext,
+                "System.Threading.Channels.Channel",
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol channel)

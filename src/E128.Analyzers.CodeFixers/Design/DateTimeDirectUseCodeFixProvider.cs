@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -34,12 +33,7 @@ public sealed class DateTimeDirectUseCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace with TimeProvider.System",
-                ct => ApplyFixAsync(context.Document, memberAccess, replacement, ct),
-                nameof(DateTimeDirectUseCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace with TimeProvider.System", nameof(DateTimeDirectUseCodeFixProvider), ct => ApplyFixAsync(context.Document, memberAccess, replacement, ct));
 
         return Task.CompletedTask;
     }

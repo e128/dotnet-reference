@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -40,12 +39,7 @@ public sealed class ProcessOutputValidatorCodeFixProvider : E128CodeFixProviderB
             ? access.Expression.ToString()
             : null;
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Verify output file exists before use",
-                ct => InsertGuardAsync(context.Document, waitStatement, pathText, receiverText, ct),
-                nameof(ProcessOutputValidatorCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Verify output file exists before use", nameof(ProcessOutputValidatorCodeFixProvider), ct => InsertGuardAsync(context.Document, waitStatement, pathText, receiverText, ct));
 
         return Task.CompletedTask;
     }

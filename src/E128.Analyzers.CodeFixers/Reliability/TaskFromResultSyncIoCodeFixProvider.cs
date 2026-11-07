@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -34,12 +33,7 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Convert to async/await",
-                ct => ConvertToAsyncAsync(context.Document, invocation, ct),
-                nameof(TaskFromResultSyncIoCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Convert to async/await", nameof(TaskFromResultSyncIoCodeFixProvider), ct => ConvertToAsyncAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

@@ -59,7 +59,7 @@ public sealed class HandlerNoDecompressionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (SetsPropertyInInitializer(creation))
+        if (InitializerAssignments.Assigns(creation, PropertyName))
         {
             return;
         }
@@ -86,35 +86,6 @@ public sealed class HandlerNoDecompressionAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static bool SetsPropertyInInitializer(BaseObjectCreationExpressionSyntax creation)
-    {
-        if (creation.Initializer is null)
-        {
-            return false;
-        }
-
-        foreach (var expression in creation.Initializer.Expressions)
-        {
-            if (expression is AssignmentExpressionSyntax assignment
-                && string.Equals(GetAssignedName(assignment.Left), PropertyName, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? GetAssignedName(ExpressionSyntax left)
-    {
-        return left switch
-        {
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
-            _ => null
-        };
     }
 
     private static bool SetsPropertyAfterCreation(

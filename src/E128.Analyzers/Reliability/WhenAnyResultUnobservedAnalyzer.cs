@@ -47,19 +47,11 @@ public sealed class WhenAnyResultUnobservedAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(start =>
-        {
-            var taskType = start.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
-
-            // A compilation without System.Threading.Tasks.Task cannot contain the shape. Fail closed.
-            if (taskType is null)
-            {
-                return;
-            }
-
-            start.RegisterSyntaxNodeAction(
-                ctx => AnalyzeInvocation(ctx, taskType),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                start,
+                "System.Threading.Tasks.Task",
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol taskType)

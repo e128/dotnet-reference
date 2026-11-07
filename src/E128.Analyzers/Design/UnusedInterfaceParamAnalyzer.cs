@@ -63,7 +63,7 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsInterfaceImplementation(method))
+        if (!InterfaceMembers.Implements(method))
         {
             return;
         }
@@ -109,56 +109,6 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
         }
 
         return names;
-    }
-
-    private static bool IsInterfaceImplementation(IMethodSymbol method)
-    {
-        if (!method.ExplicitInterfaceImplementations.IsEmpty)
-        {
-            return true;
-        }
-
-        if (method.ContainingType is not INamedTypeSymbol containingType)
-        {
-            return false;
-        }
-
-        if (containingType.TypeKind == TypeKind.Interface || InheritsFromDelegate(containingType))
-        {
-            return false;
-        }
-
-        foreach (var iface in containingType.AllInterfaces)
-        {
-            foreach (var ifaceMember in iface.GetMembers(method.Name).OfType<IMethodSymbol>())
-            {
-                var impl = containingType.FindImplementationForInterfaceMember(ifaceMember);
-                if (impl is not null
-                    && SymbolEqualityComparer.Default.Equals(impl.OriginalDefinition, method.OriginalDefinition))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private static bool InheritsFromDelegate(INamedTypeSymbol type)
-    {
-        var current = type.BaseType;
-        while (current is not null)
-        {
-            if (string.Equals(current.Name, "MulticastDelegate", StringComparison.Ordinal)
-                || string.Equals(current.Name, "Delegate", StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            current = current.BaseType;
-        }
-
-        return false;
     }
 
     private static bool IsCancellationToken(IParameterSymbol param)

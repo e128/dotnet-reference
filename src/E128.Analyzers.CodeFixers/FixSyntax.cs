@@ -1,4 +1,8 @@
+using System;
 using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -68,5 +72,230 @@ internal static class FixSyntax
         }
 
         return "\n";
+    }
+
+    /// <summary>
+    ///     Inserts the field as the first member of the type, with the indentation of the member
+    ///     that follows it. A blank line separates the two members.
+    /// </summary>
+    internal static TypeDeclarationSyntax InsertFieldAsFirstMember(
+        TypeDeclarationSyntax typeDecl,
+        MemberDeclarationSyntax fieldDecl)
+    {
+        if (!typeDecl.Members.Any())
+        {
+            return typeDecl.WithMembers(typeDecl.Members.Add(fieldDecl));
+        }
+
+        var firstMember = typeDecl.Members[0];
+        var firstMemberLeadingTrivia = firstMember.GetLeadingTrivia();
+        var fieldWithIndent = fieldDecl
+            .WithLeadingTrivia(SyntaxFactory.Whitespace(MemberIndentation(firstMember)));
+
+        // Give the existing first member a blank line before it, and keep its own leading trivia so
+        // a doc comment stays with the member.
+        var firstMemberWithBlankLine = firstMember.WithLeadingTrivia(
+            firstMemberLeadingTrivia.InsertRange(
+                0,
+                SyntaxFactory.TriviaList(SyntaxFactory.LineFeed, SyntaxFactory.LineFeed)));
+
+        var updatedMembers = typeDecl.Members
+            .Replace(firstMember, firstMemberWithBlankLine)
+            .Insert(0, fieldWithIndent);
+
+        return typeDecl.WithMembers(updatedMembers);
+    }
+
+    /// <summary>
+    ///     Returns the last whitespace trivia in the list, or an empty string when none exists.
+    /// </summary>
+    internal static string LastIndentation(SyntaxTriviaList trivia)
+    {
+        var indent = string.Empty;
+        foreach (var item in trivia)
+        {
+            if (item.IsKind(SyntaxKind.WhitespaceTrivia))
+            {
+                indent = item.ToFullString();
+            }
+        }
+
+        return indent;
+    }
+
+    /// <summary>
+    ///     Returns the list's last trivia when it is whitespace, or an empty list otherwise.
+    /// </summary>
+    internal static SyntaxTriviaList TrailingWhitespace(SyntaxTriviaList trivia)
+    {
+        return trivia.Count > 0 && trivia.Last().IsKind(SyntaxKind.WhitespaceTrivia)
+            ? SyntaxFactory.TriviaList(trivia.Last())
+            : SyntaxFactory.TriviaList();
+    }
+
+    /// <summary>
+    ///     Wraps an expression in parentheses unless it is already a primary expression,
+    ///     so appending an indexer or member access keeps the original meaning.
+    /// </summary>
+    internal static ExpressionSyntax ParenthesizeIfNeeded(ExpressionSyntax expression)
+    {
+        var bare = expression.WithoutTrivia();
+
+        return bare is IdentifierNameSyntax
+            or MemberAccessExpressionSyntax
+            or InvocationExpressionSyntax
+            or ElementAccessExpressionSyntax
+            or ThisExpressionSyntax
+            or ParenthesizedExpressionSyntax
+            ? bare
+            : SyntaxFactory.ParenthesizedExpression(bare);
+    }
+
+    /// <summary>
+    ///     Returns an element access on the target, with the target parenthesized when needed.
+    /// </summary>
+    internal static ElementAccessExpressionSyntax IndexInto(ExpressionSyntax target, ExpressionSyntax index)
+    {
+        return SyntaxFactory.ElementAccessExpression(
+            ParenthesizeIfNeeded(target),
+            SyntaxFactory.BracketedArgumentList(
+                SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(index.WithoutTrivia()))));
+    }
+
+    /// <summary>
+    ///     Replaces the statement with parsed text and keeps the original statement's trivia.
+    /// </summary>
+    internal static Document ReplaceStatementFromText(
+        Document document,
+        SyntaxNode root,
+        StatementSyntax statement,
+        string text)
+    {
+        var replacement = SyntaxFactory.ParseStatement(text).WithTriviaFrom(statement);
+        return document.WithSyntaxRoot(root.ReplaceNode(statement, replacement));
+    }
+
+    /// <summary>
+    ///     Builds a field name from the receiver text. The fallback applies when no letter or digit
+    ///     survives. The suffix follows the lower-cased identifier.
+    /// </summary>
+    internal static string BuildFieldName(string operandText, string fallback, string suffix)
+    {
+        var lastDot = operandText.LastIndexOf('.');
+        var simpleName = lastDot >= 0 ? operandText.Substring(lastDot + 1) : operandText;
+
+        var builder = new StringBuilder();
+        foreach (var c in simpleName)
+        {
+            if (char.IsLetterOrDigit(c) || c == '_')
+            {
+                builder.Append(c);
+            }
+        }
+
+        var identifier = builder.Length > 0 ? builder.ToString() : fallback;
+        var lowerFirst = char.ToLowerInvariant(identifier[0]).ToString();
+        if (identifier.Length > 1)
+        {
+            lowerFirst += identifier.Substring(1);
+        }
+
+        return "_" + lowerFirst + suffix;
+    }
+
+    /// <summary>
+    ///     True when the type declares a field, or a property or method that the caller includes,
+    ///     with the name. A field variable counts as a declared member name.
+    /// </summary>
+    internal static bool HasMemberNamed(
+        TypeDeclarationSyntax typeDecl,
+        string name,
+        bool includeProperties,
+        bool includeMethods)
+    {
+        foreach (var member in typeDecl.Members)
+        {
+            if (member is FieldDeclarationSyntax field)
+            {
+                foreach (var variable in field.Declaration.Variables)
+                {
+                    if (string.Equals(variable.Identifier.ValueText, name, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (includeProperties
+                && member is PropertyDeclarationSyntax property
+                && string.Equals(property.Identifier.ValueText, name, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (includeMethods
+                && member is MethodDeclarationSyntax method
+                && string.Equals(method.Identifier.ValueText, name, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Replaces the loop with the replacement statement and adds the namespace that the
+    ///     replacement needs.
+    /// </summary>
+    internal static async Task<Document> ReplaceLoopAsync(
+        Document document,
+        StatementSyntax loop,
+        StatementSyntax replacement,
+        string namespaceName,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+        {
+            return document;
+        }
+
+        var newRoot = root.ReplaceNode(loop, replacement.WithTriviaFrom(loop));
+        return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, namespaceName));
+    }
+
+    /// <summary>
+    ///     Wraps the statement in a try block with one catch clause. The catch clause handles
+    ///     <paramref name="catchTypeName" /> and runs <paramref name="catchBody" />.
+    /// </summary>
+    internal static async Task<Document> WrapInTryCatchAsync(
+        Document document,
+        StatementSyntax statement,
+        string catchTypeName,
+        BlockSyntax catchBody,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+        {
+            return document;
+        }
+
+        var tryBlock = SyntaxFactory.Block(statement.WithoutLeadingTrivia());
+        var catchClause = SyntaxFactory.CatchClause(
+            SyntaxFactory.CatchDeclaration(SyntaxFactory.ParseTypeName(catchTypeName)),
+            null,
+            catchBody);
+
+        var tryCatch = SyntaxFactory.TryStatement(
+                tryBlock,
+                SyntaxFactory.SingletonList(catchClause),
+                null)
+            .WithLeadingTrivia(statement.GetLeadingTrivia())
+            .WithTrailingTrivia(statement.GetTrailingTrivia());
+
+        var newRoot = root.ReplaceNode(statement, tryCatch);
+        return document.WithSyntaxRoot(newRoot);
     }
 }

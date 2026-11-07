@@ -35,17 +35,11 @@ public sealed class StringBuilderCapacityAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(startContext =>
-        {
-            var stringBuilder = startContext.Compilation.GetTypeByMetadataName("System.Text.StringBuilder");
-            if (stringBuilder is null)
-            {
-                return;
-            }
-
-            startContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeDeclaration(nodeContext, stringBuilder),
-                SyntaxKind.LocalDeclarationStatement);
-        });
+            MetadataTypes.RegisterForType(
+                startContext,
+                "System.Text.StringBuilder",
+                AnalyzeDeclaration,
+                SyntaxKind.LocalDeclarationStatement));
     }
 
     private static void AnalyzeDeclaration(
@@ -61,7 +55,7 @@ public sealed class StringBuilderCapacityAnalyzer : DiagnosticAnalyzer
         var variable = declaration.Declaration.Variables[0];
         if (variable.Initializer?.Value is not BaseObjectCreationExpressionSyntax creation
             || creation.ArgumentList is { Arguments.Count: > 0 }
-            || SetsCapacityInInitializer(creation))
+            || InitializerAssignments.Assigns(creation, "Capacity"))
         {
             return;
         }
@@ -99,32 +93,4 @@ public sealed class StringBuilderCapacityAnalyzer : DiagnosticAnalyzer
             variable.Identifier.ValueText));
     }
 
-    private static bool SetsCapacityInInitializer(BaseObjectCreationExpressionSyntax creation)
-    {
-        if (creation.Initializer is null)
-        {
-            return false;
-        }
-
-        foreach (var expression in creation.Initializer.Expressions)
-        {
-            if (expression is AssignmentExpressionSyntax assignment
-                && string.Equals(GetAssignedName(assignment.Left), "Capacity", StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? GetAssignedName(ExpressionSyntax left)
-    {
-        return left switch
-        {
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
-            _ => null
-        };
-    }
 }

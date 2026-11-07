@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -43,12 +42,7 @@ public sealed class UnsafeBooleanConversionsCodeFixProvider : E128CodeFixProvide
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace with a managed conversion (any nonzero int becomes true)",
-                _ => Task.FromResult(ApplyFix(context.Document, root, invocation, text)),
-                nameof(UnsafeBooleanConversionsCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace with a managed conversion (any nonzero int becomes true)", nameof(UnsafeBooleanConversionsCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, invocation, text)));
 
         return Task.CompletedTask;
     }

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -39,12 +38,7 @@ public sealed class AsyncVoidCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Change return type to Task",
-                ct => ApplyFixAsync(context.Document, method, ct),
-                nameof(AsyncVoidCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Change return type to Task", nameof(AsyncVoidCodeFixProvider), ct => ApplyFixAsync(context.Document, method, ct));
 
         return Task.CompletedTask;
     }

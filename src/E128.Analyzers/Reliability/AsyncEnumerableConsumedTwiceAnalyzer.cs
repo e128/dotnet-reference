@@ -264,13 +264,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
         };
 
         return type is not null
-               && (IsConstructedFrom(type, asyncEnumerableType)
-                   || type.AllInterfaces.Any(implemented => IsConstructedFrom(implemented, asyncEnumerableType)));
-    }
-
-    private static bool IsConstructedFrom(ITypeSymbol type, INamedTypeSymbol definition)
-    {
-        return type is INamedTypeSymbol named
-               && SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, definition);
+               && (TypeSymbols.MatchesOriginalDefinition(type, asyncEnumerableType)
+                   || type.AllInterfaces.Any(implemented => TypeSymbols.MatchesOriginalDefinition(implemented, asyncEnumerableType)));
     }
 }

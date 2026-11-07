@@ -5,7 +5,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,12 +37,7 @@ public sealed class FipsUnapprovedHashCodeFixProvider : E128CodeFixProviderBase
             var receiverName = GetIdentifierName(memberAccess.Expression);
             if (receiverName is not null && ReplacementMap.TryGetValue(receiverName, out var replacement))
             {
-                context.RegisterCodeFix(
-                    CodeAction.Create(
-                        $"Replace with {replacement}",
-                        ct => ReplaceReceiverAsync(context.Document, memberAccess, replacement, ct),
-                        nameof(FipsUnapprovedHashCodeFixProvider)),
-                    diagnostic);
+                CodeFixRegistration.Register(context, diagnostic, $"Replace with {replacement}", nameof(FipsUnapprovedHashCodeFixProvider), ct => ReplaceReceiverAsync(context.Document, memberAccess, replacement, ct));
             }
         }
         else if (node is ObjectCreationExpressionSyntax creation)
@@ -51,12 +45,7 @@ public sealed class FipsUnapprovedHashCodeFixProvider : E128CodeFixProviderBase
             var typeName = GetIdentifierName(creation.Type);
             if (typeName is not null && ReplacementMap.TryGetValue(typeName, out var replacement))
             {
-                context.RegisterCodeFix(
-                    CodeAction.Create(
-                        $"Replace with {replacement}",
-                        ct => ReplaceConstructorTypeAsync(context.Document, creation, replacement, ct),
-                        nameof(FipsUnapprovedHashCodeFixProvider)),
-                    diagnostic);
+                CodeFixRegistration.Register(context, diagnostic, $"Replace with {replacement}", nameof(FipsUnapprovedHashCodeFixProvider), ct => ReplaceConstructorTypeAsync(context.Document, creation, replacement, ct));
             }
         }
 

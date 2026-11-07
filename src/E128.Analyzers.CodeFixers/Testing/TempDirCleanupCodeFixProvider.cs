@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -44,12 +43,7 @@ public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Implement IAsyncLifetime with temp cleanup",
-                ct => AddAsyncLifetimeAsync(context.Document, classDecl, memberName, ct),
-                nameof(TempDirCleanupCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Implement IAsyncLifetime with temp cleanup", nameof(TempDirCleanupCodeFixProvider), ct => AddAsyncLifetimeAsync(context.Document, classDecl, memberName, ct));
 
         return Task.CompletedTask;
     }

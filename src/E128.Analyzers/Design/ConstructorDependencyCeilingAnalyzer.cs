@@ -134,20 +134,7 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
         }
 
         // An exception or a collection carries data. It does not provide a service.
-        return !DerivesFrom(type, known.Exception) && !IsEnumerable(type, known.Enumerable);
-    }
-
-    private static bool DerivesFrom(ITypeSymbol type, ITypeSymbol? baseType)
-    {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, baseType))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return !TypeSymbols.DerivesFrom(type, known.Exception) && !IsEnumerable(type, known.Enumerable);
     }
 
     private static bool IsEnumerable(ITypeSymbol type, ITypeSymbol enumerable)

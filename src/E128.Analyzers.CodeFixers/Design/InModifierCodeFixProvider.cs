@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -31,12 +30,7 @@ public sealed class InModifierCodeFixProvider : E128CodeFixProviderBase
                 continue;
             }
 
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Remove 'in' modifier",
-                    ct => RemoveInModifierAsync(context.Document, root, parameter, ct),
-                    "RemoveInModifier"),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, "Remove 'in' modifier", "RemoveInModifier", ct => RemoveInModifierAsync(context.Document, root, parameter, ct));
         }
 
         return Task.CompletedTask;

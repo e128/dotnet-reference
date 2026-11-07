@@ -150,7 +150,7 @@ public sealed class PresizeCollectionAnalyzer : DiagnosticAnalyzer
         var candidate = declaration.Declaration.Variables[0];
         if (candidate.Initializer?.Value is not BaseObjectCreationExpressionSyntax candidateCreation
             || candidateCreation.ArgumentList is { Arguments.Count: > 0 }
-            || SetsCapacityInInitializer(candidateCreation))
+            || InitializerAssignments.Assigns(candidateCreation, "Capacity"))
         {
             return false;
         }
@@ -164,35 +164,6 @@ public sealed class PresizeCollectionAnalyzer : DiagnosticAnalyzer
         variable = candidate;
         creation = candidateCreation;
         return true;
-    }
-
-    private static bool SetsCapacityInInitializer(BaseObjectCreationExpressionSyntax creation)
-    {
-        if (creation.Initializer is null)
-        {
-            return false;
-        }
-
-        foreach (var expression in creation.Initializer.Expressions)
-        {
-            if (expression is AssignmentExpressionSyntax assignment
-                && string.Equals(GetAssignedName(assignment.Left), "Capacity", StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? GetAssignedName(ExpressionSyntax left)
-    {
-        return left switch
-        {
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
-            _ => null
-        };
     }
 
     private static bool TryGetFillMethod(

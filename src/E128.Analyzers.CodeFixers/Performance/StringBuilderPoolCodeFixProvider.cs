@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -41,12 +40,7 @@ public sealed class StringBuilderPoolCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace with StringBuilderPool.Shared.Rent()",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(StringBuilderPoolCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace with StringBuilderPool.Shared.Rent()", nameof(StringBuilderPoolCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
     }
 
     // Rent() takes no seed. A seed string carries content the rewrite would drop. A capacity hint

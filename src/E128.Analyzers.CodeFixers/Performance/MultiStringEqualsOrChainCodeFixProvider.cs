@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -59,8 +58,8 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
             return;
         }
 
-        var fieldName = BuildFieldName(pivot.OperandText);
-        if (HasConflictingField(typeDecl, fieldName))
+        var fieldName = FixSyntax.BuildFieldName(pivot.OperandText, "value", "Values");
+        if (FixSyntax.HasMemberNamed(typeDecl, fieldName, includeProperties: false, includeMethods: false))
         {
             return;
         }
@@ -73,12 +72,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace OR-chain with HashSet<string>.Contains()",
-                ct => ApplyFixAsync(context.Document, orExpr, typeDecl, ct),
-                nameof(MultiStringEqualsOrChainCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace OR-chain with HashSet<string>.Contains()", nameof(MultiStringEqualsOrChainCodeFixProvider), ct => ApplyFixAsync(context.Document, orExpr, typeDecl, ct));
     }
 
     private static async Task<Document> ApplyFixAsync(
@@ -105,8 +99,8 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
             return document;
         }
 
-        var fieldName = BuildFieldName(pivot.OperandText);
-        if (HasConflictingField(typeDecl, fieldName))
+        var fieldName = FixSyntax.BuildFieldName(pivot.OperandText, "value", "Values");
+        if (FixSyntax.HasMemberNamed(typeDecl, fieldName, includeProperties: false, includeMethods: false))
         {
             return document;
         }
@@ -183,40 +177,11 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
 
         // Replace OR-chain, then insert field as first member with matching indentation.
         var typeDeclAfterReplace = typeDecl.ReplaceNode(orExpr, containsExpr);
-        var typeDeclWithField = InsertFieldAsFirstMember(typeDeclAfterReplace, fieldDecl);
+        var typeDeclWithField = FixSyntax.InsertFieldAsFirstMember(typeDeclAfterReplace, fieldDecl);
 
         var newRoot = root.ReplaceNode(typeDecl, typeDeclWithField);
         newRoot = UsingDirectives.AddIfMissing(newRoot, "System");
         return UsingDirectives.AddIfMissing(newRoot, "System.Collections.Generic");
-    }
-
-    private static TypeDeclarationSyntax InsertFieldAsFirstMember(
-        TypeDeclarationSyntax typeDecl,
-        MemberDeclarationSyntax fieldDecl)
-    {
-        if (!typeDecl.Members.Any())
-        {
-            return typeDecl.WithMembers(typeDecl.Members.Add(fieldDecl));
-        }
-
-        // Detect indent string from the existing first member's leading whitespace.
-        var firstMember = typeDecl.Members[0];
-        var firstMemberLeadingTrivia = firstMember.GetLeadingTrivia();
-        var fieldWithIndent = fieldDecl
-            .WithLeadingTrivia(SyntaxFactory.Whitespace(FixSyntax.MemberIndentation(firstMember)));
-
-        // Give the existing first member a blank line before it, and keep its own leading trivia so
-        // a doc comment stays with the member.
-        var firstMemberWithBlankLine = firstMember.WithLeadingTrivia(
-            firstMemberLeadingTrivia.InsertRange(
-                0,
-                SyntaxFactory.TriviaList(SyntaxFactory.LineFeed, SyntaxFactory.LineFeed)));
-
-        var updatedMembers = typeDecl.Members
-            .Replace(firstMember, firstMemberWithBlankLine)
-            .Insert(0, fieldWithIndent);
-
-        return typeDecl.WithMembers(updatedMembers);
     }
 
     // A fallback member writes broken code into the document, so abort the fix when the parse fails.
@@ -245,46 +210,6 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
 
         sb.Append(" };");
         return SyntaxFactory.ParseMemberDeclaration(sb.ToString());
-    }
-
-    private static bool HasConflictingField(TypeDeclarationSyntax typeDecl, string fieldName)
-    {
-        foreach (var member in typeDecl.Members.OfType<FieldDeclarationSyntax>())
-        {
-            foreach (var variable in member.Declaration.Variables)
-            {
-                if (string.Equals(variable.Identifier.ValueText, fieldName, StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    internal static string BuildFieldName(string operandText)
-    {
-        var lastDot = operandText.LastIndexOf('.');
-        var simpleName = lastDot >= 0 ? operandText.Substring(lastDot + 1) : operandText;
-
-        var sb = new StringBuilder();
-        foreach (var c in simpleName)
-        {
-            if (char.IsLetterOrDigit(c) || c == '_')
-            {
-                sb.Append(c);
-            }
-        }
-
-        var identifier = sb.Length > 0 ? sb.ToString() : "value";
-        var lowerFirst = char.ToLowerInvariant(identifier[0]).ToString();
-        if (identifier.Length > 1)
-        {
-            lowerFirst += identifier.Substring(1);
-        }
-
-        return "_" + lowerFirst + "Values";
     }
 
     private static string GetComparerExpression(string comparisonKey)

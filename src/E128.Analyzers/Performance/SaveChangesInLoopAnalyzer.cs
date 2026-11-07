@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -73,7 +72,7 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsInsideLoopBody(invocation))
+        if (!LoopContext.IsInsideLoopBody(invocation))
         {
             return;
         }
@@ -197,60 +196,5 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
         var assemblyName = definition.ContainingAssembly?.Name;
         return assemblyName is not null
                && assemblyName.StartsWith(EntityFrameworkNamespacePrefix, StringComparison.Ordinal);
-    }
-
-    private static bool IsInsideLoopBody(SyntaxNode node)
-    {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            if (current is CommonForEachStatementSyntax forEach)
-            {
-                // The source expression evaluates once, so it is not the loop body.
-                if (IsWithin(forEach.Expression, node))
-                {
-                    continue;
-                }
-
-                return true;
-            }
-
-            if (current is ForStatementSyntax forStatement)
-            {
-                // The initializer runs once. The condition and the incrementors run
-                // once per iteration and fall through to a report.
-                if (IsWithinForInitializer(forStatement, node))
-                {
-                    continue;
-                }
-
-                return true;
-            }
-
-            if (current is WhileStatementSyntax or DoStatementSyntax)
-            {
-                return true;
-            }
-
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax
-                or DestructorDeclarationSyntax or LocalFunctionStatementSyntax
-                or AccessorDeclarationSyntax or OperatorDeclarationSyntax
-                or ConversionOperatorDeclarationSyntax)
-            {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsWithinForInitializer(ForStatementSyntax forStatement, SyntaxNode node)
-    {
-        return IsWithin(forStatement.Declaration, node)
-               || forStatement.Initializers.Any(initializer => initializer.Span.Contains(node.Span));
-    }
-
-    private static bool IsWithin(SyntaxNode? container, SyntaxNode node)
-    {
-        return container is not null && container.Span.Contains(node.Span);
     }
 }

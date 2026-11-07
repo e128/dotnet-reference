@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -51,12 +50,7 @@ public sealed class TextContentGuardCodeFixProvider : E128CodeFixProviderBase
         // rewrite would negate the guard alone.
         var needsParentheses = rootOperand.Parent is PrefixUnaryExpressionSyntax;
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add a TextContent.Length guard",
-                ct => AddGuardAsync(context.Document, rootOperand, guardText, needsParentheses, ct),
-                nameof(TextContentGuardCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add a TextContent.Length guard", nameof(TextContentGuardCodeFixProvider), ct => AddGuardAsync(context.Document, rootOperand, guardText, needsParentheses, ct));
 
         return Task.CompletedTask;
     }

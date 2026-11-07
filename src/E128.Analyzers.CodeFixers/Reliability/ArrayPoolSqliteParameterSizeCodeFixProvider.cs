@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -30,22 +29,12 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
         if (node is InvocationExpressionSyntax addWithValue
             && TryGetRequestedLength(node, GetAddWithValueArgument(addWithValue)) is not null)
         {
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Add SqliteParameter.Size assignment",
-                    ct => FixAddWithValueAsync(context.Document, node, ct),
-                    nameof(ArrayPoolSqliteParameterSizeCodeFixProvider) + ".AddWithValue"),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, "Add SqliteParameter.Size assignment", nameof(ArrayPoolSqliteParameterSizeCodeFixProvider) + ".AddWithValue", ct => FixAddWithValueAsync(context.Document, node, ct));
         }
         else if (node is AssignmentExpressionSyntax valueAssignment
                  && TryGetRequestedLength(node, valueAssignment.Right) is not null)
         {
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Add SqliteParameter.Size assignment",
-                    ct => FixValueAssignmentAsync(context.Document, node, ct),
-                    nameof(ArrayPoolSqliteParameterSizeCodeFixProvider) + ".Value"),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, "Add SqliteParameter.Size assignment", nameof(ArrayPoolSqliteParameterSizeCodeFixProvider) + ".Value", ct => FixValueAssignmentAsync(context.Document, node, ct));
         }
 
         return Task.CompletedTask;

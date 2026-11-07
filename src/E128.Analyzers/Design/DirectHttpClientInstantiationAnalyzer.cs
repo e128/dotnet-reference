@@ -81,9 +81,6 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
 
         var ns = type.ContainingNamespace;
         // Expecting: System.Net.Http
-        return ns is { Name: "Http" }
-               && ns.ContainingNamespace is { Name: "Net" }
-               && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
-               && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+        return Namespaces.Equals(ns, "System.Net.Http");
     }
 }

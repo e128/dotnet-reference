@@ -55,7 +55,7 @@ public sealed class FipsDeprecatedRngAnalyzer : DiagnosticAnalyzer
         foreach (var attribute in type.GetAttributes())
         {
             if (attribute.AttributeClass is { Name: "ObsoleteAttribute" } attributeClass &&
-                FipsSymbolHelpers.NamespaceEquals(attributeClass.ContainingNamespace, "System"))
+                Namespaces.Equals(attributeClass.ContainingNamespace, "System"))
             {
                 return true;
             }

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -47,12 +46,7 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : E128CodeFixPr
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace with IHttpClientFactory.CreateClient()",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(DirectHttpClientInstantiationCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace with IHttpClientFactory.CreateClient()", nameof(DirectHttpClientInstantiationCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
 
         return Task.CompletedTask;
     }

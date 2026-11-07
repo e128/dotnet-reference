@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -56,12 +55,7 @@ public sealed class UnusedInterfaceParamCodeFixProvider : E128CodeFixProviderBas
 
         var newName = $"_{paramName}";
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Rename to '{newName}'",
-                ct => RenameParameterAsync(context.Document, param, newName, ct),
-                nameof(UnusedInterfaceParamCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, $"Rename to '{newName}'", nameof(UnusedInterfaceParamCodeFixProvider), ct => RenameParameterAsync(context.Document, param, newName, ct));
 
         return Task.CompletedTask;
     }

@@ -49,14 +49,7 @@ public sealed class SkipInitAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess
-            || !string.Equals(memberAccess.Identifier.ValueText, "SkipInit", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
-            || !MetadataTypes.Contains(unsafeType, method.ContainingType))
+        if (!OwnerInvocation.TryMatch(context, unsafeType, "SkipInit", out _))
         {
             return;
         }

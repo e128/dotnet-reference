@@ -52,19 +52,6 @@ public sealed class CommittedRedStubAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(ctx => AnalyzeMethod(ctx, assertTypes), SyntaxKind.MethodDeclaration);
     }
 
-    private static bool IsAssertType(ImmutableArray<INamedTypeSymbol> assertTypes, ITypeSymbol type)
-    {
-        foreach (var candidate in assertTypes)
-        {
-            if (SymbolEqualityComparer.Default.Equals(candidate, type))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ImmutableArray<INamedTypeSymbol> assertTypes)
     {
         var method = (MethodDeclarationSyntax)context.Node;
@@ -79,7 +66,7 @@ public sealed class CommittedRedStubAnalyzer : DiagnosticAnalyzer
         if (call is not null
             && context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol is IMethodSymbol target
             && string.Equals(target.Name, "Fail", StringComparison.Ordinal)
-            && IsAssertType(assertTypes, target.ContainingType))
+            && MetadataTypes.Contains(assertTypes, target.ContainingType))
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, call.GetLocation()));
         }

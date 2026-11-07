@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -51,12 +50,7 @@ public sealed class SelectManyToListCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use foreach + AddRange",
-                ct => ApplyFixAsync(context.Document, toListInvocation, selectManyAccess.Expression, lambda.Parameter, lambdaBody, ct),
-                SelectManyToListAnalyzer.DiagnosticId),
-            context.Diagnostics[0]);
+        CodeFixRegistration.Register(context, context.Diagnostics[0], "Use foreach + AddRange", SelectManyToListAnalyzer.DiagnosticId, ct => ApplyFixAsync(context.Document, toListInvocation, selectManyAccess.Expression, lambda.Parameter, lambdaBody, ct));
 
         return Task.CompletedTask;
     }

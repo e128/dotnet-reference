@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -56,20 +54,15 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
             return Task.CompletedTask;
         }
 
-        var fieldName = BuildFieldName(receiver.ToString());
-        if (HasConflictingMember(typeDecl, fieldName))
+        var fieldName = FixSyntax.BuildFieldName(receiver.ToString(), "chars", "Chars");
+        if (FixSyntax.HasMemberNamed(typeDecl, fieldName, includeProperties: true, includeMethods: true))
         {
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use SearchValues<char> with a span IndexOfAny",
-                _ => Task.FromResult(ApplyFix(
+        CodeFixRegistration.Register(context, diagnostic, "Use SearchValues<char> with a span IndexOfAny", nameof(IndexOfAnyToSearchValuesCodeFixProvider), _ => Task.FromResult(ApplyFix(
                     context.Document, root, typeDecl, invocation, receiver,
-                    memberAccess.Name.Identifier.ValueText, fieldName, chars)),
-                nameof(IndexOfAnyToSearchValuesCodeFixProvider)),
-            diagnostic);
+                    memberAccess.Name.Identifier.ValueText, fieldName, chars)));
 
         return Task.CompletedTask;
     }
@@ -99,7 +92,7 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
             .WithTriviaFrom(invocation);
 
         var typeDeclAfterReplace = typeDecl.ReplaceNode(invocation, replacement);
-        var typeDeclWithField = InsertFieldAsFirstMember(typeDeclAfterReplace, fieldDecl);
+        var typeDeclWithField = FixSyntax.InsertFieldAsFirstMember(typeDeclAfterReplace, fieldDecl);
 
         var newRoot = root.ReplaceNode(typeDecl, typeDeclWithField);
         // The emitted field is fully qualified, but AsSpan() is an extension method on
@@ -147,88 +140,5 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
 
         chars = sb.ToString();
         return true;
-    }
-
-    private static string BuildFieldName(string receiverText)
-    {
-        var lastDot = receiverText.LastIndexOf('.');
-        var simpleName = lastDot >= 0 ? receiverText.Substring(lastDot + 1) : receiverText;
-
-        var sb = new StringBuilder();
-        foreach (var c in simpleName)
-        {
-            if (char.IsLetterOrDigit(c) || c == '_')
-            {
-                sb.Append(c);
-            }
-        }
-
-        var identifier = sb.Length > 0 ? sb.ToString() : "chars";
-        var lowerFirst = char.ToLowerInvariant(identifier[0]).ToString();
-        if (identifier.Length > 1)
-        {
-            lowerFirst += identifier.Substring(1);
-        }
-
-        return "_" + lowerFirst + "Chars";
-    }
-
-    private static TypeDeclarationSyntax InsertFieldAsFirstMember(
-        TypeDeclarationSyntax typeDecl,
-        MemberDeclarationSyntax fieldDecl)
-    {
-        if (!typeDecl.Members.Any())
-        {
-            return typeDecl.WithMembers(typeDecl.Members.Add(fieldDecl));
-        }
-
-        var firstMember = typeDecl.Members[0];
-        var firstMemberLeadingTrivia = firstMember.GetLeadingTrivia();
-        var fieldWithIndent = fieldDecl
-            .WithLeadingTrivia(SyntaxFactory.Whitespace(FixSyntax.MemberIndentation(firstMember)));
-
-        // Give the existing first member a blank line before it, and keep its own leading trivia so
-        // a doc comment stays with the member.
-        var firstMemberWithBlankLine = firstMember.WithLeadingTrivia(
-            firstMemberLeadingTrivia.InsertRange(
-                0,
-                SyntaxFactory.TriviaList(SyntaxFactory.LineFeed, SyntaxFactory.LineFeed)));
-
-        var updatedMembers = typeDecl.Members
-            .Replace(firstMember, firstMemberWithBlankLine)
-            .Insert(0, fieldWithIndent);
-
-        return typeDecl.WithMembers(updatedMembers);
-    }
-
-    private static bool HasConflictingMember(TypeDeclarationSyntax typeDecl, string fieldName)
-    {
-        foreach (var member in typeDecl.Members)
-        {
-            if (member is FieldDeclarationSyntax field)
-            {
-                foreach (var variable in field.Declaration.Variables)
-                {
-                    if (string.Equals(variable.Identifier.ValueText, fieldName, StringComparison.Ordinal))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            if (member is PropertyDeclarationSyntax property
-                && string.Equals(property.Identifier.ValueText, fieldName, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (member is MethodDeclarationSyntax method
-                && string.Equals(method.Identifier.ValueText, fieldName, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

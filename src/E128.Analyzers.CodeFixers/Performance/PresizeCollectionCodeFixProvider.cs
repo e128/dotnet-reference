@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -35,12 +34,7 @@ public sealed class PresizeCollectionCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                Title,
-                cancellationToken => ApplyFixAsync(context.Document, creation, capacity, cancellationToken),
-                nameof(PresizeCollectionCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, Title, nameof(PresizeCollectionCodeFixProvider), cancellationToken => ApplyFixAsync(context.Document, creation, capacity, cancellationToken));
 
         return Task.CompletedTask;
     }

@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -33,12 +32,7 @@ public sealed class UnsafeReadWriteAlignmentCodeFixProvider : E128CodeFixProvide
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use Unsafe." + replacement,
-                _ => Task.FromResult(ApplyFix(context.Document, root, memberAccess, replacement)),
-                nameof(UnsafeReadWriteAlignmentCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Use Unsafe." + replacement, nameof(UnsafeReadWriteAlignmentCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, memberAccess, replacement)));
 
         return Task.CompletedTask;
     }

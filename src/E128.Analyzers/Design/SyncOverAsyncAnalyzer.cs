@@ -127,9 +127,6 @@ public sealed class SyncOverAsyncAnalyzer : DiagnosticAnalyzer
         }
 
         var ns = originalDefinition.ContainingNamespace;
-        return ns is { Name: "Tasks" }
-               && ns.ContainingNamespace is { Name: "Threading" }
-               && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
-               && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+        return Namespaces.Equals(ns, "System.Threading.Tasks");
     }
 }

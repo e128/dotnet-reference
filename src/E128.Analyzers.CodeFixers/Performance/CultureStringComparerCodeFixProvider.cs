@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,12 +37,7 @@ public sealed class CultureStringComparerCodeFixProvider : E128CodeFixProviderBa
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Use StringComparer.{replacement}",
-                ct => ReplaceComparerAsync(context.Document, expression, replacement, ct),
-                CultureStringComparerAnalyzer.DiagnosticId),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, $"Use StringComparer.{replacement}", CultureStringComparerAnalyzer.DiagnosticId, ct => ReplaceComparerAsync(context.Document, expression, replacement, ct));
 
         return Task.CompletedTask;
     }

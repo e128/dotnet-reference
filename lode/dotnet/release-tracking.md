@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-07T15:01:49Z*
+*Updated: 2026-11-07T18:44:05Z*
 
 ## Overview
 
@@ -147,6 +147,8 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.3.1   | (none)        | Accuracy fixes across the E128176 to E128201 rules. The pack carries no third-party dependency. |
 | 2.4.0   | E128202       | Unvalidated JWT claims used as an identity. Info severity. |
 | 2.4.1   | (none)        | Review-sweep accuracy fixes with no rule set change. |
+| 2.5.0   | E128203-217   | Performance rules from the twenty-practice sweep. |
+| 2.5.1   | (none)        | Shared-helper refactor across analyzers and code fixers. No rule set change. |
 
 ## Sources
 

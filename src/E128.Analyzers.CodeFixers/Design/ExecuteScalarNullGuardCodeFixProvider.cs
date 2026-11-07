@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -41,12 +40,7 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : E128CodeFixProviderB
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add null guard around ExecuteScalar",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(ExecuteScalarNullGuardCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add null guard around ExecuteScalar", nameof(ExecuteScalarNullGuardCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
 
         return Task.CompletedTask;
     }

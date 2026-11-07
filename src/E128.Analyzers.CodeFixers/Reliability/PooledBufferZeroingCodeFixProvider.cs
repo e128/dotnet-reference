@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -45,12 +44,7 @@ public sealed class PooledBufferZeroingCodeFixProvider : E128CodeFixProviderBase
 
         var bufferText = invocation.ArgumentList.Arguments[0].Expression.ToString();
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Zero the buffer before Return",
-                ct => ZeroBufferAsync(context.Document, returnStatement, bufferText, ct),
-                nameof(PooledBufferZeroingCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Zero the buffer before Return", nameof(PooledBufferZeroingCodeFixProvider), ct => ZeroBufferAsync(context.Document, returnStatement, bufferText, ct));
 
         return Task.CompletedTask;
     }

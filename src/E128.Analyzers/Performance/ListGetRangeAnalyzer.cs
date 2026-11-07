@@ -87,7 +87,7 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!SymbolEqualityComparer.Default.Equals(containingType.OriginalDefinition, listType))
+        if (!TypeSymbols.MatchesOriginalDefinition(containingType, listType))
         {
             return;
         }
@@ -95,7 +95,7 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
         // The fix returns T[]. Skip a call whose result must stay a List<T>.
         var convertedType = context.SemanticModel.GetTypeInfo(invocation, context.CancellationToken).ConvertedType;
         if (convertedType is INamedTypeSymbol converted
-            && SymbolEqualityComparer.Default.Equals(converted.OriginalDefinition, listType))
+            && TypeSymbols.MatchesOriginalDefinition(converted, listType))
         {
             return;
         }

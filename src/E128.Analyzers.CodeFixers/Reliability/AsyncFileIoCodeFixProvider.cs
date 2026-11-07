@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -25,12 +24,7 @@ public sealed class AsyncFileIoCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Await the async overload",
-                ct => AsyncSiblingCodeFixHelper.ApplyFixAsync(context.Document, invocation, ct),
-                nameof(AsyncFileIoCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Await the async overload", nameof(AsyncFileIoCodeFixProvider), ct => AsyncSiblingCodeFixHelper.ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

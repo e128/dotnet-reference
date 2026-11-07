@@ -98,7 +98,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzer : DiagnosticAnalyzer
         var creation = (IObjectCreationOperation)context.Operation;
 
         if (creation.Type is null
-            || !SymbolEqualityComparer.Default.Equals(creation.Type.OriginalDefinition, fileStreamType)
+            || !TypeSymbols.MatchesOriginalDefinition(creation.Type, fileStreamType)
             || creation.Constructor is null)
         {
             return;

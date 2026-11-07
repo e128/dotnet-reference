@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -51,15 +50,10 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : E128CodeFixProvide
         }
 
         var title = $"Add direct registration for {concreteTypeName}";
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title,
-                ct => RewriteToDirectAndForwardingAsync(
+        CodeFixRegistration.Register(context, diagnostic, title, $"E128035_{concreteTypeName}", ct => RewriteToDirectAndForwardingAsync(
                     context.Document, registrationInfo.Value.Invocation,
                     registrationInfo.Value.Lifetime, concreteTypeName,
-                    registrationInfo.Value.InterfaceName, ct),
-                $"E128035_{concreteTypeName}"),
-            diagnostic);
+                    registrationInfo.Value.InterfaceName, ct));
 
         return Task.CompletedTask;
     }

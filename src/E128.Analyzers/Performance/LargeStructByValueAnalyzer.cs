@@ -141,32 +141,7 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
         }
 
         var symbol = context.SemanticModel.GetDeclaredSymbol(method, context.CancellationToken);
-        return symbol is not IMethodSymbol methodSymbol || !ImplementsInterfaceMember(methodSymbol);
-    }
-
-    private static bool ImplementsInterfaceMember(IMethodSymbol method)
-    {
-        var containingType = method.ContainingType;
-        if (containingType is null || containingType.AllInterfaces.IsEmpty)
-        {
-            return false;
-        }
-
-        foreach (var interfaceType in containingType.AllInterfaces)
-        {
-            foreach (var member in interfaceType.GetMembers())
-            {
-                if (member is IMethodSymbol
-                    && SymbolEqualityComparer.Default.Equals(
-                        containingType.FindImplementationForInterfaceMember(member),
-                        method))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return symbol is not IMethodSymbol methodSymbol || !InterfaceMembers.ImplementsMember(methodSymbol);
     }
 
     private static bool IsExcludedNamespace(INamedTypeSymbol type)

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,12 +37,7 @@ public sealed class LowValueTestCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Delete the low-value test method",
-                ct => DeleteMethodAsync(context.Document, span, ct),
-                nameof(LowValueTestCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Delete the low-value test method", nameof(LowValueTestCodeFixProvider), ct => DeleteMethodAsync(context.Document, span, ct));
 
         return Task.CompletedTask;
     }

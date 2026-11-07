@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -25,12 +24,7 @@ public sealed class TestCodeCommentCodeFixProvider : E128CodeFixProviderBase
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var diagnostic = context.Diagnostics[0];
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove comment",
-                ct => RemoveCommentAsync(context.Document, diagnostic.Location.SourceSpan, ct),
-                nameof(TestCodeCommentCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove comment", nameof(TestCodeCommentCodeFixProvider), ct => RemoveCommentAsync(context.Document, diagnostic.Location.SourceSpan, ct));
         return Task.CompletedTask;
     }
 

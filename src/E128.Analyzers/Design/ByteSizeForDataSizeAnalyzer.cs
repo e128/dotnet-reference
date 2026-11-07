@@ -66,17 +66,17 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (IsByteSizeType(effectiveType))
+        if (ByteSizeType.Is(effectiveType))
         {
             return;
         }
 
-        if (IsByteSizeType(context.Symbol.ContainingType))
+        if (ByteSizeType.Is(context.Symbol.ContainingType))
         {
             return;
         }
 
-        if (!HasDataSizeSuffix(name))
+        if (!NameSuffixes.Matches(name, DataSizeSuffixes))
         {
             return;
         }
@@ -93,17 +93,17 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
 
         var type = TypeSymbols.UnwrapNullable(local.Type);
 
-        if (!IsNumericType(type) || IsByteSizeType(type))
+        if (!IsNumericType(type) || ByteSizeType.Is(type))
         {
             return;
         }
 
-        if (IsByteSizeType(local.ContainingType))
+        if (ByteSizeType.Is(local.ContainingType))
         {
             return;
         }
 
-        if (!HasDataSizeSuffix(local.Name))
+        if (!NameSuffixes.Matches(local.Name, DataSizeSuffixes))
         {
             return;
         }
@@ -121,37 +121,5 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
             or SpecialType.System_Int64
             or SpecialType.System_Single
             or SpecialType.System_Double;
-    }
-
-    private static bool IsByteSizeType(ITypeSymbol? type)
-    {
-        return type is not null
-               && string.Equals(type.Name, "ByteSize", StringComparison.Ordinal)
-               && string.Equals(type.ContainingNamespace?.ToString(), "Pug.Core.Classes", StringComparison.Ordinal);
-    }
-
-    private static bool HasDataSizeSuffix(string name)
-    {
-        foreach (var suffix in DataSizeSuffixes)
-        {
-            if (name.Length < suffix.Length)
-            {
-                continue;
-            }
-
-            var startIndex = name.Length - suffix.Length;
-
-            if (!char.IsUpper(name[startIndex]))
-            {
-                continue;
-            }
-
-            if (name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

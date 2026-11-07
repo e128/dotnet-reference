@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -28,12 +27,7 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : E128CodeFixProviderB
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove redundant RegexOptions.Compiled",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(GeneratedRegexCompiledCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove redundant RegexOptions.Compiled", nameof(GeneratedRegexCompiledCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
 
         return Task.CompletedTask;
     }

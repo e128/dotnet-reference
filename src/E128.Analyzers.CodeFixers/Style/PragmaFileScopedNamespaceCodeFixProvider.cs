@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,12 +30,7 @@ public sealed class PragmaFileScopedNamespaceCodeFixProvider : E128CodeFixProvid
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Move #pragma below the namespace declaration",
-                ct => MovePragmaAsync(context.Document, pragma, ct),
-                nameof(PragmaFileScopedNamespaceCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Move #pragma below the namespace declaration", nameof(PragmaFileScopedNamespaceCodeFixProvider), ct => MovePragmaAsync(context.Document, pragma, ct));
 
         return Task.CompletedTask;
     }

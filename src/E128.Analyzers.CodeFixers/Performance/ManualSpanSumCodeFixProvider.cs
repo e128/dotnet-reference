@@ -1,10 +1,8 @@
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -39,29 +37,8 @@ public sealed class ManualSpanSumCodeFixProvider : E128CodeFixProviderBase
         var replacement = SyntaxFactory.ParseStatement(
             sumName + " += TensorPrimitives.Sum(" + loop.Expression.WithoutTrivia().ToFullString() + ");");
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use TensorPrimitives.Sum",
-                ct => ReplaceLoopAsync(context.Document, loop, replacement, ct),
-                ManualSpanSumAnalyzer.DiagnosticId),
-            context.Diagnostics[0]);
+        CodeFixRegistration.Register(context, context.Diagnostics[0], "Use TensorPrimitives.Sum", ManualSpanSumAnalyzer.DiagnosticId, ct => FixSyntax.ReplaceLoopAsync(context.Document, loop, replacement, TensorsNamespace, ct));
 
         return Task.CompletedTask;
-    }
-
-    private static async Task<Document> ReplaceLoopAsync(
-        Document document,
-        ForEachStatementSyntax loop,
-        StatementSyntax replacement,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
-
-        var newRoot = root.ReplaceNode(loop, replacement.WithTriviaFrom(loop));
-        return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, TensorsNamespace));
     }
 }

@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -23,12 +22,7 @@ public sealed class SuppressionAuditCodeFixProvider : E128CodeFixProviderBase
     {
         var diagnostic = context.Diagnostics[0];
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add justification comment",
-                ct => AddJustificationCommentAsync(context.Document, root, diagnostic, ct),
-                nameof(SuppressionAuditCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add justification comment", nameof(SuppressionAuditCodeFixProvider), ct => AddJustificationCommentAsync(context.Document, root, diagnostic, ct));
 
         return Task.CompletedTask;
     }

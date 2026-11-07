@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -60,12 +59,7 @@ public sealed class AlternateLookupCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use GetAlternateLookup<ReadOnlySpan<char>>",
-                ct => ReplaceAsync(context.Document, owner, replacement, ct),
-                AlternateLookupAnalyzer.DiagnosticId),
-            context.Diagnostics[0]);
+        CodeFixRegistration.Register(context, context.Diagnostics[0], "Use GetAlternateLookup<ReadOnlySpan<char>>", AlternateLookupAnalyzer.DiagnosticId, ct => ReplaceAsync(context.Document, owner, replacement, ct));
 
         return Task.CompletedTask;
     }

@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -52,12 +51,7 @@ public sealed class PathCombineSegmentCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Use {PathCombineSegmentAnalyzer.ReplacementMethodName}",
-                ct => ReplaceAsync(context.Document, methodName, ct),
-                nameof(PathCombineSegmentCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, $"Use {PathCombineSegmentAnalyzer.ReplacementMethodName}", nameof(PathCombineSegmentCodeFixProvider), ct => ReplaceAsync(context.Document, methodName, ct));
     }
 
     private static bool IsFixable(ArgumentSyntax argument, SemanticModel? model)

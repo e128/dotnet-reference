@@ -60,7 +60,7 @@ public sealed class ConcurrentDictionaryDoubleLookupAnalyzer : DiagnosticAnalyze
 
         var receiverType = context.SemanticModel.GetTypeInfo(access.Expression, context.CancellationToken).Type;
         if (receiverType is null
-            || !SymbolEqualityComparer.Default.Equals(receiverType.OriginalDefinition, concurrentDictionary))
+            || !TypeSymbols.MatchesOriginalDefinition(receiverType, concurrentDictionary))
         {
             return;
         }

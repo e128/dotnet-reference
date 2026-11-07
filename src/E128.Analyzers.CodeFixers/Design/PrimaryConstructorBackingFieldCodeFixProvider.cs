@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,12 +30,7 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : E128CodeFixP
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove backing field, use primary constructor parameter",
-                ct => ApplyFixAsync(context.Document, diagnostic, ct),
-                nameof(PrimaryConstructorBackingFieldCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove backing field, use primary constructor parameter", nameof(PrimaryConstructorBackingFieldCodeFixProvider), ct => ApplyFixAsync(context.Document, diagnostic, ct));
 
         return Task.CompletedTask;
     }

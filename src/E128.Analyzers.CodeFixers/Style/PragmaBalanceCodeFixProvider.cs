@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -33,12 +32,7 @@ public sealed class PragmaBalanceCodeFixProvider : E128CodeFixProviderBase
 
         var isAllCodes = string.Equals(suppressedId, PragmaBalanceAnalyzer.AllCodesKey, StringComparison.Ordinal);
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                isAllCodes ? "Add #pragma warning restore" : $"Add #pragma warning restore {suppressedId}",
-                ct => AddRestorePragmaAsync(context.Document, suppressedId, ct),
-                $"{nameof(PragmaBalanceCodeFixProvider)}.{suppressedId}"),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, isAllCodes ? "Add #pragma warning restore" : $"Add #pragma warning restore {suppressedId}", $"{nameof(PragmaBalanceCodeFixProvider)}.{suppressedId}", ct => AddRestorePragmaAsync(context.Document, suppressedId, ct));
 
         return Task.CompletedTask;
     }
@@ -65,14 +59,7 @@ public sealed class PragmaBalanceCodeFixProvider : E128CodeFixProviderBase
             : SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
                 SyntaxFactory.IdentifierName(suppressedId).WithLeadingTrivia(SyntaxFactory.Space));
 
-        var restoreDirective = SyntaxFactory.PragmaWarningDirectiveTrivia(
-            SyntaxFactory.Token(SyntaxKind.HashToken),
-            SyntaxFactory.Token(SyntaxKind.PragmaKeyword).WithLeadingTrivia(SyntaxFactory.Space),
-            SyntaxFactory.Token(SyntaxKind.WarningKeyword).WithLeadingTrivia(SyntaxFactory.Space),
-            SyntaxFactory.Token(SyntaxKind.RestoreKeyword).WithLeadingTrivia(SyntaxFactory.Space),
-            errorCodes,
-            SyntaxFactory.Token(SyntaxKind.EndOfDirectiveToken).WithTrailingTrivia(SyntaxFactory.LineFeed),
-            true);
+        var restoreDirective = PragmaDirectives.Build(SyntaxKind.RestoreKeyword, errorCodes);
 
         // Append the restore directive as trailing trivia of the last real token.
         // Attaching to the last token's trailing list avoids the EndOfFileToken

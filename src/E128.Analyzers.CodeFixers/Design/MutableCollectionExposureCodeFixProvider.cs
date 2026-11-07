@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,12 +30,7 @@ public sealed class MutableCollectionExposureCodeFixProvider : E128CodeFixProvid
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Change return type to " + suggestedType,
-                ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct),
-                nameof(MutableCollectionExposureCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Change return type to " + suggestedType, nameof(MutableCollectionExposureCodeFixProvider), ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct));
 
         return Task.CompletedTask;
     }

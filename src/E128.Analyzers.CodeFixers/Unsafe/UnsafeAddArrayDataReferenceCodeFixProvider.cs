@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -31,12 +30,7 @@ public sealed class UnsafeAddArrayDataReferenceCodeFixProvider : E128CodeFixProv
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Index the array directly",
-                _ => Task.FromResult(ApplyFix(context.Document, root, invocation, access.Value)),
-                nameof(UnsafeAddArrayDataReferenceCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Index the array directly", nameof(UnsafeAddArrayDataReferenceCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, invocation, access.Value)));
 
         return Task.CompletedTask;
     }

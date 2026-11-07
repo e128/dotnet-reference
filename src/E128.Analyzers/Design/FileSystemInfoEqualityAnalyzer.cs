@@ -128,7 +128,6 @@ public sealed class FileSystemInfoEqualityAnalyzer : DiagnosticAnalyzer
     private static bool IsFileSystemInfoType(ITypeSymbol type)
     {
         return string.Equals(type.Name, "FileSystemInfo", StringComparison.Ordinal)
-               && type.ContainingNamespace is { Name: "IO" }
-                   and { ContainingNamespace: { Name: "System" } and { ContainingNamespace.IsGlobalNamespace: true } };
+               && Namespaces.Equals(type.ContainingNamespace, "System.IO");
     }
 }

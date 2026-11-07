@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -30,12 +29,7 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBa
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add matchTimeoutMilliseconds: Timeout.Infinite",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(GeneratedRegexTimeoutCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add matchTimeoutMilliseconds: Timeout.Infinite", nameof(GeneratedRegexTimeoutCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
 
         return Task.CompletedTask;
     }
@@ -56,13 +50,13 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBa
 
         var newRoot = root.ReplaceNode(attribute, newAttribute);
 
-        var withTimeoutUsing = await EnsureUsingDirectiveAsync(
+        var withTimeoutUsing = await UsingDirectives.EnsureAddedAsync(
                 document.WithSyntaxRoot(newRoot), "System.Threading", cancellationToken)
             .ConfigureAwait(false);
 
         // The emitted options value needs its namespace when the attribute was written fully
         // qualified.
-        return await EnsureUsingDirectiveAsync(
+        return await UsingDirectives.EnsureAddedAsync(
                 withTimeoutUsing, "System.Text.RegularExpressions", cancellationToken)
             .ConfigureAwait(false);
     }
@@ -124,15 +118,5 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBa
         }
 
         return count;
-    }
-
-    private static async Task<Document> EnsureUsingDirectiveAsync(
-        Document document,
-        string namespaceName,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-
-        return root is null ? document : document.WithSyntaxRoot(UsingDirectives.AddIfMissing(root, namespaceName));
     }
 }

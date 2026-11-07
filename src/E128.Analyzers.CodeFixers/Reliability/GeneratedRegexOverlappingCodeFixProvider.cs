@@ -1,12 +1,8 @@
-using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace E128.Analyzers.Reliability;
@@ -28,56 +24,9 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove overlapping \\s quantifier",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(GeneratedRegexOverlappingCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove overlapping \\s quantifier", nameof(GeneratedRegexOverlappingCodeFixProvider), ct => RegexLiteralFix.ApplyRewriteAsync(context.Document, node, RemoveOverlappingWhitespaceQuantifier, ct));
 
         return Task.CompletedTask;
-    }
-
-    private static async Task<Document> ApplyFixAsync(
-        Document document,
-        SyntaxNode attributeNode,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
-
-        var attribute = (AttributeSyntax)attributeNode;
-        if (attribute.ArgumentList is null || !attribute.ArgumentList.Arguments.Any())
-        {
-            return document;
-        }
-
-        var firstArg = attribute.ArgumentList.Arguments[0];
-        if (firstArg.NameColon is not null || firstArg.NameEquals is not null)
-        {
-            return document;
-        }
-
-        if (firstArg.Expression is not LiteralExpressionSyntax literal
-            || !literal.IsKind(SyntaxKind.StringLiteralExpression))
-        {
-            return document;
-        }
-
-        var pattern = literal.Token.ValueText;
-        var fixedPattern = RemoveOverlappingWhitespaceQuantifier(pattern);
-        if (string.Equals(fixedPattern, pattern, StringComparison.Ordinal))
-        {
-            return document;
-        }
-
-        var newLiteral = CreateFixedLiteral(literal, fixedPattern);
-        var newArg = firstArg.WithExpression(newLiteral);
-        var newRoot = root.ReplaceNode(firstArg, newArg);
-        return document.WithSyntaxRoot(newRoot);
     }
 
     internal static string RemoveOverlappingWhitespaceQuantifier(string pattern)
@@ -239,35 +188,5 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
         }
 
         return -1;
-    }
-
-    private static LiteralExpressionSyntax CreateFixedLiteral(
-        LiteralExpressionSyntax original,
-        string fixedValueText)
-    {
-        var text = original.Token.Text;
-        SyntaxToken newToken;
-
-        if (text.StartsWith("@", StringComparison.Ordinal))
-        {
-            var escapedText = "@\"" + fixedValueText.Replace("\"", "\"\"") + "\"";
-            newToken = SyntaxFactory.Literal(
-                original.Token.LeadingTrivia,
-                escapedText,
-                fixedValueText,
-                original.Token.TrailingTrivia);
-        }
-        else
-        {
-            // The one-argument overload takes the token text, so it needs the quotes and the
-            // escapes. Without them the rewrite emits an unquoted literal.
-            newToken = SyntaxFactory.Literal(
-                    SymbolDisplay.FormatLiteral(fixedValueText, quote: true),
-                    fixedValueText)
-                .WithLeadingTrivia(original.Token.LeadingTrivia)
-                .WithTrailingTrivia(original.Token.TrailingTrivia);
-        }
-
-        return SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, newToken);
     }
 }

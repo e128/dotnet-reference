@@ -1,9 +1,7 @@
 using System.Collections.Immutable;
 using System.Composition;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,42 +36,8 @@ public sealed class FinallyBlockCleanupCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Wrap cleanup in try/catch(Exception)",
-                ct => WrapInTryCatchAsync(context.Document, statement, ct),
-                nameof(FinallyBlockCleanupCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Wrap cleanup in try/catch(Exception)", nameof(FinallyBlockCleanupCodeFixProvider), ct => FixSyntax.WrapInTryCatchAsync(context.Document, statement, "System.Exception", SyntaxFactory.Block(), ct));
 
         return Task.CompletedTask;
-    }
-
-    private static async Task<Document> WrapInTryCatchAsync(
-        Document document,
-        StatementSyntax statement,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
-
-        var tryBlock = SyntaxFactory.Block(statement.WithoutLeadingTrivia());
-        var catchClause = SyntaxFactory.CatchClause(
-            SyntaxFactory.CatchDeclaration(
-                SyntaxFactory.ParseTypeName("System.Exception")),
-            null,
-            SyntaxFactory.Block());
-
-        var tryCatch = SyntaxFactory.TryStatement(
-                tryBlock,
-                SyntaxFactory.SingletonList(catchClause),
-                null)
-            .WithLeadingTrivia(statement.GetLeadingTrivia())
-            .WithTrailingTrivia(statement.GetTrailingTrivia());
-
-        var newRoot = root.ReplaceNode(statement, tryCatch);
-        return document.WithSyntaxRoot(newRoot);
     }
 }

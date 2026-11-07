@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -28,12 +27,7 @@ public sealed class OrderByFirstCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace with MinBy/MaxBy",
-                ct => ApplyFixAsync(context.Document, outerInvocation, ct),
-                nameof(OrderByFirstCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace with MinBy/MaxBy", nameof(OrderByFirstCodeFixProvider), ct => ApplyFixAsync(context.Document, outerInvocation, ct));
 
         return Task.CompletedTask;
     }

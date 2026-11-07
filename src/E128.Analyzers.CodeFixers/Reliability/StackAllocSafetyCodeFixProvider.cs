@@ -4,7 +4,6 @@ using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -36,12 +35,7 @@ public sealed class StackAllocSafetyCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Assign the buffer to a Span",
-                _ => Task.FromResult(ApplyFix(context.Document, root, pointerType)),
-                nameof(StackAllocSafetyCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Assign the buffer to a Span", nameof(StackAllocSafetyCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, pointerType)));
 
         return Task.CompletedTask;
     }

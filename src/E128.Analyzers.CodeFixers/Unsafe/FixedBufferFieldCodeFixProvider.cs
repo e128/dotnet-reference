@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -60,7 +59,7 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        var bufferStruct = BuildBufferStruct(field, bufferTypeName, size, GetIndent(field));
+        var bufferStruct = BuildBufferStruct(field, bufferTypeName, size, FixSyntax.LastIndentation(field.GetLeadingTrivia()));
         if (bufferStruct is null)
         {
             // The generated text did not parse. A stub would drop the attribute and the element
@@ -68,12 +67,7 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace with an inline array",
-                _ => Task.FromResult(ApplyFix(context.Document, root, field, type, bufferTypeName, bufferStruct)),
-                nameof(FixedBufferFieldCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace with an inline array", nameof(FixedBufferFieldCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, field, type, bufferTypeName, bufferStruct)));
     }
 
     private static Document ApplyFix(
@@ -104,13 +98,6 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
             MethodDeclarationSyntax method => string.Equals(method.Identifier.ValueText, name, StringComparison.Ordinal),
             _ => false,
         };
-    }
-
-    private static string GetIndent(FieldDeclarationSyntax field)
-    {
-        return field.GetLeadingTrivia()
-            .LastOrDefault(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia))
-            .ToFullString();
     }
 
     private static FieldDeclarationSyntax BuildField(

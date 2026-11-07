@@ -97,7 +97,7 @@ public sealed class ByteSizeUnwrapViaCastAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken)
     {
         var symbolInfo = model.GetSymbolInfo(memberAccess, cancellationToken);
-        return symbolInfo.Symbol is IPropertySymbol property && IsByteSizeType(property.ContainingType);
+        return symbolInfo.Symbol is IPropertySymbol property && ByteSizeType.Is(property.ContainingType);
     }
 
     private static bool IsNumericType(ITypeSymbol type)
@@ -109,12 +109,5 @@ public sealed class ByteSizeUnwrapViaCastAnalyzer : DiagnosticAnalyzer
             or SpecialType.System_Single
             or SpecialType.System_Double
             or SpecialType.System_Decimal;
-    }
-
-    private static bool IsByteSizeType(ITypeSymbol? type)
-    {
-        return type is not null
-               && string.Equals(type.Name, "ByteSize", StringComparison.Ordinal)
-               && string.Equals(type.ContainingNamespace?.ToString(), "Pug.Core.Classes", StringComparison.Ordinal);
     }
 }

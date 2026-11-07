@@ -4,7 +4,6 @@ using System.Composition;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Rename;
 
@@ -54,13 +53,8 @@ public sealed class MidNameUnderscoreCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Rename to '{newName}'",
-                ct => Renamer.RenameSymbolAsync(
-                    context.Document.Project.Solution, symbol, new SymbolRenameOptions(), newName, ct),
-                nameof(MidNameUnderscoreCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, $"Rename to '{newName}'", nameof(MidNameUnderscoreCodeFixProvider), ct => Renamer.RenameSymbolAsync(
+                    context.Document.Project.Solution, symbol, new SymbolRenameOptions(), newName, ct));
     }
 
     /// <summary>

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -46,12 +45,7 @@ public sealed class Utf8StringParseCodeFixProvider : E128CodeFixProviderBase
         var addProvider = diagnostic.Properties.TryGetValue(Utf8StringParseAnalyzer.AddProviderKey, out var value)
             && string.Equals(value, "true", System.StringComparison.Ordinal);
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Pass the UTF-8 bytes",
-                ct => RewriteAsync(context.Document, argument, getString, parseInvocation, addProvider, ct),
-                Utf8StringParseAnalyzer.DiagnosticId),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Pass the UTF-8 bytes", Utf8StringParseAnalyzer.DiagnosticId, ct => RewriteAsync(context.Document, argument, getString, parseInvocation, addProvider, ct));
 
         return Task.CompletedTask;
     }

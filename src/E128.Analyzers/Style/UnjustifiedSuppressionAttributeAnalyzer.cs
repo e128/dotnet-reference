@@ -90,7 +90,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzer : DiagnosticAnalyzer
         var attribute = (AttributeSyntax)context.Node;
 
         if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol is not IMethodSymbol constructor
-            || !IsCheckedType(checkedTypes, constructor.ContainingType))
+            || !MetadataTypes.Contains(checkedTypes, constructor.ContainingType))
         {
             return;
         }
@@ -101,18 +101,6 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsCheckedType(ImmutableArray<INamedTypeSymbol> checkedTypes, ITypeSymbol type)
-    {
-        foreach (var candidate in checkedTypes)
-        {
-            if (SymbolEqualityComparer.Default.Equals(candidate, type))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     private static bool HasJustification(AttributeSyntax attribute, SyntaxNodeAnalysisContext context)
     {
