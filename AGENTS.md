@@ -83,6 +83,17 @@ of what is portable versus Claude-only.
   ArchUnitNET enforce this.
 - Design order: Immutability > Memory > CPU > Parallelism. See
   `lode/practices.md` and `lode/coding-standards/solid.md`.
+- **Module depth.** Give each module a small interface that hides substantial
+  behavior. A module earns its place when deleting it would push its
+  complexity back onto callers. Merge a module away when deletion loses
+  nothing.
+- Put each concept in the one module that owns it. Keep special cases,
+  ordering rules, validation, and derived values inside. Callers must not know
+  them.
+- Shrink the interface to one obvious way to call it. Drop a parameter, flag,
+  or option when the module can derive it, every caller passes the same
+  value, or no caller reads it. Move every caller to the new shape and delete
+  the old path.
 - Never write these. Each compiles cleanly and produces incorrect or
   fragile code:
   - `DateTime.Now` or `DateTime.UtcNow` directly. Inject `TimeProvider`

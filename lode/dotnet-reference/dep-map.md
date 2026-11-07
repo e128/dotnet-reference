@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-01T20:55:18Z*
+*Updated: 2026-11-07T05:28:39Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -167,6 +167,7 @@ Versions are pinned centrally in `Directory.Packages.props`.
 | `Microsoft.Extensions.Diagnostics.Testing`       | Fake logger / time provider harness |
 | `Microsoft.Testing.Extensions.HangDump`          | Hang detection in CI              |
 | `Microsoft.Testing.Extensions.TrxReport`         | TRX report output                 |
+| `Microsoft.Testing.Extensions.CodeCoverage`      | In-process Cobertura coverage     |
 
 ---
 

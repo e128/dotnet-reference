@@ -68,6 +68,7 @@ public sealed class SyncLocalFunctionCallCodeFixProvider : E128CodeFixProviderBa
         }
 
         newRoot = SyncOverAsyncCodeFixProvider.PromoteContainingMethod(newRoot, insertedAwait);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Threading.Tasks");
 
         return document.WithSyntaxRoot(newRoot);
     }

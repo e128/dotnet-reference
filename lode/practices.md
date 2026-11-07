@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-06T13:22:50Z*
+*Updated: 2026-11-07T13:15:53Z*
 
 ## Design Principles
 
@@ -7,6 +7,9 @@
 - **SOLID principles.** Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion. Balance with YAGNI.
 - **Sealed by default.** All non-abstract classes must be sealed. Enforced by custom analyzer E128005 and ArchUnitNET architecture tests (`SealedClassTests`).
 - **Design trade-off priority.** When trade-offs arise: Immutability > Memory efficiency (`Span<T>`, `Memory<T>`) > CPU efficiency > Parallelism.
+- **Module depth.** Give each module a small interface that hides substantial behavior. A module earns its place when deleting it would push its complexity back onto callers. Merge a module away when deletion loses nothing.
+- **One owner per concept.** Put each concept in the one module that owns it. Keep special cases, ordering rules, validation, and derived values inside. Callers must not know them.
+- **One obvious call shape.** Shrink the interface until there is one obvious way to call it. Drop a parameter, flag, or option when the module can derive it, every caller passes the same value, or no caller reads it. Move every caller to the new shape and delete the old path.
 - **No backward compatibility.** Remove the obsolete path in the same change that replaces it. Never add a compatibility layer, a fallback, or a migration. This repository has no external consumers.
 - **Simplest implementation.** Build the smallest thing that fully meets the current requirement. No speculative abstraction, no interface with one implementation, no configuration for a value that never changes, no indirection.
 - **Long-term decisions.** Make an architectural decision for the long term. Never ship a stopgap for replacement later.

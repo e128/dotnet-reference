@@ -248,7 +248,7 @@ scripts/podman.sh stop
 # Or use podman compose directly
 podman compose up -d
 curl http://localhost:8080/health
-# → {"status":"healthy"}
+# → Healthy
 podman compose down
 ```
 

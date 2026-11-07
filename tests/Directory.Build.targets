@@ -1,0 +1,15 @@
+<Project>
+
+    <!-- A nearer Directory.Build.targets stops the root file from applying, so import it. -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+    <!-- In .targets, not .props: IsTestProject is only set once the .csproj body has been
+         evaluated. Test projects only, because the extension makes a project look like a
+         Microsoft.Testing.Platform app, and dotnet test then demands OutputType Exe. -->
+    <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+        <!-- Coverage collects in-process through the MTP extension, which works on macOS
+             arm64 where an out-of-process profiler never attaches. -->
+        <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    </ItemGroup>
+
+</Project>

@@ -3,6 +3,8 @@
         <File Path=".editorconfig" />
         <File Path=".gitignore" />
         <File Path=".globalconfig" />
+        <File Path="coverage-areas.json" />
+        <File Path="coverage.config.xml" />
         <File Path="CLAUDE.md" />
         <File Path="Directory.Build.props" />
         <File Path="Directory.Build.targets" />

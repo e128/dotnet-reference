@@ -35,11 +35,44 @@ jobs:
       - name: Format check
         run: dotnet format E128.Reference.slnx --verify-no-changes
 
-      - name: Build
+      - name: Build (Release)
         run: dotnet build E128.Reference.slnx --configuration Release -clp:ErrorsOnly
 
+      # Coverage collects in Debug. The Release build still validates Release
+      # compilation, and the in-process coverage extension avoids the
+      # ReadyToRun images that stall the analyzer test host.
+      - name: Build (Debug, coverage)
+        run: dotnet build E128.Reference.slnx --configuration Debug -clp:ErrorsOnly
+
+      - name: Install xmllint
+        run: command -v xmllint >/dev/null || (sudo apt-get update && sudo apt-get install -y libxml2-utils)
+
       - name: Test
-        run: dotnet test --solution E128.Reference.slnx --configuration Release --no-build -- --filter-trait "Category=CI"
+        run: |
+          dotnet test --solution E128.Reference.slnx \
+            --configuration Debug \
+            --no-build \
+            --filter-trait "Category=CI" \
+            --coverage \
+            --coverage-output-format cobertura \
+            --coverage-settings coverage.config.xml \
+            --results-directory ./test-results
+
+      - name: Gate: Coverage
+        run: bash scripts/coverage-areas.sh --min-line 80 --min-assembly 80
+
+      - name: Upload: Coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: ./test-results/
+          retention-days: 7
+
+      - name: Report: Coverage Summary
+        if: always()
+        continue-on-error: true
+        run: bash scripts/coverage-areas.sh --markdown >> "$GITHUB_STEP_SUMMARY"
 
   shellcheck:
     name: Shell Lint

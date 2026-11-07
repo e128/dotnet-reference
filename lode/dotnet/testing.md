@@ -1,5 +1,5 @@
 # .NET 10 Testing
-*Updated: 2026-11-04T22:19:26Z*
+*Updated: 2026-11-07T05:28:39Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -118,7 +118,7 @@ Minimal `.csproj` template (all versions from CPM):
 </Project>
 ```
 
-`Microsoft.Testing.Extensions.HangDump` and `Microsoft.Testing.Extensions.TrxReport` are added to projects that need hang diagnostics and TRX CI reporting.
+`Microsoft.Testing.Extensions.HangDump` and `Microsoft.Testing.Extensions.TrxReport` are added to projects that need hang diagnostics and TRX CI reporting. Every test project receives `Microsoft.Testing.Extensions.CodeCoverage` from `tests/Directory.Build.targets`. See [Code Coverage](code-coverage.md).
 
 ## Conventions
 
@@ -133,3 +133,4 @@ Minimal `.csproj` template (all versions from CPM):
 - [Project Structure](project-structure.md)
 - [Architecture Testing](architecture-testing.md)
 - [Analyzers](analyzers.md)
+- [Code Coverage](code-coverage.md)

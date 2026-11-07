@@ -104,9 +104,16 @@ public sealed class ProcessOutputValidatorCodeFixProvider : E128CodeFixProviderB
 
         var guard = BuildGuard(pathText, receiverText)
             .WithLeadingTrivia(waitStatement.GetLeadingTrivia())
+            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed)
             .WithAdditionalAnnotations(Formatter.Annotation);
 
         var newRoot = root.InsertNodesAfter(waitStatement, [guard]);
+        newRoot = UsingDirectives.AddIfMissing(newRoot, "System");
+        if (receiverText is null)
+        {
+            newRoot = UsingDirectives.AddIfMissing(newRoot, "System.IO");
+        }
+
         return document.WithSyntaxRoot(newRoot);
     }
 }

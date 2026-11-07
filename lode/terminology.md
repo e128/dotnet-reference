@@ -1,8 +1,9 @@
 # Terminology
-*Updated: 2026-11-03T01:04:17Z*
+*Updated: 2026-11-07T05:28:39Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **MTP**: Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.
+- **Cobertura**: An XML code coverage report format. The MTP coverage extension emits one Cobertura file per test module. See `lode/dotnet/code-coverage.md`.
 - **Lode**: Structured AI-owned markdown repository for persistent project knowledge. Lives in `lode/`.
 - **Plan**: A structured planning document set (`{name}-plan.md`, `{name}-context.md`, `{name}-tasks.md`) that lives in `plans/{name}/`.
 - **TDD**: Test-Driven Development. Red-Green-Refactor cycle.

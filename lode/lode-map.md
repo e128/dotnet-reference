@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-06T13:02:22Z*
+*Updated: 2026-11-07T05:28:39Z*
 
 ## Generated Docs
 
@@ -22,6 +22,7 @@
 
 - [project-structure.md](dotnet/project-structure.md): .NET 10 solution format, CPM, build props/targets, global.json
 - [testing.md](dotnet/testing.md): MTP, xUnit v3, test configuration, categories, conventions
+- [code-coverage.md](dotnet/code-coverage.md): In-process MTP coverage, Cobertura reports, area mapping, and the CI floors
 - [test-patterns.md](dotnet/test-patterns.md): Test family patterns (A-D), fake conventions, naming rules
 - [architecture-testing.md](dotnet/architecture-testing.md): ArchUnitNET structural invariant tests (layers, naming, sealed)
 - [analyzers.md](dotnet/analyzers.md): Deny-by-default strategy, analyzer packages, suppression policy

@@ -1,0 +1,17 @@
+{
+  "Analyzers": [
+    "E128.Analyzers"
+  ],
+  "Code Fixers": [
+    "E128.Analyzers.CodeFixers"
+  ],
+  "Reference Core": [
+    "E128.Reference.Core"
+  ],
+  "Reference CLI": [
+    "E128.Reference.Cli"
+  ],
+  "Reference Web": [
+    "E128.Reference.Web"
+  ]
+}

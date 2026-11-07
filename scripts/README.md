@@ -99,7 +99,8 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `runtime-matrix.sh`    | Runtime pinning matrix: SDK pin, per-project target frameworks, Docker base images (--json) |
 | `diagnostics.sh`       | Parse .NET build diagnostics into structured records (--group, --code ID, --diff OLD NEW, --json) |
 | `readme-table-diff.sh` | Detect drift between a README table and its source of truth                      |
-| `coverage-areas.sh`    | Test coverage heuristic by namespace/project                                    |
+| `coverage.sh`          | Run tests with in-process MTP coverage and build an HTML report                 |
+| `coverage-areas.sh`    | Report Cobertura coverage by feature area, with line and assembly gates         |
 | `session-health.sh`    | Session analytics: error trends, tool counts, bash commands                     |
 | `session-mine.sh`      | Mine Claude Code session transcripts for repeated patterns                      |
 | `violation-scan.sh`    | Scan for .NET anti-patterns and rule violations                                 |

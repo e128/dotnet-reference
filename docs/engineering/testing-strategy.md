@@ -90,4 +90,6 @@ var response = await client.GetAsync("/health");
 | `E128.Reference.Cli`  | Light — small surface                                                    |
 | Architecture      | Invariants (layering, naming, sealed-by-default) verified via IL analysis   |
 
-Estimate coverage by namespace with `scripts/coverage-areas.sh`.
+Measure real Cobertura coverage with `scripts/coverage.sh`. The CI gate requires
+80 percent line coverage in total and in every measured assembly. See
+`lode/dotnet/code-coverage.md` for the collection model and the gate options.
