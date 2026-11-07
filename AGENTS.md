@@ -66,6 +66,16 @@ of what is portable versus Claude-only.
   without a system-prompt-injection flag, read `prompts/SystemPrompt.txt`
   directly at session start. Its rules apply regardless of launch method.
 
+## Design Thinking
+
+Apply these questions before you settle a design, and again in review.
+
+- Exercise abstract thinking when considering this task.
+- Reduce this problem to its irreducible constraints and rebuild it from zero.
+- What would a principal architect immediately rewrite before even starting this?
+- Design the single test that breaks this design on day one.
+- What higher-level abstraction would make this entire problem disappear?
+
 ## .NET Development
 
 - C# idioms live in `.claude/rules/csharp-conventions.md`. Analyzer authoring

@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-07T05:28:39Z*
+*Updated: 2026-11-07T17:31:31Z*
 
 ## Generated Docs
 
@@ -31,6 +31,7 @@
 - [unsafe-code.md](dotnet/unsafe-code.md): No-unsafe-code policy, E128 rule coverage map, known gaps
 - [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes
 - [analyzer-candidates-external-sweep.md](dotnet/analyzer-candidates-external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
+- [analyzer-candidates-performance.md](dotnet/analyzer-candidates-performance.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
 
 ### dotnet/analyzers/
 
@@ -48,7 +49,8 @@
 - [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
 - [fips-rules.md](dotnet/analyzers/fips-rules.md): FIPS rule map, policy values, shared symbol and constant helpers
 - [rule-details.md](dotnet/analyzers/rule-details.md): Per-rule detection shape, exclusions, and code-fix behavior for the E128 rules
-- [rule-details-performance.md](dotnet/analyzers/rule-details-performance.md): Detection shape for the performance rules
+- [rule-details-performance.md](dotnet/analyzers/rule-details-performance.md): Detection shape for performance rules E128203 to E128210
+- [rule-details-performance-tier2.md](dotnet/analyzers/rule-details-performance-tier2.md): Detection shape for performance rules E128211 to E128217
 - [rule-details-reliability.md](dotnet/analyzers/rule-details-reliability.md): Detection shape for the reliability rules
 - [rule-details-reliability-concurrency.md](dotnet/analyzers/rule-details-reliability-concurrency.md): Detection shape for the async and concurrent reliability rules
 - [rule-details-reliability-resources.md](dotnet/analyzers/rule-details-reliability-resources.md): Detection shape for the resource lifetime and shared state rules

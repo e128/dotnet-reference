@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.4.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.5.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -64,7 +64,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128033 | Options class bound via `.Bind()` has init-only property                              | Yes      |
 | E128034 | Constructor `new`s a DI-registered type — inject via DI instead                       | Yes      |
 | E128035 | Concrete-type DI dependency without direct registration                               | Yes      |
-| E128037 | Unbounded `Task.WhenAll` over async `Select`                                          | Yes      |
+| E128037 | Unbounded `Task.WhenAll` over async `Select` or a `Task.Run` list                      | Yes      |
 | E128038 | `Task.WhenAll` async lambda missing `CancellationToken` propagation                   | Yes      |
 | E128039 | Catch filter must exclude `OperationCanceledException`                                | Yes      |
 | E128040 | Concurrency limit must be positive                                                    | Yes      |
@@ -163,6 +163,21 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128180 | Entity Framework Core query executed inside a loop                                                               | No       |
 | E128185 | Entity Framework Core SaveChanges inside a loop                                                                  | No       |
 | E128187 | Parallel.ForEachAsync without a degree cap (default: Info)                                                       | No       |
+| E128203 | HTTP request inside a loop creates N+1 round trips                                                               | No       |
+| E128204 | Database command inside a loop runs one round trip per iteration                                                 | No       |
+| E128205 | Collection filled in a loop has a known final count                                                              | Yes      |
+| E128206 | Empty loop body spins the CPU                                                                                    | No       |
+| E128207 | Reflection lookup inside a loop                                                                                  | No       |
+| E128208 | `ContainsKey` then indexer on a `ConcurrentDictionary`                                                           | No       |
+| E128209 | `GetBytes(...).Length` inside a loop allocates a byte array for its length                                       | Yes      |
+| E128210 | `new Regex` inside a loop with a loop-invariant pattern                                                          | No       |
+| E128211 | `Task.Delay` in a loop has no cancellation token                                                                | No       |
+| E128212 | `ToCharArray` result used only for indexing or iteration                                                        | No       |
+| E128213 | `Activator.CreateInstance` inside a loop                                                                        | No       |
+| E128214 | HTTP handler does not enable automatic decompression                                                            | No       |
+| E128215 | `StringBuilder` created without capacity for a known append count                                               | No       |
+| E128216 | Unbounded channel can grow without limit                                                                        | No       |
+| E128217 | Large struct passed by value                                                                                    | No       |
 
 ### Security
 
@@ -571,6 +586,8 @@ Flags `Task.Run(async () => ...)`. For I/O-bound work, the thread pool hop is un
 ### E128037 &mdash; Unbounded Task.WhenAll
 
 Flags `Task.WhenAll(items.Select(async ...))` where the collection is unbounded. This fans out unlimited concurrent operations. Use `Parallel.ForEachAsync` or batch with a `SemaphoreSlim`.
+
+The rule also flags a `Task.Run` call added to a task list inside a loop, then awaited with `Task.WhenAll`. That is the same unbounded fan-out with a different syntax. A `SemaphoreSlim.WaitAsync` throttle in the `Task.Run` lambda clears the report. A `Task.WaitAsync` timeout does not. A loop with a numeric literal bound clears the report, because its fan-out is bounded.
 
 ### E128038 &mdash; Task.WhenAll missing CancellationToken
 
@@ -2759,6 +2776,246 @@ E128195 reads the `appsettings*.json` files that the project passes through `Add
   <AdditionalFiles Include="appsettings.Development.json" />
 </ItemGroup>
 ```
+
+### E128203: HTTP request inside a loop
+
+Flags an `HttpClient` request call inside a loop body. Each iteration pays a
+network round trip, which is the N+1 request shape. The rule does not require an
+`await`, because the round trip is paid either way.
+
+The rule reads `SendAsync`, `GetAsync`, `PostAsync`, `PutAsync`, `DeleteAsync`,
+and `PatchAsync`. The receiver must derive from `HttpClient`.
+
+Exclusions:
+- A `for` loop with a numeric literal bound.
+- A request in a loop header, which runs once.
+- A loop body that calls `Task.Delay` or `Thread.Sleep`, which marks a retry or
+  poll loop.
+- A lambda or local function body.
+
+No code fix. The batch contract is application policy.
+
+### E128204: Database command inside a loop
+
+Flags a `DbCommand` execution inside a loop body. Each iteration pays a database
+round trip. The rule does not require an `await`, because the round trip is paid
+either way.
+
+The rule reads `ExecuteNonQueryAsync`, `ExecuteScalarAsync`, and
+`ExecuteReaderAsync`. The receiver must derive from `DbCommand`. E128093 owns the
+synchronous method shape, so this rule does not report it.
+
+Exclusions:
+- A `for` loop with a numeric literal bound.
+- A call in a loop header.
+- A loop body that calls `Task.Delay` or `Thread.Sleep`.
+
+No code fix. The batch boundary depends on the transaction scope.
+
+### E128205: Collection filled in a loop with a known count
+
+Flags a `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `Queue<T>`, or `Stack<T>`
+created with no capacity, when the next statement fills it in a loop with a
+known count.
+
+```csharp
+List<int> result = new();
+foreach (int item in source)
+{
+    result.Add(item);
+}
+```
+
+The fix passes the count to the constructor:
+
+```csharp
+List<int> result = new(source.Count);
+```
+
+The loop must be the next statement. The count comes from the `foreach` source
+or from a `Count` or `Length` bound in a `for` condition. The source expression
+must be a chain of names, not a call, so the fix never runs it twice. The
+resolved type must expose a public `(int)` constructor, so `SortedSet<T>` and
+`SortedDictionary<K,V>` stay silent.
+
+Exclusions:
+- A loop with a `break` that exits this loop. A break inside a nested loop or a
+  `switch` section does not count.
+- A collection that is not filled by the type's own fill method, which is `Add`,
+  `Enqueue`, or `Push`.
+- A capacity already set in an object initializer.
+
+### E128206: Empty loop body
+
+Flags a `while` or `do` loop with an empty body. The loop spins a core until
+another thread changes the condition.
+
+The rule stays silent when the condition calls a method. A `while (reader.Read())`
+loop does its work in the condition, so it is not a spin.
+
+No code fix. The signal type is a caller decision.
+
+### E128207: Reflection lookup inside a loop
+
+Flags a `System.Type` member lookup inside a loop body. The lookup walks metadata
+and allocates on every iteration.
+
+The rule reads `GetProperty`, `GetMethod`, `GetField`, `GetMember`,
+`GetConstructor`, `GetEvent`, `GetNestedType`, and `GetInterface`.
+
+Exclusions:
+- A lookup that references a loop variable, as in `item.GetType()`. The receiver
+  changes per iteration, so a hoist is wrong.
+- A `for` loop with a literal bound.
+- A lookup outside a loop. E128090 owns test methods.
+
+No code fix. The hoisted declaration needs a caller-chosen name.
+
+### E128208: `ContainsKey` then indexer on a `ConcurrentDictionary`
+
+Flags `map.ContainsKey(key)` as the condition of an `if` that then reads
+`map[key]`. The pair does two lookups and races with a concurrent writer that
+removes the key between them.
+
+Use `TryGetValue`:
+
+```csharp
+return map.TryGetValue(key, out int value) ? value : 0;
+```
+
+The rule reads `ConcurrentDictionary<TKey,TValue>` only. CA1854 covers
+`Dictionary<K,V>`.
+
+No code fix. The replacement depends on the `if` body and the fallback value.
+
+### E128209: `GetBytes` length inside a loop
+
+Flags `Encoding.GetBytes(value).Length` inside a loop body. The call allocates a
+byte array only to read its length. `GetByteCount` returns the same number with
+no allocation.
+
+The fix rewrites `Encoding.UTF8.GetBytes(value).Length` to
+`Encoding.UTF8.GetByteCount(value)`. The receiver must derive from `Encoding`.
+
+No exclusion beyond the loop and the `.Length` use.
+
+### E128210: `new Regex` inside a loop
+
+Flags a `Regex` construction inside a loop body. Each iteration compiles the
+pattern.
+
+The rule reads every `Regex` construction inside a loop body, including a
+constant pattern. The creation must not reference a value that changes per
+iteration, because a hoist is then wrong. A local declared in the loop body and
+a call inside the pattern both count as per-iteration values.
+
+No code fix. The hoisted field name and the `GeneratedRegex` shape are caller
+choices.
+
+### E128211: `Task.Delay` in a loop without a token
+
+Flags `Task.Delay` inside a loop body when the resolved overload has no
+`CancellationToken` parameter. The wait does not observe cancellation.
+
+A `Task.Delay(delay, cancellationToken)` call stays silent. So does a loop whose
+condition reads a `CancellationToken`, such as
+`while (!token.IsCancellationRequested)`. `Thread.Sleep` is not this rule.
+
+No code fix. The token source is a caller decision.
+
+### E128212: `ToCharArray` used only to index or iterate
+
+Flags `string.ToCharArray()` when the result is the direct `foreach` source or
+the receiver of an element access. The copy serves no purpose because indexing
+and iteration work on the string directly.
+
+```csharp
+foreach (char c in value.ToCharArray())
+```
+
+An array assigned to a local or passed to a method stays silent.
+
+No code fix. The span or direct-index shape is a caller choice.
+
+### E128213: `Activator.CreateInstance` inside a loop
+
+Flags `Activator.CreateInstance` inside a loop body. Reflection runs on every
+iteration.
+
+A `for` loop with a literal bound stays silent, because the total work is
+bounded.
+
+No code fix. The cached factory shape is a caller decision.
+
+### E128214: HTTP handler without automatic decompression
+
+Flags `new HttpClientHandler()` and `new SocketsHttpHandler()` when neither the
+object initializer nor a later assignment on the same local sets
+`AutomaticDecompression`. The default is `DecompressionMethods.None`, so a
+compressed response stays compressed.
+
+```csharp
+new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All }
+```
+
+A derived handler type stays silent because its constructor may set the property.
+A field or property initializer stays silent, because a constructor can set the
+property later.
+
+Automatic decompression decodes any response the handler reads. Enable it for
+trusted origins, and cap the response size or stream with a byte limit when the
+origin is untrusted.
+
+No code fix. The decompression method set is a caller decision.
+
+### E128215: `StringBuilder` without capacity for a known append count
+
+Flags `new StringBuilder()` with no arguments when the next statement is a loop
+that calls `Append` or `AppendLine` on the builder and the loop count is known.
+The builder grows and copies its buffer as it fills.
+
+The count comes from the `foreach` source or a `Count` or `Length` bound in a
+`for` condition. The source expression must be a chain of names, not a call.
+
+A loop with a `break` that exits this loop stays silent, because it can stop
+early. A break inside a nested loop or a `switch` section does not count. An
+append inside a lambda or local function does not run during the loop, so it
+does not count. A constructor with a capacity or an initial string stays silent,
+and so does a capacity set in an object initializer.
+
+No code fix. The capacity value is an estimate.
+
+### E128216: Unbounded channel
+
+Flags `Channel.CreateUnbounded<T>()` and
+`Channel.CreateUnboundedPrioritized<T>()`. An unbounded channel grows without
+limit when producers outrun consumers.
+
+Use `Channel.CreateBounded<T>(capacity)` when the producer rate is not bounded.
+
+No code fix. The capacity and full-mode policy are caller decisions.
+
+### E128217: Large struct passed by value
+
+Flags a parameter of a source-declared struct larger than 24 bytes, passed by
+value. Each call copies the whole struct.
+
+The size sums instance fields. A reference or pointer field counts as 8 bytes.
+The rule handles fixed buffers, inline arrays, nullable structs, and enums.
+SIMD and `System.Numerics` types stay silent.
+
+The message reports a lower bound, because the estimate ignores padding. A
+self-referential or deeply nested struct stops at a fixed depth instead of
+recursing without end.
+
+Exclusions:
+- An `in`, `ref`, `out`, `params`, or `this` parameter.
+- An override, an interface declaration, or an interface implementation, where
+  the signature is fixed.
+- A struct declared outside the current compilation, such as a framework type.
+- An explicit-layout struct, whose fields overlap.
+
+No code fix. The `in` modifier or a class change is a caller decision.
 
 ## Requirements
 

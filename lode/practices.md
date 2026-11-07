@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-07T13:15:53Z*
+*Updated: 2026-11-07T16:21:28Z*
 
 ## Design Principles
 
@@ -39,6 +39,8 @@ See [AGENTS.md](../AGENTS.md) for the always-loaded subset.
 - No time estimates
 - Ask a question only when a decision is materially ambiguous, risky, or needs
   approval. Otherwise pick the sensible default and state the choice.
+- Design questions: apply the five prompts in the AGENTS.md Design Thinking
+  section before settling a design, and again in review.
 - Every question uses the `AskUserQuestion` tool, never inline text. Give
   discrete options, never an open-ended question.
 - Written artifacts follow Simplified Technical English (STE). Scope, word

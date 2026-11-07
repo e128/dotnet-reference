@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
@@ -16,7 +17,9 @@ internal static class AnalyzerTestRunner
         DiagnosticResult[]? expected = null,
         ReferenceAssemblies? references = null,
         MarkupOptions markupOptions = MarkupOptions.None,
-        (string Name, string Content)? analyzerConfig = null)
+        (string Name, string Content)? analyzerConfig = null,
+        CompilerDiagnostics? compilerDiagnostics = null,
+        bool allowUnsafe = false)
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
         var test = new CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>
@@ -25,6 +28,19 @@ internal static class AnalyzerTestRunner
             ReferenceAssemblies = references ?? ReferenceAssemblies.Net.Net100,
             MarkupOptions = markupOptions
         };
+
+        if (compilerDiagnostics is { } diagnostics)
+        {
+            test.CompilerDiagnostics = diagnostics;
+        }
+
+        if (allowUnsafe)
+        {
+            test.SolutionTransforms.Add((solution, projectId) =>
+                solution.GetProject(projectId)?.CompilationOptions is CSharpCompilationOptions options
+                    ? solution.WithProjectCompilationOptions(projectId, options.WithAllowUnsafe(true))
+                    : solution);
+        }
 
         if (analyzerConfig is { } config)
         {

@@ -1,3 +1,25 @@
+## Release 2.5.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128203 | Performance | Warning | HTTP request inside a loop creates N+1 round trips
+E128204 | Performance | Warning | Database command inside a loop runs one round trip per iteration
+E128205 | Performance | Warning | Collection filled in a loop has a known final count
+E128206 | Performance | Warning | Empty loop body spins the CPU
+E128207 | Performance | Warning | Reflection lookup inside a loop
+E128208 | Performance | Warning | Concurrent dictionary lookup done twice
+E128209 | Performance | Warning | `GetBytes(...).Length` inside a loop allocates a byte array
+E128210 | Performance | Warning | Regex instance created inside a loop
+E128211 | Performance | Warning | `Task.Delay` in a loop has no cancellation token
+E128212 | Performance | Warning | `ToCharArray` result used only for indexing or iteration
+E128213 | Performance | Warning | `Activator.CreateInstance` inside a loop
+E128214 | Performance | Warning | HTTP handler does not enable automatic decompression
+E128215 | Performance | Warning | `StringBuilder` created without capacity for a known append count
+E128216 | Performance | Warning | Unbounded channel can grow without limit
+E128217 | Performance | Warning | Large struct passed by value
+
 ## Release 2.4.0
 
 ### New Rules
