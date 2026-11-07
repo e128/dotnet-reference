@@ -53,7 +53,7 @@
 - [x] `src/E128.Analyzers/Reliability/HttpClientInfiniteTimeoutAnalyzer.cs:166` Comment calls an exact match a tolerance. Fix: correct the comment or use `==`. Severity: Low. Source: code-reviewer
 - [x] `src/E128.Analyzers/Reliability/SubstringLengthUnderflowAnalyzer.cs:659` Local named `days` in a substring-count rule. Fix: rename to `subtracted`. Severity: Low. Source: code-reviewer
 - [x] `src/E128.Analyzers/Reliability/TaskCompletionSourceOptionsAnalyzer.cs:240` Options type matched by bare name. Fix: namespace check through `FipsSymbolHelpers.IsType`. Severity: Low. Source: code-reviewer
-- [x] `src/E128.Analyzers/_._` Stray zero-byte file. Fix: delete. Severity: Low. Source: code-reviewer
+- [x] `src/E128.Analyzers/_._` Stray zero-byte file. Fix: delete. Severity: Low. Source: code-reviewer. Reverted: the file is the required `lib/netstandard2.0` NuGet placeholder and is referenced by the csproj. Deleting it broke `dotnet pack`.
 - [x] `src/E128.Analyzers/Security/SensitiveLogArgumentAnalyzer.cs:335` and `TimingSafeComparisonAnalyzer.cs:410` SplitWords duplicated. Fix: one shared implementation with separators as input. Severity: Low. Source: code-reviewer
 - [x] `tests/E128.Analyzers.Tests/CaptiveDependencyAnalyzerTests.cs:11` Same DI package pinned 10.0.6 and 10.0.14 in one file. Fix: one version across files. Severity: Low. Source: code-reviewer
 - [x] `tests/E128.Analyzers.Tests/ComplexityCeilingE128AnalyzerTests.cs:297` vs `ConditionalDirectiveCeilingAnalyzerTests.cs:703` Same option mechanism attached via `.editorconfig` and `.globalconfig`. Fix: one spelling. Severity: Low. Source: code-reviewer
