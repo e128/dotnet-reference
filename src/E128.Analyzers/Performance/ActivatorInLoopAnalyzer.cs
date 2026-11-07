@@ -33,17 +33,11 @@ public sealed class ActivatorInLoopAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(startContext =>
-        {
-            var activator = startContext.Compilation.GetTypeByMetadataName("System.Activator");
-            if (activator is null)
-            {
-                return;
-            }
-
-            startContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, activator),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                startContext,
+                "System.Activator",
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol activator)

@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-11-04T21:29:18Z*
+*Updated: 2026-11-07T18:08:42Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 The emitted text rules live in [code-fix-output.md](code-fix-output.md). The
@@ -49,7 +49,9 @@ Availability requires. When no such API exists, report without a fix.
 ## Add a Using Directive
 
 Use `UsingDirectives.AddIfMissing(root, namespaceName)` from
-`src/E128.Analyzers/UsingDirectives.cs`. Do not write a local helper.
+`src/E128.Analyzers.CodeFixers/UsingDirectives.cs`. Do not write a local helper.
+Call `UsingDirectives.EnsureAddedAsync(document, namespaceName, cancellationToken)`
+when the fix holds a document and needs the root fetch.
 
 The helper skips the namespace when an exact-name using is already present.
 Otherwise it inserts the directive after the last directive that sorts before it,

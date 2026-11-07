@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -33,12 +32,7 @@ public sealed class CollectionMutationInEnumerationCodeFixProvider : E128CodeFix
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Iterate a copy",
-                ct => MaterializeAsync(context.Document, forEach, ct),
-                nameof(CollectionMutationInEnumerationCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Iterate a copy", nameof(CollectionMutationInEnumerationCodeFixProvider), ct => MaterializeAsync(context.Document, forEach, ct));
 
         return Task.CompletedTask;
     }

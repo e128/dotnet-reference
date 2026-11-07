@@ -4,7 +4,6 @@ using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,12 +37,7 @@ public sealed class DllImportToLibraryImportCodeFixProvider : E128CodeFixProvide
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use LibraryImport",
-                _ => Task.FromResult(ApplyFix(context.Document, root, attribute, method)),
-                nameof(DllImportToLibraryImportCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Use LibraryImport", nameof(DllImportToLibraryImportCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, attribute, method)));
     }
 
     private static Document ApplyFix(

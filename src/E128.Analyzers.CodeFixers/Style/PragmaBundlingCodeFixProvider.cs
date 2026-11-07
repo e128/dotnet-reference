@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,12 +30,7 @@ public sealed class PragmaBundlingCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Split into separate pragma directives",
-                ct => SplitPragmaAsync(context.Document, diagnostic.Location, ct),
-                nameof(PragmaBundlingCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Split into separate pragma directives", nameof(PragmaBundlingCodeFixProvider), ct => SplitPragmaAsync(context.Document, diagnostic.Location, ct));
 
         return Task.CompletedTask;
     }
@@ -95,7 +89,10 @@ public sealed class PragmaBundlingCodeFixProvider : E128CodeFixProviderBase
         var directives = new List<PragmaWarningDirectiveTriviaSyntax>(ids.Count);
         foreach (var id in ids)
         {
-            directives.Add(BuildSingleIdPragma(id));
+            directives.Add(PragmaDirectives.Build(
+                SyntaxKind.DisableKeyword,
+                SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
+                    SyntaxFactory.IdentifierName(id).WithLeadingTrivia(SyntaxFactory.Space))));
         }
 
         var tail = CollectTail(pragma);
@@ -168,16 +165,4 @@ public sealed class PragmaBundlingCodeFixProvider : E128CodeFixProviderBase
         return SyntaxFactory.TriviaList(result);
     }
 
-    private static PragmaWarningDirectiveTriviaSyntax BuildSingleIdPragma(string diagnosticId)
-    {
-        return SyntaxFactory.PragmaWarningDirectiveTrivia(
-            SyntaxFactory.Token(SyntaxKind.HashToken),
-            SyntaxFactory.Token(SyntaxKind.PragmaKeyword).WithLeadingTrivia(SyntaxFactory.Space),
-            SyntaxFactory.Token(SyntaxKind.WarningKeyword).WithLeadingTrivia(SyntaxFactory.Space),
-            SyntaxFactory.Token(SyntaxKind.DisableKeyword).WithLeadingTrivia(SyntaxFactory.Space),
-            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
-                SyntaxFactory.IdentifierName(diagnosticId).WithLeadingTrivia(SyntaxFactory.Space)),
-            SyntaxFactory.Token(SyntaxKind.EndOfDirectiveToken).WithTrailingTrivia(SyntaxFactory.LineFeed),
-            true);
-    }
 }

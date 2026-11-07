@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -39,12 +38,7 @@ public sealed class ProcessStartInfoArgumentCodeFixProvider : E128CodeFixProvide
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use ArgumentList instead of Arguments",
-                ct => ReplaceWithArgumentListAsync(context.Document, assignment, tokens, ct),
-                nameof(ProcessStartInfoArgumentCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Use ArgumentList instead of Arguments", nameof(ProcessStartInfoArgumentCodeFixProvider), ct => ReplaceWithArgumentListAsync(context.Document, assignment, tokens, ct));
 
         return Task.CompletedTask;
     }

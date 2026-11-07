@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -30,12 +29,7 @@ public sealed class CollectionPathCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Change collection type argument to " + suggestedType,
-                ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct),
-                nameof(CollectionPathCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Change collection type argument to " + suggestedType, nameof(CollectionPathCodeFixProvider), ct => ApplyFixAsync(context.Document, root, diagnostic, suggestedType, ct));
 
         return Task.CompletedTask;
     }

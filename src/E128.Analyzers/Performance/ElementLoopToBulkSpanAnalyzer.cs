@@ -244,7 +244,7 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
                 element = array.ElementType;
                 return true;
             case INamedTypeSymbol named
-                when SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, spanType):
+                when TypeSymbols.MatchesOriginalDefinition(named, spanType):
                 element = named.TypeArguments[0];
                 isSpan = true;
                 return true;

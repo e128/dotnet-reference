@@ -57,7 +57,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (!IsTaskWhenAll(context, invocation, taskType))
+        if (!TaskWhenAllCalls.IsWhenAll(context, invocation, taskType))
         {
             return;
         }
@@ -209,28 +209,6 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static bool IsTaskWhenAll(
-        SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        INamedTypeSymbol taskType)
-    {
-        var methodName = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
-
-        if (!string.Equals(methodName, "WhenAll", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
-        return symbol is IMethodSymbol method
-               && SymbolEqualityComparer.Default.Equals(method.ContainingType, taskType);
     }
 
     private static bool TryGetSelectInvocation(ExpressionSyntax expression, [NotNullWhen(true)] out InvocationExpressionSyntax? selectInvocation)

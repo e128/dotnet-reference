@@ -43,36 +43,11 @@ internal static partial class FipsSymbolHelpers
     public static string? FullName(ITypeSymbol? type) =>
         type?.ToDisplayString(FullyQualifiedNoGlobal);
 
-    /// <summary>Returns true when the namespace chain equals <paramref name="dotted" />, such as <c lang="csharp">System.Net</c>.</summary>
-    public static bool NamespaceEquals(INamespaceSymbol? ns, string dotted)
-    {
-        var end = dotted.Length;
-        for (; ns is not null && !ns.IsGlobalNamespace; ns = ns.ContainingNamespace)
-        {
-            if (end < 0)
-            {
-                return false;
-            }
-
-            var dot = end > 0 ? dotted.LastIndexOf('.', end - 1) : -1;
-            var start = dot + 1;
-            var length = end - start;
-            if (ns.Name.Length != length || string.CompareOrdinal(ns.Name, 0, dotted, start, length) != 0)
-            {
-                return false;
-            }
-
-            end = dot;
-        }
-
-        return end < 0;
-    }
-
     /// <summary>Returns true when <paramref name="type" /> is a top-level type with the given name and namespace.</summary>
     public static bool IsType(ITypeSymbol? type, string name, string dottedNamespace) =>
         type is INamedTypeSymbol { ContainingType: null } named &&
         string.Equals(named.Name, name, StringComparison.Ordinal) &&
-        NamespaceEquals(named.ContainingNamespace, dottedNamespace);
+        Namespaces.Equals(named.ContainingNamespace, dottedNamespace);
 
     public static bool IsCryptographyType(ITypeSymbol? type, string name) =>
         IsType(type, name, Cryptography);
@@ -81,10 +56,10 @@ internal static partial class FipsSymbolHelpers
     public static bool IsCryptographyType(ITypeSymbol? type, ImmutableHashSet<string> names) =>
         type is INamedTypeSymbol { ContainingType: null } named &&
         names.Contains(named.Name) &&
-        NamespaceEquals(named.ContainingNamespace, Cryptography);
+        Namespaces.Equals(named.ContainingNamespace, Cryptography);
 
     public static bool IsInCryptographyNamespace(ITypeSymbol? type) =>
-        type is INamedTypeSymbol named && NamespaceEquals(named.ContainingNamespace, Cryptography);
+        type is INamedTypeSymbol named && Namespaces.Equals(named.ContainingNamespace, Cryptography);
 
     /// <summary>
     ///     Returns true when the type sits in System.Security.Cryptography or one of its child namespaces,
@@ -99,7 +74,7 @@ internal static partial class FipsSymbolHelpers
 
         for (var ns = named.ContainingNamespace; ns is not null && !ns.IsGlobalNamespace; ns = ns.ContainingNamespace)
         {
-            if (NamespaceEquals(ns, Cryptography))
+            if (Namespaces.Equals(ns, Cryptography))
             {
                 return true;
             }

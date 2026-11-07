@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -34,12 +33,7 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : E128CodeFixPr
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add HttpCompletionOption.ResponseHeadersRead",
-                ct => InsertResponseHeadersReadAsync(context.Document, invocation, ct),
-                nameof(HttpClientResponseHeadersReadCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add HttpCompletionOption.ResponseHeadersRead", nameof(HttpClientResponseHeadersReadCodeFixProvider), ct => InsertResponseHeadersReadAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

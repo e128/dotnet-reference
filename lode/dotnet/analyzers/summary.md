@@ -1,5 +1,5 @@
 # Analyzers Summary
-*Updated: 2026-11-06T15:25:45Z*
+*Updated: 2026-11-07T18:08:42Z*
 
 `src/E128.Analyzers` holds every E128 Roslyn rule. `src/E128.Analyzers.CodeFixers`
 holds the fix providers. The analyzer assembly targets `netstandard2.0` and
@@ -21,6 +21,7 @@ can repair.
 | Which edit API do I use?                         | [code-fix-techniques.md](code-fix-techniques.md)  |
 | How is the package built and packed?             | [package-layout.md](package-layout.md)            |
 | Which buffer rules exist?                        | [pooled-buffer-rules.md](pooled-buffer-rules.md)  |
+| Which shared helper answers this?                | [shared-helpers.md](shared-helpers.md)            |
 | Which rules are disabled as redundant?           | [redundant-rules.md](redundant-rules.md)          |
 | What is the FIPS policy set?                     | [fips-rules.md](fips-rules.md)                    |
 

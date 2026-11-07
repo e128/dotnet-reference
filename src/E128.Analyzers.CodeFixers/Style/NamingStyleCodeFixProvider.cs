@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Rename;
 
@@ -70,13 +69,8 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Rename to '{suggestedName}'",
-                ct => RenameSymbolAsync(
-                    context.Document.Project.Solution, symbol, suggestedName, ct),
-                nameof(NamingStyleCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, $"Rename to '{suggestedName}'", nameof(NamingStyleCodeFixProvider), ct => RenameSymbolAsync(
+                    context.Document.Project.Solution, symbol, suggestedName, ct));
     }
 
     private static Task<Solution> RenameSymbolAsync(

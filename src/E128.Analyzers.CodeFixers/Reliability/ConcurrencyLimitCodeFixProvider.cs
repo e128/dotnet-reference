@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -34,12 +33,7 @@ public sealed class ConcurrencyLimitCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace 0 with Environment.ProcessorCount",
-                ct => ApplyFixAsync(context.Document, zeroLiteral, ct),
-                nameof(ConcurrencyLimitCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace 0 with Environment.ProcessorCount", nameof(ConcurrencyLimitCodeFixProvider), ct => ApplyFixAsync(context.Document, zeroLiteral, ct));
 
         return Task.CompletedTask;
     }

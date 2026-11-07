@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -67,12 +66,7 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use RandomNumberGenerator.GetInt32",
-                ct => Task.FromResult(Replace(context.Document, root, invocation, replacement)),
-                "UseGetInt32"),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Use RandomNumberGenerator.GetInt32", "UseGetInt32", ct => Task.FromResult(Replace(context.Document, root, invocation, replacement)));
     }
 
     private static Document Replace(

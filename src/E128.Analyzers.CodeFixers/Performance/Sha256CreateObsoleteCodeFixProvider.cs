@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,12 +30,7 @@ public sealed class Sha256CreateObsoleteCodeFixProvider : E128CodeFixProviderBas
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use SHA256.HashData()",
-                ct => RewriteToHashDataAsync(context.Document, createInvocation, ct),
-                nameof(Sha256CreateObsoleteCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Use SHA256.HashData()", nameof(Sha256CreateObsoleteCodeFixProvider), ct => RewriteToHashDataAsync(context.Document, createInvocation, ct));
 
         return Task.CompletedTask;
     }

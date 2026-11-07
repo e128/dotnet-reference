@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -45,12 +44,7 @@ public sealed class ElementLoopToBulkSpanCodeFixProvider : E128CodeFixProviderBa
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use Span." + match.BulkMethod,
-                _ => Task.FromResult(ApplyFix(context.Document, root, forStatement, match)),
-                nameof(ElementLoopToBulkSpanCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Use Span." + match.BulkMethod, nameof(ElementLoopToBulkSpanCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, forStatement, match)));
     }
 
     private static Document ApplyFix(

@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -33,12 +32,7 @@ public sealed class RedundantHashSetInFrozenSetCodeFixProvider : E128CodeFixProv
                 continue;
             }
 
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Remove intermediate HashSet",
-                    ct => RemoveHashSetAsync(context.Document, root, invocation, ct),
-                    "RemoveRedundantHashSet"),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, "Remove intermediate HashSet", "RemoveRedundantHashSet", ct => RemoveHashSetAsync(context.Document, root, invocation, ct));
         }
     }
 

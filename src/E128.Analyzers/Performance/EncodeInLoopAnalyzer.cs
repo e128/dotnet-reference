@@ -33,17 +33,11 @@ public sealed class EncodeInLoopAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(startContext =>
-        {
-            var encoding = startContext.Compilation.GetTypeByMetadataName("System.Text.Encoding");
-            if (encoding is null)
-            {
-                return;
-            }
-
-            startContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, encoding),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                startContext,
+                "System.Text.Encoding",
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol encoding)

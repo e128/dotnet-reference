@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -30,12 +29,7 @@ public sealed class DynamicallyAccessedMembersGuardCodeFixProvider : E128CodeFix
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove [DynamicallyAccessedMembers] attribute",
-                ct => RemoveAttributeAsync(context.Document, attribute, ct),
-                nameof(DynamicallyAccessedMembersGuardCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove [DynamicallyAccessedMembers] attribute", nameof(DynamicallyAccessedMembersGuardCodeFixProvider), ct => RemoveAttributeAsync(context.Document, attribute, ct));
 
         return Task.CompletedTask;
     }

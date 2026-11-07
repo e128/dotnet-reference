@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -62,12 +61,7 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
                     SyntaxFactory.Argument(operands.Right.WithoutTrivia())
                 ])));
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Compare in fixed time",
-                ct => ReplaceAsync(context.Document, invocation, replacement, ct),
-                nameof(TimingSafeComparisonCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Compare in fixed time", nameof(TimingSafeComparisonCodeFixProvider), ct => ReplaceAsync(context.Document, invocation, replacement, ct));
     }
 
     /// <summary>

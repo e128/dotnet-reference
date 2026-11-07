@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -40,12 +39,7 @@ public sealed class MemoryMarshalNonBlittableCodeFixProvider : E128CodeFixProvid
 
         var source = invocation.ArgumentList.Arguments[0].Expression;
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Compare the first byte",
-                _ => Task.FromResult(ApplyFix(context.Document, root, invocation, source)),
-                nameof(MemoryMarshalNonBlittableCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Compare the first byte", nameof(MemoryMarshalNonBlittableCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, invocation, source)));
 
         return Task.CompletedTask;
     }

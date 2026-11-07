@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -42,12 +41,7 @@ public sealed class LinearLookupInLoopCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Convert to HashSet<T> for O(1) lookup",
-                ct => ApplyToHashSetFixAsync(context.Document, invocation, memberAccess, ct),
-                nameof(LinearLookupInLoopCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Convert to HashSet<T> for O(1) lookup", nameof(LinearLookupInLoopCodeFixProvider), ct => ApplyToHashSetFixAsync(context.Document, invocation, memberAccess, ct));
 
         return Task.CompletedTask;
     }
@@ -93,7 +87,7 @@ public sealed class LinearLookupInLoopCodeFixProvider : E128CodeFixProviderBase
         editor.ReplaceNode(invocation, newInvocation);
 
         var newDocument = editor.GetChangedDocument();
-        return await EnsureUsingDirectiveAsync(newDocument, "System.Linq", cancellationToken).ConfigureAwait(false);
+        return await UsingDirectives.EnsureAddedAsync(newDocument, "System.Linq", cancellationToken).ConfigureAwait(false);
     }
 
     private static LocalDeclarationStatementSyntax BuildToHashSetDeclaration(
@@ -155,15 +149,5 @@ public sealed class LinearLookupInLoopCodeFixProvider : E128CodeFixProviderBase
         }
 
         return null;
-    }
-
-    private static async Task<Document> EnsureUsingDirectiveAsync(
-        Document document,
-        string namespaceName,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-
-        return root is null ? document : document.WithSyntaxRoot(UsingDirectives.AddIfMissing(root, namespaceName));
     }
 }

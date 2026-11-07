@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -40,12 +39,7 @@ public sealed class TimeSpanForDurationCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Change type to TimeSpan",
-                ct => ApplyFixAsync(context.Document, root, node, ct),
-                nameof(TimeSpanForDurationCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Change type to TimeSpan", nameof(TimeSpanForDurationCodeFixProvider), ct => ApplyFixAsync(context.Document, root, node, ct));
 
         return Task.CompletedTask;
     }

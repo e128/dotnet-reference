@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -53,12 +52,7 @@ public sealed class ComplexityCeilingMembershipScanCodeFixProvider : E128CodeFix
 
         var (guard, outerSide, collectionName, setName) = scan.Value;
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace the nested scan with a set lookup",
-                ct => ApplyAsync(context.Document, outer, inner, guard, outerSide, collectionName, setName, ct),
-                nameof(ComplexityCeilingMembershipScanCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace the nested scan with a set lookup", nameof(ComplexityCeilingMembershipScanCodeFixProvider), ct => ApplyAsync(context.Document, outer, inner, guard, outerSide, collectionName, setName, ct));
     }
 
     private static (IfStatementSyntax Guard, ExpressionSyntax OuterSide, string CollectionName, string SetName)?
@@ -151,7 +145,7 @@ public sealed class ComplexityCeilingMembershipScanCodeFixProvider : E128CodeFix
     /// </summary>
     private static SyntaxTriviaList IndentationTrivia(SyntaxNode anchor)
     {
-        var indent = SyntaxFactory.Whitespace(IndentationOf(anchor));
+        var indent = SyntaxFactory.Whitespace(FixSyntax.TrailingWhitespace(anchor.GetLeadingTrivia()).ToString());
         var previous = anchor.GetFirstToken().GetPreviousToken();
 
         return !previous.IsKind(SyntaxKind.None) && !previous.TrailingTrivia.Any(SyntaxKind.EndOfLineTrivia)
@@ -181,7 +175,8 @@ public sealed class ComplexityCeilingMembershipScanCodeFixProvider : E128CodeFix
         ExpressionSyntax condition,
         ForEachStatementSyntax inner)
     {
-        var extra = IndentationOf(guard).Length - IndentationOf(inner).Length;
+        var extra = FixSyntax.TrailingWhitespace(guard.GetLeadingTrivia()).ToString().Length
+                    - FixSyntax.TrailingWhitespace(inner.GetLeadingTrivia()).ToString().Length;
         var lines = guard.WithCondition(condition).ToFullString().Split('\n');
 
         for (var index = 0; index < lines.Length; index++)
@@ -191,16 +186,6 @@ public sealed class ComplexityCeilingMembershipScanCodeFixProvider : E128CodeFix
 
         return SyntaxFactory.ParseStatement(string.Join("\n", lines).TrimEnd())
             .WithTrailingTrivia(inner.GetTrailingTrivia());
-    }
-
-    private static string IndentationOf(SyntaxNode node)
-    {
-        var leading = node.GetLeadingTrivia();
-        var lastIndex = leading.Count - 1;
-
-        return lastIndex >= 0 && leading[lastIndex].IsKind(SyntaxKind.WhitespaceTrivia)
-            ? leading[lastIndex].ToString()
-            : string.Empty;
     }
 
     private static string Dedent(string line, int count)

@@ -68,7 +68,7 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!HasDurationSuffix(name))
+        if (!NameSuffixes.Matches(name, DurationSuffixes))
         {
             return;
         }
@@ -82,34 +82,5 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
             or SpecialType.System_Int64
             or SpecialType.System_Single
             or SpecialType.System_Double;
-    }
-
-    internal static bool HasDurationSuffix(string name)
-    {
-        foreach (var suffix in DurationSuffixes)
-        {
-            if (name.Length < suffix.Length)
-            {
-                continue;
-            }
-
-            var startIndex = name.Length - suffix.Length;
-
-            // Require the suffix to start at an uppercase-letter position in the name.
-            // This excludes bare lowercase words (e.g. "min", "days", "timeout" as local params)
-            // while correctly matching PascalCase compound names (TimeoutSeconds, delayMs, ActiveDays)
-            // and uppercase-first standalone names (Timeout, Days, Min as property names).
-            if (!char.IsUpper(name[startIndex]))
-            {
-                continue;
-            }
-
-            if (name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

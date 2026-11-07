@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -41,12 +40,7 @@ public sealed class ByteSizeUnwrapViaCastCodeFixProvider : E128CodeFixProviderBa
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove ByteSize cast",
-                ct => RemoveCastAsync(context.Document, castExpression, memberAccess, ct),
-                nameof(ByteSizeUnwrapViaCastCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove ByteSize cast", nameof(ByteSizeUnwrapViaCastCodeFixProvider), ct => RemoveCastAsync(context.Document, castExpression, memberAccess, ct));
     }
 
     private static bool IsNarrowingCast(

@@ -17,8 +17,9 @@ internal static class TypeSymbols
 
     /// <summary>
     ///     Returns true when <paramref name="type" /> is <paramref name="baseType" /> or inherits from it.
+    ///     A null <paramref name="baseType" /> matches nothing.
     /// </summary>
-    internal static bool DerivesFrom(ITypeSymbol? type, ITypeSymbol baseType)
+    internal static bool DerivesFrom(ITypeSymbol? type, ITypeSymbol? baseType)
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
@@ -29,5 +30,25 @@ internal static class TypeSymbols
         }
 
         return false;
+    }
+
+    /// <summary>
+    ///     Returns true when <paramref name="type" /> is <paramref name="target" />. A null target
+    ///     matches nothing.
+    /// </summary>
+    internal static bool Matches(ITypeSymbol? type, INamedTypeSymbol? target)
+    {
+        return target is not null && SymbolEqualityComparer.Default.Equals(type, target);
+    }
+
+    /// <summary>
+    ///     Returns true when the original definition of <paramref name="type" /> is
+    ///     <paramref name="definition" />. A null definition matches nothing.
+    /// </summary>
+    internal static bool MatchesOriginalDefinition(ITypeSymbol? type, INamedTypeSymbol? definition)
+    {
+        return definition is not null
+               && type is not null
+               && SymbolEqualityComparer.Default.Equals(type.OriginalDefinition, definition);
     }
 }

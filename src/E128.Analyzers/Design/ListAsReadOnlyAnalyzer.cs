@@ -73,18 +73,13 @@ public sealed class ListAsReadOnlyAnalyzer : DiagnosticAnalyzer
         }
 
         // The declared return type of the containing method or property
-        var expectedReturn = GetContainingReturnType(context.ContainingSymbol);
+        var expectedReturn = ReturnTypes.Get(context.ContainingSymbol);
         if (expectedReturn is null || !IsReadOnlyListInterface(expectedReturn))
         {
             return;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, returnedValue.Syntax.GetLocation()));
-    }
-
-    private static ITypeSymbol? GetContainingReturnType(ISymbol symbol)
-    {
-        return symbol is IMethodSymbol method ? method.ReturnType : symbol is IPropertySymbol property ? property.Type : null;
     }
 
     private static bool IsListType(ITypeSymbol type)

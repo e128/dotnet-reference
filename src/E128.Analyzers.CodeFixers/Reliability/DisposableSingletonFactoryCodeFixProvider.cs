@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -62,12 +61,7 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : E128CodeFixProvi
         {
             // The minimal form keeps the type arguments and matches the text the fix writes.
             var title = $"Register as AddSingleton<{iface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}, {returnType.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}>()";
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    title,
-                    ct => RewriteToGenericOverloadAsync(context.Document, invocation, returnType, iface, ct),
-                    $"E128031_{iface.ToDisplayString()}"),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, title, $"E128031_{iface.ToDisplayString()}", ct => DiRegistrationFix.RewriteToGenericAsync(context.Document, invocation, returnType, iface, SyntaxFactory.Identifier("AddSingleton"), ct));
         }
     }
 
@@ -85,53 +79,5 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : E128CodeFixProvi
         };
 
         return bodyExpr is null ? null : semanticModel.GetTypeInfo(bodyExpr, cancellationToken).Type;
-    }
-
-    private static async Task<Document> RewriteToGenericOverloadAsync(
-        Document document,
-        InvocationExpressionSyntax invocation,
-        ITypeSymbol concreteType,
-        INamedTypeSymbol targetInterface,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
-
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return document;
-        }
-
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return document;
-        }
-
-        // A bare Name drops the type arguments and the namespace. `Repository` alone, for
-        // Repository<Order>, does not compile, so the written name carries both.
-        var newTypeArgs = SyntaxFactory.TypeArgumentList(
-            SyntaxFactory.SeparatedList(
-                [
-                    SyntaxFactory.ParseTypeName(
-                        targetInterface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)),
-                    SyntaxFactory.ParseTypeName(
-                        concreteType.ToMinimalDisplayString(semanticModel, invocation.SpanStart))
-                ]));
-
-        var newName = SyntaxFactory.GenericName(
-                SyntaxFactory.Identifier("AddSingleton"))
-            .WithTypeArgumentList(newTypeArgs);
-
-        var newMemberAccess = memberAccess.WithName(newName);
-        var newInvocation = invocation
-            .WithExpression(newMemberAccess)
-            .WithArgumentList(SyntaxFactory.ArgumentList());
-
-        var newRoot = root.ReplaceNode(invocation, newInvocation);
-        return document.WithSyntaxRoot(newRoot);
     }
 }

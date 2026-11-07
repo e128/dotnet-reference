@@ -60,4 +60,54 @@ public sealed class GeneratedRegexNestedE128CodeFixTests
               }
               """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NestedQuantifier_QuotedLiteral_KeepsQuotes()
+    {
+        return VerifyFixAsync(
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128014:GeneratedRegex("(.+)+", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [GeneratedRegex("(.+)", RegexOptions.None, 1000)]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NestedQuantifier_QuotedLiteralWithBackslash_KeepsEscape()
+    {
+        return VerifyFixAsync(
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128014:GeneratedRegex("(\\w+)+", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [GeneratedRegex("(\\w+)", RegexOptions.None, 1000)]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """);
+    }
 }

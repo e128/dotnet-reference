@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,12 +26,7 @@ public sealed class EncodingDefaultCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace Encoding.Default with Encoding.UTF8",
-                ct => ApplyFixAsync(context.Document, memberAccess, ct),
-                nameof(EncodingDefaultCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace Encoding.Default with Encoding.UTF8", nameof(EncodingDefaultCodeFixProvider), ct => ApplyFixAsync(context.Document, memberAccess, ct));
 
         return Task.CompletedTask;
     }

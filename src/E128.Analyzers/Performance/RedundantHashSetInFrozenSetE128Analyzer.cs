@@ -41,17 +41,11 @@ public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(compilationContext =>
-        {
-            var hashSetType = compilationContext.Compilation.GetTypeByMetadataName(HashSetMetadataName);
-            if (hashSetType is null)
-            {
-                return;
-            }
-
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, hashSetType),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                compilationContext,
+                HashSetMetadataName,
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(
@@ -65,7 +59,7 @@ public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
             return;
         }
 
-        var receiver = GetReceiverExpression(invocation);
+        var receiver = ExpressionUnwrapper.Receiver(invocation);
         if (receiver is null)
         {
             return;
@@ -88,11 +82,6 @@ public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
                && string.Equals(memberAccess.Name.Identifier.Text, "ToFrozenSet", StringComparison.Ordinal);
     }
 
-    private static ExpressionSyntax? GetReceiverExpression(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Expression is MemberAccessExpressionSyntax memberAccess ? memberAccess.Expression : null;
-    }
-
     private static bool IsHashSetCreation(
         SyntaxNodeAnalysisContext context,
         ExpressionSyntax receiver,
@@ -112,7 +101,7 @@ public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (!SymbolEqualityComparer.Default.Equals(createdType.OriginalDefinition, hashSetType))
+        if (!TypeSymbols.MatchesOriginalDefinition(createdType, hashSetType))
         {
             return false;
         }

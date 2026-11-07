@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -33,12 +32,7 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Change type to ByteSize",
-                ct => ApplyFixAsync(context.Document, root, token, ct),
-                nameof(ByteSizeForDataSizeCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Change type to ByteSize", nameof(ByteSizeForDataSizeCodeFixProvider), ct => ApplyFixAsync(context.Document, root, token, ct));
 
         return Task.CompletedTask;
     }

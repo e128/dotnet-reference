@@ -1,5 +1,5 @@
 # Code Fix Techniques
-*Updated: 2026-11-04T21:29:18Z*
+*Updated: 2026-11-07T18:38:35Z*
 
 Techniques that prove a fix writes correct code. The shape rules live in
 [Code Fix Output](code-fix-output.md). The decision list lives in
@@ -149,17 +149,18 @@ BatchFixer merges only `ApplyChangesOperation` instances. Any other operation
 that a provider emits is dropped without a warning. Keep a custom operation out
 of a fix path that fix-all must cover.
 
-`CodeAction.Create` groups fixes for fix-all by the equivalence key. Pass the
-three-argument overload. A two-argument call leaves the key null, and fix-all
-cannot separate the action from a sibling action on the same diagnostic.
+`CodeFixRegistration.Register` creates the action and passes the three-argument
+`CodeAction.Create` overload. The equivalence key groups the fixes for fix-all,
+so it is never null. Call the overload that takes a changed document, or the one
+that takes a changed solution for a rename.
 
 ```csharp
-context.RegisterCodeFix(
-    CodeAction.Create(
-        title: "Use ImmutableArray<T>.Empty",
-        createChangedDocument: c => ChangeAsync(document, creation, c),
-        equivalenceKey: "UseImmutableArrayEmpty"),
-    diagnostic);
+CodeFixRegistration.Register(
+    context,
+    diagnostic,
+    "Use ImmutableArray<T>.Empty",
+    "UseImmutableArrayEmpty",
+    c => ChangeAsync(document, creation, c));
 ```
 
 ## Sequential Rename Needs Its Own Fix-All

@@ -1,11 +1,8 @@
 using System.Collections.Immutable;
 using System.Composition;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace E128.Analyzers.Design;
@@ -33,35 +30,8 @@ public sealed class ListAsReadOnlyCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Return .AsReadOnly()",
-                ct => AppendAsReadOnlyAsync(context.Document, expression, ct),
-                nameof(ListAsReadOnlyCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Return .AsReadOnly()", nameof(ListAsReadOnlyCodeFixProvider), ct => ReadOnlyCollectionFix.AppendAsReadOnlyAsync(context.Document, expression, ct));
 
         return Task.CompletedTask;
-    }
-
-    private static async Task<Document> AppendAsReadOnlyAsync(
-        Document document,
-        ExpressionSyntax expression,
-        CancellationToken cancellationToken)
-    {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
-
-        var asReadOnly = SyntaxFactory.InvocationExpression(
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    expression.WithoutTrivia(),
-                    SyntaxFactory.IdentifierName("AsReadOnly")))
-            .WithTriviaFrom(expression);
-
-        var newRoot = root.ReplaceNode(expression, asReadOnly);
-        return document.WithSyntaxRoot(newRoot);
     }
 }

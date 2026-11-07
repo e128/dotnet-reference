@@ -39,17 +39,11 @@ public sealed class DbCommandInLoopAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(startContext =>
-        {
-            var dbCommand = startContext.Compilation.GetTypeByMetadataName("System.Data.Common.DbCommand");
-            if (dbCommand is null)
-            {
-                return;
-            }
-
-            startContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, dbCommand),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                startContext,
+                "System.Data.Common.DbCommand",
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol dbCommand)

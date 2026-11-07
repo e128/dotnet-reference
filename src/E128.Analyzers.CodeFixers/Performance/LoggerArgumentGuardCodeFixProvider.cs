@@ -3,9 +3,7 @@ using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace E128.Analyzers.Performance;
@@ -42,7 +40,7 @@ public sealed class LoggerArgumentGuardCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        var indent = GetIndent(statement);
+        var indent = FixSyntax.LastIndentation(statement.GetLeadingTrivia());
 
         var receiver = memberAccess.Expression.ToString();
         var body = statement.ToString();
@@ -60,37 +58,8 @@ public sealed class LoggerArgumentGuardCodeFixProvider : E128CodeFixProviderBase
             + indent
             + "}";
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Guard the log call with IsEnabled",
-                _ => Task.FromResult(ApplyFix(context.Document, root, statement, text)),
-                nameof(LoggerArgumentGuardCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Guard the log call with IsEnabled", nameof(LoggerArgumentGuardCodeFixProvider), _ => Task.FromResult(FixSyntax.ReplaceStatementFromText(context.Document, root, statement, text)));
 
         return Task.CompletedTask;
-    }
-
-    private static string GetIndent(StatementSyntax statement)
-    {
-        var indent = string.Empty;
-        foreach (var trivia in statement.GetLeadingTrivia())
-        {
-            if (trivia.IsKind(SyntaxKind.WhitespaceTrivia))
-            {
-                indent = trivia.ToFullString();
-            }
-        }
-
-        return indent;
-    }
-
-    private static Document ApplyFix(
-        Document document,
-        SyntaxNode root,
-        ExpressionStatementSyntax statement,
-        string text)
-    {
-        var replacement = SyntaxFactory.ParseStatement(text).WithTriviaFrom(statement);
-        return document.WithSyntaxRoot(root.ReplaceNode(statement, replacement));
     }
 }

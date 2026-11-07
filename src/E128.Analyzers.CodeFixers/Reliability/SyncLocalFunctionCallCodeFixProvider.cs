@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -29,12 +28,7 @@ public sealed class SyncLocalFunctionCallCodeFixProvider : E128CodeFixProviderBa
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace synchronous call with await",
-                ct => ApplyFixAsync(context.Document, invocation, ct),
-                nameof(SyncLocalFunctionCallCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace synchronous call with await", nameof(SyncLocalFunctionCallCodeFixProvider), ct => ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

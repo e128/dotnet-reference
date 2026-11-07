@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -33,12 +32,7 @@ public sealed class CatchFilterOceCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add OperationCanceledException to catch filter",
-                ct => AddOceToFilterAsync(context.Document, root, catchClause, ct),
-                nameof(CatchFilterOceCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add OperationCanceledException to catch filter", nameof(CatchFilterOceCodeFixProvider), ct => AddOceToFilterAsync(context.Document, root, catchClause, ct));
 
         return Task.CompletedTask;
     }

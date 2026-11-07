@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -34,12 +33,7 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : E128Code
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add CancellationToken to HttpClient/Playwright calls",
-                ct => AddCancellationTokenAsync(context.Document, invocation, ct),
-                nameof(TaskWhenAllCancellationPropagationCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add CancellationToken to HttpClient/Playwright calls", nameof(TaskWhenAllCancellationPropagationCodeFixProvider), ct => AddCancellationTokenAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

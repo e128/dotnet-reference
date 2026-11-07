@@ -85,20 +85,7 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
     {
         return context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol is IMethodSymbol method
                && (methodName is null || string.Equals(method.Name, methodName, StringComparison.Ordinal))
-               && ContainsType(types.AssertTypes, method.ContainingType);
-    }
-
-    private static bool ContainsType(ImmutableArray<INamedTypeSymbol> candidates, ITypeSymbol? type)
-    {
-        foreach (var candidate in candidates)
-        {
-            if (SymbolEqualityComparer.Default.Equals(candidate, type))
-            {
-                return true;
-            }
-        }
-
-        return false;
+               && MetadataTypes.Contains(types.AssertTypes, method.ContainingType);
     }
 
     private static bool CatchesAssertionFailure(CatchClauseSyntax catchClause, SyntaxNodeAnalysisContext context, KnownTypes types)
@@ -111,7 +98,7 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
         var type = context.SemanticModel.GetTypeInfo(catchClause.Declaration.Type, context.CancellationToken).Type;
 
         return SymbolEqualityComparer.Default.Equals(type, types.ExceptionType)
-               || ContainsType(types.XunitExceptionTypes, type);
+               || MetadataTypes.Contains(types.XunitExceptionTypes, type);
     }
 
     private static bool Rethrows(CatchClauseSyntax catchClause)

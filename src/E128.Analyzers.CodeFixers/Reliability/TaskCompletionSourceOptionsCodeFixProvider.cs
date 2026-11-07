@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -44,12 +43,7 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
             }
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Run continuations asynchronously",
-                ct => AddFlagAsync(context.Document, creation, ct),
-                nameof(TaskCompletionSourceOptionsCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Run continuations asynchronously", nameof(TaskCompletionSourceOptionsCodeFixProvider), ct => AddFlagAsync(context.Document, creation, ct));
 
         return Task.CompletedTask;
     }

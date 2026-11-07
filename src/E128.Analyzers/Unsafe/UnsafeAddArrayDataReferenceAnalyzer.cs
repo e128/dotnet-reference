@@ -49,15 +49,8 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess
-            || !string.Equals(memberAccess.Identifier.ValueText, "Add", StringComparison.Ordinal))
-        {
-            return;
-        }
-
         if (TryGetIndexedAccess(invocation) is null
-            || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
-            || !MetadataTypes.Contains(unsafeType, method.ContainingType))
+            || !OwnerInvocation.TryMatch(context, unsafeType, "Add", out _))
         {
             return;
         }

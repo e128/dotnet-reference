@@ -49,14 +49,7 @@ public sealed class UnsafeCopyReferenceTypeAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess
-            || !string.Equals(memberAccess.Identifier.ValueText, "Copy", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
-            || !MetadataTypes.Contains(unsafeType, method.ContainingType)
+        if (!OwnerInvocation.TryMatch(context, unsafeType, "Copy", out var method)
             || method.TypeArguments.Length != 1
             || method.TypeArguments[0].IsUnmanagedType)
         {

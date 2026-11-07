@@ -18,6 +18,14 @@ internal static class ExpressionUnwrapper
     }
 
     /// <summary>
+    ///     Returns the receiver of a member-access invocation, or null for another shape.
+    /// </summary>
+    internal static ExpressionSyntax? Receiver(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax access ? access.Expression : null;
+    }
+
+    /// <summary>
     ///     Strips any enclosing parentheses and explicit casts from <paramref name="expression" />.
     /// </summary>
     internal static ExpressionSyntax ParenthesesAndCasts(ExpressionSyntax expression)

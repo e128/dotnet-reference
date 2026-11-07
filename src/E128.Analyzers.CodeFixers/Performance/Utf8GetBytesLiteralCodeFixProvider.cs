@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -37,12 +36,7 @@ public sealed class Utf8GetBytesLiteralCodeFixProvider : E128CodeFixProviderBase
         var useToArray = diagnostic.Properties.TryGetValue(Utf8GetBytesLiteralAnalyzer.UseToArrayKey, out var value)
             && string.Equals(value, "true", StringComparison.Ordinal);
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                useToArray ? "Use a u8 literal with ToArray" : "Use a u8 literal",
-                _ => Task.FromResult(ApplyFix(context.Document, root, invocation, literal, useToArray)),
-                nameof(Utf8GetBytesLiteralCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, useToArray ? "Use a u8 literal with ToArray" : "Use a u8 literal", nameof(Utf8GetBytesLiteralCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, invocation, literal, useToArray)));
 
         return Task.CompletedTask;
     }

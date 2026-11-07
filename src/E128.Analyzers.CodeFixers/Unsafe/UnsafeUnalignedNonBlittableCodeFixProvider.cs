@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -53,12 +52,7 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : E128CodeFixProv
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Compare the byte with zero",
-                _ => Task.FromResult(ApplyFix(context.Document, root, invocation, argument.Expression)),
-                nameof(UnsafeUnalignedNonBlittableCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Compare the byte with zero", nameof(UnsafeUnalignedNonBlittableCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, invocation, argument.Expression)));
 
         return Task.CompletedTask;
     }

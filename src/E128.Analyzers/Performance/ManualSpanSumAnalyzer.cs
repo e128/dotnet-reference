@@ -136,8 +136,8 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
         {
             IArrayTypeSymbol array => array.ElementType,
             INamedTypeSymbol { TypeArguments.Length: 1 } named
-                when SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, sumContext.ReadOnlySpan)
-                    || SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, sumContext.Span) =>
+                when TypeSymbols.MatchesOriginalDefinition(named, sumContext.ReadOnlySpan)
+                    || TypeSymbols.MatchesOriginalDefinition(named, sumContext.Span) =>
                 named.TypeArguments[0],
             _ => null
         };

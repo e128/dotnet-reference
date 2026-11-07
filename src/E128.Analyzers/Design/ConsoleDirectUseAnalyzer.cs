@@ -71,6 +71,6 @@ public sealed class ConsoleDirectUseAnalyzer : DiagnosticAnalyzer
     private static bool IsSystemConsole(INamedTypeSymbol type)
     {
         return string.Equals(type.Name, "Console", StringComparison.Ordinal)
-               && type.ContainingNamespace is { Name: "System", ContainingNamespace.IsGlobalNamespace: true };
+               && Namespaces.Equals(type.ContainingNamespace, "System");
     }
 }

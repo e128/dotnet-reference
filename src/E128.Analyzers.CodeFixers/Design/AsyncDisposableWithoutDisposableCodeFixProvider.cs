@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -34,12 +33,7 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : E128CodeFi
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Implement IDisposable",
-                ct => AddIDisposableAsync(context.Document, typeDecl, ct),
-                nameof(AsyncDisposableWithoutDisposableCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Implement IDisposable", nameof(AsyncDisposableWithoutDisposableCodeFixProvider), ct => AddIDisposableAsync(context.Document, typeDecl, ct));
 
         return Task.CompletedTask;
     }

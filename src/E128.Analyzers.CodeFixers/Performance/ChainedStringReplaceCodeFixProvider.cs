@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -32,12 +31,7 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Collapse repeated-character loop into a single pass",
-                ct => RewriteAsSinglePassAsync(context.Document, whileStatement, receiverName, collapseChar, ct),
-                nameof(ChainedStringReplaceCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Collapse repeated-character loop into a single pass", nameof(ChainedStringReplaceCodeFixProvider), ct => RewriteAsSinglePassAsync(context.Document, whileStatement, receiverName, collapseChar, ct));
 
         return Task.CompletedTask;
     }

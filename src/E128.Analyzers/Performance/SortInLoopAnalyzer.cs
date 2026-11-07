@@ -91,7 +91,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsInsideLoop(invocation))
+        if (!LoopContext.IsWithinAnyLoop(invocation))
         {
             return;
         }
@@ -122,7 +122,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
             }
 
             var containingType = method.ContainingType?.OriginalDefinition;
-            if (!IsSameType(containingType, listType) && !IsSameType(containingType, arrayType))
+            if (!TypeSymbols.Matches(containingType, listType) && !TypeSymbols.Matches(containingType, arrayType))
             {
                 return;
             }
@@ -130,7 +130,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         else
         {
             var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
-            if (symbol is not IMethodSymbol method || !IsSameType(method.ContainingType, enumerableType))
+            if (symbol is not IMethodSymbol method || !TypeSymbols.Matches(method.ContainingType, enumerableType))
             {
                 return;
             }
@@ -165,7 +165,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsSameType(method.ContainingType?.OriginalDefinition, listType))
+        if (!TypeSymbols.Matches(method.ContainingType?.OriginalDefinition, listType))
         {
             return;
         }
@@ -186,28 +186,5 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
 
         methodName = access.Name.Identifier.ValueText;
         return true;
-    }
-
-    private static bool IsInsideLoop(SyntaxNode node)
-    {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            if (current is ForEachStatementSyntax or ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
-            {
-                return true;
-            }
-
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or LocalFunctionStatementSyntax)
-            {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsSameType(ITypeSymbol? type, INamedTypeSymbol? target)
-    {
-        return target is not null && SymbolEqualityComparer.Default.Equals(type, target);
     }
 }

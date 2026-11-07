@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -114,12 +113,7 @@ public sealed class StaticNumericIncrementCodeFixProvider : E128CodeFixProviderB
             _ => "Use Interlocked methods"
         };
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                interlockedTitle,
-                ct => ApplyInterlockedFixAsync(context.Document, expression, fieldOperand, ct),
-                $"{StaticNumericIncrementAnalyzer.DiagnosticId}Interlocked"),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, interlockedTitle, $"{StaticNumericIncrementAnalyzer.DiagnosticId}Interlocked", ct => ApplyInterlockedFixAsync(context.Document, expression, fieldOperand, ct));
     }
 
     private static void RegisterRemoveStaticFix(
@@ -134,12 +128,7 @@ public sealed class StaticNumericIncrementCodeFixProvider : E128CodeFixProviderB
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove 'static' keyword",
-                ct => ApplyRemoveStaticFixAsync(context.Document, fieldSymbol, ct),
-                $"{StaticNumericIncrementAnalyzer.DiagnosticId}RemoveStatic"),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove 'static' keyword", $"{StaticNumericIncrementAnalyzer.DiagnosticId}RemoveStatic", ct => ApplyRemoveStaticFixAsync(context.Document, fieldSymbol, ct));
     }
 
     private static bool IsContainingTypeStaticClass(IFieldSymbol fieldSymbol)

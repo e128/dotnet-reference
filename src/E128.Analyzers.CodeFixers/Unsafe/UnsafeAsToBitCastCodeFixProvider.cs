@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -33,12 +32,7 @@ public sealed class UnsafeAsToBitCastCodeFixProvider : E128CodeFixProviderBase
         var argument = invocation.ArgumentList.Arguments[0];
         var typeArguments = generic.TypeArgumentList;
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use Unsafe.BitCast",
-                _ => Task.FromResult(ApplyFix(context.Document, root, invocation, memberAccess, argument, typeArguments)),
-                nameof(UnsafeAsToBitCastCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Use Unsafe.BitCast", nameof(UnsafeAsToBitCastCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, invocation, memberAccess, argument, typeArguments)));
 
         return Task.CompletedTask;
     }

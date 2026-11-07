@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -44,12 +43,7 @@ public sealed class PoolRentCapacityGuardCodeFixProvider : E128CodeFixProviderBa
         var capText = FormatCapacity(ReadCapacity(context.Document, root.SyntaxTree));
         var guardText = $"Math.Min({argumentText}, {capText})";
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                $"Guard with {guardText}",
-                ct => GuardAsync(context.Document, invocation, argument, guardText, ct),
-                nameof(PoolRentCapacityGuardCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, $"Guard with {guardText}", nameof(PoolRentCapacityGuardCodeFixProvider), ct => GuardAsync(context.Document, invocation, argument, guardText, ct));
 
         return Task.CompletedTask;
     }

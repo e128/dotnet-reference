@@ -3,7 +3,6 @@ using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -46,17 +45,12 @@ public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBas
             .Select(number => number == 1
                 ? baseName
                 : baseName + number.ToString(System.Globalization.CultureInfo.InvariantCulture))
-            .First(candidate => !HasMember(typeDeclaration, candidate));
+            .First(candidate => !FixSyntax.HasMemberNamed(typeDeclaration, candidate, includeProperties: true, includeMethods: false));
 
         var fieldType = method.ReturnType.ToDisplayString();
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Cache in a static readonly field",
-                _ => Task.FromResult(
-                    ApplyFix(context.Document, root, invocation, typeDeclaration, fieldType, fieldName)),
-                nameof(SearchValuesHoistingCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Cache in a static readonly field", nameof(SearchValuesHoistingCodeFixProvider), _ => Task.FromResult(
+                    ApplyFix(context.Document, root, invocation, typeDeclaration, fieldType, fieldName)));
     }
 
     // Name the field after the method that used the table, for example `_containsDelimiterSearchValues`.
@@ -189,30 +183,5 @@ public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBas
 
         return typeDeclaration.WithMembers(
             typeDeclaration.Members.Insert(anchorIndex + 1, fieldWithIndent));
-    }
-
-    private static bool HasMember(TypeDeclarationSyntax typeDeclaration, string name)
-    {
-        foreach (var member in typeDeclaration.Members)
-        {
-            if (member is FieldDeclarationSyntax field)
-            {
-                foreach (var variable in field.Declaration.Variables)
-                {
-                    if (string.Equals(variable.Identifier.ValueText, name, System.StringComparison.Ordinal))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            if (member is PropertyDeclarationSyntax property
-                && string.Equals(property.Identifier.ValueText, name, System.StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

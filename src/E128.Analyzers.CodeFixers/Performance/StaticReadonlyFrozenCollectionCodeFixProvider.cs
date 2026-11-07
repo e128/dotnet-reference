@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -39,12 +38,7 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : E128CodeFixP
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Convert to frozen collection",
-                ct => ConvertToFrozenAsync(context.Document, declaration, ct),
-                StaticReadonlyFrozenCollectionAnalyzer.DiagnosticId),
-            context.Diagnostics[0]);
+        CodeFixRegistration.Register(context, context.Diagnostics[0], "Convert to frozen collection", StaticReadonlyFrozenCollectionAnalyzer.DiagnosticId, ct => ConvertToFrozenAsync(context.Document, declaration, ct));
 
         return Task.CompletedTask;
     }

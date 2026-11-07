@@ -147,7 +147,7 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
                 return;
             }
         }
-        else if (!IsInsideLoopBody(invocation))
+        else if (!LoopContext.IsInsideLoopBody(invocation))
         {
             return;
         }
@@ -181,56 +181,7 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
 
         return current.Parent is CommonForEachStatementSyntax forEach
                && ReferenceEquals(forEach.Expression, current)
-               && IsInsideLoopBody(forEach);
-    }
-
-    private static bool IsInsideLoopBody(SyntaxNode node)
-    {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            // A foreach source and a for initializer run once, so they are not a per-iteration query.
-            if ((current is ForStatementSyntax or CommonForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
-                && !IsInLoopHeader(current, node))
-            {
-                return true;
-            }
-
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or LocalFunctionStatementSyntax
-                or AccessorDeclarationSyntax or OperatorDeclarationSyntax or ConversionOperatorDeclarationSyntax)
-            {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsInLoopHeader(SyntaxNode loopNode, SyntaxNode node)
-    {
-        return loopNode switch
-        {
-            CommonForEachStatementSyntax forEach => forEach.Expression.Span.Contains(node.Span),
-            ForStatementSyntax forStatement => IsInForHeader(forStatement, node),
-            _ => false
-        };
-    }
-
-    private static bool IsInForHeader(ForStatementSyntax forStatement, SyntaxNode node)
-    {
-        if (forStatement.Declaration is { } declaration && declaration.Span.Contains(node.Span))
-        {
-            return true;
-        }
-
-        foreach (var initializer in forStatement.Initializers)
-        {
-            if (initializer.Span.Contains(node.Span))
-            {
-                return true;
-            }
-        }
-
-        return false;
+               && LoopContext.IsInsideLoopBody(forEach);
     }
 
     private static bool IsEfQuerySource(
@@ -321,17 +272,12 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
         return ReferenceEquals(stripped, expression)
             ? expression switch
             {
-                InvocationExpressionSyntax invocation => GetReceiver(invocation),
+                InvocationExpressionSyntax invocation => ExpressionUnwrapper.Receiver(invocation),
                 MemberAccessExpressionSyntax access => access.Expression,
                 QueryExpressionSyntax query => query.FromClause.Expression,
                 _ => null
             }
             : stripped;
-    }
-
-    private static ExpressionSyntax? GetReceiver(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Expression is MemberAccessExpressionSyntax access ? access.Expression : null;
     }
 
     private sealed class KnownTypes

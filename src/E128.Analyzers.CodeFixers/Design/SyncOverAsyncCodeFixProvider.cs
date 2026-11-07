@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -32,12 +31,7 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Replace with await",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(SyncOverAsyncCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Replace with await", nameof(SyncOverAsyncCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
         return Task.CompletedTask;
     }
 

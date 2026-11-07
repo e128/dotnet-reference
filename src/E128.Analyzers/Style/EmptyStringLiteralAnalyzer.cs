@@ -45,27 +45,12 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
         }
 
         // Skip compile-time constant contexts where string.Empty cannot be used.
-        if (IsAttributeArgument(literal) || IsConstContext(literal))
+        if (AttributeArguments.IsInside(literal) || IsConstContext(literal))
         {
             return;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, literal.GetLocation()));
-    }
-
-    // Returns true if the node is inside an attribute argument list.
-    // string.Empty is not a compile-time constant and cannot appear in attribute arguments.
-    private static bool IsAttributeArgument(SyntaxNode node)
-    {
-        foreach (var ancestor in node.Ancestors())
-        {
-            if (ancestor is AttributeArgumentSyntax)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     // Returns true if the node is in a context that requires a compile-time constant:

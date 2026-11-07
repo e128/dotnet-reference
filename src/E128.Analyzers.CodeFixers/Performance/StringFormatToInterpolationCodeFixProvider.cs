@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -44,12 +43,7 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Convert to string interpolation",
-                ct => ApplyFixAsync(context.Document, invocation, interpolated, ct),
-                nameof(StringFormatToInterpolationCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Convert to string interpolation", nameof(StringFormatToInterpolationCodeFixProvider), ct => ApplyFixAsync(context.Document, invocation, interpolated, ct));
     }
 
     private static async Task<Document> ApplyFixAsync(

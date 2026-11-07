@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -52,12 +51,7 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
                 continue;
             }
 
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Use a StringBuilder",
-                    _ => Task.FromResult(context.Document.WithSyntaxRoot(newRoot)),
-                    nameof(StringConcatInLoopCodeFixProvider)),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, "Use a StringBuilder", nameof(StringConcatInLoopCodeFixProvider), _ => Task.FromResult(context.Document.WithSyntaxRoot(newRoot)));
         }
     }
 
@@ -91,7 +85,7 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
         }
 
         var newLoop = ReplaceEveryAppend(loop, local, builderName, semanticModel, cancellationToken);
-        var indentation = GetIndentation(loop);
+        var indentation = FixSyntax.TrailingWhitespace(loop.GetLeadingTrivia());
         var statements = new List<StatementSyntax>(block.Statements.Count + 2);
 
         foreach (var child in block.Statements)
@@ -334,13 +328,5 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
                             SyntaxFactory.IdentifierName("ToString")))))
             .WithLeadingTrivia(indentation)
             .WithTrailingTrivia(SyntaxFactory.LineFeed);
-    }
-
-    private static SyntaxTriviaList GetIndentation(SyntaxNode node)
-    {
-        var leading = node.GetLeadingTrivia();
-        return leading.Count > 0 && leading.Last().IsKind(SyntaxKind.WhitespaceTrivia)
-            ? SyntaxFactory.TriviaList(leading.Last())
-            : SyntaxFactory.TriviaList();
     }
 }

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Build the solution or a specific project.
-# Usage: build.sh [--project NAME] [--warnings] [--fix] [--errors] [--verbose]
+# Usage: build.sh [--project NAME] [--warnings] [--fix] [--errors] [--verbose] [--fast]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-VERBOSE=false; WARNINGS=false; FIX=false; ERRORS=false; PROJECT=""
+VERBOSE=false; WARNINGS=false; FIX=false; ERRORS=false; PROJECT=""; FAST=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -12,6 +12,7 @@ while [[ $# -gt 0 ]]; do
         --warnings) WARNINGS=true ;;
         --fix)      FIX=true ;;
         --errors)   ERRORS=true ;;
+        --fast)     FAST=true ;;
         --project)  PROJECT="$2"; shift ;;
         *)          err "Unknown flag: $1"; exit 1 ;;
     esac
@@ -34,6 +35,12 @@ else
 fi
 
 ARGS=(dotnet build "$TARGET" --nologo)
+if [[ "$FAST" == true ]]; then
+    # Analyzer execution is about 78 percent of a full rebuild. The fast path skips
+    # every analyzer, so scripts/check.sh remains the gate before a commit.
+    ARGS+=(-p:RunAnalyzers=false)
+    warn "Fast build: analyzers skipped. Run scripts/check.sh before commit."
+fi
 if [[ "$WARNINGS" == false ]]; then
     ARGS+=(-clp:ErrorsOnly)
 fi

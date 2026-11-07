@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -29,12 +28,7 @@ public sealed class HttpClientMissingOceCatchCodeFixProvider : E128CodeFixProvid
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Insert catch (OperationCanceledException) { throw; }",
-                ct => InsertOceCatchAsync(context.Document, catchClause, ct),
-                nameof(HttpClientMissingOceCatchCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Insert catch (OperationCanceledException) { throw; }", nameof(HttpClientMissingOceCatchCodeFixProvider), ct => InsertOceCatchAsync(context.Document, catchClause, ct));
 
         return Task.CompletedTask;
     }

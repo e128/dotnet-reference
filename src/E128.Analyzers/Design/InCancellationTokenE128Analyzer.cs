@@ -70,7 +70,6 @@ public sealed class InCancellationTokenE128Analyzer : DiagnosticAnalyzer
     private static bool IsCancellationToken(INamedTypeSymbol type)
     {
         return string.Equals(type.Name, "CancellationToken", StringComparison.Ordinal)
-               && type.ContainingNamespace is { Name: "Threading" }
-                   and { ContainingNamespace: { Name: "System" } and { ContainingNamespace.IsGlobalNamespace: true } };
+               && Namespaces.Equals(type.ContainingNamespace, "System.Threading");
     }
 }

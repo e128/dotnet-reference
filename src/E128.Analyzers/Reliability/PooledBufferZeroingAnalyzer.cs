@@ -92,7 +92,7 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
-            || !SymbolEqualityComparer.Default.Equals(method.ContainingType?.OriginalDefinition, poolType))
+            || !TypeSymbols.MatchesOriginalDefinition(method.ContainingType, poolType))
         {
             return;
         }

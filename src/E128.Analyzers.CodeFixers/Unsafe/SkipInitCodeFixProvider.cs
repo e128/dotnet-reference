@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -37,12 +36,7 @@ public sealed class SkipInitCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Initialize the local",
-                _ => Task.FromResult(ApplyFix(context.Document, root, statement, text)),
-                nameof(SkipInitCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Initialize the local", nameof(SkipInitCodeFixProvider), _ => Task.FromResult(FixSyntax.ReplaceStatementFromText(context.Document, root, statement, text)));
     }
 
     private static string? BuildReplacement(ExpressionSyntax argument, string? inferredTypeName)
@@ -61,15 +55,5 @@ public sealed class SkipInitCodeFixProvider : E128CodeFixProviderBase
         return argument is IdentifierNameSyntax identifier
             ? identifier.Identifier.ValueText + " = default;"
             : null;
-    }
-
-    private static Document ApplyFix(
-        Document document,
-        SyntaxNode root,
-        ExpressionStatementSyntax statement,
-        string text)
-    {
-        var replacement = SyntaxFactory.ParseStatement(text).WithTriviaFrom(statement);
-        return document.WithSyntaxRoot(root.ReplaceNode(statement, replacement));
     }
 }

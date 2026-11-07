@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -30,12 +29,7 @@ public sealed class NullForgivingOperatorCodeFixProvider : E128CodeFixProviderBa
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove null-forgiving operator",
-                ct => ApplyFixAsync(context.Document, node, ct),
-                nameof(NullForgivingOperatorCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove null-forgiving operator", nameof(NullForgivingOperatorCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
 
         return Task.CompletedTask;
     }

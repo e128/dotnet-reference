@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -35,12 +34,7 @@ public sealed class ImmutableArrayCreateToArrayCodeFixProvider : E128CodeFixProv
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use ImmutableCollectionsMarshal.AsImmutableArray",
-                ct => ApplyFixAsync(context.Document, invocation, ct),
-                ImmutableArrayCreateToArrayAnalyzer.DiagnosticId),
-            context.Diagnostics[0]);
+        CodeFixRegistration.Register(context, context.Diagnostics[0], "Use ImmutableCollectionsMarshal.AsImmutableArray", ImmutableArrayCreateToArrayAnalyzer.DiagnosticId, ct => ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

@@ -27,7 +27,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 
 | Script               | Purpose                                                                                      | Key flags                                                                           |
 | -------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `build.sh`           | Build the solution or a specific project                                                     | `--verbose`, `--project`, `--errors`, `--warnings`, `--fix`                         |
+| `build.sh`           | Build the solution or a specific project                                                     | `--verbose`, `--project`, `--errors`, `--warnings`, `--fix`, `--fast`               |
 | `test.sh`            | Run tests (defaults to CI category)                                                          | `--all`, `--verbose`, `--dry-run`, `--trait`                                        |
 | `format.sh`          | Run jb cleanupcode then dotnet format                                                        | `--check`, `--changed`, `--no-jb`                                                   |
 | `check.sh`           | Composed: shell lint + format + build + test                                                 | `--all`, `--no-format`, `--json`                                                    |

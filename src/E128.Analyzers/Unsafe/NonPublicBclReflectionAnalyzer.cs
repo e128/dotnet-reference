@@ -67,7 +67,7 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
-            || !DerivesFromSystemType(method.ContainingType, systemType)
+            || !TypeSymbols.DerivesFrom(method.ContainingType, systemType)
             || !IsMemberLookup(method.Name))
         {
             return;
@@ -89,19 +89,6 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
             Rule,
             invocation.GetLocation(),
             target.ToDisplayString()));
-    }
-
-    private static bool DerivesFromSystemType(INamedTypeSymbol? type, INamedTypeSymbol systemType)
-    {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, systemType))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static bool IsMemberLookup(string name)

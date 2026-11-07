@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -36,12 +35,7 @@ public sealed class OptionsBindInitCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Change 'init' to 'set'",
-                ct => ChangeInitToSetAsync(context.Document, accessor, ct),
-                nameof(OptionsBindInitCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Change 'init' to 'set'", nameof(OptionsBindInitCodeFixProvider), ct => ChangeInitToSetAsync(context.Document, accessor, ct));
 
         return Task.CompletedTask;
     }

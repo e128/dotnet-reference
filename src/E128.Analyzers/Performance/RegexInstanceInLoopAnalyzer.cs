@@ -33,18 +33,12 @@ public sealed class RegexInstanceInLoopAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(startContext =>
-        {
-            var regex = startContext.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
-            if (regex is null)
-            {
-                return;
-            }
-
-            startContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeCreation(nodeContext, regex),
+            MetadataTypes.RegisterForType(
+                startContext,
+                "System.Text.RegularExpressions.Regex",
+                AnalyzeCreation,
                 SyntaxKind.ObjectCreationExpression,
-                SyntaxKind.ImplicitObjectCreationExpression);
-        });
+                SyntaxKind.ImplicitObjectCreationExpression));
     }
 
     private static void AnalyzeCreation(SyntaxNodeAnalysisContext context, INamedTypeSymbol regex)

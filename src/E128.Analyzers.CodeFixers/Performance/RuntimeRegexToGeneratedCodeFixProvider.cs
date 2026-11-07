@@ -4,7 +4,6 @@ using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -47,12 +46,7 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Convert to [GeneratedRegex]",
-                _ => Task.FromResult(ApplyFix(context.Document, root, field, argumentList)),
-                nameof(RuntimeRegexToGeneratedCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Convert to [GeneratedRegex]", nameof(RuntimeRegexToGeneratedCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, field, argumentList)));
     }
 
     private static Document ApplyFix(
@@ -84,7 +78,7 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
 
         var modifiers = string.Join(" ", modifierTexts) + " ";
         var fieldType = field.Declaration.Type.ToString();
-        var indent = GetIndent(field.GetLeadingTrivia());
+        var indent = FixSyntax.LastIndentation(field.GetLeadingTrivia());
 
         var text = "[System.Text.RegularExpressions.GeneratedRegex("
             + pattern
@@ -115,20 +109,6 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
         newRoot = MakeEnclosingTypesPartial(newRoot, annotation);
 
         return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static string GetIndent(SyntaxTriviaList leadingTrivia)
-    {
-        var indent = string.Empty;
-        foreach (var trivia in leadingTrivia)
-        {
-            if (trivia.IsKind(SyntaxKind.WhitespaceTrivia))
-            {
-                indent = trivia.ToFullString();
-            }
-        }
-
-        return indent;
     }
 
     private static SyntaxNode MakeEnclosingTypesPartial(SyntaxNode root, SyntaxAnnotation annotation)

@@ -94,7 +94,7 @@ internal static partial class FipsSymbolHelpers
         }
 
         if (string.Equals(invocation.TargetMethod.Name, "GetBytes", StringComparison.Ordinal) &&
-            NamespaceEquals(invocation.TargetMethod.ContainingNamespace, "System.Text") &&
+            Namespaces.Equals(invocation.TargetMethod.ContainingNamespace, "System.Text") &&
             Unwrap(ResolveInitializer(invocation.Instance) ?? invocation.Instance) is IPropertyReferenceOperation encodingProperty &&
             encodingProperty.Property.IsStatic &&
             IsType(encodingProperty.Property.ContainingType, "Encoding", "System.Text") &&
@@ -139,7 +139,7 @@ internal static partial class FipsSymbolHelpers
             ((!string.Equals(method.Name, "Slice", StringComparison.Ordinal) &&
               !string.Equals(method.Name, "AsSpan", StringComparison.Ordinal) &&
               !string.Equals(method.Name, "AsMemory", StringComparison.Ordinal)) ||
-             !NamespaceEquals(method.ContainingNamespace, "System")))
+             !Namespaces.Equals(method.ContainingNamespace, "System")))
         {
             return false;
         }

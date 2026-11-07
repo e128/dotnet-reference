@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -30,12 +29,7 @@ public sealed class HardcodedTmpPathCodeFixProvider : E128CodeFixProviderBase
             diagnostic.Properties.TryGetValue(
                 HardcodedTmpPathE128Analyzer.PropRelativeSuffix, out var suffix);
 
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Replace with Path.GetTempPath()",
-                    ct => ReplaceWithGetTempPathAsync(context.Document, root, node, suffix, ct),
-                    "ReplaceWithGetTempPath"),
-                diagnostic);
+            CodeFixRegistration.Register(context, diagnostic, "Replace with Path.GetTempPath()", "ReplaceWithGetTempPath", ct => ReplaceWithGetTempPathAsync(context.Document, root, node, suffix, ct));
         }
 
         return Task.CompletedTask;

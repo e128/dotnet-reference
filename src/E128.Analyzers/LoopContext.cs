@@ -190,6 +190,90 @@ internal static class LoopContext
         return body?.Parent as StatementSyntax;
     }
 
+    /// <summary>
+    ///     Returns true when the node runs once per iteration of an enclosing loop. A node within a
+    ///     loop initializer or foreach source runs once, so it does not count.
+    /// </summary>
+    internal static bool IsInsideLoopBody(SyntaxNode node)
+    {
+        for (var current = node.Parent; current is not null; current = current.Parent)
+        {
+            if (current is ForStatementSyntax forStatement)
+            {
+                if (!IsInForHeader(forStatement, node))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (current is CommonForEachStatementSyntax forEach)
+            {
+                if (!forEach.Expression.Span.Contains(node.Span))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (current is WhileStatementSyntax or DoStatementSyntax)
+            {
+                return true;
+            }
+
+            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or DestructorDeclarationSyntax
+                or LocalFunctionStatementSyntax or AccessorDeclarationSyntax or OperatorDeclarationSyntax
+                or ConversionOperatorDeclarationSyntax)
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Returns true when any enclosing loop contains the node, even when the node sits in the
+    ///     loop header. A method, constructor, or local function boundary ends the walk.
+    /// </summary>
+    internal static bool IsWithinAnyLoop(SyntaxNode node)
+    {
+        for (var current = node.Parent; current is not null; current = current.Parent)
+        {
+            if (current is ForEachStatementSyntax or ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
+            {
+                return true;
+            }
+
+            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or LocalFunctionStatementSyntax)
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsInForHeader(ForStatementSyntax forStatement, SyntaxNode node)
+    {
+        if (forStatement.Declaration is { } declaration && declaration.Span.Contains(node.Span))
+        {
+            return true;
+        }
+
+        foreach (var initializer in forStatement.Initializers)
+        {
+            if (initializer.Span.Contains(node.Span))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool HasNumericBound(ExpressionSyntax? condition)
     {
         if (condition is not BinaryExpressionSyntax binary)

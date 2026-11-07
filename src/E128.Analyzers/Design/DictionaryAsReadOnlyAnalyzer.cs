@@ -85,9 +85,7 @@ public sealed class DictionaryAsReadOnlyAnalyzer : DiagnosticAnalyzer
 
     private static ITypeSymbol? GetContainingReturnType(ISymbol symbol)
     {
-        var returnType = symbol is IMethodSymbol method ? method.ReturnType
-            : symbol is IPropertySymbol property ? property.Type
-            : null;
+        var returnType = ReturnTypes.Get(symbol);
 
         // Unwrap Task<T> / ValueTask<T> so the rule fires on async methods.
         return returnType is INamedTypeSymbol { TypeArguments.Length: 1 } namedReturn

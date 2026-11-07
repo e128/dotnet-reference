@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,12 +37,7 @@ public sealed class SequenceEqualLoopCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Use SequenceEqual",
-                _ => Task.FromResult(ApplyFix(context.Document, root, forStatement, operands.Value)),
-                nameof(SequenceEqualLoopCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Use SequenceEqual", nameof(SequenceEqualLoopCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, forStatement, operands.Value)));
     }
 
     private static Document ApplyFix(

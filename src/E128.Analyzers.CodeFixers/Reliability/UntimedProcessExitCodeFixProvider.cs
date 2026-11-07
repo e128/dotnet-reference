@@ -4,7 +4,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -54,13 +53,8 @@ public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
         }
 
         var receiverText = memberAccess.Expression.ToString();
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add a timeout and Kill fallback",
-                ct => ReplaceStatementAsync(
-                    context.Document, statement, BuildSyncReplacement(receiverText), ["System"], ct),
-                nameof(UntimedProcessExitCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add a timeout and Kill fallback", nameof(UntimedProcessExitCodeFixProvider), ct => ReplaceStatementAsync(
+                    context.Document, statement, BuildSyncReplacement(receiverText), ["System"], ct));
     }
 
     // Only no-arg WaitForExitAsync() and WaitForExitAsync(CancellationToken.None) are fixable:
@@ -83,17 +77,12 @@ public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
         }
 
         var receiverText = memberAccess.Expression.ToString();
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add a timeout CancellationTokenSource with a Kill fallback",
-                ct => ReplaceStatementAsync(
+        CodeFixRegistration.Register(context, diagnostic, "Add a timeout CancellationTokenSource with a Kill fallback", nameof(UntimedProcessExitCodeFixProvider), ct => ReplaceStatementAsync(
                     context.Document,
                     statement,
                     BuildAsyncReplacement(receiverText),
                     ["System", "System.Threading"],
-                    ct),
-                nameof(UntimedProcessExitCodeFixProvider)),
-            diagnostic);
+                    ct));
     }
 
     private static bool IsCancellationTokenNoneArgument(ExpressionSyntax expression)

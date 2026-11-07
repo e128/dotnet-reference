@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -28,12 +27,7 @@ public sealed class AggressiveOptimizationCodeFixProvider : E128CodeFixProviderB
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Remove AggressiveOptimization",
-                _ => Task.FromResult(ApplyFix(context.Document, root, attribute, attributeList)),
-                nameof(AggressiveOptimizationCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Remove AggressiveOptimization", nameof(AggressiveOptimizationCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, attribute, attributeList)));
 
         return Task.CompletedTask;
     }

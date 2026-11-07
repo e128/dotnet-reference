@@ -77,7 +77,7 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
 
     private static void Report(SyntaxNodeAnalysisContext context, string value)
     {
-        if (!IsHardcodedUrl(value) || IsAttributeArgument(context.Node) || IsExemptDeclaration(context.Node))
+        if (!IsHardcodedUrl(value) || AttributeArguments.IsInside(context.Node) || IsExemptDeclaration(context.Node))
         {
             return;
         }
@@ -144,10 +144,5 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
         }
 
         return true;
-    }
-
-    private static bool IsAttributeArgument(SyntaxNode node)
-    {
-        return node.FirstAncestorOrSelf<AttributeArgumentSyntax>() is not null;
     }
 }

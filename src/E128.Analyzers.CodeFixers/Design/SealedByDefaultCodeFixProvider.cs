@@ -3,7 +3,6 @@ using System.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -28,12 +27,7 @@ public sealed class SealedByDefaultCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                "Add sealed modifier",
-                ct => AddSealedModifierAsync(context.Document, classDecl, ct),
-                nameof(SealedByDefaultCodeFixProvider)),
-            diagnostic);
+        CodeFixRegistration.Register(context, diagnostic, "Add sealed modifier", nameof(SealedByDefaultCodeFixProvider), ct => AddSealedModifierAsync(context.Document, classDecl, ct));
 
         return Task.CompletedTask;
     }
