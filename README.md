@@ -93,7 +93,7 @@ scripts/podman.sh test
 | **E128.Reference.Web**        | Minimal API web app with Kestrel and a health endpoint                         |
 | **E128.Reference.Cli**        | System.CommandLine CLI with a `--name` option                                  |
 | **E128.Reference.Core**       | Shared library (Greeter service, models, repositories, services)               |
-| **E128.Analyzers**            | Roslyn analyzers (E128001 to E128202), published to nuget.org                  |
+| **E128.Analyzers**            | Roslyn analyzers (E128001 to E128217), published to nuget.org                  |
 | **E128.Analyzers.CodeFixers** | Code fix providers for the analyzer rules, shipped in the same package         |
 | **E128.Reference.Tests**      | xUnit v3 and MTP with the CI, Podman, and Manual test categories               |
 | **Architecture.Tests**        | ArchUnitNET structural invariant tests (layers, naming, sealed)                |
@@ -256,7 +256,7 @@ podman compose down
 
 **GitHub Actions** (`.github/workflows/ci.yml`) runs four jobs:
 
-1. **Format + Build + Test**: format check (`dotnet format --verify-no-changes`), release build, and CI-category tests
+1. **Format + Build + Test**: format check (`dotnet format --verify-no-changes`), Release and Debug builds, CI-category tests with coverage, and an 80% line and assembly coverage gate
 2. **Shell Lint**: `scripts/lint-shell.sh` runs shellcheck over every tracked shell script
 3. **Agent Mirror Check**: checks that the opencode agent mirror is current, then verifies every guardrail hook referenced by the plugin exists
 4. **Secret Scan**: gitleaks scan over the full git history

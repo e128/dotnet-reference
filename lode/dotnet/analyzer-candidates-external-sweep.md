@@ -1,5 +1,5 @@
 # External Analyzer Candidate Sweep
-*Updated: 2026-11-06T15:25:45Z*
+*Updated: 2026-11-07T16:49:50Z*
 
 Source: a research scroll on e128.info, snapshotted 2026-11-05. The scroll lists
 thirty defect shapes. Each was checked against the E128 set and six third-party
@@ -27,7 +27,7 @@ The NASA Power of Ten read on 2026-11-05 is a separate source. It seeded three
 rules, E128199 to E128201. The pointer-depth row stays unshipped. See
 [NASA Power of Ten](#nasa-power-of-ten).
 
-The next free ID is **E128203**. E128095, E128130, and E128158 are also free.
+The next free ID is **E128218**. E128095, E128130, and E128158 are also free.
 E128022 is retired and stays out of use.
 
 The ownership check reads rule metadata, not a compiled run. Test each candidate

@@ -1,5 +1,5 @@
 # Performance Rule Details
-*Updated: 2026-11-06T13:02:22Z*
+*Updated: 2026-11-07T17:31:31Z*
 
 Behavior notes for the performance rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -100,6 +100,115 @@ or constant without the `Asynchronous` bit.
 - A `FileStreamOptions` argument, which the rule does not model.
 
 No code fix. The buffer size and the async flag are caller choices.
+
+### E128203: HTTP request inside a loop
+
+Flags an `HttpClient` request call inside a loop body. Methods: `SendAsync`,
+`GetAsync`, `PostAsync`, `PutAsync`, `DeleteAsync`, `PatchAsync`. The receiver
+must derive from `HttpClient`. The rule does not require an `await`.
+
+Exclusions: a `for` loop with a numeric literal bound, a call in a loop header, a
+body that calls `Task.Delay` or `Thread.Sleep` (a retry or poll loop), and a
+lambda or local function body.
+
+No code fix. The batch contract is application policy.
+
+### E128204: Database command inside a loop
+
+Flags a `DbCommand` execution inside a loop body. Methods:
+`ExecuteNonQueryAsync`, `ExecuteScalarAsync`, `ExecuteReaderAsync`. The receiver
+must derive from `DbCommand`. The rule does not require an `await`.
+
+E128093 owns the synchronous method shape, so this rule stays silent on it.
+Exclusions: a `for` loop with a numeric literal bound, a call in a loop header,
+and a body that calls `Task.Delay` or `Thread.Sleep`.
+
+No code fix. The batch boundary depends on the transaction scope.
+
+### E128205: Collection filled in a loop with a known count
+
+Flags a `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `Queue<T>`, or `Stack<T>`
+created with no capacity, when the next statement fills it in a loop with a
+known count.
+
+The count comes from the `foreach` source or from a `Count` or `Length` bound in
+a `for` condition. The source expression must be a chain of names, so the fix
+never runs a call twice. The loop must be the next statement in the same block.
+
+Exclusions: a loop with a `break` that exits this loop, a local that the loop
+never fills through its own fill method (`Add`, `Enqueue`, or `Push`), and a
+capacity set in an object initializer. A `SortedSet<T>` or
+`SortedDictionary<K,V>` stays silent, because neither has an `(int)` constructor.
+
+The code fix passes the count to the constructor. The analyzer passes the count
+text in the diagnostic property `CapacityExpression`, so the fix reads no second
+analysis.
+
+### E128206: Empty loop body
+
+Flags a `while` or `do` loop with an empty body. The loop spins a core until
+another thread changes the condition.
+
+The rule stays silent when the condition calls a method, because a loop such as
+`while (reader.Read())` does its work in the condition.
+
+No code fix. The signal type is a caller decision.
+
+### E128207: Reflection lookup inside a loop
+
+Flags a `System.Type` member lookup inside a loop body. Methods: `GetProperty`,
+`GetMethod`, `GetField`, `GetMember`, `GetConstructor`, `GetEvent`,
+`GetNestedType`, `GetInterface`.
+
+A lookup that references a loop variable stays silent. So does a lookup with a
+call in its receiver or argument, and a lookup in a body-declared local. The
+value changes per iteration, so a hoist would be wrong. E128090 owns test
+methods.
+
+Exclusions: a `for` loop with a numeric literal bound.
+
+No code fix. The hoisted declaration needs a caller-chosen name.
+
+### E128208: `ContainsKey` then indexer on a `ConcurrentDictionary`
+
+Flags `map.ContainsKey(key)` as the condition of an `if` that then reads
+`map[key]`. The pair does two lookups and races with a concurrent writer that
+removes the key between them.
+
+The rule matches the receiver and the key by symbol, or by constant value for a
+literal key. It reads `ConcurrentDictionary<TKey,TValue>` only. CA1854 covers
+`Dictionary<K,V>`. An indexer write stays silent, because `TryGetValue` is not
+the remedy for a write.
+
+No code fix. The replacement depends on the `if` body and the fallback value.
+
+### E128209: `GetBytes` length inside a loop
+
+Flags `Encoding.GetBytes(value).Length` inside a loop body. The call allocates a
+byte array only to read its length. `GetByteCount` returns the same number with
+no allocation.
+
+The receiver must derive from `Encoding`. The rule reads only the direct
+`.Length` use. A byte array that the code uses for anything else stays silent.
+
+The code fix rewrites the member access to `GetByteCount` with the same argument
+list.
+
+### E128210: `new Regex` inside a loop
+
+Flags a `Regex` construction inside a loop body. Each iteration compiles the
+pattern.
+
+The rule reads a constant and a non-constant pattern. The creation must not
+reference a value that changes per iteration, because a hoist is then wrong. A
+local declared in the loop body and a call in the pattern both count as
+per-iteration values.
+
+No code fix. The hoisted field name and the `GeneratedRegex` shape are caller
+choices.
+
+Tier 2 rules E128211 to E128217 live in
+[rule-details-performance-tier2.md](rule-details-performance-tier2.md).
 
 ## Related
 

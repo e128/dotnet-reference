@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-11-06T15:25:45Z*
+*Updated: 2026-11-07T17:31:31Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three
@@ -9,6 +9,10 @@ description. The Tier 2 table lists the candidates that wait for a real defect.
 
 The 2026-11-05 external sweep is complete.
 See [analyzer-candidates-external-sweep.md](analyzer-candidates-external-sweep.md).
+
+The twenty-practice performance sweep shipped fifteen rules and leaves one
+extension. See
+[analyzer-candidates-performance.md](analyzer-candidates-performance.md).
 
 - `mutable-static-readonly-array` shipped as E128061.
 - `test-reference-assemblies-tfm-mismatch` shipped as E128062.
@@ -50,7 +54,7 @@ rule description and the fix shape live in `src/E128.Analyzers/README.md`.
 | E128140-E128141 | Performance | every rule      | `Performance/`     |
 
 The unused IDs are E128095, E128130, and E128158. E128022 is retired. The next
-new rule takes E128203, after the last assigned ID.
+new rule takes E128218, after the last assigned ID.
 
 ## FIPS Cryptography Rules
 

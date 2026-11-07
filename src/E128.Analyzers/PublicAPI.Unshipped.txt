@@ -201,3 +201,37 @@ E128.Analyzers.Unsafe.FunctionPointerTypeAnalyzer.FunctionPointerTypeAnalyzer() 
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseCodeFixProvider.ConfigureAwaitFalseCodeFixProvider() -> void
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseE128Analyzer
 *REMOVED*E128.Analyzers.Design.ConfigureAwaitFalseE128Analyzer.ConfigureAwaitFalseE128Analyzer() -> void
+E128.Analyzers.Performance.HttpRequestInLoopAnalyzer
+E128.Analyzers.Performance.HttpRequestInLoopAnalyzer.HttpRequestInLoopAnalyzer() -> void
+E128.Analyzers.Performance.DbCommandInLoopAnalyzer
+E128.Analyzers.Performance.DbCommandInLoopAnalyzer.DbCommandInLoopAnalyzer() -> void
+E128.Analyzers.Performance.PresizeCollectionAnalyzer
+E128.Analyzers.Performance.PresizeCollectionAnalyzer.PresizeCollectionAnalyzer() -> void
+E128.Analyzers.Performance.EmptySpinLoopAnalyzer
+E128.Analyzers.Performance.EmptySpinLoopAnalyzer.EmptySpinLoopAnalyzer() -> void
+E128.Analyzers.Performance.ReflectionLookupInLoopAnalyzer
+E128.Analyzers.Performance.ReflectionLookupInLoopAnalyzer.ReflectionLookupInLoopAnalyzer() -> void
+E128.Analyzers.Performance.ConcurrentDictionaryDoubleLookupAnalyzer
+E128.Analyzers.Performance.ConcurrentDictionaryDoubleLookupAnalyzer.ConcurrentDictionaryDoubleLookupAnalyzer() -> void
+E128.Analyzers.Performance.EncodeInLoopAnalyzer
+E128.Analyzers.Performance.EncodeInLoopAnalyzer.EncodeInLoopAnalyzer() -> void
+E128.Analyzers.Performance.RegexInstanceInLoopAnalyzer
+E128.Analyzers.Performance.RegexInstanceInLoopAnalyzer.RegexInstanceInLoopAnalyzer() -> void
+E128.Analyzers.Performance.PollingLoopNoTokenAnalyzer
+E128.Analyzers.Performance.PollingLoopNoTokenAnalyzer.PollingLoopNoTokenAnalyzer() -> void
+E128.Analyzers.Performance.ToCharArrayCopyAnalyzer
+E128.Analyzers.Performance.ToCharArrayCopyAnalyzer.ToCharArrayCopyAnalyzer() -> void
+E128.Analyzers.Performance.ActivatorInLoopAnalyzer
+E128.Analyzers.Performance.ActivatorInLoopAnalyzer.ActivatorInLoopAnalyzer() -> void
+E128.Analyzers.Performance.HandlerNoDecompressionAnalyzer
+E128.Analyzers.Performance.HandlerNoDecompressionAnalyzer.HandlerNoDecompressionAnalyzer() -> void
+E128.Analyzers.Performance.StringBuilderCapacityAnalyzer
+E128.Analyzers.Performance.StringBuilderCapacityAnalyzer.StringBuilderCapacityAnalyzer() -> void
+E128.Analyzers.Performance.UnboundedChannelAnalyzer
+E128.Analyzers.Performance.UnboundedChannelAnalyzer.UnboundedChannelAnalyzer() -> void
+E128.Analyzers.Performance.LargeStructByValueAnalyzer
+E128.Analyzers.Performance.LargeStructByValueAnalyzer.LargeStructByValueAnalyzer() -> void
+E128.Analyzers.Performance.PresizeCollectionCodeFixProvider
+E128.Analyzers.Performance.PresizeCollectionCodeFixProvider.PresizeCollectionCodeFixProvider() -> void
+E128.Analyzers.Performance.EncodeInLoopCodeFixProvider
+E128.Analyzers.Performance.EncodeInLoopCodeFixProvider.EncodeInLoopCodeFixProvider() -> void

@@ -70,22 +70,145 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
 
         var argument = args[0].Expression;
 
-        if (!TryGetSelectInvocation(argument, out var selectInvocation))
+        if (TryGetSelectInvocation(argument, out var selectInvocation))
         {
+            if (!ReturnsTask(context, selectInvocation))
+            {
+                return;
+            }
+
+            if (ContainsSemaphoreThrottle(selectInvocation))
+            {
+                return;
+            }
+
+            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
             return;
         }
 
-        if (!ReturnsTask(context, selectInvocation))
+        if (TryGetTaskRunFanOut(context, invocation, argument, taskType, out var taskRun))
         {
-            return;
+            context.ReportDiagnostic(Diagnostic.Create(Rule, taskRun.GetLocation()));
+        }
+    }
+
+    private static bool TryGetTaskRunFanOut(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax whenAll,
+        ExpressionSyntax argument,
+        INamedTypeSymbol taskType,
+        [NotNullWhen(true)] out InvocationExpressionSyntax? taskRun)
+    {
+        taskRun = null;
+        if (argument is not IdentifierNameSyntax identifier)
+        {
+            return false;
         }
 
-        if (ContainsSemaphoreThrottle(selectInvocation))
+        if (context.SemanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol
+            is not ILocalSymbol local)
         {
-            return;
+            return false;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+        foreach (var candidateBlock in whenAll.Ancestors().OfType<BlockSyntax>())
+        {
+            var whenAllStatement = whenAll.Ancestors()
+                .OfType<StatementSyntax>()
+                .FirstOrDefault(statement => ReferenceEquals(statement.Parent, candidateBlock));
+            if (whenAllStatement is null)
+            {
+                continue;
+            }
+
+            var limit = candidateBlock.Statements.IndexOf(whenAllStatement);
+            for (var i = 0; i < limit; i++)
+            {
+                foreach (var candidate in candidateBlock.Statements[i]
+                             .DescendantNodes()
+                             .OfType<InvocationExpressionSyntax>())
+                {
+                    if (!IsAddOnLocal(candidate, local, context)
+                        || LoopContext.FindEnclosingLoopBody(candidate) is null
+                        || LoopContext.HasConstantBound(candidate)
+                        || candidate.ArgumentList.Arguments.Count != 1
+                        || candidate.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax run
+                        || !IsTaskRun(run, taskType, context)
+                        || ContainsThrottle(run, context))
+                    {
+                        continue;
+                    }
+
+                    taskRun = run;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsAddOnLocal(
+        InvocationExpressionSyntax invocation,
+        ILocalSymbol local,
+        SyntaxNodeAnalysisContext context)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax access
+            || !string.Equals(access.Name.Identifier.ValueText, "Add", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var receiver = context.SemanticModel.GetSymbolInfo(access.Expression, context.CancellationToken).Symbol;
+        return SymbolEqualityComparer.Default.Equals(receiver, local);
+    }
+
+    private static bool IsTaskRun(
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol taskType,
+        SyntaxNodeAnalysisContext context)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax access
+            || !string.Equals(access.Name.Identifier.ValueText, "Run", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
+        return symbol is IMethodSymbol method
+               && SymbolEqualityComparer.Default.Equals(method.ContainingType, taskType);
+    }
+
+    private static bool ContainsThrottle(
+        InvocationExpressionSyntax invocation,
+        SyntaxNodeAnalysisContext context)
+    {
+        foreach (var call in invocation.ArgumentList.Arguments
+                     .SelectMany(argument => argument.Expression.DescendantNodesAndSelf())
+                     .OfType<InvocationExpressionSyntax>())
+        {
+            if (call.Expression is not MemberAccessExpressionSyntax access
+                || !string.Equals(access.Name.Identifier.ValueText, "WaitAsync", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            // Task.WaitAsync(TimeSpan) is a timeout, not a concurrency gate.
+            if (context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol
+                is IMethodSymbol
+                {
+                    ContainingType.Name: "SemaphoreSlim"
+                } containing
+                && string.Equals(
+                    containing.ContainingType.ContainingNamespace?.ToDisplayString(),
+                    "System.Threading",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsTaskWhenAll(

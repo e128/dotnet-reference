@@ -131,6 +131,123 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task WhenAll_TaskRunListInLoop_FiresE128037()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M(IReadOnlyList<string> paths)
+                               {
+                                   List<Task> tasks = new();
+                                   foreach (string path in paths)
+                                   {
+                                       tasks.Add({|E128037:Task.Run(() => path.Length)|});
+                                   }
+
+                                   await Task.WhenAll(tasks);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WhenAll_TaskRunWithoutLoop_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M()
+                               {
+                                   List<Task> tasks = new();
+                                   tasks.Add(Task.Run(() => 1));
+                                   await Task.WhenAll(tasks);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WhenAll_TaskRunListWithSemaphore_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M(IReadOnlyList<string> paths, SemaphoreSlim gate)
+                               {
+                                   List<Task> tasks = new();
+                                   foreach (string path in paths)
+                                   {
+                                       tasks.Add(Task.Run(async () =>
+                                       {
+                                           await gate.WaitAsync();
+                                           await Task.Delay(path.Length);
+                                       }));
+                                   }
+
+                                   await Task.WhenAll(tasks);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WhenAll_TaskRunInBoundedLoop_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M()
+                               {
+                                   List<Task> tasks = new();
+                                   for (int i = 0; i < 3; i++)
+                                   {
+                                       tasks.Add(Task.Run(() => i));
+                                   }
+
+                                   await Task.WhenAll(tasks);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task WhenAll_TaskRunWithWaitAsyncTimeout_FiresE128037()
+    {
+        return VerifyAsync("""
+                           using System;
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               async Task M(IReadOnlyList<string> paths)
+                               {
+                                   List<Task> tasks = new();
+                                   foreach (string path in paths)
+                                   {
+                                       tasks.Add({|E128037:Task.Run(async () => await Task.Delay(path.Length).WaitAsync(TimeSpan.FromSeconds(5)))|});
+                                   }
+
+                                   await Task.WhenAll(tasks);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task WhenAll_MultipleArgs_DoesNotFire()
     {
         return VerifyAsync("""
