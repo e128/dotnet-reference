@@ -272,6 +272,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                }
                            }
 
+                           class Tests
+                           {
+                               [Xunit.Fact]
+                               public void RealTest()
+                               {
+                               }
+                           }
+
                            class C
                            {
                                void M(ILogger logger, string password)

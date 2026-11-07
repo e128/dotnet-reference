@@ -1,5 +1,5 @@
 # Reliability Rule Details
-*Updated: 2026-11-06T13:02:22Z*
+*Updated: 2026-11-07T14:35:25Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -57,7 +57,9 @@ hash-based lookup.
 The rule reports a positional parameter, an auto-property, and a field. An
 abstract property and a computed property do not join the generated equality, so
 they are skipped. A static member and a const field are skipped for the same
-reason. Both a record class and a record struct are checked.
+reason. Both a record class and a record struct are checked. A base record that
+declares `GetHashCode` owns the equality, so the derived member stays silent. A
+compiler-generated member is implicit and does not count.
 
 Type matching reads `MetadataTypes.Find` at compilation start and compares
 `OriginalDefinition` through `MetadataTypes.Contains`. A `string` and an
@@ -94,8 +96,10 @@ because the setter throws `ArgumentOutOfRangeException` for any value above
 The rule reads the left side as the `Timeout` property declared on exactly
 `System.Net.Http.HttpClient`, so a user type with its own `Timeout` is silent.
 The right side must be one of the named forms. A `FromMilliseconds` argument is
-read with `GetConstantValue`, and only a constant `-1` reports. A computed value
-is skipped, because the rule cannot prove it is infinite.
+read with `GetConstantValue`, and only a constant `-1` reports. A `HasValue`
+pattern guards the constant read, so a non-constant argument cannot throw an
+analyzer exception. A computed value is skipped, because the rule cannot prove
+it is infinite.
 
 One assignment action covers an object initializer, a plain property assignment,
 and a lambda body.
@@ -164,10 +168,13 @@ The rule reads the key from three sites:
 
 At compilation start the rule reads each `appsettings*.json` additional file
 with `AppSettingsKeyReader`, a hand-written scanner that accepts comments and a
-trailing comma. A file that fails to parse is skipped. The reader flattens each
-document to colon-separated paths and adds every intermediate node, so a section
-read matches a prefix and an array element matches its index. The comparison
-ignores case, because the configuration provider ignores case.
+trailing comma. The reader requires an object or array root, so a lone literal
+does not parse as a zero-key document. A file that fails to parse is skipped.
+The reader flattens each document to colon-separated paths and adds every
+intermediate node, so a section read matches a prefix and an array element
+matches its index. The comparison ignores case, because the configuration
+provider ignores case. A simple assignment defines the key and is not read. A
+compound assignment reads the key before it writes, so it still reports.
 
 **Exclusions**:
 

@@ -26,8 +26,7 @@ namespace E128.Analyzers.Style;
 ///     The provider skips that rename and applies the rest. The skip is deterministic: the order is
 ///     document id, then span start descending, so the same input always skips the same renames.
 ///     The skipped diagnostic stays in the solution, and a second Fix All run renames it from a fresh
-///     snapshot. No test pins this path, because the back-to-front order keeps a span valid for
-///     every ordinary input and a test would need a hand-built solution that shifts spans.
+///     snapshot. A unit test pins the stale-span branch with a hand-built rename span.
 /// </remarks>
 internal sealed class SequentialRenameFixAllProvider : FixAllProvider
 {
@@ -134,7 +133,7 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
         return result;
     }
 
-    private static async Task<Solution> ApplyRenamesSequentiallyAsync(
+    internal static async Task<Solution> ApplyRenamesSequentiallyAsync(
         Solution solution,
         List<RenameInfo> renames,
         CancellationToken ct)
@@ -172,7 +171,7 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
         return solution;
     }
 
-    private readonly struct RenameInfo
+    internal readonly struct RenameInfo
     {
         public DocumentId DocumentId { get; }
         public TextSpan Span { get; }

@@ -39,11 +39,12 @@ done < <(rg -o '"E128\d{3}"' "$ANALYZER_DIR/" --no-filename 2>/dev/null | tr -d 
 # A rule under Changed Rules is already shipped, so its old Shipped entry is
 # expected and must not count as a duplicate. Only the first column of a row
 # counts, so an ID named in a Notes cell is never read as a rule. A file that
-# has neither header is not a release file, so the check fails.
+# has none of the New, Changed, or Removed headers is not a release file, so
+# the check fails.
 unshipped_ids=()
 if [[ -f "$UNSHIPPED" ]]; then
-    if ! rg -q '^### (New|Changed) Rules\s*$' "$UNSHIPPED"; then
-        err "$UNSHIPPED has neither a New Rules nor a Changed Rules header."
+    if ! rg -q '^### (New|Changed|Removed) Rules\s*$' "$UNSHIPPED"; then
+        err "$UNSHIPPED has no New, Changed, or Removed Rules header."
         exit 1
     fi
     while IFS= read -r id; do

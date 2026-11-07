@@ -21,7 +21,8 @@ internal static class CodeFixTestRunner
         int? fixAllIterations = null,
         CompilerDiagnostics? compilerDiagnostics = null,
         DiagnosticResult[]? expected = null,
-        MarkupOptions markupOptions = MarkupOptions.None)
+        MarkupOptions markupOptions = MarkupOptions.None,
+        CodeFixTestBehaviors behaviors = CodeFixTestBehaviors.None)
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TFixer : CodeFixProvider, new()
     {
@@ -32,6 +33,11 @@ internal static class CodeFixTestRunner
             ReferenceAssemblies = references ?? ReferenceAssemblies.Net.Net100,
             MarkupOptions = markupOptions,
         };
+
+        if (behaviors != CodeFixTestBehaviors.None)
+        {
+            test.CodeFixTestBehaviors = behaviors;
+        }
 
         if (fixAllIterations is not null)
         {
@@ -52,15 +58,15 @@ internal static class CodeFixTestRunner
     }
 
     /// <summary>
-    ///     The fixer must not change the code. Both fix-all counts are zeroed so
-    ///     neither fix-all path runs, and any diagnostic in <paramref name="expected"/>
-    ///     decides whether the analyzer itself still fires.
+    ///     Asserts that the fixer leaves the code unchanged. Any diagnostic in
+    ///     <paramref name="expected"/> decides whether the analyzer itself still fires.
     /// </summary>
     /// <typeparam name="TAnalyzer">The analyzer under test.</typeparam>
     /// <typeparam name="TFixer">The fixer that must keep the code unchanged.</typeparam>
     internal static Task NoFixAsync<TAnalyzer, TFixer>(
         string source,
         ReferenceAssemblies? references = null,
+        CodeFixTestBehaviors behaviors = CodeFixTestBehaviors.None,
         params DiagnosticResult[] expected)
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TFixer : CodeFixProvider, new()
@@ -70,9 +76,12 @@ internal static class CodeFixTestRunner
             TestCode = source,
             FixedCode = source,
             ReferenceAssemblies = references ?? ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 0,
-            NumberOfFixAllInDocumentIterations = 0,
         };
+
+        if (behaviors != CodeFixTestBehaviors.None)
+        {
+            test.CodeFixTestBehaviors = behaviors;
+        }
 
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();

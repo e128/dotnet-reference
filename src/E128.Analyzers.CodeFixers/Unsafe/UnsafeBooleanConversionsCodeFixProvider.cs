@@ -17,11 +17,6 @@ public sealed class UnsafeBooleanConversionsCodeFixProvider : E128CodeFixProvide
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeBooleanConversionsAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

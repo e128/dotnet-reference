@@ -17,11 +17,6 @@ public sealed class EncodingDefaultCodeFixProvider : E128CodeFixProviderBase
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [EncodingDefaultAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

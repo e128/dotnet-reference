@@ -17,11 +17,6 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : E128CodeFixProviderB
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [FileSystemInfoEqualityAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

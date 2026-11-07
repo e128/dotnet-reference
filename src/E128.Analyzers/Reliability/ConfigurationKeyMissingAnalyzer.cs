@@ -106,8 +106,10 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A write such as config["Key"] = value defines the key, so it is not a read.
+        // A simple write such as config["Key"] = value defines the key, so it is not a read.
+        // A compound assignment reads the key before it writes it.
         if (elementAccess.Parent is AssignmentExpressionSyntax assignment
+            && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
             && ReferenceEquals(assignment.Left, elementAccess))
         {
             return;

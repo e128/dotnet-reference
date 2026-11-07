@@ -17,11 +17,6 @@ public sealed class LoggerArgumentGuardCodeFixProvider : E128CodeFixProviderBase
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [LoggerArgumentGuardAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

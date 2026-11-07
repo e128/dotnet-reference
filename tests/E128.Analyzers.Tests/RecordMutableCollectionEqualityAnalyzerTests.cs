@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,16 +7,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class RecordMutableCollectionEqualityAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<RecordMutableCollectionEqualityAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
+        AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>(code, expected);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -43,6 +34,25 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
                                public virtual bool Equals(Person? other) => other is not null && Names.SequenceEqual(other.Names);
 
                                public override int GetHashCode() => Names.Count;
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DerivedRecord_InheritsBaseGetHashCode_DoesNotFire()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+
+                           record Base
+                           {
+                               public override int GetHashCode() => 0;
+                           }
+
+                           record Derived : Base
+                           {
+                               public List<string> Names { get; init; } = new();
                            }
                            """);
     }

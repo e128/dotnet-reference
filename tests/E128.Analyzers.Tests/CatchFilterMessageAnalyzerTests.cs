@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,16 +7,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class CatchFilterMessageAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<CatchFilterMessageAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
+        AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>(code, expected);
 
     [Fact]
     [Trait("Category", "CI")]

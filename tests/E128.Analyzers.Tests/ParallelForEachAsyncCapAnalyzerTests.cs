@@ -118,6 +118,8 @@ public sealed class ParallelForEachAsyncCapAnalyzerTests
     [Trait("Category", "CI")]
     public Task CappedToMinusOne_DoesNotFire()
     {
+        // A negative MaxDegreeOfParallelism is the documented "no limit" value, so it caps the
+        // loop. A default ParallelOptions leaves the member unset, and that case fires.
         return VerifyAsync("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;

@@ -14,7 +14,6 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
 
     private const string ParallelMetadataName = "System.Threading.Tasks.Parallel";
     private const string ParallelOptionsMetadataName = "System.Threading.Tasks.ParallelOptions";
-    private const string ParallelOptionsTypeName = "ParallelOptions";
     private const string ForEachAsyncMethodName = "ForEachAsync";
     private const string MaxDegreeOfParallelismMemberName = "MaxDegreeOfParallelism";
 
@@ -113,7 +112,8 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!string.Equals(GetTypeName(creation.Type), ParallelOptionsTypeName, StringComparison.Ordinal))
+        if (context.SemanticModel.GetTypeInfo(creation, context.CancellationToken).Type is not { } createdType
+            || !SymbolEqualityComparer.Default.Equals(createdType, parallelOptionsType))
         {
             return;
         }
@@ -165,17 +165,6 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
     private static bool IsParallelOptions(ITypeSymbol type, INamedTypeSymbol parallelOptionsType)
     {
         return SymbolEqualityComparer.Default.Equals(type, parallelOptionsType);
-    }
-
-    private static string GetTypeName(TypeSyntax type)
-    {
-        return type switch
-        {
-            QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText,
-            AliasQualifiedNameSyntax alias => alias.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => type.ToString()
-        };
     }
 
     private static bool SetsMaxDegreeOfParallelism(InitializerExpressionSyntax initializer)

@@ -24,11 +24,6 @@ public sealed class LowValueTestCodeFixProvider : E128CodeFixProviderBase
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [LowValueTestAnalyzer.SuggestionDiagnosticId, LowValueTestAnalyzer.WarningDiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

@@ -20,11 +20,6 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StringFormatToInterpolationAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

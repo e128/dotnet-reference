@@ -22,8 +22,6 @@ namespace E128.Analyzers.Security;
 [Shared]
 public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBase
 {
-    private const string FixedTimeEqualsExpression = "CryptographicOperations.FixedTimeEquals";
-
     private const string OperationsTypeName = "System.Security.Cryptography.CryptographicOperations";
 
     private const string FixedTimeEqualsMethodName = "FixedTimeEquals";
@@ -38,22 +36,31 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
 
         if (node.FirstAncestorOrSelf<InvocationExpressionSyntax>(candidate =>
                 candidate.Span == diagnostic.Location.SourceSpan) is not { } invocation
-            || GetSequenceEqualOperands(invocation) is not { } operands
-            || !await HasFixedTimeEqualsAsync(context.Document, context.CancellationToken)
-                .ConfigureAwait(false)
-            || !await AreNonNullAsync(context.Document, operands, context.CancellationToken)
-                .ConfigureAwait(false))
+            || GetSequenceEqualOperands(invocation) is not { } operands)
         {
             return;
         }
 
-        var replacement = string.Concat(
-            FixedTimeEqualsExpression,
-            "(",
-            operands.Left.ToString(),
-            ", ",
-            operands.Right.ToString(),
-            ")");
+        var model = await context.Document.GetSemanticModelAsync(context.CancellationToken)
+            .ConfigureAwait(false);
+
+        if (model is null
+            || !HasFixedTimeEquals(model)
+            || !AreNonNull(model, operands, context.CancellationToken))
+        {
+            return;
+        }
+
+        var replacement = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName("CryptographicOperations"),
+                SyntaxFactory.IdentifierName(FixedTimeEqualsMethodName)),
+            SyntaxFactory.ArgumentList(
+                SyntaxFactory.SeparatedList([
+                    SyntaxFactory.Argument(operands.Left.WithoutTrivia()),
+                    SyntaxFactory.Argument(operands.Right.WithoutTrivia())
+                ])));
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -68,13 +75,9 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
     ///     <c lang="csharp">CryptographicOperations.FixedTimeEquals</c>. The type appears in .NET Core
     ///     2.1 and .NET Standard 2.1, so the fix stays absent for an older target.
     /// </summary>
-    private static async Task<bool> HasFixedTimeEqualsAsync(
-        Document document,
-        CancellationToken cancellationToken)
+    private static bool HasFixedTimeEquals(SemanticModel model)
     {
-        var compilation = await document.Project.GetCompilationAsync(cancellationToken).ConfigureAwait(false);
-
-        return compilation?.GetTypeByMetadataName(OperationsTypeName)
+        return model.Compilation.GetTypeByMetadataName(OperationsTypeName)
             ?.GetMembers(FixedTimeEqualsMethodName).Length > 0;
     }
 
@@ -82,15 +85,12 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
     ///     True when the flow analysis does not report either operand as possibly null. A project
     ///     without nullable annotations reports no flow state, so the fix stays available there.
     /// </summary>
-    private static async Task<bool> AreNonNullAsync(
-        Document document,
+    private static bool AreNonNull(
+        SemanticModel model,
         (ExpressionSyntax Left, ExpressionSyntax Right) operands,
         CancellationToken cancellationToken)
     {
-        var model = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-
-        return model is not null
-               && model.GetTypeInfo(operands.Left, cancellationToken).Nullability.FlowState
+        return model.GetTypeInfo(operands.Left, cancellationToken).Nullability.FlowState
                != NullableFlowState.MaybeNull
                && model.GetTypeInfo(operands.Right, cancellationToken).Nullability.FlowState
                != NullableFlowState.MaybeNull;
@@ -118,7 +118,7 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
     private static async Task<Document> ReplaceAsync(
         Document document,
         ExpressionSyntax expression,
-        string replacement,
+        ExpressionSyntax replacement,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -128,8 +128,7 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
             return document;
         }
 
-        var newExpression = SyntaxFactory.ParseExpression(replacement)
-            .WithTriviaFrom(expression);
+        var newExpression = replacement.WithTriviaFrom(expression);
 
         var newRoot = root.ReplaceNode(expression, newExpression);
         newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Security.Cryptography");

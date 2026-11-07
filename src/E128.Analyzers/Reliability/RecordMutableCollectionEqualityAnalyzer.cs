@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -94,7 +95,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
         var record = (RecordDeclarationSyntax)context.Node;
 
         // A record that declares GetHashCode owns its equality, which is the fix this rule asks for.
-        if (DeclaresGetHashCode(record))
+        if (DeclaresGetHashCode(record, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
@@ -114,7 +115,10 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool DeclaresGetHashCode(RecordDeclarationSyntax record)
+    private static bool DeclaresGetHashCode(
+        RecordDeclarationSyntax record,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
         foreach (var member in record.Members)
         {
@@ -122,6 +126,29 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
                 && string.Equals(method.Identifier.ValueText, "GetHashCode", StringComparison.Ordinal))
             {
                 return true;
+            }
+        }
+
+        if (model.GetDeclaredSymbol(record, cancellationToken) is not INamedTypeSymbol type)
+        {
+            return false;
+        }
+
+        // A base record that declares GetHashCode owns the equality, so the derived member is silent.
+        // The compiler-generated members are implicit and do not count.
+        for (var baseType = type.BaseType; baseType is not null; baseType = baseType.BaseType)
+        {
+            if (baseType.SpecialType is SpecialType.System_Object or SpecialType.System_ValueType)
+            {
+                continue;
+            }
+
+            foreach (var member in baseType.GetMembers("GetHashCode"))
+            {
+                if (member is IMethodSymbol { Parameters.Length: 0, IsImplicitlyDeclared: false })
+                {
+                    return true;
+                }
             }
         }
 

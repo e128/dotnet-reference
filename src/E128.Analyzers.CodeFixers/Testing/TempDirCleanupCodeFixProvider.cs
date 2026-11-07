@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading;
@@ -167,7 +168,7 @@ public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
         {
             if (member is MethodDeclarationSyntax method
                 && method.ParameterList.Parameters.Count == 0
-                && string.Equals(method.Identifier.ValueText, name, System.StringComparison.Ordinal))
+                && string.Equals(method.Identifier.ValueText, name, StringComparison.Ordinal))
             {
                 return true;
             }

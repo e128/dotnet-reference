@@ -254,6 +254,22 @@ public sealed class ComplexityCeilingE128AnalyzerTests
                                                      }
                                                      """;
 
+    private const string ForHeaderCoordinateLoopCode = """
+                                                      class C
+                                                      {
+                                                          void M(string[][] rows)
+                                                          {
+                                                              for (var i = 0; i < rows.Length; i++)
+                                                              {
+                                                                  foreach (var cell in rows[i])
+                                                                  {
+                                                                      _ = cell;
+                                                                  }
+                                                              }
+                                                          }
+                                                      }
+                                                      """;
+
     private const string TriangularLoopCode = """
                                               class C
                                               {
@@ -289,7 +305,7 @@ public sealed class ComplexityCeilingE128AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.TestState.AnalyzerConfigFiles.Add(
-            ("/.editorconfig", "is_global = true\ne128_max_complexity = " + ceiling));
+            ("/.globalconfig", "is_global = true\ne128_max_complexity = " + ceiling));
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync();
     }
@@ -448,6 +464,13 @@ public sealed class ComplexityCeilingE128AnalyzerTests
     public Task ComplexityCeilingAnalyzer_Silent_WhenIndexedLoopBoundIsOuterElement()
     {
         return VerifyAsync(IndexedCoordinateLoopCode);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ComplexityCeilingAnalyzer_Silent_WhenInnerLoopRunsOverForHeaderElement()
+    {
+        return VerifyAsync(ForHeaderCoordinateLoopCode);
     }
 
     [Fact]

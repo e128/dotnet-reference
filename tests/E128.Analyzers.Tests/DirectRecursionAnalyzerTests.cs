@@ -21,6 +21,30 @@ public sealed class DirectRecursionAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task DoesNotReport_WhenAnotherInstanceCallsTheMethod()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               int Down(int n) => n <= 0 ? 0 : new C().Down(n - 1);
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheThisInstanceCallsTheMethod()
+    {
+        return VerifyAsync("""
+                           class C
+                           {
+                               int {|E128199:Down|}(int n) => n <= 0 ? 0 : this.Down(n - 1);
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_WhenAMethodCallsItself()
     {
         return VerifyAsync("""

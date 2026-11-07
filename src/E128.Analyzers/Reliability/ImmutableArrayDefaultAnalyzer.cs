@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -109,8 +110,10 @@ public sealed class ImmutableArrayDefaultAnalyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
-        // A deconstruction has a tuple on the left. Check every element for a field.
-        foreach (var target in assignment.Left.DescendantNodesAndSelf())
+        // Only the target itself counts. A member access that reads the field on the way to a
+        // different member does not assign the field. A deconstruction target is a tuple, so walk
+        // its elements and nested tuples.
+        foreach (var target in AssignmentTargets(assignment.Left))
         {
             if (target is not (IdentifierNameSyntax or MemberAccessExpressionSyntax))
             {
@@ -123,6 +126,24 @@ public sealed class ImmutableArrayDefaultAnalyzer : DiagnosticAnalyzer
                 assignedFields.Add(field);
             }
         }
+    }
+
+    private static IEnumerable<ExpressionSyntax> AssignmentTargets(ExpressionSyntax left)
+    {
+        if (left is TupleExpressionSyntax tuple)
+        {
+            foreach (var argument in tuple.Arguments)
+            {
+                foreach (var target in AssignmentTargets(argument.Expression))
+                {
+                    yield return target;
+                }
+            }
+
+            yield break;
+        }
+
+        yield return left;
     }
 
     private static void CollectArgument(

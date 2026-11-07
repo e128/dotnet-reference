@@ -47,6 +47,7 @@ if [[ "$JSON" == true ]]; then
         "$CURRENT" "$BASE" "$AHEAD" "$BEHIND" "$CHANGED" "$UPSTREAM" "$UNPUSHED"
 elif [[ "$HUMAN" == true ]]; then
     printf "%s is %d commit(s) ahead of %s\n" "$CURRENT" "$AHEAD" "$BASE"
+    printf "%s is %d commit(s) behind %s\n" "$CURRENT" "$BEHIND" "$BASE"
     if [[ -n "$UPSTREAM" ]]; then
         printf "%d commit(s) unpushed to %s\n" "$UNPUSHED" "$UPSTREAM"
     else
@@ -55,6 +56,7 @@ elif [[ "$HUMAN" == true ]]; then
 else
     printf "${BOLD}Branch:${RESET} %s (base: %s)\n" "$CURRENT" "$BASE"
     printf "${BOLD}Ahead:${RESET} %d commit(s)\n" "$AHEAD"
+    printf "${BOLD}Behind:${RESET} %d commit(s)\n" "$BEHIND"
     if [[ -n "$UPSTREAM" ]]; then
         printf "${BOLD}Unpushed:${RESET} %d commit(s) (upstream: %s)\n" "$UNPUSHED" "$UPSTREAM"
     else

@@ -84,6 +84,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
         var efCore = EfCoreTypes.Resolve(context.Compilation);
+        var scopeAccessors = ScopeAccessorTypes.Resolve(context.Compilation);
         var scopedServices = new ConcurrentBag<INamedTypeSymbol>();
         var singletonCandidates = new ConcurrentBag<SingletonCandidate>();
         var dbContextCandidates = new ConcurrentBag<DbContextCandidate>();
@@ -94,7 +95,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationEndAction(ctx =>
         {
-            ReportCaptiveDependencies(ctx, scopedServices, singletonCandidates);
+            ReportCaptiveDependencies(ctx, scopedServices, singletonCandidates, scopeAccessors);
             ReportDbContextSingletons(ctx, dbContextCandidates);
         });
     }
@@ -501,7 +502,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     private static void ReportCaptiveDependencies(
         CompilationAnalysisContext context,
         ConcurrentBag<INamedTypeSymbol> scopedServices,
-        ConcurrentBag<SingletonCandidate> singletonCandidates)
+        ConcurrentBag<SingletonCandidate> singletonCandidates,
+        ScopeAccessorTypes scopeAccessors)
     {
         var scoped = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (var type in scopedServices)
@@ -516,7 +518,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         foreach (var candidate in singletonCandidates)
         {
-            var scopedDependency = FindScopedDependency(candidate.Implementation, scoped);
+            var scopedDependency = FindScopedDependency(candidate.Implementation, scoped, scopeAccessors);
 
             if (scopedDependency is not null)
             {
@@ -542,14 +544,17 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static string? FindScopedDependency(INamedTypeSymbol implementation, HashSet<INamedTypeSymbol> scoped)
+    private static string? FindScopedDependency(
+        INamedTypeSymbol implementation,
+        HashSet<INamedTypeSymbol> scoped,
+        ScopeAccessorTypes scopeAccessors)
     {
         foreach (var constructor in implementation.InstanceConstructors)
         {
             foreach (var parameter in constructor.Parameters)
             {
                 if (parameter.Type is INamedTypeSymbol parameterType
-                    && !ScopeAccessorNames.Contains(parameterType.Name)
+                    && !scopeAccessors.Contains(parameterType)
                     && scoped.Contains(parameterType))
                 {
                     return parameterType.Name;
@@ -558,6 +563,55 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     The scope accessors compare by symbol when the compilation references the type. The name
+    ///     set stays as a fallback for a compilation that omits the reference.
+    /// </summary>
+    private sealed class ScopeAccessorTypes
+    {
+        private static readonly ImmutableArray<string> MetadataNames =
+        [
+            "System.IServiceProvider",
+            "Microsoft.Extensions.DependencyInjection.IServiceScopeFactory",
+            "Microsoft.Extensions.DependencyInjection.IServiceScope"
+        ];
+
+        private readonly ImmutableArray<INamedTypeSymbol> types;
+
+        private ScopeAccessorTypes(ImmutableArray<INamedTypeSymbol> types)
+        {
+            this.types = types;
+        }
+
+        internal static ScopeAccessorTypes Resolve(Compilation compilation)
+        {
+            var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+
+            foreach (var metadataName in MetadataNames)
+            {
+                if (compilation.GetTypeByMetadataName(metadataName) is { } type)
+                {
+                    builder.Add(type);
+                }
+            }
+
+            return new ScopeAccessorTypes(builder.ToImmutable());
+        }
+
+        internal bool Contains(ITypeSymbol type)
+        {
+            foreach (var accessorType in types)
+            {
+                if (SymbolEqualityComparer.Default.Equals(accessorType, type))
+                {
+                    return true;
+                }
+            }
+
+            return ScopeAccessorNames.Contains(type.Name);
+        }
     }
 
     private sealed class SingletonCandidate

@@ -17,11 +17,6 @@ public sealed class MemoryMarshalNonBlittableCodeFixProvider : E128CodeFixProvid
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MemoryMarshalNonBlittableAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

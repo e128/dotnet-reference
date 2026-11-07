@@ -10,16 +10,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class PfxImportEphemeralKeySetAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<PfxImportEphemeralKeySetAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
+        AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>(code, expected);
 
     /// <summary>
     ///     Removing every metadata reference makes the certificate types unresolvable, which is the

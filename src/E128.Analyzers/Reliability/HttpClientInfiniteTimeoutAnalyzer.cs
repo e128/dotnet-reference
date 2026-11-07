@@ -136,7 +136,8 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
         }
 
         var argument = invocation.ArgumentList.Arguments[0].Expression;
-        return IsInfiniteMilliseconds(model.GetConstantValue(argument, cancellationToken).Value);
+        return model.GetConstantValue(argument, cancellationToken) is { HasValue: true, Value: var constantValue }
+            && IsInfiniteMilliseconds(constantValue);
     }
 
     private static bool IsInfiniteTimeSpanField(

@@ -1,5 +1,5 @@
 # Reliability Rule Details: Concurrency
-*Updated: 2026-11-05T15:20:29Z*
+*Updated: 2026-11-07T14:35:25Z*
 
 Behavior notes for the reliability rules that cover async and concurrent code.
 The complete rule table, the severity, and the code-fix status live in
@@ -107,7 +107,8 @@ sets no `MaxDegreeOfParallelism` member. The call then runs at most
 An I/O-bound body can need a different cap, so the rule asks for an explicit one.
 
 The rule resolves `System.Threading.Tasks.Parallel` and `ParallelOptions` once.
-It reads the initializer syntactically, so it needs no semantic model call.
+It compares the created options type by symbol, so a `using` alias cannot hide
+it. It reads the initializer syntactically, so it needs no semantic model call.
 
 **Exclusions**:
 
@@ -129,7 +130,9 @@ holds, because a second caller then throws `InvalidOperationException`.
 The second shape reads a field receiver only. A local, a parameter, a property,
 and a method result stay silent, because the rule cannot prove the source is
 shared. `TrySetResult`, `TrySetException`, and `TrySetCanceled` return false
-instead of throwing, so the rule never reports them.
+instead of throwing, so the rule never reports them. The options type compares
+by symbol through `FipsSymbolHelpers.IsType`, so a look-alike type in another
+namespace does not match.
 
 Two descriptors share the `E128159` id. The test harness sets
 `MarkupOptions = MarkupOptions.UseFirstDescriptor`.

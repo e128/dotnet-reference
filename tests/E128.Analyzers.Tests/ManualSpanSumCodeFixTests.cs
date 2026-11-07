@@ -1,25 +1,15 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ManualSpanSumCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<
-            ManualSpanSumAnalyzer,
-            ManualSpanSumCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = "using System;\n\n" + TestStubs.TensorPrimitives + "\n\n" + source,
-            FixedCode = "using System;\nusing System.Numerics.Tensors;\n\n" + TestStubs.TensorPrimitives + "\n\n" + fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<ManualSpanSumAnalyzer, ManualSpanSumCodeFixProvider>(
+            "using System;\n\n" + TestStubs.TensorPrimitives + "\n\n" + source,
+            "using System;\nusing System.Numerics.Tensors;\n\n" + TestStubs.TensorPrimitives + "\n\n" + fixedCode);
 
     [Fact]
     [Trait("Category", "CI")]

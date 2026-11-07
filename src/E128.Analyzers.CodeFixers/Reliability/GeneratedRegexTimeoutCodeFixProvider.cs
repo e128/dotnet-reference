@@ -18,11 +18,6 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBa
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GeneratedRegexAnalyzer.TimeoutDiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

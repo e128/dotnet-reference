@@ -22,11 +22,6 @@ public sealed class Utf8GetBytesLiteralCodeFixProvider : E128CodeFixProviderBase
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [Utf8GetBytesLiteralAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

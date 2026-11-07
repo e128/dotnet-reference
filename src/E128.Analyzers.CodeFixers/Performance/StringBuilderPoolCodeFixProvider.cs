@@ -17,11 +17,6 @@ public sealed class StringBuilderPoolCodeFixProvider : E128CodeFixProviderBase
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StringBuilderPoolAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);

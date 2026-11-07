@@ -18,11 +18,6 @@ public sealed class HttpClientMissingOceCatchCodeFixProvider : E128CodeFixProvid
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [HttpClientMissingOceCatchAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

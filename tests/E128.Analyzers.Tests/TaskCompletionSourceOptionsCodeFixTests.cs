@@ -59,7 +59,7 @@ public sealed class TaskCompletionSourceOptionsCodeFixTests
                                  {
                                      object M()
                                      {
-                                         return new TaskCompletionSource<int>((TaskCreationOptions.None) | TaskCreationOptions.RunContinuationsAsynchronously);
+                                         return new TaskCompletionSource<int>(TaskCreationOptions.None | TaskCreationOptions.RunContinuationsAsynchronously);
                                      }
                                  }
                                  """;

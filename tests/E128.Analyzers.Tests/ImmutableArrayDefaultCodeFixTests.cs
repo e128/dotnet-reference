@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,19 +7,12 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ImmutableArrayDefaultCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode)
-    {
-        return new CSharpCodeFixTest<ImmutableArrayDefaultAnalyzer, ImmutableArrayDefaultCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
-            // CompilationEnd diagnostics are non-local by design.
-            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck
-        }.RunAsync();
-    }
+    private static Task VerifyFixAsync(string source, string fixedCode) =>
+        CodeFixTestRunner.RunAsync<ImmutableArrayDefaultAnalyzer, ImmutableArrayDefaultCodeFixProvider>(
+            source,
+            fixedCode,
+            fixAllIterations: 1,
+            behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -66,17 +58,9 @@ public sealed class ImmutableArrayDefaultCodeFixTests
                               }
                               """;
 
-        return new CSharpCodeFixTest<ImmutableArrayDefaultAnalyzer, ImmutableArrayDefaultCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 0,
-            NumberOfFixAllInDocumentIterations = 0,
-            // CompilationEnd diagnostics are non-local by design.
-            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck
-        }.RunAsync();
+        return CodeFixTestRunner.NoFixAsync<ImmutableArrayDefaultAnalyzer, ImmutableArrayDefaultCodeFixProvider>(
+            source,
+            behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck);
     }
 
     [Fact]

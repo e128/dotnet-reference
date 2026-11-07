@@ -128,7 +128,7 @@ public sealed class SortInLoopE128AnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task RemoveAtZero_InForeach_Fires_E128153()
+    public Task RemoveAtZero_InWhile_Fires_E128153()
     {
         return VerifyAsync("""
                            using System.Collections.Generic;

@@ -87,7 +87,7 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
 
         if (index >= 0 && index < arguments.Count)
         {
-            newArguments = arguments.Replace(arguments[index], WithFlag(arguments[index], flagText));
+            newArguments = arguments.Replace(arguments[index], WithFlag(arguments[index], flag));
         }
         else if (IsContinuationOptionsState(arguments, semanticModel, cancellationToken))
         {
@@ -128,11 +128,16 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
                && SymbolEqualityComparer.Default.Equals(argumentType, continuationOptions);
     }
 
-    private static ArgumentSyntax WithFlag(ArgumentSyntax argument, string flagText)
+    private static ArgumentSyntax WithFlag(ArgumentSyntax argument, ExpressionSyntax flag)
     {
         var original = argument.Expression;
-        var originalText = original.ToString();
-        var combined = SyntaxFactory.ParseExpression($"({originalText}) | {flagText}")
+        var left = original is BinaryExpressionSyntax or ConditionalExpressionSyntax or AssignmentExpressionSyntax
+            ? SyntaxFactory.ParenthesizedExpression(original.WithoutTrivia())
+            : original.WithoutTrivia();
+        var combined = SyntaxFactory.BinaryExpression(
+                SyntaxKind.BitwiseOrExpression,
+                left,
+                flag.WithoutTrivia())
             .WithTriviaFrom(original);
 
         return argument.WithExpression(combined);

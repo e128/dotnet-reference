@@ -13,15 +13,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HardcodedSecretAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<HardcodedSecretAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        return test.RunAsync();
-    }
+    private static Task VerifyAsync(string code) =>
+        AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>(code);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -165,6 +158,14 @@ public sealed class HardcodedSecretAnalyzerTests
                            namespace Xunit
                            {
                                public sealed class FactAttribute : System.Attribute
+                               {
+                               }
+                           }
+
+                           class Tests
+                           {
+                               [Xunit.Fact]
+                               public void RealTest()
                                {
                                }
                            }
@@ -362,15 +363,25 @@ public sealed class HardcodedSecretAnalyzerTests
         var test = new CSharpAnalyzerTest<HardcodedSecretAnalyzer, DefaultVerifier>
         {
             TestCode = """
+                       class FactAttribute : System.Attribute { }
                        class C
                        {
                            const string AdminPassword = "hunter2hunter2";
+
+                           [Fact]
+                           void T() { }
                        }
                        """,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
-        test.TestState.AdditionalReferences.Add(EmitXunitStub("XunitStubOne", references));
-        test.TestState.AdditionalReferences.Add(EmitXunitStub("XunitStubTwo", references));
+        test.TestState.AdditionalReferences.Add(EmitStub(
+            "XunitStubOne",
+            "namespace Xunit { public sealed class FactAttribute { } }",
+            references));
+        test.TestState.AdditionalReferences.Add(EmitStub(
+            "XunitStubTwo",
+            "namespace Xunit { public sealed class FactAttribute { } }",
+            references));
 
         await test.RunAsync();
     }
@@ -378,21 +389,6 @@ public sealed class HardcodedSecretAnalyzerTests
     /// <summary>
     ///     Two references that both declare Xunit.FactAttribute make GetTypeByMetadataName return null.
     /// </summary>
-    private static PortableExecutableReference EmitXunitStub(string assemblyName, ImmutableArray<MetadataReference> references)
-    {
-        var compilation = CSharpCompilation.Create(
-            assemblyName,
-            [CSharpSyntaxTree.ParseText("namespace Xunit { public sealed class FactAttribute { } }")],
-            references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-        using var stream = new MemoryStream();
-        var result = compilation.Emit(stream);
-        Assert.True(result.Success);
-
-        return MetadataReference.CreateFromImage(stream.ToArray());
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public async Task TestCompilationWithNUnitReference_Silent()
@@ -404,6 +400,9 @@ public sealed class HardcodedSecretAnalyzerTests
                        class C
                        {
                            const string AdminPassword = "hunter2hunter2";
+
+                           [NUnit.Framework.Test]
+                           void T() { }
                        }
                        """,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
@@ -427,6 +426,9 @@ public sealed class HardcodedSecretAnalyzerTests
                        class C
                        {
                            const string AdminPassword = "hunter2hunter2";
+
+                           [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]
+                           void T() { }
                        }
                        """,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100

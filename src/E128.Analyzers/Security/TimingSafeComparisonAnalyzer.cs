@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -19,7 +18,9 @@ namespace E128.Analyzers.Security;
 ///     The rule reads a value produced by an HMAC member, or a local or field whose name marks it
 ///     as a tag, MAC, or signature. A plain content hash stays silent, because a hash compare is not
 ///     a forgery check. The equality operator on a span compares the address and the length in
-///     constant time, so the rule does not read that shape.
+///     constant time, so the rule does not read that shape. A field initializer in another syntax
+///     tree is a known false negative. RS1030 forbids <c lang="csharp">Compilation.GetSemanticModel</c> inside an
+///     analyzer, so only a declarator in the current tree can be inspected.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
@@ -248,7 +249,7 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
 
         string? hashOnly = null;
 
-        foreach (var word in SplitWords(symbol.Name))
+        foreach (var word in WordSplitter.Split(symbol.Name, "_."))
         {
             if (!WeakNameWords.Contains(word))
             {
@@ -406,39 +407,6 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    /// <summary>Splits a name at underscores, dots, and camel-case boundaries.</summary>
-    private static List<string> SplitWords(string name)
-    {
-        var words = new List<string>();
-        var start = 0;
-
-        for (var i = 1; i <= name.Length; i++)
-        {
-            var atEnd = i == name.Length;
-            var boundary = atEnd
-                           || name[i] is '_' or '.'
-                           || (char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
-                           || (char.IsUpper(name[i - 1]) && char.IsUpper(name[i])
-                               && i + 1 < name.Length && char.IsLower(name[i + 1]));
-
-            if (!boundary)
-            {
-                continue;
-            }
-
-            var word = name.Substring(start, i - start).Trim('_', '.');
-
-            if (word.Length > 0)
-            {
-                words.Add(word);
-            }
-
-            start = i;
-        }
-
-        return words;
-    }
-
     private static bool InitializerProducesSecret(
         ISymbol symbol,
         SemanticModel model,
@@ -455,7 +423,10 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // The declaration can sit in another syntax tree, so ask that tree's model.
+            // Only a declarator in the current syntax tree is inspected. RS1030 forbids
+            // Compilation.GetSemanticModel inside an analyzer, so a cross-tree initializer is a
+            // known false negative: a field initialized in another partial file contributes no
+            // secret signal.
             var declarationModel = declarator.SyntaxTree == model.SyntaxTree
                 ? model
                 : null;

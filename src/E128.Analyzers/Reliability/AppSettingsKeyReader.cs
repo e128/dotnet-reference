@@ -41,6 +41,14 @@ internal sealed class AppSettingsKeyReader
             reader.position = 1;
         }
 
+        // A settings document has an object or array root. A lone literal would parse as a
+        // well-formed document with zero keys and arm the rule for every read.
+        reader.SkipTrivia();
+        if (reader.position >= reader.json.Length || reader.json[reader.position] is not ('{' or '['))
+        {
+            return false;
+        }
+
         if (!reader.ReadValue(string.Empty, 1))
         {
             return false;

@@ -19,9 +19,11 @@ namespace E128.Analyzers.Performance;
 public sealed class ComplexityCeilingSuppressionCodeFixProvider : E128CodeFixProviderBase
 {
     internal const string DisableDirective =
-        "#pragma warning disable E128152 // Justification: state why this site is output-bound";
+        "#pragma warning disable " + ComplexityCeilingAnalyzer.DiagnosticId +
+        " // Justification: state why this site is output-bound";
 
-    internal const string RestoreDirective = "#pragma warning restore E128152";
+    internal const string RestoreDirective =
+        "#pragma warning restore " + ComplexityCeilingAnalyzer.DiagnosticId;
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ComplexityCeilingAnalyzer.DiagnosticId];

@@ -21,11 +21,6 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ArrayPoolSqliteParameterSizeAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

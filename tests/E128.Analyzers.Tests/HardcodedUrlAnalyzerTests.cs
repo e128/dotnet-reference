@@ -1,22 +1,13 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class HardcodedUrlAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<HardcodedUrlAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        return test.RunAsync();
-    }
+    private static Task VerifyAsync(string code) =>
+        AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>(code);
 
     [Fact]
     [Trait("Category", "CI")]
@@ -138,6 +129,14 @@ public sealed class HardcodedUrlAnalyzerTests
                            namespace Xunit
                            {
                                public sealed class FactAttribute : System.Attribute
+                               {
+                               }
+                           }
+
+                           class Tests
+                           {
+                               [Xunit.Fact]
+                               public void RealTest()
                                {
                                }
                            }

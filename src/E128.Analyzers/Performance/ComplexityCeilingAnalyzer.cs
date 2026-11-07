@@ -140,12 +140,37 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
                 return true;
             }
 
+            // A for-loop counter is not an element unless it indexes the collection the inner loop
+            // walks. A bound such as `j < i` still makes the nesting grow with the input.
+            if (enclosing is IForLoopOperation
+                && enclosing.Locals.Contains(symbol, SymbolEqualityComparer.Default)
+                && UsesLocalAsElementIndex(symbol, source))
+            {
+                return true;
+            }
+
             foreach (var reference in symbol.DeclaringSyntaxReferences)
             {
                 if (reference.SyntaxTree == bodySyntaxTree && bodySpan.Contains(reference.Span))
                 {
                     return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    // True when the local is the index of an array element or an indexer argument in the trip source.
+    private static bool UsesLocalAsElementIndex(ISymbol symbol, IOperation source)
+    {
+        foreach (var operation in source.DescendantsAndSelf())
+        {
+            if (operation is ILocalReferenceOperation local
+                && SymbolEqualityComparer.Default.Equals(local.Local, symbol)
+                && operation.Parent is IArrayElementReferenceOperation or IArgumentOperation { Parent: IPropertyReferenceOperation })
+            {
+                return true;
             }
         }
 

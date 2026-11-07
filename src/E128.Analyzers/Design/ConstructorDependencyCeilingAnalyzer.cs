@@ -51,30 +51,59 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
             context.Compilation.GetTypeByMetadataName("System.Exception"),
             context.Compilation.GetSpecialType(SpecialType.System_Collections_IEnumerable));
 
+        // Each tree carries its own analyzer config. Read every ceiling once here instead of on
+        // every constructor declaration.
+        var ceilingsBuilder = ImmutableArray.CreateBuilder<(SyntaxTree Tree, int Ceiling)>();
+        foreach (var tree in context.Compilation.SyntaxTrees)
+        {
+            ceilingsBuilder.Add((tree, ReadCeiling(tree, context.Options.AnalyzerConfigOptionsProvider)));
+        }
+
+        var ceilings = ceilingsBuilder.ToImmutable();
+
         // A record primary constructor is not registered. Its parameters declare data members, not services.
-        context.RegisterSyntaxNodeAction(ctx => AnalyzeConstructor(ctx, known), SyntaxKind.ConstructorDeclaration);
-        context.RegisterSyntaxNodeAction(ctx => AnalyzePrimaryConstructor(ctx, known), SyntaxKind.ClassDeclaration, SyntaxKind.StructDeclaration);
+        context.RegisterSyntaxNodeAction(ctx => AnalyzeConstructor(ctx, known, ceilings), SyntaxKind.ConstructorDeclaration);
+        context.RegisterSyntaxNodeAction(ctx => AnalyzePrimaryConstructor(ctx, known, ceilings), SyntaxKind.ClassDeclaration, SyntaxKind.StructDeclaration);
     }
 
-    private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context, KnownTypes known)
+    private static void AnalyzeConstructor(
+        SyntaxNodeAnalysisContext context,
+        KnownTypes known,
+        ImmutableArray<(SyntaxTree Tree, int Ceiling)> ceilings)
     {
-        var constructor = (ConstructorDeclarationSyntax)context.Node;
-        Check(context, constructor.ParameterList, constructor.Identifier, known);
+        var constructor = (ConstructorDeclarationSyntax)context.Node; Check(context, constructor.ParameterList, constructor.Identifier, known, ceilings);
     }
 
-    private static void AnalyzePrimaryConstructor(SyntaxNodeAnalysisContext context, KnownTypes known)
+    private static void AnalyzePrimaryConstructor(
+        SyntaxNodeAnalysisContext context,
+        KnownTypes known,
+        ImmutableArray<(SyntaxTree Tree, int Ceiling)> ceilings)
     {
         var type = (TypeDeclarationSyntax)context.Node;
 
         if (type.ParameterList is { } parameters)
         {
-            Check(context, parameters, type.Identifier, known);
+            Check(context, parameters, type.Identifier, known, ceilings);
         }
     }
 
-    private static void Check(SyntaxNodeAnalysisContext context, ParameterListSyntax parameters, SyntaxToken identifier, KnownTypes known)
+    private static void Check(
+        SyntaxNodeAnalysisContext context,
+        ParameterListSyntax parameters,
+        SyntaxToken identifier,
+        KnownTypes known,
+        ImmutableArray<(SyntaxTree Tree, int Ceiling)> ceilings)
     {
-        var ceiling = ReadCeiling(context);
+        var ceiling = DefaultCeiling;
+        foreach (var (tree, configured) in ceilings)
+        {
+            if (ReferenceEquals(tree, context.Node.SyntaxTree))
+            {
+                ceiling = configured;
+                break;
+            }
+        }
+
         var count = 0;
 
         foreach (var parameter in parameters.Parameters)
@@ -155,9 +184,9 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
         internal INamedTypeSymbol Enumerable { get; }
     }
 
-    private static int ReadCeiling(SyntaxNodeAnalysisContext context)
+    private static int ReadCeiling(SyntaxTree tree, AnalyzerConfigOptionsProvider optionsProvider)
     {
-        var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+        var options = optionsProvider.GetOptions(tree);
 
         return options.TryGetValue(OptionKey, out var text)
                && int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)

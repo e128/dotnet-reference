@@ -18,11 +18,6 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [RuntimeRegexToGeneratedAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

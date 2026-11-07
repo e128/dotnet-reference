@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-06T15:25:45Z*
+*Updated: 2026-11-07T14:35:25Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -59,7 +59,7 @@ Rules E128109, E128110, and E128111 cover `stackalloc` limits, pooled buffer zer
 
 ### E128152: Complexity ceiling
 
-Reports a loop whose varying nesting depth, or a recursion whose argument shrinks by a constant step, passes the `e128_max_complexity` tier. Tiers run `linear`, `linearithmic`, `quadratic`, `cubic`, `exponential`. Constant-trip loops do not raise the depth, so `for (var i = 0; i < 4; i++)` inside a loop stays linear. Recursion that halves its argument stays silent. A cache counts only when the body reads and writes the same field or dictionary local.
+Reports a loop whose varying nesting depth, or a recursion whose argument shrinks by a constant step, passes the `e128_max_complexity` tier. Tiers run `linear`, `linearithmic`, `quadratic`, `cubic`, `exponential`. Constant-trip loops do not raise the depth, so `for (var i = 0; i < 4; i++)` inside a loop stays linear. A coordinate step, whose trip count depends on the element the enclosing loop produced, adds no depth either. An enclosing `for` loop counts its counter as a coordinate only when the counter indexes the collection the inner loop walks. A direct bound such as `j < i` still adds depth. Recursion that halves its argument stays silent. A cache counts only when the body reads and writes the same field or dictionary local.
 
 Two code actions serve this rule. `ComplexityCeilingSuppressionCodeFixProvider` wraps the reported loop, or the reported recursive method, in a `#pragma warning disable E128152` pair carrying a `// Justification:` comment that E128047 accepts. `ComplexityCeilingMembershipScanCodeFixProvider` rewrites a nested equality scan as a set lookup. It offers the rewrite only when the outer loop is top level and sits in a statement list. The inner body must be one `==` guard that returns on a match without reading the inner variable. The elements must compare by value without a floating point type. The method must never mention the inner collection outside that loop.
 
@@ -151,7 +151,8 @@ No code fix. The flag set is a caller policy.
 
 Severity: **Info**. Flags a method whose operation block holds an invocation of
 the same method. The rule compares `OriginalDefinition`, so a constructed
-generic call still matches.
+generic call still matches. The receiver must be `this` or implicit, so a call
+through another instance of the same type does not report.
 
 The rule reports a local function or a lambda that calls the outer method,
 because that call re-enters the method. It reports one diagnostic per method.

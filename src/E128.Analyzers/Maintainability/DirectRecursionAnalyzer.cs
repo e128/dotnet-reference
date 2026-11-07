@@ -64,6 +64,7 @@ public sealed class DirectRecursionAnalyzer : DiagnosticAnalyzer
         {
             if (operation is IInvocationOperation invocation
                 && !IsInsideAnonymousFunction(operation)
+                && IsSelfReceiver(invocation)
                 && SymbolEqualityComparer.Default.Equals(
                     invocation.TargetMethod.OriginalDefinition,
                     method.OriginalDefinition))
@@ -73,6 +74,15 @@ public sealed class DirectRecursionAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    // A call through another instance is not direct recursion on this frame, even when the type
+    // matches. An implicit or explicit `this` receiver is.
+    private static bool IsSelfReceiver(IInvocationOperation invocation)
+    {
+        return invocation.TargetMethod.IsStatic
+            || invocation.Instance is null
+            || invocation.Instance is IInstanceReferenceOperation;
     }
 
     // A call inside a lambda runs when the lambda runs, not inside the method frame that declares

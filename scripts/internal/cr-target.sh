@@ -57,9 +57,8 @@ done
 SELF="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/$(basename -- "${BASH_SOURCE[0]}")"
 
 # Self-check. Build a scratch repo and assert the forms a gate cannot see.
-self_test() {
-    local scratch fails=0 out
-    scratch="$(mktemp -d "$(find_repo_root)/.claude/tmp/cr-target-test.XXXXXX")" || return 1
+build_self_test_repo() {
+    local scratch="$1"
     (
         cd "$scratch" || exit 1
         git init -q . && git config user.email "test@example.com" && git config user.name "test"
@@ -68,7 +67,11 @@ self_test() {
         printf 'c\n' >c.txt
         git add c.txt && git commit -qm second
         printf 'd\n' >untracked.txt
-    ) || { err "self-test: cannot build the scratch repo"; rm -rf "$scratch"; return 1; }
+    )
+}
+
+self_test_basic() {
+    local scratch="$1" fails=0 out
 
     out="$(cd "$scratch" && "$SELF" --json 2>/dev/null)"
     jq -e '.files | index("untracked.txt")' <<<"$out" >/dev/null || { err "self-test: untracked file missing"; fails=$((fails + 1)); }
@@ -82,8 +85,12 @@ self_test() {
 
     (cd "$scratch" && "$SELF" a.txt >/dev/null 2>&1) || { err "self-test: text mode must exit 0"; fails=$((fails + 1)); }
 
-    # PR resolution through a mock gh, so no network call happens.
-    local mock="$scratch/mock-gh.sh"
+    printf '%d\n' "$fails"
+}
+
+self_test_pr() {
+    local scratch="$1" fails=0 out mock
+    mock="$scratch/mock-gh.sh"
     cat >"$mock" <<'MOCK'
 #!/usr/bin/env bash
 case "$1 $2" in
@@ -110,6 +117,12 @@ MOCK
         err "self-test: a missing gh must fail"; fails=$((fails + 1))
     fi
 
+    printf '%d\n' "$fails"
+}
+
+self_test_filters() {
+    local scratch="$1" fails=0 out
+
     # Critical only drops the adjacent pair and leaves a lone word as a target.
     out="$(cd "$scratch" && "$SELF" --json a.txt critical only 2>/dev/null)"
     [[ "$(jq -r '.critical_only' <<<"$out")" == "true" && "$(jq -r '.file_count' <<<"$out")" == "1" ]] || { err "self-test: critical only pair wrong"; fails=$((fails + 1)); }
@@ -120,6 +133,23 @@ MOCK
     mkdir "$scratch/dir" && printf 'x\n' >"$scratch/dir/ok.txt" && printf 'x\n' >"$scratch/dir/bad"$'\n'"name.txt"
     out="$(cd "$scratch" && "$SELF" --json dir 2>/dev/null)"
     [[ "$(jq -c '.files' <<<"$out")" == '["dir/ok.txt"]' ]] || { err "self-test: newline name not skipped"; fails=$((fails + 1)); }
+
+    printf '%d\n' "$fails"
+}
+
+self_test() {
+    local scratch fails=0
+    scratch="$(mktemp -d "$(find_repo_root)/.claude/tmp/cr-target-test.XXXXXX")" || return 1
+
+    if ! build_self_test_repo "$scratch"; then
+        err "self-test: cannot build the scratch repo"
+        rm -rf "$scratch"
+        return 1
+    fi
+
+    fails=$((fails + $(self_test_basic "$scratch")))
+    fails=$((fails + $(self_test_pr "$scratch")))
+    fails=$((fails + $(self_test_filters "$scratch")))
 
     rm -rf "$scratch"
     if (( fails == 0 )); then
@@ -278,6 +308,10 @@ resolve_pr() {
     fi
     local PR_NUMBER
     PR_NUMBER="$(jq -r '.number' <<<"$pr_json")"
+    if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+        err "PR number is not an integer: $PR_NUMBER"
+        exit 1
+    fi
     base_ref="$(jq -r '.baseRefName' <<<"$pr_json")"
     head_ref="$(jq -r '.headRefName' <<<"$pr_json")"
     TARGET="PR #$PR_NUMBER ($head_ref -> $base_ref)"

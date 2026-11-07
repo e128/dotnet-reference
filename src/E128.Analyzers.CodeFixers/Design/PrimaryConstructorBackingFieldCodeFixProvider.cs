@@ -21,11 +21,6 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : E128CodeFixP
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [PrimaryConstructorBackingFieldAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

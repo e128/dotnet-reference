@@ -317,7 +317,7 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        foreach (var part in SplitWords(name))
+        foreach (var part in WordSplitter.Split(name, "_"))
         {
             foreach (var word in SensitiveWholeWords)
             {
@@ -331,35 +331,4 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    /// <summary>Splits a name at underscores and camel-case boundaries.</summary>
-    private static List<string> SplitWords(string name)
-    {
-        var words = new List<string>();
-        var start = 0;
-
-        for (var i = 1; i <= name.Length; i++)
-        {
-            var boundary = i == name.Length
-                           || name[i] == '_'
-                           || (char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
-                           || (char.IsUpper(name[i - 1]) && char.IsUpper(name[i])
-                               && i + 1 < name.Length && char.IsLower(name[i + 1]));
-
-            if (!boundary)
-            {
-                continue;
-            }
-
-            var word = name.Substring(start, i - start).Trim('_');
-
-            if (word.Length > 0)
-            {
-                words.Add(word);
-            }
-
-            start = i;
-        }
-
-        return words;
-    }
 }

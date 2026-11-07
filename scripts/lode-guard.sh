@@ -15,9 +15,9 @@ while [[ $# -gt 0 ]]; do
             echo "  Exit 0 if safe to append, exit 1 if over limit."
             echo ""
             echo "  Status thresholds:"
-            echo "    ok    ≤200 lines — safe to append"
-            echo "    warn  201-250 lines — approaching limit"
-            echo "    over  >250 lines — must decompose into sub-files"
+            echo "    ok    ≤${LODE_OK_LIMIT} lines — safe to append"
+            echo "    warn  $((LODE_OK_LIMIT + 1))-${LODE_FILE_LIMIT} lines — approaching limit"
+            echo "    over  >${LODE_FILE_LIMIT} lines — must decompose into sub-files"
             exit 0
             ;;
         -*)  err "Unknown flag: $1"; exit 1 ;;
@@ -50,7 +50,7 @@ fi
 
 lines=$(wc -l < "$FILE" | tr -d ' ')
 
-if (( lines <= 200 )); then
+if (( lines <= LODE_OK_LIMIT )); then
     status="ok"
     exit_code=0
 elif (( lines <= LODE_FILE_LIMIT )); then

@@ -10,8 +10,8 @@ public sealed class CaptiveDependencyAnalyzerTests
 {
     private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
         .AddPackages([
-            new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6"),
-            new PackageIdentity("Microsoft.Extensions.Hosting.Abstractions", "10.0.6")
+            new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.14"),
+            new PackageIdentity("Microsoft.Extensions.Hosting.Abstractions", "10.0.14")
         ]);
 
     private static readonly ReferenceAssemblies Net100WithEfCore = ReferenceAssemblies.Net.Net100

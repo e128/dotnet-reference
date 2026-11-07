@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -31,16 +30,8 @@ public sealed class SaveChangesInLoopAnalyzerTests
                                            }
                                            """;
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<SaveChangesInLoopAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
-    }
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
+        AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code, expected);
 
     private static Task VerifyWithEfAsync(string code, params DiagnosticResult[] expected)
     {

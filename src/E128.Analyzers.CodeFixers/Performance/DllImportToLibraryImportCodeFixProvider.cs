@@ -18,11 +18,6 @@ public sealed class DllImportToLibraryImportCodeFixProvider : E128CodeFixProvide
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [DllImportToLibraryImportAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

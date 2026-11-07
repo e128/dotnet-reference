@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using E128.Analyzers.Security;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -298,7 +299,10 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
 
         for (var i = 0; i < constructor.Parameters.Length; i++)
         {
-            if (string.Equals(constructor.Parameters[i].Type.Name, OptionsTypeName, StringComparison.Ordinal))
+            if (FipsSymbolHelpers.IsType(
+                    constructor.Parameters[i].Type,
+                    OptionsTypeName,
+                    "System.Threading.Tasks"))
             {
                 return i;
             }

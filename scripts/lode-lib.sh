@@ -9,6 +9,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # shellcheck disable=SC2034  # read by the sourcing script, never here
 LODE_FILE_LIMIT=250
 
+# The append-safe boundary. Below this line count a lode file takes a new section
+# without a warning.
+# shellcheck disable=SC2034  # read by the sourcing script, never here
+LODE_OK_LIMIT=200
+
 
 # Print prompts/SystemPrompt.txt from the repo root (parent of scripts/).
 load_system_prompt() {

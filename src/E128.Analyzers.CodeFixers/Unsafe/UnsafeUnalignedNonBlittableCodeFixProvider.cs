@@ -21,11 +21,6 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : E128CodeFixProv
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeUnalignedNonBlittableAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

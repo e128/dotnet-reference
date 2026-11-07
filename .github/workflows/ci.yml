@@ -58,10 +58,10 @@ jobs:
             --coverage-settings coverage.config.xml \
             --results-directory ./test-results
 
-      - name: Gate: Coverage
+      - name: "Gate: Coverage"
         run: bash scripts/coverage-areas.sh --min-line 80 --min-assembly 80
 
-      - name: Upload: Coverage
+      - name: "Upload: Coverage"
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -69,7 +69,7 @@ jobs:
           path: ./test-results/
           retention-days: 7
 
-      - name: Report: Coverage Summary
+      - name: "Report: Coverage Summary"
         if: always()
         continue-on-error: true
         run: bash scripts/coverage-areas.sh --markdown >> "$GITHUB_STEP_SUMMARY"

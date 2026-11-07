@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -75,15 +76,55 @@ internal static class XunitTestHelper
     }
 
     /// <summary>
-    ///     True when the compilation references xUnit, NUnit, or MSTest. Such a compilation holds test
-    ///     code, so production-only rules skip it. <c lang="csharp">GetTypeByMetadataName</c> returns
-    ///     null when two references declare the type, so the check reads every match.
+    ///     True when the compilation references xUnit, NUnit, or MSTest and declares at least one test
+    ///     method. A reference alone does not exempt the whole compilation, because a production
+    ///     project can share an assembly with a test framework. <c lang="csharp">GetTypeByMetadataName</c>
+    ///     returns null when two references declare the type, so the check reads every match.
     /// </summary>
     internal static bool IsTestCompilation(Compilation compilation)
     {
-        return compilation.GetTypesByMetadataName("Xunit.FactAttribute").Length > 0
-               || compilation.GetTypesByMetadataName("NUnit.Framework.TestAttribute").Length > 0
-               || compilation.GetTypesByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute").Length > 0;
+        var hasFramework = compilation.GetTypesByMetadataName("Xunit.FactAttribute").Length > 0
+                           || compilation.GetTypesByMetadataName("NUnit.Framework.TestAttribute").Length > 0
+                           || compilation.GetTypesByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute").Length > 0;
+
+        if (!hasFramework)
+        {
+            return false;
+        }
+
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            foreach (var method in tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
+            {
+                if (HasTestAttribute(method))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasTestAttribute(MethodDeclarationSyntax method)
+    {
+        if (GetFactOrTheoryAttribute(method) is not null)
+        {
+            return true;
+        }
+
+        foreach (var attributeList in method.AttributeLists)
+        {
+            foreach (var attribute in attributeList.Attributes)
+            {
+                if (SimpleName(attribute.Name) is "Test" or "TestCase" or "TestMethod" or "DataTestMethod")
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     internal static bool IsXunitNamespace(INamespaceSymbol? ns)

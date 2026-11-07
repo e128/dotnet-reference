@@ -124,6 +124,30 @@ public sealed class ConfigurationKeyMissingAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task CompoundAssignment_StillFires()
+    {
+        const string code = """
+                            using Microsoft.Extensions.Configuration;
+
+                            class C
+                            {
+                                static void M(IConfiguration configuration)
+                                {
+                                    {|E128195:configuration["Logging:Missing"]|} += "x";
+                                }
+                            }
+                            """;
+
+        return VerifyAsync(
+            code,
+            //lang=json
+            """
+            { "Logging": { "LogLevel": { "Default": "Warning" } } }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task MissingKey_Fires()
     {
         const string code = """

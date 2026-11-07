@@ -1,29 +1,17 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UntrackedTodoAnalyzerTests
 {
-    private static Task VerifyAsync(string code, string? pattern = null)
-    {
-        var test = new CSharpAnalyzerTest<UntrackedTodoAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-
-        if (pattern is not null)
-        {
-            test.TestState.AnalyzerConfigFiles.Add(
-                ("/.editorconfig", "is_global = true\ne128_tracked_ref_pattern = " + pattern));
-        }
-
-        return test.RunAsync();
-    }
+    private static Task VerifyAsync(string code, string? pattern = null) =>
+        AnalyzerTestRunner.VerifyAsync<UntrackedTodoAnalyzer>(
+            code,
+            analyzerConfig: pattern is null
+                ? null
+                : ("/.editorconfig", "is_global = true\ne128_tracked_ref_pattern = " + pattern));
 
     [Fact]
     [Trait("Category", "CI")]

@@ -1,5 +1,5 @@
 # FIPS Cryptography Rules
-*Updated: 2026-11-03T13:17:08Z*
+*Updated: 2026-11-07T14:35:25Z*
 
 The Security analyzer set enforces organization cryptography policy. All rules
 report an error, so a policy break fails the build by default. E128071 and
@@ -69,8 +69,12 @@ Both rules inspect the static members `Create`, `HashData`, `TryHashData` and
 ## Shared Helper
 
 `FipsSymbolHelpers` in `src/E128.Analyzers/Security/` holds symbol matching,
-constant resolution, hash-name reporting and buffer-length reading. Rules call it
-instead of matching source text. `FipsTypeClassifier` holds the type verdict.
+constant resolution, hash-name reporting and buffer-length reading. The type
+lives in three partial files: the core helpers, `FipsSymbolHelpers.BufferLength`
+and `FipsSymbolHelpers.Assignments`. The buffer-length helpers cap
+source-derived encoded text at 1 MiB before a decode or scan. An over-cap value
+falls through to the fail-closed report. Rules call the helpers instead of
+matching source text. `FipsTypeClassifier` holds the type verdict.
 
 Invariants:
 

@@ -21,11 +21,6 @@ public sealed class ElementLoopToBulkSpanCodeFixProvider : E128CodeFixProviderBa
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ElementLoopToBulkSpanAnalyzer.DiagnosticId];
 
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
-
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];

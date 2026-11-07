@@ -5,7 +5,8 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lode-lib.sh"
 
 # The endpoint and the fallback model are overridable, so no value lives in
-# source without an escape hatch.
+# source without an escape hatch. The bash migration changed the default model to
+# glm-5.3-flash; set OPENCODE_GO_MODEL to pin another model.
 readonly GO_BASE_URL="${OPENCODE_GO_BASE_URL:-https://opencode.ai/inference/go/anthropic}"
 readonly DEFAULT_MODEL="${OPENCODE_GO_MODEL:-glm-5.3-flash}"
 readonly DEFAULT_KEYCHAIN_SERVICE="OPENCODE_API_KEY"
