@@ -235,3 +235,5 @@ E128.Analyzers.Performance.PresizeCollectionCodeFixProvider
 E128.Analyzers.Performance.PresizeCollectionCodeFixProvider.PresizeCollectionCodeFixProvider() -> void
 E128.Analyzers.Performance.EncodeInLoopCodeFixProvider
 E128.Analyzers.Performance.EncodeInLoopCodeFixProvider.EncodeInLoopCodeFixProvider() -> void
+E128.Analyzers.Design.ImplicitStateMachineAnalyzer
+E128.Analyzers.Design.ImplicitStateMachineAnalyzer.ImplicitStateMachineAnalyzer() -> void

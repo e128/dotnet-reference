@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.5.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.6.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -47,6 +47,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128080 | Use `ByteSize` for data-size values to avoid unit ambiguity (default: Error)                         | Yes      |
 | E128082 | Do not unwrap `ByteSize` via cast                                                                    | Yes      |
 | E128087 | Static numeric field should not be incremented with ++/--                                            | Yes      |
+| E128218 | Boolean flags encode one state (default: Info)                                                       | No       |
 
 ### Reliability
 
@@ -623,7 +624,7 @@ Flags direct use of `System.Console` members. Use `ILogger` for service code or 
 
 ### E128046 &mdash; Excessive inheritance depth
 
-Flags classes with more than 3 levels of user-defined inheritance (excluding framework base classes). Deep hierarchies are fragile and hard to reason about. No code fix.
+Flags classes with 3 or more levels of user-defined inheritance (excluding framework base classes). Set `e128_max_inheritance_depth` to change the threshold. Deep hierarchies are fragile and hard to reason about. No code fix.
 
 ### E128047 &mdash; Suppression without justification
 
@@ -3016,6 +3017,58 @@ Exclusions:
 - An explicit-layout struct, whose fields overlap.
 
 No code fix. The `in` modifier or a class change is a caller decision.
+
+### E128218: Boolean flags encode one state
+
+Flags a class that uses several mutable `bool` members as one state. The rule
+reports when one method writes two or more of those members, or when one
+condition reads two or more of them and at least one read is negated.
+
+A member counts only when its transitions are not one-way. A member written only
+to `true`, or only to `false`, is ignored. A write in a constructor or a
+destructor is not a transition. A write through `Interlocked.Exchange` or
+`Volatile.Write` is a transition.
+
+The rule analyzes fields and auto-properties. A property with accessor bodies is
+outside its scope.
+
+The default minimum cluster size is three. Set `e128_min_state_flags` to change
+it. The rule stays at `Info` because a pair of independent flags can look like
+one state at a single call site.
+
+```csharp
+// Before (info)
+private bool _isRunning;
+private bool _isPaused;
+private bool _isStopped;
+
+public void Start()
+{
+    _isStopped = false;
+    _isRunning = true;
+}
+
+public void Pause()
+{
+    _isRunning = false;
+    _isPaused = true;
+}
+
+public void Stop()
+{
+    _isPaused = false;
+    _isStopped = true;
+}
+
+// After
+private State _state;
+
+public void Start() => _state = State.Running;
+public void Pause() => _state = State.Paused;
+public void Stop() => _state = State.Stopped;
+```
+
+No code fix. The state names and the legal transitions are domain decisions.
 
 ## Requirements
 

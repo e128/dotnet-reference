@@ -20,6 +20,9 @@ roslynator_compiler_diagnostic_fixes.enabled = true
 dotnet_diagnostic.E128107.severity = suggestion
 dotnet_diagnostic.E128108.severity = suggestion
 
+# E128218: design heuristic, kept at suggestion so a cluster report never blocks a build.
+dotnet_diagnostic.E128218.severity = suggestion
+
 dotnet_analyzer_diagnostic.severity = error
 dotnet_analyzer_diagnostic.category-roslynator.severity = error
 dotnet_analyzer_diagnostic.category-xUnit.severity = error

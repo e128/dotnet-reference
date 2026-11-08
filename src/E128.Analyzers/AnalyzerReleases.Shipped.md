@@ -1,3 +1,11 @@
+## Release 2.6.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128218 | E128-Design | Info | Boolean flags encode one state.
+
 ## Release 2.5.0
 
 ### New Rules

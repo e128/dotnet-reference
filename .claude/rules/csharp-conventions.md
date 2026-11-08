@@ -19,6 +19,12 @@ cover most C# style. The rules below cover the gaps.
 - Use `nameof` for every member name that you write as a string literal.
 - Keep the final `return` statement of a method on its own line.
 
+## Collection Counts
+
+- Read a collection count from `.Count`, `.Length`, or a lookup property.
+- Never loop or sum to derive a count that the collection already exposes.
+- Use the count directly to presize a collection or to initialize an array.
+
 ## Formatting
 
 - Declare one file-scoped namespace per file.
