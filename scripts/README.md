@@ -73,7 +73,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `task.sh`                | Task management: check/next/progress                                             |
 | `dotnet-reference.sh`    | Launch claude via the Ollama backend (default deepseek-v4.1-flash:cloud)         |
 | `dotnet-reference-go.sh` | Launch claude against the opencode Go endpoint. Reads `oc_sk_` from the Keychain |
-| `dotnet-reference-oc.sh` | Launch opencode with SystemPrompt.txt as the first turn                          |
+| `dotnet-reference-oc.sh` | Launch opencode. `run`/`mini` take `--model`. The TUI uses `opencode.json`       |
 
 ## Code Navigation & Analysis
 

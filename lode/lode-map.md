@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-07T19:09:48Z*
+*Updated: 2026-11-08T13:28:48Z*
 
 ## Generated Docs
 
@@ -67,6 +67,7 @@
 
 - [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md): Harness maintenance: Claude Code and opencode v2 capability map, discovery rules, rule ownership
 - [opencode-guardrails.md](infrastructure/opencode-guardrails.md): opencode v2 plugin hook mapping for Claude Code guardrails, permission and shell hook contracts
+- [roslyn-navigator-mcp.md](infrastructure/roslyn-navigator-mcp.md): Local Roslyn Navigator MCP server: tool manifest, harness config, verification
 - [claude-code-upstream.md](infrastructure/claude-code-upstream.md): Claude Code upstream reference: versions, agent/skill frontmatter fields
 - [code-generation-quality.md](infrastructure/code-generation-quality.md): Mechanisms that drive better AI code generation, ranked by impact, plus the review-to-rule loop
 - [podman.md](infrastructure/podman.md): Podman build commands, Dockerfile structure, smoke test patterns

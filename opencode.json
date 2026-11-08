@@ -1,5 +1,15 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/glm-5.3-flash",
+  "instructions": ["prompts/SystemPrompt.txt", ".claude/rules/*.md"],
+  "mcp": {
+    "servers": {
+      "cwm-roslyn-navigator": {
+        "type": "local",
+        "command": ["dotnet", "cwm-roslyn-navigator", "--solution", "."]
+      }
+    }
+  },
   "permissions": [
     { "action": "edit", "resource": "*", "effect": "allow" },
     { "action": "edit", "resource": ".claude/settings.json", "effect": "ask" },
@@ -10,11 +20,9 @@
     { "action": "shell", "resource": "git clean -fd *", "effect": "ask" },
     { "action": "shell", "resource": "git rebase *", "effect": "ask" }
   ],
-  "experimental": {
-    "policies": [
-      { "action": "permission", "resource": "shell:git push --force*", "effect": "deny" },
-      { "action": "permission", "resource": "shell:git push -f*", "effect": "deny" },
-      { "action": "permission", "resource": "shell:git reset --hard*", "effect": "deny" }
-    ]
-  }
+  "policies": [
+    { "action": "tool.use", "resource": "shell:git push --force*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git push -f*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git reset --hard*", "effect": "deny" }
+  ]
 }

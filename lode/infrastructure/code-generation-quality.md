@@ -1,5 +1,5 @@
 # Code Generation Quality with Claude Code
-*Updated: 2026-11-01T20:55:05Z*
+*Updated: 2026-11-08T13:10:01Z*
 
 Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
@@ -19,7 +19,7 @@ that prevent the most common AI mistakes.
 
 ## 3. Contextual Rules (`.claude/rules/`)
 
-Always loaded on Claude Code. Most impactful:
+Always loaded on both harnesses. Most impactful:
 - `dotnet-anti-patterns.md`: 4 rules preventing top .NET mistakes (`DateTime.Now`, `new HttpClient()`, `async void`, sync-over-async)
 - `quality-gates.md`: format before check, no analyzer suppressions
 - `read-before-edit.md`: prevents editing stale file contents after format. It defines the re-read triggers.

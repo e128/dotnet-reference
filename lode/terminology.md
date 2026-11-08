@@ -1,14 +1,17 @@
 # Terminology
-*Updated: 2026-11-07T05:28:39Z*
+*Updated: 2026-11-08T13:28:48Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **MTP**: Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.
 - **Cobertura**: An XML code coverage report format. The MTP coverage extension emits one Cobertura file per test module. See `lode/dotnet/code-coverage.md`.
 - **Lode**: Structured AI-owned markdown repository for persistent project knowledge. Lives in `lode/`.
+- **instructions**: The opencode config field that lists ambient instruction files or globs. opencode merges each file with `AGENTS.md`. `opencode.json` names `prompts/SystemPrompt.txt` and `.claude/rules/*.md`.
 - **Plan**: A structured planning document set (`{name}-plan.md`, `{name}-context.md`, `{name}-tasks.md`) that lives in `plans/{name}/`.
 - **TDD**: Test-Driven Development. Red-Green-Refactor cycle.
 - **STE**: Simplified Technical English (after ASD-STE100). The repo's writing standard for docs, READMEs, PR bodies, error messages, comments, and lode files. Rules live in `.claude/rules/writing-style.md`.
 - **Roslyn Analyzer**: A .NET compiler extension that provides real-time code analysis and diagnostics. This project ships `E128.Analyzers`, a custom analyzer package with design, style, and file-system rules.
+- **MCP**: Model Context Protocol. An open protocol that exposes tools, prompts, and resources to an AI client. This repository connects the Roslyn Navigator server over stdio. See `lode/infrastructure/roslyn-navigator-mcp.md`.
+- **Roslyn Navigator**: The `cwm-roslyn-navigator` .NET tool. It loads the solution with Roslyn and answers structural code questions over MCP. See `lode/infrastructure/roslyn-navigator-mcp.md`.
 - **ArchUnitNET**: Architecture testing library for .NET. Used in `tests/Architecture.Tests/` to enforce layer dependencies, naming conventions, and sealed-class policies.
 - **Trusted Publishing**: OIDC-based NuGet publishing. The `publish.yml` workflow authenticates to NuGet via OIDC rather than long-lived API keys.
 - **OIDC**: OpenID Connect. The token protocol behind Trusted Publishing. It exchanges a short-lived token for a publish credential instead of a stored API key.

@@ -256,9 +256,10 @@ The tier structure runs from AGENTS.md, to CLAUDE.md, to .claude/rules/*.md, to
 lode/. That structure, the rule-ownership table, and the staleness-detection
 procedure are authoritative in lode/infrastructure/claude-code-maintenance.md.
 Apply them here too. SystemPrompt.txt is part of the same tier system. It is the
-launcher-only layer that bootstraps the Lode method into a repository before
-AGENTS.md and lode/ exist there. A repository names its own launcher in its
-script catalog, for example `scripts/dotnet-reference.sh`. CLAUDE.md is NOT a
-changelog. When a convention changes, update the rule in place. Never append "as
-of date X, we now do Y". The git history preserves the change. The file states
-what is true now.
+bootstrap layer that carries the Lode method into a repository before AGENTS.md
+and lode/ exist there, and it stays as the shared prompt on every harness. A
+repository names its own loader in its script catalog or config, for example
+`scripts/dotnet-reference.sh` or the `instructions` field in `opencode.json`.
+CLAUDE.md is NOT a changelog. When a convention changes, update the rule in
+place. Never append "as of date X, we now do Y". The git history preserves the
+change. The file states what is true now.

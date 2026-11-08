@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-11-01T20:54:44Z*
+*Updated: 2026-11-08T13:43:23Z*
 
 ## Harness Portability Capability Map
 
@@ -21,10 +21,10 @@ those tools.
 Two supported harnesses load instructions in this repo:
 
 - Claude Code loads `CLAUDE.md` plus every file in `.claude/rules/*.md`.
-- opencode v2 loads `AGENTS.md` only. It resolves no `instructions` glob, so
-  the rule directory reaches it through the read list in `AGENTS.md`. It
-  reads project-level `.claude/skills/*/SKILL.md` through a compatibility
-  path.
+- opencode v2 loads `AGENTS.md` plus every path in the `instructions` field
+  of `opencode.json`. That field names `prompts/SystemPrompt.txt` and the
+  `.claude/rules/*.md` glob, so both harnesses load the same rules. It reads
+  project-level `.claude/skills/*/SKILL.md` through a compatibility path.
 - Subagent definitions live once in `.claude/agents/*.md`. A generated mirror
   in `.opencode/agents/` serves opencode. `/yeet` keeps the mirror current.
 
@@ -33,11 +33,10 @@ Two supported harnesses load instructions in this repo:
 | `AGENTS.md`                     | Yes                         | Cross-harness rules: communication, workflow, .NET, git, gotchas   |
 | `scripts/*.sh`                  | Yes                         | Plain bash. Any agent with shell access can call them              |
 | `lode/`                         | Yes                         | Plain markdown project memory. No harness-specific format          |
-| `.claude/rules/*.md`            | Partial                     | Shared domain rules. Claude Code auto-loads the directory. opencode resolves no `instructions` glob, so `AGENTS.md` directs it to read the matching file |
+| `.claude/rules/*.md`            | Yes                         | Shared domain rules. Both harnesses auto-load the directory through their own config |
 | `.claude/skills/`               | Yes                         | Skills (`SKILL.md`). Claude Code loads them through the skill tool. opencode reads project-level `.claude/skills/` through a compatibility path |
-| `prompts/SystemPrompt.txt`      | Yes (content), no (launch)  | The Lode Coding methodology. Content applies on any harness. The `--append-system-prompt` injection mechanism is Claude CLI only |
-| `scripts/dotnet-reference.sh`, `scripts/dotnet-reference-go.sh` | No | Claude CLI wrappers that inject `prompts/SystemPrompt.txt`. On another harness, read that file directly at session start instead. `dotnet-reference.sh` uses the local Ollama server. `dotnet-reference-go.sh` uses the opencode Go endpoint, and reads the API key from the macOS Keychain |
-| `scripts/dotnet-reference-oc.sh` | Partial | OpenCode wrapper: launches `opencode` with `prompts/SystemPrompt.txt` as the opening message. opencode has no persistent system prompt flag. The wrapper passes no `--model` flag, so opencode uses the global config model |
+| `prompts/SystemPrompt.txt`      | Yes                         | The Lode Coding methodology. Claude CLI injects it with `--append-system-prompt`. opencode loads it through `instructions` in `opencode.json` |
+| `scripts/dotnet-reference*.sh`  | No                          | Session launchers. See the paragraph below the table              |
 | `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md`, adds a thin Claude-only overlay |
 | `.claude/hooks/`                | No (file format)            | Claude Code guardrail hooks. opencode v2 has no hook file. Its plugin API provides the same interception. See [opencode-guardrails.md](opencode-guardrails.md) |
 | `.claude/settings.json`         | No                          | Claude Code permissions and hook configuration |
@@ -45,19 +44,24 @@ Two supported harnesses load instructions in this repo:
 | `.opencode/agents/`             | No                          | Generated mirror for opencode. Never hand-edit. Regenerate with `scripts/internal/opencode-agents.sh sync` |
 | `.opencode/agent-assets/`       | No                          | Generated copies of agent asset directories. They sit outside `agents/`, because opencode v2 walks that tree recursively |
 | `.opencode/plugins/`            | No                          | Hand-written opencode plugins. See [opencode-guardrails.md](opencode-guardrails.md) |
-| `opencode.json`                 | No                          | opencode v2 config. The `permissions` array and `experimental.policies` mirror the approval policy. It pins no model |
+| `opencode.json`                 | No                          | opencode v2 config. `instructions` loads `prompts/SystemPrompt.txt` and `.claude/rules/*.md`. The `permissions` array and `policies` mirror the approval policy. It sets the project default model |
+
+The session launchers start an agent against this repository.
+`dotnet-reference.sh` and `dotnet-reference-go.sh` run the Claude CLI. The
+first uses the local Ollama server and the second the opencode Go endpoint.
+`dotnet-reference-oc.sh` runs the opencode CLI and passes `--model` to `run`
+and `mini`. The full TUI reads the model from `opencode.json`.
 
 When onboarding another harness onto this repo, point it at `AGENTS.md`,
 `scripts/help.sh`, and the files under `.claude/rules/`. It loses subagent
 orchestration and hook automation unless it ships equivalents. Skills load on
-both supported harnesses without duplication. Claude Code auto-loads the rule
-directory. opencode reads the matching rule file on demand.
+both supported harnesses without duplication. Both harnesses auto-load the
+rule directory.
 
 ## Rule Load Cost
 
-Claude Code loads every file in `.claude/rules/` into every context window. The
-directory is always-loaded budget on that harness. opencode loads none of them
-and reads on demand through the read list in `AGENTS.md`. Split a rule file when
+Both harnesses load every file in `.claude/rules/` into every context
+window. The directory is always-loaded budget on both. Split a rule file when
 it grows past the point where both harnesses can hold it cheaply.
 
 ## Harness Structure
@@ -66,11 +70,12 @@ The Claude Code harness for this repo consists of:
 
 - `CLAUDE.md`. Always-loaded instructions. It imports `AGENTS.md` and adds a
   Claude-only layer. Keep the added layer under 200 lines.
-- `.claude/rules/*.md`. Domain rules shared with opencode. Claude Code 2.1.220
-  loads every rule file into every context window, not only the
+- `.claude/rules/*.md`. Domain rules shared with opencode. Both harnesses
+  load every rule file into every context window, not only the
   filename-matched ones. Treat the whole directory as always-loaded budget.
-- `opencode.json`. The opencode v2 config. The `permissions` array and
-  `experimental.policies` mirror the approval policy.
+- `opencode.json`. The opencode v2 config. `instructions` loads
+  `prompts/SystemPrompt.txt` and `.claude/rules/*.md`. The `permissions`
+  array and `policies` mirror the approval policy.
 - `.claude/hooks/`. Core guardrail hooks.
 - `.claude/settings.json`. Permissions and hook configuration.
 - `.opencode/plugins/`. Hand-written opencode plugins. A plugin exports an
@@ -85,8 +90,9 @@ The Claude Code harness for this repo consists of:
 ## opencode v2 Discovery
 
 - opencode v2 loads `AGENTS.md` from the workspace toward the home directory.
-  The `instructions` field accepts a path, a glob, or a URL but loads no entry.
-  It exists for editor tooling only.
+  The `instructions` field accepts a path, a glob, or a URL, and opencode
+  merges each file with `AGENTS.md` as ambient instructions. The repo lists
+  the prompt file and the rule glob.
 - opencode v2 discovers agent definitions under `.opencode/agents/`
   recursively. A markdown file without frontmatter becomes an agent, so
   never place an asset there. `.claude/agents/` has no compatibility path, so
@@ -107,15 +113,16 @@ The Claude Code harness for this repo consists of:
 
 ## opencode v2 Verified Facts
 
-These claims were checked against the published V2 documentation.
+These claims were checked against the published V2 documentation or a local
+probe.
 
 | Claim                                                         | Result                                                                                        |
 | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `instructions` loads files                                    | No. opencode accepts the field and loads no entry. `AGENTS.md` is the only instruction source |
+| `instructions` loads files                                    | Yes. opencode merges each listed file with `AGENTS.md` as ambient instructions. Verified on v2.2.6 with a file probe and a glob probe |
 | `.claude/skills/` resolves                                    | Yes. It is a documented project compatibility path, alongside `.agents/skills/`               |
 | `.claude/agents/` resolves                                    | No. Only `.opencode/agents/` and the `agents` config field define agents                       |
 | Plugins intercept tools and permissions                       | Yes. `ctx.tool.hook` and `ctx.permission.hook` replace the Claude Code hook layer             |
-| `.claude/rules/` auto-loads                                   | No. Claude Code alone loads the directory                                                     |
+| `.claude/rules/` auto-loads                                   | Yes. `opencode.json` lists the directory glob in `instructions`. Verified on v2.2.6 |
 
 Regenerate any of these claims only after a documentation check. A future
 release may change the answer.
@@ -131,8 +138,8 @@ release may change the answer.
 ## Adding Rules
 
 - Cross-harness core rules → `AGENTS.md`
-- Domain rules → `.claude/rules/{domain}.md` (Claude Code auto-loads it and
-  opencode reads it on demand, so keep it under 50 lines)
+- Domain rules → `.claude/rules/{domain}.md` (both harnesses auto-load it, so
+  keep it under 50 lines)
 - Claude-only rules → `CLAUDE.md` (keep the added layer under 200 lines)
 - New or changed agent → edit `.claude/agents/*.md`, then run
   `scripts/internal/opencode-agents.sh sync`. `/yeet` runs it automatically.
@@ -148,13 +155,13 @@ mechanics?
 
 ## Configuration Tiers
 
-Three loaded layers plus a wrapper:
+Three loaded layers plus a shared prompt:
 
 1. `AGENTS.md`, the portable core. Both harnesses load it.
-2. `.claude/rules/*.md`, shared domain rules. Claude Code auto-loads them.
-   opencode reads the matching file on demand.
+2. `.claude/rules/*.md`, shared domain rules. Both harnesses auto-load them.
 3. `CLAUDE.md` plus `lode/`. Claude-only overlay, and knowledge.
-4. `prompts/SystemPrompt.txt` wraps all three in lode-launcher sessions.
+4. `prompts/SystemPrompt.txt` wraps all three on both harnesses. Claude
+   wrappers inject it, and opencode loads it through `instructions`.
 
 ## Rule File Ownership
 
@@ -173,10 +180,10 @@ Link instead.
 | Lode file conventions and privacy floor      | `prompts/SystemPrompt.txt`            |
 
 The last row is a deliberate exception to the one-owner rule.
-`writing-style.md` owns the full STE definition. Claude Code auto-loads it
-and opencode reads it on demand. `prompts/SystemPrompt.txt` carries the lode-write
-subset (STE and the dash ban) for injected-launcher sessions, where no repo
-config file loads. Do not delete that copy as duplication. Keep the two in
+`writing-style.md` owns the full STE definition. Both harnesses auto-load it.
+`prompts/SystemPrompt.txt` carries the lode-write subset (STE and the dash
+ban). It reaches launcher sessions and every opencode session through
+`instructions`. Do not delete that copy as duplication. Keep the two in
 agreement when either one changes.
 
 `prompts/SystemPrompt.txt` does not hold the style checklist. It points at
@@ -190,7 +197,7 @@ prompt keeps no copy of the rules.
 1, the italic `Updated` header line in ISO 8601 UTC on line 2, the `lode-map.md` entry
 form, and the privacy floor (no absolute home path, no email address, no
 secret, no real full name). These rules must reach every harness, so they live
-in the injected prompt, not in a per-harness rule file.
+in the shared prompt file, not in a per-harness rule file.
 
 `deterministic-scripts.md` exceeds the 50-line guideline by design. It holds
 one routing table for every script. Splitting it would recreate the

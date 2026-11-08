@@ -18,3 +18,8 @@
 - `gitleaks` — secret scan in `scripts/internal/precommit.sh` (`brew install gitleaks`)
 - `dotnet-outdated-tool` — NuGet update checker
   (`dotnet tool install -g dotnet-outdated-tool`)
+
+**Repository-local tools.** `dotnet-tools.json` pins the tools this repository
+owns. Run `dotnet tool restore` after a clone or a manifest change. The
+Roslyn Navigator MCP server depends on it. See
+[lode/infrastructure/roslyn-navigator-mcp.md](../../lode/infrastructure/roslyn-navigator-mcp.md).

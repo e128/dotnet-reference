@@ -155,6 +155,7 @@ scripts/podman.sh test
 ├── .github/workflows/ci.yml  # GitHub Actions CI
 ├── .github/workflows/publish.yml # NuGet trusted publishing
 ├── .gitleaks.toml            # Secret scan config
+├── .mcp.json                 # Claude Code MCP server config (Roslyn Navigator)
 ├── .opencode/                # opencode mirror of the Claude Code harness
 │   ├── agent-assets/         # Generated agent asset copies
 │   ├── agents/               # Generated agent definitions
@@ -169,9 +170,10 @@ scripts/podman.sh test
 ├── E128.Reference.slnx       # Solution file
 ├── global.json               # SDK version and MTP test runner config
 ├── docs/                     # Architecture and guide documents
+├── dotnet-tools.json         # Repository-local .NET tool manifest
 ├── lode/                     # Project knowledge documentation
 ├── nuget.config              # Single source and source mapping
-├── opencode.json             # opencode v2 config, permission and policy mirror (no model pin)
+├── opencode.json             # opencode v2 config: model, instructions, MCP, permissions, policies
 ├── plans/                    # Structured planning documents
 ├── prompts/                  # System prompt for Lode sessions
 ├── renovate.json             # Renovate dependency update config

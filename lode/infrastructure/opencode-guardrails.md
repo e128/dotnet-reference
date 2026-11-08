@@ -1,5 +1,5 @@
 # opencode v2 Guardrail Parity
-*Updated: 2026-11-01T20:54:44Z*
+*Updated: 2026-11-08T13:47:01Z*
 
 Claude Code enforces guardrails through hook scripts under `.claude/hooks/`.
 opencode v2 has no hook file. Its plugin API carries the same interception.
@@ -93,9 +93,9 @@ same three tiers in their own syntax:
 
 | Tier | Claude Code        | opencode                           |
 | ---- | ------------------ | ---------------------------------- |
-| auto | `permissions.allow` | base policy of allow               |
+| auto | `permissions.allow` | base policy of allow              |
 | ask  | `permissions.ask`  | `permissions` with `effect` of ask |
-| deny | `permissions.deny` | `experimental.policies`            |
+| deny | `permissions.deny` | `policies` with `tool.use`         |
 
 Claude Code evaluates deny, then ask, then allow. opencode evaluates the array
 in order and the last match wins. A `git push --force` command matches the ask
@@ -108,11 +108,9 @@ returns.
 
 ## Model Selection
 
-The repo `opencode.json` pins no model. A model default is a personal choice,
-and a committed default forces that choice on every clone. The global config
-file `~/.config/opencode/opencode.json` holds the `model` key instead.
-`dotnet-reference-oc.sh` passes no `--model` flag. opencode reads the `model`
-key from the global config on both the TUI path and the run path.
+The repo `opencode.json` sets the project default model. The global config
+file `~/.config/opencode/opencode.json` sets a machine default. Project config
+wins. A one-off `opencode run --model provider/model` overrides both.
 
 ## Invariants
 
@@ -135,3 +133,6 @@ key from the global config on both the TUI path and the run path.
   input. An injected uppercase letter can pass a lowercase pattern.
 - Read a guardrail script in full before documenting it. A partial read hid
   the `python3` rule until the plugin blocked a command during verification.
+- `pre-tool-use-guard` blocks every `Edit` and `Write` to
+  `.claude/settings.json` and carries no approval path. Change that file by
+  hand.

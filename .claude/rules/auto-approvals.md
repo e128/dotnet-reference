@@ -5,7 +5,7 @@ its own config. Keep both configs in agreement when this policy changes:
 
 - Claude Code: `permissions.allow`, `permissions.ask`, and `permissions.deny`
   in `.claude/settings.json`
-- opencode: the `permissions` array and `experimental.policies` in `opencode.json`
+- opencode: the `permissions` array and `policies` in `opencode.json`
 
 Every action falls into one of three tiers.
 
@@ -13,7 +13,7 @@ Every action falls into one of three tiers.
 | ----- | ----------------------- | ------------- | ------------------------------ |
 | auto  | Runs without a prompt   | `allow`       | base policy of allow           |
 | ask   | Prompts first           | `ask`         | `effect` of `ask`              |
-| deny  | Always refused          | `deny`        | `experimental.policies`        |
+| deny  | Always refused          | `deny`        | `policies` with `tool.use`     |
 
 ## Precedence
 
@@ -21,8 +21,8 @@ Claude Code evaluates `deny`, then `ask`, then `allow`. Rule specificity never
 changes that order, so a broad deny blocks a narrower allow.
 
 opencode evaluates the `permissions` array in order, and the last matching rule
-wins. A statement in `experimental.policies` outranks the array and can only
-tighten a decision. Use a policy for the deny tier.
+wins. A statement in `policies` outranks the array and can only tighten a
+decision. Use a `tool.use` policy for the deny tier.
 
 The base posture still differs between the harnesses. Claude Code denies an
 unlisted Bash command by default. opencode allows every action by default. That

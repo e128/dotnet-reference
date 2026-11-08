@@ -47,24 +47,24 @@ of what is portable versus Claude-only.
 - **Route every repeated operation through a script in `scripts/`.** Never
   run the raw command when a script exists. Run `scripts/help.sh` for the
   full list. The full routing table lives in
-  `.claude/rules/deterministic-scripts.md`. Claude Code auto-loads
-  `.claude/rules/*.md`. opencode loads neither that directory nor any file
-  glob, so read the matching rule file yourself. On any other harness, open
-  the file directly. The table still applies since it only names bash
+  `.claude/rules/deterministic-scripts.md`. Claude Code and opencode both
+  auto-load `.claude/rules/*.md`. On any other harness, open the matching
+  rule file directly. The table still applies since it only names bash
   scripts.
 - **Lode** — `lode/` is the authoritative project memory, not this file or
   any harness config. Read `lode/lode-map.md`, `lode/terminology.md`, and
-  `lode/summary.md` at the start of a session. Read each
-  `.claude/rules/*.md` file that matches the work at hand. Update the
-  matching lode file the same turn code, config, or structure changes. Never
-  defer.
+  `lode/summary.md` at the start of a session. On a harness that does not
+  auto-load the rules, read each `.claude/rules/*.md` file that matches the
+  work at hand. Update the matching lode file the same turn code, config, or
+  structure changes. Never defer.
   Remove lode content the same turn the feature it describes disappears.
   The full Lode Coding methodology lives in `prompts/SystemPrompt.txt`. On
   Claude Code, `scripts/dotnet-reference.sh` launches a session through the
   local Ollama server. `scripts/dotnet-reference-go.sh` uses the opencode Go
-  endpoint instead. Both inject that file as the system prompt. On a harness
-  without a system-prompt-injection flag, read `prompts/SystemPrompt.txt`
-  directly at session start. Its rules apply regardless of launch method.
+  endpoint instead. Both inject that file as the system prompt. opencode
+  loads it through the `instructions` field in `opencode.json`. On any other
+  harness, read `prompts/SystemPrompt.txt` directly at session start. Its
+  rules apply regardless of launch method.
 
 ## Design Thinking
 
@@ -191,18 +191,18 @@ Apply these questions before you settle a design, and again in review.
 
 ## What This File Does Not Cover
 
-The domain rules in `.claude/rules/*.md` are cross-harness. Claude Code
-auto-loads that directory. opencode resolves no `instructions` glob, so read
-the matching rule file yourself. Skills in `.claude/skills/` are cross-harness
-too: opencode reads project-level `.claude/skills/*/SKILL.md` through a
-compatibility path.
+The domain rules in `.claude/rules/*.md` are cross-harness. Claude Code and
+opencode both auto-load that directory. Skills in `.claude/skills/` are
+cross-harness too: opencode reads project-level `.claude/skills/*/SKILL.md`
+through a compatibility path.
 
 Two layers stay single-harness:
 
 - Claude-only: `.claude/hooks/` (guardrail automation),
   `.claude/settings.json` (permissions), `CLAUDE.md`, and plugins
-- opencode-only: `opencode.json` (a `permissions` and `experimental.policies`
-  mirror of the approval policy) and `.opencode/plugins/` (guardrail parity for
+- opencode-only: `opencode.json` (loads `prompts/SystemPrompt.txt` through
+  `instructions`, and mirrors the approval policy in `permissions` and
+  `policies`) and `.opencode/plugins/` (guardrail parity for
   the `.claude/hooks/` scripts)
 
 Agent definitions are shared too. `.claude/agents/*.md` is the source of

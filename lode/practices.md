@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-07T19:46:15Z*
+*Updated: 2026-11-08T13:09:47Z*
 
 ## Design Principles
 
@@ -61,8 +61,8 @@ See [AGENTS.md](../AGENTS.md) for the always-loaded subset.
   range stays.
 - The lode-write subset of these rules also ships in
   `prompts/SystemPrompt.txt`, together with a style self-lint. That copy
-  reaches any harness, including OpenCode and Ollama, which never load
-  `.claude/rules/`.
+  reaches every harness: the Claude wrappers inject it, and opencode loads
+  it through `instructions`.
 - The self-lint is `scripts/lode-check.sh`, which runs
   `.claude/skills/tech-writing/scripts/tech-writing-lint.sh` and the 250-line
   guard in one call. The lint flags the dash ban and the other mechanical
