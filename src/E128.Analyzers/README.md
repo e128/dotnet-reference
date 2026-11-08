@@ -3072,7 +3072,7 @@ No code fix. The state names and the legal transitions are domain decisions.
 
 ## Requirements
 
-- .NET SDK 8.0+ (targets `netstandard2.0`, runs in any modern Roslyn host)
+- .NET SDK 10.0+ (targets `netstandard2.0`, runs in any modern Roslyn host)
 - Visual Studio 2022 17.8+, Rider 2024.1+, or `dotnet build` from CLI
 
 ## License
