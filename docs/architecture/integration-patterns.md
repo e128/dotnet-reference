@@ -13,7 +13,7 @@ graph TB
   targets["Directory.Build.targets"] -->|"ProjectReference<br/>OutputItemType=Analyzer<br/>ReferenceOutputAssembly=false<br/>(IsRoslynComponent != true)"| projs["every other project"]
   projs --> roslyn["Roslyn compilation"]
   roslyn --> e128["E128.Analyzers (netstandard2.0)"]
-  roslyn --> third["AsyncFixer, Meziantou, Roslynator,<br/>SonarAnalyzer, SharpSource, VSTHRD"]
+  roslyn --> third["AsyncFixer, IDisposableAnalyzers, Meziantou,<br/>Roslynator, SonarAnalyzer, SharpSource, VSTHRD"]
   e128 --> diags["Diagnostics"]
   third --> diags
   diags -->|".globalconfig: error"| build["build pass/fail"]
@@ -149,14 +149,15 @@ The analyzer targets `netstandard2.0` for maximum Roslyn host compatibility. As 
 
 ## Third-Party Analyzers (Run Alongside)
 
-| Package                                     | Prefix  | Focus                          |
-| ------------------------------------------- | ------- | ------------------------------ |
-| AsyncFixer                                  | AF      | Async/await anti-patterns      |
-| Meziantou.Analyzer                          | MA      | Quality, performance, security |
-| Microsoft.VisualStudio.Threading.Analyzers  | VSTHRD  | Threading correctness          |
-| Roslynator.* (Analyzers/CodeAnalysis/Formatting) | RCS | Style + quality + formatting   |
-| SharpSource                                 | SS      | Common pitfalls                |
-| SonarAnalyzer.CSharp                        | S       | Security + reliability         |
+| Package                                          | Prefix | Focus                          |
+| ------------------------------------------------ | ------ | ------------------------------ |
+| AsyncFixer                                       | AF     | Async/await anti-patterns      |
+| IDisposableAnalyzers                             | IDISP  | Resource ownership             |
+| Meziantou.Analyzer                               | MA     | Quality, performance, security |
+| Microsoft.VisualStudio.Threading.Analyzers       | VSTHRD | Threading correctness          |
+| Roslynator.* (Analyzers/CodeAnalysis/Formatting) | RCS    | Style + quality + formatting   |
+| SharpSource                                      | SS     | Common pitfalls                |
+| SonarAnalyzer.CSharp                             | S      | Security + reliability         |
 
 ## Code-Fix Patterns
 

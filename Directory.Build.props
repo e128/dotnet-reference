@@ -56,6 +56,7 @@
     <!-- Roslyn Analyzers (alphabetical) -->
     <ItemGroup>
         <PackageReference Include="AsyncFixer" PrivateAssets="all" />
+        <PackageReference Include="IDisposableAnalyzers" PrivateAssets="all" />
         <PackageReference Include="Meziantou.Analyzer" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeStyle" PrivateAssets="all" />
         <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" />

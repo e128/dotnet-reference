@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-08T18:09:40Z*
+*Updated: 2026-11-08T19:40:21Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -21,6 +21,7 @@ centrally in `Directory.Packages.props`:
 | Analyzer Package                                |
 | ----------------------------------------------- |
 | `AsyncFixer`                                    |
+| `IDisposableAnalyzers`                          |
 | `Meziantou.Analyzer`                            |
 | `Microsoft.CodeAnalysis.CSharp.CodeStyle`       |
 | `Microsoft.VisualStudio.Threading.Analyzers`    |

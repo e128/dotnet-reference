@@ -5,6 +5,7 @@
   <ItemGroup>
     <!-- Analyzers -->
     <PackageVersion Include="AsyncFixer" Version="2.1.0" />
+    <PackageVersion Include="IDisposableAnalyzers" Version="4.0.8" />
     <PackageVersion Include="Meziantou.Analyzer" Version="3.0.321" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
     <PackageVersion Include="Roslynator.Analyzers" Version="5.0.1" />

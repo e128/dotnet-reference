@@ -1,5 +1,5 @@
 # Redundant E128 Rules
-*Updated: 2026-11-04T13:14:02Z*
+*Updated: 2026-11-08T19:40:21Z*
 
 An E128 rule is redundant when an installed third-party rule fires on the same code. The redundant rule gets `severity = none` in `.globalconfig` (section "E128"), even when the rule ships a code fix. The rule source stays in the project, so package consumers still receive the rule and its fix.
 
@@ -11,6 +11,12 @@ An E128 rule is redundant when an installed third-party rule fires on the same c
 | E128075       | CA5394, S2245            |
 | E128088       | IDE0010, SS018, SS019    |
 | E128096       | VSTHRD002, SS034         |
+| E128162       | IDISP016                 |
+| E128193       | IDISP003                 |
+
+E128162 and E128193 were probed against IDisposableAnalyzers. On the probe
+snippet, IDISP016 fired on the `Dispose()` line and E128162 fired on the read
+that follows. IDISP003 fired on the same assignment line as E128193.
 
 E128075 ships an Error as the FIPS default, so the `none` here applies only to
 this repository. See [fips-rules.md](fips-rules.md) for the FIPS rule set.

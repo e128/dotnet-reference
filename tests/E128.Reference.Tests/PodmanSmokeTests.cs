@@ -59,7 +59,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
             Assert.Skip("Podman not available");
         }
 
-        var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -76,7 +76,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
             Assert.Skip("Podman not available");
         }
 
-        var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -91,7 +91,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
         {
             try
             {
-                var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                using var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead, cts.Token);
                 if (response.IsSuccessStatusCode)
                 {
                     return;

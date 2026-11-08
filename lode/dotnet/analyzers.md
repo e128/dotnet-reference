@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-11-07T16:49:50Z*
+*Updated: 2026-11-08T19:40:21Z*
 
 ## Strategy: Deny by Default
 
@@ -47,16 +47,25 @@ Key interactions:
 
 Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime impact). Versions pinned in `Directory.Packages.props`.
 
-| Package                                    | Prefix    | Focus                    |
-| ------------------------------------------ | --------- | ------------------------ |
-| AsyncFixer                                 | AF*       | Async/await anti-patterns |
-| Meziantou.Analyzer                         | MA*       | Code quality, performance, security |
-| Microsoft.VisualStudio.Threading.Analyzers | VSTHRD*   | Threading correctness    |
-| Roslynator.Analyzers                       | RCS*      | Code style + quality     |
-| Roslynator.CodeAnalysis.Analyzers          | RCS*      | Advanced code analysis   |
-| Roslynator.Formatting.Analyzers            | RCS*      | Formatting consistency   |
-| SharpSource                                | SS*       | Common pitfalls          |
-| SonarAnalyzer.CSharp                       | S*        | Security + reliability   |
+| Package                                    | Prefix  | Focus                               |
+| ------------------------------------------ | ------- | ----------------------------------- |
+| AsyncFixer                                 | AF*     | Async/await anti-patterns           |
+| IDisposableAnalyzers                       | IDISP*  | Resource ownership and disposal     |
+| Meziantou.Analyzer                         | MA*     | Code quality, performance, security |
+| Microsoft.VisualStudio.Threading.Analyzers | VSTHRD* | Threading correctness               |
+| Roslynator.Analyzers                       | RCS*    | Code style + quality                |
+| Roslynator.CodeAnalysis.Analyzers          | RCS*    | Advanced code analysis              |
+| Roslynator.Formatting.Analyzers            | RCS*    | Formatting consistency              |
+| SharpSource                                | SS*     | Common pitfalls                     |
+| SonarAnalyzer.CSharp                       | S*      | Security + reliability              |
+
+IDisposableAnalyzers enables every rule by default. The blanket
+`dotnet_analyzer_diagnostic.severity = error` promotes each one to an error,
+including the `Info` default of IDISP014. Two E128 rules are disabled because
+an IDISP rule covers the same code. See [redundant-rules.md](analyzers/redundant-rules.md).
+The package sits outside the maintenance window of
+[dependency-policy.md](../dependency-policy.md). The project keeps it as an
+explicit exception.
 
 ## Suppression Policy
 
