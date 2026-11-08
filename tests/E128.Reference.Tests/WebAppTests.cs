@@ -9,15 +9,17 @@ using Xunit;
 
 namespace E128.Reference.Tests;
 
-public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     private readonly HttpClient _client = factory.CreateClient();
+
+    public void Dispose() => _client.Dispose();
 
     [Fact]
     [Trait("Category", "CI")]
     public async Task Root_ReturnsOk_WithGreeting()
     {
-        var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -32,7 +34,7 @@ public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClass
         using var created = await _client.PostAsJsonAsync("/greetings", new GreetingRequest("Ada"));
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
 
-        var response = await _client.GetAsync("/greetings?count=1", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync("/greetings?count=1", HttpCompletionOption.ResponseHeadersRead);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
@@ -43,7 +45,7 @@ public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClass
     [Trait("Category", "CI")]
     public async Task Health_ReturnsOk()
     {
-        var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

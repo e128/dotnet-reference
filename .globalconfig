@@ -47,6 +47,8 @@ dotnet_diagnostic.E128067.severity = none      # String concat in loop (covered 
 dotnet_diagnostic.E128075.severity = none      # Random in crypto context (covered by CA5394, S2245)
 dotnet_diagnostic.E128088.severity = none      # Enum switch missing cases (covered by IDE0010, SS018, SS019)
 dotnet_diagnostic.E128096.severity = none      # .Result on async local function (covered by VSTHRD002, SS034)
+dotnet_diagnostic.E128162.severity = none      # Local used after Dispose (covered by IDISP016)
+dotnet_diagnostic.E128193.severity = none      # Disposable field overwritten in a loop (covered by IDISP003)
 
 # --- CA (.NET Analyzers) ---
 # Favor MA rules over CA equivalents (project policy).

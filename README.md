@@ -206,6 +206,7 @@ The repository uses a **deny-by-default** analyzer strategy:
 | Package                                     | Focus                    |
 | ------------------------------------------- | ------------------------ |
 | AsyncFixer                                  | Async and await patterns |
+| IDisposableAnalyzers                        | Resource ownership       |
 | Meziantou.Analyzer                          | General best practices   |
 | Microsoft.VisualStudio.Threading.Analyzers  | Threading correctness    |
 | Roslynator.Analyzers                        | Code style and quality   |
