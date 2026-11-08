@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-07T19:54:19Z*
+*Updated: 2026-11-08T17:41:10Z*
 
 ## Overview
 
@@ -150,6 +150,7 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.5.0   | E128203-217   | Performance rules from the twenty-practice sweep. |
 | 2.5.1   | (none)        | Shared-helper refactor across analyzers and code fixers. No rule set change. |
 | 2.6.0   | E128218       | Implicit state machine rule. Info severity. |
+| 2.6.1   | (none)        | Shared-helper refactor. E128056 also flags `File.OpenText`, and E128058 also fires on `Task<T>` and `ValueTask<T>` returns. |
 
 ## Sources
 

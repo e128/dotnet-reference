@@ -84,8 +84,7 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer
         while (current is not null)
         {
             if (string.Equals(current.Name, "EventArgs", StringComparison.Ordinal)
-                && current.ContainingNamespace is { Name: "System" }
-                && current.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true)
+                && Namespaces.Equals(current.ContainingNamespace, "System"))
             {
                 return true;
             }

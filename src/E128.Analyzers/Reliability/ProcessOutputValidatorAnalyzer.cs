@@ -28,19 +28,6 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
         true,
         "After Process.WaitForExit, verify the declared output file exists before reading it.");
 
-    private static readonly HashSet<string> FileReadMethods = new(StringComparer.Ordinal)
-    {
-        "ReadAllBytes",
-        "ReadAllBytesAsync",
-        "ReadAllText",
-        "ReadAllTextAsync",
-        "ReadAllLines",
-        "ReadAllLinesAsync",
-        "OpenRead",
-        "Open",
-        "OpenText"
-    };
-
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
     public override void Initialize(AnalysisContext context)

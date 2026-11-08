@@ -97,8 +97,6 @@ public sealed class TaskRunAsyncLambdaAnalyzer : DiagnosticAnalyzer
         var containingType = method.ContainingType;
         return containingType is not null
                && string.Equals(containingType.Name, "Task", StringComparison.Ordinal)
-               && containingType.ContainingNamespace is { Name: "Tasks" }
-               && containingType.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
-               && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
+               && Namespaces.Equals(containingType.ContainingNamespace, "System.Threading.Tasks");
     }
 }

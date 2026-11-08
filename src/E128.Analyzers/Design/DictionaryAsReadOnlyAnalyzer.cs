@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace E128.Analyzers.Design;
 
@@ -43,91 +42,9 @@ public sealed class DictionaryAsReadOnlyAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeReturn(OperationAnalysisContext context)
     {
-        var returnOp = (IReturnOperation)context.Operation;
-        if (returnOp.ReturnedValue is null)
+        if (ReadOnlyCollectionExposure.Find(MutableCollectionKind.Dictionary, context) is { } location)
         {
-            return;
+            context.ReportDiagnostic(Diagnostic.Create(Rule, location));
         }
-
-        // Strip implicit conversions to get the actual underlying type.
-        // An implicit Dictionary<K,V> → IReadOnlyDictionary<K,V> conversion wraps the expression,
-        // making ReturnedValue.Type = IReadOnlyDictionary<K,V> instead of Dictionary<K,V>.
-        var returnedValue = returnOp.ReturnedValue;
-        while (returnedValue is IConversionOperation { IsImplicit: true } conv)
-        {
-            returnedValue = conv.Operand;
-        }
-
-        var returnedType = returnedValue.Type;
-        if (returnedType is null || !IsDictionaryType(returnedType))
-        {
-            return;
-        }
-
-        // The risk is that the caller downcasts the returned reference and then mutates state the type
-        // still owns. A dictionary the method just built has no other reference, so there is nothing to
-        // protect and no downcast to guard against.
-        if (returnedValue is not (IFieldReferenceOperation or IPropertyReferenceOperation))
-        {
-            return;
-        }
-
-        // The declared return type of the containing method or property.
-        // Unwrap Task<T> and ValueTask<T> so this fires on async methods too.
-        var expectedReturn = GetContainingReturnType(context.ContainingSymbol);
-        if (expectedReturn is null || !IsReadOnlyDictionaryInterface(expectedReturn))
-        {
-            return;
-        }
-
-        context.ReportDiagnostic(Diagnostic.Create(Rule, returnedValue.Syntax.GetLocation()));
-    }
-
-    private static ITypeSymbol? GetContainingReturnType(ISymbol symbol)
-    {
-        var returnType = ReturnTypes.Get(symbol);
-
-        // Unwrap Task<T> / ValueTask<T> so the rule fires on async methods.
-        return returnType is INamedTypeSymbol { TypeArguments.Length: 1 } namedReturn
-               && IsTaskOrValueTask(namedReturn)
-            ? namedReturn.TypeArguments[0]
-            : returnType;
-    }
-
-    private static bool IsTaskOrValueTask(INamedTypeSymbol type)
-    {
-        return (string.Equals(type.Name, "Task", StringComparison.Ordinal)
-                || string.Equals(type.Name, "ValueTask", StringComparison.Ordinal))
-               && type.ContainingNamespace is { } tasksNs
-               && string.Equals(tasksNs.Name, "Tasks", StringComparison.Ordinal)
-               && tasksNs.ContainingNamespace is { } threadingNs
-               && string.Equals(threadingNs.Name, "Threading", StringComparison.Ordinal)
-               && threadingNs.ContainingNamespace is { } systemNs
-               && string.Equals(systemNs.Name, "System", StringComparison.Ordinal)
-               && systemNs.ContainingNamespace is { IsGlobalNamespace: true };
-    }
-
-    private static bool IsDictionaryType(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol namedType
-               && string.Equals(namedType.Name, "Dictionary", StringComparison.Ordinal)
-               && IsInSystemCollectionsGeneric(namedType.ContainingNamespace);
-    }
-
-    private static bool IsReadOnlyDictionaryInterface(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol namedType
-               && string.Equals(namedType.Name, "IReadOnlyDictionary", StringComparison.Ordinal)
-               && IsInSystemCollectionsGeneric(namedType.ContainingNamespace);
-    }
-
-    private static bool IsInSystemCollectionsGeneric(INamespaceSymbol? ns)
-    {
-        return ns is not null
-               && string.Equals(ns.Name, "Generic", StringComparison.Ordinal)
-               && ns.ContainingNamespace is { } parent
-               && string.Equals(parent.Name, "Collections", StringComparison.Ordinal)
-               && parent.ContainingNamespace is { } grandparent
-               && string.Equals(grandparent.Name, "System", StringComparison.Ordinal);
     }
 }

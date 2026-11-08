@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-07T18:38:35Z*
+*Updated: 2026-11-08T17:33:22Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -23,6 +23,8 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `NameSuffixes.Matches` | True when a name ends with a suffix at an uppercase-letter position. |
 | `ByteSizeType.Is` | True for `Pug.Core.Classes.ByteSize`. |
 | `ReturnTypes.Get` | Returns the return type of a method or the type of a property. |
+| `ReadOnlyCollectionExposure.Find` | Returns the location of a mutable `List` or `Dictionary` field or property that a member exposes as a read-only interface. Unwraps `Task<T>` and `ValueTask<T>`. `MutableCollectionKind` selects the collection. |
+| `TaskTypes.IsTaskOrValueTask` | True for `Task` and `ValueTask`, including their generic forms. |
 | `Unsafe.OwnerInvocation.TryMatch` | Binds a named call and confirms its containing type is one of the owner types. |
 | `Namespaces.Equals` | True when the namespace chain equals a dotted name, ending at the global namespace. |
 | `AttributeArguments.IsInside` | True when the node or an ancestor is an attribute argument. |
@@ -34,10 +36,11 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `LoopContext.FindEnclosingLoopBody` | Returns the loop body that runs once per iteration. A loop header, a lambda, or a local function returns null. |
 | `LoopContext.FindEnclosingLoop` | Returns the enclosing loop statement. |
 | `LoopContext.IsInsideLoopBody` | True when the node runs once per iteration. A `for` initializer or a `foreach` source does not count. A `for` condition and incrementor do count. |
-| `LoopContext.IsWithinAnyLoop` | True for any enclosing loop, including a header. Stops at a method, constructor, or local function. |
+| `LoopContext.IsWithinAnyLoop` | True for any enclosing loop, including a header. Stops at a method, constructor, accessor, operator, or local function. |
 | `LoopContext.HasConstantBound` | True when the nearest `for` loop has a numeric literal bound. |
 | `LoopContext.ReferencesLoopVariable` | True when the node reads a value that changes per iteration. |
 | `LoopContext.ContainsWaitCall` | True when the loop body waits between iterations. |
+| `FileReadMethods.Contains` | True when a `System.IO.File` member reads a file. The TOCTOU and process-output rules share the set. |
 | `EnclosingBody`, `StatementExits`, `ExclusiveBranches`, `DisposeCalls`, `LoopCount`, `InModifierHelper` | Body, control-flow, disposal, count, and modifier queries. |
 
 ## Code Fix Helpers

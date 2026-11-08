@@ -56,7 +56,7 @@ public sealed class SyncOverAsyncAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsTaskOrValueTaskType(property.ContainingType))
+        if (!TaskTypes.IsTaskOrValueTask(property.ContainingType))
         {
             return;
         }
@@ -89,7 +89,7 @@ public sealed class SyncOverAsyncAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsTaskOrValueTaskType(method.ContainingType))
+        if (!TaskTypes.IsTaskOrValueTask(method.ContainingType))
         {
             return;
         }
@@ -113,20 +113,5 @@ public sealed class SyncOverAsyncAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static bool IsTaskOrValueTaskType(INamedTypeSymbol type)
-    {
-        var originalDefinition = type.OriginalDefinition;
-        var name = originalDefinition.Name;
-
-        if (!string.Equals(name, "Task", StringComparison.Ordinal)
-            && !string.Equals(name, "ValueTask", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var ns = originalDefinition.ContainingNamespace;
-        return Namespaces.Equals(ns, "System.Threading.Tasks");
     }
 }
