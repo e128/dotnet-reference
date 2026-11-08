@@ -32,18 +32,6 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         true,
         "Checking FileInfo.Exists before reading a file creates a TOCTOU race. Guard the read with try/catch(IOException) instead of relying on the existence check.");
 
-    private static readonly HashSet<string> FileReadMethods = new(StringComparer.Ordinal)
-    {
-        "ReadAllBytes",
-        "ReadAllBytesAsync",
-        "ReadAllText",
-        "ReadAllTextAsync",
-        "ReadAllLines",
-        "ReadAllLinesAsync",
-        "OpenRead",
-        "Open"
-    };
-
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
     public override void Initialize(AnalysisContext context)

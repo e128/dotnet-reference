@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace E128.Analyzers.Design;
 
@@ -43,67 +42,9 @@ public sealed class ListAsReadOnlyAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeReturn(OperationAnalysisContext context)
     {
-        var returnOp = (IReturnOperation)context.Operation;
-        if (returnOp.ReturnedValue is null)
+        if (ReadOnlyCollectionExposure.Find(MutableCollectionKind.List, context) is { } location)
         {
-            return;
+            context.ReportDiagnostic(Diagnostic.Create(Rule, location));
         }
-
-        // Strip implicit conversions to get the actual underlying type.
-        // An implicit List<T> → IReadOnlyList<T> conversion wraps the field reference,
-        // making ReturnedValue.Type = IReadOnlyList<T> instead of List<T>.
-        var returnedValue = returnOp.ReturnedValue;
-        while (returnedValue is IConversionOperation { IsImplicit: true } conv)
-        {
-            returnedValue = conv.Operand;
-        }
-
-        var returnedType = returnedValue.Type;
-        if (returnedType is null || !IsListType(returnedType))
-        {
-            return;
-        }
-
-        // The risk is that the caller downcasts the returned reference and then mutates state the type
-        // still owns. A list the method just built has no other reference, so there is nothing to
-        // protect and no downcast to guard against.
-        if (returnedValue is not (IFieldReferenceOperation or IPropertyReferenceOperation))
-        {
-            return;
-        }
-
-        // The declared return type of the containing method or property
-        var expectedReturn = ReturnTypes.Get(context.ContainingSymbol);
-        if (expectedReturn is null || !IsReadOnlyListInterface(expectedReturn))
-        {
-            return;
-        }
-
-        context.ReportDiagnostic(Diagnostic.Create(Rule, returnedValue.Syntax.GetLocation()));
-    }
-
-    private static bool IsListType(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol namedType
-               && string.Equals(namedType.Name, "List", StringComparison.Ordinal)
-               && IsInSystemCollectionsGeneric(namedType.ContainingNamespace);
-    }
-
-    private static bool IsReadOnlyListInterface(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol namedType
-               && (string.Equals(namedType.Name, "IReadOnlyList", StringComparison.Ordinal)
-                   || string.Equals(namedType.Name, "IReadOnlyCollection", StringComparison.Ordinal))
-               && IsInSystemCollectionsGeneric(namedType.ContainingNamespace);
-    }
-
-    private static bool IsInSystemCollectionsGeneric(INamespaceSymbol? ns)
-    {
-        return ns is not null
-               && string.Equals(ns.Name, "Generic", StringComparison.Ordinal)
-               && ns.ContainingNamespace is { } parent
-               && string.Equals(parent.Name, "Collections", StringComparison.Ordinal)
-               && parent.ContainingNamespace is { } grandparent
-               && string.Equals(grandparent.Name, "System", StringComparison.Ordinal);
     }
 }

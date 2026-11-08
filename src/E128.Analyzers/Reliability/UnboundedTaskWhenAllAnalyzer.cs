@@ -267,18 +267,8 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         var symbol = context.SemanticModel.GetSymbolInfo(lambdaArg, context.CancellationToken).Symbol;
 
         return symbol
-            is IMethodSymbol { ReturnType: { } returnType }
-            && IsTaskLike(returnType);
-    }
-
-    private static bool IsTaskLike(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol named
-               && (string.Equals(named.OriginalDefinition.Name, "Task", StringComparison.Ordinal)
-                   || string.Equals(named.OriginalDefinition.Name, "ValueTask", StringComparison.Ordinal))
-               && named.ContainingNamespace is { Name: "Tasks" }
-               && named.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
-               && named.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
+            is IMethodSymbol { ReturnType: INamedTypeSymbol returnType }
+            && TaskTypes.IsTaskOrValueTask(returnType);
     }
 
     private static bool ContainsSemaphoreThrottle(InvocationExpressionSyntax selectInvocation)

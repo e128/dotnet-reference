@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-11-01T20:55:33Z*
+*Updated: 2026-11-08T17:33:22Z*
 
 ## Overview
 
@@ -50,13 +50,6 @@ Enforces dependency direction: Models depend on nothing, Services depend on Mode
 - Models must not depend on Services
 - Models must not depend on Repositories
 - Repositories must not depend on Services
-
-### Circular Dependencies (`CircularDependencyTests`)
-
-Guards against dependency cycles between Core layers.
-
-- Repositories must not depend back on Services
-- Models must not depend on Services or Repositories
 
 ### Naming Conventions (`NamingConventionTests`)
 

@@ -86,7 +86,7 @@ public sealed class DateTimeDirectUseAnalyzer : DiagnosticAnalyzer
     private static bool IsDateTimeOffset(INamedTypeSymbol type)
     {
         return string.Equals(type.Name, "DateTimeOffset", StringComparison.Ordinal)
-               && type.ContainingNamespace is { Name: "System" };
+               && Namespaces.Equals(type.ContainingNamespace, "System");
     }
 
     // Returns true if the node is inside a static field declaration's initializer.

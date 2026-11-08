@@ -300,10 +300,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         // Confirm via semantic model that the call is truly System.IO.
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
         var isSystemIo = symbolInfo.Symbol is IMethodSymbol methodSymbol
-                         && string.Equals(
-                             methodSymbol.ContainingType?.ContainingNamespace?.ToDisplayString(),
-                             "System.IO",
-                             StringComparison.Ordinal);
+                         && Namespaces.Equals(methodSymbol.ContainingType?.ContainingNamespace, "System.IO");
 
         return isSystemIo
             ? info.Suggestion == SuggestedType.FileInfo
@@ -340,10 +337,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         // Confirm via semantic model that the constructor is truly System.IO.
         var symbolInfo = context.SemanticModel.GetSymbolInfo(creation, context.CancellationToken);
         var isSystemIo = symbolInfo.Symbol is IMethodSymbol ctorSymbol
-                         && string.Equals(
-                             ctorSymbol.ContainingType?.ContainingNamespace?.ToDisplayString(),
-                             "System.IO",
-                             StringComparison.Ordinal);
+                         && Namespaces.Equals(ctorSymbol.ContainingType?.ContainingNamespace, "System.IO");
 
         return isSystemIo
             ? suggestion == SuggestedType.FileInfo

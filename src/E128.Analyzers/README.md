@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.6.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.6.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -782,7 +782,7 @@ string? value = GetValue();
 
 ### E128056 &mdash; File existence check TOCTOU race condition
 
-Flags file-read calls (e.g., `File.ReadAllText`, `File.OpenRead`) that follow a `FileInfo.Exists` property check or a `File.Exists(path)` call without a `try/catch` guard. Another process may delete the file between the check and the read, causing an unhandled `IOException`.
+Flags file-read calls (e.g., `File.ReadAllText`, `File.OpenRead`, `File.OpenText`) that follow a `FileInfo.Exists` property check or a `File.Exists(path)` call without a `try/catch` guard. Another process may delete the file between the check and the read, causing an unhandled `IOException`.
 
 The rule compares the guarded value by symbol. It reports a read only when the checked value names the same storage location. A call argument such as `Path.Combine(dir, name)` names no storage location, so it is not matched.
 
@@ -830,7 +830,7 @@ finally
 
 ### E128058 &mdash; Return List&lt;T&gt; via .AsReadOnly()
 
-Flags methods that return a `List<T>` field directly when the declared return type is `IReadOnlyList<T>`. Callers can cast back to `List<T>` and mutate the internal list. Use `.AsReadOnly()` to return a true read-only wrapper.
+Flags methods that return a `List<T>` field directly when the declared return type is `IReadOnlyList<T>` or `IReadOnlyCollection<T>`. It also covers a `Task<T>` or `ValueTask<T>` return that carries the interface. Callers can cast back to `List<T>` and mutate the internal list. Use `.AsReadOnly()` to return a true read-only wrapper.
 
 ```csharp
 // Before (warns)
@@ -856,7 +856,7 @@ public string Format(string input, IFormatProvider? _) =>
 
 ### E128060 &mdash; Return Dictionary&lt;K,V&gt; via .AsReadOnly()
 
-Flags methods and properties that return a `Dictionary<K,V>` field directly when the declared return type is `IReadOnlyDictionary<K,V>`. Callers can cast back to `Dictionary<K,V>` and mutate the internal collection. Use `.AsReadOnly()` (requires .NET 9+) or wrap in `ReadOnlyDictionary<K,V>`.
+Flags methods and properties that return a `Dictionary<K,V>` field directly when the declared return type is `IReadOnlyDictionary<K,V>`, including a `Task<T>` or `ValueTask<T>` return that carries the interface. Callers can cast back to `Dictionary<K,V>` and mutate the internal collection. Use `.AsReadOnly()` (requires .NET 9+) or wrap in `ReadOnlyDictionary<K,V>`.
 
 ```csharp
 // Before (warns)

@@ -1,0 +1,76 @@
+using System;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
+
+namespace E128.Analyzers.Design;
+
+/// <summary>
+///     Finds a field or property of a mutable collection that a member returns as a read-only
+///     interface. The List rules and the Dictionary rules share this walk.
+/// </summary>
+internal static class ReadOnlyCollectionExposure
+{
+    /// <summary>
+    ///     Returns the location of the exposed reference, or null when the return does not expose a
+    ///     mutable collection.
+    /// </summary>
+    internal static Location? Find(MutableCollectionKind kind, OperationAnalysisContext context)
+    {
+        if (context.Operation is not IReturnOperation { ReturnedValue: { } returnedValue })
+        {
+            return null;
+        }
+
+        // An implicit List<T> to IReadOnlyList<T> conversion wraps the field reference, so the
+        // returned value type alone does not identify the underlying collection.
+        while (returnedValue is IConversionOperation { IsImplicit: true } conversion)
+        {
+            returnedValue = conversion.Operand;
+        }
+
+        if (returnedValue.Type is not { } returnedType || !IsMutableCollection(kind, returnedType))
+        {
+            return null;
+        }
+
+        // A collection the method just built has no other reference, so there is nothing to protect.
+        if (returnedValue is not (IFieldReferenceOperation or IPropertyReferenceOperation))
+        {
+            return null;
+        }
+
+        var expectedReturn = UnwrapTask(ReturnTypes.Get(context.ContainingSymbol));
+        return expectedReturn is not null && IsReadOnlyInterface(kind, expectedReturn)
+            ? returnedValue.Syntax.GetLocation()
+            : null;
+    }
+
+    private static ITypeSymbol? UnwrapTask(ITypeSymbol? type)
+    {
+        return type is INamedTypeSymbol { TypeArguments.Length: 1 } named && TaskTypes.IsTaskOrValueTask(named)
+            ? named.TypeArguments[0]
+            : type;
+    }
+
+    private static bool IsMutableCollection(MutableCollectionKind kind, ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol namedType
+               && string.Equals(namedType.Name, MutableName(kind), StringComparison.Ordinal)
+               && Namespaces.Equals(namedType.ContainingNamespace, "System.Collections.Generic");
+    }
+
+    private static bool IsReadOnlyInterface(MutableCollectionKind kind, ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol namedType
+               && Namespaces.Equals(namedType.ContainingNamespace, "System.Collections.Generic")
+               && (kind == MutableCollectionKind.List
+                   ? namedType.Name is "IReadOnlyList" or "IReadOnlyCollection"
+                   : string.Equals(namedType.Name, "IReadOnlyDictionary", StringComparison.Ordinal));
+    }
+
+    private static string MutableName(MutableCollectionKind kind)
+    {
+        return kind == MutableCollectionKind.List ? "List" : "Dictionary";
+    }
+}

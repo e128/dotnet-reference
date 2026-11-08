@@ -5,6 +5,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace E128.Analyzers;
 
@@ -14,6 +15,13 @@ namespace E128.Analyzers;
 /// </summary>
 internal static class LoopContext
 {
+    private enum LoopPart
+    {
+        Body = 0,
+        Condition = 1,
+        Header = 2
+    }
+
     /// <summary>
     ///     Returns the body of the nearest enclosing loop when <paramref name="node" />
     ///     runs once per iteration. A node in a loop header, or in a lambda or local
@@ -21,55 +29,7 @@ internal static class LoopContext
     /// </summary>
     internal static StatementSyntax? FindEnclosingLoopBody(SyntaxNode node)
     {
-        foreach (var ancestor in node.Ancestors())
-        {
-            if (ancestor is CommonForEachStatementSyntax forEach)
-            {
-                if (forEach.Statement.Span.Contains(node.Span))
-                {
-                    return forEach.Statement;
-                }
-
-                continue;
-            }
-
-            if (ancestor is ForStatementSyntax forStatement)
-            {
-                if (forStatement.Statement.Span.Contains(node.Span))
-                {
-                    return forStatement.Statement;
-                }
-
-                continue;
-            }
-
-            if (ancestor is WhileStatementSyntax whileStatement)
-            {
-                if (whileStatement.Statement.Span.Contains(node.Span))
-                {
-                    return whileStatement.Statement;
-                }
-
-                continue;
-            }
-
-            if (ancestor is DoStatementSyntax doStatement)
-            {
-                if (doStatement.Statement.Span.Contains(node.Span))
-                {
-                    return doStatement.Statement;
-                }
-
-                continue;
-            }
-
-            if (IsBoundary(ancestor))
-            {
-                return null;
-            }
-        }
-
-        return null;
+        return FindLoopBody(node, stopAtAnonymousFunctions: true, countLoopConditions: false);
     }
 
     /// <summary>
@@ -89,17 +49,17 @@ internal static class LoopContext
                 continue;
             }
 
-            var ns = containingType.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+            var ns = containingType.ContainingNamespace;
             if (string.Equals(method.Name, "Delay", StringComparison.Ordinal)
                 && string.Equals(containingType.Name, "Task", StringComparison.Ordinal)
-                && string.Equals(ns, "System.Threading.Tasks", StringComparison.Ordinal))
+                && Namespaces.Equals(ns, "System.Threading.Tasks"))
             {
                 return true;
             }
 
             if (string.Equals(method.Name, "Sleep", StringComparison.Ordinal)
                 && string.Equals(containingType.Name, "Thread", StringComparison.Ordinal)
-                && string.Equals(ns, "System.Threading", StringComparison.Ordinal))
+                && Namespaces.Equals(ns, "System.Threading"))
             {
                 return true;
             }
@@ -159,25 +119,8 @@ internal static class LoopContext
     /// </summary>
     internal static bool HasConstantBound(SyntaxNode node)
     {
-        foreach (var ancestor in node.Ancestors())
-        {
-            if (ancestor is ForStatementSyntax forStatement)
-            {
-                return HasNumericBound(forStatement.Condition);
-            }
-
-            if (ancestor is CommonForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
-            {
-                return false;
-            }
-
-            if (IsBoundary(ancestor))
-            {
-                return false;
-            }
-        }
-
-        return false;
+        return FindLoopStatement(node, stopAtAnonymousFunctions: true) is ForStatementSyntax forStatement
+               && HasNumericBound(forStatement.Condition);
     }
 
     /// <summary>
@@ -186,92 +129,124 @@ internal static class LoopContext
     /// </summary>
     internal static StatementSyntax? FindEnclosingLoop(SyntaxNode node)
     {
-        var body = FindEnclosingLoopBody(node);
-        return body?.Parent as StatementSyntax;
+        return FindLoopBody(node, stopAtAnonymousFunctions: true, countLoopConditions: false)?.Parent as StatementSyntax;
     }
 
     /// <summary>
     ///     Returns true when the node runs once per iteration of an enclosing loop. A node within a
-    ///     loop initializer or foreach source runs once, so it does not count.
+    ///     loop initializer or a foreach source runs once, so it does not count. A loop condition
+    ///     and incrementor run once per iteration, so they do count.
     /// </summary>
     internal static bool IsInsideLoopBody(SyntaxNode node)
     {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            if (current is ForStatementSyntax forStatement)
-            {
-                if (!IsInForHeader(forStatement, node))
-                {
-                    return true;
-                }
-
-                continue;
-            }
-
-            if (current is CommonForEachStatementSyntax forEach)
-            {
-                if (!forEach.Expression.Span.Contains(node.Span))
-                {
-                    return true;
-                }
-
-                continue;
-            }
-
-            if (current is WhileStatementSyntax or DoStatementSyntax)
-            {
-                return true;
-            }
-
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or DestructorDeclarationSyntax
-                or LocalFunctionStatementSyntax or AccessorDeclarationSyntax or OperatorDeclarationSyntax
-                or ConversionOperatorDeclarationSyntax)
-            {
-                return false;
-            }
-        }
-
-        return false;
+        return FindLoopBody(node, stopAtAnonymousFunctions: false, countLoopConditions: true) is not null;
     }
 
     /// <summary>
     ///     Returns true when any enclosing loop contains the node, even when the node sits in the
-    ///     loop header. A method, constructor, or local function boundary ends the walk.
+    ///     loop header. A declaration boundary ends the walk.
     /// </summary>
     internal static bool IsWithinAnyLoop(SyntaxNode node)
     {
-        for (var current = node.Parent; current is not null; current = current.Parent)
-        {
-            if (current is ForEachStatementSyntax or ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
-            {
-                return true;
-            }
-
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or LocalFunctionStatementSyntax)
-            {
-                return false;
-            }
-        }
-
-        return false;
+        return FindLoopStatement(node, stopAtAnonymousFunctions: false) is not null;
     }
 
-    private static bool IsInForHeader(ForStatementSyntax forStatement, SyntaxNode node)
+    private static StatementSyntax? FindLoopBody(
+        SyntaxNode node,
+        bool stopAtAnonymousFunctions,
+        bool countLoopConditions)
     {
-        if (forStatement.Declaration is { } declaration && declaration.Span.Contains(node.Span))
-        {
-            return true;
-        }
+        var loop = FindLoopStatement(node, stopAtAnonymousFunctions);
+        return loop is null
+            ? null
+            : FindLoopBodyIn(loop, node, stopAtAnonymousFunctions, countLoopConditions);
+    }
 
-        foreach (var initializer in forStatement.Initializers)
-        {
-            if (initializer.Span.Contains(node.Span))
+    private static StatementSyntax? FindLoopBodyIn(
+        StatementSyntax loop,
+        SyntaxNode node,
+        bool stopAtAnonymousFunctions,
+        bool countLoopConditions)
+    {
+        var body = GetLoopBody(loop);
+        return body is null
+            ? null
+            : ClassifyPart(loop, node.Span) switch
             {
-                return true;
+                LoopPart.Body => body,
+                LoopPart.Condition when countLoopConditions => body,
+                LoopPart.Condition => FindLoopBody(loop, stopAtAnonymousFunctions, countLoopConditions),
+
+                // A node in a loop header runs once per outer iteration, so the outer loop decides.
+                LoopPart.Header => FindLoopBody(loop, stopAtAnonymousFunctions, countLoopConditions),
+                _ => null
+            };
+    }
+
+    private static LoopPart ClassifyPart(StatementSyntax loop, TextSpan span)
+    {
+        return GetLoopBody(loop) is { } body && body.Span.Contains(span)
+            ? LoopPart.Body
+            : ClassifyHeader(loop, span);
+    }
+
+    private static LoopPart ClassifyHeader(StatementSyntax loop, TextSpan span)
+    {
+        return loop switch
+        {
+            ForStatementSyntax forStatement => ContainsSpan(forStatement.Condition, span)
+                                             || forStatement.Incrementors.Any(inc => inc.Span.Contains(span))
+                ? LoopPart.Condition
+                : LoopPart.Header,
+            ForEachStatementSyntax forEach => forEach.Identifier.Span.Contains(span)
+                ? LoopPart.Condition
+                : LoopPart.Header,
+            ForEachVariableStatementSyntax forEachVariable => forEachVariable.Variable.Span.Contains(span)
+                ? LoopPart.Condition
+                : LoopPart.Header,
+            WhileStatementSyntax whileStatement => ContainsSpan(whileStatement.Condition, span)
+                ? LoopPart.Condition
+                : LoopPart.Header,
+            DoStatementSyntax doStatement => ContainsSpan(doStatement.Condition, span)
+                ? LoopPart.Condition
+                : LoopPart.Header,
+            _ => LoopPart.Header
+        };
+    }
+
+    private static bool ContainsSpan(SyntaxNode? node, TextSpan span)
+    {
+        return node is not null && node.Span.Contains(span);
+    }
+
+    private static StatementSyntax? FindLoopStatement(SyntaxNode node, bool stopAtAnonymousFunctions)
+    {
+        for (var current = node.Parent; current is not null; current = current.Parent)
+        {
+            if (IsBoundary(current, stopAtAnonymousFunctions))
+            {
+                return null;
+            }
+
+            if (current is StatementSyntax statement && GetLoopBody(statement) is not null)
+            {
+                return statement;
             }
         }
 
-        return false;
+        return null;
+    }
+
+    private static StatementSyntax? GetLoopBody(StatementSyntax statement)
+    {
+        return statement switch
+        {
+            ForStatementSyntax forStatement => forStatement.Statement,
+            CommonForEachStatementSyntax forEach => forEach.Statement,
+            WhileStatementSyntax whileStatement => whileStatement.Statement,
+            DoStatementSyntax doStatement => doStatement.Statement,
+            _ => null
+        };
     }
 
     private static bool HasNumericBound(ExpressionSyntax? condition)
@@ -296,7 +271,7 @@ internal static class LoopContext
                && literal.IsKind(SyntaxKind.NumericLiteralExpression);
     }
 
-    private static bool IsBoundary(SyntaxNode node)
+    private static bool IsBoundary(SyntaxNode node, bool stopAtAnonymousFunctions)
     {
         return node is MethodDeclarationSyntax
             or ConstructorDeclarationSyntax
@@ -305,7 +280,7 @@ internal static class LoopContext
             or ConversionOperatorDeclarationSyntax
             or LocalFunctionStatementSyntax
             or AccessorDeclarationSyntax
-            or AnonymousFunctionExpressionSyntax;
+            || (stopAtAnonymousFunctions && node is AnonymousFunctionExpressionSyntax);
     }
 
     private static List<ISymbol> GetLoopLocals(
