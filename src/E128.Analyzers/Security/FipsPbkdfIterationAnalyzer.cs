@@ -19,7 +19,7 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
     private const int MinIterations = 600_000;
 
     private static readonly string MinIterationsText = MinIterations.ToString(CultureInfo.InvariantCulture);
-    private const string KeyDerivationNamespace = "Microsoft.AspNetCore.Cryptography.KeyDerivation";
+    private const string KeyDerivationNamespace = FipsSymbolHelpers.KeyDerivation;
 
     private static readonly ImmutableHashSet<string> WeakHashNames = ImmutableHashSet.Create(
         StringComparer.OrdinalIgnoreCase,

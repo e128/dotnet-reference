@@ -1,6 +1,5 @@
 using System;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace E128.Analyzers.Design;
@@ -15,9 +14,12 @@ internal static class ReadOnlyCollectionExposure
     ///     Returns the location of the exposed reference, or null when the return does not expose a
     ///     mutable collection.
     /// </summary>
-    internal static Location? Find(MutableCollectionKind kind, OperationAnalysisContext context)
+    internal static Location? Find(
+        MutableCollectionKind kind,
+        IOperation operation,
+        ISymbol containingSymbol)
     {
-        if (context.Operation is not IReturnOperation { ReturnedValue: { } returnedValue })
+        if (operation is not IReturnOperation { ReturnedValue: { } returnedValue })
         {
             return null;
         }
@@ -40,7 +42,7 @@ internal static class ReadOnlyCollectionExposure
             return null;
         }
 
-        var expectedReturn = UnwrapTask(ReturnTypes.Get(context.ContainingSymbol));
+        var expectedReturn = UnwrapTask(ReturnTypes.Get(containingSymbol));
         return expectedReturn is not null && IsReadOnlyInterface(kind, expectedReturn)
             ? returnedValue.Syntax.GetLocation()
             : null;

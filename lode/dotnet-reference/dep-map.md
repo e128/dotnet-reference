@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-07T05:28:39Z*
+*Updated: 2026-11-08T18:09:40Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -10,7 +10,7 @@
 | ------------------------- | ---------------- | --------------- | ------------------------------- | ----------------------------- |
 | `E128.Reference.Core`     | `Microsoft.NET.Sdk`     | `net10.0`  | Shared library for Web + Cli    | None                         |
 | `E128.Reference.Web`      | `Microsoft.NET.Sdk.Web` | `net10.0`  | ASP.NET Core web service        | None (project ref only)        |
-| `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net10.0`  | Console executable              | `System.CommandLine`, `Microsoft.Extensions.DependencyInjection` |
+| `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net10.0`  | Console executable              | `System.CommandLine` |
 | `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
 | `E128.Analyzers.CodeFixers` | `Microsoft.NET.Sdk`   | `netstandard2.0` | Code fix DLL packed into `E128.Analyzers` | `Microsoft.CodeAnalysis.CSharp.Workspaces` + project ref to `E128.Analyzers` |
 
@@ -107,17 +107,15 @@ graph TB
 ### E128.Reference.Cli
 
 **Role:** Console executable using `System.CommandLine`. References `E128.Reference.Core`.
-Uses `Microsoft.Extensions.DependencyInjection` for service registration (consistent
-with the Web project's DI approach).
+Constructs `Greeter` directly, because one stateless service needs no container.
 
 #### Key Packages
 
 Versions are pinned centrally in `Directory.Packages.props`.
 
-| Package                                     | Role                     |
-| ------------------------------------------- | ------------------------ |
-| `System.CommandLine`                        | CLI argument parsing     |
-| `Microsoft.Extensions.DependencyInjection`  | DI container             |
+| Package                             | Role                 |
+| ----------------------------------- | -------------------- |
+| `System.CommandLine`                | CLI argument parsing |
 
 ### E128.Analyzers
 

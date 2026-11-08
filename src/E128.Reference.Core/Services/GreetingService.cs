@@ -19,7 +19,7 @@ public sealed class GreetingService(
         ArgumentNullException.ThrowIfNull(request);
 
         var message = greeter.Greet(request.Name);
-        var greeting = new Greeting(message, request.Name ?? "World", timeProvider.GetUtcNow());
+        var greeting = new Greeting(message, request.Name ?? greeter.DefaultName, timeProvider.GetUtcNow());
 
         await repository.SaveAsync(greeting, cancellationToken).ConfigureAwait(false);
 

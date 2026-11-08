@@ -42,7 +42,7 @@ public sealed class ListAsReadOnlyAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeReturn(OperationAnalysisContext context)
     {
-        if (ReadOnlyCollectionExposure.Find(MutableCollectionKind.List, context) is { } location)
+        if (ReadOnlyCollectionExposure.Find(MutableCollectionKind.List, context.Operation, context.ContainingSymbol) is { } location)
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, location));
         }

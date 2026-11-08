@@ -7,16 +7,16 @@ namespace E128.Reference.Core;
 /// </summary>
 public sealed class Greeter
 {
-    private readonly string _defaultName;
-
     public Greeter(string defaultName = "World")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(defaultName);
-        _defaultName = defaultName;
+        DefaultName = defaultName;
     }
+
+    internal string DefaultName { get; }
 
     public string Greet(string? name = null)
     {
-        return $"Hello, {name ?? _defaultName}!";
+        return $"Hello, {name ?? DefaultName}!";
     }
 }

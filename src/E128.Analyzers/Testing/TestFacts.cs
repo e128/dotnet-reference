@@ -129,11 +129,6 @@ internal sealed class TestFacts
     internal static bool IsAssertion(ISymbol symbol)
     {
         return symbol.Name.StartsWith("Verify", StringComparison.Ordinal)
-               || (symbol.ContainingType is { } containingType
-                   && string.Equals(containingType.Name, "Assert", StringComparison.Ordinal)
-                   && string.Equals(
-                       containingType.ContainingNamespace.ToDisplayString(),
-                       "Xunit",
-                       StringComparison.Ordinal));
+               || XunitTestHelper.IsAssertType(symbol.ContainingType);
     }
 }

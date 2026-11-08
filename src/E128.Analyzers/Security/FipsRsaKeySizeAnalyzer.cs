@@ -553,7 +553,7 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         // A curve held in a readonly field or an unreassigned local resolves to its initializer.
         if (operation is IFieldReferenceOperation or ILocalReferenceOperation)
         {
-            return depth < 4 &&
+            return depth < FipsSymbolHelpers.MaxResolveDepth &&
                 FipsSymbolHelpers.ResolveInitializer(operation) is { } resolved &&
                 TryGetCurveName(resolved, out curve, depth + 1);
         }

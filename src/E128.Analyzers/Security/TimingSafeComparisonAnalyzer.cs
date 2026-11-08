@@ -29,19 +29,12 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
 
     private const int MaxDepth = 3;
 
-    private static readonly ImmutableHashSet<string> SecretNameSuffixes = ImmutableHashSet.Create(
+    private static readonly ImmutableHashSet<string> SecretNameWords = ImmutableHashSet.Create(
         StringComparer.OrdinalIgnoreCase,
         "Mac",
         "Hmac",
         "Tag",
         "Signature");
-
-    private static readonly ImmutableHashSet<string> SecretNameSegments = ImmutableHashSet.Create(
-        StringComparer.OrdinalIgnoreCase,
-        "mac",
-        "hmac",
-        "tag",
-        "signature");
 
     // A weak word marks a string as a possible secret only when both operands carry a weak word.
     private static readonly ImmutableHashSet<string> WeakNameWords = ImmutableHashSet.Create(
@@ -388,7 +381,7 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
 
     private static bool HasSecretName(string name)
     {
-        foreach (var suffix in SecretNameSuffixes)
+        foreach (var suffix in SecretNameWords)
         {
             if (name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
             {
@@ -396,9 +389,9 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        foreach (var segment in name.Split('_', '.'))
+        foreach (var segment in WordSplitter.Split(name, "_."))
         {
-            if (SecretNameSegments.Contains(segment))
+            if (SecretNameWords.Contains(segment))
             {
                 return true;
             }

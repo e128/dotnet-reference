@@ -105,14 +105,6 @@ internal static class DiskIoCatalog
                name.Contains("DownloadTo", StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static bool IsReaderReadMethod(string name)
-    {
-        return name is "Read" or "ReadAsync" or "ReadToEnd" or "ReadToEndAsync"
-            or "ReadLine" or "ReadLineAsync" or "ReadInt32" or "ReadInt64"
-            or "ReadByte" or "ReadBytes" or "ReadString" or "ReadBoolean"
-            or "ReadSingle" or "ReadDouble" or "ReadDecimal" or "ReadChar" or "ReadChars";
-    }
-
     internal static string KindDescription(IoKind kind)
     {
         return kind switch
@@ -313,8 +305,7 @@ internal static class DiskIoCatalog
     internal static void TrackWriterVariable(
         VariableDeclarationSyntax decl,
         List<WriteOp> writes,
-        Dictionary<string, int> writerVarToFactory,
-        SyntaxNode? enclosingUsing)
+        Dictionary<string, int> writerVarToFactory)
     {
         foreach (var v in decl.Variables)
         {
@@ -327,10 +318,6 @@ internal static class DiskIoCatalog
             if (factoryIndex >= 0)
             {
                 writerVarToFactory[v.Identifier.ValueText] = factoryIndex;
-                if (enclosingUsing is not null)
-                {
-                    writes[factoryIndex] = writes[factoryIndex].WithDisposalBoundary(enclosingUsing.Span.End);
-                }
             }
         }
     }
@@ -370,9 +357,7 @@ internal static class DiskIoCatalog
                 "OpaqueWriteResult:" + v.Identifier.ValueText,
                 null,
                 IoKind.Unknown,
-                false,
-                false,
-                invocation.SpanStart));
+                false));
         }
     }
 
@@ -507,9 +492,7 @@ internal static class DiskIoCatalog
             string pathKey,
             ExpressionSyntax? sourceExpr,
             IoKind kind,
-            bool isAsync,
-            bool isStreamFactory,
-            int disposalBoundary)
+            bool isAsync)
         {
             ReportNode = reportNode;
             FactoryNode = factoryNode;
@@ -517,8 +500,6 @@ internal static class DiskIoCatalog
             SourceExpr = sourceExpr;
             Kind = kind;
             IsAsync = isAsync;
-            IsStreamFactory = isStreamFactory;
-            DisposalBoundary = disposalBoundary;
             HasMultipleWrites = false;
         }
 
@@ -528,16 +509,7 @@ internal static class DiskIoCatalog
         public ExpressionSyntax? SourceExpr { get; set; }
         public IoKind Kind { get; }
         public bool IsAsync { get; }
-        public bool IsStreamFactory { get; }
-        public int DisposalBoundary { get; set; }
         public bool HasMultipleWrites { get; set; }
-
-        public readonly WriteOp WithDisposalBoundary(int pos)
-        {
-            var copy = this;
-            copy.DisposalBoundary = pos;
-            return copy;
-        }
 
         public readonly WriteOp WithMergedSource(ExpressionSyntax src)
         {

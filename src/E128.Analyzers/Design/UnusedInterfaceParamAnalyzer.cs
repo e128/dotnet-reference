@@ -113,7 +113,9 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
 
     private static bool IsCancellationToken(IParameterSymbol param)
     {
-        return string.Equals(param.Type.Name, "CancellationToken", StringComparison.Ordinal);
+        return param.Type is INamedTypeSymbol type
+               && string.Equals(type.Name, "CancellationToken", StringComparison.Ordinal)
+               && Namespaces.Equals(type.ContainingNamespace, "System.Threading");
     }
 
     private static MethodDeclarationSyntax? GetMethodSyntax(

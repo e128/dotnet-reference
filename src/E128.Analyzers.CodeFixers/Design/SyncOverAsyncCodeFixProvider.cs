@@ -67,7 +67,7 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
         }
 
         // Promote the containing method to async.
-        newRoot = PromoteContainingMethod(newRoot, insertedAwait);
+        newRoot = FixSyntax.PromoteContainingMethod(newRoot, insertedAwait);
         newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Threading.Tasks");
 
         return document.WithSyntaxRoot(newRoot);
@@ -137,62 +137,4 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
         return false;
     }
 
-    internal static SyntaxNode PromoteContainingMethod(
-        SyntaxNode root,
-        AwaitExpressionSyntax awaitExpression)
-    {
-        // Find the containing method declaration in the NEW tree.
-        var method = awaitExpression.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-        if (method is null)
-        {
-            return root;
-        }
-
-        // Already async — nothing to do.
-        if (method.Modifiers.Any(SyntaxKind.AsyncKeyword))
-        {
-            return root;
-        }
-
-        var newMethod = method;
-
-        // Add async modifier.
-        var asyncToken = SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
-            .WithTrailingTrivia(SyntaxFactory.Space);
-        newMethod = newMethod.WithModifiers(newMethod.Modifiers.Add(asyncToken));
-
-        // Update return type.
-        newMethod = UpdateReturnType(newMethod);
-
-        return root.ReplaceNode(method, newMethod);
-    }
-
-    private static MethodDeclarationSyntax UpdateReturnType(
-        MethodDeclarationSyntax method)
-    {
-        var returnType = method.ReturnType;
-        var returnTypeText = returnType.ToString().Trim();
-
-        // void -> Task
-        if (string.Equals(returnTypeText, "void", StringComparison.Ordinal))
-        {
-            return method.WithReturnType(
-                SyntaxFactory.IdentifierName("Task")
-                    .WithTriviaFrom(returnType));
-        }
-
-        // T -> Task<T> (for non-void, non-Task return types)
-        if (!returnTypeText.StartsWith("Task", StringComparison.Ordinal)
-            && !returnTypeText.StartsWith("ValueTask", StringComparison.Ordinal))
-        {
-            var taskOfT = SyntaxFactory.GenericName(
-                SyntaxFactory.Identifier("Task"),
-                SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SingletonSeparatedList(returnType.WithoutTrivia())));
-
-            return method.WithReturnType(taskOfT.WithTriviaFrom(returnType));
-        }
-
-        return method;
-    }
 }

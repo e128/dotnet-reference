@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -103,17 +102,12 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
             ? null
             : type.DeclaringSyntaxReferences[0];
 
-        if (syntaxRef is null)
-        {
-            return DefaultThreshold;
-        }
-
-        var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(syntaxRef.SyntaxTree);
-
-        return options.TryGetValue(ThresholdOptionKey, out var rawValue)
-               && int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var threshold)
-               && threshold > 0
-            ? threshold
-            : DefaultThreshold;
+        return syntaxRef is null
+            ? DefaultThreshold
+            : OptionReader.ReadInt(
+                context.Options.AnalyzerConfigOptionsProvider.GetOptions(syntaxRef.SyntaxTree),
+                ThresholdOptionKey,
+                DefaultThreshold,
+                minimum: 1);
     }
 }

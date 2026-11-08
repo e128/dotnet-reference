@@ -61,7 +61,6 @@ public sealed class EncodingDefaultAnalyzer : DiagnosticAnalyzer
     private static bool IsSystemTextEncoding(INamedTypeSymbol type)
     {
         return string.Equals(type.Name, "Encoding", StringComparison.Ordinal)
-               && type.ContainingNamespace is { Name: "Text" }
-               && type.ContainingNamespace.ContainingNamespace is { Name: "System" };
+               && Namespaces.Equals(type.ContainingNamespace, "System.Text");
     }
 }

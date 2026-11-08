@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Threading;
 using E128.Reference.Core;
 using E128.Reference.Core.Models;
@@ -31,7 +30,7 @@ app.MapGet("/", (Greeter greeter) => greeter.Greet());
 app.MapPost("/greetings", async (GreetingRequest request, IGreetingService service, CancellationToken cancellationToken) =>
 {
     var greeting = await service.GreetAsync(request, cancellationToken);
-    return Results.Created(string.Create(CultureInfo.InvariantCulture, $"/greetings/{greeting.CreatedAt.Ticks}"), greeting);
+    return Results.Created("/greetings", greeting);
 });
 
 app.MapGet("/greetings", async (IGreetingRepository repository, int? count, CancellationToken cancellationToken) =>

@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace E128.Analyzers.Unsafe;
+namespace E128.Analyzers;
 
 internal static class InvocationNames
 {

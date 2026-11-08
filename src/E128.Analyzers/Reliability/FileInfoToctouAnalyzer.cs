@@ -103,7 +103,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol fileType,
         INamedTypeSymbol fileSystemInfoType)
     {
-        var result = new HashSet<GuardedValue>(GuardedValueComparer.Instance);
+        var result = new HashSet<GuardedValue>();
 
         foreach (var memberAccess in method.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
         {
@@ -197,22 +197,6 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         public override int GetHashCode()
         {
             return cachedHash;
-        }
-    }
-
-    private sealed class GuardedValueComparer : IEqualityComparer<GuardedValue>
-    {
-        public static readonly GuardedValueComparer Instance = new();
-
-        public bool Equals(GuardedValue? x, GuardedValue? y)
-        {
-            return SymbolEqualityComparer.Default.Equals(x?.Receiver, y?.Receiver)
-                   && SymbolEqualityComparer.Default.Equals(x?.Member, y?.Member);
-        }
-
-        public int GetHashCode(GuardedValue obj)
-        {
-            return obj.GetHashCode();
         }
     }
 

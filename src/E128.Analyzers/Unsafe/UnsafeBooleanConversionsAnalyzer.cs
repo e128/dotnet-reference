@@ -33,7 +33,7 @@ public sealed class UnsafeBooleanConversionsAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(start =>
         {
-            var unsafeType = MetadataTypes.Find(start.Compilation, "System.Runtime.CompilerServices.Unsafe");
+            var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)
             {
                 return;

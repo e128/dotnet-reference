@@ -93,16 +93,16 @@ public sealed class DllImportToLibraryImportAnalyzer : DiagnosticAnalyzer
     {
         foreach (var parameter in method.Parameters)
         {
-            if (!IsBlittable(parameter.Type))
+            if (!IsBlittableType(parameter.Type))
             {
                 return false;
             }
         }
 
-        return method.ReturnsVoid || IsBlittable(method.ReturnType);
+        return method.ReturnsVoid || IsBlittableType(method.ReturnType);
     }
 
-    private static bool IsBlittable(ITypeSymbol type)
+    private static bool IsBlittableType(ITypeSymbol type)
     {
         return type.TypeKind is TypeKind.Pointer or TypeKind.Enum
             || BlittableSpecialTypes.Contains(type.SpecialType);

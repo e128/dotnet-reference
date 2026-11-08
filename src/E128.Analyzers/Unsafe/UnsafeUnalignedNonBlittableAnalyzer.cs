@@ -38,7 +38,7 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(start =>
         {
-            var unsafeType = MetadataTypes.Find(start.Compilation, "System.Runtime.CompilerServices.Unsafe");
+            var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)
             {
                 return;
@@ -74,7 +74,7 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzer : DiagnosticAnalyzer
         }
 
         var target = method.TypeArguments[0];
-        if (target.TypeKind == TypeKind.TypeParameter || MemoryMarshalNonBlittableAnalyzer.IsBlittable(target))
+        if (target.TypeKind == TypeKind.TypeParameter || Blittability.IsBlittable(target))
         {
             return;
         }

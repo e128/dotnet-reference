@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -69,7 +68,7 @@ public sealed class MemoryMarshalNonBlittableAnalyzer : DiagnosticAnalyzer
         }
 
         var target = GetInterpretedType(method, name);
-        if (target is null || IsBlittable(target))
+        if (target is null || Blittability.IsBlittable(target))
         {
             return;
         }
@@ -84,16 +83,4 @@ public sealed class MemoryMarshalNonBlittableAnalyzer : DiagnosticAnalyzer
         return method.TypeArguments.Length == index + 1 ? method.TypeArguments[index] : null;
     }
 
-    internal static bool IsBlittable(ITypeSymbol type)
-    {
-        if (type.SpecialType is SpecialType.System_Boolean or SpecialType.System_Decimal)
-        {
-            return false;
-        }
-
-        // IsUnmanagedType accepts a struct that holds a bool or decimal, so check the fields too.
-        return type.IsUnmanagedType
-            && (type.TypeKind != TypeKind.Struct
-                || type.GetMembers().OfType<IFieldSymbol>().Where(field => !field.IsStatic).All(field => IsBlittable(field.Type)));
-    }
 }

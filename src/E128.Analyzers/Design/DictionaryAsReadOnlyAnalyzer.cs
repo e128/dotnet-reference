@@ -42,7 +42,7 @@ public sealed class DictionaryAsReadOnlyAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeReturn(OperationAnalysisContext context)
     {
-        if (ReadOnlyCollectionExposure.Find(MutableCollectionKind.Dictionary, context) is { } location)
+        if (ReadOnlyCollectionExposure.Find(MutableCollectionKind.Dictionary, context.Operation, context.ContainingSymbol) is { } location)
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, location));
         }

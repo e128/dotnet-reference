@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
