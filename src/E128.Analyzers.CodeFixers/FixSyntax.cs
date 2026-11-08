@@ -298,4 +298,52 @@ internal static class FixSyntax
         var newRoot = root.ReplaceNode(statement, tryCatch);
         return document.WithSyntaxRoot(newRoot);
     }
+
+    /// <summary>
+    ///     Adds <c lang="csharp">async</c> to the method that contains an await, and promotes its
+    ///     return type to <c lang="csharp">Task</c> or <c lang="csharp">Task&lt;T&gt;</c>. A method
+    ///     that is already async keeps its shape.
+    /// </summary>
+    internal static SyntaxNode PromoteContainingMethod(
+        SyntaxNode root,
+        AwaitExpressionSyntax awaitExpression)
+    {
+        var method = awaitExpression.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        if (method is null || method.Modifiers.Any(SyntaxKind.AsyncKeyword))
+        {
+            return root;
+        }
+
+        var asyncToken = SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+            .WithTrailingTrivia(SyntaxFactory.Space);
+        var newMethod = method.WithModifiers(method.Modifiers.Add(asyncToken));
+
+        return root.ReplaceNode(method, PromoteReturnType(newMethod));
+    }
+
+    private static MethodDeclarationSyntax PromoteReturnType(MethodDeclarationSyntax method)
+    {
+        var returnType = method.ReturnType;
+        var returnTypeText = returnType.ToString().Trim();
+
+        if (string.Equals(returnTypeText, "void", StringComparison.Ordinal))
+        {
+            return method.WithReturnType(
+                SyntaxFactory.IdentifierName("Task")
+                    .WithTriviaFrom(returnType));
+        }
+
+        if (!returnTypeText.StartsWith("Task", StringComparison.Ordinal)
+            && !returnTypeText.StartsWith("ValueTask", StringComparison.Ordinal))
+        {
+            var taskOfT = SyntaxFactory.GenericName(
+                SyntaxFactory.Identifier("Task"),
+                SyntaxFactory.TypeArgumentList(
+                    SyntaxFactory.SingletonSeparatedList(returnType.WithoutTrivia())));
+
+            return method.WithReturnType(taskOfT.WithTriviaFrom(returnType));
+        }
+
+        return method;
+    }
 }

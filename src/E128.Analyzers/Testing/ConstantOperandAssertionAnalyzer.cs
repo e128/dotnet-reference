@@ -54,9 +54,7 @@ public sealed class ConstantOperandAssertionAnalyzer : DiagnosticAnalyzer
         var invocation = (IInvocationOperation)context.Operation;
         var method = invocation.TargetMethod;
 
-        if (method.ContainingType is not { } containingType
-            || !string.Equals(containingType.Name, "Assert", StringComparison.Ordinal)
-            || !XunitTestHelper.IsXunitNamespace(containingType.ContainingNamespace)
+        if (!XunitTestHelper.IsAssertType(method.ContainingType)
             || NonOperandMembers.Contains(method.Name))
         {
             return;

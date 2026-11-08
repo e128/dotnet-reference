@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace E128.Analyzers.Style;
+namespace E128.Analyzers;
 
 /// <summary>
 ///     Reads the <c lang="csharp">e128_tracked_ref_pattern</c> option shared by the untracked-deferral rules. The pattern matches a
@@ -51,7 +51,8 @@ internal static class TrackerReference
         }
         catch (RegexMatchTimeoutException)
         {
-            return true;
+            // An unmatched reference must still report, so a slow pattern cannot disable the rule.
+            return false;
         }
     }
 }

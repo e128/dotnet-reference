@@ -99,12 +99,12 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             }
             else if (node is LocalDeclarationStatementSyntax local)
             {
-                DiskIoCatalog.TrackWriterVariable(local.Declaration, writes, writerVarToFactory, null);
+                DiskIoCatalog.TrackWriterVariable(local.Declaration, writes, writerVarToFactory);
                 DiskIoCatalog.TryTrackOpaqueWriteResult(local.Declaration, writes);
             }
-            else if (node is UsingStatementSyntax usingStmt && usingStmt.Declaration is { } decl)
+            else if (node is UsingStatementSyntax { Declaration: { } decl })
             {
-                DiskIoCatalog.TrackWriterVariable(decl, writes, writerVarToFactory, usingStmt);
+                DiskIoCatalog.TrackWriterVariable(decl, writes, writerVarToFactory);
             }
         }
     }
@@ -211,9 +211,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             DiskIoCatalog.Normalize(args[0].Expression),
             args[1].Expression,
             DiskIoCatalog.FileMethodKind(methodName),
-            DiskIoCatalog.IsAsyncName(methodName),
-            false,
-            invocation.SpanStart));
+            DiskIoCatalog.IsAsyncName(methodName)));
     }
 
     private static void AddFileValueRead(InvocationExpressionSyntax invocation, string methodName, List<DiskIoCatalog.ReadOp> reads)
@@ -246,9 +244,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             DiskIoCatalog.Normalize(args[0].Expression),
             null,
             DiskIoCatalog.FileMethodKind(methodName),
-            false,
-            true,
-            int.MaxValue));
+            false));
     }
 
     private static void AddFileReadFactory(InvocationExpressionSyntax invocation, string methodName, List<DiskIoCatalog.ReadOp> reads)
@@ -288,9 +284,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
                 DiskIoCatalog.NormalizeFileInfoInstance(receiver),
                 null,
                 DiskIoCatalog.FileMethodKind(methodName),
-                false,
-                true,
-                int.MaxValue));
+                false));
             return true;
         }
 
@@ -414,9 +408,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             DiskIoCatalog.Normalize(args[0].Expression),
             null,
             DiskIoCatalog.IoKind.Writer,
-            false,
-            true,
-            int.MaxValue));
+            false));
     }
 
     private static void AddStreamReaderCtor(
@@ -449,9 +441,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
                 DiskIoCatalog.Normalize(args[0].Expression),
                 null,
                 DiskIoCatalog.IoKind.Stream,
-                false,
-                true,
-                int.MaxValue));
+                false));
         }
         else
         {
@@ -478,9 +468,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
                 DiskIoCatalog.Normalize(innerWritePath),
                 null,
                 DiskIoCatalog.IoKind.Binary,
-                false,
-                true,
-                int.MaxValue));
+                false));
         }
     }
 

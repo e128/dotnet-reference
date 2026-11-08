@@ -73,9 +73,8 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol spanType,
         CancellationToken cancellationToken)
     {
-        if (!TryGetLoopShape(forStatement, out var variable, out var bound, out var body)
-            || bound is null
-            || body is null)
+        if (!IndexedForLoop.TryMatch(forStatement, out var variable, out var bound, out var body)
+            || bound is null)
         {
             return null;
         }
@@ -148,46 +147,6 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         }
 
         return isSpan;
-    }
-
-    private static bool TryGetLoopShape(
-        ForStatementSyntax forStatement,
-        out string variable,
-        out ExpressionSyntax? bound,
-        out StatementSyntax? body)
-    {
-        variable = string.Empty;
-        bound = null;
-        body = null;
-
-        if (forStatement.Declaration is not { Variables.Count: 1 } declaration)
-        {
-            return false;
-        }
-
-        var declarator = declaration.Variables[0];
-
-        if (declarator.Initializer?.Value is not LiteralExpressionSyntax initial
-            || !initial.IsKind(SyntaxKind.NumericLiteralExpression)
-            || !string.Equals(initial.Token.ValueText, "0", StringComparison.Ordinal)
-            || forStatement.Condition is not BinaryExpressionSyntax condition
-            || !condition.IsKind(SyntaxKind.LessThanExpression)
-            || condition.Left is not IdentifierNameSyntax conditionVariable
-            || condition.Right is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } length
-            || forStatement.Incrementors.Count != 1
-            || forStatement.Incrementors[0] is not PostfixUnaryExpressionSyntax increment
-            || !increment.IsKind(SyntaxKind.PostIncrementExpression)
-            || increment.Operand is not IdentifierNameSyntax incrementVariable
-            || !string.Equals(declarator.Identifier.ValueText, conditionVariable.Identifier.ValueText, StringComparison.Ordinal)
-            || !string.Equals(declarator.Identifier.ValueText, incrementVariable.Identifier.ValueText, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        variable = declarator.Identifier.ValueText;
-        bound = length.Expression;
-        body = forStatement.Statement;
-        return true;
     }
 
     private static StatementSyntax? GetSingleStatement(StatementSyntax statement)

@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using E128.Analyzers.Design;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -57,7 +56,7 @@ internal static class AsyncSiblingCodeFixHelper
             return document.WithSyntaxRoot(newRoot);
         }
 
-        newRoot = SyncOverAsyncCodeFixProvider.PromoteContainingMethod(newRoot, insertedAwait);
+        newRoot = FixSyntax.PromoteContainingMethod(newRoot, insertedAwait);
         newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Threading.Tasks");
 
         return document.WithSyntaxRoot(newRoot);

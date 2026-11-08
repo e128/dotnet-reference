@@ -203,9 +203,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             _ => null
         };
 
-        return name is not null
-               && (string.Equals(name, "Delete", StringComparison.Ordinal)
-                   || string.Equals(name, "DeleteAsync", StringComparison.Ordinal));
+        return string.Equals(name, "Delete", StringComparison.Ordinal);
     }
 
     private static ExpressionSyntax? FindArgument(

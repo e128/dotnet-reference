@@ -51,7 +51,7 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
         SemanticModel semanticModel,
         System.Threading.CancellationToken cancellationToken)
     {
-        if (!TryGetLoopVariable(forStatement, out var loopVariable, out var boundOwner))
+        if (!IndexedForLoop.TryMatch(forStatement, out var loopVariable, out var boundOwner, out _))
         {
             return null;
         }
@@ -174,44 +174,6 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
             && index + 1 < block.Statements.Count
             && block.Statements[index + 1] is ReturnStatementSyntax { Expression: LiteralExpressionSyntax trueLiteral }
             && trueLiteral.IsKind(SyntaxKind.TrueLiteralExpression);
-    }
-
-    private static bool TryGetLoopVariable(ForStatementSyntax forStatement, out string loopVariable, out ExpressionSyntax? boundOwner)
-    {
-        loopVariable = string.Empty;
-        boundOwner = null;
-
-        if (forStatement.Declaration is not { Variables.Count: 1 } declaration)
-        {
-            return false;
-        }
-
-        var variable = declaration.Variables[0];
-
-        if (variable.Initializer?.Value is not LiteralExpressionSyntax initial
-            || !initial.IsKind(SyntaxKind.NumericLiteralExpression)
-            || !string.Equals(initial.Token.ValueText, "0", StringComparison.Ordinal)
-            || forStatement.Condition is not BinaryExpressionSyntax condition
-            || !condition.IsKind(SyntaxKind.LessThanExpression)
-            || condition.Left is not IdentifierNameSyntax conditionVariable
-            || condition.Right is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } lengthAccess
-            || forStatement.Incrementors.Count != 1
-            || forStatement.Incrementors[0] is not PostfixUnaryExpressionSyntax increment
-            || !increment.IsKind(SyntaxKind.PostIncrementExpression)
-            || increment.Operand is not IdentifierNameSyntax incrementVariable)
-        {
-            return false;
-        }
-
-        if (!string.Equals(variable.Identifier.ValueText, conditionVariable.Identifier.ValueText, StringComparison.Ordinal)
-            || !string.Equals(variable.Identifier.ValueText, incrementVariable.Identifier.ValueText, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        loopVariable = variable.Identifier.ValueText;
-        boundOwner = lengthAccess.Expression;
-        return true;
     }
 
     private static ExpressionSyntax? GetElementAccess(ExpressionSyntax expression, string loopVariable)

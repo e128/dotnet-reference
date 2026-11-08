@@ -533,7 +533,7 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
 
             for (var ns = type.ContainingNamespace; ns is not null && !ns.IsGlobalNamespace; ns = ns.ContainingNamespace)
             {
-                if (Namespaces.Equals(ns, "Microsoft.AspNetCore.Cryptography"))
+                if (Namespaces.Equals(ns, FipsSymbolHelpers.AspNetCryptography))
                 {
                     return true;
                 }

@@ -114,7 +114,7 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private sealed class Search
     {
-        private readonly Dictionary<ILocalSymbol, HashSet<int>> _visited = new(SymbolEqualityComparer.Default);
+        private readonly Dictionary<ILocalSymbol, HashSet<(int Position, ValueKind Kind)>> _visited = new(SymbolEqualityComparer.Default);
         private readonly HashSet<IOperation> _lambdas = [];
 
         internal List<IOperation> Tokens { get; } = [];
@@ -127,7 +127,7 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                 _visited[local] = positions;
             }
 
-            return positions.Add((position * 4) + (int)kind);
+            return positions.Add((position, kind));
         }
 
         internal bool VisitLambda(IOperation lambda)

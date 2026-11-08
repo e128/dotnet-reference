@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -667,11 +666,11 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
     private static int ReadMinFlags(AnalyzerConfigOptionsProvider optionsProvider)
     {
-        return optionsProvider.GlobalOptions.TryGetValue(OptionKey, out var text)
-               && int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
-               && value >= 2
-            ? value
-            : DefaultMinFlags;
+        return OptionReader.ReadInt(
+            optionsProvider.GlobalOptions,
+            OptionKey,
+            DefaultMinFlags,
+            minimum: 2);
     }
 
     private sealed class WriteStats

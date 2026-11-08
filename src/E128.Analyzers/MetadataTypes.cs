@@ -9,6 +9,8 @@ namespace E128.Analyzers;
 
 internal static class MetadataTypes
 {
+    internal const string Unsafe = "System.Runtime.CompilerServices.Unsafe";
+
     /// <summary>
     ///     Returns every type with the metadata name. GetTypeByMetadataName returns null when two
     ///     referenced assemblies define the same name, which would silently turn a rule off.

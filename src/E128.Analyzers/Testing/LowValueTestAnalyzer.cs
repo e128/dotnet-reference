@@ -369,7 +369,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         var attribute = XunitTestHelper.GetFactOrTheoryAttribute(facts.Method);
 
         return attribute is not null
-               && IsTheoryName(attribute.Name.ToString())
+               && IsTheoryName(XunitTestHelper.SimpleName(attribute.Name))
                && XunitTestHelper.CountDataRows(facts.Method) == 1;
     }
 

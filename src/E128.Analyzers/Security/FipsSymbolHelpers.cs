@@ -18,7 +18,11 @@ internal static partial class FipsSymbolHelpers
 {
     public const string Cryptography = "System.Security.Cryptography";
 
-    private const int MaxResolveDepth = 4;
+    public const string AspNetCryptography = "Microsoft.AspNetCore.Cryptography";
+
+    public const string KeyDerivation = "Microsoft.AspNetCore.Cryptography.KeyDerivation";
+
+    internal const int MaxResolveDepth = 4;
 
     private const string HashAlgorithmNameType = "HashAlgorithmName";
 
@@ -517,14 +521,8 @@ internal static partial class FipsSymbolHelpers
     /// <summary>
     ///     Calls <paramref name="check" /> with each target an assignment writes, the value it receives, and the
     ///     syntax to report. It covers simple, <c lang="csharp">??=</c> and tuple deconstruction assignments. It skips a compound assignment such as <c lang="csharp">+=</c>, because the assigned value is not a known constant.
-    /// </summary>
-    public static void ForEachAssignment(IOperation operation, Action<IOperation, IOperation, SyntaxNode> check) =>
-        ForEachAssignment(operation, check, static (callback, target, value, syntax) => callback(target, value, syntax));
-
-    /// <summary>
-    ///     Like <see cref="ForEachAssignment(IOperation, Action{IOperation, IOperation, SyntaxNode})" /> but passes
-    ///     <paramref name="state" /> to <paramref name="check" />, so a caller can use a static lambda and avoid a
-    ///     closure allocation on every operation.
+    ///     It passes <paramref name="state" /> to <paramref name="check" />, so a caller can use a static lambda
+    ///     and avoid a closure allocation on every operation.
     /// </summary>
     /// <typeparam name="TState">The type of the state passed to the check delegate.</typeparam>
     public static void ForEachAssignment<TState>(IOperation operation, TState state, Action<TState, IOperation, IOperation, SyntaxNode> check)

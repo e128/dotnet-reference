@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -72,12 +71,10 @@ public sealed class ConditionalDirectiveCeilingAnalyzer : DiagnosticAnalyzer
 
     private static int GetCeiling(SyntaxTree tree, AnalyzerConfigOptionsProvider provider)
     {
-        var options = provider.GetOptions(tree);
-
-        return options.TryGetValue(CeilingOptionKey, out var rawValue)
-            && int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var ceiling)
-            && ceiling >= 0
-                ? ceiling
-                : DefaultCeiling;
+        return OptionReader.ReadInt(
+            provider.GetOptions(tree),
+            CeilingOptionKey,
+            DefaultCeiling,
+            minimum: 0);
     }
 }

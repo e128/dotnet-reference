@@ -26,8 +26,14 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
     ///     forbidden algorithm. The comparison ignores case, and a leading <c lang="csharp">System.Security.Cryptography.</c>
     ///     is removed first.
     /// </summary>
+    private static readonly ImmutableHashSet<string> LegacyDefaultFactoryTypes = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "HashAlgorithm",
+        "HMAC",
+        "KeyedHashAlgorithm");
+
     private static readonly ImmutableHashSet<string> ForbiddenAlgorithmNames =
-        ForbiddenAlgorithmTypes.Union(new[]
+        ForbiddenAlgorithmTypes.Union(LegacyDefaultFactoryTypes).Union(new[]
         {
             "SHA",
             "SHA-1",
@@ -35,9 +41,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             "RIPEMD-160",
             "3DES",
             "Triple DES",
-            "HashAlgorithm",
-            "HMAC",
-            "KeyedHashAlgorithm",
             "http://www.w3.org/2000/09/xmldsig#sha1",
             "http://www.w3.org/2001/04/xmldsig-more#md5",
             "http://www.w3.org/2001/04/xmldsig-more#ripemd160",
@@ -107,12 +110,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         "1.3.14.3.2.26",
         "1.2.840.113549.2.5",
         "1.3.36.3.2.1");
-
-    private static readonly ImmutableHashSet<string> LegacyDefaultFactoryTypes = ImmutableHashSet.Create(
-        StringComparer.Ordinal,
-        "HashAlgorithm",
-        "HMAC",
-        "KeyedHashAlgorithm");
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -423,7 +420,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
 
         return string.Equals(method.Name, "Pbkdf2", StringComparison.Ordinal)
             ? FipsSymbolHelpers.IsCryptographyType(owner, "Rfc2898DeriveBytes") ||
-                FipsSymbolHelpers.IsType(owner, "KeyDerivation", "Microsoft.AspNetCore.Cryptography.KeyDerivation")
+                FipsSymbolHelpers.IsType(owner, "KeyDerivation", FipsSymbolHelpers.KeyDerivation)
             : FipsSymbolHelpers.DerivesFromCryptographyType(owner, "AsymmetricAlgorithm") &&
                 (method.Name.StartsWith("Verify", StringComparison.Ordinal) ||
                  method.Name.StartsWith("TryVerify", StringComparison.Ordinal));

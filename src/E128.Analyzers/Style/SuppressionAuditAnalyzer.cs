@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace E128.Analyzers.Style;
@@ -52,14 +53,9 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var directive = trivia.GetStructure();
-            if (directive is null)
-            {
-                continue;
-            }
-
-            // Only check #pragma warning disable — not restore.
-            if (!directive.ToString().Contains("disable", StringComparison.OrdinalIgnoreCase))
+            // Only check #pragma warning disable, not restore.
+            if (trivia.GetStructure() is not PragmaWarningDirectiveTriviaSyntax directive
+                || !directive.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword))
             {
                 continue;
             }

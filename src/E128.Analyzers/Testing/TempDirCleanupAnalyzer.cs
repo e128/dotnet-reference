@@ -175,15 +175,23 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
     {
         foreach (var iface in classSymbol.AllInterfaces)
         {
-            var name = iface.Name;
-            if (string.Equals(name, "IDisposable", StringComparison.Ordinal)
-                || string.Equals(name, "IAsyncDisposable", StringComparison.Ordinal)
-                || string.Equals(name, "IAsyncLifetime", StringComparison.Ordinal))
+            if (IsCleanupInterface(iface))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool IsCleanupInterface(INamedTypeSymbol iface)
+    {
+        // IAsyncLifetime stays name-only so a test project can supply its own stand-in interface.
+        return iface.Name switch
+        {
+            "IDisposable" or "IAsyncDisposable" => Namespaces.Equals(iface.ContainingNamespace, "System"),
+            "IAsyncLifetime" => true,
+            _ => false,
+        };
     }
 }

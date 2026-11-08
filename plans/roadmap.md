@@ -1,5 +1,5 @@
 # Roadmap
-*Updated: 2026-11-08T17:36:49Z*
+*Updated: 2026-11-08T18:06:23Z*
 
 ## Implicit State Machine Rule
 
@@ -15,11 +15,14 @@
 ### Codebase Untangling
 
 - Align `MetadataTypes.RegisterForType` with `MetadataTypes.Find`, so an ambiguous type name does not turn a rule off. Decide the duplicate-report behavior first.
-- Consolidate the FIPS hash-name and OID tables in `FipsSymbolHelpers` and the security analyzers that repeat them.
+- Consolidate the FIPS hash-name and OID tables in `FipsSymbolHelpers` and the security analyzers that repeat them. This includes the SHA-3 spellings in `FipsSha3Analyzer`, `FipsHmacKeyLengthAnalyzer`, and `FipsUnapprovedHashAnalyzer`.
 - Replace the private `VerifyAsync` wrappers in the analyzer test suite with `AnalyzerTestRunner.VerifyAsync`.
 - Move the syntax root from the code fix base class into the registered action, so the fix providers stop fetching it again.
 - Pass `SuggestedType` through `FileSystemPathAnalyzer` instead of converting it to a string and back.
-- Give the SHA-3 name spellings in `FipsSha3Analyzer`, `FipsHmacKeyLengthAnalyzer`, and `FipsUnapprovedHashAnalyzer` one owner.
 - Derive `DiskIoCatalog.FileMethodKind` from the method-name sets, so membership has one source.
 - Give the `Reference.Core` default name `"World"` one owner.
+- Route `ImplicitStateMachineAnalyzer.ReadMinFlags` through per-tree options. It reads `GlobalOptions` today, so a project `.editorconfig` value never applies.
+- Give the mutable collection types and their read-only interfaces one catalogue. `MutableCollectionExposureAnalyzer`, `ReadOnlyCollectionExposure`, and `MutableCollectionKind` each encode the mapping.
+- Give pragma directives one enumerator for `SuppressionAuditAnalyzer`, `PragmaBundlingAnalyzer`, and `PragmaBalanceAnalyzer`.
+- Give the path-name heuristic one classifier for `PathNamePatterns`, `FileSystemPathHelpers`, and `CollectionPathAnalyzer`.
 

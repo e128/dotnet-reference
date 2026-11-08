@@ -18,11 +18,9 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
 
     private const string HmacPrefix = "HMAC";
 
-    private static readonly ImmutableHashSet<string> StaticHmacMembers = ImmutableHashSet.Create(
-        StringComparer.Ordinal,
-        "HashData",
-        "TryHashData",
-        "HashDataAsync");
+    // Create is excluded: it returns a new HMAC instance rather than hashing the key.
+    private static readonly ImmutableHashSet<string> StaticHmacMembers =
+        FipsTypeClassifier.OneShotMembers.Remove("Create");
 
     private static readonly char[] NameSeparators = ['-', '_'];
 

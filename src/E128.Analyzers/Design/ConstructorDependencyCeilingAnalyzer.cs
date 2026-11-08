@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -173,12 +172,10 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
 
     private static int ReadCeiling(SyntaxTree tree, AnalyzerConfigOptionsProvider optionsProvider)
     {
-        var options = optionsProvider.GetOptions(tree);
-
-        return options.TryGetValue(OptionKey, out var text)
-               && int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
-               && value > 0
-            ? value
-            : DefaultCeiling;
+        return OptionReader.ReadInt(
+            optionsProvider.GetOptions(tree),
+            OptionKey,
+            DefaultCeiling,
+            minimum: 1);
     }
 }

@@ -132,9 +132,16 @@ internal static class XunitTestHelper
         return ns is not null && string.Equals(ns.ToDisplayString(), "Xunit", StringComparison.Ordinal);
     }
 
+    internal static bool IsAssertType(INamedTypeSymbol? type)
+    {
+        return type is not null
+               && string.Equals(type.Name, "Assert", StringComparison.Ordinal)
+               && IsXunitNamespace(type.ContainingNamespace);
+    }
+
     // An attribute name can be written plain, qualified, or alias-qualified. Read the last segment
     // of the name so every spelling matches.
-    private static string SimpleName(NameSyntax name)
+    internal static string SimpleName(NameSyntax name)
     {
         return name switch
         {

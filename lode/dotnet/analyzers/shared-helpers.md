@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-08T17:33:22Z*
+*Updated: 2026-11-08T18:38:19Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -11,9 +11,11 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 
 | Helper | Contract |
 | --- | --- |
+| `MetadataTypes.Unsafe` | The single owner of the `System.Runtime.CompilerServices.Unsafe` metadata name. |
 | `MetadataTypes.Find` | Returns every type with the metadata name. Survives an ambiguous reference. |
 | `MetadataTypes.Contains` | True when a symbol is one of the resolved types. |
 | `MetadataTypes.RegisterForType` | Registers a syntax action only when `GetTypeByMetadataName` resolves. An ambiguous name turns the rule off. |
+| `OptionReader.ReadInt` | Reads one bounded integer config option. A missing, malformed, or below-minimum value yields the fallback. |
 | `TypeSymbols.UnwrapNullable` | Returns `T` for a `Nullable<T>` argument. |
 | `TypeSymbols.DerivesFrom` | Walks the base chain. A null base type matches nothing. |
 | `TypeSymbols.Matches` | True when a type equals a target. A null target matches nothing. |
@@ -23,8 +25,13 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `NameSuffixes.Matches` | True when a name ends with a suffix at an uppercase-letter position. |
 | `ByteSizeType.Is` | True for `Pug.Core.Classes.ByteSize`. |
 | `ReturnTypes.Get` | Returns the return type of a method or the type of a property. |
-| `ReadOnlyCollectionExposure.Find` | Returns the location of a mutable `List` or `Dictionary` field or property that a member exposes as a read-only interface. Unwraps `Task<T>` and `ValueTask<T>`. `MutableCollectionKind` selects the collection. |
+| `ReadOnlyCollectionExposure.Find` | Takes an operation and its containing symbol, not a diagnostic context. Returns the location of a mutable `List` or `Dictionary` field or property that a member exposes as a read-only interface. Unwraps `Task<T>` and `ValueTask<T>`. `MutableCollectionKind` selects the collection. |
 | `TaskTypes.IsTaskOrValueTask` | True for `Task` and `ValueTask`, including their generic forms. |
+| `Blittability.IsBlittable` | True when a type copies as a raw bit pattern. A struct that holds a bool or decimal returns false. |
+| `TrackerReference` | Reads `e128_tracked_ref_pattern` and matches a work-item reference. A regex timeout counts as no match, so the rule still reports. |
+| `InvocationNames.GetSimpleName` | Returns the called name for `Type.Method(...)` and for a bare `Method(...)`. |
+| `IndexedForLoop.TryMatch` | Matches `for (var i = 0; i < source.Length; i++)` and returns the variable, bound owner, and body. |
+| `XunitTestHelper.IsAssertType` | True for `Xunit.Assert`. The test-quality rules share it. |
 | `Unsafe.OwnerInvocation.TryMatch` | Binds a named call and confirms its containing type is one of the owner types. |
 | `Namespaces.Equals` | True when the namespace chain equals a dotted name, ending at the global namespace. |
 | `AttributeArguments.IsInside` | True when the node or an ancestor is an attribute argument. |
@@ -55,6 +62,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `FixSyntax.ReplaceStatementFromText` | Parses replacement statement text and keeps the original trivia. |
 | `FixSyntax.BuildFieldName` | Builds a `_lowerSuffix` field name from receiver text, with a fallback when no letter remains. |
 | `FixSyntax.HasMemberNamed` | True when a field, and optionally a property or method, has the name. |
+| `FixSyntax.PromoteContainingMethod` | Adds `async` to the method that holds an await and promotes its return type to `Task` or `Task<T>`. |
 | `FixSyntax.ReplaceLoopAsync` | Replaces the loop and adds the namespace that the replacement needs. |
 | `FixSyntax.WrapInTryCatchAsync` | Wraps a statement in a try block with one typed catch clause and a catch body. |
 | `PragmaDirectives.Build` | Builds a pragma warning directive line for a keyword and an error-code list. |

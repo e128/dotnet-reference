@@ -52,7 +52,7 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(start =>
         {
-            var unsafeType = MetadataTypes.Find(start.Compilation, "System.Runtime.CompilerServices.Unsafe");
+            var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             // Unsafe.BitCast needs .NET 8. Earlier targets have no replacement to offer.
             if (unsafeType.IsEmpty || unsafeType.All(type => type.GetMembers("BitCast").IsEmpty))
             {
