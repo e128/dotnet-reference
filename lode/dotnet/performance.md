@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-11-01T20:55:33Z*
+*Updated: 2026-11-09T13:48:18Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -23,6 +23,13 @@ it into a project file. It sets these:
 - `IlcFoldIdenticalMethodBodies` true, to fold identical method bodies.
 - `OptimizationPreference` Size, `TrimMode` link, and
   `InvariantGlobalization` true when a project sets `PublishAot`.
+
+The three runtime projects set `IsAotCompatible` true. The property turns on
+the trim and AOT analyzers and marks the assembly trimmable. The web project
+also sets `EnableRequestDelegateGenerator` true, because the delegate-based
+`MapGet` and `MapPost` overloads need generated request delegates to pass the
+AOT analyzer. The analyzer projects target `netstandard2.0` and carry no AOT
+marker.
 
 No project sets `PublishAot` today. A project that needs an AOT binary sets
 that one property and inherits the rest.

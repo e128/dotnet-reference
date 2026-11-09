@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-08T18:54:29Z*
+*Updated: 2026-11-09T13:50:59Z*
 
 ## Overview
 
@@ -152,6 +152,7 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.6.0   | E128218       | Implicit state machine rule. Info severity. |
 | 2.6.1   | (none)        | Shared-helper refactor. E128056 also flags `File.OpenText`, and E128058 also fires on `Task<T>` and `ValueTask<T>` returns. |
 | 2.6.2   | (none)        | Shared-helper extraction, FIPS name-table dedup, and rule false-negative fixes. No rule set change. |
+| 2.6.3   | (none)        | Build-dependency update: Meziantou.Analyzer 3.0.322 and PolySharp 1.17.0. No rule set change. |
 
 ## Sources
 

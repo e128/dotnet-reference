@@ -6,7 +6,7 @@
     <!-- Analyzers -->
     <PackageVersion Include="AsyncFixer" Version="2.1.0" />
     <PackageVersion Include="IDisposableAnalyzers" Version="4.0.8" />
-    <PackageVersion Include="Meziantou.Analyzer" Version="3.0.321" />
+    <PackageVersion Include="Meziantou.Analyzer" Version="3.0.322" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
     <PackageVersion Include="Roslynator.Analyzers" Version="5.0.1" />
     <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="5.0.1" />
@@ -17,8 +17,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeStyle" Version="5.9.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.9.0" />
-    <PackageVersion Include="PolySharp" Version="1.16.0" />
+    <PackageVersion Include="PolySharp" Version="1.17.0" />
     <!-- Architecture Testing -->
     <PackageVersion Include="TngTech.ArchUnitNET.xUnitV3" Version="0.13.5" />
     <!-- Testing -->
@@ -29,18 +28,19 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.5.2" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.2" />
-    <PackageVersion Include="xunit.v3.mtp-v2" Version="4.0.2" />
+    <PackageVersion Include="xunit.v3.mtp-v2" Version="4.0.3" />
     <!-- CLI -->
     <PackageVersion Include="System.CommandLine" Version="2.0.14" />
     <!-- Transitive pins -->
-    <!-- CSharp.Workspaces: required transitively by Microsoft.CodeAnalysis.CSharp -->
+    <!-- CSharp.Workspaces: direct dependency of E128.Analyzers.CodeFixers -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
-    <!-- Microsoft.Extensions.*: pulled transitively by Hosting, Mvc.Testing, and Extensions.Hosting -->
+    <!-- Microsoft.Extensions.*: unify the 10.0.x versions requested across the restore graph -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
+    <!-- System.Collections.Immutable: unifies the 10.0.1 requested by Microsoft.CodeAnalysis.Common -->
     <PackageVersion Include="System.Collections.Immutable" Version="10.0.14" />
     <!-- Transitive pins: deprecated or major-version-behind packages -->
     <PackageVersion Include="Humanizer.Core" Version="3.0.10" />

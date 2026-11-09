@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- The delegate MapGet and MapPost overloads need generated request delegates to pass the AOT analyzer. -->
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="E128.Reference.Tests" />
   </ItemGroup>
