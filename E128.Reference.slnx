@@ -20,6 +20,9 @@
         <Project Path="src/E128.Analyzers.CodeFixers/E128.Analyzers.CodeFixers.csproj" />
         <Project Path="src/E128.Reference.Cli/E128.Reference.Cli.csproj" />
     </Folder>
+    <Folder Name="/benchmarks/">
+        <Project Path="benchmarks/E128.Benchmarks/E128.Benchmarks.csproj" />
+    </Folder>
     <Folder Name="/tests/">
         <Project Path="tests/Architecture.Tests/Architecture.Tests.csproj" />
         <Project Path="tests/E128.Analyzers.Tests/E128.Analyzers.Tests.csproj" />

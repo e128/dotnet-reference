@@ -105,7 +105,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
             return document;
         }
 
-        var newRoot = BuildFixedRoot(root, typeDecl, orExpr, pivot, literals, fieldName);
+        var newRoot = BuildFixedRoot(root, typeDecl, orExpr, in pivot, literals, fieldName);
         return newRoot is null ? document : document.WithSyntaxRoot(newRoot);
     }
 

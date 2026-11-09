@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-08T19:40:21Z*
+*Updated: 2026-11-09T22:27:38Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -170,9 +170,23 @@ Versions are pinned centrally in `Directory.Packages.props`.
 
 ---
 
+## Benchmark Project (excluded from production tables)
+
+`benchmarks/E128.Benchmarks` is an executable. It references `E128.Analyzers`, `E128.Reference.Core`, and `E128.Reference.Web`. Versions are pinned centrally in `Directory.Packages.props`. See [benchmarks.md](../dotnet/benchmarks.md).
+
+| Package                            | Role                                            |
+| ---------------------------------- | ----------------------------------------------- |
+| `BenchmarkDotNet`                  | Benchmark runner and memory diagnoser           |
+| `Microsoft.AspNetCore.Mvc.Testing` | In-process host for the web endpoint benchmarks |
+| `Microsoft.CodeAnalysis.CSharp`    | Compilation for the analyzer benchmarks         |
+
+---
+
 ## Central Package Management
 
 Versions are pinned in `Directory.Packages.props` (CPM). All projects use
 `ManagePackageVersionsCentrally=true`. Transitive pins are enabled
-(`CentralPackageTransitivePinningEnabled=true`). NuGet audit is active at `low`
+(`CentralPackageTransitivePinningEnabled=true`). A setup-owned block in the first
+`PropertyGroup` of `Directory.Packages.props` sets the transitive pin and version override
+properties. NuGet audit is active at `low`
 severity for all deps (direct and transitive).

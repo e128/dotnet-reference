@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\E128.Analyzers\E128.Analyzers.csproj" />
+    <ProjectReference Include="..\..\src\E128.Reference.Core\E128.Reference.Core.csproj" />
+    <ProjectReference Include="..\..\src\E128.Reference.Web\E128.Reference.Web.csproj" />
+  </ItemGroup>
+
+</Project>

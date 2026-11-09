@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-08T13:28:48Z*
+*Updated: 2026-11-09T21:51:08Z*
 
 ## Generated Docs
 
@@ -29,6 +29,7 @@
 - [analyzers.md](dotnet/analyzers.md): Deny-by-default strategy, analyzer packages, suppression policy
 - [release-tracking.md](dotnet/release-tracking.md): AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
 - [performance.md](dotnet/performance.md): Runtime knobs, profiling ladder, safe C# hot-path tips, ASP.NET Core
+- [benchmarks.md](dotnet/benchmarks.md): BenchmarkDotNet starter project: classes, invariants, the sealing-gate gap, and the deferred comparison
 - [unsafe-code.md](dotnet/unsafe-code.md): No-unsafe-code policy, E128 rule coverage map, known gaps
 - [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes
 - [implicit-state-machine-rule.md](dotnet/implicit-state-machine-rule.md): E128218 contract, detector families, scope, and noise budget
@@ -61,7 +62,7 @@
 
 ## dotnet-reference/
 
-- [dep-map.md](dotnet-reference/dep-map.md): NuGet deps, container runtime images, SDK pins + project structure for all 4 production projects
+- [dep-map.md](dotnet-reference/dep-map.md): NuGet deps, container runtime images, SDK pins + project structure for the production projects and the benchmark project
 
 ## infrastructure/
 

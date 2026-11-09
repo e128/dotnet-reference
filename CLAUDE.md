@@ -15,3 +15,6 @@ This file adds only Claude Code mechanics. Portable content lives in
 - Put config in `.claude/` at project level, not `~/.claude/` at global level.
 - Guardrail hooks live in `.claude/hooks/`. opencode enforcement lives in
   `opencode.json` permissions.
+
+<!-- repository-setup:import -->
+@.claude/setup-guidance.md

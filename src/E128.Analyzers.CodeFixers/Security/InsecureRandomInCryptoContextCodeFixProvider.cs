@@ -299,7 +299,7 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
 
         value = converted.GetValueOrDefault();
 
-        return converted.HasValue;
+        return converted is not null;
     }
 
     private static InvocationExpressionSyntax CreateReplacement(

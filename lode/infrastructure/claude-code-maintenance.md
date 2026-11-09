@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-11-09T03:30:10Z*
+*Updated: 2026-11-09T21:16:25Z*
 
 ## Harness Portability Capability Map
 
@@ -37,7 +37,7 @@ Two supported harnesses load instructions in this repo:
 | `.claude/skills/`               | Yes                         | Skills (`SKILL.md`). Claude Code loads them through the skill tool. opencode reads project-level `.claude/skills/` through a compatibility path |
 | `prompts/SystemPrompt.txt`      | Yes                         | The Lode Coding methodology. Claude CLI injects it with `--append-system-prompt`. opencode loads it through `instructions` in `opencode.json` |
 | `scripts/dotnet-reference*.sh`  | No                          | Session launchers. See the paragraph below the table              |
-| `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md`, adds a thin Claude-only overlay |
+| `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md` and `.claude/setup-guidance.md`, adds a thin Claude-only overlay |
 | `.claude/hooks/`                | No (file format)            | Claude Code guardrail hooks. opencode v2 has no hook file. Its plugin API provides the same interception. See [opencode-guardrails.md](opencode-guardrails.md) |
 | `.claude/settings.json`         | No                          | Claude Code permissions and hook configuration |
 | `.claude/agents/*.md`           | Yes (via mirror)            | Source of truth for subagents. Claude Code reads it directly. `opencode-agents.sh sync` generates the `.opencode/agents/` mirror with translated frontmatter |
