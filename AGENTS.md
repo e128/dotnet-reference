@@ -174,6 +174,49 @@ Apply these questions before you settle a design, and again in review.
 - Ground research in authoritative, current sources. Link important
   evidence.
 
+## Instruction Files as a Memory of Failures
+
+`AGENTS.md` and `CLAUDE.md` are a memory of failures, not documentation. A
+line earns a place only when a model did the wrong thing once and the line
+stops the repeat. Apply the Claude.md Method (after Boris Cherny).
+
+- Read at the start of every session. Keep the file short enough to read,
+  not skimmed.
+- One line, one failure. State what broke and what to do instead. Give no
+  background and no philosophy.
+- A line without a failure behind it is noise. Delete noise before you add
+  anything.
+- Edit the file from evidence, never from memory. Review it like code.
+- When a model fails, the fix goes into the file before the fix goes into
+  the code.
+
+Maintain the file with these passes:
+
+1. **Collect.** Read logs, PR comments, and chat history. List every moment
+   a model went wrong in this repo. Write one line per failure with the
+   evidence path. Write no file yet.
+2. **Distill.** Turn each failure into one instruction a model can follow
+   without context. Put the failure in brackets at the end of the line.
+   Example: `[ran tests from the wrong dir, PR #212]`. Merge duplicates.
+   Drop what happened once and cannot happen again.
+3. **Structure.** Order lines by how early a session needs them: run
+   commands, tests, lint, untouched areas, style, project traps. Keep a
+   three-line header: what the repo is, how to verify a change, where to
+   look first.
+4. **Prune.** Read the file as a model would at the start of a session.
+   Cut every line that does not change a decision. Past 60 lines, cut the
+   oldest failures first, not the newest.
+5. **Test.** Open a fresh session with the file and nothing else. Run the
+   task from that session. Strengthen a line behind every repeated
+   failure. Mark a never-needed line as a deletion candidate.
+6. **Handoff.** Commit the file with a message that lists the failures it
+   covers. Remove a line after 30 days without use.
+
+Never write a line without a real failure behind it. Never paste in general
+best practice. Never let the file grow past a screen. Never describe the
+codebase when a model can read the code. Stop when a fresh session
+completes the task with zero repeated failures.
+
 ## Repo-Specific Gotchas
 
 - macOS is case-insensitive. Linux CI (`ubuntu-26.04`, ext4) is

@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-11-08T13:43:23Z*
+*Updated: 2026-11-09T03:30:10Z*
 
 ## Harness Portability Capability Map
 
@@ -144,6 +144,7 @@ release may change the answer.
 - New or changed agent → edit `.claude/agents/*.md`, then run
   `scripts/internal/opencode-agents.sh sync`. `/yeet` runs it automatically.
 - Knowledge → `lode/` (not AGENTS.md, CLAUDE.md, or rules)
+- `AGENTS.md` and `CLAUDE.md` follow the failure-memory method in `AGENTS.md` ("Instruction Files as a Memory of Failures")
 
 ### The Which-Home Test
 
