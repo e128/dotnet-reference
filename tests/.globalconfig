@@ -11,7 +11,7 @@ dotnet_diagnostic.CA1515.severity = none
 # CA1707: Underscores in test names (Method_Condition_Result naming convention)
 dotnet_diagnostic.CA1707.severity = none
 
-# CA1062: Null check constructor parameters (xUnit injects via fixture — always non-null)
+# CA1062: Null check constructor parameters (xUnit injects via fixture: always non-null)
 dotnet_diagnostic.CA1062.severity = none
 
 # CA2007, MA0004, VSTHRD111: ConfigureAwait in tests
@@ -24,7 +24,7 @@ dotnet_diagnostic.VSTHRD111.severity = none
 # VSTHRD200: Async suffix (test method names don't need Async suffix)
 dotnet_diagnostic.VSTHRD200.severity = none
 
-# CA2234: Pass Uri instead of string (test convenience — string URLs acceptable in test data)
+# CA2234: Pass Uri instead of string (test convenience: string URLs acceptable in test data)
 dotnet_diagnostic.CA2234.severity = none
 
 # MA0040, xunit1051: Ambient CancellationToken (xUnit v3 ambient token too noisy)
@@ -55,5 +55,5 @@ e128_minimum_framework_version = 100
 
 # E128097: Comment inside test code (this repo's own test suite uses explanatory
 # comments by convention; the rule encodes a consuming repo's zero-comment policy,
-# not a universal one — consuming repos configure their own severity)
+# not a universal one: consuming repos configure their own severity)
 dotnet_diagnostic.E128097.severity = none

@@ -1,16 +1,14 @@
 <Project>
 
     <!-- ============================================== -->
-    <!-- Central Package Management                     -->
+    <!-- NuGet Restore and Audit                        -->
     <!--                                                -->
-    <!-- Versions pinned in Directory.Packages.props.   -->
-    <!-- NuGet audit scans all deps (direct+transitive) -->
-    <!-- at all severity levels.                        -->
+    <!-- Package versions and the CPM switches live in  -->
+    <!-- Directory.Packages.props. NuGet audit scans    -->
+    <!-- all deps (direct and transitive) at all        -->
+    <!-- severity levels.                               -->
     <!-- ============================================== -->
     <PropertyGroup>
-        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-        <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-        <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
         <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
         <RestoreEnablePackagePruning>true</RestoreEnablePackagePruning>
         <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
@@ -36,12 +34,13 @@
     <!-- ============================================== -->
     <!-- Code Analysis                                  -->
     <!--                                                -->
-    <!-- Base mode is Recommended; Security, Reliability -->
-    <!-- and Performance are elevated to All to enable  -->
-    <!-- rules disabled by default in those categories. -->
-    <!-- Per-category modes override the base — see     -->
-    <!-- docs: AnalysisMode vs AnalysisMode<Category>.  -->
-    <!-- Rule severities are set in .editorconfig.      -->
+    <!-- Base mode is Recommended. Security,            -->
+    <!-- Reliability and Performance are raised to All  -->
+    <!-- to enable rules that are off by default in     -->
+    <!-- those categories. A per-category mode          -->
+    <!-- overrides the base. See AnalysisMode and       -->
+    <!-- AnalysisMode<Category> in the .NET docs.       -->
+    <!-- Rule severities are set in .globalconfig.      -->
     <!-- ============================================== -->
     <PropertyGroup>
         <AnalysisLevel>latest-all</AnalysisLevel>
@@ -71,14 +70,14 @@
     <!-- ============================================== -->
     <!-- Build Output                                   -->
     <!--                                                -->
-    <!-- Standard .NET artifacts layout. SDK owns all   -->
-    <!-- output paths — do not set OutDir or            -->
-    <!-- BaseIntermediateOutputPath manually.            -->
+    <!-- Standard .NET artifacts layout. The SDK owns   -->
+    <!-- all output paths. Never set OutDir or          -->
+    <!-- BaseIntermediateOutputPath manually.           -->
     <!--                                                -->
     <!-- Layout:                                        -->
-    <!--   artifacts/bin/{Project}/debug/                -->
-    <!--   artifacts/obj/{Project}/debug/                -->
-    <!--   artifacts/publish/{Project}/release/          -->
+    <!--   artifacts/bin/{Project}/debug/               -->
+    <!--   artifacts/obj/{Project}/debug/               -->
+    <!--   artifacts/publish/{Project}/release/         -->
     <!-- ============================================== -->
     <PropertyGroup>
         <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
@@ -127,7 +126,7 @@
     <!-- CI: Deterministic Builds                       -->
     <!--                                                -->
     <!-- Enabled only in CI to ensure reproducible      -->
-    <!-- output. Do not enable locally — it breaks      -->
+    <!-- output. Do not enable locally: it breaks      -->
     <!-- debugger source file resolution.               -->
     <!-- ============================================== -->
     <PropertyGroup Condition="'$(CI)' == 'true'">

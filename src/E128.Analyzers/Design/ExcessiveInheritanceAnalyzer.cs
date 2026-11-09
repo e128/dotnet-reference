@@ -60,7 +60,7 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var threshold = GetThreshold(context, type);
+        var threshold = GetThreshold(in context, type);
         if (depth < threshold)
         {
             return;

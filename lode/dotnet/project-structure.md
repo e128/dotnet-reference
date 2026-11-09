@@ -1,5 +1,5 @@
 # .NET 10 Project Structure
-*Updated: 2026-11-01T20:55:33Z*
+*Updated: 2026-11-09T22:31:48Z*
 
 ## Solution Format
 
@@ -23,6 +23,9 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 │   ├── E128.Reference.Cli/    # CLI application
 │   ├── E128.Reference.Core/   # Core library
 │   └── E128.Reference.Web/    # Web application
+├── benchmarks/
+│   ├── .globalconfig               # Benchmark severity override (global_level=101)
+│   └── E128.Benchmarks/            # BenchmarkDotNet starter benchmarks (see [Benchmarks](benchmarks.md))
 ├── tests/
 │   ├── Architecture.Tests/         # ArchUnitNET structural tests
 │   ├── E128.Analyzers.Tests/       # Roslyn analyzer unit tests
@@ -36,10 +39,12 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 
 All package versions declared in `Directory.Packages.props`. Individual `.csproj` files use `<PackageReference Include="..." />` without `Version` attributes.
 
-Key properties in `Directory.Build.props`:
+Key properties:
 - `ManagePackageVersionsCentrally=true`, enables CPM
 - `CentralPackageTransitivePinningEnabled=true`, prevents transitive version drift
 - `CentralPackageVersionOverrideEnabled=false`, prevents per-project overrides
+
+`Directory.Packages.props` owns the two `CentralPackage*` properties inside a setup-owned block. The block opens with a `repository-setup:begin cpm-hardening` comment that carries a SHA-256 hash. Never edit the block by hand. `Directory.Build.props` sets only the restore and audit properties.
 
 ## Directory.Build.props vs .targets
 

@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-11-08T19:40:21Z*
+*Updated: 2026-11-09T22:31:09Z*
 
 ## Strategy: Deny by Default
 
@@ -9,11 +9,12 @@ All analyzer diagnostics default to `error` via `.globalconfig` (`dotnet_analyze
 
 Per [Microsoft guidance](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/code-style-rule-options):
 
-| File                  | Purpose                                             | Scope              |
-| --------------------- | --------------------------------------------------- | ------------------ |
-| `.editorconfig`       | Code style, formatting, naming (canonical home)     | All projects       |
-| `.globalconfig`       | Analyzer diagnostic severities and enabling only    | All projects       |
-| `tests/.globalconfig` | Test-specific severity overrides                    | Test projects only |
+| File                       | Purpose                                          | Scope                  |
+| -------------------------- | ------------------------------------------------ | ---------------------- |
+| `.editorconfig`            | Code style, formatting, naming (canonical home)  | All projects           |
+| `.globalconfig`            | Analyzer diagnostic severities and enabling only | All projects           |
+| `tests/.globalconfig`      | Test-specific severity overrides                 | Test projects only     |
+| `benchmarks/.globalconfig` | Benchmark-specific severity overrides            | Benchmark project only |
 
 ### Rationale
 
@@ -21,7 +22,7 @@ Per [Microsoft guidance](https://learn.microsoft.com/en-us/dotnet/fundamentals/c
 
 **`.globalconfig` is purely for analyzer configuration.** It handles rule severity (`dotnet_diagnostic.*`) and enabling (`roslynator_analyzers.enabled_by_default`). It does NOT support editor style settings like indentation, whitespace, or formatting preferences. Put those in `.editorconfig`.
 
-**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` carry the `:error`/`:suggestion`/`:silent` suffix on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). The `.globalconfig` lists explicit `dotnet_diagnostic.IDE*` overrides only where the behavior deviates from the blanket `dotnet_analyzer_diagnostic.severity = error`. That avoids silent drift when rule IDs change. The `tests/.globalconfig` uses `global_level = 101` to override the root `global_level = 100`.
+**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` carry the `:error`/`:suggestion`/`:silent` suffix on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). The `.globalconfig` lists explicit `dotnet_diagnostic.IDE*` overrides only where the behavior deviates from the blanket `dotnet_analyzer_diagnostic.severity = error`. That avoids silent drift when rule IDs change. The `tests/.globalconfig` and `benchmarks/.globalconfig` use `global_level = 101` to override the root `global_level = 100`.
 
 ## MSBuild Properties
 
@@ -76,7 +77,9 @@ explicit exception.
 
 ## Key Meziantou Rules Enabled as Error
 
-Aligned with Meziantou's [comparison table](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/comparison-with-other-analyzers.md):
+A setup-owned block in the root `.globalconfig` sets the Meziantou Performance, Security, and Usage rules to `error`. The block opens with a `repository-setup:begin meziantou` comment that carries a SHA-256 hash. Do not edit the block by hand. Put an override in a `global_level = 101` file instead.
+
+The table below is aligned with Meziantou's [comparison table](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/comparison-with-other-analyzers.md):
 
 | Rule    | Guardrail                                                                   |
 | ------- | --------------------------------------------------------------------------- |
@@ -157,6 +160,8 @@ Library code must use `ConfigureAwait(false)`. CA2007 enforces this in DLL proje
 dotnet_diagnostic.CA2007.severity = error
 dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 ```
+
+The setup-owned Meziantou block sets MA0004 to `error`. MA0004 has no project-type scoping, so the root `.globalconfig` sets it back to `none` below the block. CA2007 stays the enforcement source for library code.
 
 ## Source Generators
 

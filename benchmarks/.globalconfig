@@ -1,0 +1,9 @@
+is_global = true
+
+# Benchmark-specific analyzer configuration
+# Overrides root .globalconfig for benchmark projects.
+# Higher global_level wins over root (level 100).
+global_level = 101
+
+# CA1515: Make types public (BenchmarkDotNet requires public benchmark classes)
+dotnet_diagnostic.CA1515.severity = none

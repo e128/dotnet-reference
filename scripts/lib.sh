@@ -131,13 +131,13 @@ get_option() {
 }
 
 # ── Project resolution ───────────────────────────
-# Fuzzy-match a project name against src/ and tests/ directories.
+# Fuzzy-match a project name against src/, tests/ and benchmarks/ directories.
 resolve_project() {
     local name="$1"
     local root
     root="$(find_repo_root)"
     local match
-    match="$(fd -t d --max-depth 2 "$name" "$root/src" "$root/tests" 2>/dev/null | head -1)"
+    match="$(fd -t d --max-depth 2 "$name" "$root/src" "$root/tests" "$root/benchmarks" 2>/dev/null | head -1)"
     if [[ -n "$match" ]]; then
         fd -e csproj --max-depth 1 . "$match" 2>/dev/null | head -1
     fi

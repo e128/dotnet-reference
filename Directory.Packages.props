@@ -1,6 +1,12 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+
+    <!-- repository-setup:begin cpm-hardening sha256=8752bd12e406afe74b128a98ab3fd24bae1b1659fc962048ef3d0af84e4220f1 -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
+    <!-- repository-setup:end cpm-hardening -->
+
   </PropertyGroup>
   <ItemGroup>
     <!-- Analyzers -->
@@ -20,6 +26,8 @@
     <PackageVersion Include="PolySharp" Version="1.17.0" />
     <!-- Architecture Testing -->
     <PackageVersion Include="TngTech.ArchUnitNET.xUnitV3" Version="0.13.5" />
+    <!-- Benchmarking -->
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <!-- Testing -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />

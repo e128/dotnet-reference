@@ -40,7 +40,7 @@ public sealed class AppSettingsKeyReaderTests
     [Trait("Category", "CI")]
     public void CommentsTrailingCommasAndBom_AreAccepted()
     {
-        var keys = Read("﻿{ // line\n \"A\": /* block */ [1, 2,], \"B\": { \"C\": 1.5e3, }, }");
+        var keys = Read("\uFEFF{ // line\n \"A\": /* block */ [1, 2,], \"B\": { \"C\": 1.5e3, }, }");
 
         Assert.Equal(["A", "A:0", "A:1", "B", "B:C"], keys);
     }
