@@ -1,5 +1,5 @@
 # Implicit State Machine Rule Design
-*Updated: 2026-11-07T19:46:15Z*
+*Updated: 2026-11-09T15:56:00Z*
 
 This file details the E128218 rule in
 [implicit-state-machine-rule.md](implicit-state-machine-rule.md).
@@ -80,14 +80,14 @@ records evidence, and the second pass reports at compilation end.
 start.RegisterOperationAction(ctx => RecordWrite(ctx, map, obsolete), OperationKind.SimpleAssignment, OperationKind.CompoundAssignment);
 start.RegisterOperationAction(ctx => RecordConditionRead(ctx, map, obsolete), OperationKind.Conditional, OperationKind.Loop);
 start.RegisterOperationAction(ctx => RecordInvocation(ctx, map, obsolete, interlocked, volatile), OperationKind.Invocation);
-start.RegisterCompilationEndAction(ctx => Report(ctx, map, minFlags));
+start.RegisterCompilationEndAction(ctx => Report(ctx, map));
 ```
 
 Resolve members with `SymbolEqualityComparer.Default`. Never match a member by
-name. Read the option once per compilation. A loop condition comes from
-`IWhileLoopOperation` or `IForLoopOperation`, because `ILoopOperation` has no
-`Condition` member. A write through `Interlocked.Exchange` or `Volatile.Write`
-is a transition write.
+name. Read the option per analyzed type from its declaring file, so a project
+`.editorconfig` applies. A loop condition comes from `IWhileLoopOperation` or
+`IForLoopOperation`, because `ILoopOperation` has no `Condition` member. A
+write through `Interlocked.Exchange` or `Volatile.Write` is a transition write.
 
 ## Worked Examples
 

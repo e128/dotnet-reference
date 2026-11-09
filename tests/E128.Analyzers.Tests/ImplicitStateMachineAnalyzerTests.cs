@@ -314,6 +314,39 @@ public sealed class ImplicitStateMachineAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task TwoFlagsCoWritten_ProjectEditorConfig_Fires()
+    {
+        var test = new CSharpAnalyzerTest<ImplicitStateMachineAnalyzer, DefaultVerifier>
+        {
+            TestCode = """
+                       sealed class {|E128218:Pair|}
+                       {
+                           private bool _a;
+                           private bool _b;
+
+                           public void SelectA()
+                           {
+                               _a = true;
+                               _b = false;
+                           }
+
+                           public void SelectB()
+                           {
+                               _a = false;
+                               _b = true;
+                           }
+                       }
+                       """,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
+        };
+
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", "[*.cs]\ne128_min_state_flags = 2"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task ResetOnly_Silent()
     {
         return VerifyAsync("""

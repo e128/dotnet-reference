@@ -1,5 +1,5 @@
 # Implicit State Machine Rule
-*Updated: 2026-11-07T19:42:49Z*
+*Updated: 2026-11-09T15:56:00Z*
 
 E128218 flags a class that uses several mutable `bool` fields as one state.
 The fields change together, so their valid combinations are constrained in
@@ -43,6 +43,9 @@ site. The rule therefore stays at `Info`, and the repository sets it to
 | Severity | `Info` |
 | Code fix | None |
 | Option | `e128_min_state_flags`, default `3`, minimum `2` |
+
+The rule reads the option per analyzed type from its declaring file, so a
+project `.editorconfig` applies.
 
 The rule has no code fix. The state names and the legal transitions are domain
 decisions.

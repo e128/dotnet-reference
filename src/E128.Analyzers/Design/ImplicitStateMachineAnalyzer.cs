@@ -53,7 +53,6 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        var minFlags = ReadMinFlags(context.Options.AnalyzerConfigOptionsProvider);
         var obsoleteAttribute = context.Compilation.GetTypeByMetadataName("System.ObsoleteAttribute");
         var interlockedType = context.Compilation.GetTypeByMetadataName("System.Threading.Interlocked");
         var volatileType = context.Compilation.GetTypeByMetadataName("System.Threading.Volatile");
@@ -73,7 +72,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             ctx => RecordInvocation(ctx, evidenceMap, obsoleteAttribute, interlockedType, volatileType),
             OperationKind.Invocation);
 
-        context.RegisterCompilationEndAction(ctx => Report(ctx, evidenceMap, minFlags));
+        context.RegisterCompilationEndAction(ctx => Report(ctx, evidenceMap));
     }
 
     private static void RecordWrite(
@@ -289,8 +288,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
     private static void Report(
         CompilationAnalysisContext context,
-        ConcurrentDictionary<ISymbol, TypeEvidence> evidenceMap,
-        int minFlags)
+        ConcurrentDictionary<ISymbol, TypeEvidence> evidenceMap)
     {
         foreach (var pair in evidenceMap)
         {
@@ -302,6 +300,14 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
+            var tree = type.Locations[0].SourceTree;
+            if (tree is null)
+            {
+                continue;
+            }
+
+            // Read per type so a project .editorconfig applies, not only a global config.
+            var minFlags = ReadMinFlags(context.Options.AnalyzerConfigOptionsProvider.GetOptions(tree));
             var transitionWrites = CollectTransitionWrites(evidence.Writes, out var bodyWrites, out var bodyLocations);
             var cluster = BuildCluster(evidence.Candidates, transitionWrites);
 
@@ -664,10 +670,10 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         return operation.ConstantValue is { HasValue: true, Value: bool value } ? value : null;
     }
 
-    private static int ReadMinFlags(AnalyzerConfigOptionsProvider optionsProvider)
+    private static int ReadMinFlags(AnalyzerConfigOptions options)
     {
         return OptionReader.ReadInt(
-            optionsProvider.GlobalOptions,
+            options,
             OptionKey,
             DefaultMinFlags,
             minimum: 2);

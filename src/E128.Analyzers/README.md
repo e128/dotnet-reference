@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.6.3" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.6.4" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -3032,9 +3032,11 @@ destructor is not a transition. A write through `Interlocked.Exchange` or
 The rule analyzes fields and auto-properties. A property with accessor bodies is
 outside its scope.
 
-The default minimum cluster size is three. Set `e128_min_state_flags` to change
-it. The rule stays at `Info` because a pair of independent flags can look like
-one state at a single call site.
+The default minimum cluster size is three. Set `e128_min_state_flags` in
+`.editorconfig` to change it. The minimum accepted value is two. The rule reads
+the option per source file, so a project-level `.editorconfig` applies. The
+rule stays at `Info` because a pair of independent flags can look like one
+state at a single call site.
 
 ```csharp
 // Before (info)
