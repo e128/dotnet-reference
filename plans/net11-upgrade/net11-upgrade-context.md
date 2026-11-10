@@ -1,7 +1,7 @@
 # .NET 11 Upgrade: Context
 *Created: 2026-11-07T04:25:42Z*
 
-*Updated: 2026-11-07T04:25:42Z*
+*Updated: 2026-11-10T20:42:20Z*
 
 *Status: draft. Phase 0 has not run. The .NET 11 SDK is not installed on this machine.*
 
@@ -13,6 +13,16 @@ consumer of the `E128.Analyzers` package working.
 
 The two goals pull in opposite directions on one axis. The application moves
 forward. The published package must not lose reach.
+
+The plan carries a second objective. The application adopts a union result for
+expected failure, and a generic helper composes it. An `E128.Analyzers` rule
+family then names the shapes the rewrite replaced. The rule family is the
+part that reaches a developer or an agent before the rewrite, because a
+diagnostic and a code fix survive where a design note does not.
+
+The design rule is that the correct call is the easiest call. The helper takes
+a constraint that admits a union and no other type, so the compiler enforces
+the shape and the analyzer explains the alternative.
 
 ## The Two Targets
 
@@ -57,6 +67,10 @@ true.
 | `src/E128.Analyzers/README.md` | Rule table and the `e128_minimum_framework_version` default of 100 |
 | `lode/dotnet/project-structure.md` | Describes the solution as a .NET 10 solution |
 | `lode/dotnet-reference/dep-map.md` | Records the SDK pins and the container images |
+| `src/E128.Reference.Core/Services` | `GreetingService` returns the first union result, and it sets the helper shape |
+| `src/E128.Reference.Core/Repositories` | The repository returns the same union, so the shape reaches a second caller |
+| `src/E128.Analyzers/Design` | Home of the guidance rule family |
+| `tests/E128.Analyzers.Tests` | The C# 15 snippet tests need exclusion from the `net10.0` leg |
 
 ## Architectural Decisions
 
@@ -79,8 +93,16 @@ true.
 | Treat the ReadyToRun target as a product decision | Release sets `ReadyToRun=true`, so the published container image gains a CPU floor | 2026-11-07 |
 | Drop the AOT phase items | No project sets `PublishAot`, so there is no AOT output to verify | 2026-11-07 |
 | Drop the allocation benchmark | The repository holds no benchmark project, so there is no baseline to compare | 2026-11-07 |
-| Adopt only the C# 15 forms that need no runtime attribute | `with(...)`, extension indexers, and labeled jumps are compiler-only. `union` and `closed` ship as preview scaffolding | 2026-11-07 |
-| Send new library API adoption to the roadmap | The plan moves the TFM. Each API candidate is a feature with its own tests | 2026-11-07 |
+| Adopt the C# 15 forms that need no runtime attribute first | `with(...)`, extension indexers, and labeled jumps are compiler-only. `union` and `closed` ship as preview scaffolding | 2026-11-07 |
+| Adopt `union` in the same plan, gated on the Phase 0 probe | The union result is the goal of the union work, not a later library decision. Phase 6 waits for the probe answer | 2026-11-10 |
+| Take the first § Union Constraint Gate design that compiles | The constraint carries the teaching load. A union keyword constraint is the target, an interface constraint is the fallback, and per-type overloads are the floor | 2026-11-10 |
+| Give the result union one home in `Reference.Core` | One result type per application keeps the helper generic and the call site uniform | 2026-11-10 |
+| Ship a rule only for a shape the rewrite found | The rewrite is the evidence. A rule for a shape that never occurs adds cost and no guidance | 2026-11-10 |
+| Write union rules without a C# 15 Roslyn API | The published package must keep its `net10.0` host reach. Syntax node names and metadata names compile at the pinned band | 2026-11-10 |
+| Declare the union attributes inside each snippet test | The snippet then runs at the pinned Roslyn band without a `net11.0` reference assembly set | 2026-11-10 |
+| Exclude C# 15 snippet tests from the `net10.0` leg | A `net10.0` compiler cannot parse the snippet. The leg proves reach, not union behavior | 2026-11-10 |
+| Defer the web and CLI entry points | Each entry point maps a result case to a status code or an exit code, and each mapping needs its own tests | 2026-11-10 |
+| Send every other new library API to the roadmap | The plan moves the TFM and adopts the result union. Each other API candidate is a feature with its own tests | 2026-11-07 |
 
 ## Source Material
 
@@ -110,6 +132,8 @@ async migration order:
 - [What's new in .NET 11 runtime](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-11/runtime): runtime async status, the `x86-64-v2` baseline, and the `x86-64-v3` ReadyToRun target.
 - [What's new in the SDK for .NET 11](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-11/sdk): the corrected `AnalysisLevel` resolution and the `dotnet test` run-level policy options.
 - [What's new in C# 15](https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-15): the five new language features and the memory-safety preview.
+- [Union types proposal](https://github.com/dotnet/csharplang/blob/main/proposals/union-types.md): the declaration form, `UnionAttribute`, `IUnion`, and whether the type is usable as a constraint.
+- [Closed hierarchy proposal](https://github.com/dotnet/csharplang/blob/main/proposals/closed-hierarchies.md): the `closed` modifier and `ClosedAttribute`.
 - [dotnet/core release notes 11.0](https://github.com/dotnet/core/blob/main/release-notes/11.0/README.md): the newest public build.
 - [.NET Conf 2026](https://devblogs.microsoft.com/dotnet/get-ready-for-dotnet-conf-2026/): the GA date, 2026-11-10.
 
@@ -130,6 +154,13 @@ Each row is the acceptance criterion for one `## Verifiable Behaviors` row in
 - **AC-10:** No async method in a rollout project carries `[AsyncStateMachine]` after the switch
 - **AC-11:** The analyzer suite still passes on the `net10.0` leg after the full runtime-async rollout
 - **AC-12:** The lode records the post-upgrade state, so no lode file describes `net10.0` as current
+- **AC-13:** `Reference.Core` exposes one result union, and every service and repository returns it: code reading plus one test per case
+- **AC-14:** One generic helper composes every result union, and the selected design matches the Phase 0 answer: the probe output in this file
+- **AC-15:** The build rejects a non-union type argument under Design 1: one negative snippet, with the compiler error recorded
+- **AC-16:** Every guidance rule compiles at the pinned Roslyn band and reports nothing on a `net10.0` compilation: `scripts/build.sh --project E128.Analyzers` and the analyzer suite
+- **AC-17:** The `net10.0` leg excludes every C# 15 snippet test and still reports a nonzero count: the net10 CI job in Phase 3
+- **AC-18:** Each shipped rule names a shape the Phase 6 rewrite replaced: the record in § Current State
+- **AC-19:** The full suite passes at or above the baseline count after the rewrite and after each rule lands: `scripts/test.sh --all`
 
 ## Test Status
 
@@ -143,7 +174,7 @@ Each row is the acceptance criterion for one `## Verifiable Behaviors` row in
 
 - **Last updated:** 2026-11-07T04:25:42Z
 - **Status:** Draft plan. Phase 0 not executed.
-- **Completed:** Plan, context, and tasks written from the pugworks plan. Every Claims Register row probed against this repository on 2026-11-07.
+- **Completed:** Plan, context, and tasks written from the pugworks plan. Every Claims Register row probed against this repository on 2026-11-07. The union result work and the guidance rule family added on 2026-11-10 as Phases 6 and 7.
 - **Tried & failed:** N/A
 - **Blockers:** No .NET 11 SDK on this machine (`dotnet --list-sdks` reports only `10.0.403`). GA ships at .NET Conf on 2026-11-10.
-- **Next steps:** Run Phase 0 at GA, then Phase 1.
+- **Next steps:** Run Phase 0 at GA, including the three union probes that select the constraint design. Then Phase 1.

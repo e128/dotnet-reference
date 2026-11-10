@@ -1,7 +1,7 @@
 # .NET 11 Upgrade: Tasks
 *Created: 2026-11-07T04:25:42Z*
 
-*Updated: 2026-11-07T04:25:42Z*
+*Updated: 2026-11-10T20:42:20Z*
 
 *Status: draft. Phase 0 not executed. The plan waits for the .NET 11 GA SDK.*
 
@@ -17,6 +17,9 @@
 - [ ] Record the Roslyn version that the GA SDK ships, and compare it with the pinned band in `Directory.Packages.props`
 - [ ] Record whether the GA runtime page still documents runtime async as opt-in, in context.md § Architectural Decisions
 - [ ] Probe `union` and `closed` in a throwaway project under `.claude/tmp/`. Record whether `UnionAttribute` and `ClosedAttribute` need `EnablePreviewFeatures`
+- [ ] Probe the constraint: write `static TOut Match<TUnion, TOut>(this TUnion value, Func<TUnion, TOut> match) where TUnion : union`, then a call site with a declared union and a call site with an `int`. Record which design in § Union Constraint Gate compiles
+- [ ] Probe the pinned Roslyn band: compile a snippet that declares a union against `Microsoft.CodeAnalysis.CSharp` at the `Directory.Packages.props` pin. Record whether the parser accepts it, which decides the § Union Rule Reach Gate exits
+- [ ] Record the highest assigned diagnostic ID with `scripts/analyzer-stats.sh --json`
 - [ ] Run `scripts/runtime-matrix.sh --json` to record the SDK pin, the per-project TFM set, and the two Docker base images
 - [ ] Run `scripts/internal/analyzer-release-check.sh --json` and record the result as the pre-upgrade baseline
 - [ ] Run `scripts/check.sh --all --no-format --json` for one full-suite pass. Record the pass count, the fail count, and the warning set in context.md § Test Status
@@ -135,7 +138,43 @@ Application projects only, one per step, leaf first. A step reaches the next pro
 - [ ] Run `scripts/lode-check.sh --changed` and `scripts/lode-ts.sh --changed`
 - [ ] Stage and commit: `scripts/internal/stage.sh --include-new`, then `scripts/internal/commit.sh "docs: record the net11 upgrade state"`
 
-## Phase 6: Code Review Gate
+## Phase 6: Union Result Rewrite
+
+**Complexity:** Complex
+
+The first union in the solution. Every service and repository returns it, so the shape reaches the call sites before any rule is written.
+
+- [ ] Declare the result union in `src/E128.Reference.Core`. Use the Case names the Phase 0 probe proved
+- [ ] Declare the generic helper in the same file, with the constraint design § Union Constraint Gate selected
+- [ ] Write one negative snippet or test that passes a non-union type argument. Record the compiler error, which proves Design 1 holds
+- [ ] Add the `Match` and `Map` call sites the service needs. Do not add a helper that no call site uses
+- [ ] Rewrite `IGreetingService` and `GreetingService` so an expected failure returns the union instead of a `bool`, a nullable, or an exception
+- [ ] Rewrite `IGreetingRepository` and `InMemoryGreetingRepository` the same way
+- [ ] Add one test per case, and one test that proves the composed path returns the value the exception path returned
+- [ ] Record every replaced shape in context.md § Current State. Phase 7 ships a rule only for a shape that appears there
+- [ ] Run `scripts/test.sh --all` and confirm the suite passes at or above the baseline
+- [ ] Run `scripts/format.sh --changed`, then stage and commit: `scripts/internal/stage.sh --include-new`, then `scripts/internal/commit.sh "refactor: return a union result from the core services"`
+
+## Phase 7: Guidance Rule Family
+
+**Complexity:** Complex
+
+One rule per shape Phase 6 recorded. The rule family is the part a developer or an agent meets before the rewrite.
+
+- [ ] Read the replaced-shape record in context.md. Drop every candidate that appears once and cannot recur
+- [ ] For each surviving candidate, run § Union Rule Reach Gate before writing the rule. A rule that needs a C# 15 Roslyn API takes exit 2 or exit 3
+- [ ] Write each analyzer under `src/E128.Analyzers/Design/`. Read the union by syntax node name and by metadata name, never by a typed C# 15 node
+- [ ] Gate each rule on the compilation language version, so it reports nothing on a `net10.0` host
+- [ ] Register each rule in `src/E128.Analyzers/AnalyzerReleases.Unshipped.md` with the category `E128-Design`, and continue the ID sequence from CL-35
+- [ ] Add each rule to the `src/E128.Analyzers/README.md` table and its prose section, then run `scripts/readme-table-diff.sh --analyzer`
+- [ ] Write one snippet test per rule. Declare `UnionAttribute` and `IUnion` inside the snippet, so the test runs at the pinned band
+- [ ] Exclude every C# 15 snippet test from the `net10.0` leg, and confirm the leg still reports a nonzero count
+- [ ] Add a code fix only where the rewrite is mechanical. Record the reason where it is not
+- [ ] Run `scripts/test.sh --all` on both legs, then `scripts/format.sh --changed`
+- [ ] Bump the package with `scripts/internal/version-bump.sh E128.Analyzers`, then run `scripts/internal/analyzer-release-check.sh --json`
+- [ ] Stage and commit: `scripts/internal/stage.sh --include-new`, then `scripts/internal/commit.sh "feat(analyzers): guide union results over boolean and exception shapes"`
+
+## Phase 8: Code Review Gate
 
 **Complexity:** Simple
 
@@ -145,7 +184,7 @@ Application projects only, one per step, leaf first. A step reaches the next pro
 - [ ] Run `scripts/format.sh --changed` after the fixes land
 - [ ] Stage and commit: `scripts/internal/stage.sh --include-new`, then `scripts/internal/commit.sh "review: apply the net11 upgrade findings"`
 
-## Phase 7: Algorithmic Complexity Audit
+## Phase 9: Algorithmic Complexity Audit
 
 **Complexity:** Moderate
 
@@ -162,6 +201,7 @@ The analyzer cliff sweep rewrites loop exits, so this phase judges the loops it 
 ## Pre-Commit Verification
 
 - [ ] Short-lived claim sweep: CL-1, CL-6, CL-11, CL-12, CL-14, CL-17, CL-18, CL-19, CL-22, and CL-24 were rewritten or retired by the phase that changed the behavior
+- [ ] Union claim sweep: CL-31, CL-32, CL-34, and CL-35 carry the Phase 0 answer. CL-33 was rewritten by Phase 6
 - [ ] Reconcile the file counts: compare `scripts/status.sh` against the changes recorded in context.md
 - [ ] Run `scripts/format.sh --changed`
 - [ ] Run `scripts/lint-shell.sh` when any `.sh` file changed
@@ -171,7 +211,7 @@ The analyzer cliff sweep rewrites loop exits, so this phase judges the loops it 
 - [ ] Confirm no analyzer suppression was added without written approval
 - [ ] Confirm `scripts/help.sh` still lists every script the plan references
 
-## Phase 8: Retrospective
+## Phase 10: Retrospective
 
 - [ ] Record what the upgrade cost in context.md § Current State
 - [ ] Close the plan: `scripts/internal/plan-close.sh --plan net11-upgrade`
