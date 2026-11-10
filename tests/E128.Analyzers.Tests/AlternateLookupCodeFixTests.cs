@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class AlternateLookupCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<AlternateLookupAnalyzer, AlternateLookupCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<AlternateLookupAnalyzer, AlternateLookupCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

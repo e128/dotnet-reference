@@ -10,10 +10,7 @@ internal static class CliApp
         var nameOption = new Option<string?>("--name") { Description = "The name to greet" };
         nameOption.Aliases.Add("-n");
 
-        var rootCommand = new RootCommand("E128 Reference CLI — hello world with System.CommandLine")
-        {
-            nameOption
-        };
+        var rootCommand = new RootCommand("E128 Reference CLI — hello world with System.CommandLine") { nameOption };
 
         var greeter = new Greeter();
         rootCommand.SetAction(async (parseResult, _) =>

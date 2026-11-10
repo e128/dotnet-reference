@@ -75,7 +75,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzer : DiagnosticAnalyzer
             .OfType<IFieldSymbol>()
             .FirstOrDefault();
 
-        if (asynchronousField?.ConstantValue is not int asynchronousMask || asynchronousMask == 0)
+        if (asynchronousField?.ConstantValue is not int asynchronousMask || asynchronousMask is 0)
         {
             return;
         }
@@ -162,7 +162,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzer : DiagnosticAnalyzer
         var constant = Unwrap(argument.Value).ConstantValue;
         return constant.HasValue
             && constant.Value is int options
-            && (options & asynchronousMask) == 0;
+            && (options & asynchronousMask) is 0;
     }
 
     private static IArgumentOperation? FindArgument(

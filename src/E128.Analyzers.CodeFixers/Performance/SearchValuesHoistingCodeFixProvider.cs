@@ -42,7 +42,7 @@ public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBas
 
         var baseName = GetBaseName(invocation);
         var fieldName = Enumerable.Range(1, int.MaxValue - 1)
-            .Select(number => number == 1
+            .Select(number => number is 1
                 ? baseName
                 : baseName + number.ToString(System.Globalization.CultureInfo.InvariantCulture))
             .First(candidate => !FixSyntax.HasMemberNamed(typeDeclaration, candidate, includeProperties: true, includeMethods: false));
@@ -57,13 +57,13 @@ public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBas
     private static string GetBaseName(SyntaxNode invocation)
     {
         var method = invocation.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
-        if (method is null || method.Identifier.ValueText.Length == 0)
+        if (method is null || method.Identifier.ValueText.Length is 0)
         {
             return FallbackFieldName;
         }
 
         var name = method.Identifier.ValueText;
-        return "_" + char.ToLowerInvariant(name[0]) + name.Substring(1) + "SearchValues";
+        return "_" + System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToLower(name[0]) + name.Substring(1) + "SearchValues";
     }
 
     private static Document ApplyFix(
@@ -107,7 +107,7 @@ public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBas
         TypeDeclarationSyntax typeDeclaration,
         MemberDeclarationSyntax field)
     {
-        if (typeDeclaration.Members.Count == 0)
+        if (typeDeclaration.Members.Count is 0)
         {
             return typeDeclaration.WithMembers(typeDeclaration.Members.Add(field));
         }

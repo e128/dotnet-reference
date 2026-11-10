@@ -7,12 +7,14 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ImmutableArrayDefaultCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ImmutableArrayDefaultAnalyzer, ImmutableArrayDefaultCodeFixProvider>(
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ImmutableArrayDefaultAnalyzer, ImmutableArrayDefaultCodeFixProvider>(
             source,
             fixedCode,
             fixAllIterations: 1,
             behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

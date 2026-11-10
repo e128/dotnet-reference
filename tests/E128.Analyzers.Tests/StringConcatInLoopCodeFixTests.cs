@@ -6,11 +6,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StringConcatInLoopCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<StringConcatInLoopAnalyzer, StringConcatInLoopCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<StringConcatInLoopAnalyzer, StringConcatInLoopCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source) =>
-        CodeFixTestRunner.NoFixAsync<StringConcatInLoopAnalyzer, StringConcatInLoopCodeFixProvider>(source);
+    private static Task VerifyNoFixAsync(string source)
+    {
+        return CodeFixTestRunner.NoFixAsync<StringConcatInLoopAnalyzer, StringConcatInLoopCodeFixProvider>(source);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

@@ -15,6 +15,8 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128029";
     internal const int MinChainLength = 3;
+    private const int ComparisonArgumentIndex = 2;
+    private const int EqualsCallArgumentCount = 3;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -60,10 +62,12 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
         }
 
         var match = FindHomogeneousGroup(infos);
-        if (match is not null)
+        if (match is null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, orExpr.GetLocation(), match.Value.Count, match.Value.OperandText));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, orExpr.GetLocation(), match.Value.Count, match.Value.OperandText));
     }
 
     private static List<StringEqualityInfo> CollectStringEqualityInfos(
@@ -142,35 +146,47 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
         ExpressionSyntax expr,
         CancellationToken cancellationToken)
     {
-        // Form 1: string.Equals(operand, "literal", StringComparison.X)
-        if (expr is InvocationExpressionSyntax invocation
-            && invocation.Expression is MemberAccessExpressionSyntax
-            {
-                Expression: PredefinedTypeSyntax { Keyword.ValueText: "string" },
-                Name.Identifier.ValueText: "Equals"
-            }
-            && invocation.ArgumentList.Arguments.Count == 3)
+        return TryExtractEqualsCall(semanticModel, expr, cancellationToken)
+            ?? TryExtractEqualsOperator(expr);
+    }
+
+    // Form 1: string.Equals(operand, "literal", StringComparison.X)
+    private static StringEqualityInfo? TryExtractEqualsCall(
+        SemanticModel semanticModel,
+        ExpressionSyntax expr,
+        CancellationToken cancellationToken)
+    {
+        if (expr is not InvocationExpressionSyntax invocation
+            || invocation.Expression is not MemberAccessExpressionSyntax { Expression: PredefinedTypeSyntax predefined } equalsAccess
+            || !string.Equals(predefined.Keyword.ValueText, "string", StringComparison.Ordinal)
+            || !string.Equals(equalsAccess.Name.Identifier.ValueText, "Equals", StringComparison.Ordinal)
+            || invocation.ArgumentList.Arguments.Count is not EqualsCallArgumentCount)
         {
-            var args = invocation.ArgumentList.Arguments;
-            var literalArg = args[1].Expression;
-
-            if (!literalArg.IsKind(SyntaxKind.StringLiteralExpression))
-            {
-                return null;
-            }
-
-            // Semantic verification: confirm the call resolves to System.String.Equals.
-            var symbolInfo = semanticModel.GetSymbolInfo(invocation, cancellationToken);
-            return symbolInfo.Symbol is not IMethodSymbol method
-                   || method.ContainingType?.SpecialType != SpecialType.System_String
-                ? null
-                : new StringEqualityInfo(
-                    args[0].Expression.ToString(),
-                    ((LiteralExpressionSyntax)literalArg).Token.ValueText,
-                    args[2].Expression.ToString());
+            return null;
         }
 
-        // Form 2: operand == "literal"
+        var args = invocation.ArgumentList.Arguments;
+        var literalArg = args[1].Expression;
+
+        if (!literalArg.IsKind(SyntaxKind.StringLiteralExpression))
+        {
+            return null;
+        }
+
+        // Semantic verification: confirm the call resolves to System.String.Equals.
+        var symbolInfo = semanticModel.GetSymbolInfo(invocation, cancellationToken);
+        return symbolInfo.Symbol is not IMethodSymbol method
+               || method.ContainingType?.SpecialType is not SpecialType.System_String
+            ? null
+            : new StringEqualityInfo(
+                args[0].Expression.ToString(),
+                ((LiteralExpressionSyntax)literalArg).Token.ValueText,
+                args[ComparisonArgumentIndex].Expression.ToString());
+    }
+
+    // Form 2: operand == "literal"
+    private static StringEqualityInfo? TryExtractEqualsOperator(ExpressionSyntax expr)
+    {
         return expr is BinaryExpressionSyntax
         {
             RawKind: (int)SyntaxKind.EqualsExpression,

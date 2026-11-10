@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
@@ -55,7 +56,7 @@ public sealed class DllImportToLibraryImportCodeFixProvider : E128CodeFixProvide
         var newMethod = method.ReplaceNode(attribute, renamedAttribute);
         newMethod = MakePartial(newMethod);
 
-        var targets = new List<SyntaxNode> { method };
+        List<SyntaxNode> targets = [method];
         targets.AddRange(method.Ancestors().OfType<TypeDeclarationSyntax>());
 
         var newRoot = root.ReplaceNodes(
@@ -71,8 +72,14 @@ public sealed class DllImportToLibraryImportCodeFixProvider : E128CodeFixProvide
     private static bool HasOnlyTranslatableArguments(AttributeSyntax attribute)
     {
         return attribute.ArgumentList is null
-            || attribute.ArgumentList.Arguments.All(argument => argument.NameEquals is null
-                || argument.NameEquals.Name.Identifier.ValueText is "EntryPoint" or "SetLastError");
+            || attribute.ArgumentList.Arguments.All(static argument => argument.NameEquals is null
+                || IsTranslatableArgumentName(argument.NameEquals.Name.Identifier.ValueText));
+    }
+
+    private static bool IsTranslatableArgumentName(string name)
+    {
+        return string.Equals(name, "EntryPoint", StringComparison.Ordinal)
+            || string.Equals(name, "SetLastError", StringComparison.Ordinal);
     }
 
     private static MethodDeclarationSyntax MakePartial(MethodDeclarationSyntax method)

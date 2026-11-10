@@ -19,7 +19,7 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
             ReferenceAssemblies = Net100WithDi
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     #region Fires

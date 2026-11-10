@@ -16,22 +16,19 @@ public sealed class InsecureRandomInCryptoContextAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyAsync(string[] sources, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<InsecureRandomInCryptoContextAnalyzer, DefaultVerifier>
-        {
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
+        var test = new CSharpAnalyzerTest<InsecureRandomInCryptoContextAnalyzer, DefaultVerifier> { ReferenceAssemblies = ReferenceAssemblies.Net.Net100 };
         foreach (var source in sources)
         {
             test.TestState.Sources.Add(source);
         }
 
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

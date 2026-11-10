@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ListGetRangeCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ListGetRangeAnalyzer, ListGetRangeCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ListGetRangeAnalyzer, ListGetRangeCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

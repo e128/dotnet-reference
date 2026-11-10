@@ -19,7 +19,6 @@ internal static class CodeFixTestRunner
         string fixedCode,
         ReferenceAssemblies? references = null,
         int? fixAllIterations = null,
-        CompilerDiagnostics? compilerDiagnostics = null,
         DiagnosticResult[]? expected = null,
         MarkupOptions markupOptions = MarkupOptions.None,
         CodeFixTestBehaviors behaviors = CodeFixTestBehaviors.None)
@@ -34,7 +33,7 @@ internal static class CodeFixTestRunner
             MarkupOptions = markupOptions,
         };
 
-        if (behaviors != CodeFixTestBehaviors.None)
+        if (behaviors is not CodeFixTestBehaviors.None)
         {
             test.CodeFixTestBehaviors = behaviors;
         }
@@ -44,17 +43,12 @@ internal static class CodeFixTestRunner
             test.NumberOfFixAllIterations = fixAllIterations.Value;
         }
 
-        if (compilerDiagnostics is not null)
-        {
-            test.CompilerDiagnostics = compilerDiagnostics.Value;
-        }
-
         if (expected is not null)
         {
             test.ExpectedDiagnostics.AddRange(expected);
         }
 
-        return test.RunAsync();
+        return test.RunAsync(Xunit.TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -78,16 +72,18 @@ internal static class CodeFixTestRunner
             ReferenceAssemblies = references ?? ReferenceAssemblies.Net.Net100,
         };
 
-        if (behaviors != CodeFixTestBehaviors.None)
+        if (behaviors is not CodeFixTestBehaviors.None)
         {
             test.CodeFixTestBehaviors = behaviors;
         }
 
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(Xunit.TestContext.Current.CancellationToken);
     }
 
-    /// <summary>Solution transform that turns on unsafe compilation for the test project.</summary>
+    /// <summary>
+    ///     Solution transform that turns on unsafe compilation for the test project.
+    /// </summary>
     internal static Solution AllowUnsafe(Solution solution, ProjectId projectId)
     {
         return solution.GetProject(projectId)?.CompilationOptions is CSharpCompilationOptions options

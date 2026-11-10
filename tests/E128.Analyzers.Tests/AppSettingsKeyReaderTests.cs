@@ -120,7 +120,7 @@ public sealed class AppSettingsKeyReaderTests
     public void MalformedText_DoesNotLeakPartialKeys()
     {
         var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
-        builder.Add("Existing");
+        _ = builder.Add("Existing");
 
         Assert.False(AppSettingsKeyReader.TryRead("""{ "A": 1, "B": }""", builder));
         Assert.Equal("Existing", Assert.Single(builder));

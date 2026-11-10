@@ -31,7 +31,7 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not FieldDeclarationSyntax { Parent: TypeDeclarationSyntax type } field
-            || field.Declaration.Variables.Count != 1)
+            || field.Declaration.Variables.Count is not 1)
         {
             return;
         }
@@ -48,7 +48,7 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
         var references = await SymbolFinder
             .FindReferencesAsync(symbol, context.Document.Project.Solution, context.CancellationToken)
             .ConfigureAwait(false);
-        if (references.Any(reference => reference.Locations.Any()))
+        if (references.Any(static reference => reference.Locations.Any()))
         {
             return;
         }
@@ -113,7 +113,7 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
         }
 
         var modifiers = SyntaxFactory.TokenList(
-            field.Modifiers.Where(modifier => !modifier.IsKind(SyntaxKind.FixedKeyword)));
+            field.Modifiers.Where(static modifier => !modifier.IsKind(SyntaxKind.FixedKeyword)));
 
         return declaration.WithModifiers(modifiers).WithTriviaFrom(field);
     }
@@ -129,12 +129,12 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
         var accessibility = string.Join(
             " ",
             field.Modifiers
-                .Where(modifier => modifier.IsKind(SyntaxKind.PublicKeyword)
+                .Where(static modifier => modifier.IsKind(SyntaxKind.PublicKeyword)
                     || modifier.IsKind(SyntaxKind.InternalKeyword)
                     || modifier.IsKind(SyntaxKind.ProtectedKeyword)
                     || modifier.IsKind(SyntaxKind.PrivateKeyword))
-                .Select(modifier => modifier.ValueText));
-        var modifierPrefix = accessibility.Length == 0 ? string.Empty : accessibility + " ";
+                .Select(static modifier => modifier.ValueText));
+        var modifierPrefix = accessibility.Length is 0 ? string.Empty : accessibility + " ";
 
         var text = indent + "[System.Runtime.CompilerServices.InlineArray("
             + size.ToString(CultureInfo.InvariantCulture)

@@ -33,7 +33,7 @@ public sealed class FileSystemPathCodeFixTests
             test.CodeActionIndex = codeActionIndex.Value;
         }
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

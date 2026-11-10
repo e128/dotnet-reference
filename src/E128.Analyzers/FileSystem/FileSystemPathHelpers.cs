@@ -11,9 +11,10 @@ internal static class FileSystemPathHelpers
     {
         return invocation.Expression is MemberAccessExpressionSyntax
         {
-            Expression: IdentifierNameSyntax { Identifier.ValueText: "Path" },
+            Expression: IdentifierNameSyntax pathType,
             Name: SimpleNameSyntax methodName
         }
+               && string.Equals(pathType.Identifier.ValueText, "Path", StringComparison.Ordinal)
                && IoMethodCatalog.IsPathMethod(methodName.Identifier.ValueText);
     }
 
@@ -22,18 +23,35 @@ internal static class FileSystemPathHelpers
     //   - Qualified:    System.CommandLine.Option<string> / System.CommandLine.Argument<string>
     internal static GenericNameSyntax? ExtractGenericCliType(TypeSyntax type)
     {
-        return type is GenericNameSyntax { Identifier.ValueText: "Option" or "Argument" } direct
-            ? direct
-            : type is QualifiedNameSyntax qualified
-              && qualified.Right is GenericNameSyntax { Identifier.ValueText: "Option" or "Argument" } nested
-                ? nested
-                : null;
+        if (type is GenericNameSyntax direct && IsCliTypeName(direct.Identifier.ValueText))
+        {
+            return direct;
+        }
+
+        return type is QualifiedNameSyntax { Right: GenericNameSyntax nested }
+            && IsCliTypeName(nested.Identifier.ValueText)
+            ? nested
+            : null;
+    }
+
+    private static bool IsCliTypeName(string name)
+    {
+        return string.Equals(name, "Option", StringComparison.Ordinal)
+               || string.Equals(name, "Argument", StringComparison.Ordinal);
     }
 
     internal static PredefinedTypeSyntax? GetCliStringTypeArg(GenericNameSyntax genericType)
     {
         var typeArgs = genericType.TypeArgumentList.Arguments;
-        return typeArgs.Count != 1 ? null : typeArgs[0] is PredefinedTypeSyntax { Keyword.ValueText: "string" } arg ? arg : null;
+        if (typeArgs.Count is not 1)
+        {
+            return null;
+        }
+
+        return typeArgs[0] is PredefinedTypeSyntax arg
+            && string.Equals(arg.Keyword.ValueText, "string", StringComparison.Ordinal)
+            ? arg
+            : null;
     }
 
     internal static bool TryGetPathCliName(
@@ -45,7 +63,7 @@ internal static class FileSystemPathHelpers
         strippedName = string.Empty;
 
         // RCS9004: SeparatedSyntaxList<T>.Count is O(1); calling Any() would allocate an enumerator.
-        if (argList is null || argList.Arguments.Count == 0)
+        if (argList is null || argList.Arguments.Count is 0)
         {
             return false;
         }

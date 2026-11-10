@@ -17,19 +17,19 @@ internal static class AsyncSiblingCodeFixHelper
     // PromoteContainingMethod (reused below) only understands MethodDeclarationSyntax.
     // Local functions/constructors/lambdas are left to the analyzer-only diagnostic --
     // promoting the wrong enclosing scope there would produce an await outside an async body.
-    public static bool HasFixableEnclosingMethod(SyntaxNode node)
+    internal static bool HasFixableEnclosingMethod(SyntaxNode node)
     {
         return node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault() is { } method
                && node.Ancestors()
                    .TakeWhile(a => a != method)
-                   .All(a => a is not LocalFunctionStatementSyntax
+                   .All(static a => a is not LocalFunctionStatementSyntax
                        and not ConstructorDeclarationSyntax
                        and not ParenthesizedLambdaExpressionSyntax
                        and not SimpleLambdaExpressionSyntax
                        and not AnonymousMethodExpressionSyntax);
     }
 
-    public static async Task<Document> ApplyFixAsync(
+    internal static async Task<Document> ApplyFixAsync(
         Document document,
         InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken)

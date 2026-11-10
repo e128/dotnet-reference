@@ -37,10 +37,12 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    /// <summary>VB1: AddWithValue with pooled buffer, no .Size set.</summary>
+    /// <summary>
+    ///     VB1: AddWithValue with pooled buffer, no .Size set.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_Reports_WhenAddWithValueUsesPooledBuffer_WithoutSize()
@@ -58,7 +60,9 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
                                             """);
     }
 
-    /// <summary>VB2: .Value assigned pooled buffer, no .Size set.</summary>
+    /// <summary>
+    ///     VB2: .Value assigned pooled buffer, no .Size set.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_Reports_WhenValueAssignedPooledBuffer_WithoutSize()
@@ -76,7 +80,9 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
                                             """);
     }
 
-    /// <summary>VB3: AddWithValue with pooled buffer, .Size IS set.</summary>
+    /// <summary>
+    ///     VB3: AddWithValue with pooled buffer, .Size IS set.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_NoDiag_WhenSizeIsSet()
@@ -95,7 +101,9 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
                                             """);
     }
 
-    /// <summary>VB4: Buffer is new byte[], not from ArrayPool.</summary>
+    /// <summary>
+    ///     VB4: Buffer is new byte[], not from ArrayPool.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_NoDiag_WhenBufferIsNewByteArray()
@@ -113,7 +121,9 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
                                            """);
     }
 
-    /// <summary>VB5: Value is string, not byte[].</summary>
+    /// <summary>
+    ///     VB5: Value is string, not byte[].
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_NoDiag_WhenValueIsNotByteArray()

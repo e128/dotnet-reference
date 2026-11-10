@@ -58,10 +58,12 @@ public sealed class AsyncDbIoCodeFixTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             MarkupOptions = MarkupOptions.UseFirstDescriptor,
             NumberOfFixAllIterations = 1
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    /// <summary>AC-4: fixing a void sync method promotes it to async Task and awaits the Async sibling.</summary>
+    /// <summary>
+    ///     AC-4: fixing a void sync method promotes it to async Task and awaits the Async sibling.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task AsyncDbIoCodeFix_PromotesVoidMethodToAsyncTask_WhenFixApplied()

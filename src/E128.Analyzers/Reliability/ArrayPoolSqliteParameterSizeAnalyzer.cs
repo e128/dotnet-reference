@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -12,6 +13,8 @@ namespace E128.Analyzers.Reliability;
 public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128086";
+
+    private const int AddWithValueArgumentCount = 2;
 
     internal static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -36,7 +39,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
 
         // The Size-assignment index depends only on the block. Build it once per block and share
         // it across every candidate in that block.
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var sizeAssignments =
                 new ConcurrentDictionary<BlockSyntax, ImmutableArray<(string Receiver, int Position)>>();
@@ -67,7 +70,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count != 2)
+        if (args.Count is not AddWithValueArgumentCount)
         {
             return;
         }
@@ -84,14 +87,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         }
 
         var valueArg = args[1].Expression;
-        var argType = context.SemanticModel.GetTypeInfo(valueArg, context.CancellationToken).Type;
-        if (argType is not IArrayTypeSymbol arrayType
-            || arrayType.ElementType.SpecialType != SpecialType.System_Byte)
-        {
-            return;
-        }
-
-        if (!IsFromArrayPoolRent(valueArg, context.SemanticModel))
+        if (!IsPooledByteArray(valueArg, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
@@ -133,14 +129,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         }
 
         var valueExpr = assignment.Right;
-        var valueType = context.SemanticModel.GetTypeInfo(valueExpr, context.CancellationToken).Type;
-        if (valueType is not IArrayTypeSymbol arrayType
-            || arrayType.ElementType.SpecialType != SpecialType.System_Byte)
-        {
-            return;
-        }
-
-        if (!IsFromArrayPoolRent(valueExpr, context.SemanticModel))
+        if (!IsPooledByteArray(valueExpr, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
@@ -168,14 +157,22 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
                    || string.Equals(type.Name, "DbParameter", StringComparison.Ordinal));
     }
 
-    private static bool IsFromArrayPoolRent(ExpressionSyntax expression, SemanticModel model)
+    private static bool IsPooledByteArray(ExpressionSyntax value, SemanticModel model, CancellationToken cancellationToken)
+    {
+        var type = model.GetTypeInfo(value, cancellationToken).Type;
+
+        return type is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte }
+               && IsFromArrayPoolRent(value, model, cancellationToken);
+    }
+
+    private static bool IsFromArrayPoolRent(ExpressionSyntax expression, SemanticModel model, CancellationToken cancellationToken)
     {
         if (expression is not IdentifierNameSyntax identifier)
         {
             return false;
         }
 
-        var symbol = model.GetSymbolInfo(identifier).Symbol;
+        var symbol = model.GetSymbolInfo(identifier, cancellationToken).Symbol;
         if (symbol is not ILocalSymbol local)
         {
             return false;
@@ -186,8 +183,8 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         foreach (var reference in local.DeclaringSyntaxReferences)
         {
             if (reference.SyntaxTree == model.SyntaxTree
-                && reference.GetSyntax() is VariableDeclaratorSyntax { Initializer.Value: { } value }
-                && IsArrayPoolRentCall(value, model))
+                && reference.GetSyntax(cancellationToken) is VariableDeclaratorSyntax { Initializer.Value: { } value }
+                && IsArrayPoolRentCall(value, model, cancellationToken))
             {
                 return true;
             }
@@ -196,14 +193,14 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsArrayPoolRentCall(ExpressionSyntax expression, SemanticModel model)
+    private static bool IsArrayPoolRentCall(ExpressionSyntax expression, SemanticModel model, CancellationToken cancellationToken)
     {
         if (expression is not InvocationExpressionSyntax invocation)
         {
             return false;
         }
 
-        var symbolInfo = model.GetSymbolInfo(invocation);
+        var symbolInfo = model.GetSymbolInfo(invocation, cancellationToken);
         if (symbolInfo.Symbol is not IMethodSymbol method)
         {
             return false;

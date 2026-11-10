@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class DynamicallyAccessedMembersGuardE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<DynamicallyAccessedMembersGuardAnalyzer, DynamicallyAccessedMembersGuardCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<DynamicallyAccessedMembersGuardAnalyzer, DynamicallyAccessedMembersGuardCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

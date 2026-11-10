@@ -6,11 +6,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StringFormatToInterpolationE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<StringFormatToInterpolationAnalyzer, StringFormatToInterpolationCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<StringFormatToInterpolationAnalyzer, StringFormatToInterpolationCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source) =>
-        CodeFixTestRunner.NoFixAsync<StringFormatToInterpolationAnalyzer, StringFormatToInterpolationCodeFixProvider>(source);
+    private static Task VerifyNoFixAsync(string source)
+    {
+        return CodeFixTestRunner.NoFixAsync<StringFormatToInterpolationAnalyzer, StringFormatToInterpolationCodeFixProvider>(source);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

@@ -11,6 +11,9 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProviderBase
 {
+    // The length of the escaped whitespace class: a backslash and the letter s.
+    private const int EscapedClassLength = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GeneratedRegexAnalyzer.OverlappingQuantifierDiagnosticId];
 
@@ -31,37 +34,45 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
 
     internal static string RemoveOverlappingWhitespaceQuantifier(string pattern)
     {
-        for (var i = 0; i < pattern.Length - 2; i++)
+        for (var i = 0; i < pattern.Length - EscapedClassLength; i++)
         {
-            if (pattern[i] != '\\' || pattern[i + 1] != 's')
+            var qEnd = FindWhitespaceQuantifierEnd(pattern, i);
+            if (qEnd < 0)
             {
                 continue;
             }
 
-            var qEnd = i + 2;
-            if (qEnd >= pattern.Length || pattern[qEnd] is not ('*' or '+'))
-            {
-                continue;
-            }
-
-            qEnd++;
-            if (qEnd < pattern.Length && pattern[qEnd] is '?')
-            {
-                qEnd++;
-            }
-
-            if (HasOverlappingElementForward(pattern, qEnd))
-            {
-                return pattern.Substring(0, i) + pattern.Substring(qEnd);
-            }
-
-            if (HasOverlappingElementBackward(pattern, i))
+            if (HasOverlappingElementForward(pattern, qEnd) || HasOverlappingElementBackward(pattern, i))
             {
                 return pattern.Substring(0, i) + pattern.Substring(qEnd);
             }
         }
 
         return pattern;
+    }
+
+    // Returns the index after a `\s*` or `\s+` quantifier (with an optional lazy `?`) that starts at
+    // the index, or -1 when no such quantifier starts there.
+    private static int FindWhitespaceQuantifierEnd(string pattern, int index)
+    {
+        if (pattern[index] is not '\\' || pattern[index + 1] is not 's')
+        {
+            return -1;
+        }
+
+        var qEnd = index + EscapedClassLength;
+        if (qEnd >= pattern.Length || pattern[qEnd] is not ('*' or '+'))
+        {
+            return -1;
+        }
+
+        qEnd++;
+        if (qEnd < pattern.Length && pattern[qEnd] is '?')
+        {
+            qEnd++;
+        }
+
+        return qEnd;
     }
 
     private static bool HasOverlappingElementForward(string pattern, int index)
@@ -73,49 +84,53 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
 
         var ch = pattern[index];
 
-        return (ch == '.' && index + 1 < pattern.Length && pattern[index + 1] is '*' or '+')
-               || (ch == '(' && ContainsDotQuantifierInGroup(pattern, index));
+        return (ch is '.' && index + 1 < pattern.Length && pattern[index + 1] is '*' or '+')
+               || (ch is '(' && ContainsDotQuantifierInGroup(pattern, index));
     }
 
     private static bool HasOverlappingElementBackward(string pattern, int backslashIndex)
     {
-        if (backslashIndex == 0)
+        if (backslashIndex is 0)
         {
             return false;
         }
 
         var prevIdx = backslashIndex - 1;
-        var prev = pattern[prevIdx];
-
-        if (prev == '?')
+        if (pattern[prevIdx] is '?')
         {
-            if (prevIdx == 0)
+            if (prevIdx is 0)
             {
                 return false;
             }
 
             prevIdx--;
-            prev = pattern[prevIdx];
         }
 
-        if (prev is '*' or '+' && prevIdx > 0 && pattern[prevIdx - 1] == '.')
+        var prev = pattern[prevIdx];
+
+        if (IsQuantifierPrecededBy(pattern, prev, prevIdx, '.'))
         {
             return true;
         }
 
-        if (prev == ')')
+        if (prev is ')')
         {
-            var openParen = FindMatchingOpenParen(pattern, prevIdx);
-            return openParen >= 0 && ContainsDotQuantifierInGroup(pattern, openParen);
+            return IsDotQuantifierGroupClosedAt(pattern, prevIdx);
         }
 
-        if (prev is '*' or '+' && prevIdx > 0 && pattern[prevIdx - 1] == ')')
-        {
-            var openParen = FindMatchingOpenParen(pattern, prevIdx - 1);
-            return openParen >= 0 && ContainsDotQuantifierInGroup(pattern, openParen);
-        }
+        return IsQuantifierPrecededBy(pattern, prev, prevIdx, ')')
+            && IsDotQuantifierGroupClosedAt(pattern, prevIdx - 1);
+    }
 
-        return false;
+    private static bool IsQuantifierPrecededBy(string pattern, char prev, int prevIdx, char expected)
+    {
+        return prev is '*' or '+' && prevIdx > 0 && pattern[prevIdx - 1] == expected;
+    }
+
+    private static bool IsDotQuantifierGroupClosedAt(string pattern, int closeIndex)
+    {
+        var openParen = FindMatchingOpenParen(pattern, closeIndex);
+        return openParen >= 0 && ContainsDotQuantifierInGroup(pattern, openParen);
     }
 
     private static bool ContainsDotQuantifierInGroup(string pattern, int openParenIndex)
@@ -136,25 +151,19 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
             }
 
             var ch = pattern[j];
-            if (ch == '\\')
+            if (ch is '\\')
             {
                 skipNext = true;
                 continue;
             }
 
-            if (ch == '(')
+            depth += GroupDepthDelta(ch);
+            if (ch is ')' && depth is 0)
             {
-                depth++;
+                return false;
             }
-            else if (ch == ')')
-            {
-                depth--;
-                if (depth == 0)
-                {
-                    return false;
-                }
-            }
-            else if (ch == '.' && depth == 1 && j + 1 < pattern.Length && pattern[j + 1] is '*' or '+' or '?')
+
+            if (IsDotQuantifierAt(pattern, j, depth))
             {
                 return true;
             }
@@ -163,24 +172,42 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
         return false;
     }
 
+    private static int GroupDepthDelta(char ch)
+    {
+        return ch switch
+        {
+            '(' => 1,
+            ')' => -1,
+            _ => 0
+        };
+    }
+
+    private static bool IsDotQuantifierAt(string pattern, int index, int depth)
+    {
+        return pattern[index] is '.'
+               && depth is 1
+               && index + 1 < pattern.Length
+               && pattern[index + 1] is '*' or '+' or '?';
+    }
+
     private static int FindMatchingOpenParen(string pattern, int closeIndex)
     {
         var depth = 0;
         for (var j = closeIndex; j >= 0; j--)
         {
-            if (j > 0 && pattern[j - 1] == '\\')
+            if (j > 0 && pattern[j - 1] is '\\')
             {
                 continue;
             }
 
-            if (pattern[j] == ')')
+            if (pattern[j] is ')')
             {
                 depth++;
             }
-            else if (pattern[j] == '(')
+            else if (pattern[j] is '(')
             {
                 depth--;
-                if (depth == 0)
+                if (depth is 0)
                 {
                     return j;
                 }

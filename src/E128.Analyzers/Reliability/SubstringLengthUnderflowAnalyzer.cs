@@ -22,6 +22,8 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128198";
 
+    private const int SubstringArgumentCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Substring count can be negative",
@@ -52,7 +54,7 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
 
         if (invocation.Expression is not MemberAccessExpressionSyntax call
             || !string.Equals(call.Name.Identifier.ValueText, "Substring", StringComparison.Ordinal)
-            || invocation.ArgumentList.Arguments.Count != 2)
+            || invocation.ArgumentList.Arguments.Count is not SubstringArgumentCount)
         {
             return;
         }
@@ -61,7 +63,7 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         var token = context.CancellationToken;
 
         if (model.GetSymbolInfo(invocation, token).Symbol is not IMethodSymbol method
-            || method.ContainingType.SpecialType != SpecialType.System_String)
+            || method.ContainingType.SpecialType is not SpecialType.System_String)
         {
             return;
         }
@@ -301,17 +303,38 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         return invocation.Expression is MemberAccessExpressionSyntax access
                && invocation.ArgumentList.Arguments.Count > 0
                && model.GetSymbolInfo(invocation, token).Symbol is IMethodSymbol method
-               && method.ContainingType.SpecialType == SpecialType.System_String
-               && (((string.Equals(method.Name, "IsNullOrEmpty", StringComparison.Ordinal)
-                     || string.Equals(method.Name, "IsNullOrWhiteSpace", StringComparison.Ordinal))
-                    && invocation.ArgumentList.Arguments.Count == 1
-                    && IsSameReceiver(invocation.ArgumentList.Arguments[0].Expression, receiver, model, token)
-                    && IsNegated(invocation))
-                   || ((string.Equals(method.Name, "EndsWith", StringComparison.Ordinal)
-                        || string.Equals(method.Name, "StartsWith", StringComparison.Ordinal)
-                        || string.Equals(method.Name, "Contains", StringComparison.Ordinal))
-                       && !IsNegated(invocation)
-                       && IsSameReceiver(access.Expression, receiver, model, token)));
+               && method.ContainingType.SpecialType is SpecialType.System_String
+               && (IsNullOrEmptyGuard(invocation, method, receiver, model, token)
+                   || IsTextProbeGuard(invocation, access, method, receiver, model, token));
+    }
+
+    private static bool IsNullOrEmptyGuard(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        return (string.Equals(method.Name, "IsNullOrEmpty", StringComparison.Ordinal)
+                || string.Equals(method.Name, "IsNullOrWhiteSpace", StringComparison.Ordinal))
+               && invocation.ArgumentList.Arguments.Count is 1
+               && IsSameReceiver(invocation.ArgumentList.Arguments[0].Expression, receiver, model, token)
+               && IsNegated(invocation);
+    }
+
+    private static bool IsTextProbeGuard(
+        InvocationExpressionSyntax invocation,
+        MemberAccessExpressionSyntax access,
+        IMethodSymbol method,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken token)
+    {
+        return (string.Equals(method.Name, "EndsWith", StringComparison.Ordinal)
+                || string.Equals(method.Name, "StartsWith", StringComparison.Ordinal)
+                || string.Equals(method.Name, "Contains", StringComparison.Ordinal))
+               && !IsNegated(invocation)
+               && IsSameReceiver(access.Expression, receiver, model, token);
     }
 
     // A guard of the form x.IndexOf(...) >= 0, which proves the receiver is non-empty.
@@ -323,12 +346,12 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
     {
         return comparison.IsKind(SyntaxKind.GreaterThanOrEqualExpression)
                && model.GetConstantValue(comparison.Right, token) is { HasValue: true, Value: int zero }
-               && zero == 0
+               && zero is 0
                && ExpressionUnwrapper.Parentheses(comparison.Left) is InvocationExpressionSyntax invocation
                && invocation.Expression is MemberAccessExpressionSyntax access
                && string.Equals(access.Name.Identifier.ValueText, "IndexOf", StringComparison.Ordinal)
                && model.GetSymbolInfo(invocation, token).Symbol is IMethodSymbol method
-               && method.ContainingType.SpecialType == SpecialType.System_String
+               && method.ContainingType.SpecialType is SpecialType.System_String
                && IsSameReceiver(access.Expression, receiver, model, token);
     }
 

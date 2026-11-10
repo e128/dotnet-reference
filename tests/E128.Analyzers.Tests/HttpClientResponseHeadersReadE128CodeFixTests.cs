@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HttpClientResponseHeadersReadE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<HttpClientResponseHeadersReadAnalyzer, HttpClientResponseHeadersReadCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<HttpClientResponseHeadersReadAnalyzer, HttpClientResponseHeadersReadCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SequenceEqualLoopCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<SequenceEqualLoopAnalyzer, SequenceEqualLoopCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<SequenceEqualLoopAnalyzer, SequenceEqualLoopCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

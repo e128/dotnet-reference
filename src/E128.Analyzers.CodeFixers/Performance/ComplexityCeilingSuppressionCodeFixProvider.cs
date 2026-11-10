@@ -53,11 +53,14 @@ public sealed class ComplexityCeilingSuppressionCodeFixProvider : E128CodeFixPro
     {
         var statement = node as StatementSyntax ?? node.FirstAncestorOrSelf<StatementSyntax>();
 
-        return statement is not null
-            ? statement.Parent is BlockSyntax or SwitchSectionSyntax or GlobalStatementSyntax
-                ? statement
-                : null
-            : node as MethodDeclarationSyntax;
+        if (statement is null)
+        {
+            return node as MethodDeclarationSyntax;
+        }
+
+        return statement.Parent is BlockSyntax or SwitchSectionSyntax or GlobalStatementSyntax
+            ? statement
+            : null;
     }
 
     private static Document ApplySuppression(Document document, SyntaxNode root, SyntaxNode anchor)

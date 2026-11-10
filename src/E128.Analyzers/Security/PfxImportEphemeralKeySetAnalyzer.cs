@@ -177,7 +177,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzer : DiagnosticAnalyzer
         foreach (var parameter in constructor.Parameters)
         {
             if (string.Equals(parameter.Name, FileNameParameterName, StringComparison.Ordinal)
-                && parameter.Type.SpecialType == SpecialType.System_String)
+                && parameter.Type.SpecialType is SpecialType.System_String)
             {
                 return true;
             }

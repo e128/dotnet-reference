@@ -58,11 +58,11 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var targets = new[]
-        {
+        INamedTypeSymbol?[] targets =
+        [
             context.Compilation.GetTypeByMetadataName("System.DateTime"),
             context.Compilation.GetTypeByMetadataName("System.DateTimeOffset")
-        };
+        ];
 
         context.RegisterSyntaxNodeAction(
             ctx => AnalyzeCall(ctx, timeSpanType, targets),
@@ -86,7 +86,7 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
 
         if (invocation.Expression is not MemberAccessExpressionSyntax call
             || !IsAddOrSubtract(call, targets, context)
-            || invocation.ArgumentList.Arguments.Count != 1)
+            || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return;
         }
@@ -110,11 +110,13 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (binary.IsKind(SyntaxKind.AddExpression)
-            && IsTarget(model.GetTypeInfo(binary.Right, token).Type, targets))
+        if (!binary.IsKind(SyntaxKind.AddExpression)
+            || !IsTarget(model.GetTypeInfo(binary.Right, token).Type, targets))
         {
-            ReportIfMonth(context, binary.Left, timeSpanType);
+            return;
         }
+
+        ReportIfMonth(context, binary.Left, timeSpanType);
     }
 
     private static void AnalyzeCompoundAssignment(
@@ -124,10 +126,12 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
-        if (IsTarget(context.SemanticModel.GetTypeInfo(assignment.Left, context.CancellationToken).Type, targets))
+        if (!IsTarget(context.SemanticModel.GetTypeInfo(assignment.Left, context.CancellationToken).Type, targets))
         {
-            ReportIfMonth(context, assignment.Right, timeSpanType);
+            return;
         }
+
+        ReportIfMonth(context, assignment.Right, timeSpanType);
     }
 
     private static bool IsAddOrSubtract(
@@ -185,7 +189,7 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
 
         if (invocation.Expression is not MemberAccessExpressionSyntax access
             || !string.Equals(access.Name.Identifier.ValueText, "FromDays", StringComparison.Ordinal)
-            || invocation.ArgumentList.Arguments.Count != 1)
+            || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return false;
         }

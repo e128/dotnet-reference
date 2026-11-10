@@ -81,7 +81,7 @@ internal static class XunitTestHelper
     ///     project can share an assembly with a test framework. <c lang="csharp">GetTypeByMetadataName</c>
     ///     returns null when two references declare the type, so the check reads every match.
     /// </summary>
-    internal static bool IsTestCompilation(Compilation compilation)
+    internal static bool IsTestCompilation(Compilation compilation, CancellationToken cancellationToken = default)
     {
         var hasFramework = compilation.GetTypesByMetadataName("Xunit.FactAttribute").Length > 0
                            || compilation.GetTypesByMetadataName("NUnit.Framework.TestAttribute").Length > 0
@@ -94,7 +94,7 @@ internal static class XunitTestHelper
 
         foreach (var tree in compilation.SyntaxTrees)
         {
-            foreach (var method in tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
+            foreach (var method in tree.GetRoot(cancellationToken).DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
                 if (HasTestAttribute(method))
                 {
@@ -104,6 +104,14 @@ internal static class XunitTestHelper
         }
 
         return false;
+    }
+
+    private static bool IsOtherFrameworkTestName(string name)
+    {
+        return string.Equals(name, "Test", StringComparison.Ordinal)
+               || string.Equals(name, "TestCase", StringComparison.Ordinal)
+               || string.Equals(name, "TestMethod", StringComparison.Ordinal)
+               || string.Equals(name, "DataTestMethod", StringComparison.Ordinal);
     }
 
     private static bool HasTestAttribute(MethodDeclarationSyntax method)
@@ -117,7 +125,7 @@ internal static class XunitTestHelper
         {
             foreach (var attribute in attributeList.Attributes)
             {
-                if (SimpleName(attribute.Name) is "Test" or "TestCase" or "TestMethod" or "DataTestMethod")
+                if (IsOtherFrameworkTestName(SimpleName(attribute.Name)))
                 {
                     return true;
                 }

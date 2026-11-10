@@ -60,23 +60,23 @@ public sealed class OceWhenTokenFilterAnalyzer : DiagnosticAnalyzer
         }
 
         var fullName = context.SemanticModel.GetTypeInfo(type, context.CancellationToken).Type?.ToDisplayString();
-        return fullName is "System.OperationCanceledException" or "System.Threading.Tasks.TaskCanceledException";
+        return string.Equals(fullName, "System.OperationCanceledException", StringComparison.Ordinal)
+               || string.Equals(fullName, "System.Threading.Tasks.TaskCanceledException", StringComparison.Ordinal);
     }
 
     private static bool IsNegatedCancellationRequestedFilter(SyntaxNodeAnalysisContext context, ExpressionSyntax filterExpression)
     {
         return ExpressionUnwrapper.Parentheses(filterExpression) is PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.LogicalNotExpression } notExpression
-               && ExpressionUnwrapper.Parentheses(notExpression.Operand) is MemberAccessExpressionSyntax
-               {
-                   Name.Identifier.ValueText: "IsCancellationRequested"
-               } tokenAccess
+               && ExpressionUnwrapper.Parentheses(notExpression.Operand) is MemberAccessExpressionSyntax tokenAccess
+               && string.Equals(tokenAccess.Name.Identifier.ValueText, "IsCancellationRequested", StringComparison.Ordinal)
                && IsCancellationTokenTyped(context, tokenAccess.Expression);
     }
 
     private static bool IsCancellationTokenTyped(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
         var type = context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type;
-        return type is { Name: "CancellationToken" }
+        return type is not null
+               && string.Equals(type.Name, "CancellationToken", StringComparison.Ordinal)
                && string.Equals(type.ContainingNamespace?.ToDisplayString(), "System.Threading", StringComparison.Ordinal);
     }
 }

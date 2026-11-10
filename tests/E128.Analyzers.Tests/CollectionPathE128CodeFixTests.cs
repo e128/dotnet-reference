@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class CollectionPathE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<CollectionPathAnalyzer, CollectionPathCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<CollectionPathAnalyzer, CollectionPathCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

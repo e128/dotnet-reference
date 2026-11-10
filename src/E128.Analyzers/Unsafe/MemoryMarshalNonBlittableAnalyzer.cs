@@ -31,7 +31,7 @@ public sealed class MemoryMarshalNonBlittableAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var memoryMarshal = MetadataTypes.Find(start.Compilation, "System.Runtime.InteropServices.MemoryMarshal");
             if (memoryMarshal.IsEmpty)

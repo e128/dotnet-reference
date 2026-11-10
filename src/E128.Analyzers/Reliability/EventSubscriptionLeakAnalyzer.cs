@@ -124,11 +124,13 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (CapturesSubscriber(assignment.Right, model, subscriber, token))
+        if (!CapturesSubscriber(assignment.Right, model, subscriber, token))
         {
-            subscriptions.Enqueue(
-                (eventSymbol, GetReceiver(assignment.Left, model, token), assignment.GetLocation()));
+            return;
         }
+
+        subscriptions.Enqueue(
+            (eventSymbol, GetReceiver(assignment.Left, model, token), assignment.GetLocation()));
     }
 
     private static bool IsOwnInstanceEvent(ExpressionSyntax left)
@@ -152,12 +154,14 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (IsInDisposeMethod(invocation)
-            && DisposeCalls.GetReceiver(invocation) is { } receiver
-            && context.SemanticModel.GetSymbolInfo(receiver, context.CancellationToken).Symbol is IFieldSymbol field)
+        if (!IsInDisposeMethod(invocation)
+            || DisposeCalls.GetReceiver(invocation) is not { } receiver
+            || context.SemanticModel.GetSymbolInfo(receiver, context.CancellationToken).Symbol is not IFieldSymbol field)
         {
-            disposedFields[field] = true;
+            return;
         }
+
+        disposedFields[field] = true;
     }
 
     private static void CollectRemoval(
@@ -175,10 +179,12 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (model.GetSymbolInfo(assignment.Left, token).Symbol is IEventSymbol eventSymbol)
+        if (model.GetSymbolInfo(assignment.Left, token).Symbol is not IEventSymbol eventSymbol)
         {
-            removals[(eventSymbol, GetReceiver(assignment.Left, model, token))] = true;
+            return;
         }
+
+        removals[(eventSymbol, GetReceiver(assignment.Left, model, token))] = true;
     }
 
     private static bool IsInSubscriber(
@@ -205,10 +211,12 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             var ownedAndDisposed = receiver is IFieldSymbol { IsStatic: false } publisher
                                    && disposedFields.ContainsKey(publisher);
 
-            if (!ownedAndDisposed && !IsRemoved(removals, eventSymbol, receiver))
+            if (ownedAndDisposed || IsRemoved(removals, eventSymbol, receiver))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, location, eventSymbol.Name));
+                continue;
             }
+
+            context.ReportDiagnostic(Diagnostic.Create(Rule, location, eventSymbol.Name));
         }
     }
 
@@ -258,7 +266,7 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
     private static bool IsDisposable(INamedTypeSymbol type)
     {
         return type.AllInterfaces.Any(
-            candidate => string.Equals(candidate.ToDisplayString(), DisposableTypeName, StringComparison.Ordinal)
+            static candidate => string.Equals(candidate.ToDisplayString(), DisposableTypeName, StringComparison.Ordinal)
                          || string.Equals(candidate.ToDisplayString(), AsyncDisposableTypeName, StringComparison.Ordinal));
     }
 
@@ -307,15 +315,24 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (model.GetSymbolInfo(identifier, cancellationToken).Symbol is { IsStatic: false } member
-                && member is IFieldSymbol or IPropertySymbol or IMethodSymbol or IEventSymbol
-                && SymbolEqualityComparer.Default.Equals(member.ContainingType, subscriber))
+            if (ReadsInstanceMember(identifier, model, subscriber, cancellationToken))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool ReadsInstanceMember(
+        IdentifierNameSyntax identifier,
+        SemanticModel model,
+        INamedTypeSymbol subscriber,
+        CancellationToken cancellationToken)
+    {
+        return model.GetSymbolInfo(identifier, cancellationToken).Symbol is { IsStatic: false } member
+               && member is IFieldSymbol or IPropertySymbol or IMethodSymbol or IEventSymbol
+               && SymbolEqualityComparer.Default.Equals(member.ContainingType, subscriber);
     }
 
     private static bool IsInDisposeMethod(SyntaxNode node)

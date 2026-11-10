@@ -82,20 +82,10 @@ public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
 
         // A fix must not reformat the members the caller already wrote, so the
         // annotation stays on the inserted nodes.
-        ClassDeclarationSyntax newClassDecl;
-        if (classDecl.BaseList is not null)
-        {
-            newClassDecl = classDecl.WithBaseList(newBaseList).WithMembers(newMembers);
-        }
-        else
-        {
-            // Without a base list, the line break before the brace is trailing trivia
-            // of the identifier. Move it after the new base list.
-            newClassDecl = classDecl
+        var newClassDecl = classDecl.BaseList is not null ? classDecl.WithBaseList(newBaseList).WithMembers(newMembers) : classDecl
                 .WithIdentifier(classDecl.Identifier.WithTrailingTrivia(SyntaxFactory.Space))
                 .WithBaseList(newBaseList.WithTrailingTrivia(classDecl.Identifier.TrailingTrivia))
                 .WithMembers(newMembers);
-        }
 
         var newRoot = root.ReplaceNode(classDecl, newClassDecl);
 
@@ -161,7 +151,7 @@ public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
         foreach (var member in classDecl.Members)
         {
             if (member is MethodDeclarationSyntax method
-                && method.ParameterList.Parameters.Count == 0
+                && method.ParameterList.Parameters.Count is 0
                 && string.Equals(method.Identifier.ValueText, name, StringComparison.Ordinal))
             {
                 return true;

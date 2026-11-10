@@ -14,7 +14,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
         {
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -122,6 +122,6 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
                        }
                        """,
             ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -56,7 +56,7 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             // The analyzer option is constant for a tree. Parse it once per tree instead of
             // once per test method.
@@ -93,39 +93,47 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var semanticModel = context.SemanticModel;
-
-        var guarded = false;
-        var resolverName = string.Empty;
-
-        // DescendantNodes is a pre-order walk, so a node always precedes its own descendants. An invocation
-        // therefore never arrives before a call that encloses it, which is all the ordering this needs.
-        foreach (var invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
-        {
-            if (semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol called)
-            {
-                continue;
-            }
-
-            if (IsSkipCall(called))
-            {
-                guarded = guarded || resolverName.Length == 0;
-                continue;
-            }
-
-            if (resolverName.Length == 0 && TryMatchResolver(called, allowlist, out var matched))
-            {
-                resolverName = matched;
-            }
-        }
-
-        if (resolverName.Length == 0 || guarded)
+        var resolverName = FindResolver(context, body, allowlist, out var guarded);
+        if (resolverName.Length is 0 || guarded)
         {
             return;
         }
 
         context.ReportDiagnostic(
             Diagnostic.Create(Rule, declaration.Identifier.GetLocation(), method.Name, resolverName));
+    }
+
+    private static string FindResolver(
+        SyntaxNodeAnalysisContext context,
+        SyntaxNode body,
+        ImmutableHashSet<string> allowlist,
+        out bool guarded)
+    {
+        guarded = false;
+        var resolverName = string.Empty;
+
+        // DescendantNodes is a pre-order walk, so a node always precedes its own descendants. An invocation
+        // therefore never arrives before a call that encloses it, which is all the ordering this needs.
+        foreach (var invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol called)
+            {
+                continue;
+            }
+
+            if (IsSkipCall(called))
+            {
+                guarded = guarded || resolverName.Length is 0;
+                continue;
+            }
+
+            if (resolverName.Length is 0 && TryMatchResolver(called, allowlist, out var matched))
+            {
+                resolverName = matched;
+            }
+        }
+
+        return resolverName;
     }
 
     // The analyzer option is constant for a tree, so one parse serves every test method in it.
@@ -162,21 +170,21 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         }
 
         var memberName = containingType.Name + "." + method.Name;
-        if (allowlist.Contains(memberName))
+        if (!allowlist.Contains(memberName))
         {
-            matched = memberName;
-            return true;
+            return false;
         }
 
-        return false;
+        matched = memberName;
+        return true;
     }
 
     private static ImmutableHashSet<string> ParseAllowlist(string rawValue)
     {
         var entries = rawValue
             .Split(',')
-            .Select(entry => entry.Trim())
-            .Where(entry => entry.Length > 0);
+            .Select(static entry => entry.Trim())
+            .Where(static entry => entry.Length > 0);
 
         return ImmutableHashSet.CreateRange(StringComparer.Ordinal, entries);
     }

@@ -14,7 +14,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
         {
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
                        }
                        """,
             ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
         test.TestState.AdditionalProjects["System.Foo"].Sources.Add("namespace Foo { public class Widget { } }");
         test.TestState.AdditionalProjectReferences.Add("System.Foo");
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

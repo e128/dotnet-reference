@@ -100,6 +100,7 @@ scripts/podman.sh test
 | **E128.Analyzers.Tests**      | Analyzer and code fix unit tests                                               |
 | **E128.Reference.Cli.Tests**  | Unit tests for the CLI app                                                     |
 | **E128.Reference.Core.Tests** | Unit tests for the Greeter, GreetingService, and repositories                  |
+| **E128.Benchmarks**           | BenchmarkDotNet starter benchmarks for Core, the Web endpoints, and analyzers  |
 | **Podman**                    | Hardened Resolute multi-stage Dockerfile and compose.yaml                      |
 | **Bash scripts**              | Build, test, format, CI, Podman, and lode tasks ([catalog](scripts/README.md)) |
 | **Claude Code harness**       | CLAUDE.md, rules, hooks, skills, and agents (see `.claude/`)                   |
@@ -169,6 +170,8 @@ scripts/podman.sh test
 ├── compose.yaml              # Container orchestration
 ├── E128.Reference.slnx       # Solution file
 ├── global.json               # SDK version and MTP test runner config
+├── benchmarks/
+│   └── E128.Benchmarks/      # BenchmarkDotNet starter benchmarks
 ├── docs/                     # Architecture and guide documents
 ├── dotnet-tools.json         # Repository-local .NET tool manifest
 ├── lode/                     # Project knowledge documentation
@@ -198,7 +201,7 @@ The repository uses a **deny-by-default** analyzer strategy:
 
 - `dotnet_analyzer_diagnostic.severity = error` makes each diagnostic an error unless a rule overrides it
 - Third-party analyzer packages (see [`Directory.Packages.props`](./Directory.Packages.props)) add more than 1000 rules
-- `.globalconfig` documents each rule that is disabled or set to `suggestion`
+- `.globalconfig` sets every off-by-default rule to `error`, and its `Not Enabled` section lists each rule left below `error` with a reason
 - Test projects use a separate `tests/.globalconfig` at `global_level = 101` for test overrides
 
 ### Analyzer Packages

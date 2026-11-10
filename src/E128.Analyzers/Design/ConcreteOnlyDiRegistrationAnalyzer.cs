@@ -76,7 +76,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (methodSymbol.TypeArguments.Length != 1)
+        if (methodSymbol.TypeArguments.Length is not 1)
         {
             return;
         }
@@ -91,9 +91,11 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
             case MemberAccessExpressionSyntax m:
                 nameNode = m.Name;
                 return true;
+
             case IdentifierNameSyntax i:
                 nameNode = i;
                 return true;
+
             default:
                 nameNode = null;
                 return false;
@@ -114,10 +116,10 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         }
 
         var nonMarkerInterfaces = typeArg.AllInterfaces
-            .Where(i => !MarkerInterfaces.Contains(i.ToDisplayString()))
+            .Where(static i => !MarkerInterfaces.Contains(i.ToDisplayString()))
             .ToList();
 
-        if (nonMarkerInterfaces.Count == 0)
+        if (nonMarkerInterfaces.Count is 0)
         {
             return;
         }
@@ -134,7 +136,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
 
         var lifetime = nameNode.Identifier.Text.Substring(3);
         // string.Join already returns the single element unchanged, so Count == 1 needs no branch.
-        var interfaceNames = string.Join(", ", nonMarkerInterfaces.Select(i => i.Name));
+        var interfaceNames = string.Join(", ", nonMarkerInterfaces.Select(static i => i.Name));
         // The suggested call must carry the type arguments so it matches what the code fix writes.
         var suggestedType = nonMarkerInterfaces[0]
             .ToMinimalDisplayString(context.SemanticModel, invocation.SpanStart);
@@ -180,7 +182,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
             }
 
             if (!string.Equals(generic.Identifier.ValueText, methodName, StringComparison.Ordinal)
-                || generic.TypeArgumentList.Arguments.Count != 1
+                || generic.TypeArgumentList.Arguments.Count is not 1
                 || generic.TypeArgumentList.Arguments[0] is not IdentifierNameSyntax typeArgument)
             {
                 continue;

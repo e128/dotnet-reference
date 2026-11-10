@@ -7,11 +7,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StringBuilderPoolCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<StringBuilderPoolAnalyzer, StringBuilderPoolCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<StringBuilderPoolAnalyzer, StringBuilderPoolCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
-        CodeFixTestRunner.NoFixAsync<StringBuilderPoolAnalyzer, StringBuilderPoolCodeFixProvider>(source, expected: expected);
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
+    {
+        return CodeFixTestRunner.NoFixAsync<StringBuilderPoolAnalyzer, StringBuilderPoolCodeFixProvider>(source, expected: expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

@@ -18,7 +18,7 @@ public sealed class SealedByDefaultCodeFixTests
             NumberOfFixAllIterations = 1,
             // CompilationEnd diagnostics are non-local by design.
             CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

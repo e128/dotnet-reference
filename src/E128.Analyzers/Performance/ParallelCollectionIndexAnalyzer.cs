@@ -26,6 +26,8 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128106";
 
+    private const int RangeArgumentCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Index a collection with a bound taken from a different collection",
@@ -56,7 +58,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
         // Both scans below are subtree walks whose answer depends only on the declaring lambda or
         // loop and on the index name. Cache the answer for the lifetime of the compilation so a
         // body with many element accesses pays for each walk once.
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var boundCache = new ConcurrentDictionary<(SyntaxNode Declaring, string Index), (bool Found, ExpressionSyntax? Source)>();
             var guardCache = new ConcurrentDictionary<(SyntaxNode Scope, string Index, string Symbol), bool>();
@@ -75,7 +77,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
         var elementAccess = (ElementAccessExpressionSyntax)context.Node;
 
         if (elementAccess.ArgumentList is null
-            || elementAccess.ArgumentList.Arguments.Count != 1
+            || elementAccess.ArgumentList.Arguments.Count is not 1
             || elementAccess.ArgumentList.Arguments[0].Expression is not IdentifierNameSyntax indexIdentifier)
         {
             return;
@@ -122,7 +124,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
                 }
 
                 var source = FindRangeSource(OutermostInvocation(lambda));
-                cache.TryAdd(key, (source is not null, source));
+                _ = cache.TryAdd(key, (source is not null, source));
                 return source;
             }
 
@@ -149,7 +151,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
 
         foreach (var candidate in invocation.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>())
         {
-            if (candidate.ArgumentList.Arguments.Count != 2
+            if (candidate.ArgumentList.Arguments.Count is not RangeArgumentCount
                 || !IsZeroLiteral(candidate.ArgumentList.Arguments[0].Expression)
                 || CountReceiver(candidate.ArgumentList.Arguments[1].Expression) is not { } receiver)
             {
@@ -176,8 +178,8 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
     {
         return loop.Condition?.DescendantNodesAndSelf()
             .OfType<MemberAccessExpressionSyntax>()
-            .Where(memberAccess => CountMemberNames.Contains(memberAccess.Name.Identifier.ValueText))
-            .Select(memberAccess => memberAccess.Expression)
+            .Where(static memberAccess => CountMemberNames.Contains(memberAccess.Name.Identifier.ValueText))
+            .Select(static memberAccess => memberAccess.Expression)
             .FirstOrDefault();
     }
 
@@ -197,7 +199,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
         // The scan compares only the final symbol name, so that name is part of the key.
         return cache.GetOrAdd(
             (scope, indexName, indexedSymbol.Name),
-            key => ScanForLengthGuard(key.Scope, key.Index, key.Symbol));
+            static key => ScanForLengthGuard(key.Scope, key.Index, key.Symbol));
     }
 
     private static bool ScanForLengthGuard(SyntaxNode scope, string indexName, string symbolName)

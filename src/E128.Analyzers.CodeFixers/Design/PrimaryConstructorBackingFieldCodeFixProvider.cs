@@ -79,7 +79,7 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : E128CodeFixP
         }
 
         editor.RemoveNode(
-            fieldDeclaration.Declaration.Variables.Count == 1 ? fieldDeclaration : variable,
+            fieldDeclaration.Declaration.Variables.Count is 1 ? fieldDeclaration : variable,
             SyntaxRemoveOptions.KeepNoTrivia);
 
         return editor.GetChangedDocument();

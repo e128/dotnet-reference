@@ -58,7 +58,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var mutableTypes = FindMutableTypes(start.Compilation);
 
@@ -200,14 +200,16 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (IsMutableCollection(propertySymbol.Type, mutableTypes))
+        if (!IsMutableCollection(propertySymbol.Type, mutableTypes))
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                property.GetLocation(),
-                propertySymbol.Name,
-                propertySymbol.Type.ToDisplayString()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            property.GetLocation(),
+            propertySymbol.Name,
+            propertySymbol.Type.ToDisplayString()));
     }
 
     private static void AnalyzeField(
@@ -266,7 +268,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
         }
 
         var accessors = accessorList.Accessors;
-        if (accessors.Count == 0)
+        if (accessors.Count is 0)
         {
             return false;
         }

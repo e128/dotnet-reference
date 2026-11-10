@@ -31,19 +31,12 @@ internal static class UsingDirectives
             .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
 
         var usings = compilationUnit.Usings;
-        var insertIndex = 0;
-        for (var i = 0; i < usings.Count; i++)
-        {
-            if (StringComparer.Ordinal.Compare(usings[i].Name?.ToString(), namespaceName) < 0)
-            {
-                insertIndex = i + 1;
-            }
-        }
+        var insertIndex = FindInsertIndex(usings, namespaceName);
 
         // A file header, such as a licence comment, is leading trivia of the first node. Move it to
         // the new directive so the header stays at the top of the file, whether the header sat on
         // an existing using or on the first member of a file with no usings yet.
-        if (insertIndex == 0)
+        if (insertIndex is 0)
         {
             if (usings.Count > 0)
             {
@@ -60,6 +53,20 @@ internal static class UsingDirectives
         }
 
         return compilationUnit.WithUsings(usings.Insert(insertIndex, newUsing));
+    }
+
+    private static int FindInsertIndex(SyntaxList<UsingDirectiveSyntax> usings, string namespaceName)
+    {
+        var insertIndex = 0;
+        for (var i = 0; i < usings.Count; i++)
+        {
+            if (StringComparer.Ordinal.Compare(usings[i].Name?.ToString(), namespaceName) < 0)
+            {
+                insertIndex = i + 1;
+            }
+        }
+
+        return insertIndex;
     }
 
     /// <summary>

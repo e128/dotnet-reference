@@ -25,6 +25,14 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
     // also stops a self-referential struct in broken code from recursing without end.
     private const int MaxDepth = 16;
 
+    // Sizes in bytes of the primitive types and the nullable tag.
+    private const int ByteSize = 1;
+    private const int ShortSize = 2;
+    private const int IntSize = 4;
+    private const int LongSize = 8;
+    private const int DecimalSize = 16;
+    private const int NullableTagSize = 4;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Large struct passed by value",
@@ -45,7 +53,7 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var inlineArray = startContext.Compilation.GetTypeByMetadataName(
                 "System.Runtime.CompilerServices.InlineArrayAttribute");
@@ -72,26 +80,13 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var candidate = TypeSymbols.UnwrapNullable(type);
-        if (candidate is not INamedTypeSymbol named
-            || !named.IsValueType
-            || named.TypeKind == TypeKind.Enum
-            || named.IsRefLikeType
-            || named.IsTupleType
-            || named.DeclaringSyntaxReferences.Length == 0
-            || IsExcludedNamespace(named)
-            || IsExplicitLayout(named))
+        if (GetMeasurableStruct(type) is not { } named)
         {
             return;
         }
 
         var size = GetSize(named, inlineArray);
-        if (size <= MaxByValueSize)
-        {
-            return;
-        }
-
-        if (!IsFlaggedOwner(parameter, context))
+        if (size <= MaxByValueSize || !IsFlaggedOwner(parameter, context))
         {
             return;
         }
@@ -102,6 +97,22 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
             parameter.Identifier.ValueText,
             named.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
             size));
+    }
+
+    private static INamedTypeSymbol? GetMeasurableStruct(ITypeSymbol type)
+    {
+        var candidate = TypeSymbols.UnwrapNullable(type);
+
+        return candidate is INamedTypeSymbol named
+            && named.IsValueType
+            && named.TypeKind is not TypeKind.Enum
+            && !named.IsRefLikeType
+            && !named.IsTupleType
+            && named.DeclaringSyntaxReferences.Length is not 0
+            && !IsExcludedNamespace(named)
+            && !IsExplicitLayout(named)
+            ? named
+            : null;
     }
 
     private static bool HasByReferenceModifier(ParameterSyntax parameter)
@@ -155,12 +166,13 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
     {
         foreach (var attribute in type.GetAttributes())
         {
-            if (attribute.AttributeClass is { Name: "StructLayoutAttribute" } attributeClass
+            if (attribute.AttributeClass is { } attributeClass
+                && string.Equals(attributeClass.Name, "StructLayoutAttribute", StringComparison.Ordinal)
                 && string.Equals(
                     attributeClass.ContainingNamespace?.ToDisplayString(),
                     "System.Runtime.InteropServices",
                     StringComparison.Ordinal)
-                && attribute.ConstructorArguments.Length == 1
+                && attribute.ConstructorArguments.Length is 1
                 && attribute.ConstructorArguments[0].Value is int layoutKind
                 && layoutKind == (int)LayoutKind.Explicit)
             {
@@ -187,35 +199,12 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
             return MaxByValueSize + 1;
         }
 
-        if (type is IArrayTypeSymbol or IPointerTypeSymbol or IFunctionPointerTypeSymbol)
+        if (GetShallowSize(type, inlineArray, visited, depth) is { } shallowSize)
         {
-            return PointerSize;
+            return shallowSize;
         }
 
-        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable
-            && nullable.TypeArguments.Length == 1)
-        {
-            return GetSize(nullable.TypeArguments[0], inlineArray, visited, depth + 1) + 4;
-        }
-
-        var primitiveSize = GetPrimitiveSize(type.SpecialType);
-        if (primitiveSize > 0)
-        {
-            return primitiveSize;
-        }
-
-        if (type.TypeKind == TypeKind.Enum
-            && type is INamedTypeSymbol { EnumUnderlyingType: { } underlying })
-        {
-            return GetSize(underlying, inlineArray, visited, depth + 1);
-        }
-
-        if (type is not INamedTypeSymbol named || named.IsReferenceType)
-        {
-            return PointerSize;
-        }
-
-        if (!visited.Add(named))
+        if (type is not INamedTypeSymbol named || named.IsReferenceType || !visited.Add(named))
         {
             return PointerSize;
         }
@@ -228,40 +217,79 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
         }
         finally
         {
-            visited.Remove(named);
+            _ = visited.Remove(named);
         }
+    }
+
+    // Returns the size for a pointer, a nullable, a primitive, or an enum. Returns null when the
+    // type is a struct or class that the caller must measure field by field.
+    private static int? GetShallowSize(
+        ITypeSymbol type,
+        INamedTypeSymbol? inlineArray,
+        HashSet<INamedTypeSymbol> visited,
+        int depth)
+    {
+        if (type is IArrayTypeSymbol or IPointerTypeSymbol or IFunctionPointerTypeSymbol)
+        {
+            return PointerSize;
+        }
+
+        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable
+            && nullable.TypeArguments.Length is 1)
+        {
+            return GetSize(nullable.TypeArguments[0], inlineArray, visited, depth + 1) + NullableTagSize;
+        }
+
+        var primitiveSize = GetPrimitiveSize(type.SpecialType);
+        if (primitiveSize > 0)
+        {
+            return primitiveSize;
+        }
+
+        return type.TypeKind is TypeKind.Enum
+               && type is INamedTypeSymbol { EnumUnderlyingType: { } underlying }
+            ? GetSize(underlying, inlineArray, visited, depth + 1)
+            : null;
     }
 
     private static int GetPrimitiveSize(SpecialType specialType)
     {
         if (specialType is SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte)
         {
-            return 1;
+            return ByteSize;
         }
 
         if (specialType is SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16)
         {
-            return 2;
+            return ShortSize;
         }
 
         if (specialType is SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single)
         {
-            return 4;
+            return IntSize;
         }
 
+        return GetWideSize(specialType);
+    }
+
+    private static int GetWideSize(SpecialType specialType)
+    {
         if (specialType is SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double)
         {
-            return 8;
+            return LongSize;
         }
 
-        if (specialType == SpecialType.System_Decimal)
+        if (specialType is SpecialType.System_Decimal)
         {
-            return 16;
+            return DecimalSize;
         }
 
-        var isPointer = specialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr
-            or SpecialType.System_String or SpecialType.System_Object;
-        return isPointer ? PointerSize : 0;
+        return specialType is SpecialType.System_IntPtr
+            or SpecialType.System_UIntPtr
+            or SpecialType.System_String
+            or SpecialType.System_Object
+            ? PointerSize
+            : 0;
     }
 
     private static int GetFieldSize(
@@ -308,14 +336,14 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
         foreach (var attribute in type.GetAttributes())
         {
             if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, inlineArray)
-                || attribute.ConstructorArguments.Length != 1
+                || attribute.ConstructorArguments.Length is not 1
                 || attribute.ConstructorArguments[0].Value is not int count
                 || count <= 0)
             {
                 continue;
             }
 
-            var element = type.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(field => !field.IsStatic);
+            var element = type.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(static field => !field.IsStatic);
             if (element is null)
             {
                 return false;

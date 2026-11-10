@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class AsyncVoidE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<AsyncVoidAnalyzer, AsyncVoidCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<AsyncVoidAnalyzer, AsyncVoidCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -113,6 +115,8 @@ public sealed class AsyncVoidE128CodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code) =>
-        CodeFixTestRunner.NoFixAsync<AsyncVoidAnalyzer, AsyncVoidCodeFixProvider>(code);
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return CodeFixTestRunner.NoFixAsync<AsyncVoidAnalyzer, AsyncVoidCodeFixProvider>(code);
+    }
 }

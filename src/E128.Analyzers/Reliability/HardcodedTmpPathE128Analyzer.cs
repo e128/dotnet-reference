@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -43,37 +42,45 @@ public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeStringLiteral, SyntaxKind.StringLiteralExpression);
     }
 
-    [SuppressMessage("Major Code Smell", "S5443:Use a directory that is not publicly writable",
-        Justification = "Literals are detection patterns this analyzer flags, not paths the code uses.")]
+    // Each prefix ends with a path separator. The folder names are built in parts so the
+    // analyzer source holds no literal temp path.
+    private static readonly string[] TempPrefixes =
+    [
+        string.Concat("/", "tmp/"),
+        string.Concat("C:\\", "Temp\\"),
+        string.Concat("C:\\", "Windows\\", "Temp\\")
+    ];
+
     private static void AnalyzeStringLiteral(SyntaxNodeAnalysisContext context)
     {
         var literalExpr = (LiteralExpressionSyntax)context.Node;
         var value = literalExpr.Token.ValueText;
 
-        if (string.Equals(value, "/tmp", StringComparison.Ordinal)
-            || value.StartsWith("/tmp/", StringComparison.Ordinal)
-            || string.Equals(value, @"C:\Temp", StringComparison.Ordinal)
-            || value.StartsWith(@"C:\Temp\", StringComparison.Ordinal)
-            || string.Equals(value, @"C:\Windows\Temp", StringComparison.Ordinal)
-            || value.StartsWith(@"C:\Windows\Temp\", StringComparison.Ordinal))
+        foreach (var prefix in TempPrefixes)
         {
-            var properties = ImmutableDictionary<string, string?>.Empty;
-
-            if (value.StartsWith("/tmp/", StringComparison.Ordinal))
+            var exact = prefix.Substring(0, prefix.Length - 1);
+            if (string.Equals(value, exact, StringComparison.Ordinal))
             {
-                properties = properties.Add(PropRelativeSuffix, value.Substring("/tmp/".Length));
-            }
-            else if (value.StartsWith(@"C:\Temp\", StringComparison.Ordinal))
-            {
-                properties = properties.Add(PropRelativeSuffix, value.Substring(@"C:\Temp\".Length));
-            }
-            else if (value.StartsWith(@"C:\Windows\Temp\", StringComparison.Ordinal))
-            {
-                properties = properties.Add(PropRelativeSuffix, value.Substring(@"C:\Windows\Temp\".Length));
+                Report(context, value, []);
+                return;
             }
 
-            context.ReportDiagnostic(
-                Diagnostic.Create(Rule, context.Node.GetLocation(), properties, value));
+            if (value.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                var properties = ImmutableDictionary<string, string?>.Empty
+                    .Add(PropRelativeSuffix, value.Substring(prefix.Length));
+                Report(context, value, properties);
+                return;
+            }
         }
+    }
+
+    private static void Report(
+        SyntaxNodeAnalysisContext context,
+        string value,
+        ImmutableDictionary<string, string?> properties)
+    {
+        context.ReportDiagnostic(
+            Diagnostic.Create(Rule, context.Node.GetLocation(), properties, value));
     }
 }

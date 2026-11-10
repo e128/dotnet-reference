@@ -38,7 +38,7 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             // A type with its own ToList() is not a LINQ method, so the rule has nothing to say about
             // it. Report only when System.Linq.Enumerable exists in the compilation.
@@ -51,7 +51,7 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            if (builder.Count == 0)
+            if (builder.Count is 0)
             {
                 return;
             }

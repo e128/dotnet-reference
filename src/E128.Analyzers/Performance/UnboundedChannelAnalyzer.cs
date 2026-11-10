@@ -32,7 +32,7 @@ public sealed class UnboundedChannelAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
             MetadataTypes.RegisterForType(
                 startContext,
                 "System.Threading.Channels.Channel",

@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class GetBufferNotVisibleAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>(code, expected);
+    }
 
     #region Fires
 

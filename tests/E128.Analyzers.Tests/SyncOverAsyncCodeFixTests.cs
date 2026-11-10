@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SyncOverAsyncCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<SyncOverAsyncAnalyzer, SyncOverAsyncCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<SyncOverAsyncAnalyzer, SyncOverAsyncCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -169,6 +171,8 @@ public sealed class SyncOverAsyncCodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code) =>
-        CodeFixTestRunner.NoFixAsync<SyncOverAsyncAnalyzer, SyncOverAsyncCodeFixProvider>(code);
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return CodeFixTestRunner.NoFixAsync<SyncOverAsyncAnalyzer, SyncOverAsyncCodeFixProvider>(code);
+    }
 }

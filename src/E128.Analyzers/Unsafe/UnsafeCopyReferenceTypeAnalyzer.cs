@@ -31,7 +31,7 @@ public sealed class UnsafeCopyReferenceTypeAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)
@@ -50,7 +50,7 @@ public sealed class UnsafeCopyReferenceTypeAnalyzer : DiagnosticAnalyzer
         var invocation = (InvocationExpressionSyntax)context.Node;
 
         if (!OwnerInvocation.TryMatch(context, unsafeType, "Copy", out var method)
-            || method.TypeArguments.Length != 1
+            || method.TypeArguments.Length is not 1
             || method.TypeArguments[0].IsUnmanagedType)
         {
             return;

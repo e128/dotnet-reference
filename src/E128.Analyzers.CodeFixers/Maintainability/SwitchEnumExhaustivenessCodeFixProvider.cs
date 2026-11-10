@@ -19,20 +19,11 @@ namespace E128.Analyzers.Maintainability;
 [Shared]
 public sealed class SwitchEnumExhaustivenessCodeFixProvider : E128CodeFixProviderBase
 {
-    private const string DefaultSectionTemplate = """
-                                                  switch (0)
-                                                  {
-                                                      default:
-                                                          throw new System.ArgumentOutOfRangeException();
-                                                  }
-                                                  """;
+    private const string DefaultSectionTemplate =
+        "switch (0)\n{\n    default:\n        throw new System.ArgumentOutOfRangeException();\n}";
 
-    private const string DiscardArmTemplate = """
-                                              0 switch
-                                              {
-                                                  _ => throw new System.ArgumentOutOfRangeException()
-                                              }
-                                              """;
+    private const string DiscardArmTemplate =
+        "0 switch\n{\n    _ => throw new System.ArgumentOutOfRangeException()\n}";
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [SwitchEnumExhaustivenessAnalyzer.DiagnosticId];
@@ -42,7 +33,7 @@ public sealed class SwitchEnumExhaustivenessCodeFixProvider : E128CodeFixProvide
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         var target = node.FirstAncestorOrSelf<SyntaxNode>(
-            candidate => candidate is SwitchStatementSyntax or SwitchExpressionSyntax);
+            static candidate => candidate is SwitchStatementSyntax or SwitchExpressionSyntax);
 
         switch (target)
         {

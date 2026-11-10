@@ -17,6 +17,9 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int MaxNameSuffix = 100;
+    private const int AddWithValueArgumentCount = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ArrayPoolSqliteParameterSizeAnalyzer.DiagnosticId];
 
@@ -83,7 +86,7 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
             length,
             containingStatement.GetLeadingTrivia());
 
-        var replacement = new List<StatementSyntax> { declaration, sizeStatement };
+        List<StatementSyntax> replacement = [declaration, sizeStatement];
 
         // A statement that only performs the call keeps no second copy of it. Any other statement
         // still reads the parameter, so the call moves into the declaration and the statement uses
@@ -192,7 +195,7 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
 
     private static ExpressionSyntax? GetAddWithValueArgument(InvocationExpressionSyntax invocation)
     {
-        return invocation.ArgumentList.Arguments.Count == 2
+        return invocation.ArgumentList.Arguments.Count is AddWithValueArgumentCount
             ? invocation.ArgumentList.Arguments[1].Expression
             : null;
     }
@@ -204,38 +207,16 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
     /// </summary>
     private static ExpressionSyntax? TryGetRequestedLength(SyntaxNode scope, ExpressionSyntax? value)
     {
-        if (value is null)
+        var rent = value switch
         {
-            return null;
-        }
-
-        var rent = value as InvocationExpressionSyntax;
-        if (rent is null && value is IdentifierNameSyntax bufferName)
-        {
-            var member = scope.FirstAncestorOrSelf<MemberDeclarationSyntax>();
-            var name = bufferName.Identifier.ValueText;
-            var declarators = member?.DescendantNodes()
-                .OfType<VariableDeclaratorSyntax>()
-                .Where(v => string.Equals(v.Identifier.ValueText, name, StringComparison.Ordinal))
-                .ToList();
-
-            // Decline when the name is ambiguous. Two declarators of one name can sit in different scopes,
-            // and a reassigned buffer can hold a different length at the call.
-            if (declarators is not { Count: 1 }
-                || member is null
-                || member.DescendantNodes().OfType<AssignmentExpressionSyntax>().Any(a =>
-                    a.Left is IdentifierNameSyntax left
-                    && string.Equals(left.Identifier.ValueText, name, StringComparison.Ordinal)))
-            {
-                return null;
-            }
-
-            rent = declarators[0].Initializer?.Value as InvocationExpressionSyntax;
-        }
+            InvocationExpressionSyntax invocation => invocation,
+            IdentifierNameSyntax bufferName => FindRentForBuffer(scope, bufferName),
+            _ => null
+        };
 
         if (rent is null
             || rent.Expression is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Rent" }
-            || rent.ArgumentList.Arguments.Count != 1)
+            || rent.ArgumentList.Arguments.Count is not 1)
         {
             return null;
         }
@@ -244,11 +225,34 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
         return length is LiteralExpressionSyntax or IdentifierNameSyntax ? length : null;
     }
 
+    private static InvocationExpressionSyntax? FindRentForBuffer(SyntaxNode scope, IdentifierNameSyntax bufferName)
+    {
+        var member = scope.FirstAncestorOrSelf<MemberDeclarationSyntax>();
+        var name = bufferName.Identifier.ValueText;
+        var declarators = member?.DescendantNodes()
+            .OfType<VariableDeclaratorSyntax>()
+            .Where(v => string.Equals(v.Identifier.ValueText, name, StringComparison.Ordinal))
+            .ToList();
+
+        // Decline when the name is ambiguous. Two declarators of one name can sit in different scopes,
+        // and a reassigned buffer can hold a different length at the call.
+        if (declarators is not { Count: 1 }
+            || member is null
+            || member.DescendantNodes().OfType<AssignmentExpressionSyntax>().Any(a =>
+                a.Left is IdentifierNameSyntax left
+                && string.Equals(left.Identifier.ValueText, name, StringComparison.Ordinal)))
+        {
+            return null;
+        }
+
+        return declarators[0].Initializer?.Value as InvocationExpressionSyntax;
+    }
+
     private static string GenerateUniqueParameterName(BlockSyntax block)
     {
         var existingNames = block.DescendantNodes()
             .OfType<VariableDeclaratorSyntax>()
-            .Select(v => v.Identifier.ValueText)
+            .Select(static v => v.Identifier.ValueText)
             .ToImmutableHashSet(StringComparer.Ordinal);
 
         if (!existingNames.Contains("sqliteParam"))
@@ -256,7 +260,7 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
             return "sqliteParam";
         }
 
-        for (var i = 2; i < 100; i++)
+        for (var i = 2; i < MaxNameSuffix; i++)
         {
             var candidate = "sqliteParam" + i.ToString(CultureInfo.InvariantCulture);
             if (!existingNames.Contains(candidate))

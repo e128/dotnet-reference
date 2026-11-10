@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class TaskRunAsyncLambdaE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<TaskRunAsyncLambdaAnalyzer, TaskRunAsyncLambdaCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<TaskRunAsyncLambdaAnalyzer, TaskRunAsyncLambdaCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -78,6 +80,8 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code) =>
-        CodeFixTestRunner.NoFixAsync<TaskRunAsyncLambdaAnalyzer, TaskRunAsyncLambdaCodeFixProvider>(code);
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return CodeFixTestRunner.NoFixAsync<TaskRunAsyncLambdaAnalyzer, TaskRunAsyncLambdaCodeFixProvider>(code);
+    }
 }

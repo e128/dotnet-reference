@@ -91,7 +91,7 @@ public sealed class BareParseAnalyzer : DiagnosticAnalyzer
         {
             if (member is IMethodSymbol method &&
                 method.IsStatic &&
-                method.ReturnType.SpecialType == SpecialType.System_Boolean &&
+                method.ReturnType.SpecialType is SpecialType.System_Boolean &&
                 method.Parameters.Length >= 1)
             {
                 // Found a static bool TryParse(...) method
@@ -151,6 +151,7 @@ public sealed class BareParseAnalyzer : DiagnosticAnalyzer
         }
 
         var fullName = typeInfo.Type.ToDisplayString();
-        return fullName is "System.FormatException" or "System.Exception";
+        return string.Equals(fullName, "System.FormatException", StringComparison.Ordinal)
+               || string.Equals(fullName, "System.Exception", StringComparison.Ordinal);
     }
 }

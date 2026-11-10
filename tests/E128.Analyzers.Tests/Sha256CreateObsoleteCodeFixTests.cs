@@ -8,8 +8,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class Sha256CreateObsoleteCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<Sha256CreateObsoleteAnalyzer, Sha256CreateObsoleteCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<Sha256CreateObsoleteAnalyzer, Sha256CreateObsoleteCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -84,6 +86,6 @@ public sealed class Sha256CreateObsoleteCodeFixTests
                         }
                         """,
             NumberOfFixAllInDocumentIterations = 0
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 }

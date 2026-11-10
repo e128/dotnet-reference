@@ -45,7 +45,7 @@ public sealed class PresizeCollectionAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var targets = ResolveTargets(startContext.Compilation);
             if (targets.IsEmpty)
@@ -78,9 +78,9 @@ public sealed class PresizeCollectionAnalyzer : DiagnosticAnalyzer
     {
         foreach (var constructor in type.InstanceConstructors)
         {
-            if (constructor.Parameters.Length == 1
-                && constructor.Parameters[0].Type.SpecialType == SpecialType.System_Int32
-                && constructor.DeclaredAccessibility == Accessibility.Public)
+            if (constructor.Parameters.Length is 1
+                && constructor.Parameters[0].Type.SpecialType is SpecialType.System_Int32
+                && constructor.DeclaredAccessibility is Accessibility.Public)
             {
                 return true;
             }
@@ -142,7 +142,7 @@ public sealed class PresizeCollectionAnalyzer : DiagnosticAnalyzer
         creation = null;
         fillMethod = null;
 
-        if (declaration.Declaration.Variables.Count != 1)
+        if (declaration.Declaration.Variables.Count is not 1)
         {
             return false;
         }

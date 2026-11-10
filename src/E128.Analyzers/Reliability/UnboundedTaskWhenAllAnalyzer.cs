@@ -39,7 +39,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var taskType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
             if (taskType is null)
@@ -63,7 +63,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count != 1)
+        if (args.Count is not 1)
         {
             return;
         }
@@ -86,10 +86,12 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (TryGetTaskRunFanOut(context, invocation, argument, taskType, out var taskRun))
+        if (!TryGetTaskRunFanOut(context, invocation, argument, taskType, out var taskRun))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, taskRun.GetLocation()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, taskRun.GetLocation()));
     }
 
     private static bool TryGetTaskRunFanOut(
@@ -124,28 +126,40 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
             var limit = candidateBlock.Statements.IndexOf(whenAllStatement);
             for (var i = 0; i < limit; i++)
             {
-                foreach (var candidate in candidateBlock.Statements[i]
-                             .DescendantNodes()
-                             .OfType<InvocationExpressionSyntax>())
+                taskRun = FindUnthrottledTaskRunAdd(candidateBlock.Statements[i], local, taskType, context);
+                if (taskRun is not null)
                 {
-                    if (!IsAddOnLocal(candidate, local, context)
-                        || LoopContext.FindEnclosingLoopBody(candidate) is null
-                        || LoopContext.HasConstantBound(candidate)
-                        || candidate.ArgumentList.Arguments.Count != 1
-                        || candidate.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax run
-                        || !IsTaskRun(run, taskType, context)
-                        || ContainsThrottle(run, context))
-                    {
-                        continue;
-                    }
-
-                    taskRun = run;
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    private static InvocationExpressionSyntax? FindUnthrottledTaskRunAdd(
+        StatementSyntax statement,
+        ILocalSymbol local,
+        INamedTypeSymbol taskType,
+        SyntaxNodeAnalysisContext context)
+    {
+        foreach (var candidate in statement.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (!IsAddOnLocal(candidate, local, context)
+                || LoopContext.FindEnclosingLoopBody(candidate) is null
+                || LoopContext.HasConstantBound(candidate)
+                || candidate.ArgumentList.Arguments.Count is not 1
+                || candidate.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax run
+                || !IsTaskRun(run, taskType, context)
+                || ContainsThrottle(run, context))
+            {
+                continue;
+            }
+
+            return run;
+        }
+
+        return null;
     }
 
     private static bool IsAddOnLocal(
@@ -184,7 +198,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context)
     {
         foreach (var call in invocation.ArgumentList.Arguments
-                     .SelectMany(argument => argument.Expression.DescendantNodesAndSelf())
+                     .SelectMany(static argument => argument.Expression.DescendantNodesAndSelf())
                      .OfType<InvocationExpressionSyntax>())
         {
             if (call.Expression is not MemberAccessExpressionSyntax access
@@ -195,10 +209,8 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
 
             // Task.WaitAsync(TimeSpan) is a timeout, not a concurrency gate.
             if (context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol
-                is IMethodSymbol
-                {
-                    ContainingType.Name: "SemaphoreSlim"
-                } containing
+                is IMethodSymbol containing
+                && string.Equals(containing.ContainingType.Name, "SemaphoreSlim", StringComparison.Ordinal)
                 && string.Equals(
                     containing.ContainingType.ContainingNamespace?.ToDisplayString(),
                     "System.Threading",
@@ -229,14 +241,14 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
             return TryGetSelectInvocation(receiver, out selectInvocation);
         }
 
-        if (candidate.Expression is MemberAccessExpressionSyntax memberAccess
-            && string.Equals(memberAccess.Name.Identifier.ValueText, "Select", StringComparison.Ordinal))
+        if (candidate.Expression is not MemberAccessExpressionSyntax memberAccess
+            || !string.Equals(memberAccess.Name.Identifier.ValueText, "Select", StringComparison.Ordinal))
         {
-            selectInvocation = candidate;
-            return true;
+            return false;
         }
 
-        return false;
+        selectInvocation = candidate;
+        return true;
     }
 
     private static bool IsMaterializer(InvocationExpressionSyntax invocation)
@@ -283,7 +295,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
 
         return lambdaArg.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
+            .Any(static inv => inv.Expression is MemberAccessExpressionSyntax ma
                         && string.Equals(ma.Name.Identifier.ValueText, "WaitAsync", StringComparison.Ordinal));
     }
 }

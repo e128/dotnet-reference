@@ -28,6 +28,7 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128157";
 
     private const int MaxDepth = 3;
+    private const int StaticEqualsArgumentCount = 2;
 
     private static readonly ImmutableHashSet<string> SecretNameWords = ImmutableHashSet.Create(
         StringComparer.OrdinalIgnoreCase,
@@ -44,6 +45,19 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         "expected",
         "computed",
         "hash");
+
+    private static readonly ImmutableHashSet<string> ConvertEncoderMethods = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "ToHexString",
+        "ToHexStringLower",
+        "ToBase64String");
+
+    private static readonly ImmutableHashSet<string> IncrementalHashReaders = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "GetCurrentHash",
+        "GetHashAndReset",
+        "TryGetCurrentHash",
+        "TryGetHashAndReset");
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -79,10 +93,12 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
 
         // The equality operator on a span compares the address and the length, never the content,
         // and it takes constant time. Only the string forms leak a matching prefix.
-        if (IsSecretStringComparison(binary.Left, binary.Right, context.SemanticModel, context.CancellationToken))
+        if (!IsSecretStringComparison(binary.Left, binary.Right, context.SemanticModel, context.CancellationToken))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, binary.GetLocation(), binary.ToString()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, binary.GetLocation(), binary.ToString()));
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
@@ -98,10 +114,12 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
             _ => false
         };
 
-        if (reported)
+        if (!reported)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), invocation.ToString()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), invocation.ToString()));
     }
 
     private static string? GetInvokedName(InvocationExpressionSyntax invocation)
@@ -141,7 +159,7 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         left = invocation;
         right = invocation;
 
-        if (arguments.Count == 1 && invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+        if (arguments.Count is 1 && invocation.Expression is MemberAccessExpressionSyntax memberAccess)
         {
             left = memberAccess.Expression;
             right = arguments[0].Expression;
@@ -149,17 +167,31 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        if (arguments.Count == 2
-            && model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol { IsStatic: true } method
-            && method.ContainingType.ToDisplayString() is "System.Linq.Enumerable" or "System.MemoryExtensions")
+        if (arguments.Count is not StaticEqualsArgumentCount || !IsStaticSequenceEqual(invocation, model, cancellationToken))
         {
-            left = arguments[0].Expression;
-            right = arguments[1].Expression;
-
-            return true;
+            return false;
         }
 
-        return false;
+        left = arguments[0].Expression;
+        right = arguments[1].Expression;
+
+        return true;
+    }
+
+    private static bool IsStaticSequenceEqual(
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        if (model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol { IsStatic: true } method)
+        {
+            return false;
+        }
+
+        var typeName = method.ContainingType.ToDisplayString();
+
+        return string.Equals(typeName, "System.Linq.Enumerable", StringComparison.Ordinal)
+               || string.Equals(typeName, "System.MemoryExtensions", StringComparison.Ordinal);
     }
 
     private static bool IsSecretStringEquals(
@@ -225,7 +257,7 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        return model.GetTypeInfo(expression, cancellationToken).Type?.SpecialType == SpecialType.System_String;
+        return model.GetTypeInfo(expression, cancellationToken).Type?.SpecialType is SpecialType.System_String;
     }
 
     private static string? GetWeakWord(
@@ -285,8 +317,9 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
     {
         return model.GetTypeInfo(expression, cancellationToken).Type
                is INamedTypeSymbol { TypeArguments.Length: 1 } namedType
-               && namedType.TypeArguments[0].SpecialType == SpecialType.System_Byte
-               && namedType.Name is "ReadOnlySpan" or "Span";
+               && namedType.TypeArguments[0].SpecialType is SpecialType.System_Byte
+               && (string.Equals(namedType.Name, "ReadOnlySpan", StringComparison.Ordinal)
+                   || string.Equals(namedType.Name, "Span", StringComparison.Ordinal));
     }
 
     private static bool IsSecretDerived(
@@ -440,22 +473,26 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         int depth,
         CancellationToken cancellationToken)
     {
-        if (invocation.ArgumentList.Arguments.Count == 0
+        if (invocation.ArgumentList.Arguments.Count is 0
             || model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol method)
         {
             return false;
         }
 
-        var isEncoder = method.ContainingType.ToDisplayString() switch
-        {
-            "System.Convert" => method.Name is "ToHexString" or "ToHexStringLower" or "ToBase64String",
-            "System.Buffers.Text.Base64Url" => method.Name is "EncodeToString",
-            _ => false
-        };
-
-        return isEncoder
+        return IsEncoderMethod(method.ContainingType.ToDisplayString(), method.Name)
                && IsSecretDerived(
                    invocation.ArgumentList.Arguments[0].Expression, model, depth + 1, cancellationToken);
+    }
+
+    private static bool IsEncoderMethod(string typeName, string methodName)
+    {
+        if (string.Equals(typeName, "System.Convert", StringComparison.Ordinal))
+        {
+            return ConvertEncoderMethods.Contains(methodName);
+        }
+
+        return string.Equals(typeName, "System.Buffers.Text.Base64Url", StringComparison.Ordinal)
+               && string.Equals(methodName, "EncodeToString", StringComparison.Ordinal);
     }
 
     private static bool IsSecretProducer(
@@ -474,8 +511,7 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
                || (invocation.Expression is MemberAccessExpressionSyntax access
                    && (IsHmacType(model.GetTypeInfo(access.Expression, cancellationToken).Type)
                        || (string.Equals(method.ContainingType.Name, "IncrementalHash", StringComparison.Ordinal)
-                           && method.Name is "GetCurrentHash" or "GetHashAndReset" or "TryGetCurrentHash"
-                               or "TryGetHashAndReset"
+                           && IncrementalHashReaders.Contains(method.Name)
                            && IsHmacIncrementalHash(access.Expression, model, cancellationToken))));
     }
 
@@ -537,10 +573,8 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken)
     {
         return value is InvocationExpressionSyntax invocation
-               && model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol
-               {
-                   Name: "CreateHMAC",
-                   ContainingType.Name: "IncrementalHash"
-               };
+               && model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol method
+               && string.Equals(method.Name, "CreateHMAC", StringComparison.Ordinal)
+               && string.Equals(method.ContainingType.Name, "IncrementalHash", StringComparison.Ordinal);
     }
 }

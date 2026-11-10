@@ -35,7 +35,7 @@ public sealed class Utf8StringParseCodeFixProvider : E128CodeFixProviderBase
             .FirstOrDefault();
 
         if (getString?.ArgumentList is null
-            || getString.ArgumentList.Arguments.Count != 1
+            || getString.ArgumentList.Arguments.Count is not 1
             || getString.Parent is not ArgumentSyntax argument
             || argument.Parent?.Parent is not InvocationExpressionSyntax parseInvocation)
         {

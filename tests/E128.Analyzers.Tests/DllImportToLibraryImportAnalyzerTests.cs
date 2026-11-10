@@ -17,7 +17,7 @@ public sealed class DllImportToLibraryImportAnalyzerTests
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             CompilerDiagnostics = CompilerDiagnostics.None,
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

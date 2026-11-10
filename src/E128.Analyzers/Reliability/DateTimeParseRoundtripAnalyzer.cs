@@ -11,6 +11,8 @@ namespace E128.Analyzers.Reliability;
 public sealed class DateTimeParseRoundtripAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128016";
+    private const int ParseArgCount = 2;
+    private const int ParseExactArgCount = 3;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -78,13 +80,23 @@ public sealed class DateTimeParseRoundtripAnalyzer : DiagnosticAnalyzer
 
     private static bool IsTargetMethod(string name)
     {
-        return name is "Parse" or "ParseExact";
+        return string.Equals(name, "Parse", StringComparison.Ordinal)
+               || string.Equals(name, "ParseExact", StringComparison.Ordinal);
     }
 
     private static int GetExpectedArgCountWithoutStyles(string methodName)
     {
-        return methodName.Equals("Parse", StringComparison.Ordinal) ? 2 :
-            methodName.Equals("ParseExact", StringComparison.Ordinal) ? 3 : -1;
+        if (methodName.Equals("Parse", StringComparison.Ordinal))
+        {
+            return ParseArgCount;
+        }
+
+        if (methodName.Equals("ParseExact", StringComparison.Ordinal))
+        {
+            return ParseExactArgCount;
+        }
+
+        return -1;
     }
 
     private static bool IsTargetContainingType(string? containingType)

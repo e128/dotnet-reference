@@ -77,7 +77,7 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
         FipsSymbolHelpers.ForEachAssignment(
             context.Operation,
             context,
-            static (state, target, value, syntax) => CheckIterationCountAssignment(state, target, value, syntax));
+            CheckIterationCountAssignment);
     }
 
     private static void CheckIterationCountAssignment(
@@ -86,12 +86,14 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
         IOperation value,
         SyntaxNode syntax)
     {
-        if (FipsSymbolHelpers.IsCandidateAssignmentTarget(target, "IterationCount") &&
-            target is IPropertyReferenceOperation property &&
-            FipsSymbolHelpers.IsCryptographyType(property.Property.ContainingType, "Rfc2898DeriveBytes"))
+        if (!FipsSymbolHelpers.IsCandidateAssignmentTarget(target, "IterationCount") ||
+            target is not IPropertyReferenceOperation property ||
+            !FipsSymbolHelpers.IsCryptographyType(property.Property.ContainingType, "Rfc2898DeriveBytes"))
         {
-            CheckIterations(context, value, syntax.GetLocation());
+            return;
         }
+
+        CheckIterations(context, value, syntax.GetLocation());
     }
 
     /// <summary>
@@ -201,10 +203,12 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
             CheckHashAlgorithm(context, hash.Value, location);
         }
 
-        if (FipsSymbolHelpers.ArgumentNamed(creation.Arguments, "iterationCount") is { } iterations)
+        if (FipsSymbolHelpers.ArgumentNamed(creation.Arguments, "iterationCount") is not { } iterations)
         {
-            CheckIterations(context, iterations.Value, location);
+            return;
         }
+
+        CheckIterations(context, iterations.Value, location);
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
@@ -313,6 +317,8 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
             "PBKDF2 PRF cannot be verified at compile time; ensure it is HMACSHA256 or stronger");
     }
 
-    private static void Report(OperationAnalysisContext context, Location location, string message) =>
+    private static void Report(OperationAnalysisContext context, Location location, string message)
+    {
         context.ReportDiagnostic(Diagnostic.Create(Rule, location, message));
+    }
 }

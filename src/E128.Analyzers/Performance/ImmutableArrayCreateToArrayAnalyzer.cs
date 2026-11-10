@@ -49,7 +49,7 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var marshalType = compilationContext.Compilation.GetTypeByMetadataName(ImmutableCollectionsMarshalMetadataName);
             if (marshalType is null)
@@ -78,13 +78,23 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private static void AnalyzeInvocation(
-        SyntaxNodeAnalysisContext context,
-        INamedTypeSymbol immutableArrayType,
-        HashSet<ISymbol> freshOwners)
+    // Returns the single argument when it is a call to a member named ToArray.
+    private static InvocationExpressionSyntax? GetToArrayArgument(InvocationExpressionSyntax invocation)
     {
-        var invocation = (InvocationExpressionSyntax)context.Node;
+        if (invocation.ArgumentList.Arguments.Count is not 1
+            || invocation.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax innerInvocation
+            || innerInvocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        {
+            return null;
+        }
 
+        return string.Equals(memberAccess.Name.Identifier.Text, "ToArray", StringComparison.Ordinal)
+            ? innerInvocation
+            : null;
+    }
+
+    private static bool IsCreateCall(InvocationExpressionSyntax invocation)
+    {
         var methodName = invocation.Expression switch
         {
             MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
@@ -92,28 +102,23 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
             _ => null
         };
 
-        if (methodName is not ("Create" or "CreateRange"))
+        return string.Equals(methodName, "Create", StringComparison.Ordinal)
+               || string.Equals(methodName, "CreateRange", StringComparison.Ordinal);
+    }
+
+    private static void AnalyzeInvocation(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol immutableArrayType,
+        HashSet<ISymbol> freshOwners)
+    {
+        var invocation = (InvocationExpressionSyntax)context.Node;
+
+        if (!IsCreateCall(invocation))
         {
             return;
         }
 
-        if (invocation.ArgumentList.Arguments.Count != 1)
-        {
-            return;
-        }
-
-        var argument = invocation.ArgumentList.Arguments[0].Expression;
-        if (argument is not InvocationExpressionSyntax innerInvocation)
-        {
-            return;
-        }
-
-        if (innerInvocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-
-        if (!string.Equals(memberAccess.Name.Identifier.Text, "ToArray", StringComparison.Ordinal))
+        if (GetToArrayArgument(invocation) is not { } innerInvocation)
         {
             return;
         }

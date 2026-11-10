@@ -23,7 +23,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
             MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyWithoutHttpAsync(string code, params DiagnosticResult[] expected)
@@ -35,7 +35,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
             MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyWithRegisteredServicesAsync(
@@ -52,7 +52,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
         test.TestState.AnalyzerConfigFiles.Add(
             ("/.editorconfig", "is_global = true\ne128_registered_services = " + registeredServices));
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     #region Fires

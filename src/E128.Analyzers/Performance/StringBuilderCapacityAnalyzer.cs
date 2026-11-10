@@ -34,7 +34,7 @@ public sealed class StringBuilderCapacityAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
             MetadataTypes.RegisterForType(
                 startContext,
                 "System.Text.StringBuilder",
@@ -47,7 +47,7 @@ public sealed class StringBuilderCapacityAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol stringBuilder)
     {
         var declaration = (LocalDeclarationStatementSyntax)context.Node;
-        if (declaration.Declaration.Variables.Count != 1)
+        if (declaration.Declaration.Variables.Count is not 1)
         {
             return;
         }

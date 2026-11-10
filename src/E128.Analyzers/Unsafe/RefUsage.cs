@@ -25,17 +25,22 @@ internal static class RefUsage
                 continue;
             }
 
-            return parent switch
-            {
-                RefExpressionSyntax => true,
-                ArgumentSyntax argument => !argument.RefKindKeyword.IsKind(SyntaxKind.None),
-                AssignmentExpressionSyntax assignment => assignment.Left == node,
-                PrefixUnaryExpressionSyntax prefix => prefix.IsKind(SyntaxKind.PreIncrementExpression)
-                    || prefix.IsKind(SyntaxKind.PreDecrementExpression),
-                PostfixUnaryExpressionSyntax postfix => postfix.IsKind(SyntaxKind.PostIncrementExpression)
-                    || postfix.IsKind(SyntaxKind.PostDecrementExpression),
-                _ => false,
-            };
+            return IsReferenceContext(parent, node);
         }
+    }
+
+    private static bool IsReferenceContext(SyntaxNode? parent, SyntaxNode node)
+    {
+        return parent switch
+        {
+            RefExpressionSyntax => true,
+            ArgumentSyntax argument => !argument.RefKindKeyword.IsKind(SyntaxKind.None),
+            AssignmentExpressionSyntax assignment => assignment.Left == node,
+            PrefixUnaryExpressionSyntax prefix => prefix.IsKind(SyntaxKind.PreIncrementExpression)
+                || prefix.IsKind(SyntaxKind.PreDecrementExpression),
+            PostfixUnaryExpressionSyntax postfix => postfix.IsKind(SyntaxKind.PostIncrementExpression)
+                || postfix.IsKind(SyntaxKind.PostDecrementExpression),
+            _ => false,
+        };
     }
 }

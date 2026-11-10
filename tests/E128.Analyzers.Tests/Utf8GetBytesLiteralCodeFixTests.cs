@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class Utf8GetBytesLiteralCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<Utf8GetBytesLiteralAnalyzer, Utf8GetBytesLiteralCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<Utf8GetBytesLiteralAnalyzer, Utf8GetBytesLiteralCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

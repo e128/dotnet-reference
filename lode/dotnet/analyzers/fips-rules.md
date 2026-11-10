@@ -1,5 +1,5 @@
 # FIPS Cryptography Rules
-*Updated: 2026-11-07T14:35:25Z*
+*Updated: 2026-11-09T23:44:15Z*
 
 The Security analyzer set enforces organization cryptography policy. All rules
 report an error, so a policy break fails the build by default. E128071 and
@@ -28,10 +28,9 @@ invariants that the rule set shares.
 
 - Every rule reports an error. A policy break fails the build by default, so a
   consumer must fix the code or lower the severity in its own configuration.
-  The only exception in this repository is E128075: `.globalconfig` sets it to
-  `none` because CA5394 and S2245 already cover insecure randomness here. That
-  local suppression is recorded in [redundant-rules.md](redundant-rules.md), and
-  package consumers still receive E128075 as an error.
+  This repository has no exception. CA5394 and S2245 also cover insecure
+  randomness, so E128075 and those rules can report the same code. See
+  [redundant-rules.md](redundant-rules.md).
 - RSA keys use at least 3072 bits. Approved curves are P-384 and P-521.
 - PBKDF2 uses at least 600,000 iterations.
 - AES-GCM uses the full 16-byte tag.

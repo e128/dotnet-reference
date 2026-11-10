@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-09T21:51:08Z*
+*Updated: 2026-11-09T23:44:15Z*
 
 ## Generated Docs
 
@@ -45,7 +45,7 @@
 - [configuration.md](dotnet/analyzers/configuration.md): Option surfaces, key naming, severity keys, MSBuild properties, additional files
 - [symbol-lookups.md](dotnet/analyzers/symbol-lookups.md): Documentation comment IDs, accessibility, interface implementation, data and control flow, scoped registration
 - [testing.md](dotnet/analyzers/testing.md): Markup forms, code fix assertions, option injection, Roslyn version alignment
-- [redundant-rules.md](dotnet/analyzers/redundant-rules.md): E128 rules disabled because third-party analyzers cover them
+- [redundant-rules.md](dotnet/analyzers/redundant-rules.md): E128 rules that overlap a third-party analyzer
 - [code-fix-patterns.md](dotnet/analyzers/code-fix-patterns.md): Code fix structure: decision list, code-aware library, AddUsing, span widening, tables, registration
 - [code-fix-output.md](dotnet/analyzers/code-fix-output.md): Text the fix writes and keeps: literals, formatter, inserted members, trivia, rewrite shape guards
 - [code-fix-techniques.md](dotnet/analyzers/code-fix-techniques.md): Fix-all providers, DocumentEditor, speculative bind, error-count guard, generator, attribute update

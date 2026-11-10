@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SemaphoreSlimReleaseAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

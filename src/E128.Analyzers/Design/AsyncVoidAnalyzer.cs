@@ -13,6 +13,8 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128007";
 
+    private const int EventHandlerParameterCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Avoid async void methods",
@@ -63,7 +65,7 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        if (method.ParameterList.Parameters.Count != 2)
+        if (method.ParameterList.Parameters.Count is not EventHandlerParameterCount)
         {
             return false;
         }

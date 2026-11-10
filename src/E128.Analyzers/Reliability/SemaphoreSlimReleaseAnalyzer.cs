@@ -126,8 +126,8 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
         var isNamedWait = string.Equals(method.Name, WaitName, StringComparison.Ordinal)
                           || string.Equals(method.Name, WaitAsyncName, StringComparison.Ordinal);
 
-        var takesPlainOrTokenOnly = method.Parameters.Length == 0
-                                    || (method.Parameters.Length == 1
+        var takesPlainOrTokenOnly = method.Parameters.Length is 0
+                                    || (method.Parameters.Length is 1
                                         && SymbolEqualityComparer.Default.Equals(
                                             method.Parameters[0].Type, cancellationTokenType));
 
@@ -182,23 +182,38 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        for (var node = wait.Parent; node is not null && node != statement; node = node.Parent)
+        if (IsInsideLocalFunction(wait, statement))
         {
-            if (node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
-            {
-                return false;
-            }
+            return false;
         }
 
         var statements = block.Statements;
         var start = statements.IndexOf(statement);
 
-        if (start < 0)
+        return start >= 0 && ReleaseFollows(statements, start + 1, receiver, model, cancellationToken);
+    }
+
+    private static bool IsInsideLocalFunction(SyntaxNode wait, SyntaxNode statement)
+    {
+        for (var node = wait.Parent; node is not null && node != statement; node = node.Parent)
         {
-            return false;
+            if (node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+            {
+                return true;
+            }
         }
 
-        for (var i = start + 1; i < statements.Count; i++)
+        return false;
+    }
+
+    private static bool ReleaseFollows(
+        SyntaxList<StatementSyntax> statements,
+        int first,
+        ISymbol receiver,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        for (var i = first; i < statements.Count; i++)
         {
             var next = statements[i];
 
@@ -304,22 +319,27 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
     {
         for (var current = node.Parent; current is not null && current != finallyBlock; current = current.Parent)
         {
-            if (current is IfStatementSyntax or ConditionalExpressionSyntax or SwitchStatementSyntax
-                or ForStatementSyntax or CommonForEachStatementSyntax or WhileStatementSyntax
-                or DoStatementSyntax)
-            {
-                return false;
-            }
-
-            // A lambda or local function runs on its own schedule, so its release may never run here.
-            if (current is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
-                or BaseMethodDeclarationSyntax or AccessorDeclarationSyntax)
+            if (IsBranchingConstruct(current) || IsSeparateScope(current))
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static bool IsBranchingConstruct(SyntaxNode node)
+    {
+        return node is IfStatementSyntax or ConditionalExpressionSyntax or SwitchStatementSyntax
+            or ForStatementSyntax or CommonForEachStatementSyntax or WhileStatementSyntax
+            or DoStatementSyntax;
+    }
+
+    // A lambda or local function runs on its own schedule, so its release may never run here.
+    private static bool IsSeparateScope(SyntaxNode node)
+    {
+        return node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+            or BaseMethodDeclarationSyntax or AccessorDeclarationSyntax;
     }
 
     private static bool IsReleaseOf(

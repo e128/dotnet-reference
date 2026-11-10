@@ -20,7 +20,7 @@ public sealed class UntrackedSkipAnalyzerTests
         {
             TestCode = code,
             ReferenceAssemblies = Net100WithXunit
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class UntrackedSkipAnalyzerTests
         test.TestState.AnalyzerConfigFiles.Add(
             ("/.editorconfig", "is_global = true\ne128_tracked_ref_pattern = ([unclosed"));
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

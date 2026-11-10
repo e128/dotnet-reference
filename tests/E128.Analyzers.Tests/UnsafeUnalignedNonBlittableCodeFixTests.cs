@@ -22,7 +22,7 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixTests
 
         test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

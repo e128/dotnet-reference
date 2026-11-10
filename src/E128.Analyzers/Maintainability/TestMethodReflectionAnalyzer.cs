@@ -38,7 +38,7 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var bindingFlagsType = startContext.Compilation.GetTypeByMetadataName(BindingFlagsMetadataName);
             var typeType = startContext.Compilation.GetTypeByMetadataName(TypeMetadataName);
@@ -128,10 +128,12 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
         }
 
         var symbol = context.SemanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol;
-        if (SymbolEqualityComparer.Default.Equals(symbol, bindingFlagsType))
+        if (!SymbolEqualityComparer.Default.Equals(symbol, bindingFlagsType))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), "BindingFlags"));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), "BindingFlags"));
     }
 
     private static bool IsInsideTestMethod(SyntaxNode node)
@@ -154,7 +156,10 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
             foreach (var attribute in attributeList.Attributes)
             {
                 var attrName = attribute.Name.ToString();
-                if (attrName is "Fact" or "Theory" or "Xunit.Fact" or "Xunit.Theory")
+                if (string.Equals(attrName, "Fact", StringComparison.Ordinal)
+                    || string.Equals(attrName, "Theory", StringComparison.Ordinal)
+                    || string.Equals(attrName, "Xunit.Fact", StringComparison.Ordinal)
+                    || string.Equals(attrName, "Xunit.Theory", StringComparison.Ordinal))
                 {
                     return true;
                 }

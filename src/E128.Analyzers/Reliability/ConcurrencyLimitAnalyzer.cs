@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -48,13 +50,12 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static void AnalyzeObjectCreation(SyntaxNodeAnalysisContext context)
     {
-        if (!TryGetArgumentList(context.Node, out var argumentList, out var nodeForLocation)
-            || argumentList is null || nodeForLocation is null)
+        if (!TryGetArgumentList(context.Node, out var argumentList, out var nodeForLocation))
         {
             return;
         }
 
-        if (argumentList.Arguments.Count == 0)
+        if (argumentList.Arguments.Count is 0)
         {
             return;
         }
@@ -76,16 +77,18 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
         }
 
         var firstArg = argumentList.Arguments[0].Expression;
-        if (!TryGetConstantInt(context.SemanticModel, firstArg, out var value))
+        if (!TryGetConstantInt(context.SemanticModel, firstArg, context.CancellationToken, out var value))
         {
             return;
         }
 
         // Zero is a legal initial count for SemaphoreSlim, so only a negative value is a defect.
-        if (value < 0)
+        if (value >= 0)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, nodeForLocation.GetLocation(), value));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, nodeForLocation.GetLocation(), value));
     }
 
     // Bind the semantic model only for a creation that names SemaphoreSlim. Binding every object
@@ -109,8 +112,8 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
 
     private static bool TryGetArgumentList(
         SyntaxNode node,
-        out ArgumentListSyntax? argumentList,
-        out SyntaxNode? nodeForLocation)
+        [NotNullWhen(true)] out ArgumentListSyntax? argumentList,
+        [NotNullWhen(true)] out SyntaxNode? nodeForLocation)
     {
         if (node is ObjectCreationExpressionSyntax objectCreation
             && objectCreation.ArgumentList is { } objArgList)
@@ -164,21 +167,23 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!TryGetConstantInt(context.SemanticModel, assignment.Right, out var value))
+        if (!TryGetConstantInt(context.SemanticModel, assignment.Right, context.CancellationToken, out var value))
         {
             return;
         }
 
         // -1 means "unlimited" — a valid value for MaxDegreeOfParallelism.
-        if (value == -1)
+        if (value is -1)
         {
             return;
         }
 
-        if (value <= 0)
+        if (value > 0)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.Right.GetLocation(), value));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.Right.GetLocation(), value));
     }
 
     /// <summary>
@@ -199,7 +204,7 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count == 0)
+        if (args.Count is 0)
         {
             return;
         }
@@ -216,18 +221,24 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
         }
 
         var firstArg = args[0].Expression;
-        if (!TryGetConstantInt(context.SemanticModel, firstArg, out var value))
+        if (!TryGetConstantInt(context.SemanticModel, firstArg, context.CancellationToken, out var value))
         {
             return;
         }
 
-        if (value <= 0)
+        if (value > 0)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), value));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), value));
     }
 
-    private static bool TryGetConstantInt(SemanticModel model, ExpressionSyntax expression, out int value)
+    private static bool TryGetConstantInt(
+        SemanticModel model,
+        ExpressionSyntax expression,
+        CancellationToken cancellationToken,
+        out int value)
     {
         value = 0;
 
@@ -246,30 +257,30 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        var constantValue = model.GetConstantValue(expression);
-        if (constantValue.HasValue && constantValue.Value is int constVal)
+        var constantValue = model.GetConstantValue(expression, cancellationToken);
+        if (!constantValue.HasValue || constantValue.Value is not int constVal)
         {
-            value = constVal;
-            return true;
+            return false;
         }
 
-        return false;
+        value = constVal;
+        return true;
     }
 
     private static bool IsSemaphoreSlim(INamedTypeSymbol type)
     {
         return string.Equals(type.Name, "SemaphoreSlim", StringComparison.Ordinal)
-               && type.ContainingNamespace is { Name: "Threading" }
-               && type.ContainingNamespace.ContainingNamespace is { Name: "System" };
+               && IsNamespaceNamed(type.ContainingNamespace, "Threading")
+               && IsNamespaceNamed(type.ContainingNamespace.ContainingNamespace, "System");
     }
 
     private static bool IsParallelOptions(INamedTypeSymbol type)
     {
         return type is not null
                && string.Equals(type.Name, "ParallelOptions", StringComparison.Ordinal)
-               && type.ContainingNamespace is { Name: "Tasks" }
-               && type.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
-               && type.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
+               && IsNamespaceNamed(type.ContainingNamespace, "Tasks")
+               && IsNamespaceNamed(type.ContainingNamespace.ContainingNamespace, "Threading")
+               && IsNamespaceNamed(type.ContainingNamespace.ContainingNamespace.ContainingNamespace, "System");
     }
 
     private static bool IsChannelCreateBounded(IMethodSymbol method)
@@ -282,8 +293,13 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
         var containingType = method.ContainingType;
         return containingType is not null
                && string.Equals(containingType.Name, "Channel", StringComparison.Ordinal)
-               && containingType.ContainingNamespace is { Name: "Channels" }
-               && containingType.ContainingNamespace.ContainingNamespace is { Name: "Threading" }
-               && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" };
+               && IsNamespaceNamed(containingType.ContainingNamespace, "Channels")
+               && IsNamespaceNamed(containingType.ContainingNamespace.ContainingNamespace, "Threading")
+               && IsNamespaceNamed(containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace, "System");
+    }
+
+    private static bool IsNamespaceNamed(INamespaceSymbol? symbol, string name)
+    {
+        return symbol is not null && string.Equals(symbol.Name, name, StringComparison.Ordinal);
     }
 }

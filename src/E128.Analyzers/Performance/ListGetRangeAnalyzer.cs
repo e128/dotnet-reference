@@ -12,6 +12,8 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128084";
 
+    private const int GetRangeArgumentCount = 2;
+
     private const string ListMetadataName = "System.Collections.Generic.List`1";
     private const string CollectionsMarshalMetadataName = "System.Runtime.InteropServices.CollectionsMarshal";
 
@@ -38,7 +40,7 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var marshalType = compilationContext.Compilation.GetTypeByMetadataName(CollectionsMarshalMetadataName);
             if (marshalType is null)
@@ -58,36 +60,33 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
         });
     }
 
+    // Returns the member access when the call has the shape x.GetRange(a, b).
+    private static MemberAccessExpressionSyntax? GetRangeAccess(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax memberAccess
+            && string.Equals(memberAccess.Name.Identifier.Text, "GetRange", StringComparison.Ordinal)
+            && invocation.ArgumentList.Arguments.Count is GetRangeArgumentCount
+            ? memberAccess
+            : null;
+    }
+
+    private static bool IsListMethod(IMethodSymbol methodSymbol, INamedTypeSymbol listType)
+    {
+        return methodSymbol.ContainingType is INamedTypeSymbol { IsGenericType: true } containingType
+            && TypeSymbols.MatchesOriginalDefinition(containingType, listType);
+    }
+
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol listType)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        if (GetRangeAccess(invocation) is not { } memberAccess)
         {
             return;
         }
 
-        if (!string.Equals(memberAccess.Name.Identifier.Text, "GetRange", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (invocation.ArgumentList.Arguments.Count != 2)
-        {
-            return;
-        }
-
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol)
-        {
-            return;
-        }
-
-        if (methodSymbol.ContainingType is not INamedTypeSymbol containingType || !containingType.IsGenericType)
-        {
-            return;
-        }
-
-        if (!TypeSymbols.MatchesOriginalDefinition(containingType, listType))
+        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol
+            || !IsListMethod(methodSymbol, listType))
         {
             return;
         }
@@ -103,7 +102,7 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
         // GetRange throws on a null receiver. AsSpan(null) returns an empty span. Report only a receiver
         // that flow analysis proves non-null, so a maybe-null or nullable-disabled receiver stays silent.
         if (context.SemanticModel.GetTypeInfo(memberAccess.Expression, context.CancellationToken).Nullability.FlowState
-            != NullableFlowState.NotNull)
+            is not NullableFlowState.NotNull)
         {
             return;
         }

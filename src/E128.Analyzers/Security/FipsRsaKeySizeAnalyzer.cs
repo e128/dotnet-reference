@@ -26,7 +26,9 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
     private static readonly string NamedDefaultKeySizeMessage =
         $"RSA created by name uses the platform default key size, which cannot be verified; create the key with an explicit key size of at least {MinRsaBitsText} bits";
 
-    /// <summary>Curve names and object identifiers for P-384 and P-521. The comparison ignores case.</summary>
+    /// <summary>
+    ///     Curve names and object identifiers for P-384 and P-521. The comparison ignores case.
+    /// </summary>
     private static readonly ImmutableHashSet<string> AllowedCurves = ImmutableHashSet.Create(
         StringComparer.OrdinalIgnoreCase,
         "nistP384",
@@ -105,7 +107,7 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             // .NET Framework's mscorlib defines object. There RSA.Create() returns RSACryptoServiceProvider.
             var isFramework =
@@ -132,7 +134,17 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         var isEllipticCurve = FipsSymbolHelpers.DerivesFromCryptographyType(type, "ECDsa") ||
             FipsSymbolHelpers.DerivesFromCryptographyType(type, "ECDiffieHellman");
 
-        return isRsa ? Family.Rsa : isEllipticCurve ? Family.EllipticCurve : Family.None;
+        if (isRsa)
+        {
+            return Family.Rsa;
+        }
+
+        if (isEllipticCurve)
+        {
+            return Family.EllipticCurve;
+        }
+
+        return Family.None;
     }
 
     /// <summary>
@@ -199,7 +211,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(OperationAnalysisContext context, bool isFramework)
     {
         var invocation = (IInvocationOperation)context.Operation;
-        var method = invocation.TargetMethod;
         var syntax = invocation.Syntax;
 
         if (ReportCertificateKey(context, invocation))
@@ -223,6 +234,14 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        AnalyzeInstanceCall(context, invocation);
+    }
+
+    private static void AnalyzeInstanceCall(OperationAnalysisContext context, IInvocationOperation invocation)
+    {
+        var method = invocation.TargetMethod;
+        var syntax = invocation.Syntax;
+
         if (method.IsStatic)
         {
             return;
@@ -236,15 +255,15 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         var family = GetFamily(instanceType);
 
         // ECDsa.GenerateKey(ECCurve) and ECDiffieHellman.GenerateKey(ECCurve).
-        if (family == Family.EllipticCurve && string.Equals(method.Name, "GenerateKey", StringComparison.Ordinal))
+        if (family is Family.EllipticCurve && string.Equals(method.Name, "GenerateKey", StringComparison.Ordinal))
         {
-            CheckCurveArgument(context, invocation.Arguments, syntax);
+            _ = CheckCurveArgument(context, invocation.Arguments, syntax);
         }
-        else if (family == Family.EllipticCurve && EcImportMethods.Contains(method.Name))
+        else if (family is Family.EllipticCurve && EcImportMethods.Contains(method.Name))
         {
             Report(context, syntax, ImportedCurveMessage(instanceType.Name));
         }
-        else if (family == Family.Rsa && ImportMethods.Contains(method.Name))
+        else if (family is Family.Rsa && ImportMethods.Contains(method.Name))
         {
             Report(context, syntax, ImportedKeySizeMessage(instanceType.Name));
         }
@@ -258,15 +277,17 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
     {
         var reference = (IMethodReferenceOperation)context.Operation;
         var method = reference.Method;
-        if (method.IsStatic &&
-            string.Equals(method.Name, "Create", StringComparison.Ordinal) &&
-            FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "RSA"))
+        if (!method.IsStatic ||
+            !string.Equals(method.Name, "Create", StringComparison.Ordinal) ||
+            !FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "RSA"))
         {
-            Report(
-                context,
-                reference.Syntax,
-                $"RSA key size cannot be verified at compile time because the {method.ContainingType.Name}.Create method group is invoked later; ensure it is at least {MinRsaBitsText} bits");
+            return;
         }
+
+        Report(
+            context,
+            reference.Syntax,
+            $"RSA key size cannot be verified at compile time because the {method.ContainingType.Name}.Create method group is invoked later; ensure it is at least {MinRsaBitsText} bits");
     }
 
     private static void AnalyzeObjectCreation(OperationAnalysisContext context, bool isFramework)
@@ -278,18 +299,18 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         }
 
         var family = GetFamily(createdType);
-        if (family == Family.None)
+        if (family is Family.None)
         {
             return;
         }
 
         var syntax = creation.Syntax;
-        if (family == Family.EllipticCurve && CheckCurveArgument(context, creation.Arguments, syntax))
+        if (family is Family.EllipticCurve && CheckCurveArgument(context, creation.Arguments, syntax))
         {
             return;
         }
 
-        if (family == Family.Rsa)
+        if (family is Family.Rsa)
         {
             CheckRsaCreation(context, creation, creation.Arguments, createdType.Name, syntax, isFramework);
         }
@@ -297,7 +318,7 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         {
             CheckKeySize(context, family, createdType.Name, keySize, syntax);
         }
-        else if (family == Family.EllipticCurve)
+        else if (family is Family.EllipticCurve)
         {
             // No curve and no key size: the type creates the default P-256 key, which is below the policy minimum.
             Report(context, syntax, DefaultCurveMessage(createdType.Name));
@@ -315,13 +336,14 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         FipsSymbolHelpers.ForEachAssignment(
             context.Operation,
             context,
-            static (state, target, value, syntax) => CheckAssignment(state, target, value, syntax));
+            CheckAssignment);
     }
 
     private static void CheckAssignment(OperationAnalysisContext context, IOperation target, IOperation value, SyntaxNode syntax)
     {
         // ECParameters.Curve is a field, so a parameters struct can carry a weak curve.
-        if (target is IFieldReferenceOperation { Field.Name: "Curve" } curveField &&
+        if (target is IFieldReferenceOperation curveField &&
+            string.Equals(curveField.Field.Name, "Curve", StringComparison.Ordinal) &&
             FipsSymbolHelpers.IsCryptographyType(curveField.Field.ContainingType, "ECParameters"))
         {
             CheckCurveValue(context, value, syntax);
@@ -341,7 +363,7 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         }
 
         var family = GetFamily(instanceType);
-        if (family == Family.None)
+        if (family is Family.None)
         {
             return;
         }
@@ -349,14 +371,16 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         CheckKeySize(context, family, instanceType.Name, value, syntax);
     }
 
-    /// <summary>The first int parameter is the key size, such as <c lang="csharp">RSACryptoServiceProvider(int, CspParameters)</c>.</summary>
+    /// <summary>
+    ///     The first int parameter is the key size, such as <c lang="csharp">RSACryptoServiceProvider(int, CspParameters)</c>.
+    /// </summary>
     private static bool TryGetKeySizeArgument(
         ImmutableArray<IArgumentOperation> arguments,
         [NotNullWhen(true)] out IOperation? keySize)
     {
         foreach (var argument in arguments)
         {
-            if (argument.Parameter?.Type.SpecialType == SpecialType.System_Int32)
+            if (argument.Parameter?.Type.SpecialType is SpecialType.System_Int32)
             {
                 keySize = argument.Value;
                 return true;
@@ -385,20 +409,10 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        foreach (var argument in arguments)
+        if (HasImportedKeyArgument(arguments))
         {
-            var type = argument.Parameter?.Type;
-            if (type is null)
-            {
-                continue;
-            }
-
-            if (type.SpecialType == SpecialType.System_IntPtr ||
-                (FipsSymbolHelpers.IsInCryptographyNamespace(type) && ImportedKeyTypes.Contains(type.Name)))
-            {
-                Report(context, syntax, ImportedKeySizeMessage(typeName));
-                return;
-            }
+            Report(context, syntax, ImportedKeySizeMessage(typeName));
+            return;
         }
 
         // Assigning KeySize does not reliably resize an RSACryptoServiceProvider key, so only an import, which
@@ -410,12 +424,41 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var message = isCryptoServiceProvider
-            ? $"{typeName} created without an explicit key size uses the platform default, which cannot be verified, and assigning KeySize afterward is not a reliable way to set it; use the constructor that takes a key size of at least {MinRsaBitsText} bits"
-            : isFrameworkFactory
-                ? $"{typeName} created without an explicit key size uses the platform default, which cannot be verified, and on .NET Framework assigning KeySize afterward is not a reliable way to set it; use an overload that takes a key size of at least {MinRsaBitsText} bits"
-                : $"{typeName} created without an explicit key size uses the platform default, which cannot be verified; use an explicit key size of at least {MinRsaBitsText} bits or set KeySize before use";
-        Report(context, syntax, message);
+        Report(context, syntax, DefaultRsaKeyMessage(typeName, isCryptoServiceProvider, isFrameworkFactory));
+    }
+
+    private static bool HasImportedKeyArgument(ImmutableArray<IArgumentOperation> arguments)
+    {
+        foreach (var argument in arguments)
+        {
+            if (argument.Parameter?.Type is { } type && IsImportedKeyType(type))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsImportedKeyType(ITypeSymbol type)
+    {
+        return type.SpecialType is SpecialType.System_IntPtr ||
+            (FipsSymbolHelpers.IsInCryptographyNamespace(type) && ImportedKeyTypes.Contains(type.Name));
+    }
+
+    private static string DefaultRsaKeyMessage(string typeName, bool isCryptoServiceProvider, bool isFrameworkFactory)
+    {
+        if (isCryptoServiceProvider)
+        {
+            return $"{typeName} created without an explicit key size uses the platform default, which cannot be verified, and assigning KeySize afterward is not a reliable way to set it; use the constructor that takes a key size of at least {MinRsaBitsText} bits";
+        }
+
+        if (isFrameworkFactory)
+        {
+            return $"{typeName} created without an explicit key size uses the platform default, which cannot be verified, and on .NET Framework assigning KeySize afterward is not a reliable way to set it; use an overload that takes a key size of at least {MinRsaBitsText} bits";
+        }
+
+        return $"{typeName} created without an explicit key size uses the platform default, which cannot be verified; use an explicit key size of at least {MinRsaBitsText} bits or set KeySize before use";
     }
 
     /// <summary>
@@ -426,34 +469,51 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
     {
         var method = invocation.TargetMethod;
         if (!method.IsStatic ||
-            !((string.Equals(method.Name, "CreateFromName", StringComparison.Ordinal) &&
-               FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "CryptoConfig")) ||
-              (string.Equals(method.Name, "Create", StringComparison.Ordinal) &&
-               (FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "AsymmetricAlgorithm") ||
-                FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "RSA")))) ||
-            method.Parameters.Length == 0 ||
-            method.Parameters[0].Type.SpecialType != SpecialType.System_String ||
+            !IsNameFactory(method) ||
+            method.Parameters.Length is 0 ||
+            method.Parameters[0].Type.SpecialType is not SpecialType.System_String ||
             !FipsSymbolHelpers.TryGetConstant<string>(FipsSymbolHelpers.ArgumentAt(invocation.Arguments, 0)?.Value, out var name))
         {
             return false;
         }
 
-        name = name.Trim();
+        return IsRsaAlgorithmName(name.Trim());
+    }
 
+    private static bool IsNameFactory(IMethodSymbol method)
+    {
+        if (string.Equals(method.Name, "CreateFromName", StringComparison.Ordinal))
+        {
+            return FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "CryptoConfig");
+        }
+
+        return string.Equals(method.Name, "Create", StringComparison.Ordinal) &&
+            (FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "AsymmetricAlgorithm") ||
+             FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "RSA"));
+    }
+
+    private static bool IsRsaAlgorithmName(string name)
+    {
         return string.Equals(name, "RSA", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(name, FipsSymbolHelpers.Cryptography + ".RSA", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(name, FipsSymbolHelpers.Cryptography + ".AsymmetricAlgorithm", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(name, FipsSymbolHelpers.Cryptography + ".RSACryptoServiceProvider", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string ImportedKeySizeMessage(string typeName) =>
-        $"{typeName} key size cannot be verified because the key is imported; policy requires at least {MinRsaBitsText} bits";
+    private static string ImportedKeySizeMessage(string typeName)
+    {
+        return $"{typeName} key size cannot be verified because the key is imported; policy requires at least {MinRsaBitsText} bits";
+    }
 
-    private static string ImportedCurveMessage(string typeName) =>
-        $"{typeName} curve cannot be verified because the key is imported; policy requires P-384 or P-521";
+    private static string ImportedCurveMessage(string typeName)
+    {
+        return $"{typeName} curve cannot be verified because the key is imported; policy requires P-384 or P-521";
+    }
 
-    private static string DefaultCurveMessage(string typeName) =>
-        $"{typeName} created without a curve argument or a key size uses the default P-256 curve; policy requires P-384 or P-521";
+    private static string DefaultCurveMessage(string typeName)
+    {
+        return $"{typeName} created without a curve argument or a key size uses the default P-256 curve; policy requires P-384 or P-521";
+    }
 
     /// <summary>
     ///     Returns true when the object initializer, or the first statement that uses the local receiving the new
@@ -471,13 +531,18 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
 
         // An upcast local (AsymmetricAlgorithm) does not reach the RSA KeySize or import checks, so it stays unresolved.
         return use is not null &&
-            GetFamily(use.Type) == Family.Rsa &&
+            GetFamily(use.Type) is Family.Rsa &&
             ((allowKeySize && FipsSymbolHelpers.IsUnconditionalPropertyAssignment(use, "KeySize", block)) ||
-             (use.Parent is IInvocationOperation invocation &&
-              invocation.Instance == use &&
-              ImportMethods.Contains(invocation.TargetMethod.Name) &&
-              invocation.Parent is IExpressionStatementOperation { Parent: { } parent } &&
-              parent == block));
+             IsImportStatementIn(use, block));
+    }
+
+    private static bool IsImportStatementIn(ILocalReferenceOperation use, IBlockOperation? block)
+    {
+        return use.Parent is IInvocationOperation invocation &&
+            invocation.Instance == use &&
+            ImportMethods.Contains(invocation.TargetMethod.Name) &&
+            invocation.Parent is IExpressionStatementOperation { Parent: { } parent } &&
+            parent == block;
     }
 
     private static void CheckKeySize(
@@ -487,7 +552,7 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         IOperation value,
         SyntaxNode syntax)
     {
-        var minimum = family == Family.EllipticCurve ? MinEllipticCurveBits : MinRsaBits;
+        var minimum = family is Family.EllipticCurve ? MinEllipticCurveBits : MinRsaBits;
 
         if (FipsSymbolHelpers.TryGetResolvedConstant<int>(value, out var bits))
         {
@@ -550,6 +615,11 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         curve = string.Empty;
         var operation = FipsSymbolHelpers.Unwrap(value);
 
+        if (operation is null)
+        {
+            return false;
+        }
+
         // A curve held in a readonly field or an unreassigned local resolves to its initializer.
         if (operation is IFieldReferenceOperation or ILocalReferenceOperation)
         {
@@ -558,41 +628,69 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
                 TryGetCurveName(resolved, out curve, depth + 1);
         }
 
-        // ECCurve.NamedCurves.nistP256
-        if (operation is IPropertyReferenceOperation { Property: { IsStatic: true } property } &&
-            property.ContainingType is { Name: "NamedCurves", ContainingType: { } outer } &&
-            FipsSymbolHelpers.IsCryptographyType(outer, "ECCurve"))
+        return TryGetNamedCurve(operation, out curve) ||
+            TryGetFactoryCurve(operation, out curve) ||
+            TryGetOidCurve(operation, out curve);
+    }
+
+    // ECCurve.NamedCurves.nistP256
+    private static bool TryGetNamedCurve(IOperation operation, out string curve)
+    {
+        curve = string.Empty;
+
+        if (operation is not IPropertyReferenceOperation { Property: { IsStatic: true } property } ||
+            property.ContainingType is not { ContainingType: { } outer } container ||
+            !string.Equals(container.Name, "NamedCurves", StringComparison.Ordinal) ||
+            !FipsSymbolHelpers.IsCryptographyType(outer, "ECCurve"))
         {
-            curve = property.Name;
-            return true;
+            return false;
         }
 
-        // ECCurve.CreateFromFriendlyName("nistP256") and ECCurve.CreateFromValue("1.2.840.10045.3.1.7")
-        if (operation is IInvocationOperation { TargetMethod: { IsStatic: true } method } invocation &&
-            (string.Equals(method.Name, "CreateFromFriendlyName", StringComparison.Ordinal) ||
-             string.Equals(method.Name, "CreateFromValue", StringComparison.Ordinal)) &&
-            FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "ECCurve") &&
-            invocation.Arguments.Length == 1 &&
-            FipsSymbolHelpers.TryGetConstant<string>(invocation.Arguments[0].Value, out var text))
+        curve = property.Name;
+
+        return true;
+    }
+
+    // ECCurve.CreateFromFriendlyName("nistP256") and ECCurve.CreateFromValue("1.2.840.10045.3.1.7")
+    private static bool TryGetFactoryCurve(IOperation operation, out string curve)
+    {
+        curve = string.Empty;
+
+        if (operation is not IInvocationOperation { TargetMethod: { IsStatic: true } method } invocation ||
+            !(string.Equals(method.Name, "CreateFromFriendlyName", StringComparison.Ordinal) ||
+              string.Equals(method.Name, "CreateFromValue", StringComparison.Ordinal)) ||
+            !FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "ECCurve") ||
+            invocation.Arguments.Length is not 1 ||
+            !FipsSymbolHelpers.TryGetConstant<string>(invocation.Arguments[0].Value, out var text))
         {
-            curve = text;
-            return true;
+            return false;
         }
 
-        // ECCurve.CreateFromOid(new Oid("1.2.840.10045.3.1.7"))
-        if (operation is IInvocationOperation { TargetMethod: { IsStatic: true, Name: "CreateFromOid" } oidMethod } oidInvocation &&
-            FipsSymbolHelpers.IsCryptographyType(oidMethod.ContainingType, "ECCurve") &&
-            oidInvocation.Arguments.Length == 1 &&
-            FipsSymbolHelpers.Unwrap(oidInvocation.Arguments[0].Value) is IObjectCreationOperation oid &&
-            FipsSymbolHelpers.IsCryptographyType(oid.Type, "Oid") &&
-            FipsSymbolHelpers.ArgumentAt(oid.Arguments, 0)?.Value is { } oidValue &&
-            FipsSymbolHelpers.TryGetConstant<string>(oidValue, out var oidText))
+        curve = text;
+
+        return true;
+    }
+
+    // ECCurve.CreateFromOid(new Oid("1.2.840.10045.3.1.7"))
+    private static bool TryGetOidCurve(IOperation operation, out string curve)
+    {
+        curve = string.Empty;
+
+        if (operation is not IInvocationOperation { TargetMethod: { IsStatic: true } oidMethod } oidInvocation ||
+            !string.Equals(oidMethod.Name, "CreateFromOid", StringComparison.Ordinal) ||
+            !FipsSymbolHelpers.IsCryptographyType(oidMethod.ContainingType, "ECCurve") ||
+            oidInvocation.Arguments.Length is not 1 ||
+            FipsSymbolHelpers.Unwrap(oidInvocation.Arguments[0].Value) is not IObjectCreationOperation oid ||
+            !FipsSymbolHelpers.IsCryptographyType(oid.Type, "Oid") ||
+            FipsSymbolHelpers.ArgumentAt(oid.Arguments, 0)?.Value is not { } oidValue ||
+            !FipsSymbolHelpers.TryGetConstant<string>(oidValue, out var oidText))
         {
-            curve = oidText;
-            return true;
+            return false;
         }
 
-        return false;
+        curve = oidText;
+
+        return true;
     }
 
     private enum Family
@@ -602,6 +700,8 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         EllipticCurve = 2,
     }
 
-    private static void Report(OperationAnalysisContext context, SyntaxNode syntax, string message) =>
+    private static void Report(OperationAnalysisContext context, SyntaxNode syntax, string message)
+    {
         context.ReportDiagnostic(Diagnostic.Create(Rule, syntax.GetLocation(), message));
+    }
 }

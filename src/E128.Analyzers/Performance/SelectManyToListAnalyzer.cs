@@ -36,7 +36,7 @@ public sealed class SelectManyToListAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var enumerableType = compilationContext.Compilation.GetTypeByMetadataName(EnumerableMetadataName);
             if (enumerableType is null)
@@ -50,61 +50,40 @@ public sealed class SelectManyToListAnalyzer : DiagnosticAnalyzer
         });
     }
 
+    // Returns the SelectMany call when the call has the shape source.SelectMany(x).ToList().
+    private static InvocationExpressionSyntax? GetSelectManyInvocation(InvocationExpressionSyntax toListInvocation)
+    {
+        if (toListInvocation.Expression is not MemberAccessExpressionSyntax toListAccess
+            || !string.Equals(toListAccess.Name.Identifier.Text, "ToList", StringComparison.Ordinal)
+            || toListInvocation.ArgumentList.Arguments.Count is not 0
+            || toListAccess.Expression is not InvocationExpressionSyntax selectManyInvocation
+            || selectManyInvocation.Expression is not MemberAccessExpressionSyntax selectManyAccess)
+        {
+            return null;
+        }
+
+        return string.Equals(selectManyAccess.Name.Identifier.Text, "SelectMany", StringComparison.Ordinal)
+            && selectManyInvocation.ArgumentList.Arguments.Count is 1
+            ? selectManyInvocation
+            : null;
+    }
+
+    private static bool IsEnumerableMethod(
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol enumerableType,
+        SyntaxNodeAnalysisContext context)
+    {
+        return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
+            && SymbolEqualityComparer.Default.Equals(method.ContainingType, enumerableType);
+    }
+
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol enumerableType)
     {
         var toListInvocation = (InvocationExpressionSyntax)context.Node;
 
-        if (toListInvocation.Expression is not MemberAccessExpressionSyntax toListAccess)
-        {
-            return;
-        }
-
-        if (!string.Equals(toListAccess.Name.Identifier.Text, "ToList", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (toListInvocation.ArgumentList.Arguments.Count != 0)
-        {
-            return;
-        }
-
-        if (toListAccess.Expression is not InvocationExpressionSyntax selectManyInvocation)
-        {
-            return;
-        }
-
-        if (selectManyInvocation.Expression is not MemberAccessExpressionSyntax selectManyAccess)
-        {
-            return;
-        }
-
-        if (!string.Equals(selectManyAccess.Name.Identifier.Text, "SelectMany", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (selectManyInvocation.ArgumentList.Arguments.Count != 1)
-        {
-            return;
-        }
-
-        if (context.SemanticModel.GetSymbolInfo(toListInvocation, context.CancellationToken).Symbol is not IMethodSymbol toListSymbol)
-        {
-            return;
-        }
-
-        if (!SymbolEqualityComparer.Default.Equals(toListSymbol.ContainingType, enumerableType))
-        {
-            return;
-        }
-
-        if (context.SemanticModel.GetSymbolInfo(selectManyInvocation, context.CancellationToken).Symbol is not IMethodSymbol selectManySymbol)
-        {
-            return;
-        }
-
-        if (!SymbolEqualityComparer.Default.Equals(selectManySymbol.ContainingType, enumerableType))
+        if (GetSelectManyInvocation(toListInvocation) is not { } selectManyInvocation
+            || !IsEnumerableMethod(toListInvocation, enumerableType, context)
+            || !IsEnumerableMethod(selectManyInvocation, enumerableType, context))
         {
             return;
         }

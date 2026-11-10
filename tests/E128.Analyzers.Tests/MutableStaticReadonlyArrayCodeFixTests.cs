@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class MutableStaticReadonlyArrayCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<MutableStaticReadonlyArrayAnalyzer, MutableStaticReadonlyArrayCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<MutableStaticReadonlyArrayAnalyzer, MutableStaticReadonlyArrayCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

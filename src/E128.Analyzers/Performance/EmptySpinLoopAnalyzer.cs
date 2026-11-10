@@ -45,10 +45,12 @@ public sealed class EmptySpinLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (context.Node is DoStatementSyntax doStatement)
+        if (context.Node is not DoStatementSyntax doStatement)
         {
-            Analyze(context, doStatement.Statement, doStatement.DoKeyword, doStatement.Condition);
+            return;
         }
+
+        Analyze(context, doStatement.Statement, doStatement.DoKeyword, doStatement.Condition);
     }
 
     private static void Analyze(
@@ -74,7 +76,7 @@ public sealed class EmptySpinLoopAnalyzer : DiagnosticAnalyzer
     {
         return body switch
         {
-            BlockSyntax block => block.Statements.Count == 0,
+            BlockSyntax block => block.Statements.Count is 0,
             EmptyStatementSyntax => true,
             _ => false
         };

@@ -71,15 +71,15 @@ public sealed class ChainedStringReplaceAnalyzer : DiagnosticAnalyzer
 
     private static bool IsStringReplaceInvocation(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
-        return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol
-        {
-            Name: "Replace"
-        } method && method.ContainingType?.SpecialType == SpecialType.System_String;
+        return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
+               && string.Equals(method.Name, "Replace", StringComparison.Ordinal)
+               && method.ContainingType?.SpecialType is SpecialType.System_String;
     }
 
     private static bool IsChainedFurtherOutward(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
-        return invocation.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Replace" } outerAccess
+        return invocation.Parent is MemberAccessExpressionSyntax outerAccess
+               && string.Equals(outerAccess.Name.Identifier.ValueText, "Replace", StringComparison.Ordinal)
                && outerAccess.Parent is InvocationExpressionSyntax outerInvocation
                && IsStringReplaceInvocation(context, outerInvocation);
     }
@@ -108,9 +108,11 @@ public sealed class ChainedStringReplaceAnalyzer : DiagnosticAnalyzer
     private static ISymbol? TryGetStringContainsReceiverSymbol(SyntaxNodeAnalysisContext context, ExpressionSyntax condition)
     {
         return condition is InvocationExpressionSyntax containsInvocation
-               && containsInvocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Contains" } containsAccess
-               && context.SemanticModel.GetSymbolInfo(containsInvocation, context.CancellationToken).Symbol is IMethodSymbol { Name: "Contains" } containsMethod
-               && containsMethod.ContainingType?.SpecialType == SpecialType.System_String
+               && containsInvocation.Expression is MemberAccessExpressionSyntax containsAccess
+               && string.Equals(containsAccess.Name.Identifier.ValueText, "Contains", StringComparison.Ordinal)
+               && context.SemanticModel.GetSymbolInfo(containsInvocation, context.CancellationToken).Symbol is IMethodSymbol containsMethod
+               && string.Equals(containsMethod.Name, "Contains", StringComparison.Ordinal)
+               && containsMethod.ContainingType?.SpecialType is SpecialType.System_String
             ? context.SemanticModel.GetSymbolInfo(containsAccess.Expression, context.CancellationToken).Symbol
             : null;
     }

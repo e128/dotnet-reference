@@ -17,6 +17,8 @@ public sealed class ManualBitCountAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128134";
 
+    private const int LoopBodyStatementCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use BitOperations.PopCount instead of a bit-count loop",
@@ -39,7 +41,7 @@ public sealed class ManualBitCountAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             if (start.Compilation.GetTypeByMetadataName("System.Numerics.BitOperations") is not { } bitOperations
                 || !bitOperations.GetMembers("PopCount").Any())
@@ -83,60 +85,67 @@ public sealed class ManualBitCountAnalyzer : DiagnosticAnalyzer
         if (loop.Condition is not BinaryExpressionSyntax condition
             || !condition.IsKind(SyntaxKind.NotEqualsExpression)
             || loop.Statement is not BlockSyntax body
-            || body.Statements.Count != 2)
+            || body.Statements.Count is not LoopBodyStatementCount
+            || !TryReadNotZero(condition, out var conditionName)
+            || !TryMatchAddStatement(body.Statements[0], conditionName, out var count)
+            || !IsShiftRightByOne(body.Statements[1], conditionName))
         {
             return false;
         }
 
-        if (!TryReadNotZero(condition, out var conditionName)
-            || body.Statements[0] is not ExpressionStatementSyntax first
-            || first.Expression is not AssignmentExpressionSyntax add
+        valueName = conditionName;
+        countName = count;
+        return true;
+    }
+
+    private static bool TryMatchAddStatement(StatementSyntax statement, string valueName, out string countName)
+    {
+        countName = string.Empty;
+
+        if (statement is not ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax add }
             || !add.IsKind(SyntaxKind.AddAssignmentExpression)
             || add.Left is not IdentifierNameSyntax countIdentifier
             || add.Right is not BinaryExpressionSyntax bitwiseAnd
             || !bitwiseAnd.IsKind(SyntaxKind.BitwiseAndExpression)
             || bitwiseAnd.Left is not IdentifierNameSyntax masked
             || !IsLiteral(bitwiseAnd.Right, 1)
-            || body.Statements[1] is not ExpressionStatementSyntax second
-            || second.Expression is not AssignmentExpressionSyntax shift
-            || !shift.IsKind(SyntaxKind.RightShiftAssignmentExpression)
-            || shift.Left is not IdentifierNameSyntax shifted
-            || !IsLiteral(shift.Right, 1))
+            || !string.Equals(valueName, masked.Identifier.ValueText, StringComparison.Ordinal))
         {
             return false;
         }
 
-        if (!string.Equals(conditionName, masked.Identifier.ValueText, StringComparison.Ordinal)
-            || !string.Equals(conditionName, shifted.Identifier.ValueText, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        valueName = conditionName;
         countName = countIdentifier.Identifier.ValueText;
+
         return true;
+    }
+
+    private static bool IsShiftRightByOne(StatementSyntax statement, string valueName)
+    {
+        return statement is ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax shift }
+            && shift.IsKind(SyntaxKind.RightShiftAssignmentExpression)
+            && shift.Left is IdentifierNameSyntax shifted
+            && IsLiteral(shift.Right, 1)
+            && string.Equals(valueName, shifted.Identifier.ValueText, StringComparison.Ordinal);
     }
 
     private static bool TryReadNotZero(BinaryExpressionSyntax condition, out string name)
     {
         name = string.Empty;
 
-        var left = condition.Left as IdentifierNameSyntax;
-        var right = condition.Right as IdentifierNameSyntax;
-
-        if (left is not null && IsLiteral(condition.Right, 0))
+        if (condition.Left is IdentifierNameSyntax left && IsLiteral(condition.Right, 0))
         {
             name = left.Identifier.ValueText;
             return true;
         }
 
-        if (right is not null && IsLiteral(condition.Left, 0))
+        if (condition.Right is not IdentifierNameSyntax right || !IsLiteral(condition.Left, 0))
         {
-            name = right.Identifier.ValueText;
-            return true;
+            return false;
         }
 
-        return false;
+        name = right.Identifier.ValueText;
+
+        return true;
     }
 
     private static bool IsLiteral(ExpressionSyntax expression, int expected)

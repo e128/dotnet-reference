@@ -47,7 +47,7 @@ public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
         MemberAccessExpressionSyntax memberAccess,
         InvocationExpressionSyntax invocation)
     {
-        if (invocation.ArgumentList.Arguments.Count != 0 || invocation.Parent is not ExpressionStatementSyntax statement)
+        if (invocation.ArgumentList.Arguments.Count is not 0 || invocation.Parent is not ExpressionStatementSyntax statement)
         {
             return;
         }
@@ -69,7 +69,7 @@ public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
     {
         var arguments = invocation.ArgumentList.Arguments;
         if (arguments.Count > 1
-            || (arguments.Count == 1 && !IsCancellationTokenNoneArgument(arguments[0].Expression))
+            || (arguments.Count is 1 && !IsCancellationTokenNoneArgument(arguments[0].Expression))
             || invocation.Parent is not AwaitExpressionSyntax awaitExpression
             || awaitExpression.Parent is not ExpressionStatementSyntax statement)
         {
@@ -87,34 +87,41 @@ public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
 
     private static bool IsCancellationTokenNoneArgument(ExpressionSyntax expression)
     {
-        return expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "None" };
+        return expression is MemberAccessExpressionSyntax memberAccess
+            && string.Equals(memberAccess.Name.Identifier.ValueText, "None", StringComparison.Ordinal);
     }
 
     private static StatementSyntax BuildSyncReplacement(string receiverText)
     {
-        return SyntaxFactory.ParseStatement($$"""
-            if (!{{receiverText}}.WaitForExit(TimeSpan.FromSeconds(30)))
-            {
-                {{receiverText}}.Kill();
-            }
-            """);
+        string[] lines =
+        [
+            $"if (!{receiverText}.WaitForExit(TimeSpan.FromSeconds(30)))",
+            "{",
+            $"    {receiverText}.Kill();",
+            "}"
+        ];
+
+        return SyntaxFactory.ParseStatement(string.Join("\n", lines));
     }
 
     private static StatementSyntax BuildAsyncReplacement(string receiverText)
     {
-        return SyntaxFactory.ParseStatement($$"""
-            {
-                using var __timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                try
-                {
-                    await {{receiverText}}.WaitForExitAsync(__timeoutCts.Token);
-                }
-                catch (OperationCanceledException) when (__timeoutCts.IsCancellationRequested)
-                {
-                    {{receiverText}}.Kill(true);
-                }
-            }
-            """);
+        string[] lines =
+        [
+            "{",
+            "    using var __timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));",
+            "    try",
+            "    {",
+            $"        await {receiverText}.WaitForExitAsync(__timeoutCts.Token);",
+            "    }",
+            "    catch (OperationCanceledException) when (__timeoutCts.IsCancellationRequested)",
+            "    {",
+            $"        {receiverText}.Kill(true);",
+            "    }",
+            "}"
+        ];
+
+        return SyntaxFactory.ParseStatement(string.Join("\n", lines));
     }
 
     private static async Task<Document> ReplaceStatementAsync(

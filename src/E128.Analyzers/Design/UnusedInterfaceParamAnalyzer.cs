@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -58,7 +59,7 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
         }
 
         var syntax = GetMethodSyntax(method, context.CancellationToken);
-        if (syntax is null || (syntax.Body is null && syntax.ExpressionBody is null))
+        if (!HasBody(syntax))
         {
             return;
         }
@@ -76,9 +77,7 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
         {
             // An underscore-prefixed name is the discard convention the code fix would enforce on
             // itself, so the parameter needs no report and no fix.
-            if (IsCancellationToken(param)
-                || param.Name.StartsWith("_", StringComparison.Ordinal)
-                || referencedNames.Contains(param.Name))
+            if (IsExemptParameter(param, referencedNames))
             {
                 continue;
             }
@@ -89,6 +88,18 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(Diagnostic.Create(Rule, paramSyntax.GetLocation(), param.Name));
             }
         }
+    }
+
+    private static bool HasBody([NotNullWhen(true)] MethodDeclarationSyntax? syntax)
+    {
+        return syntax is not null && (syntax.Body is not null || syntax.ExpressionBody is not null);
+    }
+
+    private static bool IsExemptParameter(IParameterSymbol param, HashSet<string> referencedNames)
+    {
+        return IsCancellationToken(param)
+               || param.Name.StartsWith("_", StringComparison.Ordinal)
+               || referencedNames.Contains(param.Name);
     }
 
     private static HashSet<string> CollectReferencedNames(MethodDeclarationSyntax method)

@@ -25,13 +25,13 @@ public sealed class MemoryMarshalNonBlittableCodeFixProvider : E128CodeFixProvid
             {
                 Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax generic },
             } invocation
-            || invocation.ArgumentList.Arguments.Count != 1)
+            || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return Task.CompletedTask;
         }
 
         if (!string.Equals(generic.Identifier.ValueText, "Read", StringComparison.Ordinal)
-            || generic.TypeArgumentList.Arguments.Count != 1
+            || generic.TypeArgumentList.Arguments.Count is not 1
             || !string.Equals(generic.TypeArgumentList.Arguments[0].ToString(), "bool", StringComparison.Ordinal))
         {
             return Task.CompletedTask;

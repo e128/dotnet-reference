@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ImmutableArrayCreateToArrayCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ImmutableArrayCreateToArrayAnalyzer, ImmutableArrayCreateToArrayCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ImmutableArrayCreateToArrayAnalyzer, ImmutableArrayCreateToArrayCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

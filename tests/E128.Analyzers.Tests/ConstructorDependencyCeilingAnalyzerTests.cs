@@ -27,7 +27,7 @@ public sealed class ConstructorDependencyCeilingAnalyzerTests
                 ("/.editorconfig", "is_global = true\ne128_max_ctor_dependencies = " + ceiling));
         }
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

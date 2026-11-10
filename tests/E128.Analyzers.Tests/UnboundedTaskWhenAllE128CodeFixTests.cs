@@ -30,6 +30,8 @@ public sealed class UnboundedTaskWhenAllE128CodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code) =>
-        CodeFixTestRunner.NoFixAsync<UnboundedTaskWhenAllAnalyzer, UnboundedTaskWhenAllCodeFixProvider>(code);
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return CodeFixTestRunner.NoFixAsync<UnboundedTaskWhenAllAnalyzer, UnboundedTaskWhenAllCodeFixProvider>(code);
+    }
 }

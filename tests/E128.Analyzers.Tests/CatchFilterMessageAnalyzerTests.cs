@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class CatchFilterMessageAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

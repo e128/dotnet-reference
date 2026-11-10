@@ -24,7 +24,7 @@ public sealed class UnsafeAsToBitCastCodeFixProvider : E128CodeFixProviderBase
             {
                 Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax generic } memberAccess,
             } invocation
-            || invocation.ArgumentList.Arguments.Count != 1)
+            || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return Task.CompletedTask;
         }

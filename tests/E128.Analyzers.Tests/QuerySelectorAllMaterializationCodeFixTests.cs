@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class QuerySelectorAllMaterializationCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<QuerySelectorAllMaterializationAnalyzer, QuerySelectorAllMaterializationCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<QuerySelectorAllMaterializationAnalyzer, QuerySelectorAllMaterializationCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

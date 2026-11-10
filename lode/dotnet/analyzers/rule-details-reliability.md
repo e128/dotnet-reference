@@ -1,5 +1,5 @@
 # Reliability Rule Details
-*Updated: 2026-11-07T14:35:25Z*
+*Updated: 2026-11-09T23:44:15Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -241,4 +241,4 @@ No code fix. The guard belongs to the caller.
   resource lifetime and shared state
 - [rule-details.md](rule-details.md): the remaining rule details
 - [pooled-buffer-rules.md](pooled-buffer-rules.md): buffer ownership rules
-- [redundant-rules.md](redundant-rules.md): rules disabled because another analyzer covers the shape
+- [redundant-rules.md](redundant-rules.md): rules that another analyzer also covers

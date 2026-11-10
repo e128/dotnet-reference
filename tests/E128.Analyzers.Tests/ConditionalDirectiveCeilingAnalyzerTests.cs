@@ -21,7 +21,7 @@ public sealed class ConditionalDirectiveCeilingAnalyzerTests
             test.TestState.AnalyzerConfigFiles.Add(("/.globalconfig", "is_global = true\n" + config));
         }
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

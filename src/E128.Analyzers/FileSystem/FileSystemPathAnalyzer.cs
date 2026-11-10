@@ -84,13 +84,14 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         var stringParameters = new List<ParameterSyntax>();
         foreach (var param in paramList.Parameters)
         {
-            if (param.Type is PredefinedTypeSyntax { Keyword.ValueText: "string" })
+            if (param.Type is PredefinedTypeSyntax predefined
+                && string.Equals(predefined.Keyword.ValueText, "string", StringComparison.Ordinal))
             {
                 stringParameters.Add(param);
             }
         }
 
-        if (stringParameters.Count == 0)
+        if (stringParameters.Count is 0)
         {
             return;
         }
@@ -99,7 +100,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         // (interface and abstract methods, empty-body stubs, record primary constructors).
         // A non-empty body uses Strategy 2, so a display-only method with a path-like
         // parameter name is not flagged on the name alone.
-        if (body is null || body.Statements.Count == 0)
+        if (body is null || body.Statements.Count is 0)
         {
             ReportNamePatternMatches(context, stringParameters);
             return;
@@ -132,13 +133,16 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             case MethodDeclarationSyntax method:
                 body = method.Body;
                 return method.ParameterList;
+
             case ConstructorDeclarationSyntax ctor:
                 body = ctor.Body;
                 return ctor.ParameterList;
+
             case RecordDeclarationSyntax { ParameterList: { } recordParams }:
                 // A primary constructor has no body to inspect, so only the name pattern applies.
                 body = null;
                 return recordParams;
+
             default:
                 body = null;
                 return null;
@@ -179,21 +183,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
             foreach (var variable in statement.Declaration.Variables)
             {
-                var localName = variable.Identifier.ValueText;
-                var rhs = variable.Initializer?.Value;
-
-                if (rhs is IdentifierNameSyntax id)
-                {
-                    AddRoot(roots, localName, id.Identifier.ValueText);
-                }
-                else if (rhs is InvocationExpressionSyntax init
-                         && FileSystemPathHelpers.IsPathMethodCall(init)
-                         && init.ArgumentList.Arguments.Count > 0
-                         && init.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax source)
-                {
-                    AddRoot(roots, localName, source.Identifier.ValueText);
-                    pathCalls.Add((localName, source.Identifier.ValueText));
-                }
+                CollectVariableRoots(variable, roots, pathCalls);
             }
         }
 
@@ -213,11 +203,34 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         return roots;
     }
 
+    private static void CollectVariableRoots(
+        VariableDeclaratorSyntax variable,
+        Dictionary<string, HashSet<string>> roots,
+        List<(string Local, string Source)> pathCalls)
+    {
+        var localName = variable.Identifier.ValueText;
+        var rhs = variable.Initializer?.Value;
+
+        if (rhs is IdentifierNameSyntax id)
+        {
+            AddRoot(roots, localName, id.Identifier.ValueText);
+        }
+        else if (rhs is InvocationExpressionSyntax init
+                 && FileSystemPathHelpers.IsPathMethodCall(init)
+                 && init.ArgumentList.Arguments.Count > 0
+                 && init.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax source)
+        {
+            AddRoot(roots, localName, source.Identifier.ValueText);
+            pathCalls.Add((localName, source.Identifier.ValueText));
+        }
+    }
+
     private static void AddRoot(Dictionary<string, HashSet<string>> roots, string local, string root)
     {
         if (!roots.TryGetValue(local, out var set))
         {
-            roots[local] = set = new HashSet<string>(StringComparer.Ordinal);
+            set = new HashSet<string>(StringComparer.Ordinal);
+            roots[local] = set;
         }
 
         set.Add(root);
@@ -302,11 +315,14 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         var isSystemIo = symbolInfo.Symbol is IMethodSymbol methodSymbol
                          && Namespaces.Equals(methodSymbol.ContainingType?.ContainingNamespace, "System.IO");
 
-        return isSystemIo
-            ? info.Suggestion == SuggestedType.FileInfo
-                ? (argId.Identifier.ValueText, "file path", "FileInfo")
-                : (argId.Identifier.ValueText, "directory path", "DirectoryInfo")
-            : null;
+        return isSystemIo ? ToSite(argId.Identifier.ValueText, info.Suggestion) : null;
+    }
+
+    private static (string ArgName, string Description, string Type) ToSite(string argName, SuggestedType suggestion)
+    {
+        return suggestion is SuggestedType.FileInfo
+            ? (argName, "file path", "FileInfo")
+            : (argName, "directory path", "DirectoryInfo");
     }
 
     private static (string ArgName, string Description, string Type)? GetCreationSite(
@@ -324,7 +340,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         }
 
         var argList = creation.ArgumentList;
-        if (argList is null || argList.Arguments.Count == 0)
+        if (argList is null || argList.Arguments.Count is 0)
         {
             return null;
         }
@@ -339,11 +355,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         var isSystemIo = symbolInfo.Symbol is IMethodSymbol ctorSymbol
                          && Namespaces.Equals(ctorSymbol.ContainingType?.ContainingNamespace, "System.IO");
 
-        return isSystemIo
-            ? suggestion == SuggestedType.FileInfo
-                ? (argId.Identifier.ValueText, "file path", "FileInfo")
-                : (argId.Identifier.ValueText, "directory path", "DirectoryInfo")
-            : null;
+        return isSystemIo ? ToSite(argId.Identifier.ValueText, suggestion) : null;
     }
 
     private static void AnalyzeOptionCreation(SyntaxNodeAnalysisContext context)
@@ -382,8 +394,16 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
     private static ImmutableDictionary<string, string?> PropertiesForDescription(string description)
     {
-        return string.Equals(description, "file path", StringComparison.Ordinal) ? FileInfoProperties
-            : string.Equals(description, "directory path", StringComparison.Ordinal) ? DirectoryInfoProperties
-            : AmbiguousProperties;
+        if (string.Equals(description, "file path", StringComparison.Ordinal))
+        {
+            return FileInfoProperties;
+        }
+
+        if (string.Equals(description, "directory path", StringComparison.Ordinal))
+        {
+            return DirectoryInfoProperties;
+        }
+
+        return AmbiguousProperties;
     }
 }

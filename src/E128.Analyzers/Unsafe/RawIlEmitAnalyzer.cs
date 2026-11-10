@@ -39,7 +39,7 @@ public sealed class RawIlEmitAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var ilGenerator = start.Compilation.GetTypeByMetadataName("System.Reflection.Emit.ILGenerator");
             if (ilGenerator is null)

@@ -440,7 +440,7 @@ public sealed class ComplexityCeilingE128CodeFixTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

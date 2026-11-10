@@ -13,9 +13,24 @@ namespace E128.Analyzers.Security;
 ///     E128202: Reports decoded JWT claims used to create an authenticated identity for a request.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
+public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128202";
+
+    private static readonly ImmutableHashSet<string> ClaimReaderNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "TryGetClaim",
+        "TryGetPayloadValue",
+        "TryGetHeaderValue");
+
+    private static readonly ImmutableHashSet<string> AddMethodNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "AddClaims",
+        "AddClaim",
+        "AddIdentity",
+        "AddIdentities",
+        "Add",
+        "AddRange");
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -37,7 +52,7 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var types = new KnownTypes(start.Compilation);
             if ((types.JwtHandlers.IsEmpty && types.JsonHandlers.IsEmpty)
@@ -74,144 +89,7 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private sealed class KnownTypes
-    {
-        internal KnownTypes(Compilation compilation)
-        {
-            JwtHandlers = MetadataTypes.Find(compilation, "System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler");
-            JwtTokens = MetadataTypes.Find(compilation, "System.IdentityModel.Tokens.Jwt.JwtSecurityToken");
-            JsonHandlers = MetadataTypes.Find(compilation, "Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler");
-            JsonTokens = MetadataTypes.Find(compilation, "Microsoft.IdentityModel.JsonWebTokens.JsonWebToken");
-            Identities = MetadataTypes.Find(compilation, "System.Security.Claims.ClaimsIdentity");
-            Principals = MetadataTypes.Find(compilation, "System.Security.Claims.ClaimsPrincipal");
-            HttpContexts = MetadataTypes.Find(compilation, "Microsoft.AspNetCore.Http.HttpContext");
-            Tickets = MetadataTypes.Find(compilation, "Microsoft.AspNetCore.Authentication.AuthenticationTicket");
-        }
-
-        internal ImmutableArray<INamedTypeSymbol> JwtHandlers { get; }
-        internal ImmutableArray<INamedTypeSymbol> JwtTokens { get; }
-        internal ImmutableArray<INamedTypeSymbol> JsonHandlers { get; }
-        internal ImmutableArray<INamedTypeSymbol> JsonTokens { get; }
-        internal ImmutableArray<INamedTypeSymbol> Identities { get; }
-        internal ImmutableArray<INamedTypeSymbol> Principals { get; }
-        internal ImmutableArray<INamedTypeSymbol> HttpContexts { get; }
-        internal ImmutableArray<INamedTypeSymbol> Tickets { get; }
-
-        internal bool IsHandler(ITypeSymbol? type)
-        {
-            return Is(JwtHandlers, type) || Is(JsonHandlers, type);
-        }
-
-        internal bool IsToken(ITypeSymbol? type)
-        {
-            return Is(JwtTokens, type) || Is(JsonTokens, type);
-        }
-    }
-
-    /// <summary>
-    ///     The state of one sink lookup: the decoded token expressions found so far, and the visited nodes
-    ///     that stop a cycle through locals or lambda parameters.
-    /// </summary>
-    private sealed class Search
-    {
-        private readonly Dictionary<ILocalSymbol, HashSet<(int Position, ValueKind Kind)>> _visited = new(SymbolEqualityComparer.Default);
-        private readonly HashSet<IOperation> _lambdas = [];
-
-        internal List<IOperation> Tokens { get; } = [];
-
-        internal bool Visit(ILocalSymbol local, ValueKind kind, int position)
-        {
-            if (!_visited.TryGetValue(local, out var positions))
-            {
-                positions = [];
-                _visited[local] = positions;
-            }
-
-            return positions.Add((position, kind));
-        }
-
-        internal bool VisitLambda(IOperation lambda)
-        {
-            return _lambdas.Add(lambda);
-        }
-    }
-
-    private sealed class LocalFunctionCalls : OperationWalker
-    {
-        private readonly HashSet<IMethodSymbol> _roots = new(SymbolEqualityComparer.Default);
-        private readonly Dictionary<IMethodSymbol, List<IMethodSymbol>> _calls = new(SymbolEqualityComparer.Default);
-        private IMethodSymbol? _current;
-
-        public override void VisitLocalFunction(ILocalFunctionOperation operation)
-        {
-            var previous = _current;
-            _current = operation.Symbol;
-            base.VisitLocalFunction(operation);
-            _current = previous;
-        }
-
-        public override void VisitInvocation(IInvocationOperation operation)
-        {
-            Record(operation.TargetMethod);
-            base.VisitInvocation(operation);
-        }
-
-        public override void VisitMethodReference(IMethodReferenceOperation operation)
-        {
-            Record(operation.Method);
-            base.VisitMethodReference(operation);
-        }
-
-        public override void VisitNameOf(INameOfOperation operation)
-        {
-            // A nameof expression does not call or expose the function.
-        }
-
-        private void Record(IMethodSymbol method)
-        {
-            if (method.MethodKind != MethodKind.LocalFunction)
-            {
-                return;
-            }
-
-            method = method.OriginalDefinition;
-            if (_current is null)
-            {
-                _roots.Add(method);
-                return;
-            }
-
-            if (!_calls.TryGetValue(_current.OriginalDefinition, out var calls))
-            {
-                calls = [];
-                _calls[_current.OriginalDefinition] = calls;
-            }
-
-            calls.Add(method);
-        }
-
-        internal HashSet<IMethodSymbol> Reachable()
-        {
-            var reachable = new HashSet<IMethodSymbol>(_roots, SymbolEqualityComparer.Default);
-            var pending = new Queue<IMethodSymbol>(_roots);
-            while (pending.Count > 0)
-            {
-                if (!_calls.TryGetValue(pending.Dequeue(), out var calls))
-                {
-                    continue;
-                }
-
-                foreach (var called in calls.Where(reachable.Add))
-                {
-                    pending.Enqueue(called);
-                }
-            }
-
-            return reachable;
-        }
-    }
-
-    private sealed class BodyAnalysis(KnownTypes types, HashSet<IMethodSymbol> localFunctions, BodyAnalysis? parent = null, SyntaxNode? origin = null) : OperationWalker
+    private sealed partial class BodyAnalysis(KnownTypes types, HashSet<IMethodSymbol> localFunctions, BodyAnalysis? parent = null, SyntaxNode? origin = null) : OperationWalker
     {
         private readonly HashSet<ILocalSymbol> _declared = new(SymbolEqualityComparer.Default);
         private readonly Dictionary<ILocalSymbol, List<(IOperation Value, SyntaxNode Syntax)>> _definitions = new(SymbolEqualityComparer.Default);
@@ -231,10 +109,12 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
         public override void VisitLocalFunction(ILocalFunctionOperation operation)
         {
-            if (localFunctions.Contains(operation.Symbol.OriginalDefinition))
+            if (!localFunctions.Contains(operation.Symbol.OriginalDefinition))
             {
-                VisitNested(operation.Body, operation.Syntax);
+                return;
             }
+
+            VisitNested(operation.Body, operation.Syntax);
         }
 
         public override void VisitVariableDeclarator(IVariableDeclaratorOperation operation)
@@ -268,7 +148,7 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
         public override void VisitSwitch(ISwitchOperation operation)
         {
-            foreach (var clause in operation.Cases.SelectMany(@case => @case.Clauses).OfType<IPatternCaseClauseOperation>())
+            foreach (var clause in operation.Cases.SelectMany(static @case => @case.Clauses).OfType<IPatternCaseClauseOperation>())
             {
                 RecordPatterns(clause.Pattern, operation.Value, clause.Syntax);
             }
@@ -434,12 +314,12 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
         private bool IsClaimReader(IInvocationOperation invocation)
         {
             return types.IsToken(invocation.TargetMethod.ContainingType)
-                   && invocation.TargetMethod.Name is "TryGetClaim" or "TryGetPayloadValue" or "TryGetHeaderValue";
+                   && ClaimReaderNames.Contains(invocation.TargetMethod.Name);
         }
 
         private void RecordClaimOutput(IInvocationOperation invocation)
         {
-            foreach (var argument in invocation.Arguments.Where(argument => argument.Parameter?.RefKind == RefKind.Out))
+            foreach (var argument in invocation.Arguments.Where(static argument => argument.Parameter?.RefKind is RefKind.Out))
             {
                 var value = Unwrap(argument.Value);
                 if (value is IDeclarationExpressionOperation declaration)
@@ -522,15 +402,15 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            if (kind == ValueKind.Principal)
+            if (kind is ValueKind.Principal)
             {
                 CollectPrincipal(value, anchor, search);
             }
-            else if (kind == ValueKind.Identity)
+            else if (kind is ValueKind.Identity)
             {
                 CollectIdentity(value, anchor, search);
             }
-            else if (kind == ValueKind.Claims)
+            else if (kind is ValueKind.Claims)
             {
                 CollectClaims(value, anchor, search);
             }
@@ -542,12 +422,14 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
         private void CollectPrincipal(IOperation value, SyntaxNode anchor, Search search)
         {
-            if (value is IObjectCreationOperation creation && Is(types.Principals, creation.Type))
+            if (value is not IObjectCreationOperation creation || !Is(types.Principals, creation.Type))
             {
-                foreach (var argument in creation.Arguments)
-                {
-                    Collect(argument.Value, ValueKind.Identity, anchor, search);
-                }
+                return;
+            }
+
+            foreach (var argument in creation.Arguments)
+            {
+                Collect(argument.Value, ValueKind.Identity, anchor, search);
             }
         }
 
@@ -599,14 +481,16 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                 IInvocationOperation invocation when IsDecoder(invocation.TargetMethod)
                     => Argument(invocation.Arguments, "token"),
                 IObjectCreationOperation { Arguments.Length: 1 } creation
-                    when types.IsToken(creation.Type) && creation.Arguments[0].Value.Type?.SpecialType == SpecialType.System_String
+                    when types.IsToken(creation.Type) && creation.Arguments[0].Value.Type?.SpecialType is SpecialType.System_String
                     => creation.Arguments[0].Value,
                 _ => null
             };
-            if (token is not null)
+            if (token is null)
             {
-                search.Tokens.Add(token);
+                return;
             }
+
+            search.Tokens.Add(token);
         }
 
         private void CollectLocal(ILocalSymbol local, ValueKind kind, SyntaxNode anchor, Search search)
@@ -678,20 +562,15 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
         private void CollectAdded(ILocalSymbol local, ValueKind kind, List<(IOperation Value, SyntaxNode Syntax)> definitions, SyntaxNode anchor, Search search)
         {
             var isIdentity = Is(types.Identities, local.Type);
-            if (kind == ValueKind.Token
-                || (kind == ValueKind.Identity && isIdentity
-                    && !definitions.Exists(definition => Unwrap(definition.Value) is IObjectCreationOperation creation
-                                                         && IsAuthenticatedIdentity(creation))))
+            if (SkipsAddedClaims(kind, isIdentity, definitions))
             {
                 return;
             }
 
             // An identity is stored by reference, so a claim added after the sink still reaches the request.
-            var addedKind = kind == ValueKind.Principal || (kind == ValueKind.Identity && !isIdentity)
-                ? ValueKind.Identity
-                : ValueKind.Claims;
+            var addedKind = AddedKindFor(kind, isIdentity);
             // An identity copies a claim collection when it is built, so only an earlier add reaches it.
-            var copied = kind == ValueKind.Claims && !isIdentity;
+            var copied = kind is ValueKind.Claims && !isIdentity;
             foreach (var (target, value, syntax, owner) in _added)
             {
                 if (SymbolEqualityComparer.Default.Equals(target, local)
@@ -701,6 +580,21 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                     owner.Collect(value, addedKind, syntax, search);
                 }
             }
+        }
+
+        private bool SkipsAddedClaims(ValueKind kind, bool isIdentity, List<(IOperation Value, SyntaxNode Syntax)> definitions)
+        {
+            return kind is ValueKind.Token
+                   || (kind is ValueKind.Identity && isIdentity
+                       && !definitions.Exists(definition => Unwrap(definition.Value) is IObjectCreationOperation creation
+                                                            && IsAuthenticatedIdentity(creation)));
+        }
+
+        private static ValueKind AddedKindFor(ValueKind kind, bool isIdentity)
+        {
+            return kind is ValueKind.Principal || (kind is ValueKind.Identity && !isIdentity)
+                ? ValueKind.Identity
+                : ValueKind.Claims;
         }
 
         /// <summary>
@@ -718,7 +612,7 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                 // A pattern variable is scoped to its own arm, so it is live wherever its input is read.
                 || definition.Syntax is CasePatternSwitchLabelSyntax or SwitchExpressionArmSyntax or IsPatternExpressionSyntax);
             // The walker visits a for incrementor after the body, so order by source position.
-            before.Sort((left, right) => left.Syntax.SpanStart.CompareTo(right.Syntax.SpanStart));
+            before.Sort(static (left, right) => left.Syntax.SpanStart.CompareTo(right.Syntax.SpanStart));
             var start = before.FindLastIndex(definition =>
                 definition.Syntax.SpanStart < anchor.SpanStart && Kills(definition.Syntax, anchor));
             var live = start <= 0 ? before : before.GetRange(start, before.Count - start);
@@ -800,11 +694,11 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
             }
 
             var loop = use.Ancestors()
-                .TakeWhile(node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+                .TakeWhile(static node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
                 .FirstOrDefault(node => IsLoop(node) && node.Span.Contains(read.Span));
             return loop is not null
                    && !read.Ancestors().TakeWhile(node => node != loop)
-                       .Any(node => node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+                       .Any(static node => node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
                 ? read
                 : use;
         }
@@ -821,7 +715,7 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
             return lambda?.Parent is IDelegateCreationOperation { Parent: IArgumentOperation { Parent: IInvocationOperation invocation } argument }
                    && search.VisitLambda(lambda)
-                ? invocation.Arguments.Where(other => other != argument).Select(other => other.Value).Prepend(invocation.Instance)
+                ? invocation.Arguments.Where(other => other != argument).Select(static other => other.Value).Prepend(invocation.Instance)
                 : [];
         }
 
@@ -865,9 +759,9 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
         private bool ValidatedBefore(IOperation token, SyntaxNode sink)
         {
-            var boundary = sink.Ancestors().FirstOrDefault(node => node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax);
+            var boundary = sink.Ancestors().FirstOrDefault(static node => node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax);
             for (var statement = sink.FirstAncestorOrSelf<StatementSyntax>();
-                 statement is not null && (boundary is null || (statement != boundary && boundary.Span.Contains(statement.Span)));
+                 statement is not null && IsInsideBoundary(statement, boundary);
                  statement = statement.Parent?.FirstAncestorOrSelf<StatementSyntax>())
             {
                 if (statement.Parent is not BlockSyntax block)
@@ -875,42 +769,74 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
-                if (block.DescendantNodes(node => node is not AnonymousFunctionExpressionSyntax and not LocalFunctionStatementSyntax)
-                    .Any(node => node is LabeledStatementSyntax or GotoStatementSyntax))
+                var scan = ScanBlockBefore(block, statement, token, sink);
+                if (scan is BlockScan.Continue)
                 {
-                    return false;
+                    continue;
                 }
 
-                foreach (var previous in block.Statements.TakeWhile(candidate => candidate != statement))
-                {
-                    if (previous is LabeledStatementSyntax or GotoStatementSyntax)
-                    {
-                        return false;
-                    }
-
-                    if (ValidatesToken(previous, token)
-                        && !WrittenBetween(token, previous.Span.End, sink.SpanStart)
-                        && !RewrittenInLoop(token, sink, previous.SpanStart))
-                    {
-                        return true;
-                    }
-                }
+                return scan is BlockScan.Validated;
             }
 
             return false;
+        }
+
+        private static bool IsInsideBoundary(StatementSyntax statement, SyntaxNode? boundary)
+        {
+            return boundary is null || (statement != boundary && boundary.Span.Contains(statement.Span));
+        }
+
+        private BlockScan ScanBlockBefore(BlockSyntax block, StatementSyntax statement, IOperation token, SyntaxNode sink)
+        {
+            if (block.DescendantNodes(static node => node is not AnonymousFunctionExpressionSyntax and not LocalFunctionStatementSyntax)
+                .Any(static node => node is LabeledStatementSyntax or GotoStatementSyntax))
+            {
+                return BlockScan.Abort;
+            }
+
+            foreach (var previous in block.Statements.TakeWhile(candidate => candidate != statement))
+            {
+                if (previous is LabeledStatementSyntax or GotoStatementSyntax)
+                {
+                    return BlockScan.Abort;
+                }
+
+                if (ValidatesToken(previous, token)
+                    && !WrittenBetween(token, previous.Span.End, sink.SpanStart)
+                    && !RewrittenInLoop(token, sink, previous.SpanStart))
+                {
+                    return BlockScan.Validated;
+                }
+            }
+
+            return BlockScan.Continue;
         }
 
         private bool ValidatesToken(StatementSyntax statement, IOperation token)
         {
             if (statement is TryStatementSyntax guarded)
             {
-                return guarded.Catches.All(handler => SyntaxExits(handler.Block))
-                       && guarded.Block.Statements.Any(previous => ValidatesToken(previous, token)
-                           && !WrittenBetween(token, previous.Span.End, guarded.Span.End))
-                       && !guarded.Block.DescendantNodes().Any(node => node is GotoStatementSyntax or LabeledStatementSyntax);
+                return ValidatesGuardedTry(guarded, token);
             }
 
-            var expression = statement switch
+            var expression = ValidationExpression(statement);
+
+            return _validations.Exists(validation => expression == validation.Syntax
+                                                     && ValidatesSymbol(Argument(validation.Arguments, "token"), token, statement))
+                   || _guards.Exists(entry => entry.Syntax == statement && ResultValidates(entry.Result, token, statement));
+        }
+
+        private bool ValidatesGuardedTry(TryStatementSyntax guarded, IOperation token)
+        {
+            return guarded.Catches.All(static handler => SyntaxExits(handler.Block))
+                   && guarded.Block.Statements.Any(previous => ValidatesToken(previous, token)
+                       && !WrittenBetween(token, previous.Span.End, guarded.Span.End))
+                   && !guarded.Block.DescendantNodes().Any(static node => node is GotoStatementSyntax or LabeledStatementSyntax);
+        }
+
+        private static ExpressionSyntax? ValidationExpression(StatementSyntax statement)
+        {
+            return statement switch
             {
                 ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax { RawKind: (int)Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleAssignmentExpression } assignment } => assignment.Right,
                 ExpressionStatementSyntax plain => plain.Expression,
@@ -918,24 +844,6 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                     => declaration.Declaration.Variables[0].Initializer?.Value,
                 _ => null
             };
-            foreach (var validation in _validations)
-            {
-                if (expression == validation.Syntax
-                    && ValidatesSymbol(Argument(validation.Arguments, "token"), token, statement))
-                {
-                    return true;
-                }
-            }
-
-            foreach (var (guard, result) in _guards)
-            {
-                if (guard == statement && ResultValidates(result, token, statement))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -962,9 +870,9 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
         private bool ResultValidates(ILocalSymbol result, IOperation token, SyntaxNode use)
         {
             return !_declared.Contains(result)
-                ? parent?.ResultValidates(result, token, use) == true
+                ? parent?.ResultValidates(result, token, use) is true
                 : _definitions.TryGetValue(result, out var definitions)
-                  && definitions.Count == 1
+                  && definitions.Count is 1
                   && !WrittenBetween(token, definitions[0].Syntax.SpanStart, use.SpanStart)
                   && ValidatesSymbol(ValidatedToken(result), token, definitions[0].Syntax);
         }
@@ -981,22 +889,33 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                 return parent?.ValidatedToken(result);
             }
 
-            if (!_definitions.TryGetValue(result, out var definitions) || definitions.Count != 1)
+            if (!_definitions.TryGetValue(result, out var definitions) || definitions.Count is not 1)
             {
                 return null;
             }
 
-            var call = Unwrap(definitions[0].Value);
+            return ValidationTokenArgument(UnwrapAwaited(definitions[0].Value));
+        }
+
+        private static IOperation UnwrapAwaited(IOperation value)
+        {
+            var call = Unwrap(value);
             if (call is IAwaitOperation awaited)
             {
                 call = Unwrap(awaited.Operation);
             }
 
-            if (call is IInvocationOperation { TargetMethod.Name: "ConfigureAwait", Instance: { } task })
+            if (call is IInvocationOperation { Instance: { } task } configure
+                && string.Equals(configure.TargetMethod.Name, "ConfigureAwait", StringComparison.Ordinal))
             {
                 call = Unwrap(task);
             }
 
+            return call;
+        }
+
+        private IOperation? ValidationTokenArgument(IOperation call)
+        {
             return call is IInvocationOperation invocation
                    && types.IsHandler(invocation.TargetMethod.ContainingType)
                    && (string.Equals(invocation.TargetMethod.Name, "ValidateTokenAsync", StringComparison.Ordinal)
@@ -1044,14 +963,16 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
             {
                 return _definitions.TryGetValue(local.Local, out var definitions)
                     ? definitions.Exists(definition => AuthenticatedIdentity(definition.Value, visited))
-                    : parent?.AuthenticatedIdentity(value, visited) == true;
+                    : parent?.AuthenticatedIdentity(value, visited) is true;
             }
 
-            if (value is not IObjectCreationOperation creation || !Is(types.Identities, creation.Type))
-            {
-                return false;
-            }
+            return value is IObjectCreationOperation creation
+                   && Is(types.Identities, creation.Type)
+                   && CreationAuthenticates(creation, visited);
+        }
 
+        private bool CreationAuthenticates(IObjectCreationOperation creation, HashSet<ILocalSymbol> visited)
+        {
             var type = Argument(creation.Arguments, "authenticationType") ?? Argument(creation.Arguments, "type");
             return type is not null
                 ? type.ConstantValue is not { HasValue: true } constant || constant.Value is string { Length: > 0 }
@@ -1075,232 +996,12 @@ public sealed class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
             return false;
         }
-
-        private void VisitNested(IOperation? body, SyntaxNode syntax)
-        {
-            var nested = new BodyAnalysis(types, localFunctions, this, syntax);
-            nested.Visit(body);
-            _nestedBodies.Add(nested);
-            MergePositions(_opaque, nested._opaque);
-            _added.AddRange(nested._added);
-            MergePositions(_writes, nested._writes);
-        }
-
-        private void AddDefinition(ILocalSymbol local, IOperation value, SyntaxNode syntax)
-        {
-            if (!_definitions.TryGetValue(local, out var definitions))
-            {
-                definitions = [];
-                _definitions[local] = definitions;
-            }
-
-            definitions.Add((value, syntax));
-        }
-
-        private void RecordWrite(IOperation target, int position)
-        {
-            if (StorageSymbol(target) is { } symbol)
-            {
-                AddWrite(symbol, position);
-            }
-        }
-
-        private void AddWrite(ISymbol symbol, int position)
-        {
-            AddPosition(_writes, symbol, position);
-        }
-
-        private static void AddPosition(Dictionary<ISymbol, List<int>> writes, ISymbol symbol, int position)
-        {
-            if (!writes.TryGetValue(symbol, out var positions))
-            {
-                positions = [];
-                writes[symbol] = positions;
-            }
-
-            positions.Add(position);
-        }
-
-        private static void MergePositions(Dictionary<ISymbol, List<int>> target, Dictionary<ISymbol, List<int>> source)
-        {
-            foreach (var pair in source)
-            {
-                foreach (var position in pair.Value)
-                {
-                    AddPosition(target, pair.Key, position);
-                }
-            }
-        }
-
-        private bool OpaqueBefore(ISymbol symbol, int position)
-        {
-            return _opaque.TryGetValue(symbol, out var positions) && positions.Exists(write => write < position);
-        }
-
-        private void MarkOpaque(IOperation target, int position)
-        {
-            if (StorageSymbol(target) is { } symbol)
-            {
-                AddPosition(_opaque, symbol, position);
-            }
-        }
-
-        private void MarkOpaqueWrite(IOperation target, SyntaxNode syntax)
-        {
-            RecordWrite(target, syntax.SpanStart);
-            MarkOpaque(target, syntax.SpanStart);
-        }
-
-        private static IOperation? ReceiverOf(IOperation? instance)
-        {
-            if (instance is not IConditionalAccessInstanceOperation)
-            {
-                return instance;
-            }
-
-            var current = instance.Parent;
-            while (current is not null and not IConditionalAccessOperation)
-            {
-                current = current.Parent;
-            }
-
-            return (current as IConditionalAccessOperation)?.Operation;
-        }
-
-        private static bool IsAddMethod(string name)
-        {
-            return name is "AddClaims" or "AddClaim" or "AddIdentity" or "AddIdentities" or "Add" or "AddRange";
-        }
-
-        private static IEnumerable<ILocalSymbol> PassedResults(IOperation condition)
-        {
-            condition = Unwrap(condition);
-            if (condition is IBinaryOperation { OperatorKind: BinaryOperatorKind.ConditionalAnd } both)
-            {
-                return PassedResults(both.LeftOperand).Concat(PassedResults(both.RightOperand));
-            }
-
-            var passed = condition is IBinaryOperation
-            {
-                OperatorKind: BinaryOperatorKind.Equals,
-                RightOperand.ConstantValue: { HasValue: true, Value: true }
-            } equals
-                ? equals.LeftOperand
-                : condition;
-            return ValidResult(passed) is { } result ? [result] : [];
-        }
-
-        private static ILocalSymbol? ValidResult(IOperation operation)
-        {
-            return operation is IPropertyReferenceOperation { Instance: ILocalReferenceOperation local } property
-                   && string.Equals(property.Property.Name, "IsValid", StringComparison.Ordinal)
-                ? local.Local
-                : null;
-        }
-
-        private static ILocalSymbol? FailedResult(IOperation condition)
-        {
-            var failed = Unwrap(condition) switch
-            {
-                IUnaryOperation { OperatorKind: UnaryOperatorKind.Not } not => not.Operand,
-                IBinaryOperation
-                {
-                    OperatorKind: BinaryOperatorKind.Equals,
-                    RightOperand.ConstantValue: { HasValue: true, Value: false }
-                } equals => equals.LeftOperand,
-                _ => null
-            };
-            return failed is null ? null : ValidResult(failed);
-        }
-
-        private static bool Exits(IOperation operation)
-        {
-            return operation switch
-            {
-                IReturnOperation { Kind: OperationKind.Return or OperationKind.YieldBreak } => true,
-                IThrowOperation or IExpressionStatementOperation { Operation: IThrowOperation } => true,
-                IBlockOperation { Operations.Length: > 0 } block => Exits(block.Operations[block.Operations.Length - 1]),
-                _ => false
-            };
-        }
-
-        private static IOperation? Argument(ImmutableArray<IArgumentOperation> arguments, string name)
-        {
-            foreach (var argument in arguments)
-            {
-                if (string.Equals(argument.Parameter?.Name, name, StringComparison.Ordinal))
-                {
-                    return argument.Value;
-                }
-            }
-
-            return null;
-        }
-
-        private static ISymbol? StorageSymbol(IOperation? operation)
-        {
-            return operation is null ? null : Unwrap(operation) switch
-            {
-                ILocalReferenceOperation local => local.Local,
-                IParameterReferenceOperation parameter => parameter.Parameter,
-                IFieldReferenceOperation field => field.Field,
-                IPropertyReferenceOperation property when IsStableProperty(property.Property) => property.Property,
-                _ => null
-            };
-        }
-
-        private static bool IsStableProperty(IPropertySymbol property)
-        {
-            return !property.IsIndexer && property.DeclaringSyntaxReferences.Any(reference =>
-                reference.GetSyntax() is PropertyDeclarationSyntax { ExpressionBody: null } declaration
-                && declaration.AccessorList?.Accessors.Any(accessor =>
-                    accessor.RawKind == (int)Microsoft.CodeAnalysis.CSharp.SyntaxKind.GetAccessorDeclaration
-                    && accessor.Body is null && accessor.ExpressionBody is null) == true);
-        }
-
-        private static bool SameStorage(IOperation? left, IOperation? right)
-        {
-            if (left is null || right is null)
-            {
-                return left is null && right is null;
-            }
-
-            left = Unwrap(left);
-            right = Unwrap(right);
-            return left is IInstanceReferenceOperation leftThis && right is IInstanceReferenceOperation rightThis
-                ? leftThis.ReferenceKind == rightThis.ReferenceKind
-                  && SymbolEqualityComparer.Default.Equals(leftThis.Type, rightThis.Type)
-                : StorageSymbol(left) is { } symbol
-                  && SymbolEqualityComparer.Default.Equals(symbol, StorageSymbol(right))
-                  && SameStorage(StorageReceiver(left), StorageReceiver(right));
-        }
-
-        private static IOperation? StorageReceiver(IOperation operation)
-        {
-            return operation switch
-            {
-                IFieldReferenceOperation field => field.Instance,
-                IPropertyReferenceOperation property => property.Instance,
-                _ => null
-            };
-        }
-
-        private static IOperation Unwrap(IOperation operation)
-        {
-            while (operation is IConversionOperation { OperatorMethod: null } conversion)
-            {
-                operation = conversion.Operand;
-            }
-
-            return operation;
-        }
     }
 
-    private enum ValueKind
+    private enum BlockScan
     {
-        Principal = 0,
-        Identity = 1,
-        Claims = 2,
-        Token = 3
+        Continue = 0,
+        Validated = 1,
+        Abort = 2
     }
 }

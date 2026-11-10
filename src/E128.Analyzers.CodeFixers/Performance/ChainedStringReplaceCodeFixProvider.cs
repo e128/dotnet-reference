@@ -44,7 +44,34 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
         receiverName = string.Empty;
         collapseChar = default;
 
-        if (whileStatement.Condition is not InvocationExpressionSyntax
+        if (!TryGetContainsCondition(whileStatement.Condition, out var conditionReceiver, out var searchLiteral)
+            || !TryGetReplaceLiterals(
+                whileStatement.Statement, conditionReceiver, out var replaceSearchLiteral, out var replacementLiteral))
+        {
+            return false;
+        }
+
+        if (!string.Equals(searchLiteral, replaceSearchLiteral, StringComparison.Ordinal)
+            || replacementLiteral.Length is not 1
+            || !string.Equals(searchLiteral, replacementLiteral + replacementLiteral, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        receiverName = conditionReceiver;
+        collapseChar = replacementLiteral[0];
+        return true;
+    }
+
+    private static bool TryGetContainsCondition(
+        ExpressionSyntax condition,
+        out string receiver,
+        out string searchLiteral)
+    {
+        receiver = string.Empty;
+        searchLiteral = string.Empty;
+
+        if (condition is not InvocationExpressionSyntax
             {
                 Expression: MemberAccessExpressionSyntax
                 {
@@ -52,14 +79,28 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
                     Expression: IdentifierNameSyntax conditionReceiver
                 },
                 ArgumentList.Arguments: { Count: > 0 } containsArgs
-            } || containsArgs[0].Expression is not LiteralExpressionSyntax { Token.ValueText: var searchLiteral })
+            } || containsArgs[0].Expression is not LiteralExpressionSyntax { Token.ValueText: var literal })
         {
             return false;
         }
 
-        if (FindReplaceAssignment(whileStatement.Statement) is not { } assignment
+        receiver = conditionReceiver.Identifier.ValueText;
+        searchLiteral = literal;
+        return true;
+    }
+
+    private static bool TryGetReplaceLiterals(
+        StatementSyntax body,
+        string receiver,
+        out string searchLiteral,
+        out string replacementLiteral)
+    {
+        searchLiteral = string.Empty;
+        replacementLiteral = string.Empty;
+
+        if (FindReplaceAssignment(body) is not { } assignment
             || assignment.Left is not IdentifierNameSyntax assignmentTarget
-            || !string.Equals(assignmentTarget.Identifier.ValueText, conditionReceiver.Identifier.ValueText, StringComparison.Ordinal)
+            || !string.Equals(assignmentTarget.Identifier.ValueText, receiver, StringComparison.Ordinal)
             || assignment.Right is not InvocationExpressionSyntax
             {
                 Expression: MemberAccessExpressionSyntax
@@ -69,22 +110,15 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
                 },
                 ArgumentList.Arguments: { Count: > 1 } replaceArgs
             }
-            || !string.Equals(replaceReceiver.Identifier.ValueText, conditionReceiver.Identifier.ValueText, StringComparison.Ordinal)
-            || replaceArgs[0].Expression is not LiteralExpressionSyntax { Token.ValueText: var replaceSearchLiteral }
-            || replaceArgs[1].Expression is not LiteralExpressionSyntax { Token.ValueText: var replacementLiteral })
+            || !string.Equals(replaceReceiver.Identifier.ValueText, receiver, StringComparison.Ordinal)
+            || replaceArgs[0].Expression is not LiteralExpressionSyntax { Token.ValueText: var search }
+            || replaceArgs[1].Expression is not LiteralExpressionSyntax { Token.ValueText: var replacement })
         {
             return false;
         }
 
-        if (!string.Equals(searchLiteral, replaceSearchLiteral, StringComparison.Ordinal)
-            || replacementLiteral.Length != 1
-            || !string.Equals(searchLiteral, replacementLiteral + replacementLiteral, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        receiverName = conditionReceiver.Identifier.ValueText;
-        collapseChar = replacementLiteral[0];
+        searchLiteral = search;
+        replacementLiteral = replacement;
         return true;
     }
 
@@ -99,6 +133,38 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
         }
 
         return null;
+    }
+
+    private static string BuildCollapseBlock(string receiverName, string charLiteral)
+    {
+        string[] lines =
+        [
+            "{",
+            $"    var __buffer = new char[{receiverName}.Length];",
+            "    var __pos = 0;",
+            "    var __collapsing = false;",
+            $"    foreach (var __c in {receiverName})",
+            "    {",
+            $"        if (__c == {charLiteral})",
+            "        {",
+            "            if (!__collapsing)",
+            "            {",
+            "                __buffer[__pos++] = __c;",
+            "                __collapsing = true;",
+            "            }",
+            "        }",
+            "        else",
+            "        {",
+            "            __buffer[__pos++] = __c;",
+            "            __collapsing = false;",
+            "        }",
+            "    }",
+            string.Empty,
+            $"    {receiverName} = new string(__buffer, 0, __pos);",
+            "}"
+        ];
+
+        return string.Join("\n", lines);
     }
 
     private static async Task<Document> RewriteAsSinglePassAsync(
@@ -117,31 +183,7 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
         // The collapse character is a runtime value. FormatLiteral puts the quotes and the escapes
         // back, so a newline or a quote stays a valid character literal.
         var charLiteral = SymbolDisplay.FormatLiteral(collapseChar, quote: true);
-        var replacement = SyntaxFactory.ParseStatement($$"""
-            {
-                var __buffer = new char[{{receiverName}}.Length];
-                var __pos = 0;
-                var __collapsing = false;
-                foreach (var __c in {{receiverName}})
-                {
-                    if (__c == {{charLiteral}})
-                    {
-                        if (!__collapsing)
-                        {
-                            __buffer[__pos++] = __c;
-                            __collapsing = true;
-                        }
-                    }
-                    else
-                    {
-                        __buffer[__pos++] = __c;
-                        __collapsing = false;
-                    }
-                }
-
-                {{receiverName}} = new string(__buffer, 0, __pos);
-            }
-            """)
+        var replacement = SyntaxFactory.ParseStatement(BuildCollapseBlock(receiverName, charLiteral))
             .WithLeadingTrivia(whileStatement.GetLeadingTrivia())
             .WithTrailingTrivia(whileStatement.GetTrailingTrivia())
             .WithAdditionalAnnotations(Formatter.Annotation);

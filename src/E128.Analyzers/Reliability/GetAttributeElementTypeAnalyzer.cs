@@ -68,13 +68,15 @@ public sealed class GetAttributeElementTypeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!HrefElements.Contains(elementType))
+        if (HrefElements.Contains(elementType))
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                invocation.GetLocation(),
-                elementType));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            invocation.GetLocation(),
+            elementType));
     }
 
     private static bool IsGetAttributeHref(InvocationExpressionSyntax invocation)
@@ -91,7 +93,7 @@ public sealed class GetAttributeElementTypeAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (invocation.ArgumentList.Arguments.Count != 1)
+        if (invocation.ArgumentList.Arguments.Count is not 1)
         {
             return false;
         }
@@ -106,30 +108,7 @@ public sealed class GetAttributeElementTypeAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        ExpressionSyntax? receiver = null;
-
-        switch (getAttributeCall.Expression)
-        {
-            case MemberAccessExpressionSyntax memberAccess:
-                receiver = memberAccess.Expression;
-                break;
-            case MemberBindingExpressionSyntax:
-                if (getAttributeCall.Parent is ConditionalAccessExpressionSyntax condAccess)
-                {
-                    receiver = condAccess.Expression;
-                }
-
-                break;
-            default:
-                return null;
-        }
-
-        if (receiver is null)
-        {
-            return null;
-        }
-
-        if (receiver is not IdentifierNameSyntax identifier)
+        if (GetReceiver(getAttributeCall) is not IdentifierNameSyntax identifier)
         {
             return null;
         }
@@ -142,22 +121,39 @@ public sealed class GetAttributeElementTypeAnalyzer : DiagnosticAnalyzer
 
         foreach (var syntaxRef in local.DeclaringSyntaxReferences)
         {
-            var declNode = syntaxRef.GetSyntax(cancellationToken);
-            if (declNode is VariableDeclaratorSyntax declarator
-                && declarator.Initializer?.Value is InvocationExpressionSyntax initInvocation)
+            var initInvocation = GetInitializerInvocation(syntaxRef.GetSyntax(cancellationToken));
+            if (initInvocation is not null)
             {
                 return ExtractSelectorFromInvocation(initInvocation);
-            }
-
-            if (declNode is VariableDeclaratorSyntax declarator2
-                && declarator2.Initializer?.Value is ConditionalAccessExpressionSyntax condAccess
-                && condAccess.WhenNotNull is InvocationExpressionSyntax condInvocation)
-            {
-                return ExtractSelectorFromInvocation(condInvocation);
             }
         }
 
         return null;
+    }
+
+    private static ExpressionSyntax? GetReceiver(InvocationExpressionSyntax getAttributeCall)
+    {
+        return getAttributeCall.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Expression,
+            MemberBindingExpressionSyntax => (getAttributeCall.Parent as ConditionalAccessExpressionSyntax)?.Expression,
+            _ => null
+        };
+    }
+
+    private static InvocationExpressionSyntax? GetInitializerInvocation(SyntaxNode declNode)
+    {
+        if (declNode is not VariableDeclaratorSyntax declarator)
+        {
+            return null;
+        }
+
+        return declarator.Initializer?.Value switch
+        {
+            InvocationExpressionSyntax initInvocation => initInvocation,
+            ConditionalAccessExpressionSyntax { WhenNotNull: InvocationExpressionSyntax condInvocation } => condInvocation,
+            _ => null
+        };
     }
 
     private static string? ExtractSelectorFromInvocation(InvocationExpressionSyntax invocation)
@@ -176,7 +172,7 @@ public sealed class GetAttributeElementTypeAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        if (invocation.ArgumentList.Arguments.Count != 1)
+        if (invocation.ArgumentList.Arguments.Count is not 1)
         {
             return null;
         }

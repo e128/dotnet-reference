@@ -84,7 +84,7 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : E128CodeFi
         foreach (var member in typeDecl.Members)
         {
             if (member is MethodDeclarationSyntax method
-                && method.ParameterList.Parameters.Count == 0
+                && method.ParameterList.Parameters.Count is 0
                 && string.Equals(method.Identifier.ValueText, "Dispose", StringComparison.Ordinal))
             {
                 return true;

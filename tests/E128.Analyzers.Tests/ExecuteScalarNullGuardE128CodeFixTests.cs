@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ExecuteScalarNullGuardE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ExecuteScalarNullGuardAnalyzer, ExecuteScalarNullGuardCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ExecuteScalarNullGuardAnalyzer, ExecuteScalarNullGuardCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -142,6 +144,8 @@ public sealed class ExecuteScalarNullGuardE128CodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code) =>
-        CodeFixTestRunner.NoFixAsync<ExecuteScalarNullGuardAnalyzer, ExecuteScalarNullGuardCodeFixProvider>(code);
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return CodeFixTestRunner.NoFixAsync<ExecuteScalarNullGuardAnalyzer, ExecuteScalarNullGuardCodeFixProvider>(code);
+    }
 }

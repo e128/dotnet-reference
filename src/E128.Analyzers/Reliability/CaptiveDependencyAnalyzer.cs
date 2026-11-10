@@ -29,6 +29,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128154";
 
+    private const int ServiceAndImplementationArity = 2;
+
     private const string DbContextMetadataName = "Microsoft.EntityFrameworkCore.DbContext";
 
     private const string ServiceLifetimeMetadataName = "Microsoft.Extensions.DependencyInjection.ServiceLifetime";
@@ -118,7 +120,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         var lifetime = GetLifetime(methodName);
         var isDbContextRegistration = efCore.IsDbContextRegistration(methodName);
 
-        if (lifetime == Lifetime.None && !isDbContextRegistration)
+        if (lifetime is Lifetime.None && !isDbContextRegistration)
         {
             return;
         }
@@ -145,7 +147,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         var method = operation.TargetMethod;
         var typeOfRegistrations = ReadTypeOfArguments(operation, out var hasFactoryOrInstance);
 
-        if (lifetime == Lifetime.Scoped)
+        if (lifetime is Lifetime.Scoped)
         {
             CollectScopedServices(method, typeOfRegistrations, scopedServices);
 
@@ -266,7 +268,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         foreach (var argument in operation.Arguments)
         {
             if (argument.Parameter is not { } parameter
-                || argument.ArgumentKind == ArgumentKind.DefaultValue
+                || argument.ArgumentKind is ArgumentKind.DefaultValue
                 || !SymbolEqualityComparer.Default.Equals(parameter.Type, efCore.ServiceLifetime))
             {
                 continue;
@@ -353,12 +355,14 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         var implementation = GetSingletonImplementation(method);
 
-        if (implementation is not null)
+        if (implementation is null)
         {
-            singletonCandidates.Add(new SingletonCandidate(
-                GetRegistrationLocation(invocation),
-                implementation));
+            return;
         }
+
+        singletonCandidates.Add(new SingletonCandidate(
+            GetRegistrationLocation(invocation),
+            implementation));
     }
 
     private static Lifetime GetLifetime(string methodName)
@@ -370,11 +374,18 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
 
         var name = methodName.StartsWith("Try", StringComparison.Ordinal) ? methodName.Substring(3) : methodName;
-        name = name.StartsWith("AddKeyed", StringComparison.Ordinal)
-            ? name.Substring("AddKeyed".Length)
-            : name.StartsWith("Add", StringComparison.Ordinal)
-                ? name.Substring("Add".Length)
-                : string.Empty;
+        if (name.StartsWith("AddKeyed", StringComparison.Ordinal))
+        {
+            name = name.Substring("AddKeyed".Length);
+        }
+        else if (name.StartsWith("Add", StringComparison.Ordinal))
+        {
+            name = name.Substring("Add".Length);
+        }
+        else
+        {
+            name = string.Empty;
+        }
 
         return name switch
         {
@@ -394,8 +405,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             var parameter = argument.Parameter;
 
             if (parameter is null
-                || argument.ArgumentKind == ArgumentKind.DefaultValue
-                || (operation.TargetMethod.IsExtensionMethod && parameter.Ordinal == 0)
+                || argument.ArgumentKind is ArgumentKind.DefaultValue
+                || (operation.TargetMethod.IsExtensionMethod && parameter.Ordinal is 0)
                 || string.Equals(parameter.Name, "serviceKey", StringComparison.Ordinal))
             {
                 continue;
@@ -477,7 +488,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         // implementation only when T is a concrete class, because an interface has no constructor.
         return method.TypeArguments.Length switch
         {
-            2 => method.TypeArguments[1] as INamedTypeSymbol,
+            ServiceAndImplementationArity => method.TypeArguments[1] as INamedTypeSymbol,
             1 when method.TypeArguments[0] is INamedTypeSymbol { TypeKind: TypeKind.Class } service
                    && !service.IsAbstract => service,
             _ => null
@@ -511,7 +522,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             scoped.Add(type);
         }
 
-        if (scoped.Count == 0)
+        if (scoped.Count is 0)
         {
             return;
         }

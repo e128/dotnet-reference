@@ -29,7 +29,7 @@ public sealed class Utf8GetBytesLiteralAnalyzerTests
                 : solution;
         });
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

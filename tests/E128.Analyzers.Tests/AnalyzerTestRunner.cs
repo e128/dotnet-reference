@@ -36,7 +36,7 @@ internal static class AnalyzerTestRunner
 
         if (allowUnsafe)
         {
-            test.SolutionTransforms.Add((solution, projectId) =>
+            test.SolutionTransforms.Add(static (solution, projectId) =>
                 solution.GetProject(projectId)?.CompilationOptions is CSharpCompilationOptions options
                     ? solution.WithProjectCompilationOptions(projectId, options.WithAllowUnsafe(true))
                     : solution);
@@ -52,6 +52,6 @@ internal static class AnalyzerTestRunner
             test.ExpectedDiagnostics.AddRange(expected);
         }
 
-        return test.RunAsync();
+        return test.RunAsync(Xunit.TestContext.Current.CancellationToken);
     }
 }

@@ -57,15 +57,15 @@ public sealed class StackAllocSafetyCodeFixProvider : E128CodeFixProviderBase
     // In a loop the pointer is not the problem, so a Span would leave the diagnostic in place.
     private static bool IsInsideLoop(SyntaxNode node)
     {
-        return node.Ancestors().TakeWhile(ancestor => ancestor is not MemberDeclarationSyntax)
-            .Any(ancestor => ancestor is ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax);
+        return node.Ancestors().TakeWhile(static ancestor => ancestor is not MemberDeclarationSyntax)
+            .Any(static ancestor => ancestor is ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax);
     }
 
     private static bool IsIndexOnly(string variableName, SyntaxNode stackAlloc)
     {
         var scope = stackAlloc
             .Ancestors()
-            .FirstOrDefault(ancestor => ancestor is BlockSyntax or ArrowExpressionClauseSyntax);
+            .FirstOrDefault(static ancestor => ancestor is BlockSyntax or ArrowExpressionClauseSyntax);
 
         if (scope is null)
         {

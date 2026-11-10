@@ -9,8 +9,10 @@ namespace E128.Analyzers.Security;
 /// </summary>
 internal static class FipsForbiddenTypes
 {
-    /// <summary>Types whose use the policy blocks outright.</summary>
-    public static readonly ImmutableHashSet<string> Algorithms = ImmutableHashSet.Create(
+    /// <summary>
+    ///     Types whose use the policy blocks outright.
+    /// </summary>
+    internal static readonly ImmutableHashSet<string> Algorithms = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "MD5",
         "MD5CryptoServiceProvider",
@@ -39,12 +41,14 @@ internal static class FipsForbiddenTypes
     ///     <c lang="csharp">ChaCha20Poly1305</c> is not in the approved algorithm list.
     ///     <c lang="csharp">PasswordDeriveBytes</c> implements the obsolete PBKDF1 and defaults to SHA-1.
     /// </summary>
-    public static readonly ImmutableHashSet<string> Excluded = ImmutableHashSet.Create(
+    internal static readonly ImmutableHashSet<string> Excluded = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "ChaCha20Poly1305",
         "PasswordDeriveBytes");
 
-    /// <summary>Every type E128071 reports.</summary>
-    public static readonly ImmutableHashSet<string> All =
+    /// <summary>
+    ///     Every type E128071 reports.
+    /// </summary>
+    internal static readonly ImmutableHashSet<string> All =
         Algorithms.Union(Excluded).WithComparer(StringComparer.Ordinal);
 }

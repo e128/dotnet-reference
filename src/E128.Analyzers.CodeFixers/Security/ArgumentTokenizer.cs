@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -67,7 +70,7 @@ internal static class ArgumentTokenizer
 
         FinalizeToken(currentAtoms, tokens);
 
-        return insideQuotes || tokens.Count == 0 ? null : tokens;
+        return insideQuotes || tokens.Count is 0 ? null : tokens;
     }
 
     private static void AppendText(string text, List<StringPart> currentAtoms, List<ExpressionSyntax> tokens, ref bool insideQuotes)
@@ -97,7 +100,7 @@ internal static class ArgumentTokenizer
 
     private static void FlushBuffer(StringBuilder buffer, List<StringPart> currentAtoms)
     {
-        if (buffer.Length == 0)
+        if (buffer.Length is 0)
         {
             return;
         }
@@ -108,7 +111,7 @@ internal static class ArgumentTokenizer
 
     private static void FinalizeToken(List<StringPart> currentAtoms, List<ExpressionSyntax> tokens)
     {
-        if (currentAtoms.Count == 0)
+        if (currentAtoms.Count is 0)
         {
             return;
         }
@@ -119,14 +122,14 @@ internal static class ArgumentTokenizer
 
     private static ExpressionSyntax BuildTokenExpression(List<StringPart> atoms)
     {
-        if (atoms.Count == 1 && atoms[0].Hole is { } singleHole)
+        if (atoms.Count is 1 && atoms[0].Hole is { } singleHole)
         {
             return singleHole;
         }
 
-        if (atoms.TrueForAll(atom => atom.Hole is null))
+        if (atoms.TrueForAll(static atom => atom.Hole is null))
         {
-            var text = string.Concat(atoms.Select(atom => atom.Text));
+            var text = string.Concat(atoms.Select(static atom => atom.Text));
             return SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(text));
         }
 
@@ -149,16 +152,52 @@ internal static class ArgumentTokenizer
             SyntaxFactory.Token(default, SyntaxKind.InterpolatedStringTextToken, text, text, default));
     }
 
-    private readonly struct StringPart
+    private readonly struct StringPart : IEquatable<StringPart>
     {
-        public StringPart(string? text, ExpressionSyntax? hole)
+        private const int HashMultiplier = 31;
+
+        internal StringPart(string? text, ExpressionSyntax? hole)
         {
             Text = text;
             Hole = hole;
         }
 
-        public string? Text { get; }
+        internal string? Text { get; }
 
-        public ExpressionSyntax? Hole { get; }
+        internal ExpressionSyntax? Hole { get; }
+
+        public static bool operator ==(StringPart left, StringPart right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(StringPart left, StringPart right)
+        {
+            return !left.Equals(right);
+        }
+
+        public bool Equals(StringPart other)
+        {
+            return string.Equals(Text, other.Text, StringComparison.Ordinal)
+                   && ReferenceEquals(Hole, other.Hole);
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is StringPart other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            var textHash = Text is null ? 0 : StringComparer.Ordinal.GetHashCode(Text);
+            var holeHash = Hole is null ? 0 : RuntimeHelpers.GetHashCode(Hole);
+
+            return unchecked((textHash * HashMultiplier) + holeHash);
+        }
+
+        public override string ToString()
+        {
+            return Text ?? Hole?.ToString() ?? string.Empty;
+        }
     }
 }

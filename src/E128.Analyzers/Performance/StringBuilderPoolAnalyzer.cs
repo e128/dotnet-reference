@@ -40,7 +40,7 @@ public sealed class StringBuilderPoolAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             // The rule names an API from the Pug package. Without that type the suggestion has no
             // remedy, so the analyzer must not run at all.

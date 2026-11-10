@@ -109,7 +109,7 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        if (arguments.Count != 1)
+        if (arguments.Count is not 1)
         {
             return false;
         }

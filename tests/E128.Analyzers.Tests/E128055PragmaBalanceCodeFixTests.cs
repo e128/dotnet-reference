@@ -21,7 +21,7 @@ public sealed class E128055PragmaBalanceCodeFixTests
             // unbalanced #pragma warning disable E128055 during its suppression phase.
             TestBehaviors = TestBehaviors.SkipSuppressionCheck
         };
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

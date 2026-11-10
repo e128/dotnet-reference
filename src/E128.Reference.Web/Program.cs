@@ -25,15 +25,15 @@ builder.Services.ConfigureHttpJsonOptions(static options =>
 
 var app = builder.Build();
 
-app.MapGet("/", (Greeter greeter) => greeter.Greet());
+app.MapGet("/", static (Greeter greeter) => greeter.Greet());
 
-app.MapPost("/greetings", async (GreetingRequest request, IGreetingService service, CancellationToken cancellationToken) =>
+app.MapPost("/greetings", static async (GreetingRequest request, IGreetingService service, CancellationToken cancellationToken) =>
 {
     var greeting = await service.GreetAsync(request, cancellationToken);
-    return Results.Created("/greetings", greeting);
+    return Results.Created(new Uri("/greetings", UriKind.Relative), greeting);
 });
 
-app.MapGet("/greetings", async (IGreetingRepository repository, int? count, CancellationToken cancellationToken) =>
+app.MapGet("/greetings", static async (IGreetingRepository repository, int? count, CancellationToken cancellationToken) =>
 {
     var greetings = await repository.GetRecentAsync(count ?? 10, cancellationToken);
     return Results.Ok(greetings);

@@ -60,25 +60,31 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (IInvocationOperation)context.Operation;
         var method = invocation.TargetMethod;
-        if (method.IsStatic && FipsTypeClassifier.OneShotMembers.Contains(method.Name))
+        if (!method.IsStatic || !FipsTypeClassifier.OneShotMembers.Contains(method.Name))
         {
-            InspectType(context, method.ContainingType, invocation.Syntax);
+            return;
         }
+
+        InspectType(context, method.ContainingType, invocation.Syntax);
     }
 
-    /// <summary>Reports a method group that names a static factory or one-shot helper of a cipher type.</summary>
+    /// <summary>
+    ///     Reports a method group that names a static factory or one-shot helper of a cipher type.
+    /// </summary>
     private static void AnalyzeMethodReference(OperationAnalysisContext context)
     {
         var reference = (IMethodReferenceOperation)context.Operation;
-        if (reference.Method.IsStatic && FipsTypeClassifier.OneShotMembers.Contains(reference.Method.Name))
+        if (!reference.Method.IsStatic || !FipsTypeClassifier.OneShotMembers.Contains(reference.Method.Name))
         {
-            InspectType(context, reference.Method.ContainingType, reference.Syntax);
+            return;
         }
+
+        InspectType(context, reference.Method.ContainingType, reference.Syntax);
     }
 
     private static void InspectType(OperationAnalysisContext context, ITypeSymbol? type, SyntaxNode syntax)
     {
-        if (type is null || FipsTypeClassifier.GetVerdict(context.Compilation, type) != TypeVerdict.ForbiddenName)
+        if (type is null || FipsTypeClassifier.GetVerdict(context.Compilation, type) is not TypeVerdict.ForbiddenName)
         {
             return;
         }

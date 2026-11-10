@@ -64,10 +64,12 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
     private static void Analyze(SyntaxNodeAnalysisContext context)
     {
         var reason = Classify(context.Node, context.SemanticModel, context.CancellationToken);
-        if (reason is not null)
+        if (reason is null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, context.Node.GetLocation(), reason));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, context.Node.GetLocation(), reason));
     }
 
     private static string? Classify(SyntaxNode node, SemanticModel model, System.Threading.CancellationToken cancellationToken)
@@ -83,9 +85,7 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
         }
 
         if (node is not StackAllocArrayCreationExpressionSyntax { Type: ArrayTypeSyntax array }
-            || array.RankSpecifiers.Count == 0
-            || array.RankSpecifiers[0].Sizes.Count == 0
-            || array.RankSpecifiers[0].Sizes[0] is OmittedArraySizeExpressionSyntax)
+            || !HasSizedFirstRank(array))
         {
             return null;
         }
@@ -95,21 +95,37 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
 
         if (constant.HasValue)
         {
-            if (constant.Value is int count)
-            {
-                var bytes = (long)count * ElementSize(model.GetTypeInfo(array.ElementType, cancellationToken).Type);
-                if (bytes > MaxStackBytes)
-                {
-                    return "its size is " + bytes.ToString(CultureInfo.InvariantCulture) + " bytes, above the 1024 byte limit";
-                }
-            }
-
-            return null;
+            return ClassifyConstantSize(constant.Value, array, model, cancellationToken);
         }
 
         return IsBounded(node, size, model, cancellationToken)
             ? null
             : "its length is not bounded, so guard it and fall back to the heap above 1024 bytes";
+    }
+
+    private static bool HasSizedFirstRank(ArrayTypeSyntax array)
+    {
+        return array.RankSpecifiers.Count is not 0
+               && array.RankSpecifiers[0].Sizes.Count is not 0
+               && array.RankSpecifiers[0].Sizes[0] is not OmittedArraySizeExpressionSyntax;
+    }
+
+    private static string? ClassifyConstantSize(
+        object? value,
+        ArrayTypeSyntax array,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        if (value is not int count)
+        {
+            return null;
+        }
+
+        var bytes = (long)count * ElementSize(model.GetTypeInfo(array.ElementType, cancellationToken).Type);
+
+        return bytes > MaxStackBytes
+            ? "its size is " + bytes.ToString(CultureInfo.InvariantCulture) + " bytes, above the 1024 byte limit"
+            : null;
     }
 
     private static bool IsInsideLoop(SyntaxNode node)
@@ -136,33 +152,25 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         System.Threading.CancellationToken cancellationToken)
     {
-        if (size is InvocationExpressionSyntax invocation
-            && model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol
-            {
-                Name: "Min",
-                ContainingType.Name: "Math"
-            })
+        if (IsMathMinCall(size, model, cancellationToken))
         {
             return true;
         }
 
         var lengthNames = new HashSet<string>(
-            size.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Select(n => n.Identifier.ValueText),
+            size.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Select(static n => n.Identifier.ValueText),
             StringComparer.Ordinal);
 
         var child = node;
         foreach (var ancestor in node.Ancestors())
         {
             // A guard counts only when its condition tests a name used in the length.
-            if ((ancestor is ConditionalExpressionSyntax conditional && conditional.Condition != child
-                 && MentionsAny(conditional.Condition, lengthNames))
-                || (ancestor is IfStatementSyntax ifStatement && ifStatement.Condition != child
-                    && MentionsAny(ifStatement.Condition, lengthNames)))
+            if (IsGuardingAncestor(ancestor, child, lengthNames))
             {
                 return true;
             }
 
-            if (ancestor is MemberDeclarationSyntax or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+            if (IsScopeBoundary(ancestor))
             {
                 return false;
             }
@@ -171,6 +179,34 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool IsMathMinCall(
+        ExpressionSyntax size,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        return size is InvocationExpressionSyntax invocation
+               && model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol method
+               && string.Equals(method.Name, "Min", StringComparison.Ordinal)
+               && string.Equals(method.ContainingType?.Name, "Math", StringComparison.Ordinal);
+    }
+
+    private static bool IsScopeBoundary(SyntaxNode node)
+    {
+        return node is MemberDeclarationSyntax or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax;
+    }
+
+    private static bool IsGuardingAncestor(SyntaxNode ancestor, SyntaxNode child, HashSet<string> lengthNames)
+    {
+        var condition = ancestor switch
+        {
+            ConditionalExpressionSyntax conditional => conditional.Condition,
+            IfStatementSyntax ifStatement => ifStatement.Condition,
+            _ => null
+        };
+
+        return condition is not null && condition != child && MentionsAny(condition, lengthNames);
     }
 
     private static bool MentionsAny(ExpressionSyntax condition, HashSet<string> names)

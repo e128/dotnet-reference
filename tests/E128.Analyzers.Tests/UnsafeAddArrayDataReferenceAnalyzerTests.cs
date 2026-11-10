@@ -14,7 +14,7 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzerTests
         {
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -50,6 +50,7 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzerTests
                            }
                            """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheArrayIsMultiDimensional()

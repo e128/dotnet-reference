@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class NullForgivingOperatorE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<NullForgivingOperatorAnalyzer, NullForgivingOperatorCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<NullForgivingOperatorAnalyzer, NullForgivingOperatorCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

@@ -24,14 +24,14 @@ public sealed class GreetingServiceTests
     [Trait("Category", "CI")]
     public Task GreetAsync_Throws_WhenRequestIsNull()
     {
-        return Assert.ThrowsAsync<ArgumentNullException>(() => _service.GreetAsync(null!));
+        return Assert.ThrowsAsync<ArgumentNullException>(() => _service.GreetAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public async Task GreetAsync_ReturnsGreeting_WithDefaultName()
     {
-        var result = await _service.GreetAsync(new GreetingRequest());
+        var result = await _service.GreetAsync(new GreetingRequest(), TestContext.Current.CancellationToken);
 
         Assert.Equal("Hello, World!", result.Message);
         Assert.Equal("World", result.RecipientName);
@@ -41,7 +41,7 @@ public sealed class GreetingServiceTests
     [Trait("Category", "CI")]
     public async Task GreetAsync_ReturnsGreeting_WithCustomName()
     {
-        var result = await _service.GreetAsync(new GreetingRequest("Claude"));
+        var result = await _service.GreetAsync(new GreetingRequest("Claude"), TestContext.Current.CancellationToken);
 
         Assert.Equal("Hello, Claude!", result.Message);
         Assert.Equal("Claude", result.RecipientName);
@@ -51,7 +51,7 @@ public sealed class GreetingServiceTests
     [Trait("Category", "CI")]
     public async Task GreetAsync_UsesTimeProvider_ForTimestamp()
     {
-        var result = await _service.GreetAsync(new GreetingRequest());
+        var result = await _service.GreetAsync(new GreetingRequest(), TestContext.Current.CancellationToken);
 
         Assert.Equal(FixedTime, result.CreatedAt);
     }
@@ -60,9 +60,9 @@ public sealed class GreetingServiceTests
     [Trait("Category", "CI")]
     public async Task GreetAsync_PersistsGreeting_ToRepository()
     {
-        await _service.GreetAsync(new GreetingRequest("Test"));
+        _ = await _service.GreetAsync(new GreetingRequest("Test"), TestContext.Current.CancellationToken);
 
-        var saved = await _repository.GetRecentAsync(1);
+        var saved = await _repository.GetRecentAsync(1, TestContext.Current.CancellationToken);
         var single = Assert.Single(saved);
         Assert.Equal("Hello, Test!", single.Message);
     }

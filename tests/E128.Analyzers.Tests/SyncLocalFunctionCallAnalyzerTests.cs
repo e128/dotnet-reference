@@ -17,10 +17,12 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    /// <summary>AC-1: E128096 fires on async local function invoked via .Result in a synchronous method.</summary>
+    /// <summary>
+    ///     AC-1: E128096 fires on async local function invoked via .Result in a synchronous method.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_Fires_OnLocalFunctionResult()
@@ -39,7 +41,9 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                            """);
     }
 
-    /// <summary>AC-2: E128096 fires on async local function invoked via .Wait() in a synchronous method.</summary>
+    /// <summary>
+    ///     AC-2: E128096 fires on async local function invoked via .Wait() in a synchronous method.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_Fires_OnLocalFunctionWait()
@@ -58,7 +62,9 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                            """);
     }
 
-    /// <summary>AC-3: E128096 does not fire when the containing method is already async.</summary>
+    /// <summary>
+    ///     AC-3: E128096 does not fire when the containing method is already async.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_DoesNotFire_WhenContainingMethodAsync()
@@ -78,7 +84,9 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                            """);
     }
 
-    /// <summary>AC-4: E128096 does not fire on non-async local function.</summary>
+    /// <summary>
+    ///     AC-4: E128096 does not fire on non-async local function.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_DoesNotFire_OnNonAsyncLocalFunction()
@@ -97,7 +105,9 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                            """);
     }
 
-    /// <summary>AC-5: E128096 does not fire on method declarations (VSTHRD002 covers them).</summary>
+    /// <summary>
+    ///     AC-5: E128096 does not fire on method declarations (VSTHRD002 covers them).
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_DoesNotFire_OnMethodDeclaration()
@@ -116,7 +126,9 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                            """);
     }
 
-    /// <summary>AC-6: E128096 fires on Task&lt;T&gt; return type.</summary>
+    /// <summary>
+    ///     AC-6: E128096 fires on Task&lt;T&gt; return type.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_Fires_OnTaskTReturnType()

@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ManualBitCountCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ManualBitCountAnalyzer, ManualBitCountCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ManualBitCountAnalyzer, ManualBitCountCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

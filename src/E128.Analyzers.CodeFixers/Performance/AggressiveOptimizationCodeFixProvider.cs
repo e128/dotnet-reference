@@ -52,9 +52,9 @@ public sealed class AggressiveOptimizationCodeFixProvider : E128CodeFixProviderB
             }
         }
 
-        if (kept.Count == 0)
+        if (kept.Count is 0)
         {
-            var withoutAttribute = attributeList.Attributes.Count == 1
+            var withoutAttribute = attributeList.Attributes.Count is 1
                 ? RemoveAttributeList(root, attributeList)
                 : root.ReplaceNode(
                     attributeList,
@@ -100,11 +100,17 @@ public sealed class AggressiveOptimizationCodeFixProvider : E128CodeFixProviderB
         var left = StripAggressiveOptimization(binary.Left);
         var right = StripAggressiveOptimization(binary.Right);
 
-        return left is null
-            ? right?.WithoutTrailingTrivia()
-            : right is null
-                ? left.WithoutTrailingTrivia()
-                : SyntaxFactory.BinaryExpression(SyntaxKind.BitwiseOrExpression, left, right);
+        if (left is null)
+        {
+            return right?.WithoutTrailingTrivia();
+        }
+
+        if (right is null)
+        {
+            return left.WithoutTrailingTrivia();
+        }
+
+        return SyntaxFactory.BinaryExpression(SyntaxKind.BitwiseOrExpression, left, right);
     }
 
     private static bool IsAggressiveOptimization(ExpressionSyntax expression)

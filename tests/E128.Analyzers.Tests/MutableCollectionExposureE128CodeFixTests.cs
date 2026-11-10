@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class MutableCollectionExposureE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<MutableCollectionExposureAnalyzer, MutableCollectionExposureCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<MutableCollectionExposureAnalyzer, MutableCollectionExposureCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

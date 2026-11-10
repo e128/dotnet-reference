@@ -8,8 +8,10 @@ public sealed class GeneratedRegexOverlappingE128CodeFixTests
 {
     private const string PartialImpl = "    private static partial System.Text.RegularExpressions.Regex DigitsOnly() => null!;";
 
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<GeneratedRegexAnalyzer, GeneratedRegexOverlappingCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<GeneratedRegexAnalyzer, GeneratedRegexOverlappingCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

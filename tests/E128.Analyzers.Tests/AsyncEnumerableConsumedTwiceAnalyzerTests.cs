@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

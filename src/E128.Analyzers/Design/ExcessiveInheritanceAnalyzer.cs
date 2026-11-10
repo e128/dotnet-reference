@@ -49,13 +49,13 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
         var type = (INamedTypeSymbol)context.Symbol;
 
         // Only analyze classes — skip structs, interfaces, enums, delegates, record structs.
-        if (type.TypeKind != TypeKind.Class)
+        if (type.TypeKind is not TypeKind.Class)
         {
             return;
         }
 
         var depth = CountUserDefinedDepth(type, context.Compilation);
-        if (depth == 0)
+        if (depth is 0)
         {
             return;
         }
@@ -76,7 +76,7 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
         var depth = 0;
         var current = type.BaseType;
 
-        while (current is not null && current.SpecialType != SpecialType.System_Object)
+        while (current is not null && current.SpecialType is not SpecialType.System_Object)
         {
             if (IsUserDefined(current, compilation))
             {

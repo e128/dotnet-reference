@@ -6,11 +6,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class RedundantHashSetInFrozenSetE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<RedundantHashSetInFrozenSetE128Analyzer, RedundantHashSetInFrozenSetCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<RedundantHashSetInFrozenSetE128Analyzer, RedundantHashSetInFrozenSetCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source) =>
-        CodeFixTestRunner.NoFixAsync<RedundantHashSetInFrozenSetE128Analyzer, RedundantHashSetInFrozenSetCodeFixProvider>(source);
+    private static Task VerifyNoFixAsync(string source)
+    {
+        return CodeFixTestRunner.NoFixAsync<RedundantHashSetInFrozenSetE128Analyzer, RedundantHashSetInFrozenSetCodeFixProvider>(source);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

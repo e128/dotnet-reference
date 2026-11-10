@@ -34,9 +34,9 @@ public sealed class DiskRoundtripCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropWriteKind, out var writeKind);
-        diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropReadKind, out var readKind);
-        diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropIsAwaited, out var isAwaitedStr);
+        _ = diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropWriteKind, out var writeKind);
+        _ = diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropReadKind, out var readKind);
+        _ = diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropIsAwaited, out var isAwaitedStr);
         var isAwaited = string.Equals(isAwaitedStr, "true", StringComparison.Ordinal);
 
         // The read must yield the value the write produced. Only a matching kind, or a text and bytes

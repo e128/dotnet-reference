@@ -103,7 +103,7 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var taskType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
             var valueTaskType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
@@ -299,13 +299,13 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        if (valueTaskType is not null && SymbolEqualityComparer.Default.Equals(containingType, valueTaskType))
+        if (valueTaskType is null || !SymbolEqualityComparer.Default.Equals(containingType, valueTaskType))
         {
-            wrapperName = "ValueTask.FromResult";
-            return true;
+            return false;
         }
 
-        return false;
+        wrapperName = "ValueTask.FromResult";
+        return true;
     }
 
     private static bool MethodContainsAwait(MethodDeclarationSyntax method)

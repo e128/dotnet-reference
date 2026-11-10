@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class NonXmlDocCommentE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<NonXmlDocCommentE128Analyzer, NonXmlDocCommentCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<NonXmlDocCommentE128Analyzer, NonXmlDocCommentCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

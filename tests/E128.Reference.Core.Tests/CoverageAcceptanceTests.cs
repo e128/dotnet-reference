@@ -18,7 +18,7 @@ public sealed class CoverageAcceptanceTests
     {
         var config = await ReadCoverageConfigAsync();
 
-        Assert.Contains(ReadExcludePatterns(config), pattern => IsMatch("E128.Reference.Core.Tests.dll", pattern));
+        Assert.Contains(ReadExcludePatterns(config), static pattern => IsMatch("E128.Reference.Core.Tests.dll", pattern));
     }
 
     [Fact]
@@ -29,10 +29,10 @@ public sealed class CoverageAcceptanceTests
         var excludes = ReadExcludePatterns(config);
 
         Assert.Null(config.Root?.Element("CodeCoverage")?.Element("ModulePaths")?.Element("Include"));
-        Assert.DoesNotContain(excludes, pattern => IsMatch("E128.Analyzers.dll", pattern));
-        Assert.DoesNotContain(excludes, pattern => IsMatch("E128.Reference.Core.dll", pattern));
-        Assert.DoesNotContain(excludes, pattern => IsMatch("E128.Reference.Web.dll", pattern));
-        Assert.DoesNotContain(excludes, pattern => IsMatch("BrandNew.Project.dll", pattern));
+        Assert.DoesNotContain(excludes, static pattern => IsMatch("E128.Analyzers.dll", pattern));
+        Assert.DoesNotContain(excludes, static pattern => IsMatch("E128.Reference.Core.dll", pattern));
+        Assert.DoesNotContain(excludes, static pattern => IsMatch("E128.Reference.Web.dll", pattern));
+        Assert.DoesNotContain(excludes, static pattern => IsMatch("BrandNew.Project.dll", pattern));
     }
 
     private static bool IsMatch(string assemblyName, string pattern)
@@ -42,18 +42,23 @@ public sealed class CoverageAcceptanceTests
 
     private static string[] ReadExcludePatterns(XDocument config)
     {
-        return config.Root?
+        var modulePaths = config.Root?
             .Element("CodeCoverage")?
             .Element("ModulePaths")?
             .Element("Exclude")?
-            .Elements("ModulePath")
-            .Select(element => element.Value)
-            .ToArray() ?? [];
+            .Elements("ModulePath");
+
+        if (modulePaths is null)
+        {
+            return [];
+        }
+
+        return [.. modulePaths.Select(static element => element.Value)];
     }
 
     private static async Task<XDocument> ReadCoverageConfigAsync()
     {
-        var content = await File.ReadAllTextAsync(FindCoverageConfig());
+        var content = await File.ReadAllTextAsync(FindCoverageConfig(), TestContext.Current.CancellationToken);
 
         return XDocument.Parse(content);
     }

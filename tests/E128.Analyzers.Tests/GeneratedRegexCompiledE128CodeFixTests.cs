@@ -8,8 +8,10 @@ public sealed class GeneratedRegexCompiledE128CodeFixTests
 {
     private const string PartialImpl = "    private static partial System.Text.RegularExpressions.Regex DigitsOnly() => null!;";
 
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<GeneratedRegexAnalyzer, GeneratedRegexCompiledCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<GeneratedRegexAnalyzer, GeneratedRegexCompiledCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

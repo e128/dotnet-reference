@@ -78,7 +78,7 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
         AddDefinitions(context.Compilation, "System.Threading.Tasks.TaskCompletionSource`1", sources);
         AddDefinitions(context.Compilation, "System.Threading.Tasks.TaskCompletionSource", sources);
 
-        if (sources.Count == 0)
+        if (sources.Count is 0)
         {
             return;
         }

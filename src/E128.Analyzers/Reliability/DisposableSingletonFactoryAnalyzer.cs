@@ -48,12 +48,7 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        var methodName = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax m => m.Name.Identifier.Text,
-            IdentifierNameSyntax i => i.Identifier.Text,
-            _ => null
-        };
+        var methodName = GetInvokedName(invocation);
 
         if (!string.Equals(methodName, "AddSingleton", StringComparison.Ordinal))
         {
@@ -61,7 +56,7 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count != 1)
+        if (args.Count is not 1)
         {
             return;
         }
@@ -72,12 +67,7 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var bodyExpr = arg switch
-        {
-            SimpleLambdaExpressionSyntax s => s.Body as ExpressionSyntax,
-            ParenthesizedLambdaExpressionSyntax p => p.Body as ExpressionSyntax,
-            _ => null
-        };
+        var bodyExpr = GetLambdaBody(arg);
 
         if (bodyExpr is null)
         {
@@ -99,8 +89,28 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, arg.GetLocation(), returnType.Name));
     }
 
+    private static string? GetInvokedName(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax m => m.Name.Identifier.Text,
+            IdentifierNameSyntax i => i.Identifier.Text,
+            _ => null
+        };
+    }
+
+    private static ExpressionSyntax? GetLambdaBody(ExpressionSyntax lambda)
+    {
+        return lambda switch
+        {
+            SimpleLambdaExpressionSyntax s => s.Body as ExpressionSyntax,
+            ParenthesizedLambdaExpressionSyntax p => p.Body as ExpressionSyntax,
+            _ => null
+        };
+    }
+
     private static bool ImplementsIDisposable(ITypeSymbol type)
     {
-        return type.AllInterfaces.Any(i => string.Equals(i.ToDisplayString(), "System.IDisposable", StringComparison.Ordinal));
+        return type.AllInterfaces.Any(static i => string.Equals(i.ToDisplayString(), "System.IDisposable", StringComparison.Ordinal));
     }
 }

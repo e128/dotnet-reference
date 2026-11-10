@@ -101,7 +101,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         ConfigurationKeys keys)
     {
         var elementAccess = (ElementAccessExpressionSyntax)context.Node;
-        if (elementAccess.ArgumentList.Arguments.Count != 1)
+        if (elementAccess.ArgumentList.Arguments.Count is not 1)
         {
             return;
         }
@@ -142,7 +142,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         ConfigurationKeys keys)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        if (invocation.ArgumentList.Arguments.Count == 0)
+        if (invocation.ArgumentList.Arguments.Count is 0)
         {
             return;
         }
@@ -160,26 +160,18 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (string.Equals(method.Name, "GetConnectionString", StringComparison.Ordinal)
-            && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationExtensions))
+        if (IsConnectionStringCall(method, configurationExtensions))
         {
             var name = ReadConstantKey(context, invocation.ArgumentList.Arguments[0].Expression);
-            if (name is null)
+            if (name is not null)
             {
-                return;
+                Report(context, keys, "ConnectionStrings:" + name, invocation.GetLocation());
             }
 
-            Report(context, keys, "ConnectionStrings:" + name, invocation.GetLocation());
             return;
         }
 
-        // GetSection is an interface member. GetRequiredSection is an extension method.
-        var isSectionCall =
-            (string.Equals(method.Name, "GetSection", StringComparison.Ordinal)
-             && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationType))
-            || (string.Equals(method.Name, "GetRequiredSection", StringComparison.Ordinal)
-                && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationExtensions));
-        if (!isSectionCall)
+        if (!IsSectionCall(method, configurationType, configurationExtensions))
         {
             return;
         }
@@ -199,6 +191,24 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         }
 
         Report(context, keys, section, invocation.GetLocation());
+    }
+
+    private static bool IsConnectionStringCall(IMethodSymbol method, INamedTypeSymbol? configurationExtensions)
+    {
+        return string.Equals(method.Name, "GetConnectionString", StringComparison.Ordinal)
+               && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationExtensions);
+    }
+
+    // GetSection is an interface member. GetRequiredSection is an extension method.
+    private static bool IsSectionCall(
+        IMethodSymbol method,
+        INamedTypeSymbol configurationType,
+        INamedTypeSymbol? configurationExtensions)
+    {
+        return (string.Equals(method.Name, "GetSection", StringComparison.Ordinal)
+                && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationType))
+               || (string.Equals(method.Name, "GetRequiredSection", StringComparison.Ordinal)
+                   && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationExtensions));
     }
 
     private static bool IsConfigurationMethodName(string name)
@@ -222,7 +232,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         var constant = context.SemanticModel.GetConstantValue(
             expression,
             context.CancellationToken);
-        return !constant.HasValue || constant.Value is not string key || key.Length == 0
+        return !constant.HasValue || constant.Value is not string key || key.Length is 0
             ? null
             : key;
     }
@@ -258,30 +268,7 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         {
             var builder = ImmutableHashSet.CreateBuilder(
                 StringComparer.OrdinalIgnoreCase);
-            var parsedAny = false;
-
-            foreach (var file in files)
-            {
-                var fileName = Path.GetFileName(file.Path);
-                if (!fileName.StartsWith("appsettings", StringComparison.OrdinalIgnoreCase)
-                    || !fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var text = file.GetText(cancellationToken);
-                if (text is null)
-                {
-                    continue;
-                }
-
-                if (!AppSettingsKeyReader.TryRead(text.ToString(), builder))
-                {
-                    continue;
-                }
-
-                parsedAny = true;
-            }
+            var parsedAny = ReadAppSettingsFiles(files, builder, cancellationToken);
 
             // The option adds keys on top of a parsed file. It never activates the rule on its own,
             // because without a file the rule cannot tell a missing key from an invisible source.
@@ -298,12 +285,37 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
                     var trimmed = key.Trim();
                     if (trimmed.Length > 0)
                     {
-                        builder.Add(trimmed);
+                        _ = builder.Add(trimmed);
                     }
                 }
             }
 
             return new ConfigurationKeys(builder.ToImmutable());
+        }
+
+        private static bool ReadAppSettingsFiles(
+            ImmutableArray<AdditionalText> files,
+            ImmutableHashSet<string>.Builder builder,
+            System.Threading.CancellationToken cancellationToken)
+        {
+            var parsedAny = false;
+            foreach (var file in files)
+            {
+                var fileName = Path.GetFileName(file.Path);
+                if (!fileName.StartsWith("appsettings", StringComparison.OrdinalIgnoreCase)
+                    || !fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var text = file.GetText(cancellationToken);
+                if (text is not null && AppSettingsKeyReader.TryRead(text.ToString(), builder))
+                {
+                    parsedAny = true;
+                }
+            }
+
+            return parsedAny;
         }
 
         internal bool Contains(string key)

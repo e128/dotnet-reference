@@ -22,7 +22,7 @@ public sealed class RuntimeRegexToGeneratedCodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             CompilerDiagnostics = CompilerDiagnostics.None,
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -68,6 +68,7 @@ public sealed class RuntimeRegexToGeneratedCodeFixTests
             }
             """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Fix_PutsPartialDirectlyBeforeTheTypeKeyword()

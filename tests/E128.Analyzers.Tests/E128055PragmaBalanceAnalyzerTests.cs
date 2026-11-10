@@ -20,7 +20,7 @@ public sealed class E128055PragmaBalanceAnalyzerTests
             TestBehaviors = TestBehaviors.SkipSuppressionCheck
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

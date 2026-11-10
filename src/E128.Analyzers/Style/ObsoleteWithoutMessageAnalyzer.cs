@@ -60,10 +60,12 @@ public sealed class ObsoleteWithoutMessageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!HasMessage(attribute, context))
+        if (HasMessage(attribute, context))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, attribute.GetLocation()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, attribute.GetLocation()));
     }
 
     private static bool HasMessage(AttributeSyntax attribute, SyntaxNodeAnalysisContext context)
@@ -83,7 +85,7 @@ public sealed class ObsoleteWithoutMessageAnalyzer : DiagnosticAnalyzer
             var isMessage = argument.NameEquals is null
                             && (argument.NameColon is { } nameColon
                                 ? string.Equals(nameColon.Name.Identifier.ValueText, "message", StringComparison.Ordinal)
-                                : index == 0);
+                                : index is 0);
 
             if (!isMessage)
             {

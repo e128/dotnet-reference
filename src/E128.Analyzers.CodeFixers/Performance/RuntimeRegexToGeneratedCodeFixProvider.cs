@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -14,6 +15,8 @@ namespace E128.Analyzers.Performance;
 [Shared]
 public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int ArgumentCountWithOptions = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [RuntimeRegexToGeneratedAnalyzer.DiagnosticId];
 
@@ -22,16 +25,13 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not FieldDeclarationSyntax field
-            || field.Declaration.Variables.Count != 1
-            || field.AttributeLists.Count > 0
-            || field.Parent is not TypeDeclarationSyntax)
+        if (GetCandidateField(node) is not { } field)
         {
             return;
         }
 
         var creation = RuntimeRegexToGeneratedAnalyzer.TryGetCreation(field.Declaration.Variables[0]);
-        if (creation?.ArgumentList is not { Arguments.Count: 1 or 2 } argumentList)
+        if (creation?.ArgumentList is not { Arguments.Count: 1 or ArgumentCountWithOptions } argumentList)
         {
             return;
         }
@@ -39,14 +39,30 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
         // GeneratedRegex arguments must be constants, and the options must be a plain flag list.
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel is null
-            || argumentList.Arguments.Any(argument =>
-                !semanticModel.GetConstantValue(argument.Expression, context.CancellationToken).HasValue)
-            || (argumentList.Arguments.Count == 2 && StripCompiled(argumentList.Arguments[1].Expression) is null))
+            || !IsConvertible(argumentList, semanticModel, context.CancellationToken))
         {
             return;
         }
 
         CodeFixRegistration.Register(context, diagnostic, "Convert to [GeneratedRegex]", nameof(RuntimeRegexToGeneratedCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, field, argumentList)));
+    }
+
+    private static FieldDeclarationSyntax? GetCandidateField(SyntaxNode node)
+    {
+        return node is FieldDeclarationSyntax { Parent: TypeDeclarationSyntax, AttributeLists.Count: 0 } field
+               && field.Declaration.Variables.Count is 1
+            ? field
+            : null;
+    }
+
+    private static bool IsConvertible(
+        ArgumentListSyntax argumentList,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var arguments = argumentList.Arguments;
+        return arguments.All(argument => semanticModel.GetConstantValue(argument.Expression, cancellationToken).HasValue)
+               && (arguments.Count is not ArgumentCountWithOptions || StripCompiled(arguments[1].Expression) is not null);
     }
 
     private static Document ApplyFix(
@@ -57,7 +73,7 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
     {
         var arguments = argumentList.Arguments;
         var pattern = arguments[0].Expression.ToString();
-        var options = arguments.Count == 2 ? StripCompiled(arguments[1].Expression) : "RegexOptions.None";
+        var options = arguments.Count is ArgumentCountWithOptions ? StripCompiled(arguments[1].Expression) : "RegexOptions.None";
         if (options is null)
         {
             return document;
@@ -121,9 +137,9 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
 
         var types = target.Ancestors().OfType<TypeDeclarationSyntax>().ToList();
 
-        return types.Count == 0
+        return types.Count is 0
             ? root
-            : root.ReplaceNodes(types, (_, rewritten) => AddPartial(rewritten));
+            : root.ReplaceNodes(types, static (_, rewritten) => AddPartial(rewritten));
     }
 
     private static TypeDeclarationSyntax AddPartial(TypeDeclarationSyntax type)
@@ -156,8 +172,8 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
             return null;
         }
 
-        flags.RemoveAll(flag => flag.EndsWith("Compiled", System.StringComparison.Ordinal));
-        return flags.Count == 0 ? "RegexOptions.None" : string.Join(" | ", flags);
+        _ = flags.RemoveAll(static flag => flag.EndsWith("Compiled", System.StringComparison.Ordinal));
+        return flags.Count is 0 ? "RegexOptions.None" : string.Join(" | ", flags);
     }
 
     private static bool CollectFlags(ExpressionSyntax expression, List<string> flags)

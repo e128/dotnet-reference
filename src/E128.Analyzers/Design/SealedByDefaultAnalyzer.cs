@@ -24,9 +24,7 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
         "E128-Design",
         DiagnosticSeverity.Warning,
         true,
-        null,
-        null,
-        WellKnownDiagnosticTags.CompilationEnd);
+        customTags: WellKnownDiagnosticTags.CompilationEnd);
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -44,7 +42,7 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
 
         // Two-pass strategy: per-compilation state is captured inside RegisterCompilationStartAction
         // so each compilation gets its own fresh sets (correct for incremental builds).
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var candidates = new ConcurrentBag<(INamedTypeSymbol Type, Location Location)>();
             var hasSubclassSet = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
@@ -86,29 +84,31 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
         // Record this type's base as having at least one subclass.
         if (type.BaseType is { SpecialType: not SpecialType.System_Object } baseType)
         {
-            hasSubclassSet.TryAdd(baseType.OriginalDefinition, true);
+            _ = hasSubclassSet.TryAdd(baseType.OriginalDefinition, true);
         }
 
         // Collect candidates that could trigger E128005.
         // Exclusions: abstract, static, sealed, record (IsRecord covers record class),
         // struct (TypeKind.Struct), direct Object subclass. A COM class needs no
         // exclusion because CS0424 forbids a base class on a ComImport type.
-        if (type.TypeKind != TypeKind.Class
+        if (type.TypeKind is not TypeKind.Class
             || type.IsAbstract
             || type.IsStatic
             || type.IsSealed
             || type.IsRecord
             || type.BaseType is null
-            || type.BaseType.SpecialType == SpecialType.System_Object)
+            || type.BaseType.SpecialType is SpecialType.System_Object)
         {
             return;
         }
 
         var locations = type.Locations;
-        if (locations.Length > 0)
+        if (locations.Length is 0)
         {
-            candidates.Add((type, locations[0]));
+            return;
         }
+
+        candidates.Add((type, locations[0]));
     }
 
     private static void CollectConstraintTypes(
@@ -119,10 +119,10 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
         {
             foreach (var constraintType in typeParameter.ConstraintTypes)
             {
-                if (constraintType.TypeKind == TypeKind.Class)
+                if (constraintType.TypeKind is TypeKind.Class)
                 {
-                    constraintTypes.TryAdd(constraintType, true);
-                    constraintTypes.TryAdd(constraintType.OriginalDefinition, true);
+                    _ = constraintTypes.TryAdd(constraintType, true);
+                    _ = constraintTypes.TryAdd(constraintType.OriginalDefinition, true);
                 }
             }
         }

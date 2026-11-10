@@ -15,7 +15,7 @@ public sealed class SensitiveLogArgumentAnalyzerTests
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
                 .AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "10.0.13")]),
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

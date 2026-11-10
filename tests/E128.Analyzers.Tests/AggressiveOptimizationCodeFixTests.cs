@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class AggressiveOptimizationCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<AggressiveOptimizationAnalyzer, AggressiveOptimizationCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<AggressiveOptimizationAnalyzer, AggressiveOptimizationCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -61,6 +63,7 @@ public sealed class AggressiveOptimizationCodeFixTests
             }
             """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Fix_KeepsTheDocComment()

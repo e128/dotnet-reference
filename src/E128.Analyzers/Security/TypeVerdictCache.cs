@@ -12,6 +12,8 @@ internal static class TypeVerdictCache
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<ITypeSymbol, TypeVerdict>> Cache =
         new();
 
-    public static ConcurrentDictionary<ITypeSymbol, TypeVerdict> For(Compilation compilation) =>
-        Cache.GetValue(compilation, static _ => new ConcurrentDictionary<ITypeSymbol, TypeVerdict>(SymbolEqualityComparer.Default));
+    internal static ConcurrentDictionary<ITypeSymbol, TypeVerdict> For(Compilation compilation)
+    {
+        return Cache.GetValue(compilation, static _ => new ConcurrentDictionary<ITypeSymbol, TypeVerdict>(SymbolEqualityComparer.Default));
+    }
 }

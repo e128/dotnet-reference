@@ -95,7 +95,7 @@ public sealed class HttpClientMissingOceCatchCodeFixProvider : E128CodeFixProvid
 
     private static SyntaxTriviaList ExtractIndentation(SyntaxTriviaList trivia)
     {
-        var whitespace = trivia.Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToArray();
+        var whitespace = trivia.Where(static t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToArray();
         return whitespace.Length > 0
             ? SyntaxFactory.TriviaList(whitespace[whitespace.Length - 1])
             : SyntaxFactory.TriviaList();

@@ -114,7 +114,7 @@ public sealed class OrderByFirstAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (inner.ArgumentList.Arguments.Count != 1)
+        if (inner.ArgumentList.Arguments.Count is not 1)
         {
             return false;
         }

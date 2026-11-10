@@ -23,11 +23,15 @@ public sealed class ByteSizeUnwrapViaCastE128CodeFixTests
                                         }
                                         """;
 
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ByteSizeUnwrapViaCastAnalyzer, ByteSizeUnwrapViaCastCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ByteSizeUnwrapViaCastAnalyzer, ByteSizeUnwrapViaCastCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
-        CodeFixTestRunner.NoFixAsync<ByteSizeUnwrapViaCastAnalyzer, ByteSizeUnwrapViaCastCodeFixProvider>(source, expected: expected);
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
+    {
+        return CodeFixTestRunner.NoFixAsync<ByteSizeUnwrapViaCastAnalyzer, ByteSizeUnwrapViaCastCodeFixProvider>(source, expected: expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

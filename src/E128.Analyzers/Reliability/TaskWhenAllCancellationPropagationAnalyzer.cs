@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -18,6 +19,39 @@ namespace E128.Analyzers.Reliability;
 public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128038";
+
+    private static readonly HashSet<string> HttpClientMethods = new(StringComparer.Ordinal)
+    {
+        "GetAsync",
+        "PostAsync",
+        "SendAsync",
+        "PutAsync",
+        "DeleteAsync",
+        "PatchAsync",
+        "GetStringAsync",
+        "GetStreamAsync",
+        "GetByteArrayAsync"
+    };
+
+    private static readonly HashSet<string> PlaywrightMethods = new(StringComparer.Ordinal)
+    {
+        "GotoAsync",
+        "ClickAsync",
+        "FillAsync",
+        "TypeAsync",
+        "TapAsync",
+        "CheckAsync",
+        "UncheckAsync",
+        "SelectOptionAsync",
+        "HoverAsync",
+        "FocusAsync",
+        "PressAsync",
+        "DispatchEventAsync",
+        "WaitForSelectorAsync",
+        "WaitForNavigationAsync",
+        "WaitForURLAsync",
+        "WaitForLoadStateAsync"
+    };
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -41,7 +75,7 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var taskType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
             if (taskType is null)
@@ -65,7 +99,7 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count != 1)
+        if (args.Count is not 1)
         {
             return;
         }
@@ -92,10 +126,12 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
             .Any(inv => IsHttpClientOrPlaywrightMethod(inv)
                         && !HasCancellationTokenArgument(context, inv));
 
-        if (hasUnpropagatedCall)
+        if (!hasUnpropagatedCall)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
     private static bool TryGetSelectInvocation(ExpressionSyntax expression, [NotNullWhen(true)] out InvocationExpressionSyntax? selectInvocation)
@@ -107,14 +143,14 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        if (candidate.Expression is MemberAccessExpressionSyntax memberAccess
-            && string.Equals(memberAccess.Name.Identifier.ValueText, "Select", StringComparison.Ordinal))
+        if (candidate.Expression is not MemberAccessExpressionSyntax memberAccess
+            || !string.Equals(memberAccess.Name.Identifier.ValueText, "Select", StringComparison.Ordinal))
         {
-            selectInvocation = candidate;
-            return true;
+            return false;
         }
 
-        return false;
+        selectInvocation = candidate;
+        return true;
     }
 
     private static bool HasAsyncLambda(InvocationExpressionSyntax selectInvocation)
@@ -164,24 +200,12 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
 
     private static bool IsHttpClientMethod(string name)
     {
-        return name switch
-        {
-            "GetAsync" or "PostAsync" or "SendAsync" or "PutAsync" or "DeleteAsync"
-                or "PatchAsync" or "GetStringAsync" or "GetStreamAsync" or "GetByteArrayAsync" => true,
-            _ => false
-        };
+        return HttpClientMethods.Contains(name);
     }
 
     private static bool IsPlaywrightMethod(string name)
     {
-        return name switch
-        {
-            "GotoAsync" or "ClickAsync" or "FillAsync" or "TypeAsync" or "TapAsync"
-                or "CheckAsync" or "UncheckAsync" or "SelectOptionAsync" or "HoverAsync"
-                or "FocusAsync" or "PressAsync" or "DispatchEventAsync" or "WaitForSelectorAsync"
-                or "WaitForNavigationAsync" or "WaitForURLAsync" or "WaitForLoadStateAsync" => true,
-            _ => false
-        };
+        return PlaywrightMethods.Contains(name);
     }
 
     private static bool HasCancellationTokenArgument(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
@@ -215,7 +239,7 @@ public sealed class TaskWhenAllCancellationPropagationAnalyzer : DiagnosticAnaly
         return initializer is not null
                && initializer.Expressions
                    .OfType<AssignmentExpressionSyntax>()
-                   .Any(assign => assign.Left is IdentifierNameSyntax id
+                   .Any(static assign => assign.Left is IdentifierNameSyntax id
                                   && string.Equals(id.Identifier.Text, "CancellationToken", StringComparison.Ordinal));
     }
 }

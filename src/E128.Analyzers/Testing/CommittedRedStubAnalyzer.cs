@@ -63,22 +63,27 @@ public sealed class CommittedRedStubAnalyzer : DiagnosticAnalyzer
 
         var call = SoleCall(method);
 
-        if (call is not null
-            && context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol is IMethodSymbol target
-            && string.Equals(target.Name, "Fail", StringComparison.Ordinal)
-            && MetadataTypes.Contains(assertTypes, target.ContainingType))
+        if (call is null
+            || context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol is not IMethodSymbol target
+            || !string.Equals(target.Name, "Fail", StringComparison.Ordinal)
+            || !MetadataTypes.Contains(assertTypes, target.ContainingType))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, call.GetLocation()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, call.GetLocation()));
     }
 
     private static InvocationExpressionSyntax? SoleCall(MethodDeclarationSyntax method)
     {
-        return method.ExpressionBody is { Expression: InvocationExpressionSyntax expressionCall }
-            ? expressionCall
-            : method.Body is { Statements.Count: 1 } body
-              && body.Statements[0] is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax statementCall }
-                ? statementCall
-                : null;
+        if (method.ExpressionBody is { Expression: InvocationExpressionSyntax expressionCall })
+        {
+            return expressionCall;
+        }
+
+        return method.Body is { Statements.Count: 1 } body
+            && body.Statements[0] is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax statementCall }
+            ? statementCall
+            : null;
     }
 }

@@ -16,7 +16,7 @@ public sealed class DirectRecursionAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

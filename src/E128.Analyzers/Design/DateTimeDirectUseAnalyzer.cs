@@ -66,7 +66,7 @@ public sealed class DateTimeDirectUseAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (containingType.SpecialType != SpecialType.System_DateTime
+        if (containingType.SpecialType is not SpecialType.System_DateTime
             && !IsDateTimeOffset(containingType))
         {
             return;

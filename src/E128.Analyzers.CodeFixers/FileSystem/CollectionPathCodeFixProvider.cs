@@ -44,7 +44,7 @@ public sealed class CollectionPathCodeFixProvider : E128CodeFixProviderBase
         _ = cancellationToken;
 
         var token = root.FindToken(diagnostic.Location.SourceSpan.Start);
-        var parameter = FindAncestor<ParameterSyntax>(token);
+        var parameter = token.Parent?.FirstAncestorOrSelf<ParameterSyntax>();
         if (parameter?.Type is null)
         {
             return Task.FromResult(document);
@@ -70,7 +70,7 @@ public sealed class CollectionPathCodeFixProvider : E128CodeFixProviderBase
         }
 
         var typeArgs = genericName.TypeArgumentList.Arguments;
-        if (typeArgs.Count != 1 || typeArgs[0] is not PredefinedTypeSyntax)
+        if (typeArgs.Count is not 1 || typeArgs[0] is not PredefinedTypeSyntax)
         {
             return root;
         }
@@ -81,22 +81,5 @@ public sealed class CollectionPathCodeFixProvider : E128CodeFixProviderBase
         var newGenericName = genericName.WithTypeArgumentList(newTypeArgList);
 
         return root.ReplaceNode(genericName, newGenericName);
-    }
-
-    private static T? FindAncestor<T>(SyntaxToken token)
-        where T : SyntaxNode
-    {
-        var node = token.Parent;
-        while (node is not null)
-        {
-            if (node is T result)
-            {
-                return result;
-            }
-
-            node = node.Parent;
-        }
-
-        return null;
     }
 }

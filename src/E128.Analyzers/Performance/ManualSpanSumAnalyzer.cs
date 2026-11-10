@@ -39,7 +39,7 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var tensors = start.Compilation.GetTypeByMetadataName("System.Numerics.Tensors.TensorPrimitives");
             var readOnlySpan = start.Compilation.GetTypeByMetadataName("System.ReadOnlySpan`1");
@@ -53,7 +53,7 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
             var floatType = start.Compilation.GetSpecialType(SpecialType.System_Single);
             var doubleType = start.Compilation.GetSpecialType(SpecialType.System_Double);
 
-            if (floatType.TypeKind == TypeKind.Error || doubleType.TypeKind == TypeKind.Error)
+            if (floatType.TypeKind is TypeKind.Error || doubleType.TypeKind is TypeKind.Error)
             {
                 return;
             }
@@ -111,7 +111,7 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
         valueName = loop.Identifier.ValueText;
 
         if (loop.Statement is not BlockSyntax body
-            || body.Statements.Count != 1
+            || body.Statements.Count is not 1
             || body.Statements[0] is not ExpressionStatementSyntax statement
             || statement.Expression is not AssignmentExpressionSyntax add
             || !add.IsKind(SyntaxKind.AddAssignmentExpression)
@@ -147,7 +147,7 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
     {
         return tensors.GetMembers("Sum")
             .OfType<IMethodSymbol>()
-            .Any(method => method.Parameters.Length == 1
+            .Any(method => method.Parameters.Length is 1
                 && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, spanType));
     }
 

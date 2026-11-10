@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class TextContentGuardCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<TextContentGuardAnalyzer, TextContentGuardCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<TextContentGuardAnalyzer, TextContentGuardCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

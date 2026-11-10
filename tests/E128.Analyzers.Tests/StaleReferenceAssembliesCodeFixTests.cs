@@ -10,8 +10,10 @@ public sealed class StaleReferenceAssembliesCodeFixTests
     private static readonly ReferenceAssemblies Net100WithTesting = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.CodeAnalysis.CSharp.CodeFix.Testing", "1.1.3")]);
 
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<StaleReferenceAssembliesAnalyzer, StaleReferenceAssembliesCodeFixProvider>(source, fixedCode, references: Net100WithTesting);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<StaleReferenceAssembliesAnalyzer, StaleReferenceAssembliesCodeFixProvider>(source, fixedCode, references: Net100WithTesting);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

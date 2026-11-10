@@ -127,7 +127,7 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
         }
 
         var typeArgs = candidate.TypeArgumentList.Arguments;
-        if (typeArgs.Count != 1)
+        if (typeArgs.Count is not 1)
         {
             return false;
         }

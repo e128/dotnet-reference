@@ -14,7 +14,7 @@ public sealed class ManualSpanSumAnalyzerTests
         {
             TestCode = "using System;\n\n" + TestStubs.TensorPrimitives + "\n\n" + code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyWithoutStubAsync(string code)
@@ -23,7 +23,7 @@ public sealed class ManualSpanSumAnalyzerTests
         {
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

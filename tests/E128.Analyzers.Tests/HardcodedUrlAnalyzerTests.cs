@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HardcodedUrlAnalyzerTests
 {
-    private static Task VerifyAsync(string code) =>
-        AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>(code);
+    private static Task VerifyAsync(string code)
+    {
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>(code);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

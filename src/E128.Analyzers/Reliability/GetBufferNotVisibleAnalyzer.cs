@@ -107,7 +107,27 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var creation = model.GetSymbolInfo(memberAccess.Expression, token).Symbol switch
+        var creation = FindCreation(memberAccess.Expression, body, invocation, memoryStreamType, context);
+
+        if (creation is null)
+        {
+            return;
+        }
+
+        ReportIfNotVisible(context, creation, memoryStreamType, invocation);
+    }
+
+    private static BaseObjectCreationExpressionSyntax? FindCreation(
+        ExpressionSyntax receiver,
+        BlockSyntax body,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol memoryStreamType,
+        SyntaxNodeAnalysisContext context)
+    {
+        var model = context.SemanticModel;
+        var token = context.CancellationToken;
+
+        return model.GetSymbolInfo(receiver, token).Symbol switch
         {
             ILocalSymbol local when IsMemoryStream(local.Type, memoryStreamType) =>
                 FindLocalCreation(local, body, invocation, model, token),
@@ -115,11 +135,6 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
                 FindParameterCreation(parameter, body, invocation, model, token),
             _ => null
         };
-
-        if (creation is not null)
-        {
-            ReportIfNotVisible(context, creation, memoryStreamType, invocation);
-        }
     }
 
     private static BaseObjectCreationExpressionSyntax? FindLocalCreation(
@@ -226,10 +241,12 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
         var constant = model.GetConstantValue(visibleArgument, token);
 
         // A non-constant argument may be true at run time, so the rule cannot claim the call throws.
-        if (constant.HasValue && constant.Value is bool isVisible && !isVisible)
+        if (!constant.HasValue || constant.Value is not bool isVisible || isVisible)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
     private static ExpressionSyntax? FindPubliclyVisibleArgument(

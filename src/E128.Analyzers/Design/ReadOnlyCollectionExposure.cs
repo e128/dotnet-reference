@@ -66,13 +66,14 @@ internal static class ReadOnlyCollectionExposure
     {
         return type is INamedTypeSymbol namedType
                && Namespaces.Equals(namedType.ContainingNamespace, "System.Collections.Generic")
-               && (kind == MutableCollectionKind.List
-                   ? namedType.Name is "IReadOnlyList" or "IReadOnlyCollection"
+               && (kind is MutableCollectionKind.List
+                   ? string.Equals(namedType.Name, "IReadOnlyList", StringComparison.Ordinal)
+                       || string.Equals(namedType.Name, "IReadOnlyCollection", StringComparison.Ordinal)
                    : string.Equals(namedType.Name, "IReadOnlyDictionary", StringComparison.Ordinal));
     }
 
     private static string MutableName(MutableCollectionKind kind)
     {
-        return kind == MutableCollectionKind.List ? "List" : "Dictionary";
+        return kind is MutableCollectionKind.List ? "List" : "Dictionary";
     }
 }

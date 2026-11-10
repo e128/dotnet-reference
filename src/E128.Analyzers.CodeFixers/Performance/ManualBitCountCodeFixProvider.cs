@@ -46,11 +46,11 @@ public sealed class ManualBitCountCodeFixProvider : E128CodeFixProviderBase
 
         var valueIdentifier = SyntaxFactory.IdentifierName(valueName);
         ExpressionSyntax operand = valueIdentifier;
-        if (valueType.SpecialType == SpecialType.System_Int32)
+        if (valueType.SpecialType is SpecialType.System_Int32)
         {
             operand = SyntaxFactory.CastExpression(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.UIntKeyword)), valueIdentifier);
         }
-        else if (valueType.SpecialType == SpecialType.System_Int64)
+        else if (valueType.SpecialType is SpecialType.System_Int64)
         {
             operand = SyntaxFactory.CastExpression(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ULongKeyword)), valueIdentifier);
         }

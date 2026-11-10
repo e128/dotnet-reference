@@ -172,20 +172,21 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             _ => false,
         };
 
-        if (mayTargetAlgorithm)
+        if (!mayTargetAlgorithm)
         {
-            FipsSymbolHelpers.ForEachAssignment(
-                context.Operation,
-                context,
-                static (state, target, value, syntax) => CheckXmlUriAssignment(state, target, value, syntax));
+            return;
         }
+
+        FipsSymbolHelpers.ForEachAssignment(context.Operation, context, CheckXmlUriAssignment);
     }
 
-    private static bool IsAlgorithmPropertyTarget(IOperation target) =>
-        FipsSymbolHelpers.IsCandidateAssignmentTarget(target, "SignatureMethod") ||
+    private static bool IsAlgorithmPropertyTarget(IOperation target)
+    {
+        return FipsSymbolHelpers.IsCandidateAssignmentTarget(target, "SignatureMethod") ||
         FipsSymbolHelpers.IsCandidateAssignmentTarget(target, "DigestMethod") ||
         FipsSymbolHelpers.IsCandidateAssignmentTarget(target, "KeyAlgorithm") ||
         FipsSymbolHelpers.IsCandidateAssignmentTarget(target, "DigestAlgorithm");
+    }
 
     private static void CheckXmlUriAssignment(
         OperationAnalysisContext context,
@@ -201,32 +202,46 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         if (string.Equals(property.Name, "DigestAlgorithm", StringComparison.Ordinal) &&
             FipsSymbolHelpers.IsType(property.ContainingType, "CmsSigner", PkcsNamespace))
         {
-            // CmsSigner.DigestAlgorithm = new Oid("1.3.14.3.2.26")
-            if (FipsSymbolHelpers.Unwrap(value) is IObjectCreationOperation oid &&
-                FipsSymbolHelpers.IsCryptographyType(oid.Type, "Oid") &&
-                FipsSymbolHelpers.TryGetConstant<string>(FipsSymbolHelpers.ArgumentAt(oid.Arguments, 0)?.Value, out var oidValue) &&
-                ForbiddenHashOids.Contains(oidValue.Trim()))
-            {
-                ReportForbidden(context, syntax, oidValue);
-            }
+            CheckCmsSignerOid(context, value, syntax);
 
             return;
         }
 
-        if (!((string.Equals(property.Name, "SignatureMethod", StringComparison.Ordinal) &&
-               FipsSymbolHelpers.IsType(property.ContainingType, "SignedInfo", XmlDsigNamespace)) ||
-              (string.Equals(property.Name, "DigestMethod", StringComparison.Ordinal) &&
-               FipsSymbolHelpers.IsType(property.ContainingType, "Reference", XmlDsigNamespace)) ||
-              (string.Equals(property.Name, "KeyAlgorithm", StringComparison.Ordinal) &&
-               FipsSymbolHelpers.IsType(property.ContainingType, "EncryptionMethod", XmlDsigNamespace))))
+        if (!IsXmlAlgorithmProperty(property))
         {
             return;
         }
 
-        if (FipsSymbolHelpers.TryGetConstant<string>(value, out var uri) && IsForbiddenAlgorithmName(uri))
+        if (!FipsSymbolHelpers.TryGetConstant<string>(value, out var uri) || !IsForbiddenAlgorithmName(uri))
         {
-            ReportForbidden(context, syntax, uri);
+            return;
         }
+
+        ReportForbidden(context, syntax, uri);
+    }
+
+    // CmsSigner.DigestAlgorithm = new Oid("1.3.14.3.2.26")
+    private static void CheckCmsSignerOid(OperationAnalysisContext context, IOperation value, SyntaxNode syntax)
+    {
+        if (FipsSymbolHelpers.Unwrap(value) is not IObjectCreationOperation oid ||
+            !FipsSymbolHelpers.IsCryptographyType(oid.Type, "Oid") ||
+            !FipsSymbolHelpers.TryGetConstant<string>(FipsSymbolHelpers.ArgumentAt(oid.Arguments, 0)?.Value, out var oidValue) ||
+            !ForbiddenHashOids.Contains(oidValue.Trim()))
+        {
+            return;
+        }
+
+        ReportForbidden(context, syntax, oidValue);
+    }
+
+    private static bool IsXmlAlgorithmProperty(IPropertySymbol property)
+    {
+        return (string.Equals(property.Name, "SignatureMethod", StringComparison.Ordinal) &&
+                FipsSymbolHelpers.IsType(property.ContainingType, "SignedInfo", XmlDsigNamespace)) ||
+            (string.Equals(property.Name, "DigestMethod", StringComparison.Ordinal) &&
+                FipsSymbolHelpers.IsType(property.ContainingType, "Reference", XmlDsigNamespace)) ||
+            (string.Equals(property.Name, "KeyAlgorithm", StringComparison.Ordinal) &&
+                FipsSymbolHelpers.IsType(property.ContainingType, "EncryptionMethod", XmlDsigNamespace));
     }
 
     private static void AnalyzeObjectCreation(OperationAnalysisContext context)
@@ -269,7 +284,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             ReportHashNameArguments(context, creation.Constructor, creation.Arguments, syntax);
         }
 
-        InspectType(context, creation.Type, syntax);
+        _ = InspectType(context, creation.Type, syntax);
     }
 
     /// <summary>
@@ -279,12 +294,14 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeFieldReference(OperationAnalysisContext context)
     {
         var reference = (IFieldReferenceOperation)context.Operation;
-        if (string.Equals(reference.Field.Name, "TripleDes3KeyPkcs12", StringComparison.Ordinal) &&
-            FipsSymbolHelpers.IsCryptographyType(reference.Field.ContainingType, "PbeEncryptionAlgorithm") &&
-            !FipsSymbolHelpers.IsComparison(reference))
+        if (!string.Equals(reference.Field.Name, "TripleDes3KeyPkcs12", StringComparison.Ordinal) ||
+            !FipsSymbolHelpers.IsCryptographyType(reference.Field.ContainingType, "PbeEncryptionAlgorithm") ||
+            FipsSymbolHelpers.IsComparison(reference))
         {
-            ReportForbidden(context, reference.Syntax, "TripleDES (PbeEncryptionAlgorithm.TripleDes3KeyPkcs12)");
+            return;
         }
+
+        ReportForbidden(context, reference.Syntax, "TripleDES (PbeEncryptionAlgorithm.TripleDes3KeyPkcs12)");
     }
 
     /// <summary>
@@ -323,10 +340,12 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethodReference(OperationAnalysisContext context)
     {
         var reference = (IMethodReferenceOperation)context.Operation;
-        if (reference.Method.IsStatic && FipsTypeClassifier.OneShotMembers.Contains(reference.Method.Name))
+        if (!reference.Method.IsStatic || !FipsTypeClassifier.OneShotMembers.Contains(reference.Method.Name))
         {
-            InspectType(context, reference.Method.ContainingType, reference.Syntax);
+            return;
         }
+
+        _ = InspectType(context, reference.Method.ContainingType, reference.Syntax);
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
@@ -347,10 +366,12 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             ReportHashNameArguments(context, method, invocation.Arguments, invocation.Syntax);
         }
 
-        if (method.IsStatic)
+        if (!method.IsStatic)
         {
-            AnalyzeStaticInvocation(context, invocation);
+            return;
         }
+
+        AnalyzeStaticInvocation(context, invocation);
     }
 
     private static bool ReportDsaOrOaep(OperationAnalysisContext context, IInvocationOperation invocation)
@@ -368,25 +389,25 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
 
         // RSACryptoServiceProvider.Encrypt(data, fOAEP) and Decrypt: true selects OAEP with SHA-1, false selects
         // PKCS#1 v1.5, and a flag that is not constant can select either.
-        if ((string.Equals(method.Name, "Encrypt", StringComparison.Ordinal) ||
-             string.Equals(method.Name, "Decrypt", StringComparison.Ordinal)) &&
-            FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "RSACryptoServiceProvider") &&
-            FipsSymbolHelpers.ArgumentNamed(invocation.Arguments, "fOAEP") is { } oaepFlag)
+        if (!(string.Equals(method.Name, "Encrypt", StringComparison.Ordinal) ||
+              string.Equals(method.Name, "Decrypt", StringComparison.Ordinal)) ||
+            !FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "RSACryptoServiceProvider") ||
+            FipsSymbolHelpers.ArgumentNamed(invocation.Arguments, "fOAEP") is not { } oaepFlag)
         {
-            ReportForbidden(
-                context,
-                syntax,
-                oaepFlag.Value.ConstantValue switch
-                {
-                    { HasValue: true, Value: true } => "SHA1 (RSA OAEP padding)",
-                    { HasValue: true } => Pkcs1Encryption,
-                    _ => "SHA1 (RSA OAEP padding) or RSA PKCS#1 v1.5 encryption, when fOAEP is not constant (use RSAEncryptionPadding.OaepSHA256)",
-                });
-
-            return true;
+            return false;
         }
 
-        return false;
+        ReportForbidden(
+            context,
+            syntax,
+            oaepFlag.Value.ConstantValue switch
+            {
+                { HasValue: true, Value: true } => "SHA1 (RSA OAEP padding)",
+                { HasValue: true } => Pkcs1Encryption,
+                _ => "SHA1 (RSA OAEP padding) or RSA PKCS#1 v1.5 encryption, when fOAEP is not constant (use RSAEncryptionPadding.OaepSHA256)",
+            });
+
+        return true;
     }
 
     private static bool ReportLegacyHashName(OperationAnalysisContext context, IInvocationOperation invocation)
@@ -444,7 +465,7 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
 
         // HashAlgorithm.Create() and friends select SHA-1 or HMAC-SHA1 by default.
         if (string.Equals(method.Name, "Create", StringComparison.Ordinal) &&
-            method.Parameters.Length == 0 &&
+            method.Parameters.Length is 0 &&
             LegacyDefaultFactoryTypes.Contains(method.ContainingType.Name))
         {
             var text = string.Equals(method.ContainingType.Name, "HashAlgorithm", StringComparison.Ordinal)
@@ -455,15 +476,24 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Factories that resolve an algorithm from a name, such as HashAlgorithm.Create("MD5").
-        if (NamedFactoryMethods.Contains(method.Name) &&
-            method.Parameters.Length > 0 &&
-            method.Parameters[0].Type.SpecialType == SpecialType.System_String &&
-            FipsSymbolHelpers.TryGetConstant<string>(FipsSymbolHelpers.ArgumentAt(invocation.Arguments, 0)?.Value, out var name) &&
-            IsForbiddenAlgorithmName(name))
+        ReportNamedFactory(context, invocation);
+    }
+
+    // Factories that resolve an algorithm from a name, such as HashAlgorithm.Create("MD5").
+    private static void ReportNamedFactory(OperationAnalysisContext context, IInvocationOperation invocation)
+    {
+        var method = invocation.TargetMethod;
+
+        if (!NamedFactoryMethods.Contains(method.Name) ||
+            method.Parameters.Length is 0 ||
+            method.Parameters[0].Type.SpecialType is not SpecialType.System_String ||
+            !FipsSymbolHelpers.TryGetConstant<string>(FipsSymbolHelpers.ArgumentAt(invocation.Arguments, 0)?.Value, out var name) ||
+            !IsForbiddenAlgorithmName(name))
         {
-            ReportForbidden(context, syntax, name);
+            return;
         }
+
+        ReportForbidden(context, invocation.Syntax, name);
     }
 
     /// <summary>
@@ -480,29 +510,39 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var value = FipsSymbolHelpers.Unwrap(argument.Value);
-
-            // CryptoConfig.MapNameToOID("SHA1") is the object identifier of the named algorithm.
-            if (value is IInvocationOperation { TargetMethod: { IsStatic: true, Name: "MapNameToOID" } mapper } map &&
-                FipsSymbolHelpers.IsCryptographyType(mapper.ContainingType, "CryptoConfig"))
+            if (TryGetForbiddenHashValue(FipsSymbolHelpers.Unwrap(argument.Value), out name))
             {
-                value = FipsSymbolHelpers.Unwrap(FipsSymbolHelpers.ArgumentAt(map.Arguments, 0)?.Value);
-            }
-
-            if (FipsSymbolHelpers.TryGetConstant<string>(value, out var constantName) &&
-                (IsForbiddenAlgorithmName(constantName) || ForbiddenHashOids.Contains(constantName.Trim())))
-            {
-                name = constantName;
-
                 return true;
             }
+        }
 
-            if (value is ITypeOfOperation typeOf &&
-                FipsSymbolHelpers.IsCryptographyType(typeOf.TypeOperand, FipsForbiddenTypes.All))
-            {
-                name = typeOf.TypeOperand.Name;
-                return true;
-            }
+        name = string.Empty;
+        return false;
+    }
+
+    private static bool TryGetForbiddenHashValue(IOperation? value, out string name)
+    {
+        // CryptoConfig.MapNameToOID("SHA1") is the object identifier of the named algorithm.
+        if (value is IInvocationOperation { TargetMethod: { IsStatic: true } mapper } map &&
+            string.Equals(mapper.Name, "MapNameToOID", StringComparison.Ordinal) &&
+            FipsSymbolHelpers.IsCryptographyType(mapper.ContainingType, "CryptoConfig"))
+        {
+            value = FipsSymbolHelpers.Unwrap(FipsSymbolHelpers.ArgumentAt(map.Arguments, 0)?.Value);
+        }
+
+        if (FipsSymbolHelpers.TryGetConstant<string>(value, out var constantName) &&
+            (IsForbiddenAlgorithmName(constantName) || ForbiddenHashOids.Contains(constantName.Trim())))
+        {
+            name = constantName;
+
+            return true;
+        }
+
+        if (value is ITypeOfOperation typeOf &&
+            FipsSymbolHelpers.IsCryptographyType(typeOf.TypeOperand, FipsForbiddenTypes.All))
+        {
+            name = typeOf.TypeOperand.Name;
+            return true;
         }
 
         name = string.Empty;
@@ -513,28 +553,34 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         OperationAnalysisContext context,
         IMethodSymbol? method,
         ImmutableArray<IArgumentOperation> arguments,
-        SyntaxNode syntax) =>
+        SyntaxNode syntax)
+    {
         FipsSymbolHelpers.ReportHashNameArguments(
             method,
             arguments,
             syntax,
             context,
             static (_, name) => IsForbiddenAlgorithmName(name),
-            static (state, node, name) => ReportForbidden(state, node, name));
+            ReportForbidden);
+    }
 
     /// <summary>
     ///     Reports a forbidden hash name stored in a mutable field, a property or a reassigned target, because a
     ///     later read of that target cannot be followed.
     /// </summary>
-    private static void AnalyzeHashNameStore(OperationAnalysisContext context) =>
+    private static void AnalyzeHashNameStore(OperationAnalysisContext context)
+    {
         FipsSymbolHelpers.ReportHashNameStores(
             context.Operation,
             context,
             static (_, name) => IsForbiddenAlgorithmName(name),
-            static (state, node, name) => ReportForbidden(state, node, name));
+            ReportForbidden);
+    }
 
-    private static void ReportForbidden(OperationAnalysisContext context, SyntaxNode syntax, string algorithm) =>
+    private static void ReportForbidden(OperationAnalysisContext context, SyntaxNode syntax, string algorithm)
+    {
         context.ReportDiagnostic(Diagnostic.Create(Rule, syntax.GetLocation(), algorithm));
+    }
 
     /// <summary>
     ///     Reports a forbidden type or a type that derives from one. Returns true when either type rule owns the
@@ -548,16 +594,18 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         }
 
         var verdict = FipsTypeClassifier.GetVerdict(context.Compilation, type);
-        if (verdict == TypeVerdict.ForbiddenType)
+        if (verdict is TypeVerdict.ForbiddenType)
         {
             ReportForbidden(context, syntax, FipsSymbolHelpers.FullName(type) ?? type.Name);
         }
 
-        return verdict != TypeVerdict.Allowed;
+        return verdict is not TypeVerdict.Allowed;
     }
 
-    private static bool IsForbiddenAlgorithmName(string name) =>
-        ForbiddenAlgorithmNames.Contains(NormalizeName(name));
+    private static bool IsForbiddenAlgorithmName(string name)
+    {
+        return ForbiddenAlgorithmNames.Contains(NormalizeName(name));
+    }
 
     private static string NormalizeName(string name)
     {

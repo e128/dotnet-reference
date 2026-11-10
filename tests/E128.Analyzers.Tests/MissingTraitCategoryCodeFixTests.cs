@@ -10,8 +10,10 @@ public sealed class MissingTraitCategoryCodeFixTests
     private static readonly ReferenceAssemblies Net100WithXunit = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("xunit.v3.core", "3.2.2")]);
 
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<MissingTraitCategoryAnalyzer, MissingTraitCategoryCodeFixProvider>(source, fixedCode, references: Net100WithXunit);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<MissingTraitCategoryAnalyzer, MissingTraitCategoryCodeFixProvider>(source, fixedCode, references: Net100WithXunit);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

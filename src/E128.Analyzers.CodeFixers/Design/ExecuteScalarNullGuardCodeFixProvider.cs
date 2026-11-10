@@ -80,11 +80,11 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : E128CodeFixProviderB
 
         for (var suffix = 1; suffix <= MaxAttempts; suffix++)
         {
-            var candidate = suffix == 1
+            var candidate = suffix is 1
                 ? BaseName
                 : BaseName + suffix.ToString(CultureInfo.InvariantCulture);
 
-            if (semanticModel.LookupSymbols(position, name: candidate).Length == 0)
+            if (semanticModel.LookupSymbols(position, name: candidate).Length is 0)
             {
                 return candidate;
             }

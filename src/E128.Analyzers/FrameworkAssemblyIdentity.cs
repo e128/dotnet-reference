@@ -29,7 +29,7 @@ internal static class FrameworkAssemblyIdentity
     ///     Returns true when the assembly carries a known framework public key token. An unsigned
     ///     assembly has no token and returns false.
     /// </summary>
-    public static bool IsFrameworkAssembly(IAssemblySymbol? assembly)
+    internal static bool IsFrameworkAssembly(IAssemblySymbol? assembly)
     {
         if (assembly is null)
         {

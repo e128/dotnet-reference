@@ -20,6 +20,17 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : E128CodeFixProviderBase
 {
+    private static readonly HashSet<string> TargetMethodNames = new(
+        [
+            "GetAsync", "PostAsync", "SendAsync", "PutAsync", "DeleteAsync",
+            "PatchAsync", "GetStringAsync", "GetStreamAsync", "GetByteArrayAsync",
+            "GotoAsync", "ClickAsync", "FillAsync", "TypeAsync", "TapAsync",
+            "CheckAsync", "UncheckAsync", "SelectOptionAsync", "HoverAsync",
+            "FocusAsync", "PressAsync", "DispatchEventAsync", "WaitForSelectorAsync",
+            "WaitForNavigationAsync", "WaitForURLAsync", "WaitForLoadStateAsync"
+        ],
+        StringComparer.Ordinal);
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TaskWhenAllCancellationPropagationAnalyzer.DiagnosticId];
 
@@ -62,14 +73,14 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : E128Code
         }
 
         var callsToFix = FindCallsMissingCt(whenAllInvocation, semanticModel, cancellationToken);
-        if (callsToFix.Count == 0)
+        if (callsToFix.Count is 0)
         {
             return document;
         }
 
         var ctArgument = SyntaxFactory.Argument(SyntaxFactory.IdentifierName(ctParamName));
 
-        var newRoot = root.ReplaceNodes(callsToFix, (original, rewritten) =>
+        var newRoot = root.ReplaceNodes(callsToFix, (_, rewritten) =>
         {
             var newArgList = rewritten.ArgumentList.AddArguments(ctArgument);
             return rewritten.WithArgumentList(newArgList);
@@ -93,7 +104,7 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : E128Code
         CancellationToken cancellationToken)
     {
         var whenAllArgs = whenAllInvocation.ArgumentList.Arguments;
-        if (whenAllArgs.Count != 1
+        if (whenAllArgs.Count is not 1
             || whenAllArgs[0].Expression is not InvocationExpressionSyntax selectInvocation)
         {
             return [];
@@ -146,17 +157,7 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : E128Code
             return false;
         }
 
-        var methodName = name.Identifier.Text;
-        return methodName switch
-        {
-            "GetAsync" or "PostAsync" or "SendAsync" or "PutAsync" or "DeleteAsync"
-                or "PatchAsync" or "GetStringAsync" or "GetStreamAsync" or "GetByteArrayAsync"
-                or "GotoAsync" or "ClickAsync" or "FillAsync" or "TypeAsync" or "TapAsync"
-                or "CheckAsync" or "UncheckAsync" or "SelectOptionAsync" or "HoverAsync"
-                or "FocusAsync" or "PressAsync" or "DispatchEventAsync" or "WaitForSelectorAsync"
-                or "WaitForNavigationAsync" or "WaitForURLAsync" or "WaitForLoadStateAsync" => true,
-            _ => false
-        };
+        return TargetMethodNames.Contains(name.Identifier.Text);
     }
 
     // Appending the token positionally needs an overload that takes one more argument and ends with

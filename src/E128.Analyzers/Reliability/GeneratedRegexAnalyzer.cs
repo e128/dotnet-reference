@@ -68,12 +68,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
     {
         var attribute = (AttributeSyntax)context.Node;
 
-        var name = attribute.Name switch
-        {
-            IdentifierNameSyntax id => id.Identifier.ValueText,
-            QualifiedNameSyntax q => q.Right.Identifier.ValueText,
-            _ => null
-        };
+        var name = GetAttributeName(attribute);
 
         if (!string.Equals(name, "GeneratedRegex", StringComparison.Ordinal)
             && !string.Equals(name, "GeneratedRegexAttribute", StringComparison.Ordinal))
@@ -102,19 +97,38 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(Diagnostic.Create(CompiledRule, attribute.GetLocation()));
         }
 
-        var patternLiteral = GetPatternLiteral(attribute);
-        if (patternLiteral is not null)
-        {
-            if (GeneratedRegexHelpers.HasOverlappingQuantifiers(patternLiteral))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(OverlappingQuantifierRule, attribute.GetLocation()));
-            }
+        ReportQuantifierRules(context, attribute);
+    }
 
-            if (GeneratedRegexHelpers.HasNestedQuantifier(patternLiteral))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(NestedQuantifierRule, attribute.GetLocation()));
-            }
+    private static string? GetAttributeName(AttributeSyntax attribute)
+    {
+        return attribute.Name switch
+        {
+            IdentifierNameSyntax id => id.Identifier.ValueText,
+            QualifiedNameSyntax q => q.Right.Identifier.ValueText,
+            _ => null
+        };
+    }
+
+    private static void ReportQuantifierRules(SyntaxNodeAnalysisContext context, AttributeSyntax attribute)
+    {
+        var patternLiteral = GetPatternLiteral(attribute);
+        if (patternLiteral is null)
+        {
+            return;
         }
+
+        if (GeneratedRegexHelpers.HasOverlappingQuantifiers(patternLiteral))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(OverlappingQuantifierRule, attribute.GetLocation()));
+        }
+
+        if (!GeneratedRegexHelpers.HasNestedQuantifier(patternLiteral))
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(NestedQuantifierRule, attribute.GetLocation()));
     }
 
     private static bool HasTimeoutArgument(AttributeSyntax attribute, IMethodSymbol constructor)
@@ -200,7 +214,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
 
             if (arg.NameColon is null && arg.NameEquals is null)
             {
-                if (positionalIndex == 1)
+                if (positionalIndex is 1)
                 {
                     optionsExpression = arg.Expression;
                     break;
@@ -225,22 +239,16 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
                    || ExpressionContainsCompiled(binary.Right, semanticModel, cancellationToken);
         }
 
-        if (expression is MemberAccessExpressionSyntax memberAccess
-            && string.Equals(memberAccess.Name.Identifier.ValueText, "Compiled", StringComparison.Ordinal))
+        if (expression is not MemberAccessExpressionSyntax memberAccess
+            || !string.Equals(memberAccess.Name.Identifier.ValueText, "Compiled", StringComparison.Ordinal))
         {
-            var symbol = semanticModel.GetSymbolInfo(memberAccess, cancellationToken).Symbol;
-            if (symbol is IFieldSymbol { ContainingType: { } containingType }
-                && string.Equals(containingType.Name, "RegexOptions", StringComparison.Ordinal))
-            {
-                var ns = containingType.ContainingNamespace;
-                return ns is { Name: "RegularExpressions" }
-                       && ns.ContainingNamespace is { Name: "Text" }
-                       && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
-                       && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
-            }
+            return false;
         }
 
-        return false;
+        var symbol = semanticModel.GetSymbolInfo(memberAccess, cancellationToken).Symbol;
+        return symbol is IFieldSymbol { ContainingType: { } containingType }
+               && string.Equals(containingType.Name, "RegexOptions", StringComparison.Ordinal)
+               && IsRegularExpressionsNamespace(containingType.ContainingNamespace);
     }
 
     private static bool IsGeneratedRegexAttribute(INamedTypeSymbol type)
@@ -250,11 +258,20 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var ns = type.ContainingNamespace;
-        return ns is { Name: "RegularExpressions" }
-               && ns.ContainingNamespace is { Name: "Text" }
-               && ns.ContainingNamespace.ContainingNamespace is { Name: "System" }
-               && ns.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+        return IsRegularExpressionsNamespace(type.ContainingNamespace);
+    }
+
+    private static bool IsRegularExpressionsNamespace(INamespaceSymbol? ns)
+    {
+        var text = ns?.ContainingNamespace;
+        var system = text?.ContainingNamespace;
+        return ns is not null
+               && text is not null
+               && system is not null
+               && string.Equals(ns.Name, "RegularExpressions", StringComparison.Ordinal)
+               && string.Equals(text.Name, "Text", StringComparison.Ordinal)
+               && string.Equals(system.Name, "System", StringComparison.Ordinal)
+               && system.ContainingNamespace?.IsGlobalNamespace is true;
     }
 
     private static string? GetPatternLiteral(AttributeSyntax attribute)

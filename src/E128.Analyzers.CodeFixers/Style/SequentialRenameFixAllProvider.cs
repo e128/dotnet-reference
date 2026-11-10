@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -44,12 +45,12 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
     public override async Task<CodeAction?> GetFixAsync(FixAllContext fixAllContext)
     {
         var renames = await CollectRenamesAsync(fixAllContext).ConfigureAwait(false);
-        if (renames.Count == 0)
+        if (renames.Count is 0)
         {
             return null;
         }
 
-        var title = renames.Count == 1
+        var title = renames.Count is 1
             ? $"Rename '{renames[0].OldName}' to '{renames[0].NewName}'"
             : $"Fix {renames.Count.ToString(CultureInfo.InvariantCulture)} naming style violations";
 
@@ -95,7 +96,7 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
 
         // Process back-to-front within each document so renames at higher positions
         // don't shift the spans of symbols that appear earlier in the same file.
-        return [.. result.OrderBy(r => r.DocumentId.Id).ThenByDescending(r => r.Span.Start)];
+        return [.. result.OrderBy(static r => r.DocumentId.Id).ThenByDescending(static r => r.Span.Start)];
     }
 
     private static async Task<List<(Document Document, ImmutableArray<Diagnostic> Diagnostics)>>
@@ -103,7 +104,7 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
     {
         var result = new List<(Document, ImmutableArray<Diagnostic>)>();
 
-        if (context.Scope == FixAllScope.Document && context.Document is not null)
+        if (context.Scope is FixAllScope.Document && context.Document is not null)
         {
             var diagnostics = await context.GetDocumentDiagnosticsAsync(context.Document).ConfigureAwait(false);
             if (diagnostics.Length > 0)
@@ -114,7 +115,7 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
             return result;
         }
 
-        var projects = context.Scope == FixAllScope.Solution
+        var projects = context.Scope is FixAllScope.Solution
             ? context.Project.Solution.Projects
             : [context.Project];
 
@@ -171,19 +172,63 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
         return solution;
     }
 
-    internal readonly struct RenameInfo
+    internal readonly struct RenameInfo : IEquatable<RenameInfo>
     {
-        public DocumentId DocumentId { get; }
-        public TextSpan Span { get; }
-        public string OldName { get; }
-        public string NewName { get; }
+        private const int HashSeed = 17;
+        private const int HashMultiplier = 31;
 
-        public RenameInfo(DocumentId documentId, TextSpan span, string oldName, string newName)
+        internal DocumentId DocumentId { get; }
+        internal TextSpan Span { get; }
+        internal string OldName { get; }
+        internal string NewName { get; }
+
+        internal RenameInfo(DocumentId documentId, TextSpan span, string oldName, string newName)
         {
             DocumentId = documentId;
             Span = span;
             OldName = oldName;
             NewName = newName;
+        }
+
+        public static bool operator ==(RenameInfo left, RenameInfo right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(RenameInfo left, RenameInfo right)
+        {
+            return !left.Equals(right);
+        }
+
+        public bool Equals(RenameInfo other)
+        {
+            return EqualityComparer<DocumentId>.Default.Equals(DocumentId, other.DocumentId)
+                && Span.Equals(other.Span)
+                && string.Equals(OldName, other.OldName, StringComparison.Ordinal)
+                && string.Equals(NewName, other.NewName, StringComparison.Ordinal);
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is RenameInfo other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = HashSeed;
+                hash = (hash * HashMultiplier) + EqualityComparer<DocumentId>.Default.GetHashCode(DocumentId);
+                hash = (hash * HashMultiplier) + Span.GetHashCode();
+                hash = (hash * HashMultiplier) + StringComparer.Ordinal.GetHashCode(OldName);
+                hash = (hash * HashMultiplier) + StringComparer.Ordinal.GetHashCode(NewName);
+                return hash;
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"{OldName} to {NewName}";
         }
     }
 }

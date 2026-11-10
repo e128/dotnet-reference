@@ -95,7 +95,7 @@ internal static class LoopCount
         CancellationToken cancellationToken)
     {
         foreach (var invocation in loop
-                     .DescendantNodes(descendIntoChildren: node =>
+                     .DescendantNodes(descendIntoChildren: static node =>
                          node is not AnonymousFunctionExpressionSyntax
                              and not LocalFunctionStatementSyntax)
                      .OfType<InvocationExpressionSyntax>())
@@ -169,13 +169,17 @@ internal static class LoopCount
 
     private static string? CountSuffix(ITypeSymbol type)
     {
-        return type is IArrayTypeSymbol
-            ? ".Length"
-            : HasIntProperty(type, "Count")
-                ? ".Count"
-                : HasIntProperty(type, "Length")
-                    ? ".Length"
-                    : null;
+        if (type is IArrayTypeSymbol)
+        {
+            return ".Length";
+        }
+
+        if (HasIntProperty(type, "Count"))
+        {
+            return ".Count";
+        }
+
+        return HasIntProperty(type, "Length") ? ".Length" : null;
     }
 
     private static string? GetMemberCountText(ExpressionSyntax expression)
@@ -219,7 +223,7 @@ internal static class LoopCount
         foreach (var property in type.GetMembers(propertyName).OfType<IPropertySymbol>())
         {
             if (property.IsStatic
-                || property.Type.SpecialType != SpecialType.System_Int32
+                || property.Type.SpecialType is not SpecialType.System_Int32
                 || !property.ExplicitInterfaceImplementations.IsEmpty)
             {
                 continue;

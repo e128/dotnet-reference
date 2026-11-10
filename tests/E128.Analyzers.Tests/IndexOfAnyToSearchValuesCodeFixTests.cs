@@ -7,11 +7,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class IndexOfAnyToSearchValuesCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<IndexOfAnyToSearchValuesAnalyzer, IndexOfAnyToSearchValuesCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<IndexOfAnyToSearchValuesAnalyzer, IndexOfAnyToSearchValuesCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
-        CodeFixTestRunner.NoFixAsync<IndexOfAnyToSearchValuesAnalyzer, IndexOfAnyToSearchValuesCodeFixProvider>(source, expected: expected);
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
+    {
+        return CodeFixTestRunner.NoFixAsync<IndexOfAnyToSearchValuesAnalyzer, IndexOfAnyToSearchValuesCodeFixProvider>(source, expected: expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

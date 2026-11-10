@@ -13,6 +13,8 @@ namespace E128.Analyzers.Unsafe;
 [Shared]
 public sealed class UnsafeBooleanConversionsCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int ConversionTypeArgumentCount = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeBooleanConversionsAnalyzer.DiagnosticId];
 
@@ -25,8 +27,8 @@ public sealed class UnsafeBooleanConversionsCodeFixProvider : E128CodeFixProvide
             {
                 Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax generic },
             } invocation
-            || invocation.ArgumentList.Arguments.Count != 1
-            || generic.TypeArgumentList.Arguments.Count != 2)
+            || invocation.ArgumentList.Arguments.Count is not 1
+            || generic.TypeArgumentList.Arguments.Count is not ConversionTypeArgumentCount)
         {
             return Task.CompletedTask;
         }
@@ -57,9 +59,12 @@ public sealed class UnsafeBooleanConversionsCodeFixProvider : E128CodeFixProvide
         var isBoolToInt = string.Equals(source, "bool", StringComparison.Ordinal)
             && string.Equals(target, "int", StringComparison.Ordinal);
 
-        return isIntToBool
-            ? "(" + valueText + " != 0)"
-            : isBoolToInt ? "(" + valueText + " ? 1 : 0)" : null;
+        if (isIntToBool)
+        {
+            return "(" + valueText + " != 0)";
+        }
+
+        return isBoolToInt ? "(" + valueText + " ? 1 : 0)" : null;
     }
 
     private static Document ApplyFix(

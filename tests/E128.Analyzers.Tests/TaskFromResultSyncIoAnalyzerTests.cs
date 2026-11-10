@@ -18,7 +18,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyWithReferencesAsync(ReferenceAssemblies referenceAssemblies, string code)
@@ -28,7 +28,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
             TestCode = code,
             ReferenceAssemblies = referenceAssemblies
         };
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

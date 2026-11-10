@@ -19,7 +19,7 @@ internal static class FixSyntax
     /// </summary>
     internal static bool IsInStaticMember(SyntaxNode node)
     {
-        return node.Ancestors().Any(ancestor => ancestor switch
+        return node.Ancestors().Any(static ancestor => ancestor switch
         {
             BaseTypeDeclarationSyntax type => type.Modifiers.Any(SyntaxKind.StaticKeyword),
             BaseMethodDeclarationSyntax method => method.Modifiers.Any(SyntaxKind.StaticKeyword),
@@ -42,7 +42,7 @@ internal static class FixSyntax
         };
 
         return body is ObjectCreationExpressionSyntax creation
-               && (creation.ArgumentList?.Arguments.Count ?? 0) == 0;
+               && (creation.ArgumentList?.Arguments.Count ?? 0) is 0;
     }
 
     /// <summary>
@@ -52,10 +52,10 @@ internal static class FixSyntax
     internal static string MemberIndentation(MemberDeclarationSyntax member)
     {
         var indent = member.GetLeadingTrivia()
-            .FirstOrDefault(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            .FirstOrDefault(static trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia))
             .ToFullString();
 
-        return indent.Length == 0 ? "    " : indent;
+        return indent.Length is 0 ? "    " : indent;
     }
 
     /// <summary>
@@ -194,13 +194,7 @@ internal static class FixSyntax
         }
 
         var identifier = builder.Length > 0 ? builder.ToString() : fallback;
-        var lowerFirst = char.ToLowerInvariant(identifier[0]).ToString();
-        if (identifier.Length > 1)
-        {
-            lowerFirst += identifier.Substring(1);
-        }
-
-        return "_" + lowerFirst + suffix;
+        return "_" + char.ToLowerInvariant(identifier[0]) + identifier.Substring(1) + suffix;
     }
 
     /// <summary>
@@ -215,33 +209,46 @@ internal static class FixSyntax
     {
         foreach (var member in typeDecl.Members)
         {
-            if (member is FieldDeclarationSyntax field)
-            {
-                foreach (var variable in field.Declaration.Variables)
-                {
-                    if (string.Equals(variable.Identifier.ValueText, name, StringComparison.Ordinal))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            if (includeProperties
-                && member is PropertyDeclarationSyntax property
-                && string.Equals(property.Identifier.ValueText, name, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (includeMethods
-                && member is MethodDeclarationSyntax method
-                && string.Equals(method.Identifier.ValueText, name, StringComparison.Ordinal))
+            if (DeclaresName(member, name, includeProperties, includeMethods))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool DeclaresName(
+        MemberDeclarationSyntax member,
+        string name,
+        bool includeProperties,
+        bool includeMethods)
+    {
+        return member switch
+        {
+            FieldDeclarationSyntax field => DeclaresVariableNamed(field, name),
+            PropertyDeclarationSyntax property => includeProperties && IsNamed(property.Identifier, name),
+            MethodDeclarationSyntax method => includeMethods && IsNamed(method.Identifier, name),
+            _ => false
+        };
+    }
+
+    private static bool DeclaresVariableNamed(FieldDeclarationSyntax field, string name)
+    {
+        foreach (var variable in field.Declaration.Variables)
+        {
+            if (IsNamed(variable.Identifier, name))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsNamed(SyntaxToken identifier, string name)
+    {
+        return string.Equals(identifier.ValueText, name, StringComparison.Ordinal);
     }
 
     /// <summary>

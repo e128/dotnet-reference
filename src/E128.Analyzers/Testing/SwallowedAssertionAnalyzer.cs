@@ -103,7 +103,7 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
 
     private static bool Rethrows(CatchClauseSyntax catchClause)
     {
-        return OwnNodes(catchClause).Any(node => node is ThrowStatementSyntax or ThrowExpressionSyntax);
+        return OwnNodes(catchClause).Any(static node => node is ThrowStatementSyntax or ThrowExpressionSyntax);
     }
 
     private static bool CallsAssertFail(CatchClauseSyntax catchClause, SyntaxNodeAnalysisContext context, KnownTypes types)
@@ -114,7 +114,7 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
     // A throw or a call inside a nested lambda or local function does not run when the catch runs.
     private static IEnumerable<SyntaxNode> OwnNodes(CatchClauseSyntax catchClause)
     {
-        return catchClause.Block.DescendantNodes(node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax));
+        return catchClause.Block.DescendantNodes(static node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax));
     }
 
     private sealed class KnownTypes

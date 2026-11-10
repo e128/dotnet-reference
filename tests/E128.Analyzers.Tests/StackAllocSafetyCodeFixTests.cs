@@ -21,7 +21,7 @@ public sealed class StackAllocSafetyCodeFixTests
         };
         test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -52,6 +52,7 @@ public sealed class StackAllocSafetyCodeFixTests
             }
             """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task NoFix_WhenTheStackAllocIsInsideALoop()

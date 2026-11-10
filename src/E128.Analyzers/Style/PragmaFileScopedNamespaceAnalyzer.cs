@@ -50,16 +50,18 @@ public sealed class PragmaFileScopedNamespaceAnalyzer : DiagnosticAnalyzer
         // every token in the file, including the whole body below the namespace.
         var found = FindDisablePragma(namespaceToken.LeadingTrivia);
         for (var token = namespaceToken.GetPreviousToken(includeZeroWidth: true);
-             found is null && token.RawKind != 0;
+             found is null && token.RawKind is not 0;
              token = token.GetPreviousToken(includeZeroWidth: true))
         {
             found = FindDisablePragma(token.TrailingTrivia) ?? FindDisablePragma(token.LeadingTrivia);
         }
 
-        if (found is { } trivia)
+        if (found is not { } trivia)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, trivia.GetLocation()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, trivia.GetLocation()));
     }
 
     private static SyntaxTrivia? FindDisablePragma(SyntaxTriviaList triviaList)

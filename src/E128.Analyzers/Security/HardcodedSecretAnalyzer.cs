@@ -89,9 +89,9 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
-            if (XunitTestHelper.IsTestCompilation(start.Compilation))
+            if (XunitTestHelper.IsTestCompilation(start.Compilation, start.CancellationToken))
             {
                 return;
             }
@@ -121,21 +121,17 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
 
         var name = TargetName(literal);
 
-        if (name is not null && IsCredentialName(name))
+        if (name is null || !IsCredentialName(name))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, literal.GetLocation(), name));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, literal.GetLocation(), name));
     }
 
     private static string? TargetName(LiteralExpressionSyntax literal)
     {
-        SyntaxNode current = literal;
-
-        // Look through parentheses, a coalesce, and the branches of a conditional.
-        while (current.Parent is { } parent && IsTransparent(parent, current))
-        {
-            current = parent;
-        }
+        var current = SkipTransparentParents(literal);
 
         return current.Parent switch
         {
@@ -148,6 +144,19 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
             ArgumentSyntax { NameColon: { } nameColon } => nameColon.Name.Identifier.ValueText,
             _ => null
         };
+    }
+
+    // Look through parentheses, a coalesce, and the branches of a conditional.
+    private static SyntaxNode SkipTransparentParents(SyntaxNode literal)
+    {
+        var current = literal;
+
+        while (current.Parent is { } parent && IsTransparent(parent, current))
+        {
+            current = parent;
+        }
+
+        return current;
     }
 
     private static bool IsTransparent(SyntaxNode parent, SyntaxNode child)
@@ -174,7 +183,7 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
     // An indexer key such as ["Password"] names the credential.
     private static string? ConstantKey(BracketedArgumentListSyntax argumentList)
     {
-        return argumentList.Arguments.Count == 1
+        return argumentList.Arguments.Count is 1
                && argumentList.Arguments[0].Expression is LiteralExpressionSyntax key
                && key.IsKind(SyntaxKind.StringLiteralExpression)
             ? key.Token.ValueText
@@ -217,7 +226,18 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        var hasPathSeparator = false;
+        if (!TryFindPathSeparator(value, out var hasPathSeparator))
+        {
+            return false;
+        }
+
+        return hasPathSeparator || IsTitleCaseHyphenated(value);
+    }
+
+    // Returns false when the value holds a character that a key name never uses.
+    private static bool TryFindPathSeparator(string value, out bool hasPathSeparator)
+    {
+        hasPathSeparator = false;
 
         foreach (var character in value)
         {
@@ -231,7 +251,7 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        return hasPathSeparator || IsTitleCaseHyphenated(value);
+        return true;
     }
 
     // "BRAVE_API_KEY" names the setting a credential is read from. The underscore requirement keeps
@@ -271,7 +291,7 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
 
         foreach (var segment in segments)
         {
-            if (segment.Length == 0 || !char.IsUpper(segment[0]))
+            if (segment.Length is 0 || !char.IsUpper(segment[0]))
             {
                 return false;
             }

@@ -44,17 +44,21 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
         context.RegisterOperationAction(AnalyzeInvocation, OperationKind.Invocation);
     }
 
-    /// <summary>Reports the static <c lang="csharp">Rijndael.Create()</c> factory, which returns the same non-AES type.</summary>
+    /// <summary>
+    ///     Reports the static <c lang="csharp">Rijndael.Create()</c> factory, which returns the same non-AES type.
+    /// </summary>
     private static void AnalyzeInvocation(OperationAnalysisContext context)
     {
         var invocation = (IInvocationOperation)context.Operation;
         var method = invocation.TargetMethod;
-        if (method.IsStatic &&
-            string.Equals(method.Name, "Create", StringComparison.Ordinal) &&
-            FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "Rijndael"))
+        if (!method.IsStatic ||
+            !string.Equals(method.Name, "Create", StringComparison.Ordinal) ||
+            !FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "Rijndael"))
         {
-            Report(context, invocation, "Rijndael", "Aes.Create()");
+            return;
         }
+
+        Report(context, invocation, "Rijndael", "Aes.Create()");
     }
 
     private static void AnalyzeObjectCreation(OperationAnalysisContext context)
@@ -68,7 +72,7 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
 
         // E128071 already blocks these types, so factory advice would contradict it.
         if (FipsSymbolHelpers.IsCryptographyType(type, FipsForbiddenTypes.All) ||
-            FipsTypeClassifier.GetVerdict(context.Compilation, type) != TypeVerdict.Allowed)
+            FipsTypeClassifier.GetVerdict(context.Compilation, type) is not TypeVerdict.Allowed)
         {
             return;
         }
@@ -76,30 +80,50 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
         var name = type.Name;
         if (!FipsSymbolHelpers.IsInCryptographyNamespace(type))
         {
-            // Rijndael can use a block size that AES does not allow. The name is ambiguous, so outside
-            // System.Security.Cryptography only a symmetric algorithm counts.
-            if ((string.Equals(name, "Rijndael", StringComparison.Ordinal) ||
-                 string.Equals(name, "RijndaelManaged", StringComparison.Ordinal)) &&
-                FipsSymbolHelpers.DerivesFromCryptographyType(type, "SymmetricAlgorithm"))
-            {
-                Report(context, creation, name, "Aes.Create()");
-            }
-
+            ReportRijndaelOutsideCryptographyNamespace(context, creation, type);
             return;
         }
 
-        if (string.Equals(name, "Rijndael", StringComparison.Ordinal) ||
-            string.Equals(name, "RijndaelManaged", StringComparison.Ordinal))
+        if (IsRijndaelName(name))
         {
             Report(context, creation, name, "Aes.Create()");
             return;
         }
 
-        if (name.EndsWith("Managed", StringComparison.Ordinal) ||
-            (name.EndsWith("Cng", StringComparison.Ordinal) && !UsesCngKeyStorage(creation.Constructor)))
+        if (!IsFactoryReplaceable(name, creation))
         {
-            Report(context, creation, name, SuggestFactory(name, creation) ?? "the abstract base factory's Create()");
+            return;
         }
+
+        Report(context, creation, name, SuggestFactory(name, creation) ?? "the abstract base factory's Create()");
+    }
+
+    // Rijndael can use a block size that AES does not allow. The name is ambiguous, so outside
+    // System.Security.Cryptography only a symmetric algorithm counts.
+    private static void ReportRijndaelOutsideCryptographyNamespace(
+        OperationAnalysisContext context,
+        IObjectCreationOperation creation,
+        ITypeSymbol type)
+    {
+        if (!IsRijndaelName(type.Name) ||
+            !FipsSymbolHelpers.DerivesFromCryptographyType(type, "SymmetricAlgorithm"))
+        {
+            return;
+        }
+
+        Report(context, creation, type.Name, "Aes.Create()");
+    }
+
+    private static bool IsRijndaelName(string name)
+    {
+        return string.Equals(name, "Rijndael", StringComparison.Ordinal) ||
+               string.Equals(name, "RijndaelManaged", StringComparison.Ordinal);
+    }
+
+    private static bool IsFactoryReplaceable(string name, IObjectCreationOperation creation)
+    {
+        return name.EndsWith("Managed", StringComparison.Ordinal) ||
+               (name.EndsWith("Cng", StringComparison.Ordinal) && !UsesCngKeyStorage(creation.Constructor));
     }
 
     /// <summary>
@@ -125,12 +149,14 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static void Report(OperationAnalysisContext context, IOperation operation, string typeName, string suggestion) =>
+    private static void Report(OperationAnalysisContext context, IOperation operation, string typeName, string suggestion)
+    {
         context.ReportDiagnostic(Diagnostic.Create(
             Rule,
             operation.Syntax.GetLocation(),
             typeName,
             suggestion));
+    }
 
     /// <summary>
     ///     Best-effort factory suggestion: AesManaged becomes Aes.Create(), SHA256Cng becomes SHA256.Create(),
@@ -140,32 +166,48 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static string? SuggestFactory(string typeName, IObjectCreationOperation creation)
     {
-        var baseName = typeName;
-        if (baseName.EndsWith("Managed", StringComparison.Ordinal))
+        var baseName = StripFactorySuffix(typeName);
+        if (creation.Arguments.Length is 0)
         {
-            baseName = baseName.Substring(0, baseName.Length - "Managed".Length);
-        }
-        else if (baseName.EndsWith("Cng", StringComparison.Ordinal))
-        {
-            baseName = baseName.Substring(0, baseName.Length - "Cng".Length);
+            return baseName.Length is 0 ? "the abstract base factory's Create()" : baseName + ".Create()";
         }
 
-        if (creation.Arguments.Length == 0)
-        {
-            return baseName.Length == 0 ? "the abstract base factory's Create()" : baseName + ".Create()";
-        }
-
-        if (creation.Arguments.Length != 1 || creation.Arguments[0].Parameter?.Type is not { } parameterType)
+        if (creation.Arguments.Length is not 1 || creation.Arguments[0].Parameter?.Type is not { } parameterType)
         {
             return null;
         }
 
-        var keepsKeySize = baseName is "RSA" or "DSA" && parameterType.SpecialType == SpecialType.System_Int32;
-        var keepsCurve = baseName is "ECDsa" or "ECDiffieHellman" &&
-            FipsSymbolHelpers.IsCryptographyType(parameterType, "ECCurve");
-
-        return keepsKeySize || keepsCurve
+        return KeepsFactoryArgument(baseName, parameterType)
             ? baseName + ".Create(" + creation.Arguments[0].Value.Syntax + ")"
             : null;
+    }
+
+    private static string StripFactorySuffix(string typeName)
+    {
+        if (typeName.EndsWith("Managed", StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - "Managed".Length);
+        }
+
+        if (typeName.EndsWith("Cng", StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - "Cng".Length);
+        }
+
+        return typeName;
+    }
+
+    private static bool KeepsFactoryArgument(string baseName, ITypeSymbol parameterType)
+    {
+        var keepsKeySize =
+            (string.Equals(baseName, "RSA", StringComparison.Ordinal) ||
+             string.Equals(baseName, "DSA", StringComparison.Ordinal)) &&
+            parameterType.SpecialType is SpecialType.System_Int32;
+        var keepsCurve =
+            (string.Equals(baseName, "ECDsa", StringComparison.Ordinal) ||
+             string.Equals(baseName, "ECDiffieHellman", StringComparison.Ordinal)) &&
+            FipsSymbolHelpers.IsCryptographyType(parameterType, "ECCurve");
+
+        return keepsKeySize || keepsCurve;
     }
 }

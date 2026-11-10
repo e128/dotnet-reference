@@ -19,7 +19,7 @@ public sealed class PragmaFileScopedNamespaceCodeFixTests
             // tests — E128094 fires on a pragma above the namespace, and the framework adds
             // its own pragma during the suppression phase, which is also above the namespace.
             TestBehaviors = TestBehaviors.SkipSuppressionCheck
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

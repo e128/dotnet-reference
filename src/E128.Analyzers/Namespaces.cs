@@ -24,7 +24,7 @@ internal static class Namespaces
             var dot = end > 0 ? dotted.LastIndexOf('.', end - 1) : -1;
             var start = dot + 1;
             var length = end - start;
-            if (ns.Name.Length != length || string.CompareOrdinal(ns.Name, 0, dotted, start, length) != 0)
+            if (ns.Name.Length != length || string.CompareOrdinal(ns.Name, 0, dotted, start, length) is not 0)
             {
                 return false;
             }

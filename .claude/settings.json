@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/stop-failure"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-failure\""
           }
         ]
       }
@@ -94,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/init-session",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/init-session\"",
             "statusMessage": "Loading session context..."
           }
         ]
@@ -106,7 +106,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/user-prompt-submit"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-submit\""
           }
         ]
       }
@@ -128,7 +128,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/post-tool-use-memory-sync"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use-memory-sync\""
           }
         ]
       },
@@ -137,7 +137,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/post-format-reread-reminder"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-format-reread-reminder\""
           }
         ]
       }
@@ -148,7 +148,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/pre-tool-use-guard"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-tool-use-guard\""
           }
         ]
       },
@@ -157,7 +157,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/validate-agent-frontmatter"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-agent-frontmatter\""
           }
         ]
       },
@@ -166,7 +166,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/block-raw-git"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-raw-git\""
           }
         ]
       },
@@ -175,7 +175,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/block-raw-commands"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-raw-commands\""
           }
         ]
       }

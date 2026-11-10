@@ -14,7 +14,7 @@ public sealed class SkipInitAnalyzerTests
         {
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -47,6 +47,7 @@ public sealed class SkipInitAnalyzerTests
                            }
                            """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenCalledThroughUsingStatic()

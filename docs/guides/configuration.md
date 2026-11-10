@@ -25,10 +25,7 @@ graph TB
 | Property                          | Value             | Effect                                            |
 | --------------------------------- | ----------------- | ------------------------------------------------- |
 | `AnalysisLevel`                   | `latest-all`      | Enable the latest analyzer rule set               |
-| `AnalysisMode`                    | `Recommended`     | Baseline mode; per-category overrides below       |
-| `AnalysisModeSecurity`            | `All`             | All security rules on                             |
-| `AnalysisModeReliability`         | `All`             | All reliability rules on                          |
-| `AnalysisModePerformance`         | `All`             | All performance rules on                          |
+| `AnalysisMode`                    | `All`             | Every CA rule runs, including rules off by default |
 | `EnableNETAnalyzers`              | `true`            | .NET analyzers active                             |
 | `EnforceCodeStyleInBuild`         | `true`            | IDE* rules fire during build                      |
 | `TreatWarningsAsErrors`           | `true`            | Any warning fails the build                       |
@@ -77,15 +74,18 @@ dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary  # libraries o
 
 ## Common Test-Project Overrides (`tests/.globalconfig`)
 
-| Rule      | Reason                                              |
-| --------- | --------------------------------------------------- |
-| CA1515    | xUnit requires public test types                    |
-| CA1707    | Underscores in test method names                    |
-| CA1062    | xUnit fixture injection is non-null                 |
-| CA2007    | `ConfigureAwait` not needed in tests                |
-| MA0040    | Ambient `CancellationToken` too noisy               |
-| E128064   | Fixtures legitimately round-trip through disk       |
-| VSTHRD200 | Test methods don't need `Async` suffix              |
+| Rule      | Reason                                                  |
+| --------- | ------------------------------------------------------- |
+| CA2007    | Conflicts with xUnit1030 (`ConfigureAwait(false)`)      |
+| MA0004    | Same xUnit1030 conflict                                 |
+| VSTHRD111 | Same xUnit1030 conflict                                 |
+| CA1707    | Test names use `Method_Condition_Result`                |
+| S100      | Same naming form                                        |
+| RCS1046   | Same naming form: test names carry no `Async` suffix    |
+| S4018     | Test runner helpers take explicit type arguments        |
+| E128043   | Guard-clause tests pass `null!`                         |
+| MA0191    | Same guard-clause tests                                 |
+| E128097   | Test-specific exception                                 |
 
 ## Environment-Specific Overrides
 

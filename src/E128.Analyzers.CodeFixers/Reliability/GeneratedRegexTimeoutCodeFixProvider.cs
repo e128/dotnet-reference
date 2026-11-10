@@ -14,6 +14,8 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int MaxPositionalArgsWithoutTimeout = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GeneratedRegexAnalyzer.TimeoutDiagnosticId];
 
@@ -64,7 +66,7 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBa
     private static bool HasNamedArgument(AttributeSyntax attribute)
     {
         return attribute.ArgumentList?.Arguments.Any(
-                   argument => argument.NameColon is not null || argument.NameEquals is not null)
+                   static argument => argument.NameColon is not null || argument.NameEquals is not null)
                ?? false;
     }
 
@@ -79,7 +81,7 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBa
 
         var positionalCount = CountPositionalArgs(attribute);
 
-        if (positionalCount < 2)
+        if (positionalCount < MaxPositionalArgsWithoutTimeout)
         {
             var optionsArg = SyntaxFactory.AttributeArgument(
                     SyntaxFactory.MemberAccessExpression(

@@ -14,6 +14,8 @@ namespace E128.Analyzers.Reliability;
 internal sealed class AppSettingsKeyReader
 {
     private const int MaxDepth = 64;
+    private const int HexDigitCount = 4;
+    private const int CommentMarkerLength = 2;
 
     private readonly string json;
     private readonly ImmutableHashSet<string>.Builder keys;
@@ -63,7 +65,7 @@ internal sealed class AppSettingsKeyReader
 
         foreach (var key in parsed)
         {
-            keys.Add(key);
+            _ = keys.Add(key);
         }
 
         return true;
@@ -135,8 +137,8 @@ internal sealed class AppSettingsKeyReader
 
         position++;
 
-        var path = prefix.Length == 0 ? name : prefix + ":" + name;
-        keys.Add(path);
+        var path = prefix.Length is 0 ? name : prefix + ":" + name;
+        _ = keys.Add(path);
 
         return ReadValue(path, depth + 1);
     }
@@ -156,10 +158,10 @@ internal sealed class AppSettingsKeyReader
                 return true;
             }
 
-            var path = prefix.Length == 0
+            var path = prefix.Length is 0
                 ? index.ToString(CultureInfo.InvariantCulture)
                 : prefix + ":" + index.ToString(CultureInfo.InvariantCulture);
-            keys.Add(path);
+            _ = keys.Add(path);
             index++;
 
             if (!ReadValue(path, depth + 1))
@@ -228,21 +230,27 @@ internal sealed class AppSettingsKeyReader
             case '"' or '\\' or '/':
                 builder.Append(escape);
                 return true;
+
             case 'b':
                 builder.Append('\b');
                 return true;
+
             case 'f':
                 builder.Append('\f');
                 return true;
+
             case 'n':
                 builder.Append('\n');
                 return true;
+
             case 'r':
                 builder.Append('\r');
                 return true;
+
             case 't':
                 builder.Append('\t');
                 return true;
+
             case 'u':
                 return TryReadUnicodeEscape(builder);
             default:
@@ -252,9 +260,9 @@ internal sealed class AppSettingsKeyReader
 
     private bool TryReadUnicodeEscape(StringBuilder builder)
     {
-        if (position + 4 > json.Length
+        if (position + HexDigitCount > json.Length
             || !int.TryParse(
-                json.Substring(position, 4),
+                json.Substring(position, HexDigitCount),
                 NumberStyles.AllowHexSpecifier,
                 CultureInfo.InvariantCulture,
                 out var code))
@@ -262,7 +270,7 @@ internal sealed class AppSettingsKeyReader
             return false;
         }
 
-        position += 4;
+        position += HexDigitCount;
         builder.Append((char)code);
 
         return true;
@@ -287,7 +295,10 @@ internal sealed class AppSettingsKeyReader
 
         // The token must be a JSON literal. double.TryParse would also accept NaN, Infinity, a
         // leading plus sign, a leading zero, and a trailing dot.
-        return token is "true" or "false" or "null" || IsJsonNumber(token);
+        return string.Equals(token, "true", StringComparison.Ordinal)
+               || string.Equals(token, "false", StringComparison.Ordinal)
+               || string.Equals(token, "null", StringComparison.Ordinal)
+               || IsJsonNumber(token);
     }
 
     // Matches -?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?
@@ -384,7 +395,12 @@ internal sealed class AppSettingsKeyReader
             return -1;
         }
 
-        while (index < token.Length && token[index] is >= '0' and <= '9')
+        return SkipDigits(token, index);
+    }
+
+    private static int SkipDigits(string token, int index)
+    {
+        while (index < token.Length && IsDigit(token[index]))
         {
             index++;
         }
@@ -437,13 +453,13 @@ internal sealed class AppSettingsKeyReader
 
     private void SkipBlockComment()
     {
-        var end = json.IndexOf("*/", position + 2, StringComparison.Ordinal);
-        position = end < 0 ? json.Length : end + 2;
+        var end = json.IndexOf("*/", position + CommentMarkerLength, StringComparison.Ordinal);
+        position = end < 0 ? json.Length : end + CommentMarkerLength;
     }
 
     private bool StartsWithAt(string text)
     {
-        return string.CompareOrdinal(json, position, text, 0, text.Length) == 0;
+        return string.CompareOrdinal(json, position, text, 0, text.Length) is 0;
     }
 
     private char Peek()

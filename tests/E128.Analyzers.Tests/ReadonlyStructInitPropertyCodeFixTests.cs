@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ReadonlyStructInitPropertyCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ReadonlyStructInitPropertyAnalyzer, ReadonlyStructInitPropertyCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ReadonlyStructInitPropertyAnalyzer, ReadonlyStructInitPropertyCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

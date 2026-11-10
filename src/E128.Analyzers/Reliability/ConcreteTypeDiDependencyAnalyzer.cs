@@ -22,6 +22,8 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128035";
 
+    private const int InterfaceImplementationTypeArgumentCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Concrete-type DI dependency without direct registration",
@@ -100,12 +102,12 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
         ConcurrentBag<INamedTypeSymbol> interfaceRegistered,
         ConcurrentBag<INamedTypeSymbol> directlyRegistered)
     {
-        if (method.TypeArguments.Length == 2
+        if (method.TypeArguments.Length is InterfaceImplementationTypeArgumentCount
             && method.TypeArguments[1] is INamedTypeSymbol implType)
         {
             interfaceRegistered.Add(implType);
         }
-        else if (method.TypeArguments.Length == 1
+        else if (method.TypeArguments.Length is 1
                  && method.TypeArguments[0] is INamedTypeSymbol concreteType)
         {
             directlyRegistered.Add(concreteType);
@@ -163,7 +165,7 @@ public sealed class ConcreteTypeDiDependencyAnalyzer : DiagnosticAnalyzer
 
         interfaceOnly.ExceptWith(direct);
 
-        if (interfaceOnly.Count == 0)
+        if (interfaceOnly.Count is 0)
         {
             return;
         }

@@ -54,14 +54,7 @@ public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var syntaxName = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
-
-        if (syntaxName is not null && syntaxName.EndsWith("Async", StringComparison.Ordinal))
+        if (AsyncContextSyntaxHelper.HasAsyncSuffixSyntaxName(invocation))
         {
             return;
         }
@@ -99,7 +92,8 @@ public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
-            if (current.Name is "DbConnection" or "DbCommand"
+            if ((string.Equals(current.Name, "DbConnection", StringComparison.Ordinal)
+                 || string.Equals(current.Name, "DbCommand", StringComparison.Ordinal))
                 && string.Equals(current.ContainingNamespace?.ToDisplayString(), "System.Data.Common", StringComparison.Ordinal))
             {
                 return true;

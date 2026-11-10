@@ -40,11 +40,7 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         var shared = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 
         // Random.Shared.Next(...): the diagnostic covers 'Random.Shared'.
-        if (shared is not MemberAccessExpressionSyntax
-            || shared.Parent is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Next" } next
-            || next.Expression != shared
-            || next.Parent is not InvocationExpressionSyntax invocation
-            || invocation.Expression != next)
+        if (FindNextInvocation(shared) is not { } invocation)
         {
             return;
         }
@@ -66,7 +62,19 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
             return;
         }
 
-        CodeFixRegistration.Register(context, diagnostic, "Use RandomNumberGenerator.GetInt32", "UseGetInt32", ct => Task.FromResult(Replace(context.Document, root, invocation, replacement)));
+        CodeFixRegistration.Register(context, diagnostic, "Use RandomNumberGenerator.GetInt32", "UseGetInt32", _ => Task.FromResult(Replace(context.Document, root, invocation, replacement)));
+    }
+
+    private static InvocationExpressionSyntax? FindNextInvocation(SyntaxNode shared)
+    {
+        return shared is MemberAccessExpressionSyntax
+               && shared.Parent is MemberAccessExpressionSyntax next
+               && string.Equals(next.Name.Identifier.ValueText, "Next", StringComparison.Ordinal)
+               && next.Expression == shared
+               && next.Parent is InvocationExpressionSyntax invocation
+               && invocation.Expression == next
+            ? invocation
+            : null;
     }
 
     private static Document Replace(
@@ -79,8 +87,8 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
 
         // Add the using directive only when a plain RandomNumberGenerator reference does not already resolve to it.
         var alreadyImported = changed.DescendantNodes()
-            .Any(node => node is UsingDirectiveSyntax { Name: { } imported } &&
-                imported.ToString() is "System.Security.Cryptography" or "System.Security.Cryptography.*");
+            .OfType<UsingDirectiveSyntax>()
+            .Any(static directive => directive.Name is { } imported && IsCryptographyNamespace(imported.ToString()));
 
         var newRoot = alreadyImported ? changed : UsingDirectives.AddIfMissing(changed, "System.Security.Cryptography");
 
@@ -90,12 +98,18 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
             unit.Usings.Count > 0 &&
             unit.Members.FirstOrDefault() is { } firstMember &&
             firstMember.GetLeadingTrivia().Count > 0 &&
-            firstMember.GetLeadingTrivia().All(trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)))
+            firstMember.GetLeadingTrivia().All(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)))
         {
             newRoot = unit.ReplaceNode(firstMember, firstMember.WithLeadingTrivia(SyntaxFactory.TriviaList()));
         }
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static bool IsCryptographyNamespace(string name)
+    {
+        return string.Equals(name, "System.Security.Cryptography", StringComparison.Ordinal)
+               || string.Equals(name, "System.Security.Cryptography.*", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -117,12 +131,7 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
 
         // The emitted replacement uses the plain name, which resolves only after the using directive lands. It
         // must not bind, at the fix site, to a source type that shadows RandomNumberGenerator.
-        var boundPlain = model.GetSpeculativeSymbolInfo(
-            invocation.SpanStart,
-            replacement,
-            SpeculativeBindingOption.BindAsExpression).Symbol;
-        if (boundPlain is ITypeSymbol { Name: "RandomNumberGenerator" } plainType &&
-            !SymbolEqualityComparer.Default.Equals(plainType, expected))
+        if (IsShadowedBySourceType(model, invocation, replacement, expected))
         {
             return false;
         }
@@ -139,11 +148,28 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
             probe,
             SpeculativeBindingOption.BindAsExpression).Symbol;
 
-        return boundGlobal is IMethodSymbol { Name: "GetInt32", IsStatic: true } getInt32
+        return boundGlobal is IMethodSymbol { IsStatic: true } getInt32
+               && string.Equals(getInt32.Name, "GetInt32", StringComparison.Ordinal)
                && SymbolEqualityComparer.Default.Equals(getInt32.ContainingType, expected)
                && getInt32.Parameters.Length == replacement.ArgumentList.Arguments.Count
-               && getInt32.Parameters.All(parameter => parameter.Type.SpecialType == SpecialType.System_Int32)
+               && getInt32.Parameters.All(static parameter => parameter.Type.SpecialType is SpecialType.System_Int32)
                && model.IsAccessible(invocation.SpanStart, getInt32);
+    }
+
+    private static bool IsShadowedBySourceType(
+        SemanticModel model,
+        InvocationExpressionSyntax invocation,
+        InvocationExpressionSyntax replacement,
+        INamedTypeSymbol expected)
+    {
+        var boundPlain = model.GetSpeculativeSymbolInfo(
+            invocation.SpanStart,
+            replacement,
+            SpeculativeBindingOption.BindAsExpression).Symbol;
+
+        return boundPlain is ITypeSymbol plainType &&
+               string.Equals(plainType.Name, RandomNumberGeneratorName, StringComparison.Ordinal) &&
+               !SymbolEqualityComparer.Default.Equals(plainType, expected);
     }
 
     private static bool IsRandomNext(IMethodSymbol method)
@@ -157,7 +183,7 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
 
         foreach (var parameter in method.Parameters)
         {
-            if (parameter.Type.SpecialType != SpecialType.System_Int32 || parameter.RefKind != RefKind.None)
+            if (parameter.Type.SpecialType is not SpecialType.System_Int32 || parameter.RefKind is not RefKind.None)
             {
                 return false;
             }
@@ -233,15 +259,13 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         IMethodSymbol method,
         out ExpressionSyntax?[] ordered)
     {
-        ordered = [];
-
         var arguments = invocation.ArgumentList.Arguments;
+        ordered = new ExpressionSyntax?[arguments.Count];
         if (arguments.Count != method.Parameters.Length)
         {
             return false;
         }
 
-        ordered = new ExpressionSyntax?[arguments.Count];
         for (var i = 0; i < arguments.Count; i++)
         {
             var argument = arguments[i];
@@ -309,7 +333,7 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         var arguments = bounds.IsEmpty
             ? SyntaxFactory.SeparatedList(new[] { SyntaxFactory.Argument(SyntaxFactory.ParseExpression("int.MaxValue")) })
             : SyntaxFactory.SeparatedList(
-                bounds.Select(bound => SyntaxFactory.Argument(bound.WithoutTrivia())),
+                bounds.Select(static bound => SyntaxFactory.Argument(bound.WithoutTrivia())),
                 Enumerable.Repeat(
                     SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(SyntaxFactory.Space),
                     bounds.Length - 1));

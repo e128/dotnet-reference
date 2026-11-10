@@ -29,6 +29,8 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128075";
 
+    private const string NextBytesName = "NextBytes";
+
     private const string CryptoFileMessage =
         "System.Random is not cryptographically secure and this file uses cryptography APIs; use RandomNumberGenerator for any security-sensitive value";
 
@@ -109,7 +111,7 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
             GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var cryptography = new CryptographyUse(start.Compilation);
             start.RegisterOperationAction(operation => AnalyzeObjectCreation(operation, cryptography), OperationKind.ObjectCreation);
@@ -121,27 +123,35 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeObjectCreation(OperationAnalysisContext context, CryptographyUse cryptography)
     {
         var creation = (IObjectCreationOperation)context.Operation;
-        if (IsRandomType(creation.Type))
+        if (!IsRandomType(creation.Type))
         {
-            ReportSite(context, creation, cryptography);
+            return;
         }
+
+        ReportSite(context, creation, cryptography);
     }
 
-    /// <summary>Returns true when the type is <c lang="csharp">System.Random</c> or derives from it.</summary>
-    private static bool IsRandomType(ITypeSymbol? type) =>
-        FipsSymbolHelpers.DerivesFromType(type, "Random", "System");
+    /// <summary>
+    ///     Returns true when the type is <c lang="csharp">System.Random</c> or derives from it.
+    /// </summary>
+    private static bool IsRandomType(ITypeSymbol? type)
+    {
+        return FipsSymbolHelpers.DerivesFromType(type, "Random", "System");
+    }
 
     private static void AnalyzePropertyReference(OperationAnalysisContext context, CryptographyUse cryptography)
     {
         var reference = (IPropertyReferenceOperation)context.Operation;
         var property = reference.Property;
 
-        if (property.IsStatic &&
-            string.Equals(property.Name, "Shared", StringComparison.Ordinal) &&
-            IsRandomType(property.ContainingType))
+        if (!property.IsStatic ||
+            !string.Equals(property.Name, "Shared", StringComparison.Ordinal) ||
+            !IsRandomType(property.ContainingType))
         {
-            ReportSite(context, reference, cryptography);
+            return;
         }
+
+        ReportSite(context, reference, cryptography);
     }
 
     /// <summary>
@@ -162,13 +172,15 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
         }
 
         var name = GetSensitiveName(invocation);
-        if (name is not null)
+        if (name is null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                invocation.Syntax.GetLocation(),
-                SensitiveMessage(name)));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            invocation.Syntax.GetLocation(),
+            SensitiveMessage(name)));
     }
 
     /// <summary>
@@ -223,9 +235,22 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static string? GetSensitiveName(IOperation site)
     {
-        var name = FindNextBytesCall(site) is { } nextBytes
-            ? nextBytes.Arguments.Length > 0 ? GetBufferName(nextBytes.Arguments[0].Value) : null
-            : GetDestinationName(site);
+        string? name;
+        if (FindNextBytesCall(site) is { } nextBytes)
+        {
+            if (nextBytes.Arguments.Length > 0)
+            {
+                name = GetBufferName(nextBytes.Arguments[0].Value);
+            }
+            else
+            {
+                name = null;
+            }
+        }
+        else
+        {
+            name = GetDestinationName(site);
+        }
 
         return name is not null && IsSensitive(name) ? name : null;
     }
@@ -236,7 +261,8 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static IInvocationOperation? FindNextBytesCall(IOperation site)
     {
-        if (site is IInvocationOperation { TargetMethod.Name: "NextBytes" } call)
+        if (site is IInvocationOperation call &&
+            string.Equals(call.TargetMethod.Name, NextBytesName, StringComparison.Ordinal))
         {
             return call;
         }
@@ -247,7 +273,8 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
             parent = parent.Parent;
         }
 
-        return parent is IInvocationOperation { TargetMethod.Name: "NextBytes" } receiver &&
+        return parent is IInvocationOperation receiver &&
+               string.Equals(receiver.TargetMethod.Name, NextBytesName, StringComparison.Ordinal) &&
                FipsSymbolHelpers.Unwrap(receiver.Instance) == site
             ? receiver
             : null;
@@ -262,9 +289,11 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
                 case IInvocationOperation { Instance: { } instance }:
                     buffer = instance;
                     break;
+
                 case IInvocationOperation { TargetMethod.IsExtensionMethod: true, Arguments.Length: > 0 } extension:
                     buffer = extension.Arguments[0].Value;
                     break;
+
                 case { } operation:
                     return TargetSymbolName(operation);
                 default:
@@ -285,53 +314,63 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
         var child = operation;
         for (var current = operation.Parent; current is not null; child = current, current = current.Parent)
         {
-            switch (current)
+            if (IsPassThrough(current, child))
             {
-                case IVariableDeclaratorOperation declarator:
-                    return declarator.Symbol.Name;
-                case IFieldInitializerOperation { InitializedFields.Length: > 0 } fieldInitializer:
-                    return fieldInitializer.InitializedFields[0].Name;
-                case IPropertyInitializerOperation { InitializedProperties.Length: > 0 } propertyInitializer:
-                    return propertyInitializer.InitializedProperties[0].Name;
-                case IAssignmentOperation assignment:
-                    return assignment.Value == child ? TargetSymbolName(assignment.Target) : null;
-                case IInvocationOperation invocation:
-                    if (invocation.Instance == child || (child is IArgumentOperation && IsValueLike(invocation.Type)))
-                    {
-                        continue;
-                    }
-
-                    return null;
-                case IPropertyReferenceOperation property when property.Instance == child:
-                case IFieldReferenceOperation field when field.Instance == child:
-                case IArgumentOperation:
-                case IVariableInitializerOperation:
-                case IConversionOperation:
-                case IParenthesizedOperation:
-                case IBinaryOperation:
-                case IUnaryOperation:
-                case IConditionalOperation:
-                case ICoalesceOperation:
-                case IInterpolatedStringOperation:
-                case IInterpolatedStringContentOperation:
-                    continue;
-                default:
-                    return null;
+                continue;
             }
+
+            return DestinationNameAt(current, child);
         }
 
         return null;
     }
 
-    /// <summary>A plain value: a primitive, a string, or an array of them.</summary>
+    // True for an ancestor the walk passes through on its way to the destination.
+    private static bool IsPassThrough(IOperation current, IOperation child)
+    {
+        return current switch
+        {
+            IInvocationOperation invocation =>
+                invocation.Instance == child || (child is IArgumentOperation && IsValueLike(invocation.Type)),
+            IPropertyReferenceOperation property => property.Instance == child,
+            IFieldReferenceOperation field => field.Instance == child,
+            _ => IsTransparentWrapper(current)
+        };
+    }
+
+    private static bool IsTransparentWrapper(IOperation current)
+    {
+        return current is IArgumentOperation or IVariableInitializerOperation or IConversionOperation
+            or IParenthesizedOperation or IBinaryOperation or IUnaryOperation or IConditionalOperation
+            or ICoalesceOperation or IInterpolatedStringOperation or IInterpolatedStringContentOperation;
+    }
+
+    // The name a terminal ancestor gives the value, or null when the ancestor ends the walk without one.
+    private static string? DestinationNameAt(IOperation current, IOperation child)
+    {
+        return current switch
+        {
+            IVariableDeclaratorOperation declarator => declarator.Symbol.Name,
+            IFieldInitializerOperation { InitializedFields.Length: > 0 } fieldInitializer =>
+                fieldInitializer.InitializedFields[0].Name,
+            IPropertyInitializerOperation { InitializedProperties.Length: > 0 } propertyInitializer =>
+                propertyInitializer.InitializedProperties[0].Name,
+            IAssignmentOperation assignment => assignment.Value == child ? TargetSymbolName(assignment.Target) : null,
+            _ => null
+        };
+    }
+
+    /// <summary>
+    ///     A plain value: a primitive, a string, or an array of them.
+    /// </summary>
     private static bool IsValueLike(ITypeSymbol? type)
     {
         return type switch
         {
             null => false,
             IArrayTypeSymbol array => IsValueLike(array.ElementType),
-            _ => type.SpecialType == SpecialType.System_String ||
-                 (type.IsValueType && type.SpecialType != SpecialType.None && type.SpecialType != SpecialType.System_Void)
+            _ => type.SpecialType is SpecialType.System_String ||
+                 (type.IsValueType && type.SpecialType is not (SpecialType.None or SpecialType.System_Void))
         };
     }
 
@@ -397,7 +436,7 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
 
             // A canceled scan throws before it stores a result, so a partial answer is never cached.
             var found = Scan(model, tree, cancellationToken);
-            _files.TryAdd(tree, found);
+            _ = _files.TryAdd(tree, found);
 
             return found;
         }
@@ -492,7 +531,7 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
 
         private static void AddNamespaceNames(INamespaceSymbol ns, ImmutableHashSet<string>.Builder names)
         {
-            names.Add(ns.Name);
+            _ = names.Add(ns.Name);
             foreach (var type in ns.GetTypeMembers())
             {
                 AddTypeNames(type, names);
@@ -506,16 +545,16 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
 
         private static void AddTypeNames(INamedTypeSymbol type, ImmutableHashSet<string>.Builder names)
         {
-            names.Add(type.Name);
+            _ = names.Add(type.Name);
             if (type.Name.EndsWith("Attribute", StringComparison.Ordinal) && type.Name.Length > "Attribute".Length)
             {
-                names.Add(type.Name.Substring(0, type.Name.Length - "Attribute".Length));
+                _ = names.Add(type.Name.Substring(0, type.Name.Length - "Attribute".Length));
             }
 
             // A member reached through a value from another file can mark this file without spelling its type.
             foreach (var member in type.GetMembers())
             {
-                names.Add(member.Name);
+                _ = names.Add(member.Name);
             }
 
             foreach (var nested in type.GetTypeMembers())

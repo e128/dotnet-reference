@@ -14,6 +14,8 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128112";
 
+    private const int ExpectedTypeArgumentCount = 2;
+
     private static readonly Dictionary<SpecialType, int> ElementSizes = new()
     {
         [SpecialType.System_Boolean] = 1,
@@ -50,11 +52,11 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             // Unsafe.BitCast needs .NET 8. Earlier targets have no replacement to offer.
-            if (unsafeType.IsEmpty || unsafeType.All(type => type.GetMembers("BitCast").IsEmpty))
+            if (unsafeType.IsEmpty || unsafeType.All(static type => type.GetMembers("BitCast").IsEmpty))
             {
                 return;
             }
@@ -70,9 +72,9 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
         var invocation = (InvocationExpressionSyntax)context.Node;
 
         if (!OwnerInvocation.TryMatch(context, unsafeType, "As", out var method)
-            || method.TypeArguments.Length != 2
-            || method.Parameters.Length != 1
-            || method.Parameters[0].RefKind != RefKind.Ref)
+            || method.TypeArguments.Length is not ExpectedTypeArgumentCount
+            || method.Parameters.Length is not 1
+            || method.Parameters[0].RefKind is not RefKind.Ref)
         {
             return;
         }
@@ -94,7 +96,7 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static bool TryGetFixedSize(ITypeSymbol type, out int size)
     {
-        if (type.TypeKind == TypeKind.Enum)
+        if (type.TypeKind is TypeKind.Enum)
         {
             size = 0;
             var underlying = ((INamedTypeSymbol)type).EnumUnderlyingType;

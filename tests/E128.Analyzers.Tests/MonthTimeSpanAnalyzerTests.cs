@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class MonthTimeSpanAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

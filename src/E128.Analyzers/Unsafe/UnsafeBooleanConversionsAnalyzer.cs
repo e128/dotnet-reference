@@ -12,6 +12,8 @@ public sealed class UnsafeBooleanConversionsAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128115";
 
+    private const int ExpectedTypeArgumentCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Do not reinterpret between bool and int",
@@ -31,7 +33,7 @@ public sealed class UnsafeBooleanConversionsAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)
@@ -50,9 +52,9 @@ public sealed class UnsafeBooleanConversionsAnalyzer : DiagnosticAnalyzer
         var invocation = (InvocationExpressionSyntax)context.Node;
 
         if (!OwnerInvocation.TryMatch(context, unsafeType, "As", out var method)
-            || method.TypeArguments.Length != 2
-            || method.Parameters.Length != 1
-            || method.Parameters[0].RefKind != RefKind.Ref)
+            || method.TypeArguments.Length is not ExpectedTypeArgumentCount
+            || method.Parameters.Length is not 1
+            || method.Parameters[0].RefKind is not RefKind.Ref)
         {
             return;
         }
@@ -68,13 +70,13 @@ public sealed class UnsafeBooleanConversionsAnalyzer : DiagnosticAnalyzer
 
     internal static BooleanConversion? GetConversionKind(ITypeSymbol source, ITypeSymbol target)
     {
-        if (source.SpecialType == SpecialType.System_Int32 && target.SpecialType == SpecialType.System_Boolean)
+        if (source.SpecialType is SpecialType.System_Int32 && target.SpecialType is SpecialType.System_Boolean)
         {
             return BooleanConversion.ToIntBool;
         }
 
-        var isBoolToInt = source.SpecialType == SpecialType.System_Boolean
-            && target.SpecialType == SpecialType.System_Int32;
+        var isBoolToInt = source.SpecialType is SpecialType.System_Boolean
+            && target.SpecialType is SpecialType.System_Int32;
 
         return isBoolToInt ? BooleanConversion.ToBoolInt : null;
     }

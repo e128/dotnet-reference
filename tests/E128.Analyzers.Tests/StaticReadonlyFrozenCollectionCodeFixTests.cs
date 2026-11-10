@@ -8,8 +8,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StaticReadonlyFrozenCollectionCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<StaticReadonlyFrozenCollectionAnalyzer, StaticReadonlyFrozenCollectionCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<StaticReadonlyFrozenCollectionAnalyzer, StaticReadonlyFrozenCollectionCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -98,6 +100,6 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixTests
             FixedCode = source,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllInDocumentIterations = 0
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 }

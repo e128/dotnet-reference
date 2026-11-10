@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -51,19 +52,52 @@ internal static class DiskIoCatalog
         "OpenText"
     };
 
+    private static readonly HashSet<string> WriterWriteMethods = new(StringComparer.Ordinal)
+    {
+        "Write",
+        "WriteAsync",
+        "WriteLine",
+        "WriteLineAsync",
+        "Flush",
+        "FlushAsync"
+    };
+
+    private static readonly HashSet<string> WriteFileModes = new(StringComparer.Ordinal)
+    {
+        "Create",
+        "CreateNew",
+        "Append"
+    };
+
+    private static readonly Dictionary<string, IoKind> FileMethodKinds = new(StringComparer.Ordinal)
+    {
+        ["WriteAllText"] = IoKind.Text,
+        ["WriteAllTextAsync"] = IoKind.Text,
+        ["AppendAllText"] = IoKind.Text,
+        ["AppendAllTextAsync"] = IoKind.Text,
+        ["ReadAllText"] = IoKind.Text,
+        ["ReadAllTextAsync"] = IoKind.Text,
+        ["WriteAllBytes"] = IoKind.Bytes,
+        ["WriteAllBytesAsync"] = IoKind.Bytes,
+        ["ReadAllBytes"] = IoKind.Bytes,
+        ["ReadAllBytesAsync"] = IoKind.Bytes,
+        ["WriteAllLines"] = IoKind.Lines,
+        ["WriteAllLinesAsync"] = IoKind.Lines,
+        ["AppendAllLines"] = IoKind.Lines,
+        ["AppendAllLinesAsync"] = IoKind.Lines,
+        ["ReadAllLines"] = IoKind.Lines,
+        ["ReadAllLinesAsync"] = IoKind.Lines,
+        ["Create"] = IoKind.Stream,
+        ["OpenWrite"] = IoKind.Stream,
+        ["OpenRead"] = IoKind.Stream,
+        ["CreateText"] = IoKind.Writer,
+        ["AppendText"] = IoKind.Writer,
+        ["OpenText"] = IoKind.Writer
+    };
+
     internal static IoKind FileMethodKind(string methodName)
     {
-        return methodName switch
-        {
-            "WriteAllText" or "WriteAllTextAsync" or "AppendAllText" or "AppendAllTextAsync"
-                or "ReadAllText" or "ReadAllTextAsync" => IoKind.Text,
-            "WriteAllBytes" or "WriteAllBytesAsync" or "ReadAllBytes" or "ReadAllBytesAsync" => IoKind.Bytes,
-            "WriteAllLines" or "WriteAllLinesAsync" or "AppendAllLines" or "AppendAllLinesAsync"
-                or "ReadAllLines" or "ReadAllLinesAsync" => IoKind.Lines,
-            "Create" or "OpenWrite" or "OpenRead" => IoKind.Stream,
-            "CreateText" or "AppendText" or "OpenText" => IoKind.Writer,
-            _ => IoKind.Unknown
-        };
+        return FileMethodKinds.TryGetValue(methodName, out var kind) ? kind : IoKind.Unknown;
     }
 
     internal static bool IsFileWriteValueMethod(string name)
@@ -93,7 +127,7 @@ internal static class DiskIoCatalog
 
     internal static bool IsWriterWriteMethod(string name)
     {
-        return name is "Write" or "WriteAsync" or "WriteLine" or "WriteLineAsync" or "Flush" or "FlushAsync";
+        return WriterWriteMethods.Contains(name);
     }
 
     internal static bool IsOpaqueWriteMethodName(string name)
@@ -158,14 +192,15 @@ internal static class DiskIoCatalog
     internal static bool IsWriteFileMode(ExpressionSyntax? mode)
     {
         return mode is MemberAccessExpressionSyntax modeMa
-               && modeMa.Name.Identifier.ValueText is "Create" or "CreateNew" or "Append";
+               && WriteFileModes.Contains(modeMa.Name.Identifier.ValueText);
     }
 
     internal static ExpressionSyntax? ExtractPathFromStreamArg(ExpressionSyntax arg)
     {
         return arg is InvocationExpressionSyntax inv
                && inv.Expression is MemberAccessExpressionSyntax ma
-               && ma.Expression is IdentifierNameSyntax { Identifier.ValueText: "File" }
+               && ma.Expression is IdentifierNameSyntax fileId
+               && string.Equals(fileId.Identifier.ValueText, "File", StringComparison.Ordinal)
                && inv.ArgumentList.Arguments.Count >= 1
             ? inv.ArgumentList.Arguments[0].Expression
             : null;
@@ -280,13 +315,19 @@ internal static class DiskIoCatalog
             return dot > 0 ? key.Substring("Member:".Length, dot - "Member:".Length) : null;
         }
 
-        return key.StartsWith("FileInfo:", StringComparison.Ordinal)
-            ? key.Substring("FileInfo:".Length)
-            : key.StartsWith("OpaqueWriteResult:", StringComparison.Ordinal)
-                ? key.Substring("OpaqueWriteResult:".Length)
-                : key.StartsWith("OpaqueWriteRoot:", StringComparison.Ordinal)
-                    ? key.Substring("OpaqueWriteRoot:".Length)
-                    : null;
+        if (key.StartsWith("FileInfo:", StringComparison.Ordinal))
+        {
+            return key.Substring("FileInfo:".Length);
+        }
+
+        if (key.StartsWith("OpaqueWriteResult:", StringComparison.Ordinal))
+        {
+            return key.Substring("OpaqueWriteResult:".Length);
+        }
+
+        return key.StartsWith("OpaqueWriteRoot:", StringComparison.Ordinal)
+            ? key.Substring("OpaqueWriteRoot:".Length)
+            : null;
     }
 
     internal static int FindFactoryIndex(List<WriteOp> writes, ExpressionSyntax candidate)
@@ -369,7 +410,7 @@ internal static class DiskIoCatalog
         }
 
         SyntaxNode? cursor = writeStmt;
-        while (cursor != null)
+        while (cursor is not null)
         {
             var parent = cursor.Parent;
             if (parent is null)
@@ -441,7 +482,8 @@ internal static class DiskIoCatalog
             {
                 if (!result.TryGetValue(left.Identifier.ValueText, out var positions))
                 {
-                    result[left.Identifier.ValueText] = positions = [];
+                    positions = [];
+                    result[left.Identifier.ValueText] = positions;
                 }
 
                 positions.Add(assignment.SpanStart);
@@ -484,9 +526,11 @@ internal static class DiskIoCatalog
         Unknown = 7
     }
 
-    internal struct WriteOp
+    internal readonly struct WriteOp : IEquatable<WriteOp>
     {
-        public WriteOp(
+        private const int HashPrime = 31;
+
+        internal WriteOp(
             SyntaxNode reportNode,
             ExpressionSyntax? factoryNode,
             string pathKey,
@@ -503,34 +547,87 @@ internal static class DiskIoCatalog
             HasMultipleWrites = false;
         }
 
-        public SyntaxNode ReportNode { get; }
-        public ExpressionSyntax? FactoryNode { get; }
-        public string PathKey { get; }
-        public ExpressionSyntax? SourceExpr { get; set; }
-        public IoKind Kind { get; }
-        public bool IsAsync { get; }
-        public bool HasMultipleWrites { get; set; }
-
-        public readonly WriteOp WithMergedSource(ExpressionSyntax src)
+        private WriteOp(WriteOp source, ExpressionSyntax? sourceExpr, bool hasMultipleWrites)
         {
-            var copy = this;
-            if (copy.SourceExpr is null && !copy.HasMultipleWrites)
+            ReportNode = source.ReportNode;
+            FactoryNode = source.FactoryNode;
+            PathKey = source.PathKey;
+            SourceExpr = sourceExpr;
+            Kind = source.Kind;
+            IsAsync = source.IsAsync;
+            HasMultipleWrites = hasMultipleWrites;
+        }
+
+        internal SyntaxNode ReportNode { get; }
+        internal ExpressionSyntax? FactoryNode { get; }
+        internal string PathKey { get; }
+        internal ExpressionSyntax? SourceExpr { get; }
+        internal IoKind Kind { get; }
+        internal bool IsAsync { get; }
+        internal bool HasMultipleWrites { get; }
+
+        internal WriteOp WithMergedSource(ExpressionSyntax src)
+        {
+            if (SourceExpr is null && !HasMultipleWrites)
             {
-                copy.SourceExpr = src;
-            }
-            else
-            {
-                copy.HasMultipleWrites = true;
-                copy.SourceExpr = null;
+                return new WriteOp(this, src, false);
             }
 
-            return copy;
+            return new WriteOp(this, null, true);
+        }
+
+        public bool Equals(WriteOp other)
+        {
+            return ReportNode == other.ReportNode
+                   && FactoryNode == other.FactoryNode
+                   && string.Equals(PathKey, other.PathKey, StringComparison.Ordinal)
+                   && SourceExpr == other.SourceExpr
+                   && Kind == other.Kind
+                   && IsAsync == other.IsAsync
+                   && HasMultipleWrites == other.HasMultipleWrites;
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is WriteOp other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = ReportNode.GetHashCode();
+                hash = (hash * HashPrime) + (FactoryNode?.GetHashCode() ?? 0);
+                hash = (hash * HashPrime) + StringComparer.Ordinal.GetHashCode(PathKey);
+                hash = (hash * HashPrime) + (SourceExpr?.GetHashCode() ?? 0);
+                hash = (hash * HashPrime) + (int)Kind;
+                hash = (hash * HashPrime) + (IsAsync ? 1 : 0);
+                return (hash * HashPrime) + (HasMultipleWrites ? 1 : 0);
+            }
+        }
+
+        public override string ToString()
+        {
+            var kind = Kind.ToString();
+            return $"WriteOp({PathKey}, {kind})";
+        }
+
+        public static bool operator ==(WriteOp left, WriteOp right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(WriteOp left, WriteOp right)
+        {
+            return !left.Equals(right);
         }
     }
 
-    internal readonly struct ReadOp
+    internal readonly struct ReadOp : IEquatable<ReadOp>
     {
-        public ReadOp(
+        private const int HashPrime = 31;
+
+        internal ReadOp(
             SyntaxNode reportNode,
             string pathKey,
             IoKind kind,
@@ -544,10 +641,52 @@ internal static class DiskIoCatalog
             IsAwaited = isAwaited;
         }
 
-        public SyntaxNode ReportNode { get; }
-        public string PathKey { get; }
-        public IoKind Kind { get; }
-        public bool IsAsync { get; }
-        public bool IsAwaited { get; }
+        internal SyntaxNode ReportNode { get; }
+        internal string PathKey { get; }
+        internal IoKind Kind { get; }
+        internal bool IsAsync { get; }
+        internal bool IsAwaited { get; }
+
+        public bool Equals(ReadOp other)
+        {
+            return ReportNode == other.ReportNode
+                   && string.Equals(PathKey, other.PathKey, StringComparison.Ordinal)
+                   && Kind == other.Kind
+                   && IsAsync == other.IsAsync
+                   && IsAwaited == other.IsAwaited;
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is ReadOp other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = ReportNode.GetHashCode();
+                hash = (hash * HashPrime) + StringComparer.Ordinal.GetHashCode(PathKey);
+                hash = (hash * HashPrime) + (int)Kind;
+                hash = (hash * HashPrime) + (IsAsync ? 1 : 0);
+                return (hash * HashPrime) + (IsAwaited ? 1 : 0);
+            }
+        }
+
+        public override string ToString()
+        {
+            var kind = Kind.ToString();
+            return $"ReadOp({PathKey}, {kind})";
+        }
+
+        public static bool operator ==(ReadOp left, ReadOp right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ReadOp left, ReadOp right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

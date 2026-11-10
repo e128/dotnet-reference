@@ -6,10 +6,12 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ManualSpanSumCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ManualSpanSumAnalyzer, ManualSpanSumCodeFixProvider>(
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ManualSpanSumAnalyzer, ManualSpanSumCodeFixProvider>(
             "using System;\n\n" + TestStubs.TensorPrimitives + "\n\n" + source,
             "using System;\nusing System.Numerics.Tensors;\n\n" + TestStubs.TensorPrimitives + "\n\n" + fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

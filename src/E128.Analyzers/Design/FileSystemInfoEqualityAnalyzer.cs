@@ -85,7 +85,7 @@ public sealed class FileSystemInfoEqualityAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (invocation.ArgumentList.Arguments.Count != 1)
+        if (invocation.ArgumentList.Arguments.Count is not 1)
         {
             return;
         }

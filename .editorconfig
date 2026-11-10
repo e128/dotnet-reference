@@ -250,9 +250,34 @@ dotnet_naming_style.pascal_case.capitalization = pascal_case
 #
 # Note: no Roslyn rule enforces this automatically; it is a code review convention.
 
+#### Roslynator Options ####
+
+# Each key below is required by the rule named beside it. Without the key, ROS0003 reports at error.
+# Values follow the style the repo already uses.
+roslynator_accessibility_modifiers = explicit                                # RCS1018
+roslynator_conditional_operator_condition_parentheses_style = omit           # RCS1051
+roslynator_object_creation_parentheses_style = include                       # RCS1050
+roslynator_use_anonymous_function_or_method_group = method_group             # RCS1207
+roslynator_new_line_before_while_in_do_statement = true                      # RCS0051
+roslynator_blank_line_between_single_line_accessors = false                  # RCS0011
+roslynator_arrow_token_new_line = after                                      # RCS0032
+roslynator_blank_line_between_using_directives = never                       # RCS0015
+roslynator_accessor_braces_style = multi_line                                # RCS0020
+roslynator_block_braces_style = multi_line                                   # RCS0021
+roslynator_equals_token_new_line = after                                     # RCS0052
+roslynator_new_line_at_end_of_file = true                                    # RCS0058
+roslynator_blank_line_after_file_scoped_namespace_declaration = true         # RCS0060
+roslynator_array_creation_type_style = implicit_when_type_is_obvious         # RCS1014
+roslynator_empty_string_style = field                                        # RCS1078
+roslynator_enum_flag_value_style = shift_operator                           # RCS1254
+roslynator_null_check_style = pattern_matching                               # RCS1248
+roslynator_enum_has_flag_style = method                                      # RCS1096
+roslynator_infinite_loop_style = while                                         # RCS1252
+roslynator_doc_comment_summary_style = multi_line                            # RCS1253
+
 #### Analyzer Diagnostic Severity ####
 
-# CS1591 severity is set in .globalconfig (line 100) — do not duplicate here.
+# CS1591 severity is set in .globalconfig — do not duplicate here.
 
 #######################################
 # ReSharper Settings

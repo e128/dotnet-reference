@@ -32,7 +32,7 @@ public sealed class SelectManyToListCodeFixProvider : E128CodeFixProviderBase
         if (toListInvocation.Expression is not MemberAccessExpressionSyntax toListAccess
             || toListAccess.Expression is not InvocationExpressionSyntax selectManyInvocation
             || selectManyInvocation.Expression is not MemberAccessExpressionSyntax selectManyAccess
-            || selectManyInvocation.ArgumentList.Arguments.Count != 1)
+            || selectManyInvocation.ArgumentList.Arguments.Count is not 1)
         {
             return Task.CompletedTask;
         }
@@ -104,7 +104,7 @@ public sealed class SelectManyToListCodeFixProvider : E128CodeFixProviderBase
         var statement = toListInvocation.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>();
 
         return statement is not null
-               && statement.Declaration.Variables.Count == 1
+               && statement.Declaration.Variables.Count is 1
                && statement.Declaration.Variables[0].Initializer?.Value == toListInvocation
             ? statement
             : null;

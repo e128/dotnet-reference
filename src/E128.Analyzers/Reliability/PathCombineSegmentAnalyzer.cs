@@ -144,7 +144,7 @@ public sealed class PathCombineSegmentAnalyzer : DiagnosticAnalyzer
 
         foreach (var part in segments)
         {
-            if (part.Length == 0 || string.Equals(part, ".", StringComparison.Ordinal))
+            if (part.Length is 0 || string.Equals(part, ".", StringComparison.Ordinal))
             {
                 continue;
             }

@@ -17,10 +17,12 @@ public sealed class AsyncFileIoCodeFixTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             MarkupOptions = MarkupOptions.UseFirstDescriptor,
             NumberOfFixAllIterations = 1
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    /// <summary>AC-4: fixing a void sync method promotes it to async Task and awaits the Async sibling.</summary>
+    /// <summary>
+    ///     AC-4: fixing a void sync method promotes it to async Task and awaits the Async sibling.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task AsyncFileIoCodeFix_PromotesVoidMethodToAsyncTask_WhenFixApplied()
@@ -52,7 +54,9 @@ public sealed class AsyncFileIoCodeFixTests
         return VerifyFixAsync(source, fixedCode);
     }
 
-    /// <summary>AC-5: fixing a value-returning sync method promotes it to async Task&lt;T&gt; and awaits the Async sibling.</summary>
+    /// <summary>
+    ///     AC-5: fixing a value-returning sync method promotes it to async Task&lt;T&gt; and awaits the Async sibling.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task AsyncFileIoCodeFix_PromotesReturningMethodToAsyncTaskOfT_WhenFixApplied()

@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class AwaitInFinallyAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

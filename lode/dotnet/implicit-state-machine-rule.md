@@ -1,5 +1,5 @@
 # Implicit State Machine Rule
-*Updated: 2026-11-09T15:56:00Z*
+*Updated: 2026-11-09T23:44:15Z*
 
 E128218 flags a class that uses several mutable `bool` fields as one state.
 The fields change together, so their valid combinations are constrained in
@@ -20,8 +20,8 @@ The rule sees three facts:
 - the conditions that read several members together
 
 A pair of independent flags looks the same as a state variable at one call
-site. The rule therefore stays at `Info`, and the repository sets it to
-`suggestion`.
+site. The rule therefore ships at `Info`, and the repository sets it to
+`error`.
 
 ## Detector Families
 
@@ -119,8 +119,9 @@ not with the enclosing method.
 | Feature switches read together | Four toggled members read in one condition | Higher co-read threshold and a negated read |
 | Cache validity pair | A reset writes both | `Info` severity |
 
-The repository sets `dotnet_diagnostic.E128218.severity = suggestion` in
-`.globalconfig`. A consumer keeps the default `Info`.
+The repository sets `dotnet_diagnostic.E128218.severity = error` in
+`.globalconfig`, so a cluster report fails the build. A consumer keeps the
+default `Info`.
 
 ## Duplicate Owners
 

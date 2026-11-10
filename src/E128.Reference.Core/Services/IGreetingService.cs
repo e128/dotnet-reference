@@ -9,5 +9,5 @@ namespace E128.Reference.Core.Services;
 /// </summary>
 public interface IGreetingService
 {
-    Task<Greeting> GreetAsync(GreetingRequest request, CancellationToken cancellationToken = default);
+    Task<Greeting> GreetAsync(GreetingRequest request, CancellationToken cancellationToken);
 }

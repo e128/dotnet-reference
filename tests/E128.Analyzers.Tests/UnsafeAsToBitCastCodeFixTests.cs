@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UnsafeAsToBitCastCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<UnsafeAsToBitCastAnalyzer, UnsafeAsToBitCastCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<UnsafeAsToBitCastAnalyzer, UnsafeAsToBitCastCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

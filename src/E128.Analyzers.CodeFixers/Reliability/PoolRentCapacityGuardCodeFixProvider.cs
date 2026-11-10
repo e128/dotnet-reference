@@ -33,7 +33,7 @@ public sealed class PoolRentCapacityGuardCodeFixProvider : E128CodeFixProviderBa
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         var invocation = node as InvocationExpressionSyntax ?? node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
 
-        if (invocation is null || invocation.ArgumentList.Arguments.Count != 1)
+        if (invocation is null || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return Task.CompletedTask;
         }

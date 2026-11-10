@@ -148,7 +148,7 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : E128CodeFixPr
 
         var existingCtor = classDecl.Members
             .OfType<ConstructorDeclarationSyntax>()
-            .FirstOrDefault(c => c.Modifiers.Any(SyntaxKind.PublicKeyword));
+            .FirstOrDefault(static c => c.Modifiers.Any(SyntaxKind.PublicKeyword));
 
         return existingCtor is not null
             ? AddToExistingConstructor(classDecl, existingCtor, fieldDecl, fieldName, parameterName)
@@ -185,7 +185,7 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : E128CodeFixPr
         var classWithField = InsertFieldBeforeConstructor(classDecl, fieldDecl, existingCtor);
         return classWithField.ReplaceNode(
             classWithField.Members.OfType<ConstructorDeclarationSyntax>()
-                .First(c => c.Modifiers.Any(SyntaxKind.PublicKeyword)),
+                .First(static c => c.Modifiers.Any(SyntaxKind.PublicKeyword)),
             newCtor);
     }
 

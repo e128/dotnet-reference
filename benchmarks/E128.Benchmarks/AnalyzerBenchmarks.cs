@@ -70,49 +70,59 @@ public class AnalyzerBenchmarks
     }
 
     [Benchmark]
-    public Task<ImmutableArray<Diagnostic>> MultiStringEqualsOrChainAsync() =>
-        RunAsync(_multiString);
+    public Task<ImmutableArray<Diagnostic>> MultiStringEqualsOrChainAsync()
+    {
+        return RunAsync(_multiString);
+    }
 
     [Benchmark]
-    public Task<ImmutableArray<Diagnostic>> ExcessiveInheritanceAsync() =>
-        RunAsync(_inheritance);
+    public Task<ImmutableArray<Diagnostic>> ExcessiveInheritanceAsync()
+    {
+        return RunAsync(_inheritance);
+    }
 
     [Benchmark]
-    public Task<ImmutableArray<Diagnostic>> InsecureRandomInCryptoContextAsync() =>
-        RunAsync(_insecureRandom);
+    public Task<ImmutableArray<Diagnostic>> InsecureRandomInCryptoContextAsync()
+    {
+        return RunAsync(_insecureRandom);
+    }
 
     [Benchmark]
-    public Task<ImmutableArray<Diagnostic>> AllThreeAsync() =>
-        RunAsync(_all);
+    public Task<ImmutableArray<Diagnostic>> AllThreeAsync()
+    {
+        return RunAsync(_all);
+    }
 
     private static CSharpCompilation CreateCompilation()
     {
         var runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)
             ?? throw new InvalidOperationException("The runtime directory is unknown.");
 
-        var references = new[]
-        {
+        PortableExecutableReference[] references =
+        [
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Private.CoreLib.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Security.Cryptography.dll"))
-        };
+        ];
 
         var compilation = CSharpCompilation.Create(
             "BenchmarkSample",
-            [CSharpSyntaxTree.ParseText(Source)],
+            [CSharpSyntaxTree.ParseText(Source, cancellationToken: CancellationToken.None)],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-        var errors = compilation.GetDiagnostics()
-            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        var errors = compilation.GetDiagnostics(CancellationToken.None)
+            .Where(static diagnostic => diagnostic.Severity is DiagnosticSeverity.Error);
 
         return errors.Any()
             ? throw new InvalidOperationException("The sample source does not compile.")
             : compilation;
     }
 
-    private Task<ImmutableArray<Diagnostic>> RunAsync(ImmutableArray<DiagnosticAnalyzer> analyzers) =>
-        _compilation
+    private Task<ImmutableArray<Diagnostic>> RunAsync(ImmutableArray<DiagnosticAnalyzer> analyzers)
+    {
+        return _compilation
             .WithAnalyzers(analyzers)
             .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
+    }
 }

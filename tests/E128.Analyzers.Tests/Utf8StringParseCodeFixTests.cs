@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class Utf8StringParseCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<Utf8StringParseAnalyzer, Utf8StringParseCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<Utf8StringParseAnalyzer, Utf8StringParseCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

@@ -109,7 +109,7 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
 
             if (!isDisable)
             {
-                open.Remove(id);
+                _ = open.Remove(id);
             }
             else if (!open.ContainsKey(id))
             {

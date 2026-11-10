@@ -17,10 +17,14 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixTests
                                     }
                                     """;
 
-    private static Task VerifyFixAsync(string testCode, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ArrayPoolSqliteParameterSizeAnalyzer, ArrayPoolSqliteParameterSizeCodeFixProvider>(testCode, fixedCode);
+    private static Task VerifyFixAsync(string testCode, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ArrayPoolSqliteParameterSizeAnalyzer, ArrayPoolSqliteParameterSizeCodeFixProvider>(testCode, fixedCode);
+    }
 
-    /// <summary>VB6: Code fix captures discard and inserts .Size for AddWithValue.</summary>
+    /// <summary>
+    ///     VB6: Code fix captures discard and inserts .Size for AddWithValue.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task CodeFix_CapturesDiscardAndInsertsSizeForAddWithValue()
@@ -154,7 +158,9 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixTests
                        """);
     }
 
-    /// <summary>VB7: Code fix inserts .Size after .Value assignment.</summary>
+    /// <summary>
+    ///     VB7: Code fix inserts .Size after .Value assignment.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task CodeFix_InsertsSizeAfterValueAssignment()

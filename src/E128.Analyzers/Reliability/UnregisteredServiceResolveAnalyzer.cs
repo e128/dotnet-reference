@@ -111,13 +111,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
     {
         // The collectors live in this closure, so each compilation gets its own state and the
         // analyzer host can never leak registrations from one compilation into the next.
-        var registeredServices = new ConcurrentBag<INamedTypeSymbol>();
-        var registeredOpenGenerics = new ConcurrentBag<string>();
-        var resolveCandidates = new ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)>();
-        var parameterCandidates = new ConcurrentBag<(Location Location, INamedTypeSymbol ParameterType, INamedTypeSymbol ContainingType)>();
-        var registeredClientNames = new ConcurrentBag<string>();
-        var clientResolveCandidates = new ConcurrentBag<(Location Location, string Name)>();
-        var configuredServices = ReadConfiguredServices(context.Options.AnalyzerConfigOptionsProvider);
+        var state = new ResolveState(ReadConfiguredServices(context.Options.AnalyzerConfigOptionsProvider));
 
         // Both types ship in Microsoft.Extensions.Http. Without either one the named-client check cannot
         // tell a registration from a resolve, so it stays silent rather than guess.
@@ -125,37 +119,29 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         var httpClientExtensionsType = context.Compilation.GetTypeByMetadataName(HttpClientExtensionsTypeName);
 
         context.RegisterSyntaxNodeAction(
-            ctx => CollectRegistrations(ctx, registeredServices, registeredOpenGenerics),
+            ctx => CollectRegistrations(ctx, state.RegisteredServices, state.RegisteredOpenGenerics),
             SyntaxKind.InvocationExpression);
 
         context.RegisterSyntaxNodeAction(
-            ctx => CollectResolves(ctx, resolveCandidates),
+            ctx => CollectResolves(ctx, state.ResolveCandidates),
             SyntaxKind.InvocationExpression);
 
         context.RegisterSyntaxNodeAction(
-            ctx => CollectConstructorParameters(ctx, parameterCandidates),
+            ctx => CollectConstructorParameters(ctx, state.ParameterCandidates),
             SyntaxKind.ConstructorDeclaration);
 
         if (httpClientFactoryType is not null && httpClientExtensionsType is not null)
         {
             context.RegisterSyntaxNodeAction(
-                ctx => CollectClientRegistrations(ctx, httpClientExtensionsType, registeredClientNames),
+                ctx => CollectClientRegistrations(ctx, httpClientExtensionsType, state.RegisteredClientNames),
                 SyntaxKind.InvocationExpression);
 
             context.RegisterSyntaxNodeAction(
-                ctx => CollectClientResolves(ctx, httpClientFactoryType, clientResolveCandidates),
+                ctx => CollectClientResolves(ctx, httpClientFactoryType, state.ClientResolveCandidates),
                 SyntaxKind.InvocationExpression);
         }
 
-        context.RegisterCompilationEndAction(ctx => ReportUnregisteredResolves(
-            ctx,
-            registeredServices,
-            registeredOpenGenerics,
-            resolveCandidates,
-            parameterCandidates,
-            configuredServices,
-            registeredClientNames,
-            clientResolveCandidates));
+        context.RegisterCompilationEndAction(ctx => ReportUnregisteredResolves(ctx, state));
     }
 
     private static void CollectRegistrations(
@@ -219,11 +205,13 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is IMethodSymbol { TypeArguments.Length: 1 } method
-            && method.TypeArguments[0] is INamedTypeSymbol { Name.Length: > 0 } serviceType)
+            is not IMethodSymbol { TypeArguments.Length: 1 } method
+            || method.TypeArguments[0] is not INamedTypeSymbol { Name.Length: > 0 } serviceType)
         {
-            resolveCandidates.Add((invocation.GetLocation(), serviceType));
+            return;
         }
+
+        resolveCandidates.Add((invocation.GetLocation(), serviceType));
     }
 
     private static void CollectConstructorParameters(
@@ -284,11 +272,13 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (TryGetStringArgument(invocation, method, context.SemanticModel, context.CancellationToken, out var name)
-            && name.Length > 0)
+        if (!TryGetStringArgument(invocation, method, context.SemanticModel, context.CancellationToken, out var name)
+            || name.Length is 0)
         {
-            registeredClientNames.Add(name);
+            return;
         }
+
+        registeredClientNames.Add(name);
     }
 
     private static void CollectClientResolves(
@@ -313,11 +303,13 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         }
 
         // The empty name is the default client, which AddHttpClient() always supplies.
-        if (TryGetStringArgument(invocation, method, context.SemanticModel, context.CancellationToken, out var name)
-            && name.Length > 0)
+        if (!TryGetStringArgument(invocation, method, context.SemanticModel, context.CancellationToken, out var name)
+            || name.Length is 0)
         {
-            clientResolveCandidates.Add((invocation.GetLocation(), name));
+            return;
         }
+
+        clientResolveCandidates.Add((invocation.GetLocation(), name));
     }
 
     private static bool IsDeclaredOn(IMethodSymbol method, INamedTypeSymbol type)
@@ -338,7 +330,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
         // The named-client APIs carry exactly one string parameter, the client name. Reading the constant of
         // the matching argument keeps the check independent of parameter order and reduced receiver removal.
-        if (!method.Parameters.Any(parameter => parameter.Type.SpecialType == SpecialType.System_String))
+        if (!method.Parameters.Any(static parameter => parameter.Type.SpecialType is SpecialType.System_String))
         {
             return false;
         }
@@ -357,16 +349,15 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static void ReportUnregisteredResolves(
-        CompilationAnalysisContext context,
-        ConcurrentBag<INamedTypeSymbol> registeredServices,
-        ConcurrentBag<string> registeredOpenGenerics,
-        ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)> resolveCandidates,
-        ConcurrentBag<(Location Location, INamedTypeSymbol ParameterType, INamedTypeSymbol ContainingType)> parameterCandidates,
-        ImmutableHashSet<string> configuredServices,
-        ConcurrentBag<string> registeredClientNames,
-        ConcurrentBag<(Location Location, string Name)> clientResolveCandidates)
+    private static void ReportUnregisteredResolves(CompilationAnalysisContext context, ResolveState state)
     {
+        var registeredServices = state.RegisteredServices;
+        var registeredOpenGenerics = state.RegisteredOpenGenerics;
+        var resolveCandidates = state.ResolveCandidates;
+        var parameterCandidates = state.ParameterCandidates;
+        var configuredServices = state.ConfiguredServices;
+        var registeredClientNames = state.RegisteredClientNames;
+        var clientResolveCandidates = state.ClientResolveCandidates;
         var registered = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (var type in registeredServices)
         {
@@ -398,13 +389,13 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         // location is picked by file and span to keep repeated runs identical.
         var unregisteredClientNames = clientResolveCandidates
             .Where(candidate => !registeredClientNameSet.Contains(candidate.Name))
-            .GroupBy(candidate => candidate.Name, StringComparer.Ordinal)
-            .Select(group => group
-                .OrderBy(candidate => candidate.Location.GetLineSpan().Path, StringComparer.Ordinal)
-                .ThenBy(candidate => candidate.Location.SourceSpan.Start)
+            .GroupBy(static candidate => candidate.Name, StringComparer.Ordinal)
+            .Select(static group => group
+                .OrderBy(static candidate => candidate.Location.GetLineSpan().Path, StringComparer.Ordinal)
+                .ThenBy(static candidate => candidate.Location.SourceSpan.Start)
                 .First())
-            .OrderBy(candidate => candidate.Location.GetLineSpan().Path, StringComparer.Ordinal)
-            .ThenBy(candidate => candidate.Location.SourceSpan.Start);
+            .OrderBy(static candidate => candidate.Location.GetLineSpan().Path, StringComparer.Ordinal)
+            .ThenBy(static candidate => candidate.Location.SourceSpan.Start);
 
         foreach (var (location, name) in unregisteredClientNames)
         {
@@ -439,8 +430,8 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
         var entries = rawValue
             .Split(',')
-            .Select(entry => entry.Trim())
-            .Where(entry => entry.Length > 0);
+            .Select(static entry => entry.Trim())
+            .Where(static entry => entry.Length > 0);
 
         return ImmutableHashSet.CreateRange(StringComparer.Ordinal, entries);
     }
@@ -469,5 +460,27 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
     {
         return methodName.StartsWith("Add", StringComparison.Ordinal)
                || methodName.StartsWith("TryAdd", StringComparison.Ordinal);
+    }
+
+    private sealed class ResolveState
+    {
+        internal ResolveState(ImmutableHashSet<string> configuredServices)
+        {
+            ConfiguredServices = configuredServices;
+        }
+
+        internal ConcurrentBag<INamedTypeSymbol> RegisteredServices { get; } = [];
+
+        internal ConcurrentBag<string> RegisteredOpenGenerics { get; } = [];
+
+        internal ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)> ResolveCandidates { get; } = [];
+
+        internal ConcurrentBag<(Location Location, INamedTypeSymbol ParameterType, INamedTypeSymbol ContainingType)> ParameterCandidates { get; } = [];
+
+        internal ConcurrentBag<string> RegisteredClientNames { get; } = [];
+
+        internal ConcurrentBag<(Location Location, string Name)> ClientResolveCandidates { get; } = [];
+
+        internal ImmutableHashSet<string> ConfiguredServices { get; }
     }
 }

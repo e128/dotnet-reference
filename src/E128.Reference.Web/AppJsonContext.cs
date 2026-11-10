@@ -12,4 +12,5 @@ namespace E128.Reference.Web;
 [JsonSerializable(typeof(GreetingRequest))]
 [JsonSerializable(typeof(Greeting[]))]
 [JsonSerializable(typeof(IReadOnlyList<Greeting>))]
+[JsonSourceGenerationOptions(RespectNullableAnnotations = true, RespectRequiredConstructorParameters = true)]
 internal sealed partial class AppJsonContext : JsonSerializerContext;

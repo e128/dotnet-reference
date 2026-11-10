@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HttpClientMissingOceCatchCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<HttpClientMissingOceCatchAnalyzer, HttpClientMissingOceCatchCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<HttpClientMissingOceCatchAnalyzer, HttpClientMissingOceCatchCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

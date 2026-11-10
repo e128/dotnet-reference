@@ -56,7 +56,7 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : E128CodeFixP
         }
 
         var variable = declaration.Variables.FirstOrDefault();
-        if (declaration.Variables.Count != 1 || variable?.Initializer?.Value is null)
+        if (declaration.Variables.Count is not 1 || variable?.Initializer?.Value is null)
         {
             return document;
         }
@@ -96,21 +96,17 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : E128CodeFixP
         var dictionaryType = semanticModel.Compilation.GetTypeByMetadataName(DictionaryMetadataName);
         var originalDefinition = namedType.OriginalDefinition;
 
-        if (hashSetType is not null && SymbolEqualityComparer.Default.Equals(originalDefinition, hashSetType))
+        isHashSet = hashSetType is not null && SymbolEqualityComparer.Default.Equals(originalDefinition, hashSetType);
+        var isDictionary = dictionaryType is not null
+            && SymbolEqualityComparer.Default.Equals(originalDefinition, dictionaryType);
+
+        if (!isHashSet && !isDictionary)
         {
-            fieldType = namedType;
-            isHashSet = true;
-            return true;
+            return false;
         }
 
-        if (dictionaryType is not null && SymbolEqualityComparer.Default.Equals(originalDefinition, dictionaryType))
-        {
-            fieldType = namedType;
-            isHashSet = false;
-            return true;
-        }
-
-        return false;
+        fieldType = namedType;
+        return true;
     }
 
     private static VariableDeclarationSyntax BuildFrozenDeclaration(

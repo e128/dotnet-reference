@@ -24,7 +24,7 @@ internal static class InterfaceMembers
             return false;
         }
 
-        if (containingType.TypeKind == TypeKind.Interface || InheritsFromDelegate(containingType))
+        if (containingType.TypeKind is TypeKind.Interface || InheritsFromDelegate(containingType))
         {
             return false;
         }
