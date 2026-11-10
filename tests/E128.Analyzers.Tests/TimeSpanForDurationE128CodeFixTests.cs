@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class TimeSpanForDurationE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<TimeSpanForDurationAnalyzer, TimeSpanForDurationCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<TimeSpanForDurationAnalyzer, TimeSpanForDurationCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

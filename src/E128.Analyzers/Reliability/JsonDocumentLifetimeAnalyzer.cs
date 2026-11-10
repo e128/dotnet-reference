@@ -110,13 +110,13 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
     {
         variableName = string.Empty;
 
-        if (invocation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator })
+        if (invocation.Parent is not EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator })
         {
-            variableName = declarator.Identifier.ValueText;
-            return true;
+            return false;
         }
 
-        return false;
+        variableName = declarator.Identifier.ValueText;
+        return true;
     }
 
     private static bool HasEscapingRootElement(BaseMethodDeclarationSyntax method, string docVariableName)

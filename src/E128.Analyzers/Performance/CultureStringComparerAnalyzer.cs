@@ -52,7 +52,7 @@ public sealed class CultureStringComparerAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var collections = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
 
@@ -63,7 +63,7 @@ public sealed class CultureStringComparerAnalyzer : DiagnosticAnalyzer
             AddCollection(start.Compilation, collections, "System.Collections.Generic.SortedSet`1");
 
             var stringComparer = start.Compilation.GetTypeByMetadataName("System.StringComparer");
-            if (collections.Count == 0 || stringComparer is null)
+            if (collections.Count is 0 || stringComparer is null)
             {
                 return;
             }
@@ -85,10 +85,12 @@ public sealed class CultureStringComparerAnalyzer : DiagnosticAnalyzer
         ImmutableArray<INamedTypeSymbol>.Builder collections,
         string metadataName)
     {
-        if (compilation.GetTypeByMetadataName(metadataName) is { } type)
+        if (compilation.GetTypeByMetadataName(metadataName) is not { } type)
         {
-            collections.Add(type);
+            return;
         }
+
+        collections.Add(type);
     }
 
     private static void Analyze(
@@ -137,8 +139,8 @@ public sealed class CultureStringComparerAnalyzer : DiagnosticAnalyzer
 
     private static bool IsTrackedCollection(INamedTypeSymbol type, ImmutableArray<INamedTypeSymbol> collections)
     {
-        if (type.TypeArguments.Length == 0
-            || type.TypeArguments[0].SpecialType != SpecialType.System_String)
+        if (type.TypeArguments.Length is 0
+            || type.TypeArguments[0].SpecialType is not SpecialType.System_String)
         {
             return false;
         }

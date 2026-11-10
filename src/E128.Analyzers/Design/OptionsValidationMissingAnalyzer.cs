@@ -191,39 +191,81 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
         ExpressionSyntax? current = outermost;
         while (current is InvocationExpressionSyntax invocation)
         {
-            if (model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol method)
+            var (kind, method, bindsConfiguration) = ClassifyInvocation(invocation, types, model, cancellationToken);
+            if (kind is ChainCall.Validation)
             {
-                if (IsValidationCall(method, types.OptionsBuilder, types.BuilderExtensions))
-                {
-                    return false;
-                }
-
-                if (MetadataTypes.Contains(types.ServiceCollectionExtensions, method.ContainingType)
-                    && IsOptionsRegistration(method, types.ServiceCollection, types.Configuration, out var bindsConfiguration))
-                {
-                    // The outermost registration wins, so its bind flag must win too.
-                    registrationBindsConfiguration = registration is null ? bindsConfiguration : registrationBindsConfiguration;
-                    registration ??= invocation;
-                    registrationMethod ??= method;
-                }
-                else if (IsBindCall(method, types.BuilderExtensions))
-                {
-                    hasBind = true;
-                }
+                return false;
             }
 
-            current = invocation.Expression is MemberAccessExpressionSyntax member ? member.Expression : null;
+            // The outermost registration wins, so its bind flag must win too.
+            if (kind is ChainCall.Registration && registration is null)
+            {
+                registration = invocation;
+                registrationMethod = method;
+                registrationBindsConfiguration = bindsConfiguration;
+            }
+            else if (kind is ChainCall.Bind)
+            {
+                hasBind = true;
+            }
+
+            current = NextInChain(invocation);
         }
 
         // A bare AddOptions<T>() carries no configuration source here, so it needs a Bind call.
         return registration is not null
                && registrationMethod is not null
-               && registrationMethod.TypeArguments.Length == 1
-               && (hasBind || registrationBindsConfiguration);
+               && registrationMethod.TypeArguments.Length is 1
+               && HasConfigurationSource(hasBind, registrationBindsConfiguration);
     }
 
-    private readonly struct RuleTypes
+    private static bool HasConfigurationSource(bool hasBind, bool registrationBindsConfiguration)
     {
+        return hasBind || registrationBindsConfiguration;
+    }
+
+    private static (ChainCall Kind, IMethodSymbol? Method, bool BindsConfiguration) ClassifyInvocation(
+        InvocationExpressionSyntax invocation,
+        RuleTypes types,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        if (model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol method)
+        {
+            return (ChainCall.Other, null, false);
+        }
+
+        if (IsValidationCall(method, types.OptionsBuilder, types.BuilderExtensions))
+        {
+            return (ChainCall.Validation, method, false);
+        }
+
+        if (MetadataTypes.Contains(types.ServiceCollectionExtensions, method.ContainingType)
+            && IsOptionsRegistration(method, types.ServiceCollection, types.Configuration, out var bindsConfiguration))
+        {
+            return (ChainCall.Registration, method, bindsConfiguration);
+        }
+
+        return (IsBindCall(method, types.BuilderExtensions) ? ChainCall.Bind : ChainCall.Other, method, false);
+    }
+
+    private static ExpressionSyntax? NextInChain(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax member ? member.Expression : null;
+    }
+
+    private enum ChainCall
+    {
+        Other = 0,
+        Validation = 1,
+        Registration = 2,
+        Bind = 3,
+    }
+
+    private readonly struct RuleTypes : IEquatable<RuleTypes>
+    {
+        private const int HashPrime = 31;
+
         internal RuleTypes(
             ImmutableArray<INamedTypeSymbol> serviceCollectionExtensions,
             INamedTypeSymbol? serviceCollection,
@@ -251,6 +293,78 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
         internal INamedTypeSymbol? ValidateOptions { get; }
 
         internal ImmutableArray<INamedTypeSymbol> BuilderExtensions { get; }
+
+        public static bool operator ==(RuleTypes left, RuleTypes right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(RuleTypes left, RuleTypes right)
+        {
+            return !left.Equals(right);
+        }
+
+        public bool Equals(RuleTypes other)
+        {
+            return SymbolEqualityComparer.Default.Equals(ServiceCollection, other.ServiceCollection)
+                   && SymbolEqualityComparer.Default.Equals(Configuration, other.Configuration)
+                   && SymbolEqualityComparer.Default.Equals(OptionsBuilder, other.OptionsBuilder)
+                   && SymbolEqualityComparer.Default.Equals(ValidateOptions, other.ValidateOptions)
+                   && SameSymbols(ServiceCollectionExtensions, other.ServiceCollectionExtensions)
+                   && SameSymbols(BuilderExtensions, other.BuilderExtensions);
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is RuleTypes other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = SymbolHash(ServiceCollection);
+                hash = (hash * HashPrime) + SymbolHash(Configuration);
+                hash = (hash * HashPrime) + SymbolHash(OptionsBuilder);
+                hash = (hash * HashPrime) + SymbolHash(ValidateOptions);
+                hash = (hash * HashPrime) + (ServiceCollectionExtensions.IsDefault ? 0 : ServiceCollectionExtensions.Length);
+
+                return (hash * HashPrime) + (BuilderExtensions.IsDefault ? 0 : BuilderExtensions.Length);
+            }
+        }
+
+        public override string ToString()
+        {
+            return nameof(RuleTypes);
+        }
+
+        private static int SymbolHash(ISymbol? symbol)
+        {
+            return symbol is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(symbol);
+        }
+
+        private static bool SameSymbols(ImmutableArray<INamedTypeSymbol> left, ImmutableArray<INamedTypeSymbol> right)
+        {
+            if (left.IsDefault || right.IsDefault)
+            {
+                return left.IsDefault && right.IsDefault;
+            }
+
+            if (left.Length != right.Length)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < left.Length; index++)
+            {
+                if (!SymbolEqualityComparer.Default.Equals(left[index], right[index]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     /// <summary>
@@ -365,8 +479,8 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
         {
             // The parameterless form is the registration that a Bind call follows. The delegate form
             // configures values in code and is outside this rule.
-            return method.Parameters.Length == 0
-                || (method.Parameters.Length == 1
+            return method.Parameters.Length is 0
+                || (method.Parameters.Length is 1
                     && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, serviceCollectionType));
         }
 

@@ -44,7 +44,7 @@ public sealed class StringConcatInLoopAnalyzer : DiagnosticAnalyzer
         }
 
         var typeInfo = context.SemanticModel.GetTypeInfo(assignment.Left, context.CancellationToken);
-        if (typeInfo.Type?.SpecialType != SpecialType.System_String)
+        if (typeInfo.Type?.SpecialType is not SpecialType.System_String)
         {
             return;
         }

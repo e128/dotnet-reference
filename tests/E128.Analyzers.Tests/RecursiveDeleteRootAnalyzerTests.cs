@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class RecursiveDeleteRootAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

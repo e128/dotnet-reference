@@ -46,7 +46,7 @@ public sealed class PathCombineSegmentCodeFixProvider : E128CodeFixProviderBase
         var model = await context.Document.GetSemanticModelAsync(context.CancellationToken)
             .ConfigureAwait(false);
 
-        if (!IsFixable(argument, model))
+        if (!IsFixable(argument, model, context.CancellationToken))
         {
             return;
         }
@@ -54,10 +54,10 @@ public sealed class PathCombineSegmentCodeFixProvider : E128CodeFixProviderBase
         CodeFixRegistration.Register(context, diagnostic, $"Use {PathCombineSegmentAnalyzer.ReplacementMethodName}", nameof(PathCombineSegmentCodeFixProvider), ct => ReplaceAsync(context.Document, methodName, ct));
     }
 
-    private static bool IsFixable(ArgumentSyntax argument, SemanticModel? model)
+    private static bool IsFixable(ArgumentSyntax argument, SemanticModel? model, CancellationToken cancellationToken)
     {
         return model is not null
-               && model.GetConstantValue(argument.Expression) is { HasValue: true, Value: string segment }
+               && model.GetConstantValue(argument.Expression, cancellationToken) is { HasValue: true, Value: string segment }
                && PathCombineSegmentAnalyzer.IsRooted(segment)
                && HasJoinMethod(model.Compilation);
     }

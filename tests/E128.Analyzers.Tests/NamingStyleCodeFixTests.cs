@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
@@ -17,10 +18,10 @@ public sealed class NamingStyleCodeFixTests
     [InlineData("MyFieldName", new[] { "My", "Field", "Name" })]
     [InlineData("HTTPClient", new[] { "HTTP", "Client" })]
     [InlineData("foo", new[] { "foo" })]
-    public void SplitByCaseTransition_ReturnsExpectedWords(string input, string[] expected)
+    public void SplitByCaseTransition_ReturnsExpectedWords(string input, IEnumerable<string> expected)
     {
         var result = NamingStyleCodeFixProvider.SplitByCaseTransition(input);
-        Assert.Equal(expected, result);
+        Assert.Equal(expected, result, StringComparer.Ordinal);
     }
 
     [Theory]
@@ -53,7 +54,7 @@ public sealed class NamingStyleCodeFixTests
     {
         var result = NamingStyleCodeFixProvider.BuildCompliantName(
             symbolName, prefix, suffix, wordSeparator, capitalizationScheme);
-        Assert.Equal(expected, result);
+        Assert.Equal(expected, result, StringComparer.Ordinal);
     }
 
     [Fact]
@@ -125,7 +126,7 @@ public sealed class NamingStyleCodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -152,7 +153,7 @@ public sealed class NamingStyleCodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -183,6 +184,6 @@ public sealed class NamingStyleCodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 }

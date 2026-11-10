@@ -20,6 +20,7 @@ namespace E128.Analyzers.Design;
 public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProviderBase
 {
     private const string ImmutableNamespace = "System.Collections.Immutable";
+    private const int MaxByteValue = 255;
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MutableStaticReadonlyArrayAnalyzer.DiagnosticId];
@@ -77,7 +78,7 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
             properties.Add(CreateSpanProperty(field, variable, elements));
         }
 
-        return properties.Count == 0 ? null : properties.MoveToImmutable();
+        return properties.Count is 0 ? null : properties.MoveToImmutable();
     }
 
     private static PropertyDeclarationSyntax CreateSpanProperty(
@@ -86,11 +87,11 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
         ImmutableArray<ExpressionSyntax> elements)
     {
         var modifiers = SyntaxFactory.TokenList(
-            field.Modifiers.Where(modifier => !modifier.IsKind(SyntaxKind.ReadOnlyKeyword)));
+            field.Modifiers.Where(static modifier => !modifier.IsKind(SyntaxKind.ReadOnlyKeyword)));
 
         var collection = SyntaxFactory.CollectionExpression(
             SyntaxFactory.SeparatedList<CollectionElementSyntax>(
-                elements.Select(element => SyntaxFactory.ExpressionElement(element.WithoutTrivia()))));
+                elements.Select(static element => SyntaxFactory.ExpressionElement(element.WithoutTrivia()))));
 
         return SyntaxFactory.PropertyDeclaration(
                 SyntaxFactory.ParseTypeName("ReadOnlySpan<byte>"),
@@ -130,8 +131,8 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
         switch (expression)
         {
             case CollectionExpressionSyntax collection
-                when collection.Elements.All(element => element is ExpressionElementSyntax):
-                return [.. collection.Elements.Cast<ExpressionElementSyntax>().Select(element => element.Expression)];
+                when collection.Elements.All(static element => element is ExpressionElementSyntax):
+                return [.. collection.Elements.Cast<ExpressionElementSyntax>().Select(static element => element.Expression)];
             case ImplicitArrayCreationExpressionSyntax { Initializer: { } implicitInitializer }:
                 return [.. implicitInitializer.Expressions];
             case ArrayCreationExpressionSyntax { Initializer: { } explicitInitializer }:
@@ -152,7 +153,7 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
             && constant.Value switch
             {
                 byte => true,
-                int value => value is >= 0 and <= 255,
+                int value => value is >= 0 and <= MaxByteValue,
                 _ => false
             };
     }
@@ -229,11 +230,19 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
     private static CollectionExpressionSyntax? UnwrapArrayCreation(ExpressionSyntax expression)
     {
         // Implicit: new[] { "a", "b" } or Explicit: new T[] { "a", "b" }
-        var initializer = expression is ImplicitArrayCreationExpressionSyntax implicitArray
-            ? implicitArray.Initializer
-            : expression is ArrayCreationExpressionSyntax explicitArray
-                ? explicitArray.Initializer
-                : null;
+        InitializerExpressionSyntax? initializer;
+        if (expression is ImplicitArrayCreationExpressionSyntax implicitArray)
+        {
+            initializer = implicitArray.Initializer;
+        }
+        else if (expression is ArrayCreationExpressionSyntax explicitArray)
+        {
+            initializer = explicitArray.Initializer;
+        }
+        else
+        {
+            initializer = null;
+        }
 
         return initializer is not null
             ? CollectionExpressionFromInitializers(initializer)
@@ -247,7 +256,7 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
             return null;
         }
 
-        var elements = initializer.Expressions.Select(expr =>
+        var elements = initializer.Expressions.Select(static expr =>
             SyntaxFactory.ExpressionElement(expr.WithoutTrailingTrivia())).ToList();
 
         return SyntaxFactory.CollectionExpression(

@@ -63,35 +63,34 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
     {
         foreach (var ancestor in node.Ancestors())
         {
-            // goto case "" needs a constant too, so string.Empty would not compile there.
-            if (ancestor is CaseSwitchLabelSyntax or CasePatternSwitchLabelSyntax or ConstantPatternSyntax or GotoStatementSyntax)
-            {
-                return true;
-            }
-
-            if (ancestor is VariableDeclarationSyntax decl)
-            {
-                var parent = decl.Parent;
-                if (parent is FieldDeclarationSyntax field
-                    && field.Modifiers.Any(SyntaxKind.ConstKeyword))
-                {
-                    return true;
-                }
-
-                if (parent is LocalDeclarationStatementSyntax local
-                    && local.Modifiers.Any(SyntaxKind.ConstKeyword))
-                {
-                    return true;
-                }
-            }
-
-            // Default parameter value: void M(string s = "")
-            if (ancestor is ParameterSyntax)
+            if (IsConstAncestor(ancestor))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool IsConstAncestor(SyntaxNode ancestor)
+    {
+        // goto case "" needs a constant too, so string.Empty would not compile there.
+        // A default parameter value such as void M(string s = "") needs a constant as well.
+        return ancestor is CaseSwitchLabelSyntax
+                   or CasePatternSwitchLabelSyntax
+                   or ConstantPatternSyntax
+                   or GotoStatementSyntax
+                   or ParameterSyntax
+               || (ancestor is VariableDeclarationSyntax decl && IsConstDeclaration(decl));
+    }
+
+    private static bool IsConstDeclaration(VariableDeclarationSyntax decl)
+    {
+        return decl.Parent switch
+        {
+            FieldDeclarationSyntax field => field.Modifiers.Any(SyntaxKind.ConstKeyword),
+            LocalDeclarationStatementSyntax local => local.Modifiers.Any(SyntaxKind.ConstKeyword),
+            _ => false
+        };
     }
 }

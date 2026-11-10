@@ -146,7 +146,7 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
 
         // A section that already leaves the switch cannot take a break. The break after a return or
         // throw is unreachable code, which CS0162 reports.
-        if (statements.Count == 0 || !LeavesSwitch(statements[statements.Count - 1]))
+        if (statements.Count is 0 || !LeavesSwitch(statements[statements.Count - 1]))
         {
             statements.Add(SyntaxFactory.BreakStatement());
         }
@@ -172,11 +172,14 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
         // The switch expression is the variable side, so it is the operand that is not the enum
         // constant. Taking the left operand by position puts the constant in the subject of a reversed
         // comparison, `Color.Red == x`, which makes every case label unreachable.
-        return ifStatement.Condition is not BinaryExpressionSyntax binary
-            ? null
-            : IsEnumConstant(binary.Left, model, cancellationToken)
-                ? binary.Right
-                : binary.Left;
+        if (ifStatement.Condition is not BinaryExpressionSyntax binary)
+        {
+            return null;
+        }
+
+        return IsEnumConstant(binary.Left, model, cancellationToken)
+            ? binary.Right
+            : binary.Left;
     }
 
     private static ExpressionSyntax? ExtractCaseLabel(
@@ -185,13 +188,17 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
         CancellationToken cancellationToken)
     {
         // The label is the enum constant, whichever side of the comparison it sits on.
-        return condition is not BinaryExpressionSyntax binary
-            ? null
-            : IsEnumConstant(binary.Left, model, cancellationToken)
-                ? binary.Left
-                : IsEnumConstant(binary.Right, model, cancellationToken)
-                    ? binary.Right
-                    : null;
+        if (condition is not BinaryExpressionSyntax binary)
+        {
+            return null;
+        }
+
+        if (IsEnumConstant(binary.Left, model, cancellationToken))
+        {
+            return binary.Left;
+        }
+
+        return IsEnumConstant(binary.Right, model, cancellationToken) ? binary.Right : null;
     }
 
     private static bool IsEnumConstant(

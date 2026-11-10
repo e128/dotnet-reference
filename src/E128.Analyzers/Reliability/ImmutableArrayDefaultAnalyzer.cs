@@ -159,10 +159,12 @@ public sealed class ImmutableArrayDefaultAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol
-            is IFieldSymbol field)
+            is not IFieldSymbol field)
         {
-            assignedFields.Add(field);
+            return;
         }
+
+        assignedFields.Add(field);
     }
 
     private static void Report(

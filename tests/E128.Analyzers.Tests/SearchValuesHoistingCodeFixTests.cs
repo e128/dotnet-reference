@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SearchValuesHoistingCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<SearchValuesHoistingAnalyzer, SearchValuesHoistingCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<SearchValuesHoistingAnalyzer, SearchValuesHoistingCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

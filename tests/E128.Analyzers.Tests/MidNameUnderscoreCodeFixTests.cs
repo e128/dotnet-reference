@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class MidNameUnderscoreCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<MidNameUnderscoreAnalyzer, MidNameUnderscoreCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<MidNameUnderscoreAnalyzer, MidNameUnderscoreCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

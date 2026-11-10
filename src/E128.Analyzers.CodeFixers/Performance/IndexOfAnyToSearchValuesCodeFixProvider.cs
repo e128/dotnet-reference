@@ -61,8 +61,7 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
         }
 
         CodeFixRegistration.Register(context, diagnostic, "Use SearchValues<char> with a span IndexOfAny", nameof(IndexOfAnyToSearchValuesCodeFixProvider), _ => Task.FromResult(ApplyFix(
-                    context.Document, root, typeDecl, invocation, receiver,
-                    memberAccess.Name.Identifier.ValueText, fieldName, chars)));
+                    context.Document, root, typeDecl, invocation, memberAccess, fieldName, chars)));
 
         return Task.CompletedTask;
     }
@@ -72,11 +71,12 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
         SyntaxNode root,
         TypeDeclarationSyntax typeDecl,
         InvocationExpressionSyntax invocation,
-        ExpressionSyntax receiver,
-        string methodName,
+        MemberAccessExpressionSyntax memberAccess,
         string fieldName,
         string chars)
     {
+        var receiver = memberAccess.Expression;
+        var methodName = memberAccess.Name.Identifier.ValueText;
         var fieldText = "private static readonly System.Buffers.SearchValues<char> " + fieldName
             + " = System.Buffers.SearchValues.Create(" + SymbolDisplay.FormatLiteral(chars, quote: true) + ");";
         var fieldDecl = SyntaxFactory.ParseMemberDeclaration(fieldText);
@@ -103,7 +103,7 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
     private static bool TryExtractCharLiterals(SeparatedSyntaxList<ArgumentSyntax> arguments, out string chars)
     {
         chars = string.Empty;
-        if (arguments.Count != 1)
+        if (arguments.Count is not 1)
         {
             return false;
         }
@@ -133,7 +133,7 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
             sb.Append(literal.Token.Value);
         }
 
-        if (sb.Length == 0)
+        if (sb.Length is 0)
         {
             return false;
         }

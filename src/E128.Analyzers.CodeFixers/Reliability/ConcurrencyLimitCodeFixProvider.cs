@@ -42,8 +42,7 @@ public sealed class ConcurrencyLimitCodeFixProvider : E128CodeFixProviderBase
     {
         // Direct literal node.
         if (node is LiteralExpressionSyntax directLiteral
-            && directLiteral.Token.Value is int directVal
-            && directVal == 0)
+            && directLiteral.Token.Value is 0)
         {
             return directLiteral;
         }
@@ -51,7 +50,7 @@ public sealed class ConcurrencyLimitCodeFixProvider : E128CodeFixProviderBase
         // Search descendants for the first literal 0 in an argument position.
         return node.DescendantNodes()
             .OfType<LiteralExpressionSyntax>()
-            .FirstOrDefault(lit => lit.Token.Value is int val && val == 0);
+            .FirstOrDefault(static lit => lit.Token.Value is 0);
     }
 
     private static async Task<Document> ApplyFixAsync(

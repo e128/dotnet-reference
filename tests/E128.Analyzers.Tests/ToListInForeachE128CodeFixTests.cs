@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ToListInForeachE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ToListInForeachAnalyzer, ToListInForeachCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ToListInForeachAnalyzer, ToListInForeachCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

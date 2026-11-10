@@ -34,7 +34,7 @@ public sealed class ConcurrentDictionaryDoubleLookupAnalyzer : DiagnosticAnalyze
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var concurrentDictionary = startContext.Compilation.GetTypeByMetadataName(
                 "System.Collections.Concurrent.ConcurrentDictionary`2");
@@ -65,19 +65,12 @@ public sealed class ConcurrentDictionaryDoubleLookupAnalyzer : DiagnosticAnalyze
             return;
         }
 
-        if (invocation.ArgumentList.Arguments.Count != 1)
+        if (invocation.ArgumentList.Arguments.Count is not 1)
         {
             return;
         }
 
-        var condition = (ExpressionSyntax)invocation;
-        while (condition.Parent is ParenthesizedExpressionSyntax parenthesized)
-        {
-            condition = parenthesized;
-        }
-
-        if (condition.Parent is not IfStatementSyntax ifStatement
-            || !ReferenceEquals(ifStatement.Condition, condition))
+        if (FindOwningIfStatement(invocation) is not { } ifStatement)
         {
             return;
         }
@@ -102,6 +95,20 @@ public sealed class ConcurrentDictionaryDoubleLookupAnalyzer : DiagnosticAnalyze
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), access.Expression.ToString()));
     }
 
+    private static IfStatementSyntax? FindOwningIfStatement(InvocationExpressionSyntax invocation)
+    {
+        var condition = (ExpressionSyntax)invocation;
+        while (condition.Parent is ParenthesizedExpressionSyntax parenthesized)
+        {
+            condition = parenthesized;
+        }
+
+        return condition.Parent is IfStatementSyntax ifStatement
+            && ReferenceEquals(ifStatement.Condition, condition)
+            ? ifStatement
+            : null;
+    }
+
     private static bool ContainsMatchingRead(
         StatementSyntax body,
         ISymbol receiver,
@@ -111,7 +118,7 @@ public sealed class ConcurrentDictionaryDoubleLookupAnalyzer : DiagnosticAnalyze
     {
         foreach (var elementAccess in body.DescendantNodes().OfType<ElementAccessExpressionSyntax>())
         {
-            if (elementAccess.ArgumentList.Arguments.Count != 1 || IsWriteTarget(elementAccess))
+            if (elementAccess.ArgumentList.Arguments.Count is not 1 || IsWriteTarget(elementAccess))
             {
                 continue;
             }

@@ -12,6 +12,8 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128114";
 
+    private const int ExpectedArgumentCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Index the array instead of bypassing its bounds check",
@@ -31,7 +33,7 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)
@@ -59,7 +61,7 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzer : DiagnosticAnalyzer
         var reference = (InvocationExpressionSyntax)invocation.ArgumentList.Arguments[0].Expression;
         if (context.SemanticModel.GetSymbolInfo(reference, context.CancellationToken).Symbol is not IMethodSymbol { IsGenericMethod: true } inner
             || !string.Equals(inner.ContainingType.Name, "MemoryMarshal", StringComparison.Ordinal)
-            || inner.Parameters.Length != 1
+            || inner.Parameters.Length is not 1
             || inner.Parameters[0].Type is not IArrayTypeSymbol { IsSZArray: true })
         {
             return;
@@ -71,20 +73,24 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzer : DiagnosticAnalyzer
     internal static (ExpressionSyntax Array, ExpressionSyntax Index)? TryGetIndexedAccess(
         InvocationExpressionSyntax invocation)
     {
-        if (invocation.ArgumentList.Arguments.Count != 2)
+        if (invocation.ArgumentList.Arguments.Count is not ExpectedArgumentCount)
         {
             return null;
         }
 
         var first = invocation.ArgumentList.Arguments[0];
 
-        return first.RefKindKeyword.ValueText.Length > 0
-            && first.Expression is InvocationExpressionSyntax
+        if (first.RefKindKeyword.ValueText.Length is 0
+            || first.Expression is not InvocationExpressionSyntax
             {
-                Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "GetArrayDataReference" },
+                Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: var methodName },
                 ArgumentList.Arguments.Count: 1,
             } reference
-            ? (reference.ArgumentList.Arguments[0].Expression, invocation.ArgumentList.Arguments[1].Expression)
-            : null;
+            || !string.Equals(methodName, "GetArrayDataReference", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return (reference.ArgumentList.Arguments[0].Expression, invocation.ArgumentList.Arguments[1].Expression);
     }
 }

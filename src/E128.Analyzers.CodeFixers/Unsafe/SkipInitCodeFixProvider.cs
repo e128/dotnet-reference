@@ -21,7 +21,7 @@ public sealed class SkipInitCodeFixProvider : E128CodeFixProviderBase
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
         if (node is not InvocationExpressionSyntax { Parent: ExpressionStatementSyntax statement } invocation
-            || invocation.ArgumentList.Arguments.Count != 1)
+            || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return;
         }

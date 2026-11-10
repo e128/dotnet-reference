@@ -98,7 +98,7 @@ public sealed class StaleReferenceAssembliesAnalyzer : DiagnosticAnalyzer
         out string versionName,
         out int versionNumber)
     {
-        versionName = "";
+        versionName = string.Empty;
         versionNumber = 0;
 
         // Pattern: ReferenceAssemblies.Net.NetXX

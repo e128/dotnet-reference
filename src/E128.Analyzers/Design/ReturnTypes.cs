@@ -13,8 +13,11 @@ internal static class ReturnTypes
     /// </summary>
     internal static ITypeSymbol? Get(ISymbol symbol)
     {
-        return symbol is IMethodSymbol method ? method.ReturnType
-            : symbol is IPropertySymbol property ? property.Type
-            : null;
+        return symbol switch
+        {
+            IMethodSymbol method => method.ReturnType,
+            IPropertySymbol property => property.Type,
+            _ => null,
+        };
     }
 }

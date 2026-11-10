@@ -20,7 +20,7 @@ public sealed class CommittedRedStubAnalyzerTests
         {
             TestCode = code,
             ReferenceAssemblies = Net100WithXunit
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SwitchEnumExhaustivenessCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<SwitchEnumExhaustivenessAnalyzer, SwitchEnumExhaustivenessCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<SwitchEnumExhaustivenessAnalyzer, SwitchEnumExhaustivenessCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

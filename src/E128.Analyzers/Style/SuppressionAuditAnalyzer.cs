@@ -76,34 +76,48 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
     //   #pragma warning disable CS1234
     private static bool HasJustificationComment(SyntaxTrivia pragmaTrivia)
     {
-        // Check trailing trivia on the directive structure for a comment.
-        var directive = pragmaTrivia.GetStructure();
-        if (directive is not null)
+        return HasTrailingComment(pragmaTrivia.GetStructure()) || HasPrecedingComment(pragmaTrivia);
+    }
+
+    private static bool IsComment(SyntaxTrivia trivia)
+    {
+        return trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+               || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia);
+    }
+
+    // Check trailing trivia on the directive structure for a comment.
+    private static bool HasTrailingComment(SyntaxNode? directive)
+    {
+        if (directive is null)
         {
-            foreach (var token in directive.DescendantTokens())
+            return false;
+        }
+
+        foreach (var token in directive.DescendantTokens())
+        {
+            foreach (var trailing in token.TrailingTrivia)
             {
-                foreach (var trailing in token.TrailingTrivia)
+                if (IsComment(trailing))
                 {
-                    if (trailing.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                        || trailing.IsKind(SyntaxKind.MultiLineCommentTrivia))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
 
-        // Check the preceding trivia for a comment on the line immediately before.
-        var token2 = pragmaTrivia.Token;
-        var allTrivia = token2.LeadingTrivia;
+        return false;
+    }
+
+    // Check the preceding trivia for a comment on the line immediately before.
+    private static bool HasPrecedingComment(SyntaxTrivia pragmaTrivia)
+    {
+        var allTrivia = pragmaTrivia.Token.LeadingTrivia;
         var pragmaIndex = allTrivia.IndexOf(pragmaTrivia);
 
         for (var i = pragmaIndex - 1; i >= 0; i--)
         {
             var preceding = allTrivia[i];
 
-            if (preceding.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || preceding.IsKind(SyntaxKind.MultiLineCommentTrivia))
+            if (IsComment(preceding))
             {
                 return true;
             }

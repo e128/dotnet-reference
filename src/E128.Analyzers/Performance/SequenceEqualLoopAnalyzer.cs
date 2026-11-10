@@ -56,8 +56,26 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
+        if (GetReturnFalseComparison(forStatement) is not { } comparison
+            || GetElementAccess(comparison.Left, loopVariable) is not { } left
+            || GetElementAccess(comparison.Right, loopVariable) is not { } right
+            || forStatement.Parent is not BlockSyntax block)
+        {
+            return null;
+        }
+
+        var index = block.Statements.IndexOf(forStatement);
+
+        return IsConvertibleLoop(block, index, boundOwner, (left, right), semanticModel, cancellationToken)
+            ? (left, right)
+            : null;
+    }
+
+    // Matches `for (...) { if (a[i] != b[i]) { return false; } }` and returns the comparison.
+    private static BinaryExpressionSyntax? GetReturnFalseComparison(ForStatementSyntax forStatement)
+    {
         if (forStatement.Statement is not BlockSyntax loopBody
-            || loopBody.Statements.Count != 1
+            || loopBody.Statements.Count is not 1
             || loopBody.Statements[0] is not IfStatementSyntax ifStatement
             || ifStatement.Condition is not BinaryExpressionSyntax comparison
             || !comparison.IsKind(SyntaxKind.NotEqualsExpression))
@@ -65,34 +83,24 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        if (GetSingleStatement(ifStatement.Statement) is not ReturnStatementSyntax
-            {
-                Expression: LiteralExpressionSyntax falseLiteral,
-            }
-            || !falseLiteral.IsKind(SyntaxKind.FalseLiteralExpression))
-        {
-            return null;
-        }
-
-        if (GetElementAccess(comparison.Left, loopVariable) is not { } left
-            || GetElementAccess(comparison.Right, loopVariable) is not { } right)
-        {
-            return null;
-        }
-
-        if (forStatement.Parent is not BlockSyntax block)
-        {
-            return null;
-        }
-
-        var index = block.Statements.IndexOf(forStatement);
-
-        return IsFollowedByTrueReturn(block, index)
-            && IsOperand(boundOwner, left, right)
-            && HasLengthGuard(block, index, left, right)
-            && HaveSafeElementType(left, right, semanticModel, cancellationToken)
-            ? (left, right)
+        return GetSingleStatement(ifStatement.Statement) is ReturnStatementSyntax { Expression: LiteralExpressionSyntax falseLiteral }
+            && falseLiteral.IsKind(SyntaxKind.FalseLiteralExpression)
+            ? comparison
             : null;
+    }
+
+    private static bool IsConvertibleLoop(
+        BlockSyntax block,
+        int index,
+        ExpressionSyntax? boundOwner,
+        (ExpressionSyntax Left, ExpressionSyntax Right) operands,
+        SemanticModel semanticModel,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        return IsFollowedByTrueReturn(block, index)
+            && IsOperand(boundOwner, operands.Left, operands.Right)
+            && HasLengthGuard(block, index, operands.Left, operands.Right)
+            && HaveSafeElementType(operands.Left, operands.Right, semanticModel, cancellationToken);
     }
 
     private static bool IsOperand(ExpressionSyntax? owner, ExpressionSyntax left, ExpressionSyntax right)
@@ -105,27 +113,35 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
     // when the code before the loop already returns false on a length mismatch.
     private static bool HasLengthGuard(BlockSyntax block, int index, ExpressionSyntax left, ExpressionSyntax right)
     {
-        if (index < 1
-            || block.Statements[index - 1] is not IfStatementSyntax guard
-            || guard.Else is not null
-            || guard.Condition is not BinaryExpressionSyntax comparison
-            || !comparison.IsKind(SyntaxKind.NotEqualsExpression)
-            || comparison.Left is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } leftLength
-            || comparison.Right is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } rightLength)
+        if (GetGuardComparison(block, index) is not { } found
+            || found.Comparison.Left is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } leftLength
+            || found.Comparison.Right is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } rightLength
+            || !ReturnsFalse(found.Guard.Statement))
         {
             return false;
         }
 
-        var returnsFalse = GetEmbeddedStatement(guard.Statement) is ReturnStatementSyntax
-        {
-            Expression: LiteralExpressionSyntax literal,
-        } && literal.IsKind(SyntaxKind.FalseLiteralExpression);
+        return (SyntaxFactory.AreEquivalent(leftLength.Expression, left)
+                && SyntaxFactory.AreEquivalent(rightLength.Expression, right))
+            || (SyntaxFactory.AreEquivalent(leftLength.Expression, right)
+                && SyntaxFactory.AreEquivalent(rightLength.Expression, left));
+    }
 
-        return returnsFalse
-            && ((SyntaxFactory.AreEquivalent(leftLength.Expression, left)
-                    && SyntaxFactory.AreEquivalent(rightLength.Expression, right))
-                || (SyntaxFactory.AreEquivalent(leftLength.Expression, right)
-                    && SyntaxFactory.AreEquivalent(rightLength.Expression, left)));
+    private static (IfStatementSyntax Guard, BinaryExpressionSyntax Comparison)? GetGuardComparison(
+        BlockSyntax block,
+        int index)
+    {
+        return index >= 1
+            && block.Statements[index - 1] is IfStatementSyntax { Else: null, Condition: BinaryExpressionSyntax comparison } guard
+            && comparison.IsKind(SyntaxKind.NotEqualsExpression)
+            ? (guard, comparison)
+            : null;
+    }
+
+    private static bool ReturnsFalse(StatementSyntax statement)
+    {
+        return GetEmbeddedStatement(statement) is ReturnStatementSyntax { Expression: LiteralExpressionSyntax literal }
+            && literal.IsKind(SyntaxKind.FalseLiteralExpression);
     }
 
     private static StatementSyntax GetEmbeddedStatement(StatementSyntax statement)
@@ -148,22 +164,32 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
         }
 
         var element = leftArray.ElementType;
-        return element.TypeKind == TypeKind.Enum
-            || element.SpecialType is SpecialType.System_Boolean
-                or SpecialType.System_Char
-                or SpecialType.System_SByte
-                or SpecialType.System_Byte
-                or SpecialType.System_Int16
-                or SpecialType.System_UInt16
-                or SpecialType.System_Int32
-                or SpecialType.System_UInt32
-                or SpecialType.System_Int64
-                or SpecialType.System_UInt64;
+        return element.TypeKind is TypeKind.Enum
+            || IsNarrowIntegral(element.SpecialType)
+            || IsWideIntegral(element.SpecialType);
+    }
+
+    private static bool IsNarrowIntegral(SpecialType specialType)
+    {
+        return specialType is SpecialType.System_Boolean
+            or SpecialType.System_Char
+            or SpecialType.System_SByte
+            or SpecialType.System_Byte
+            or SpecialType.System_Int16
+            or SpecialType.System_UInt16;
+    }
+
+    private static bool IsWideIntegral(SpecialType specialType)
+    {
+        return specialType is SpecialType.System_Int32
+            or SpecialType.System_UInt32
+            or SpecialType.System_Int64
+            or SpecialType.System_UInt64;
     }
 
     private static StatementSyntax? GetSingleStatement(StatementSyntax statement)
     {
-        return statement is BlockSyntax block && block.Statements.Count == 1
+        return statement is BlockSyntax block && block.Statements.Count is 1
             ? block.Statements[0]
             : null;
     }
@@ -179,7 +205,7 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
     private static ExpressionSyntax? GetElementAccess(ExpressionSyntax expression, string loopVariable)
     {
         return expression is ElementAccessExpressionSyntax elementAccess
-            && elementAccess.ArgumentList.Arguments.Count == 1
+            && elementAccess.ArgumentList.Arguments.Count is 1
             && elementAccess.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax identifier
             && string.Equals(identifier.Identifier.ValueText, loopVariable, StringComparison.Ordinal)
             ? elementAccess.Expression

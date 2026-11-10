@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class LazyFieldThreadSafetyAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<LazyFieldThreadSafetyAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<LazyFieldThreadSafetyAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

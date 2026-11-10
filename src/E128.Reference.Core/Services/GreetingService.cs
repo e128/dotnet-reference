@@ -14,10 +14,15 @@ public sealed class GreetingService(
     IGreetingRepository repository,
     TimeProvider timeProvider) : IGreetingService
 {
-    public async Task<Greeting> GreetAsync(GreetingRequest request, CancellationToken cancellationToken = default)
+    public Task<Greeting> GreetAsync(GreetingRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        return GreetCoreAsync(request, cancellationToken);
+    }
+
+    private async Task<Greeting> GreetCoreAsync(GreetingRequest request, CancellationToken cancellationToken)
+    {
         var message = greeter.Greet(request.Name);
         var greeting = new Greeting(message, request.Name ?? greeter.DefaultName, timeProvider.GetUtcNow());
 

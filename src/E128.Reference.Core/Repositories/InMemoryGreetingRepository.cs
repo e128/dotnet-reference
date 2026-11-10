@@ -16,7 +16,7 @@ public sealed class InMemoryGreetingRepository : IGreetingRepository
     private readonly Lock _gate = new();
     private readonly List<Greeting> _greetings = [];
 
-    public Task SaveAsync(Greeting greeting, CancellationToken cancellationToken = default)
+    public Task SaveAsync(Greeting greeting, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(greeting);
 
@@ -28,7 +28,7 @@ public sealed class InMemoryGreetingRepository : IGreetingRepository
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken)
     {
         Greeting[] recent;
 
@@ -37,7 +37,7 @@ public sealed class InMemoryGreetingRepository : IGreetingRepository
             recent =
             [
                 .. _greetings
-                    .OrderByDescending(greeting => greeting.CreatedAt)
+                    .OrderByDescending(static greeting => greeting.CreatedAt)
                     .Take(count)
             ];
         }

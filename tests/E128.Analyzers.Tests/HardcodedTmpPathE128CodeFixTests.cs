@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HardcodedTmpPathE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<HardcodedTmpPathE128Analyzer, HardcodedTmpPathCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<HardcodedTmpPathE128Analyzer, HardcodedTmpPathCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

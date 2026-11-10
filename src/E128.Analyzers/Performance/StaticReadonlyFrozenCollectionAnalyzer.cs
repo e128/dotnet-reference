@@ -44,7 +44,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             // Guard: only register if FrozenSet<T> exists in the compilation (.NET 8+)
             var frozenSetType = compilationContext.Compilation.GetTypeByMetadataName(FrozenSetMetadataName);
@@ -76,18 +76,10 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
 
         // One type node declares every variable in the list, so a frozen rewrite cannot cover one
         // variable alone. The fix rewrites the whole declaration, and the other variables would go.
-        if (fieldDeclaration.Declaration.Variables.Count != 1)
-        {
-            return;
-        }
-
-        if (!HasStaticReadonlyModifiers(fieldDeclaration))
-        {
-            return;
-        }
-
-        // Must have an initializer at the declaration site
-        if (!HasDeclarationInitializer(fieldDeclaration))
+        // The field must also have an initializer at the declaration site.
+        if (fieldDeclaration.Declaration.Variables.Count is not 1
+            || !HasStaticReadonlyModifiers(fieldDeclaration)
+            || !HasDeclarationInitializer(fieldDeclaration))
         {
             return;
         }
@@ -95,38 +87,36 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
         // Get the field symbol to check its type
         foreach (var variable in fieldDeclaration.Declaration.Variables)
         {
-            if (context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken) is not IFieldSymbol fieldSymbol)
+            if (context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken)
+                is not IFieldSymbol { Type: INamedTypeSymbol { IsGenericType: true } fieldType }
+                || GetSuggestedType(fieldType, hashSetType, dictionaryType) is not { } suggestedType)
             {
                 continue;
             }
 
-            if (fieldSymbol.Type is not INamedTypeSymbol fieldType || !fieldType.IsGenericType)
-            {
-                continue;
-            }
-
-            var originalDefinition = fieldType.OriginalDefinition;
-            string? suggestedType = null;
-
-            if (hashSetType is not null && SymbolEqualityComparer.Default.Equals(originalDefinition, hashSetType))
-            {
-                suggestedType = $"FrozenSet<{fieldType.TypeArguments[0].ToDisplayString()}>";
-            }
-            else if (dictionaryType is not null && SymbolEqualityComparer.Default.Equals(originalDefinition, dictionaryType))
-            {
-                suggestedType = $"FrozenDictionary<{fieldType.TypeArguments[0].ToDisplayString()}, {fieldType.TypeArguments[1].ToDisplayString()}>";
-            }
-
-            if (suggestedType is not null)
-            {
-                var location = fieldDeclaration.Declaration.GetLocation();
-                context.ReportDiagnostic(Diagnostic.Create(
-                    Rule,
-                    location,
-                    fieldType.ToDisplayString(),
-                    suggestedType));
-            }
+            context.ReportDiagnostic(Diagnostic.Create(
+                Rule,
+                fieldDeclaration.Declaration.GetLocation(),
+                fieldType.ToDisplayString(),
+                suggestedType));
         }
+    }
+
+    private static string? GetSuggestedType(
+        INamedTypeSymbol fieldType,
+        INamedTypeSymbol? hashSetType,
+        INamedTypeSymbol? dictionaryType)
+    {
+        var originalDefinition = fieldType.OriginalDefinition;
+
+        if (hashSetType is not null && SymbolEqualityComparer.Default.Equals(originalDefinition, hashSetType))
+        {
+            return $"FrozenSet<{fieldType.TypeArguments[0].ToDisplayString()}>";
+        }
+
+        return dictionaryType is not null && SymbolEqualityComparer.Default.Equals(originalDefinition, dictionaryType)
+            ? $"FrozenDictionary<{fieldType.TypeArguments[0].ToDisplayString()}, {fieldType.TypeArguments[1].ToDisplayString()}>"
+            : null;
     }
 
     private static bool HasStaticReadonlyModifiers(FieldDeclarationSyntax fieldDeclaration)

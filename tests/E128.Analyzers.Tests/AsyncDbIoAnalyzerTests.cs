@@ -65,7 +65,7 @@ public sealed class AsyncDbIoAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -87,7 +87,9 @@ public sealed class AsyncDbIoAnalyzerTests
                            """);
     }
 
-    /// <summary>AC-2: E128093 does not fire when the containing method is already async.</summary>
+    /// <summary>
+    ///     AC-2: E128093 does not fire when the containing method is already async.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task AsyncDbIoAnalyzer_DoesNotFire_WhenContainingMethodAlreadyAsync()
@@ -104,7 +106,9 @@ public sealed class AsyncDbIoAnalyzerTests
                                                               """);
     }
 
-    /// <summary>AC-3: E128093 does not fire on a DbConnection-derived member with no Async sibling.</summary>
+    /// <summary>
+    ///     AC-3: E128093 does not fire on a DbConnection-derived member with no Async sibling.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task AsyncDbIoAnalyzer_DoesNotFire_OnMemberWithoutAsyncSibling()

@@ -38,7 +38,7 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var spanType = start.Compilation.GetTypeByMetadataName("System.Span`1");
             if (spanType is null)
@@ -79,15 +79,8 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        if (GetSingleStatement(body) is not ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax assignment }
-            || !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
-        {
-            return null;
-        }
-
-        if (!TryGetIndexedReceiver(assignment.Left, variable, out var destination)
-            || destination is null
-            || !IsSimpleTarget(destination, variable, model, cancellationToken))
+        if (GetSimpleAssignment(body) is not { } assignment
+            || GetSimpleDestination(assignment, variable, model, cancellationToken) is not { } destination)
         {
             return null;
         }
@@ -106,19 +99,57 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
                 : null;
         }
 
-        BulkLoopMatch? fill = null;
+        return IsFillCandidate(destination, bound, assignment.Right, variable, model, cancellationToken)
+            ? CreateFillMatch(destination, assignment.Right, destinationElement, destinationIsSpan, model, cancellationToken)
+            : null;
+    }
 
-        // Fill evaluates the value once, so a call or a property read would run fewer times.
-        if (SyntaxFactory.AreEquivalent(destination, bound)
-            && !References(assignment.Right, variable)
-            && IsRepeatableValue(assignment.Right, model, cancellationToken))
-        {
-            fill = IsClearValue(assignment.Right, destinationElement, model)
-                ? new BulkLoopMatch(LoopKind.Clear, destination, null, null, destinationIsSpan, false)
-                : new BulkLoopMatch(LoopKind.Fill, destination, assignment.Right, null, destinationIsSpan, false);
-        }
+    private static AssignmentExpressionSyntax? GetSimpleAssignment(StatementSyntax body)
+    {
+        return GetSingleStatement(body) is ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax assignment }
+            && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+            ? assignment
+            : null;
+    }
 
-        return fill;
+    private static ExpressionSyntax? GetSimpleDestination(
+        AssignmentExpressionSyntax assignment,
+        string variable,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return TryGetIndexedReceiver(assignment.Left, variable, out var destination)
+            && destination is not null
+            && IsSimpleTarget(destination, variable, model, cancellationToken)
+            ? destination
+            : null;
+    }
+
+    // Fill evaluates the value once, so a call or a property read would run fewer times.
+    private static bool IsFillCandidate(
+        ExpressionSyntax destination,
+        ExpressionSyntax bound,
+        ExpressionSyntax value,
+        string variable,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return SyntaxFactory.AreEquivalent(destination, bound)
+            && !References(value, variable)
+            && IsRepeatableValue(value, model, cancellationToken);
+    }
+
+    private static BulkLoopMatch CreateFillMatch(
+        ExpressionSyntax destination,
+        ExpressionSyntax value,
+        ITypeSymbol? destinationElement,
+        bool destinationIsSpan,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return IsClearValue(value, destinationElement, model, cancellationToken)
+            ? new BulkLoopMatch(LoopKind.Clear, destination, null, null, destinationIsSpan, false)
+            : new BulkLoopMatch(LoopKind.Fill, destination, value, null, destinationIsSpan, false);
     }
 
     // Returns whether the source is already a span when the loop is a valid copy.
@@ -151,9 +182,12 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
 
     private static StatementSyntax? GetSingleStatement(StatementSyntax statement)
     {
-        return statement is BlockSyntax block
-            ? block.Statements.Count == 1 ? block.Statements[0] : null
-            : statement;
+        if (statement is not BlockSyntax block)
+        {
+            return statement;
+        }
+
+        return block.Statements.Count is 1 ? block.Statements[0] : null;
     }
 
     private static bool TryGetIndexedReceiver(
@@ -183,7 +217,7 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken)
     {
         return !References(expression, variable)
-            && !expression.DescendantNodesAndSelf().Any(node => node is InvocationExpressionSyntax)
+            && !expression.DescendantNodesAndSelf().Any(static node => node is InvocationExpressionSyntax)
             && model.GetSymbolInfo(expression, cancellationToken).Symbol
             is ILocalSymbol or IParameterSymbol or IFieldSymbol;
     }
@@ -202,11 +236,13 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
             case IArrayTypeSymbol { Rank: 1 } array:
                 element = array.ElementType;
                 return true;
+
             case INamedTypeSymbol named
                 when TypeSymbols.MatchesOriginalDefinition(named, spanType):
                 element = named.TypeArguments[0];
                 isSpan = true;
                 return true;
+
             default:
                 return false;
         }
@@ -242,30 +278,23 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
 
     // Clear writes default(T). A zero literal is not default(T) for a nullable element, an
     // object element, or a type that a user-defined conversion would reach.
-    private static bool IsClearValue(ExpressionSyntax value, ITypeSymbol? element, SemanticModel model)
+    private static bool IsClearValue(
+        ExpressionSyntax value,
+        ITypeSymbol? element,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
         if (value is DefaultExpressionSyntax)
         {
             return true;
         }
 
-        if (value is LiteralExpressionSyntax literal)
+        if (value is LiteralExpressionSyntax literal && ClassifyLiteral(literal, element) is { } literalResult)
         {
-            if (literal.IsKind(SyntaxKind.DefaultLiteralExpression))
-            {
-                return true;
-            }
-
-            if (literal.IsKind(SyntaxKind.NullLiteralExpression))
-            {
-                return element is null || !element.IsValueType || IsNullable(element);
-            }
+            return literalResult;
         }
 
-        if (element is null
-            || !element.IsValueType
-            || IsNullable(element)
-            || !element.IsUnmanagedType)
+        if (element is null || !IsZeroableValueType(element))
         {
             return false;
         }
@@ -276,8 +305,29 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var constant = model.GetConstantValue(value);
+        var constant = model.GetConstantValue(value, cancellationToken);
         return constant.HasValue && IsZero(constant.Value);
+    }
+
+    // A default literal clears. A null literal clears only a reference or nullable element.
+    // Any other literal is undecided, so the caller keeps checking.
+    private static bool? ClassifyLiteral(LiteralExpressionSyntax literal, ITypeSymbol? element)
+    {
+        if (literal.IsKind(SyntaxKind.DefaultLiteralExpression))
+        {
+            return true;
+        }
+
+        return literal.IsKind(SyntaxKind.NullLiteralExpression)
+            ? element is null || !element.IsValueType || IsNullable(element)
+            : null;
+    }
+
+    private static bool IsZeroableValueType(ITypeSymbol element)
+    {
+        return element.IsValueType
+            && !IsNullable(element)
+            && element.IsUnmanagedType;
     }
 
     private static bool IsZero(object? value)
@@ -286,24 +336,32 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         {
             bool flag => !flag,
             char character => character == '\0',
-            byte number => number == 0,
-            sbyte number => number == 0,
-            short number => number == 0,
-            ushort number => number == 0,
-            int number => number == 0,
-            uint number => number == 0,
-            long number => number == 0,
-            ulong number => number == 0,
             float number => number == 0,
             double number => number == 0,
             decimal number => number == 0,
+            _ => IsZeroInteger(value),
+        };
+    }
+
+    private static bool IsZeroInteger(object? value)
+    {
+        return value switch
+        {
+            byte number => number is 0,
+            sbyte number => number is 0,
+            short number => number is 0,
+            ushort number => number is 0,
+            int number => number is 0,
+            uint number => number == 0,
+            long number => number == 0,
+            ulong number => number == 0,
             _ => false,
         };
     }
 
     private static bool IsNullable(ITypeSymbol type)
     {
-        return type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
+        return type.OriginalDefinition.SpecialType is SpecialType.System_Nullable_T;
     }
 
     internal enum LoopKind

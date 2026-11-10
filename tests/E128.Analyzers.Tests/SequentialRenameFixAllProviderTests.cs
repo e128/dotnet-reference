@@ -20,7 +20,7 @@ public sealed class SequentialRenameFixAllProviderTests
             .AddMetadataReference(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
         var document = project.AddDocument("Test.cs", "class C { int a; int b; }");
         var solution = document.Project.Solution;
-        var text = await document.GetTextAsync();
+        var text = await document.GetTextAsync(TestContext.Current.CancellationToken);
         var source = text.ToString();
         var aStart = source.IndexOf("int a;", StringComparison.Ordinal) + 4;
 
@@ -38,7 +38,7 @@ public sealed class SequentialRenameFixAllProviderTests
 
         var renamedDocument = result.GetDocument(document.Id);
         Assert.NotNull(renamedDocument);
-        var renamedText = (await renamedDocument.GetTextAsync()).ToString();
+        var renamedText = (await renamedDocument.GetTextAsync(TestContext.Current.CancellationToken)).ToString();
 
         Assert.Contains("alpha", renamedText, StringComparison.Ordinal);
         Assert.DoesNotContain("beta", renamedText, StringComparison.Ordinal);

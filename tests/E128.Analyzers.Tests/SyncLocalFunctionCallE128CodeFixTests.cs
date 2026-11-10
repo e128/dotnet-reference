@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SyncLocalFunctionCallE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<SyncLocalFunctionCallAnalyzer, SyncLocalFunctionCallCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<SyncLocalFunctionCallAnalyzer, SyncLocalFunctionCallCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

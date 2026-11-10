@@ -31,7 +31,7 @@ public sealed class NullByRefAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)
@@ -88,7 +88,7 @@ public sealed class NullByRefAnalyzer : DiagnosticAnalyzer
 
     private static bool HasNullPointer(InvocationExpressionSyntax invocation)
     {
-        if (invocation.ArgumentList.Arguments.Count != 1)
+        if (invocation.ArgumentList.Arguments.Count is not 1)
         {
             return false;
         }
@@ -97,12 +97,22 @@ public sealed class NullByRefAnalyzer : DiagnosticAnalyzer
 
         return expression switch
         {
-            LiteralExpressionSyntax literal => literal.IsKind(SyntaxKind.NullLiteralExpression)
-                || literal.IsKind(SyntaxKind.DefaultLiteralExpression),
+            LiteralExpressionSyntax literal => IsNullOrDefaultLiteral(literal),
             DefaultExpressionSyntax => true,
             CastExpressionSyntax { Type: PointerTypeSyntax, Expression: LiteralExpressionSyntax value } =>
-                value.IsKind(SyntaxKind.NullLiteralExpression) || value.Token.Value is 0 or 0u or 0L or 0UL,
+                IsNullOrZeroLiteral(value),
             _ => false,
         };
+    }
+
+    private static bool IsNullOrDefaultLiteral(LiteralExpressionSyntax literal)
+    {
+        return literal.IsKind(SyntaxKind.NullLiteralExpression)
+            || literal.IsKind(SyntaxKind.DefaultLiteralExpression);
+    }
+
+    private static bool IsNullOrZeroLiteral(LiteralExpressionSyntax value)
+    {
+        return value.IsKind(SyntaxKind.NullLiteralExpression) || value.Token.Value is 0 or 0u or 0L or 0UL;
     }
 }

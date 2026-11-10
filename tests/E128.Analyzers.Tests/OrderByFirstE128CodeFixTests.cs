@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class OrderByFirstE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<OrderByFirstAnalyzer, OrderByFirstCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<OrderByFirstAnalyzer, OrderByFirstCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

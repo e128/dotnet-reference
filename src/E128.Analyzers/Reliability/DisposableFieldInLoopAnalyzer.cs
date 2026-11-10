@@ -112,15 +112,7 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         if (type is ITypeParameterSymbol typeParameter)
         {
             // A constraint such as "where T : IDisposable" makes the field disposable.
-            foreach (var constraint in typeParameter.ConstraintTypes)
-            {
-                if (IsDisposable(constraint, disposableTypes, asyncDisposableTypes))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return HasDisposableConstraint(typeParameter, disposableTypes, asyncDisposableTypes);
         }
 
         if (type.IsValueType || type is not INamedTypeSymbol namedType)
@@ -128,22 +120,45 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (MetadataTypes.Contains(disposableTypes, namedType.OriginalDefinition)
-            || MetadataTypes.Contains(asyncDisposableTypes, namedType.OriginalDefinition))
+        if (IsDisposableDefinition(namedType, disposableTypes, asyncDisposableTypes))
         {
             return true;
         }
 
         foreach (var implemented in namedType.AllInterfaces)
         {
-            if (MetadataTypes.Contains(disposableTypes, implemented.OriginalDefinition)
-                || MetadataTypes.Contains(asyncDisposableTypes, implemented.OriginalDefinition))
+            if (IsDisposableDefinition(implemented, disposableTypes, asyncDisposableTypes))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool HasDisposableConstraint(
+        ITypeParameterSymbol typeParameter,
+        ImmutableArray<INamedTypeSymbol> disposableTypes,
+        ImmutableArray<INamedTypeSymbol> asyncDisposableTypes)
+    {
+        foreach (var constraint in typeParameter.ConstraintTypes)
+        {
+            if (IsDisposable(constraint, disposableTypes, asyncDisposableTypes))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsDisposableDefinition(
+        INamedTypeSymbol type,
+        ImmutableArray<INamedTypeSymbol> disposableTypes,
+        ImmutableArray<INamedTypeSymbol> asyncDisposableTypes)
+    {
+        return MetadataTypes.Contains(disposableTypes, type.OriginalDefinition)
+               || MetadataTypes.Contains(asyncDisposableTypes, type.OriginalDefinition);
     }
 
     private static SyntaxNode? FindEnclosingLoop(SyntaxNode node)
@@ -163,8 +178,7 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
 
             // A lambda or a local function runs on its own schedule, so the enclosing loop does not
             // make the assignment a per-iteration write.
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or AccessorDeclarationSyntax
-                or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax or BaseTypeDeclarationSyntax)
+            if (IsLoopScopeBoundary(current))
             {
                 return null;
             }
@@ -173,16 +187,30 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
+    private static bool IsLoopScopeBoundary(SyntaxNode node)
+    {
+        return node is MethodDeclarationSyntax or ConstructorDeclarationSyntax or AccessorDeclarationSyntax
+            or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax or BaseTypeDeclarationSyntax;
+    }
+
     private static bool IsInLoopHeader(SyntaxNode loop, SyntaxNode node)
     {
-        return (loop is CommonForEachStatementSyntax forEach && forEach.Expression.Span.Contains(node.Span))
-               || (loop is ForStatementSyntax forStatement
-                   && (ContainsSpan(forStatement.Declaration, node)
-                       || ContainsSpan(forStatement.Condition, node)
-                       || IsInAny(forStatement.Initializers, node)
-                       || IsInAny(forStatement.Incrementors, node)))
-               || (loop is WhileStatementSyntax whileStatement && whileStatement.Condition.Span.Contains(node.Span))
-               || (loop is DoStatementSyntax doStatement && doStatement.Condition.Span.Contains(node.Span));
+        return loop switch
+        {
+            CommonForEachStatementSyntax forEach => forEach.Expression.Span.Contains(node.Span),
+            ForStatementSyntax forStatement => IsInForHeader(forStatement, node),
+            WhileStatementSyntax whileStatement => whileStatement.Condition.Span.Contains(node.Span),
+            DoStatementSyntax doStatement => doStatement.Condition.Span.Contains(node.Span),
+            _ => false
+        };
+    }
+
+    private static bool IsInForHeader(ForStatementSyntax forStatement, SyntaxNode node)
+    {
+        return ContainsSpan(forStatement.Declaration, node)
+               || ContainsSpan(forStatement.Condition, node)
+               || IsInAny(forStatement.Initializers, node)
+               || IsInAny(forStatement.Incrementors, node);
     }
 
     private static bool ContainsSpan(SyntaxNode? container, SyntaxNode node)
@@ -291,6 +319,12 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
+    private static bool IsExitStatement(SyntaxNode node)
+    {
+        return node is ContinueStatementSyntax or BreakStatementSyntax or ReturnStatementSyntax
+            or ThrowStatementSyntax or GotoStatementSyntax;
+    }
+
     private static bool ExitsBetween(SyntaxNode? scope, SyntaxNode from, SyntaxNode to)
     {
         if (scope is null)
@@ -299,16 +333,11 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         }
 
         foreach (var node in scope.DescendantNodes(
-                     child => child is not AnonymousFunctionExpressionSyntax
+                     static child => child is not AnonymousFunctionExpressionSyntax
                               and not LocalFunctionStatementSyntax))
         {
-            if (node.SpanStart < from.Span.End || node.SpanStart >= to.SpanStart)
-            {
-                continue;
-            }
-
-            if (node is ContinueStatementSyntax or BreakStatementSyntax or ReturnStatementSyntax
-                or ThrowStatementSyntax or GotoStatementSyntax)
+            var inRange = node.SpanStart >= from.Span.End && node.SpanStart < to.SpanStart;
+            if (inRange && IsExitStatement(node))
             {
                 return true;
             }

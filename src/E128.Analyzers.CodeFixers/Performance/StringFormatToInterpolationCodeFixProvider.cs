@@ -16,6 +16,8 @@ namespace E128.Analyzers.Performance;
 [Shared]
 public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int DoubledBraceLength = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StringFormatToInterpolationAnalyzer.DiagnosticId];
 
@@ -128,7 +130,7 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
                 }
 
                 contents.Add(CreateTextContent("}"));
-                i += 2;
+                i += DoubledBraceLength;
             }
             else
             {
@@ -150,7 +152,7 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
         if (i + 1 < formatString.Length && formatString[i + 1] == '{')
         {
             contents.Add(CreateTextContent("{"));
-            return i + 2;
+            return i + DoubledBraceLength;
         }
 
         var closeIndex = formatString.IndexOf('}', i);
@@ -243,7 +245,7 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
                 '\r' => "\\r",
                 '\n' => "\\n",
                 '\t' => "\\t",
-                _ => character.ToString()
+                _ => character.ToString(CultureInfo.InvariantCulture)
             });
         }
 

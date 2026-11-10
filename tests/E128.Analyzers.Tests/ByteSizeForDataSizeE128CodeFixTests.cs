@@ -30,7 +30,7 @@ public sealed class ByteSizeForDataSizeE128CodeFixTests
         };
         test.TestState.Sources.Add(ByteSizeStub);
         test.FixedState.Sources.Add(ByteSizeStub);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

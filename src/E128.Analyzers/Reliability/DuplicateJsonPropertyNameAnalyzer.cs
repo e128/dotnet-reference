@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -94,7 +95,7 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (candidates.Count == 0)
+        if (candidates.Count is 0)
         {
             return;
         }
@@ -174,13 +175,7 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
     // with another member. A conditional JsonIgnore keeps the member in the contract.
     private static bool IsExcluded(ISymbol member, ImmutableArray<INamedTypeSymbol> jsonIgnoreTypes)
     {
-        if (member.IsStatic)
-        {
-            return true;
-        }
-
-        if (member is IPropertySymbol property
-            && (property.IsIndexer || property.ExplicitInterfaceImplementations.Length > 0))
+        if (IsNeverInContract(member))
         {
             return true;
         }
@@ -202,7 +197,14 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        return member.DeclaredAccessibility != Accessibility.Public && !isIncluded;
+        return member.DeclaredAccessibility is not Accessibility.Public && !isIncluded;
+    }
+
+    private static bool IsNeverInContract(ISymbol member)
+    {
+        return member.IsStatic
+               || (member is IPropertySymbol property
+                   && (property.IsIndexer || property.ExplicitInterfaceImplementations.Length > 0));
     }
 
     // JsonIgnoreCondition.Always is 1 and is the default when the attribute names no condition.
@@ -212,7 +214,7 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
         {
             if (string.Equals(argument.Key, "Condition", StringComparison.Ordinal))
             {
-                return argument.Value.Value is int condition && condition == 1;
+                return argument.Value.Value is int and 1;
             }
         }
 
@@ -223,9 +225,9 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
     {
         jsonName = string.Empty;
 
-        if (attribute.ConstructorArguments.Length != 1
+        if (attribute.ConstructorArguments.Length is not 1
             || attribute.ConstructorArguments[0].Value is not string name
-            || name.Length == 0)
+            || name.Length is 0)
         {
             return false;
         }
@@ -271,17 +273,25 @@ public sealed class DuplicateJsonPropertyNameAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Rule,
-                GetLocation(attribute, member),
+                GetLocation(attribute, member, context.CancellationToken),
                 member.Name,
                 earlier.Name,
                 jsonName,
                 type.Name));
     }
 
-    private static Location GetLocation(AttributeData attribute, ISymbol member)
+    private static Location GetLocation(AttributeData attribute, ISymbol member, CancellationToken cancellationToken)
     {
-        return attribute.ApplicationSyntaxReference?.GetSyntax() is { } syntax
-            ? syntax.GetLocation()
-            : member.Locations.Length > 0 ? member.Locations[0] : Location.None;
+        if (attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken) is { } syntax)
+        {
+            return syntax.GetLocation();
+        }
+
+        if (member.Locations.Length > 0)
+        {
+            return member.Locations[0];
+        }
+
+        return Location.None;
     }
 }

@@ -71,7 +71,7 @@ public sealed class ConfigurationKeyMissingAnalyzerTests
         }
 
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

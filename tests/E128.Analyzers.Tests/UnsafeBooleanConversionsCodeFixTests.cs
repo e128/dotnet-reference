@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UnsafeBooleanConversionsCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<UnsafeBooleanConversionsAnalyzer, UnsafeBooleanConversionsCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<UnsafeBooleanConversionsAnalyzer, UnsafeBooleanConversionsCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

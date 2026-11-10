@@ -34,7 +34,7 @@ public sealed class LowValueTestCodeFixTests
             ReferenceAssemblies = Net100WithXunit,
             CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
             NumberOfFixAllIterations = 1
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public sealed class LowValueTestCodeFixTests
         var project = workspace.AddProject("TestProject", LanguageNames.CSharp);
         var document = workspace.AddDocument(project.Id, "Test.cs", SourceText.From(code));
 
-        var root = await document.GetSyntaxRootAsync();
+        var root = await document.GetSyntaxRootAsync(TestContext.Current.CancellationToken);
         var method = root!.DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .First(m => string.Equals(m.Identifier.ValueText, methodName, StringComparison.Ordinal));

@@ -16,7 +16,7 @@ public sealed class InModifierE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyMutableStructFixAsync(string source, string fixedCode)
@@ -26,7 +26,7 @@ public sealed class InModifierE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyRefStructFixAsync(string source, string fixedCode)
@@ -36,7 +36,7 @@ public sealed class InModifierE128CodeFixTests
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

@@ -59,7 +59,7 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
                 Name.Identifier.ValueText: "Dispose",
                 Expression: IdentifierNameSyntax receiver
             }
-            || invocation.ArgumentList.Arguments.Count != 0)
+            || invocation.ArgumentList.Arguments.Count is not 0)
         {
             return;
         }
@@ -78,11 +78,25 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var disposeEnd = invocation.Span.End;
+        var usage = FindUseAfterDispose(block, local, model, invocation.Span.End, context.CancellationToken);
+        if (usage is null)
+        {
+            return;
+        }
 
+        context.ReportDiagnostic(Diagnostic.Create(Rule, usage.GetLocation(), local.Name));
+    }
+
+    private static IdentifierNameSyntax? FindUseAfterDispose(
+        BlockSyntax block,
+        ILocalSymbol local,
+        SemanticModel model,
+        int disposeEnd,
+        CancellationToken cancellationToken)
+    {
         foreach (var identifier in block.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            if (!IsReadOfLocal(identifier, local, model, disposeEnd, block, context.CancellationToken))
+            if (!IsReadOfLocal(identifier, local, model, disposeEnd, block, cancellationToken))
             {
                 continue;
             }
@@ -92,25 +106,18 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
             if (identifier.Parent is AssignmentExpressionSyntax assignment
                 && assignment.Left == identifier)
             {
-                return;
+                return null;
             }
 
-            // A second Dispose is harmless, so the rule does not report it.
-            if (IsDisposeReceiver(identifier))
+            // A second Dispose is harmless, so the rule does not report it. Only a member access on the
+            // local reads its state. A nameof, a null test, and a comparison do not.
+            if (!IsDisposeReceiver(identifier) && IsMemberAccessReceiver(identifier))
             {
-                continue;
+                return identifier;
             }
-
-            // Only a member access on the local reads its state. A nameof, a null test, and a
-            // comparison do not.
-            if (!IsMemberAccessReceiver(identifier))
-            {
-                continue;
-            }
-
-            context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), local.Name));
-            return;
         }
+
+        return null;
     }
 
     private static bool IsReadOfLocal(
@@ -152,7 +159,8 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
 
         foreach (var ancestor in identifier.Ancestors())
         {
-            if (ancestor is InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" } })
+            if (ancestor is InvocationExpressionSyntax { Expression: IdentifierNameSyntax nameofName }
+                && string.Equals(nameofName.Identifier.ValueText, "nameof", StringComparison.Ordinal))
             {
                 return false;
             }
@@ -163,7 +171,8 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
 
     private static bool IsDisposeReceiver(IdentifierNameSyntax identifier)
     {
-        return identifier.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Dispose" } access
+        return identifier.Parent is MemberAccessExpressionSyntax access
+               && string.Equals(access.Name.Identifier.ValueText, "Dispose", StringComparison.Ordinal)
                && access.Parent is InvocationExpressionSyntax;
     }
 }

@@ -28,6 +28,8 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
 
     private const string StartInfoTypeName = "System.Diagnostics.ProcessStartInfo";
 
+    private const string StartInfoMemberName = "StartInfo";
+
     private static readonly ImmutableHashSet<string> RedirectProperties = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "RedirectStandardOutput",
@@ -133,11 +135,19 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
     {
         // The configuration and the wait usually sit in one method. A lambda body is the scope for a
         // wait inside a callback, because the enclosing method holds no relation to the process.
-        return invocation.FirstAncestorOrSelf<AnonymousFunctionExpressionSyntax>() is { } lambda
-            ? lambda.Body
-            : invocation.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>() is { } method
-                ? (SyntaxNode?)method.Body ?? method.ExpressionBody
-                : invocation.FirstAncestorOrSelf<BlockSyntax>();
+        if (invocation.FirstAncestorOrSelf<AnonymousFunctionExpressionSyntax>() is { } lambda)
+        {
+            // The configuration and the wait usually sit in one method. A lambda body is the scope for a
+            // wait inside a callback, because the enclosing method holds no relation to the process.
+            return lambda.Body;
+        }
+
+        if (invocation.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>() is { } method)
+        {
+            return (SyntaxNode?)method.Body ?? method.ExpressionBody;
+        }
+
+        return invocation.FirstAncestorOrSelf<BlockSyntax>();
     }
 
     private static bool HasRedirectedStream(
@@ -151,6 +161,25 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
             .Any(assignment => IsTrueRedirect(scope, assignment, processSymbol, model, cancellationToken));
     }
 
+    private static bool IsTrueAssignment(AssignmentExpressionSyntax assignment)
+    {
+        return assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+               && assignment.Right is LiteralExpressionSyntax literal
+               && literal.IsKind(SyntaxKind.TrueLiteralExpression);
+    }
+
+    private static bool IsStartInfoProperty(
+        ExpressionSyntax left,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return model.GetSymbolInfo(left, cancellationToken).Symbol is IPropertySymbol property
+               && string.Equals(
+                   property.ContainingType?.ToDisplayString(),
+                   StartInfoTypeName,
+                   StringComparison.Ordinal);
+    }
+
     private static bool IsTrueRedirect(
         SyntaxNode scope,
         AssignmentExpressionSyntax assignment,
@@ -158,20 +187,10 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        if (!assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
-            || assignment.Right is not LiteralExpressionSyntax literal
-            || !literal.IsKind(SyntaxKind.TrueLiteralExpression))
-        {
-            return false;
-        }
-
-        if (!TryGetRedirectTarget(assignment.Left, out var name, out var receiver)
+        if (!IsTrueAssignment(assignment)
+            || !TryGetRedirectTarget(assignment.Left, out var name, out var receiver)
             || !RedirectProperties.Contains(name)
-            || model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is not IPropertySymbol property
-            || !string.Equals(
-                property.ContainingType?.ToDisplayString(),
-                StartInfoTypeName,
-                StringComparison.Ordinal))
+            || !IsStartInfoProperty(assignment.Left, model, cancellationToken))
         {
             return false;
         }
@@ -181,6 +200,16 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
             return StartInfoBinds(scope, receiver, processSymbol, model, cancellationToken);
         }
 
+        return InitializerRedirectBinds(scope, assignment, processSymbol, model, cancellationToken);
+    }
+
+    private static bool InitializerRedirectBinds(
+        SyntaxNode scope,
+        AssignmentExpressionSyntax assignment,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
         // An object initializer has no receiver. The flag belongs to the info instance the
         // initializer builds, or to the start info of the process the initializer builds.
         return assignment.Parent is InitializerExpressionSyntax initializer
@@ -259,18 +288,25 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        return assignment is
+        if (assignment is
+            {
+                Parent: InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax owner },
+                Left: IdentifierNameSyntax startInfoName
+            }
+            && IsStartInfoName(startInfoName))
         {
-            Parent: InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax owner },
-            Left: IdentifierNameSyntax { Identifier.ValueText: "StartInfo" }
+            return FlowsTo(owner, processSymbol, model, cancellationToken);
         }
-            ? FlowsTo(owner, processSymbol, model, cancellationToken)
-            : assignment.Left is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "StartInfo" } access
-                ? SymbolEqualityComparer.Default.Equals(
-                    GetRootSymbol(access.Expression, model, cancellationToken),
-                    processSymbol)
-                : model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is { } target
-                  && IsLinked(scope, target, processSymbol, model, cancellationToken);
+
+        if (assignment.Left is MemberAccessExpressionSyntax access && IsStartInfoName(access.Name))
+        {
+            return SymbolEqualityComparer.Default.Equals(
+                GetRootSymbol(access.Expression, model, cancellationToken),
+                processSymbol);
+        }
+
+        return model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is { } target
+               && IsLinked(scope, target, processSymbol, model, cancellationToken);
     }
 
     /// <summary>
@@ -314,12 +350,18 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        return assignment.Left is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "StartInfo" } access
+        return assignment.Left is MemberAccessExpressionSyntax access && IsStartInfoName(access.Name)
             ? SymbolEqualityComparer.Default.Equals(
                 GetRootSymbol(access.Expression, model, cancellationToken),
                 processSymbol)
-            : assignment is { Left: IdentifierNameSyntax { Identifier.ValueText: "StartInfo" }, Parent: InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax owner } }
+            : assignment is { Left: IdentifierNameSyntax startInfoName, Parent: InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax owner } }
+              && IsStartInfoName(startInfoName)
               && FlowsTo(owner, processSymbol, model, cancellationToken);
+    }
+
+    private static bool IsStartInfoName(SimpleNameSyntax name)
+    {
+        return string.Equals(name.Identifier.ValueText, StartInfoMemberName, StringComparison.Ordinal);
     }
 
     private static bool IsSymbol(
@@ -338,7 +380,8 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        return model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol { Name: "Start", IsStatic: true } method
+        return model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol { IsStatic: true } method
+               && string.Equals(method.Name, "Start", StringComparison.Ordinal)
                && string.Equals(method.ContainingType?.ToDisplayString(), ProcessTypeName, StringComparison.Ordinal);
     }
 
@@ -384,9 +427,11 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
                 case ParenthesizedExpressionSyntax parenthesized:
                     current = parenthesized.Expression;
                     break;
+
                 case PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression):
                     current = postfix.Operand;
                     break;
+
                 default:
                     return current;
             }
@@ -408,10 +453,12 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
                 name = access.Name.Identifier.ValueText;
                 receiver = access.Expression;
                 return true;
+
             case IdentifierNameSyntax identifier:
                 name = identifier.Identifier.ValueText;
                 receiver = null;
                 return true;
+
             default:
                 name = string.Empty;
                 receiver = null;
@@ -423,6 +470,12 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
     ///     True for a read method on the process stream, or for a call that receives the process
     ///     output stream as an argument. A helper that gets the stream is assumed to drain it.
     /// </summary>
+    private static bool IsStandardStreamName(string name)
+    {
+        return string.Equals(name, "StandardOutput", StringComparison.Ordinal)
+               || string.Equals(name, "StandardError", StringComparison.Ordinal);
+    }
+
     private static bool IsDrainCall(
         InvocationExpressionSyntax invocation,
         ISymbol processSymbol,
@@ -437,7 +490,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
                || invocation.ArgumentList.Arguments.Any(argument => argument.Expression
             .DescendantNodesAndSelf()
             .OfType<MemberAccessExpressionSyntax>()
-            .Any(member => member.Name.Identifier.ValueText is "StandardOutput" or "StandardError"
+            .Any(member => IsStandardStreamName(member.Name.Identifier.ValueText)
                            && SymbolEqualityComparer.Default.Equals(
                                GetRootSymbol(member.Expression, model, cancellationToken),
                                processSymbol)));

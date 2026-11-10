@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class TaskWhenAllCancellationPropagationE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<TaskWhenAllCancellationPropagationAnalyzer, TaskWhenAllCancellationPropagationCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<TaskWhenAllCancellationPropagationAnalyzer, TaskWhenAllCancellationPropagationCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

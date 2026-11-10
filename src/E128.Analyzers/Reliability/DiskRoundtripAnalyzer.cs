@@ -55,13 +55,7 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeFunctionBody(SyntaxNodeAnalysisContext context)
     {
-        var body = context.Node switch
-        {
-            MethodDeclarationSyntax m => (SyntaxNode?)m.Body ?? m.ExpressionBody?.Expression,
-            LocalFunctionStatementSyntax lf => (SyntaxNode?)lf.Body ?? lf.ExpressionBody?.Expression,
-            ConstructorDeclarationSyntax ct => (SyntaxNode?)ct.Body ?? ct.ExpressionBody?.Expression,
-            _ => null
-        };
+        var body = GetFunctionBody(context.Node);
         if (body is null)
         {
             return;
@@ -72,12 +66,28 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         var writerVarToFactory = new Dictionary<string, int>(StringComparer.Ordinal);
 
         CollectOps(context, body, writes, reads, writerVarToFactory);
-        if (writes.Count == 0 || reads.Count == 0)
+        if (writes.Count is 0 || reads.Count is 0)
         {
             return;
         }
 
         Correlate(context, writes, reads, DiskIoCatalog.BuildAssignmentPositions(body));
+    }
+
+    private static SyntaxNode? GetFunctionBody(SyntaxNode node)
+    {
+        return node switch
+        {
+            MethodDeclarationSyntax m => BodyOrExpression(m.Body, m.ExpressionBody),
+            LocalFunctionStatementSyntax lf => BodyOrExpression(lf.Body, lf.ExpressionBody),
+            ConstructorDeclarationSyntax ct => BodyOrExpression(ct.Body, ct.ExpressionBody),
+            _ => null
+        };
+    }
+
+    private static SyntaxNode? BodyOrExpression(BlockSyntax? block, ArrowExpressionClauseSyntax? arrow)
+    {
+        return (SyntaxNode?)block ?? arrow?.Expression;
     }
 
     private static void CollectOps(
@@ -150,51 +160,50 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        if (!IsFileStaticMethod(methodName))
+        {
+            return false;
+        }
+
+        if (!ConfirmSystemIoInvocation(context, invocation))
+        {
+            return true;
+        }
+
+        AddFileStaticOp(invocation, methodName, writes, reads);
+        return true;
+    }
+
+    private static bool IsFileStaticMethod(string methodName)
+    {
+        return DiskIoCatalog.IsFileWriteValueMethod(methodName)
+               || DiskIoCatalog.IsFileReadValueMethod(methodName)
+               || DiskIoCatalog.IsFileWriteFactory(methodName)
+               || DiskIoCatalog.IsFileReadFactory(methodName);
+    }
+
+    private static void AddFileStaticOp(
+        InvocationExpressionSyntax invocation,
+        string methodName,
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads)
+    {
         if (DiskIoCatalog.IsFileWriteValueMethod(methodName))
         {
-            if (!ConfirmSystemIoInvocation(context, invocation))
-            {
-                return true;
-            }
-
             AddFileValueWrite(invocation, methodName, writes);
-            return true;
         }
-
-        if (DiskIoCatalog.IsFileReadValueMethod(methodName))
+        else if (DiskIoCatalog.IsFileReadValueMethod(methodName))
         {
-            if (!ConfirmSystemIoInvocation(context, invocation))
-            {
-                return true;
-            }
-
             AddFileValueRead(invocation, methodName, reads);
-            return true;
         }
-
-        if (DiskIoCatalog.IsFileWriteFactory(methodName))
+        else if (DiskIoCatalog.IsFileWriteFactory(methodName))
         {
-            if (!ConfirmSystemIoInvocation(context, invocation))
-            {
-                return true;
-            }
-
             AddFileWriteFactory(invocation, methodName, writes);
-            return true;
         }
-
-        if (DiskIoCatalog.IsFileReadFactory(methodName))
+        else
         {
-            if (!ConfirmSystemIoInvocation(context, invocation))
-            {
-                return true;
-            }
-
             AddFileReadFactory(invocation, methodName, reads);
-            return true;
         }
-
-        return false;
     }
 
     private static void AddFileValueWrite(InvocationExpressionSyntax invocation, string methodName, List<DiskIoCatalog.WriteOp> writes)
@@ -288,18 +297,18 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        if (DiskIoCatalog.IsFileReadFactory(methodName))
+        if (!DiskIoCatalog.IsFileReadFactory(methodName))
         {
-            reads.Add(new DiskIoCatalog.ReadOp(
-                invocation,
-                DiskIoCatalog.NormalizeFileInfoInstance(receiver),
-                DiskIoCatalog.FileMethodKind(methodName),
-                false,
-                false));
-            return true;
+            return false;
         }
 
-        return false;
+        reads.Add(new DiskIoCatalog.ReadOp(
+            invocation,
+            DiskIoCatalog.NormalizeFileInfoInstance(receiver),
+            DiskIoCatalog.FileMethodKind(methodName),
+            false,
+            false));
+        return true;
     }
 
     private static void TryHandleWriterWrite(
@@ -325,10 +334,12 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count >= 1 && !methodName.StartsWith("Flush", StringComparison.Ordinal))
+        if (args.Count < 1 || methodName.StartsWith("Flush", StringComparison.Ordinal))
         {
-            writes[factoryIdx] = writes[factoryIdx].WithMergedSource(args[0].Expression);
+            return;
         }
+
+        writes[factoryIdx] = writes[factoryIdx].WithMergedSource(args[0].Expression);
     }
 
     private static void TryClassifyCtor(
@@ -349,51 +360,51 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        if (!IsKnownIoCtorName(typeName) || !ConfirmSystemIoCtor(context, creation))
+        {
+            return;
+        }
+
+        AddCtorOps(typeName, creation, args.Value, writes, reads);
+    }
+
+    private static bool IsKnownIoCtorName(string typeName)
+    {
+        return string.Equals(typeName, "StreamWriter", StringComparison.Ordinal)
+               || string.Equals(typeName, "StreamReader", StringComparison.Ordinal)
+               || string.Equals(typeName, "FileStream", StringComparison.Ordinal)
+               || string.Equals(typeName, "BinaryWriter", StringComparison.Ordinal)
+               || string.Equals(typeName, "BinaryReader", StringComparison.Ordinal);
+    }
+
+    private static void AddCtorOps(
+        string typeName,
+        ObjectCreationExpressionSyntax creation,
+        SeparatedSyntaxList<ArgumentSyntax> args,
+        List<DiskIoCatalog.WriteOp> writes,
+        List<DiskIoCatalog.ReadOp> reads)
+    {
         switch (typeName)
         {
             case "StreamWriter":
-                if (ConfirmSystemIoCtor(context, creation))
-                {
-                    AddStreamWriterCtor(creation, args.Value, writes);
-                }
-
+                AddStreamWriterCtor(creation, args, writes);
                 break;
 
             case "StreamReader":
-                if (ConfirmSystemIoCtor(context, creation))
-                {
-                    AddStreamReaderCtor(creation, args.Value, reads);
-                }
-
+                AddStreamReaderCtor(creation, args, reads);
                 break;
 
             case "FileStream":
-                if (ConfirmSystemIoCtor(context, creation))
-                {
-                    AddFileStreamCtor(creation, args.Value, writes, reads);
-                }
-
+                AddFileStreamCtor(creation, args, writes, reads);
                 break;
 
             case "BinaryWriter":
-                if (ConfirmSystemIoCtor(context, creation))
-                {
-                    AddBinaryWriterCtor(creation, args.Value, writes);
-                }
-
-                break;
-
-            case "BinaryReader":
-                if (ConfirmSystemIoCtor(context, creation))
-                {
-                    AddBinaryReaderCtor(creation, args.Value, reads);
-                }
-
+                AddBinaryWriterCtor(creation, args, writes);
                 break;
 
             default:
-                // Not a System.IO stream ctor we recognize; ignore.
-                return;
+                AddBinaryReaderCtor(creation, args, reads);
+                break;
         }
     }
 
@@ -460,16 +471,18 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         List<DiskIoCatalog.WriteOp> writes)
     {
         var innerWritePath = DiskIoCatalog.ExtractPathFromStreamArg(args[0].Expression);
-        if (innerWritePath is not null)
+        if (innerWritePath is null)
         {
-            writes.Add(new DiskIoCatalog.WriteOp(
-                creation,
-                creation,
-                DiskIoCatalog.Normalize(innerWritePath),
-                null,
-                DiskIoCatalog.IoKind.Binary,
-                false));
+            return;
         }
+
+        writes.Add(new DiskIoCatalog.WriteOp(
+            creation,
+            creation,
+            DiskIoCatalog.Normalize(innerWritePath),
+            null,
+            DiskIoCatalog.IoKind.Binary,
+            false));
     }
 
     private static void AddBinaryReaderCtor(
@@ -478,15 +491,17 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
         List<DiskIoCatalog.ReadOp> reads)
     {
         var innerReadPath = DiskIoCatalog.ExtractPathFromStreamArg(args[0].Expression);
-        if (innerReadPath is not null)
+        if (innerReadPath is null)
         {
-            reads.Add(new DiskIoCatalog.ReadOp(
-                creation,
-                DiskIoCatalog.Normalize(innerReadPath),
-                DiskIoCatalog.IoKind.Binary,
-                false,
-                false));
+            return;
         }
+
+        reads.Add(new DiskIoCatalog.ReadOp(
+            creation,
+            DiskIoCatalog.Normalize(innerReadPath),
+            DiskIoCatalog.IoKind.Binary,
+            false,
+            false));
     }
 
     private static bool IsFileInfoReceiver(SyntaxNodeAnalysisContext context, ExpressionSyntax receiver)

@@ -57,10 +57,10 @@ public sealed class StringBuilderPoolCodeFixProvider : E128CodeFixProviderBase
             _ => default
         };
 
-        return arguments.Count == 0
-               || (arguments.Count == 1
+        return arguments.Count is 0
+               || (arguments.Count is 1
                    && semanticModel.GetTypeInfo(arguments[0].Expression, cancellationToken).Type?.SpecialType
-                       == SpecialType.System_Int32);
+                       is SpecialType.System_Int32);
     }
 
     private static async Task<Document> ApplyFixAsync(

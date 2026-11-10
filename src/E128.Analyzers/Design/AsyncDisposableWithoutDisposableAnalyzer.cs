@@ -41,7 +41,7 @@ public sealed class AsyncDisposableWithoutDisposableAnalyzer : DiagnosticAnalyze
         var type = (INamedTypeSymbol)context.Symbol;
 
         // Skip interfaces — they define contracts, not implementations.
-        if (type.TypeKind == TypeKind.Interface)
+        if (type.TypeKind is TypeKind.Interface)
         {
             return;
         }
@@ -68,11 +68,13 @@ public sealed class AsyncDisposableWithoutDisposableAnalyzer : DiagnosticAnalyze
             }
         }
 
-        if (hasAsyncDisposable && !hasDisposable)
+        if (!hasAsyncDisposable || hasDisposable)
         {
-            context.ReportDiagnostic(
-                Diagnostic.Create(Rule, type.Locations[0], type.Name));
+            return;
         }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(Rule, type.Locations[0], type.Name));
     }
 
     private static bool IsSystemInterface(INamedTypeSymbol iface, string name)

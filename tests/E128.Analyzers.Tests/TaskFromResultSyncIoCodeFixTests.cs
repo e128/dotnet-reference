@@ -24,7 +24,7 @@ public sealed class TaskFromResultSyncIoCodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = referenceAssemblies,
             NumberOfFixAllIterations = 1
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

@@ -16,7 +16,7 @@ public sealed class FileSystemPathAnalyzerTests
             MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyWithRecordsAsync(string code, params DiagnosticResult[] expected)
@@ -28,7 +28,7 @@ public sealed class FileSystemPathAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

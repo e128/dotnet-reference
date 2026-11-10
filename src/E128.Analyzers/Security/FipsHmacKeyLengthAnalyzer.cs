@@ -71,15 +71,21 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
             OperationKind.DeconstructionAssignment);
     }
 
-    /// <summary>Returns the hash output length in bytes for an HMAC type, or 0 when the type is not covered.</summary>
-    private static int MinimumKeyBytes(ITypeSymbol? type) =>
-        FipsSymbolHelpers.IsInCryptographyNamespace(type) &&
+    /// <summary>
+    ///     Returns the hash output length in bytes for an HMAC type, or 0 when the type is not covered.
+    /// </summary>
+    private static int MinimumKeyBytes(ITypeSymbol? type)
+    {
+        return FipsSymbolHelpers.IsInCryptographyNamespace(type) &&
         type is INamedTypeSymbol { ContainingType: null } named &&
         named.Name.StartsWith(HmacPrefix, StringComparison.Ordinal)
             ? MinimumKeyBytes(named.Name.Substring(HmacPrefix.Length))
             : 0;
+    }
 
-    /// <summary>Returns the hash output length in bytes for a hash algorithm name, or 0 when it is not covered.</summary>
+    /// <summary>
+    ///     Returns the hash output length in bytes for a hash algorithm name, or 0 when it is not covered.
+    /// </summary>
     private static int MinimumKeyBytes(string hashName)
     {
         var normalized = hashName.IndexOfAny(NameSeparators) < 0
@@ -93,10 +99,32 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
     {
         var creation = (IObjectCreationOperation)context.Operation;
         var minimum = MinimumKeyBytes(creation.Type);
-        if (minimum != 0 && creation.Type is { } type)
+        if (minimum is 0 || creation.Type is not { } type)
         {
-            CheckKey(context, type.Name, minimum, creation.Arguments, creation.Syntax);
+            return;
         }
+
+        CheckKey(context, type.Name, minimum, creation.Arguments, creation.Syntax);
+    }
+
+    private static void CheckStaticHmacOwner(
+        OperationAnalysisContext context,
+        INamedTypeSymbol? owner,
+        ImmutableArray<IArgumentOperation> arguments,
+        SyntaxNode syntax)
+    {
+        if (owner is null)
+        {
+            return;
+        }
+
+        var minimum = MinimumKeyBytes(owner);
+        if (minimum is 0)
+        {
+            return;
+        }
+
+        CheckKey(context, owner.Name, minimum, arguments, syntax);
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
@@ -112,15 +140,7 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
 
         if (StaticHmacMembers.Contains(method.Name))
         {
-            if (method.ContainingType is { } owner)
-            {
-                var minimum = MinimumKeyBytes(owner);
-                if (minimum != 0)
-                {
-                    CheckKey(context, owner.Name, minimum, invocation.Arguments, syntax);
-                }
-            }
-
+            CheckStaticHmacOwner(context, method.ContainingType, invocation.Arguments, syntax);
             return;
         }
 
@@ -139,7 +159,7 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
             }
 
             var minimum = MinimumKeyBytes(hashName);
-            if (minimum != 0)
+            if (minimum is not 0)
             {
                 CheckKey(context, "HMAC-" + hashName, minimum, invocation.Arguments, syntax);
             }
@@ -158,7 +178,7 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
         FipsSymbolHelpers.ForEachAssignment(
             context.Operation,
             context,
-            static (state, target, value, syntax) => CheckKeyAssignment(state, target, value, syntax));
+            CheckKeyAssignment);
     }
 
     private static void CheckKeyAssignment(OperationAnalysisContext context, IOperation target, IOperation value, SyntaxNode syntax)
@@ -169,25 +189,35 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var instanceType = property.Instance?.Type;
+        var instanceType = ResolveHmacInstanceType(property);
         var minimum = MinimumKeyBytes(instanceType);
+        if (minimum is 0 ||
+            instanceType is not { } type ||
+            !FipsSymbolHelpers.TryGetConstantByteLength(value, out var keyBytes) ||
+            keyBytes >= minimum)
+        {
+            return;
+        }
+
+        Report(context, syntax, type.Name, keyBytes, minimum);
+    }
+
+    private static ITypeSymbol? ResolveHmacInstanceType(IPropertyReferenceOperation property)
+    {
+        var instanceType = property.Instance?.Type;
+        if (MinimumKeyBytes(instanceType) is not 0)
+        {
+            return instanceType;
+        }
 
         // A base-typed local (HMAC h = new HMACSHA256()) takes the concrete type from its initializer.
-        if (minimum == 0 &&
-            FipsSymbolHelpers.DerivesFromCryptographyType(instanceType, "HMAC") &&
+        if (FipsSymbolHelpers.DerivesFromCryptographyType(instanceType, "HMAC") &&
             FipsSymbolHelpers.Unwrap(FipsSymbolHelpers.ResolveInitializer(property.Instance)) is IObjectCreationOperation created)
         {
-            instanceType = created.Type;
-            minimum = MinimumKeyBytes(instanceType);
+            return created.Type;
         }
 
-        if (minimum != 0 &&
-            instanceType is { } type &&
-            FipsSymbolHelpers.TryGetConstantByteLength(value, out var keyBytes) &&
-            keyBytes < minimum)
-        {
-            Report(context, syntax, type.Name, keyBytes, minimum);
-        }
+        return instanceType;
     }
 
     private static void CheckKey(
@@ -198,17 +228,18 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
         SyntaxNode syntax)
     {
         var argument = FipsSymbolHelpers.ArgumentNamed(arguments, "key");
-        if (argument is null)
+        if (argument is null ||
+            !FipsSymbolHelpers.TryGetConstantByteLength(argument.Value, out var keyBytes) ||
+            keyBytes >= minimum)
         {
             return;
         }
 
-        if (FipsSymbolHelpers.TryGetConstantByteLength(argument.Value, out var keyBytes) && keyBytes < minimum)
-        {
-            Report(context, syntax, label, keyBytes, minimum);
-        }
+        Report(context, syntax, label, keyBytes, minimum);
     }
 
-    private static void Report(OperationAnalysisContext context, SyntaxNode syntax, string label, int keyBytes, int minimum) =>
+    private static void Report(OperationAnalysisContext context, SyntaxNode syntax, string label, int keyBytes, int minimum)
+    {
         context.ReportDiagnostic(Diagnostic.Create(Rule, syntax.GetLocation(), label, keyBytes, minimum));
+    }
 }

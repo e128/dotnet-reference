@@ -10,8 +10,10 @@ public sealed class GeneratedRegexTimeoutE128CodeFixTests
 {
     private const string PartialImpl = "    private static partial System.Text.RegularExpressions.Regex DigitsOnly() => null!;";
 
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<GeneratedRegexAnalyzer, GeneratedRegexTimeoutCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<GeneratedRegexAnalyzer, GeneratedRegexTimeoutCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -123,6 +125,6 @@ public sealed class GeneratedRegexTimeoutE128CodeFixTests
             NumberOfFixAllInDocumentIterations = 0
         };
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 }

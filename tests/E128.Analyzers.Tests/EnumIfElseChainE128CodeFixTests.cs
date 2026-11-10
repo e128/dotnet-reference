@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class EnumIfElseChainE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<EnumIfElseChainAnalyzer, EnumIfElseChainCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<EnumIfElseChainAnalyzer, EnumIfElseChainCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

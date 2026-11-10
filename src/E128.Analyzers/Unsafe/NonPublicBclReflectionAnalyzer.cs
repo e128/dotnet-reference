@@ -27,6 +27,17 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
         "A nonpublic base class library member is an implementation detail. A servicing release " +
         "can rename it, remove it, or change its shape. Use the public API instead.");
 
+    private static readonly ImmutableArray<string> MemberLookupNames =
+    [
+        "GetMethod",
+        "GetField",
+        "GetProperty",
+        "GetEvent",
+        "GetMember",
+        "GetConstructor",
+        "GetNestedType",
+    ];
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
     public override void Initialize(AnalysisContext context)
@@ -39,7 +50,7 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var type = start.Compilation.GetTypeByMetadataName("System.Type");
             var bindingFlags = start.Compilation.GetTypeByMetadataName("System.Reflection.BindingFlags");
@@ -93,13 +104,7 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
 
     private static bool IsMemberLookup(string name)
     {
-        return name is "GetMethod"
-            or "GetField"
-            or "GetProperty"
-            or "GetEvent"
-            or "GetMember"
-            or "GetConstructor"
-            or "GetNestedType";
+        return MemberLookupNames.Contains(name, StringComparer.Ordinal);
     }
 
     private static bool UsesNonPublicFlag(

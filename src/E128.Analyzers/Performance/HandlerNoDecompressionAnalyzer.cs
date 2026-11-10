@@ -35,13 +35,13 @@ public sealed class HandlerNoDecompressionAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
-            var handlers = new[]
-            {
+            INamedTypeSymbol?[] handlers =
+            [
                 startContext.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClientHandler"),
                 startContext.Compilation.GetTypeByMetadataName("System.Net.Http.SocketsHttpHandler")
-            };
+            ];
 
             startContext.RegisterSyntaxNodeAction(
                 nodeContext => AnalyzeCreation(nodeContext, handlers),
@@ -148,13 +148,14 @@ public sealed class HandlerNoDecompressionAnalyzer : DiagnosticAnalyzer
             return target is not null;
         }
 
-        if (creation.Parent is AssignmentExpressionSyntax assignment
-            && ReferenceEquals(assignment.Right, creation))
+        if (creation.Parent is not AssignmentExpressionSyntax assignment
+            || !ReferenceEquals(assignment.Right, creation))
         {
-            target = context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol;
-            return target is not null;
+            return false;
         }
 
-        return false;
+        target = context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol;
+
+        return target is not null;
     }
 }

@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ConcurrencyLimitE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ConcurrencyLimitAnalyzer, ConcurrencyLimitCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ConcurrencyLimitAnalyzer, ConcurrencyLimitCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

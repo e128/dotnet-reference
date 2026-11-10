@@ -13,14 +13,14 @@ namespace E128.Benchmarks;
 /// </summary>
 internal sealed class FixedGreetingRepository(IReadOnlyList<Greeting> greetings) : IGreetingRepository
 {
-    public Task SaveAsync(Greeting greeting, CancellationToken cancellationToken = default)
+    public Task SaveAsync(Greeting greeting, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(greeting);
 
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 

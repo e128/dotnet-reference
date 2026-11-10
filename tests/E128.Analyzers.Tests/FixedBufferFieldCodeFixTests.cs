@@ -21,7 +21,7 @@ public sealed class FixedBufferFieldCodeFixTests
         };
         test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -48,6 +48,7 @@ public sealed class FixedBufferFieldCodeFixTests
             }
             """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Fix_HandlesNestedTypesAndSeveralBuffers()
@@ -108,6 +109,7 @@ public sealed class FixedBufferFieldCodeFixTests
 
         return VerifyFixAsync(Code, Code);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task NoFix_WhenOneDeclarationHoldsSeveralBuffers()

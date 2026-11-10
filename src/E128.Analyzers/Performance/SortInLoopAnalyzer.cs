@@ -66,7 +66,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var listType = startContext.Compilation.GetTypeByMetadataName(ListMetadataName);
             var arrayType = startContext.Compilation.GetTypeByMetadataName(ArrayMetadataName);
@@ -108,35 +108,38 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!SortMethods.Contains(methodName))
+        if (!SortMethods.Contains(methodName)
+            || !IsSortOnKnownType(context, invocation, methodName, listType, arrayType, enumerableType))
         {
             return;
         }
 
-        if (string.Equals(methodName, "Sort", StringComparison.Ordinal))
-        {
-            var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
-            if (symbol is not IMethodSymbol method)
-            {
-                return;
-            }
-
-            var containingType = method.ContainingType?.OriginalDefinition;
-            if (!TypeSymbols.Matches(containingType, listType) && !TypeSymbols.Matches(containingType, arrayType))
-            {
-                return;
-            }
-        }
-        else
-        {
-            var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
-            if (symbol is not IMethodSymbol method || !TypeSymbols.Matches(method.ContainingType, enumerableType))
-            {
-                return;
-            }
-        }
-
         context.ReportDiagnostic(Diagnostic.Create(SortRule, invocation.GetLocation(), methodName));
+    }
+
+    // List.Sort and Array.Sort sort in place. Every other sort name must come from Enumerable.
+    private static bool IsSortOnKnownType(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        string methodName,
+        INamedTypeSymbol? listType,
+        INamedTypeSymbol? arrayType,
+        INamedTypeSymbol? enumerableType)
+    {
+        var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
+        if (symbol is not IMethodSymbol method)
+        {
+            return false;
+        }
+
+        if (!string.Equals(methodName, "Sort", StringComparison.Ordinal))
+        {
+            return TypeSymbols.Matches(method.ContainingType, enumerableType);
+        }
+
+        var containingType = method.ContainingType?.OriginalDefinition;
+
+        return TypeSymbols.Matches(containingType, listType) || TypeSymbols.Matches(containingType, arrayType);
     }
 
     private static void AnalyzeShiftAtZero(
@@ -154,7 +157,7 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         if (args[0].Expression is not LiteralExpressionSyntax literal
             || !literal.IsKind(SyntaxKind.NumericLiteralExpression)
             || literal.Token.Value is not int value
-            || value != 0)
+            || value is not 0)
         {
             return;
         }

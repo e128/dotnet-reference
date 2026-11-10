@@ -31,7 +31,7 @@ public sealed class SkipInitAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)

@@ -26,6 +26,8 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private const int NameMirrorOtherTokenLimit = 1;
 
+    private const int DuplicateKeyThreshold = 2;
+
     private static readonly ImmutableHashSet<string> UnorderedResultMetadataNames = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "ISet`1",
@@ -142,7 +144,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
         var duplicateKeys = DuplicateKeys(facts);
 
-        if (conditions.Count == 0 && duplicateKeys.IsEmpty)
+        if (conditions.Count is 0 && duplicateKeys.IsEmpty)
         {
             return;
         }
@@ -162,7 +164,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         {
             foreach (var key in entry.DuplicateKeys)
             {
-                keyCounts.TryGetValue(key, out var count);
+                _ = keyCounts.TryGetValue(key, out var count);
                 keyCounts[key] = count + 1;
             }
         }
@@ -173,7 +175,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
             foreach (var key in entry.DuplicateKeys)
             {
-                if (keyCounts[key] >= 2)
+                if (keyCounts[key] >= DuplicateKeyThreshold)
                 {
                     conditions = conditions.Add(DuplicateCoverageCondition);
                     break;
@@ -186,7 +188,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
             }
 
             var rule = conditions.Length >= 2 ? WarningRule : SuggestionRule;
-            var names = string.Join(", ", conditions.OrderBy(name => name, StringComparer.Ordinal));
+            var names = string.Join(", ", conditions.OrderBy(static name => name, StringComparer.Ordinal));
             context.ReportDiagnostic(Diagnostic.Create(rule, entry.Location, entry.MethodName, names));
         }
     }
@@ -214,7 +216,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
             ? body.DescendantTokens()
             : method.ExpressionBody?.DescendantTokens() ?? [];
 
-        return string.Join(" ", tokens.Select(token => token.Text));
+        return string.Join(" ", tokens.Select(static token => token.Text));
     }
 
     private static bool HasLiteralProductionCall(TestFacts facts)
@@ -237,7 +239,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         // A call on an interface is a library or seam accessor, not the concrete code under test. A DOM
         // read such as IDocument.QuerySelector("img") carries no behavior, so it must not seed a
         // duplicate key or count as the call an assertion echoes.
-        if (method.ContainingType?.TypeKind == TypeKind.Interface)
+        if (method.ContainingType?.TypeKind is TypeKind.Interface)
         {
             return false;
         }
@@ -255,7 +257,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         // call, so `Assert.Same(Pool.Shared, Pool.Shared)` reaches production without an invocation.
         return !IsNullOnly(facts)
                && facts.Statements == BareSizeStatementCount
-               && facts.Assertions.Length == 1
+               && facts.Assertions.Length is 1
                && facts.ProductionCalls.IsEmpty
                && !ReadsProductionMember(facts);
     }
@@ -329,7 +331,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         // A helper declared in the test class asserts on the caller's behalf, so its body is not read here.
         return !facts.ContainsAwait
                && !facts.HasHelperCall
-               && facts.Assertions.Length == 0
+               && facts.Assertions.Length is 0
                && facts.ProductionCalls.Length > 0
                && !CallsVoidProduction(facts)
                && !CallsCheckStyleAssertion(facts);
@@ -370,7 +372,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
         return attribute is not null
                && IsTheoryName(XunitTestHelper.SimpleName(attribute.Name))
-               && XunitTestHelper.CountDataRows(facts.Method) == 1;
+               && XunitTestHelper.CountDataRows(facts.Method) is 1;
     }
 
     private static bool LiteralEcho(TestFacts facts)
@@ -418,7 +420,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool MockVerifyOnly(TestFacts facts)
     {
-        if (facts.Assertions.Length != 1)
+        if (facts.Assertions.Length is not 1)
         {
             return false;
         }
@@ -430,7 +432,7 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool LogAssert(TestFacts facts)
     {
-        if (facts.Assertions.Length != 1)
+        if (facts.Assertions.Length is not 1)
         {
             return false;
         }

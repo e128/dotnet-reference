@@ -85,7 +85,7 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : E128CodeFixProviderB
 
             if (arg.NameColon is null && arg.NameEquals is null)
             {
-                if (positionalIndex == 1)
+                if (positionalIndex is 1)
                 {
                     return arg;
                 }
@@ -102,12 +102,18 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : E128CodeFixProviderB
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        return IsCompiledReference(expression, semanticModel, cancellationToken)
-            ? CreateRegexOptionsNone(expression)
-            : expression is BinaryExpressionSyntax binary
-              && binary.IsKind(SyntaxKind.BitwiseOrExpression)
-                ? RemoveCompiledFromBinary(binary, expression, semanticModel, cancellationToken)
-                : expression;
+        if (IsCompiledReference(expression, semanticModel, cancellationToken))
+        {
+            return CreateRegexOptionsNone(expression);
+        }
+
+        if (expression is BinaryExpressionSyntax binary
+            && binary.IsKind(SyntaxKind.BitwiseOrExpression))
+        {
+            return RemoveCompiledFromBinary(binary, expression, semanticModel, cancellationToken);
+        }
+
+        return expression;
     }
 
     private static ExpressionSyntax? RemoveCompiledFromBinary(
@@ -167,9 +173,17 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : E128CodeFixProviderB
         var symbol = semanticModel.GetSymbolInfo(memberAccess, cancellationToken).Symbol;
         return symbol is IFieldSymbol { ContainingType: { } containingType }
                && string.Equals(containingType.Name, "RegexOptions", StringComparison.Ordinal)
-               && containingType.ContainingNamespace is { Name: "RegularExpressions" }
-               && containingType.ContainingNamespace.ContainingNamespace is { Name: "Text" }
-               && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace is { Name: "System" }
-               && containingType.ContainingNamespace.ContainingNamespace.ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true;
+               && IsSystemTextRegularExpressions(containingType.ContainingNamespace);
+    }
+
+    private static bool IsSystemTextRegularExpressions(INamespaceSymbol? regularExpressions)
+    {
+        return regularExpressions is not null
+               && string.Equals(regularExpressions.Name, "RegularExpressions", StringComparison.Ordinal)
+               && regularExpressions.ContainingNamespace is { } text
+               && string.Equals(text.Name, "Text", StringComparison.Ordinal)
+               && text.ContainingNamespace is { } system
+               && string.Equals(system.Name, "System", StringComparison.Ordinal)
+               && system.ContainingNamespace is { IsGlobalNamespace: true };
     }
 }

@@ -28,25 +28,59 @@ internal static class IndexedForLoop
 
         var declarator = declaration.Variables[0];
 
-        if (declarator.Initializer?.Value is not LiteralExpressionSyntax initial
-            || !initial.IsKind(SyntaxKind.NumericLiteralExpression)
-            || !string.Equals(initial.Token.ValueText, "0", StringComparison.Ordinal)
-            || forStatement.Condition is not BinaryExpressionSyntax condition
-            || !condition.IsKind(SyntaxKind.LessThanExpression)
-            || condition.Left is not IdentifierNameSyntax conditionVariable
-            || condition.Right is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } length
-            || forStatement.Incrementors.Count != 1
-            || forStatement.Incrementors[0] is not PostfixUnaryExpressionSyntax increment
-            || !increment.IsKind(SyntaxKind.PostIncrementExpression)
-            || increment.Operand is not IdentifierNameSyntax incrementVariable
-            || !string.Equals(declarator.Identifier.ValueText, conditionVariable.Identifier.ValueText, StringComparison.Ordinal)
-            || !string.Equals(declarator.Identifier.ValueText, incrementVariable.Identifier.ValueText, StringComparison.Ordinal))
+        if (!IsZeroInitialized(declarator)
+            || !TryMatchCondition(forStatement, out var conditionName, out var owner)
+            || !TryGetIncrementedName(forStatement, out var incrementName)
+            || !string.Equals(declarator.Identifier.ValueText, conditionName, StringComparison.Ordinal)
+            || !string.Equals(declarator.Identifier.ValueText, incrementName, StringComparison.Ordinal))
         {
             return false;
         }
 
         variable = declarator.Identifier.ValueText;
-        boundOwner = length.Expression;
+        boundOwner = owner;
+        return true;
+    }
+
+    private static bool IsZeroInitialized(VariableDeclaratorSyntax declarator)
+    {
+        return declarator.Initializer?.Value is LiteralExpressionSyntax initial
+               && initial.IsKind(SyntaxKind.NumericLiteralExpression)
+               && string.Equals(initial.Token.ValueText, "0", StringComparison.Ordinal);
+    }
+
+    private static bool TryMatchCondition(
+        ForStatementSyntax forStatement,
+        out string conditionName,
+        out ExpressionSyntax? owner)
+    {
+        conditionName = string.Empty;
+        owner = null;
+        if (forStatement.Condition is not BinaryExpressionSyntax condition
+            || !condition.IsKind(SyntaxKind.LessThanExpression)
+            || condition.Left is not IdentifierNameSyntax conditionVariable
+            || condition.Right is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } length)
+        {
+            return false;
+        }
+
+        conditionName = conditionVariable.Identifier.ValueText;
+        owner = length.Expression;
+        return true;
+    }
+
+    private static bool TryGetIncrementedName(ForStatementSyntax forStatement, out string name)
+    {
+        name = string.Empty;
+        if (forStatement.Incrementors.Count is not 1
+            || forStatement.Incrementors[0] is not PostfixUnaryExpressionSyntax increment
+            || !increment.IsKind(SyntaxKind.PostIncrementExpression)
+            || increment.Operand is not IdentifierNameSyntax incrementVariable)
+        {
+            return false;
+        }
+
+        name = incrementVariable.Identifier.ValueText;
         return true;
     }
 }

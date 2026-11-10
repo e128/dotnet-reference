@@ -87,7 +87,7 @@ internal static class LoopContext
 
         var varying = GetLoopLocals(body.Parent, semanticModel, cancellationToken);
         AddBodySymbols(body, semanticModel, varying, cancellationToken);
-        if (varying.Count == 0)
+        if (varying.Count is 0)
         {
             return false;
         }
@@ -194,24 +194,20 @@ internal static class LoopContext
     {
         return loop switch
         {
-            ForStatementSyntax forStatement => ContainsSpan(forStatement.Condition, span)
-                                             || forStatement.Incrementors.Any(inc => inc.Span.Contains(span))
-                ? LoopPart.Condition
-                : LoopPart.Header,
-            ForEachStatementSyntax forEach => forEach.Identifier.Span.Contains(span)
-                ? LoopPart.Condition
-                : LoopPart.Header,
-            ForEachVariableStatementSyntax forEachVariable => forEachVariable.Variable.Span.Contains(span)
-                ? LoopPart.Condition
-                : LoopPart.Header,
-            WhileStatementSyntax whileStatement => ContainsSpan(whileStatement.Condition, span)
-                ? LoopPart.Condition
-                : LoopPart.Header,
-            DoStatementSyntax doStatement => ContainsSpan(doStatement.Condition, span)
-                ? LoopPart.Condition
-                : LoopPart.Header,
+            ForStatementSyntax forStatement => ToHeaderPart(
+                ContainsSpan(forStatement.Condition, span)
+                || forStatement.Incrementors.Any(inc => inc.Span.Contains(span))),
+            ForEachStatementSyntax forEach => ToHeaderPart(forEach.Identifier.Span.Contains(span)),
+            ForEachVariableStatementSyntax forEachVariable => ToHeaderPart(forEachVariable.Variable.Span.Contains(span)),
+            WhileStatementSyntax whileStatement => ToHeaderPart(ContainsSpan(whileStatement.Condition, span)),
+            DoStatementSyntax doStatement => ToHeaderPart(ContainsSpan(doStatement.Condition, span)),
             _ => LoopPart.Header
         };
+    }
+
+    private static LoopPart ToHeaderPart(bool isCondition)
+    {
+        return isCondition ? LoopPart.Condition : LoopPart.Header;
     }
 
     private static bool ContainsSpan(SyntaxNode? node, TextSpan span)
@@ -330,10 +326,12 @@ internal static class LoopContext
         CancellationToken cancellationToken)
     {
         var symbol = semanticModel.GetDeclaredSymbol(declaration, cancellationToken);
-        if (symbol is not null)
+        if (symbol is null)
         {
-            symbols.Add(symbol);
+            return;
         }
+
+        symbols.Add(symbol);
     }
 
     private static void AddBodySymbols(
@@ -381,9 +379,11 @@ internal static class LoopContext
         }
 
         var symbol = semanticModel.GetSymbolInfo(target, cancellationToken).Symbol;
-        if (symbol is not null)
+        if (symbol is null)
         {
-            symbols.Add(symbol);
+            return;
         }
+
+        symbols.Add(symbol);
     }
 }

@@ -29,6 +29,9 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
     private const int QuadraticTierRank = 2;
     private const int CubicTierRank = 3;
     private const int ExponentialTierRank = 4;
+    private const int QuadraticDegree = 2;
+    private const int CubicDegree = 3;
+    private const int MinimumDivisor = 2;
 
     private static readonly DiagnosticDescriptor NestedLoopRule = new(
         DiagnosticId,
@@ -72,7 +75,7 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         var (tier, tierRank) = GetLoopTier(CountVaryingEnclosingLoops(loop));
         var ceiling = GetCeiling(context.Operation.Syntax.SyntaxTree, context.Options.AnalyzerConfigOptionsProvider);
 
-        TryGetTierRank(ceiling, out var ceilingRank);
+        _ = TryGetTierRank(ceiling, out var ceilingRank);
 
         if (tierRank <= ceilingRank)
         {
@@ -122,39 +125,53 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
 
         foreach (var operation in source.DescendantsAndSelf())
         {
-            var symbol = operation switch
-            {
-                ILocalReferenceOperation local => (ISymbol)local.Local,
-                IParameterReferenceOperation parameter => parameter.Parameter,
-                _ => null,
-            };
+            var symbol = GetReferencedSymbol(operation);
 
             if (symbol is null || loop.Locals.Contains(symbol, SymbolEqualityComparer.Default))
             {
                 continue;
             }
 
-            if (enclosing is IForEachLoopOperation
-                && enclosing.Locals.Contains(symbol, SymbolEqualityComparer.Default))
+            if (IsEnclosingElement(enclosing, symbol, source)
+                || IsDeclaredInBody(symbol, bodySpan, bodySyntaxTree))
             {
                 return true;
             }
+        }
 
-            // A for-loop counter is not an element unless it indexes the collection the inner loop
-            // walks. A bound such as `j < i` still makes the nesting grow with the input.
-            if (enclosing is IForLoopOperation
-                && enclosing.Locals.Contains(symbol, SymbolEqualityComparer.Default)
-                && UsesLocalAsElementIndex(symbol, source))
+        return false;
+    }
+
+    private static ISymbol? GetReferencedSymbol(IOperation operation)
+    {
+        return operation switch
+        {
+            ILocalReferenceOperation local => local.Local,
+            IParameterReferenceOperation parameter => parameter.Parameter,
+            _ => null,
+        };
+    }
+
+    // A for-loop counter is not an element unless it indexes the collection the inner loop
+    // walks. A bound such as `j < i` still makes the nesting grow with the input.
+    private static bool IsEnclosingElement(ILoopOperation enclosing, ISymbol symbol, IOperation source)
+    {
+        if (!enclosing.Locals.Contains(symbol, SymbolEqualityComparer.Default))
+        {
+            return false;
+        }
+
+        return enclosing is IForEachLoopOperation
+            || (enclosing is IForLoopOperation && UsesLocalAsElementIndex(symbol, source));
+    }
+
+    private static bool IsDeclaredInBody(ISymbol symbol, TextSpan bodySpan, SyntaxTree? bodySyntaxTree)
+    {
+        foreach (var reference in symbol.DeclaringSyntaxReferences)
+        {
+            if (reference.SyntaxTree == bodySyntaxTree && bodySpan.Contains(reference.Span))
             {
                 return true;
-            }
-
-            foreach (var reference in symbol.DeclaringSyntaxReferences)
-            {
-                if (reference.SyntaxTree == bodySyntaxTree && bodySpan.Contains(reference.Span))
-                {
-                    return true;
-                }
             }
         }
 
@@ -177,13 +194,16 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static IOperation? GetTripCountSource(ILoopOperation loop) => loop switch
+    private static IOperation? GetTripCountSource(ILoopOperation loop)
     {
-        IForEachLoopOperation forEachLoop => forEachLoop.Collection,
-        IForLoopOperation forLoop => forLoop.Condition,
-        IWhileLoopOperation whileLoop => whileLoop.Condition,
-        _ => null,
-    };
+        return loop switch
+        {
+            IForEachLoopOperation forEachLoop => forEachLoop.Collection,
+            IForLoopOperation forLoop => forLoop.Condition,
+            IWhileLoopOperation whileLoop => whileLoop.Condition,
+            _ => null,
+        };
+    }
 
     private static TextSpan GetBodySpan(ILoopOperation loop, out SyntaxTree? syntaxTree)
     {
@@ -205,12 +225,15 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         return body.Syntax.Span;
     }
 
-    private static bool HasConstantTripCount(ILoopOperation loop) => loop switch
+    private static bool HasConstantTripCount(ILoopOperation loop)
     {
-        IForLoopOperation forLoop => HasConstantBound(forLoop.Condition),
-        IForEachLoopOperation forEachLoop => HasConstantSize(forEachLoop.Collection),
-        _ => false,
-    };
+        return loop switch
+        {
+            IForLoopOperation forLoop => HasConstantBound(forLoop.Condition),
+            IForEachLoopOperation forEachLoop => HasConstantSize(forEachLoop.Collection),
+            _ => false,
+        };
+    }
 
     private static bool HasConstantBound(IOperation? condition)
     {
@@ -226,19 +249,22 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
 
         return source is IArrayCreationOperation array
             ? array.Initializer is not null
-              || (array.DimensionSizes.Length == 1 && array.DimensionSizes[0].ConstantValue.HasValue)
+              || (array.DimensionSizes.Length is 1 && array.DimensionSizes[0].ConstantValue.HasValue)
             : source is ICollectionExpressionOperation expression
               && expression.Elements.Length > 0
-              && expression.Elements.All(element => Unwrap(element).ConstantValue.HasValue);
+              && expression.Elements.All(static element => Unwrap(element).ConstantValue.HasValue);
     }
 
-    private static (string Tier, int Rank) GetLoopTier(int degree) => degree switch
+    private static (string Tier, int Rank) GetLoopTier(int degree)
     {
-        2 => ("quadratic", QuadraticTierRank),
-        3 => ("cubic", CubicTierRank),
-        > 3 => ("cubic or worse", CubicTierRank),
-        _ => ("linear", LinearTierRank),
-    };
+        return degree switch
+        {
+            QuadraticDegree => ("quadratic", QuadraticTierRank),
+            CubicDegree => ("cubic", CubicTierRank),
+            > CubicDegree => ("cubic or worse", CubicTierRank),
+            _ => ("linear", LinearTierRank),
+        };
+    }
 
     private static void AnalyzeMethodRecursion(OperationBlockAnalysisContext context)
     {
@@ -252,24 +278,14 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
 
         var calls = CollectRecursiveCalls(method, body);
 
-        if (calls.Length < 2)
-        {
-            return;
-        }
-
-        if (!calls.Any(contraction => contraction == Contraction.Subtractive))
-        {
-            return;
-        }
-
-        if (HasMemoization(body, containingType))
+        if (!IsUnmemoizedExponentialRecursion(calls, body, containingType))
         {
             return;
         }
 
         var ceiling = GetCeiling(body.Syntax.SyntaxTree, context.Options.AnalyzerConfigOptionsProvider);
 
-        TryGetTierRank(ceiling, out var ceilingRank);
+        _ = TryGetTierRank(ceiling, out var ceilingRank);
 
         if (ExponentialTierRank <= ceilingRank)
         {
@@ -286,6 +302,16 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(RecursionRule, declaration.GetLocation(), ceiling));
+    }
+
+    private static bool IsUnmemoizedExponentialRecursion(
+        ImmutableArray<Contraction> calls,
+        IBlockOperation body,
+        INamedTypeSymbol containingType)
+    {
+        return calls.Length >= 2
+            && calls.Any(static contraction => contraction is Contraction.Subtractive)
+            && !HasMemoization(body, containingType);
     }
 
     private static ImmutableArray<Contraction> CollectRecursiveCalls(IMethodSymbol method, IBlockOperation body)
@@ -312,16 +338,16 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
         {
             var contraction = ClassifyArgument(Unwrap(invocation.Arguments[index].Value), method.Parameters[index]);
 
-            if (contraction == Contraction.Subtractive)
+            if (contraction is Contraction.Subtractive)
             {
                 return Contraction.Subtractive;
             }
 
-            if (contraction == Contraction.Unknown)
+            if (contraction is Contraction.Unknown)
             {
                 result = Contraction.Unknown;
             }
-            else if (contraction == Contraction.Divisive && result == Contraction.Same)
+            else if (contraction is Contraction.Divisive && result is Contraction.Same)
             {
                 result = Contraction.Divisive;
             }
@@ -347,37 +373,42 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
             return Contraction.Unknown;
         }
 
-        var subtractive = (binary.OperatorKind == BinaryOperatorKind.Subtract && binary.RightOperand.ConstantValue.HasValue)
-                          || (binary.OperatorKind == BinaryOperatorKind.Add && IsNegativeConstant(binary.RightOperand));
-        var divisive = binary.OperatorKind == BinaryOperatorKind.Divide && IsDivisorAtLeastTwo(binary.RightOperand);
+        var subtractive = (binary.OperatorKind is BinaryOperatorKind.Subtract && binary.RightOperand.ConstantValue.HasValue)
+                          || (binary.OperatorKind is BinaryOperatorKind.Add && IsNegativeConstant(binary.RightOperand));
+        var divisive = binary.OperatorKind is BinaryOperatorKind.Divide && IsDivisorAtLeastTwo(binary.RightOperand);
 
-        return subtractive
-            ? Contraction.Subtractive
-            : divisive
-                ? Contraction.Divisive
-                : Contraction.Unknown;
+        if (subtractive)
+        {
+            return Contraction.Subtractive;
+        }
+
+        return divisive ? Contraction.Divisive : Contraction.Unknown;
     }
 
     private static bool IsDivisorAtLeastTwo(IOperation divisor)
     {
         var value = divisor.ConstantValue.Value;
 
-        return value is int intValue
-            ? intValue >= 2
-            : value is long longValue
-                ? longValue >= 2
-                : value is double doubleValue && doubleValue >= 2;
+        return value switch
+        {
+            int intValue => intValue >= MinimumDivisor,
+            long longValue => longValue >= MinimumDivisor,
+            double doubleValue => doubleValue >= MinimumDivisor,
+            _ => false,
+        };
     }
 
     private static bool IsNegativeConstant(IOperation operand)
     {
         var value = operand.ConstantValue.Value;
 
-        return value is int intValue
-            ? intValue < 0
-            : value is long longValue
-                ? longValue < 0
-                : value is double doubleValue && doubleValue < 0;
+        return value switch
+        {
+            int intValue => intValue < 0,
+            long longValue => longValue < 0,
+            double doubleValue => doubleValue < 0,
+            _ => false,
+        };
     }
 
     private static bool ReferencesParameter(IOperation operation, IParameterSymbol parameter)
@@ -474,7 +505,7 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
 
     private static bool IsCacheType(ITypeSymbol type)
     {
-        if (type.TypeKind == TypeKind.Array)
+        if (type.TypeKind is TypeKind.Array)
         {
             return true;
         }
@@ -510,18 +541,23 @@ public sealed class ComplexityCeilingAnalyzer : DiagnosticAnalyzer
             case "linear":
                 rank = LinearTierRank;
                 return true;
+
             case "linearithmic":
                 rank = LinearithmicTierRank;
                 return true;
+
             case "quadratic":
                 rank = QuadraticTierRank;
                 return true;
+
             case "cubic":
                 rank = CubicTierRank;
                 return true;
+
             case "exponential":
                 rank = ExponentialTierRank;
                 return true;
+
             default:
                 rank = ExponentialTierRank;
                 return false;

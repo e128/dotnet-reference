@@ -14,7 +14,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzerTests
         {
             TestCode = code,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -52,6 +52,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzerTests
                            }
                            """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenRegexIsAUserType()

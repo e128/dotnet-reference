@@ -18,8 +18,10 @@ namespace E128.Analyzers.Style;
 [Shared]
 public sealed class MidNameUnderscoreCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int HungarianPrefixLength = 2;
+
     private static readonly SequentialRenameFixAllProvider s_fixAllProvider =
-        new((_, symbolName) => symbolName is null ? null : ComputeFixedName(symbolName),
+        new(static (_, symbolName) => symbolName is null ? null : ComputeFixedName(symbolName),
             nameof(MidNameUnderscoreCodeFixProvider));
 
     public override ImmutableArray<string> FixableDiagnosticIds =>
@@ -87,7 +89,7 @@ public sealed class MidNameUnderscoreCodeFixProvider : E128CodeFixProviderBase
         // Preserve first segment's casing, PascalCase subsequent segments
         for (var i = 0; i < segments.Length; i++)
         {
-            if (i == 0)
+            if (i is 0)
             {
                 result.Append(segments[i]);
             }
@@ -105,14 +107,14 @@ public sealed class MidNameUnderscoreCodeFixProvider : E128CodeFixProviderBase
     {
         // s_foo, m_foo, t_foo — 2-char prefix
         if (name.Length >= 2
-            && name[1] == '_'
+            && name[1] is '_'
             && IsHungarianPrefixChar(name[0]))
         {
-            return 2;
+            return HungarianPrefixLength;
         }
 
         // _foo — 1-char prefix
-        return name.Length > 0 && name[0] == '_' ? 1 : 0;
+        return name.Length > 0 && name[0] is '_' ? 1 : 0;
     }
 
     private static bool IsHungarianPrefixChar(char c)

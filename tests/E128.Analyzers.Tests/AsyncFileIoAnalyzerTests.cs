@@ -17,10 +17,12 @@ public sealed class AsyncFileIoAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    /// <summary>AC-1: E128092 fires on a sync File.* call inside a fully synchronous method.</summary>
+    /// <summary>
+    ///     AC-1: E128092 fires on a sync File.* call inside a fully synchronous method.
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task AsyncFileIoAnalyzer_Fires_OnSyncFileCallInSynchronousMethod()
@@ -38,7 +40,9 @@ public sealed class AsyncFileIoAnalyzerTests
                            """);
     }
 
-    /// <summary>AC-2: E128092 does not fire when the containing method is already async (CA1849 covers it).</summary>
+    /// <summary>
+    ///     AC-2: E128092 does not fire when the containing method is already async (CA1849 covers it).
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task AsyncFileIoAnalyzer_DoesNotFire_WhenContainingMethodAlreadyAsync()
@@ -58,7 +62,9 @@ public sealed class AsyncFileIoAnalyzerTests
                            """);
     }
 
-    /// <summary>AC-3: E128092 does not fire on a File.* member with no Async sibling (e.g. File.Exists).</summary>
+    /// <summary>
+    ///     AC-3: E128092 does not fire on a File.* member with no Async sibling (e.g. File.Exists).
+    /// </summary>
     [Fact]
     [Trait("Category", "CI")]
     public Task AsyncFileIoAnalyzer_DoesNotFire_OnFileMemberWithoutAsyncSibling()

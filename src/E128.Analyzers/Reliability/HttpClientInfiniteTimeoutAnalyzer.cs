@@ -130,7 +130,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
             || !string.Equals(method.Name, FromMillisecondsMethodName, StringComparison.Ordinal)
             || !MetadataTypes.Contains(timeSpanTypes, method.ContainingType)
             || value is not InvocationExpressionSyntax invocation
-            || invocation.ArgumentList.Arguments.Count != 1)
+            || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return false;
         }

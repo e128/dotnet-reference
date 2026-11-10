@@ -6,7 +6,9 @@ namespace E128.Analyzers.Tests;
 /// </summary>
 internal static class TestStubs
 {
-    /// <summary>Synthetic AngleSharp.Dom shape used by the text guard and its fixer tests.</summary>
+    /// <summary>
+    ///     Synthetic AngleSharp.Dom shape used by the text guard and its fixer tests.
+    /// </summary>
     public const string AngleSharpDom =
         """
         namespace AngleSharp.Dom
@@ -16,7 +18,9 @@ internal static class TestStubs
         }
         """;
 
-    /// <summary>Synthetic System.Numerics.Tensors shape used by the span-sum tests.</summary>
+    /// <summary>
+    ///     Synthetic System.Numerics.Tensors shape used by the span-sum tests.
+    /// </summary>
     public const string TensorPrimitives =
         """
         namespace System.Numerics.Tensors

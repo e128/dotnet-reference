@@ -7,7 +7,14 @@ namespace E128.Reference.Core;
 /// </summary>
 public sealed class Greeter
 {
-    public Greeter(string defaultName = "World")
+    private const string FallbackName = "World";
+
+    public Greeter()
+        : this(FallbackName)
+    {
+    }
+
+    public Greeter(string defaultName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(defaultName);
         DefaultName = defaultName;
@@ -15,7 +22,12 @@ public sealed class Greeter
 
     internal string DefaultName { get; }
 
-    public string Greet(string? name = null)
+    public string Greet()
+    {
+        return Greet(null);
+    }
+
+    public string Greet(string? name)
     {
         return $"Hello, {name ?? DefaultName}!";
     }

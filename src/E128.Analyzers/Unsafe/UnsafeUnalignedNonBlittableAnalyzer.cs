@@ -36,7 +36,7 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)
@@ -68,13 +68,13 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzer : DiagnosticAnalyzer
 
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
             || !MetadataTypes.Contains(unsafeType, method.ContainingType)
-            || method.TypeArguments.Length != 1)
+            || method.TypeArguments.Length is not 1)
         {
             return;
         }
 
         var target = method.TypeArguments[0];
-        if (target.TypeKind == TypeKind.TypeParameter || Blittability.IsBlittable(target))
+        if (target.TypeKind is TypeKind.TypeParameter || Blittability.IsBlittable(target))
         {
             return;
         }

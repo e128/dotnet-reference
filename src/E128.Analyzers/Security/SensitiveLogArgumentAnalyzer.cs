@@ -60,6 +60,15 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
         "hint"
     ];
 
+    // The logger, the event id, and the level types carry no template value.
+    private static readonly string[] FrameworkTypeNames =
+    [
+        "Microsoft.Extensions.Logging.EventId",
+        "Microsoft.Extensions.Logging.LogLevel",
+        "Microsoft.Extensions.Logging.ILogger",
+        "Microsoft.Extensions.Logging.ILogger<TCategoryName>"
+    ];
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Avoid logging a sensitive value",
@@ -80,9 +89,9 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
-            if (XunitTestHelper.IsTestCompilation(start.Compilation))
+            if (XunitTestHelper.IsTestCompilation(start.Compilation, start.CancellationToken))
             {
                 return;
             }
@@ -104,49 +113,59 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
 
         foreach (var argument in invocation.Arguments)
         {
-            if (argument.Parameter is not { } parameter
-                || argument.ArgumentKind == ArgumentKind.DefaultValue
-                || IsFrameworkParameter(parameter.Type))
+            AnalyzeArgument(context, argument, isGenerated);
+        }
+    }
+
+    private static void AnalyzeArgument(OperationAnalysisContext context, IArgumentOperation argument, bool isGenerated)
+    {
+        if (argument.Parameter is not { } parameter
+            || argument.ArgumentKind is ArgumentKind.DefaultValue
+            || IsFrameworkParameter(parameter.Type))
+        {
+            return;
+        }
+
+        var value = StripConversions(argument.Value);
+
+        // The params object[] holds the template values. Read each element, whether the call
+        // spells the array out or lets the compiler build it.
+        if (parameter.IsParams && value is IArrayCreationOperation { Initializer: { } initializer })
+        {
+            ReportElements(context, initializer);
+
+            return;
+        }
+
+        if (argument.Value.Syntax is not ExpressionSyntax syntax)
+        {
+            return;
+        }
+
+        // A template string is not a value. Only the holes of an interpolated template can
+        // carry one. A LoggerMessage method has no template parameter, so every string is a value.
+        if (!isGenerated && parameter.Type.SpecialType is SpecialType.System_String)
+        {
+            if (syntax is InterpolatedStringExpressionSyntax)
             {
-                continue;
+                Report(context, ValueExpressions(syntax), argument.Syntax.GetLocation());
             }
 
-            var value = StripConversions(argument.Value);
+            return;
+        }
 
-            // The params object[] holds the template values. Read each element, whether the call
-            // spells the array out or lets the compiler build it.
-            if (parameter.IsParams && value is IArrayCreationOperation { Initializer: { } initializer })
+        Report(context, ValueExpressions(syntax), argument.Syntax.GetLocation());
+    }
+
+    private static void ReportElements(OperationAnalysisContext context, IArrayInitializerOperation initializer)
+    {
+        foreach (var element in initializer.ElementValues)
+        {
+            // The element keeps the syntax the author wrote, so a cast stays visible.
+            if (element.Syntax is ExpressionSyntax elementSyntax)
             {
-                foreach (var element in initializer.ElementValues)
-                {
-                    // The element keeps the syntax the author wrote, so a cast stays visible.
-                    if (element.Syntax is ExpressionSyntax elementSyntax)
-                    {
-                        Report(context, [elementSyntax], ElementLocation(elementSyntax));
-                    }
-                }
-
-                continue;
+                Report(context, [elementSyntax], ElementLocation(elementSyntax));
             }
-
-            if (argument.Value.Syntax is not ExpressionSyntax syntax)
-            {
-                continue;
-            }
-
-            // A template string is not a value. Only the holes of an interpolated template can
-            // carry one. A LoggerMessage method has no template parameter, so every string is a value.
-            if (!isGenerated && parameter.Type.SpecialType == SpecialType.System_String)
-            {
-                if (syntax is InterpolatedStringExpressionSyntax)
-                {
-                    Report(context, ValueExpressions(syntax), argument.Syntax.GetLocation());
-                }
-
-                continue;
-            }
-
-            Report(context, ValueExpressions(syntax), argument.Syntax.GetLocation());
         }
     }
 
@@ -227,7 +246,7 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
     // The logger, the event id, the level, the exception, and the formatter carry no template value.
     private static bool IsFrameworkParameter(ITypeSymbol type)
     {
-        if (type.TypeKind == TypeKind.Delegate)
+        if (type.TypeKind is TypeKind.Delegate)
         {
             return true;
         }
@@ -244,18 +263,14 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        return type.OriginalDefinition.ToDisplayString() is
-            "Microsoft.Extensions.Logging.EventId"
-            or "Microsoft.Extensions.Logging.LogLevel"
-            or "Microsoft.Extensions.Logging.ILogger"
-            or "Microsoft.Extensions.Logging.ILogger<TCategoryName>";
+        return FrameworkTypeNames.Contains(type.OriginalDefinition.ToDisplayString(), StringComparer.Ordinal);
     }
 
     // An interpolated argument hides its values in holes. Read each hole as its own value.
     private static IEnumerable<ExpressionSyntax> ValueExpressions(ExpressionSyntax expression)
     {
         return expression is InterpolatedStringExpressionSyntax interpolated
-            ? interpolated.Contents.OfType<InterpolationSyntax>().Select(hole => hole.Expression)
+            ? interpolated.Contents.OfType<InterpolationSyntax>().Select(static hole => hole.Expression)
             : new[] { expression };
     }
 
@@ -268,28 +283,54 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
             MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
             MemberBindingExpressionSyntax binding => binding.Name.Identifier.ValueText,
-            ParenthesizedExpressionSyntax parenthesized => LeafName(parenthesized.Expression),
-            CastExpressionSyntax cast => LeafName(cast.Expression),
+            ConditionalAccessExpressionSyntax access => ConditionalAccessLeafName(access),
+            InvocationExpressionSyntax invocation => InvocationLeafName(invocation),
+            _ => WrappedExpression(expression) is { } inner ? LeafName(inner) : null
+        };
+    }
+
+    // The expression inside a parenthesis, a cast, a null-forgiving operator or an "as" expression.
+    private static ExpressionSyntax? WrappedExpression(ExpressionSyntax expression)
+    {
+        return expression switch
+        {
+            ParenthesizedExpressionSyntax parenthesized => parenthesized.Expression,
+            CastExpressionSyntax cast => cast.Expression,
             PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression } postfix =>
-                LeafName(postfix.Operand),
-            BinaryExpressionSyntax { RawKind: (int)SyntaxKind.AsExpression } asExpression =>
-                LeafName(asExpression.Left),
-            ConditionalAccessExpressionSyntax
-            {
-                WhenNotNull: InvocationExpressionSyntax
-                {
-                    ArgumentList.Arguments.Count: 0,
-                    Expression: MemberBindingExpressionSyntax { Name.Identifier.ValueText: "ToString" or "Trim" }
-                }
-            } passThrough => LeafName(passThrough.Expression),
-            ConditionalAccessExpressionSyntax access => LeafName(access.WhenNotNull),
-            InvocationExpressionSyntax
-            {
-                ArgumentList.Arguments.Count: 0,
-                Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToString" or "Trim" } call
-            } => LeafName(call.Expression),
+                postfix.Operand,
+            BinaryExpressionSyntax { RawKind: (int)SyntaxKind.AsExpression } asExpression => asExpression.Left,
             _ => null
         };
+    }
+
+    private static bool IsToStringOrTrim(SimpleNameSyntax name)
+    {
+        var text = name.Identifier.ValueText;
+
+        return string.Equals(text, "ToString", StringComparison.Ordinal)
+               || string.Equals(text, "Trim", StringComparison.Ordinal);
+    }
+
+    private static string? ConditionalAccessLeafName(ConditionalAccessExpressionSyntax access)
+    {
+        return access.WhenNotNull is InvocationExpressionSyntax
+        {
+            ArgumentList.Arguments.Count: 0,
+            Expression: MemberBindingExpressionSyntax binding
+        } && IsToStringOrTrim(binding.Name)
+            ? LeafName(access.Expression)
+            : LeafName(access.WhenNotNull);
+    }
+
+    private static string? InvocationLeafName(InvocationExpressionSyntax invocation)
+    {
+        return invocation is
+        {
+            ArgumentList.Arguments.Count: 0,
+            Expression: MemberAccessExpressionSyntax call
+        } && IsToStringOrTrim(call.Name)
+            ? LeafName(call.Expression)
+            : null;
     }
 
     private static bool IsSensitiveName(string name)
@@ -330,5 +371,4 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
 
         return false;
     }
-
 }

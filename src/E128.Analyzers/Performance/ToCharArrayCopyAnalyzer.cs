@@ -32,7 +32,7 @@ public sealed class ToCharArrayCopyAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var stringType = startContext.Compilation.GetSpecialType(SpecialType.System_String);
             if (stringType is null)
@@ -51,7 +51,7 @@ public sealed class ToCharArrayCopyAnalyzer : DiagnosticAnalyzer
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (invocation.Expression is not MemberAccessExpressionSyntax access
             || !string.Equals(access.Name.Identifier.ValueText, "ToCharArray", StringComparison.Ordinal)
-            || invocation.ArgumentList.Arguments.Count != 0)
+            || invocation.ArgumentList.Arguments.Count is not 0)
         {
             return;
         }

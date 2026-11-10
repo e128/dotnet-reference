@@ -107,7 +107,7 @@ public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
             }
 
             var fullName = typeInfo.Type.ToDisplayString();
-            if (fullName is "System.OperationCanceledException" or "System.Threading.Tasks.TaskCanceledException")
+            if (IsCancellationTypeName(fullName))
             {
                 return true;
             }
@@ -155,12 +155,18 @@ public sealed class CatchFilterOceAnalyzer : DiagnosticAnalyzer
             }
 
             var fullName = typeInfo.Type.ToDisplayString();
-            if (fullName is "System.OperationCanceledException" or "System.Threading.Tasks.TaskCanceledException")
+            if (IsCancellationTypeName(fullName))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool IsCancellationTypeName(string fullName)
+    {
+        return string.Equals(fullName, "System.OperationCanceledException", StringComparison.Ordinal)
+               || string.Equals(fullName, "System.Threading.Tasks.TaskCanceledException", StringComparison.Ordinal);
     }
 }

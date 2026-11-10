@@ -31,7 +31,7 @@ public sealed class UnsafeAsPointerEscapeAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
             if (unsafeType.IsEmpty)
@@ -69,7 +69,7 @@ public sealed class UnsafeAsPointerEscapeAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         System.Threading.CancellationToken cancellationToken)
     {
-        return invocation.ArgumentList.Arguments.Count == 1
+        return invocation.ArgumentList.Arguments.Count is 1
             && !IsInAsyncMember(invocation)
             && model.GetSymbolInfo(invocation.ArgumentList.Arguments[0].Expression, cancellationToken).Symbol
                 is ILocalSymbol { RefKind: RefKind.None } or IParameterSymbol { RefKind: RefKind.None };

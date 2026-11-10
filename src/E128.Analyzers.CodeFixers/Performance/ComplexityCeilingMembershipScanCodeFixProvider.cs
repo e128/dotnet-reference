@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using MembershipScan = (Microsoft.CodeAnalysis.CSharp.Syntax.IfStatementSyntax Guard, Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax OuterSide, string CollectionName, string SetName);
 
 namespace E128.Analyzers.Performance;
 
@@ -44,71 +45,103 @@ public sealed class ComplexityCeilingMembershipScanCodeFixProvider : E128CodeFix
             return;
         }
 
-        var scan = Recognize(inner, outer, model);
+        var scan = Recognize(inner, outer, model, context.CancellationToken);
         if (scan is null)
         {
             return;
         }
 
-        var (guard, outerSide, collectionName, setName) = scan.Value;
-
-        CodeFixRegistration.Register(context, diagnostic, "Replace the nested scan with a set lookup", nameof(ComplexityCeilingMembershipScanCodeFixProvider), ct => ApplyAsync(context.Document, outer, inner, guard, outerSide, collectionName, setName, ct));
+        CodeFixRegistration.Register(context, diagnostic, "Replace the nested scan with a set lookup", nameof(ComplexityCeilingMembershipScanCodeFixProvider), ct => ApplyAsync(context.Document, outer, inner, scan.Value, ct));
     }
 
-    private static (IfStatementSyntax Guard, ExpressionSyntax OuterSide, string CollectionName, string SetName)?
-        Recognize(ForEachStatementSyntax inner, ForEachStatementSyntax outer, SemanticModel model)
+    private static MembershipScan? Recognize(
+        ForEachStatementSyntax inner,
+        ForEachStatementSyntax outer,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
-        if (inner.Statement is not BlockSyntax body
-            || body.Statements.Count != 1
-            || body.Statements[0] is not IfStatementSyntax guard
-            || guard.Else is not null
-            || !guard.Condition.IsKind(SyntaxKind.EqualsExpression)
-            || !ReturnsOnMatch(guard.Statement)
-            || ReturnsInnerVariable(guard.Statement, inner.Identifier.ValueText)
-            || guard.Condition is not BinaryExpressionSyntax comparison)
+        if (FindEqualityGuard(inner) is not { } found
+            || SelectOuterSide(found.Comparison, outer) is not { } outerSide)
         {
             return null;
         }
 
-        var outerSide = RootsAt(comparison.Left, outer.Identifier.ValueText)
-            ? comparison.Left
-            : RootsAt(comparison.Right, outer.Identifier.ValueText)
-                ? comparison.Right
-                : null;
-
+        var comparison = found.Comparison;
         var innerSide = comparison.Left == outerSide ? comparison.Right : comparison.Left;
 
-        if (outerSide is null
-            || innerSide is not IdentifierNameSyntax innerIdentifier
-            || !string.Equals(innerIdentifier.Identifier.ValueText, inner.Identifier.ValueText, StringComparison.Ordinal)
-            || ContainsInvocation(outerSide)
-            || inner.Expression is not IdentifierNameSyntax collection
-            || !IsStableSource(collection, inner, model))
-        {
-            return null;
-        }
-
-        var elementType = model.GetTypeInfo(innerIdentifier).Type;
-        if (elementType is null || !IsValueEquatable(elementType) || inner.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault() is not { } method)
+        if (FindStableCollection(inner, innerSide, outerSide, model, cancellationToken) is not { } collection
+            || model.GetTypeInfo(innerSide, cancellationToken).Type is not { } elementType
+            || !IsValueEquatable(elementType)
+            || inner.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault() is not { } method)
         {
             return null;
         }
 
         var collectionName = collection.Identifier.ValueText;
 
-        return (guard, outerSide, collectionName, UniqueName(collectionName + "Set", method));
+        return (found.Guard, outerSide, collectionName, UniqueName(collectionName + "Set", method));
+    }
+
+    private static (IfStatementSyntax Guard, BinaryExpressionSyntax Comparison)? FindEqualityGuard(
+        ForEachStatementSyntax inner)
+    {
+        if (inner.Statement is not BlockSyntax body
+            || body.Statements.Count is not 1
+            || body.Statements[0] is not IfStatementSyntax guard
+            || guard.Else is not null
+            || !guard.Condition.IsKind(SyntaxKind.EqualsExpression)
+            || !IsReturnGuard(guard, inner.Identifier.ValueText)
+            || guard.Condition is not BinaryExpressionSyntax comparison)
+        {
+            return null;
+        }
+
+        return (guard, comparison);
+    }
+
+    private static bool IsReturnGuard(IfStatementSyntax guard, string innerName)
+    {
+        return ReturnsOnMatch(guard.Statement) && !ReturnsInnerVariable(guard.Statement, innerName);
+    }
+
+    private static ExpressionSyntax? SelectOuterSide(BinaryExpressionSyntax comparison, ForEachStatementSyntax outer)
+    {
+        var outerName = outer.Identifier.ValueText;
+        if (RootsAt(comparison.Left, outerName))
+        {
+            return comparison.Left;
+        }
+
+        return RootsAt(comparison.Right, outerName) ? comparison.Right : null;
+    }
+
+    private static IdentifierNameSyntax? FindStableCollection(
+        ForEachStatementSyntax inner,
+        ExpressionSyntax innerSide,
+        ExpressionSyntax outerSide,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        if (innerSide is not IdentifierNameSyntax innerIdentifier
+            || !string.Equals(innerIdentifier.Identifier.ValueText, inner.Identifier.ValueText, StringComparison.Ordinal)
+            || ContainsInvocation(outerSide)
+            || inner.Expression is not IdentifierNameSyntax collection
+            || !IsStableSource(collection, inner, model, cancellationToken))
+        {
+            return null;
+        }
+
+        return collection;
     }
 
     private static async Task<Document> ApplyAsync(
         Document document,
         ForEachStatementSyntax outer,
         ForEachStatementSyntax inner,
-        IfStatementSyntax guard,
-        ExpressionSyntax outerSide,
-        string collectionName,
-        string setName,
+        MembershipScan scan,
         CancellationToken cancellationToken)
     {
+        var (guard, outerSide, collectionName, setName) = scan;
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.InsertBefore(outer, SetDeclaration(collectionName, setName, outer));
         editor.ReplaceNode(inner, RewriteGuard(guard, ContainsCall(setName, outerSide), inner));
@@ -218,11 +251,19 @@ public sealed class ComplexityCeilingMembershipScanCodeFixProvider : E128CodeFix
     /// </summary>
     private static bool ReturnsInnerVariable(StatementSyntax statement, string name)
     {
-        var returned = statement is ReturnStatementSyntax single
-            ? single
-            : statement is BlockSyntax { Statements.Count: 1 } block
-                ? block.Statements[0] as ReturnStatementSyntax
-                : null;
+        ReturnStatementSyntax? returned;
+        if (statement is ReturnStatementSyntax single)
+        {
+            returned = single;
+        }
+        else if (statement is BlockSyntax { Statements.Count: 1 } block)
+        {
+            returned = block.Statements[0] as ReturnStatementSyntax;
+        }
+        else
+        {
+            returned = null;
+        }
 
         return returned?.Expression is { } value
                && value.DescendantNodesAndSelf()
@@ -273,9 +314,13 @@ public sealed class ComplexityCeilingMembershipScanCodeFixProvider : E128CodeFix
     ///     or a parameter. Any other mention of the name in the method may read or write it, and a
     ///     write would leave the hoisted set stale, so the rewrite declines.
     /// </summary>
-    private static bool IsStableSource(IdentifierNameSyntax collection, ForEachStatementSyntax inner, SemanticModel model)
+    private static bool IsStableSource(
+        IdentifierNameSyntax collection,
+        ForEachStatementSyntax inner,
+        SemanticModel model,
+        CancellationToken cancellationToken)
     {
-        var symbol = model.GetSymbolInfo(collection).Symbol;
+        var symbol = model.GetSymbolInfo(collection, cancellationToken).Symbol;
         if (symbol is not ILocalSymbol and not IParameterSymbol
             || inner.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault() is not { } method)
         {

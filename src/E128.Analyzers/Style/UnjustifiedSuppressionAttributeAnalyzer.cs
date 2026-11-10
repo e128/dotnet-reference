@@ -62,7 +62,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (checkedTypes.Count == 0)
+        if (checkedTypes.Count is 0)
         {
             return;
         }
@@ -95,10 +95,12 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!HasJustification(attribute, context))
+        if (HasJustification(attribute, context))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, attribute.GetLocation(), constructor.ContainingType.Name.Replace("Attribute", string.Empty)));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, attribute.GetLocation(), constructor.ContainingType.Name.Replace("Attribute", string.Empty)));
     }
 
 

@@ -35,7 +35,7 @@ public sealed class Sha256CreateObsoleteAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var sha256Type = startContext.Compilation.GetTypeByMetadataName(Sha256MetadataName);
 

@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class MemoryMarshalNonBlittableCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<MemoryMarshalNonBlittableAnalyzer, MemoryMarshalNonBlittableCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<MemoryMarshalNonBlittableAnalyzer, MemoryMarshalNonBlittableCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -37,6 +39,7 @@ public sealed class MemoryMarshalNonBlittableCodeFixTests
             }
             """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Fix_ParenthesizesACastSource()

@@ -91,6 +91,21 @@ public sealed class MissingTraitCategoryAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
+    private static bool IsTraitName(string name)
+    {
+        return string.Equals(name, "Trait", StringComparison.Ordinal)
+               || string.Equals(name, "TraitAttribute", StringComparison.Ordinal);
+    }
+
+    private static bool IsXunitTraitConstructor(AttributeSyntax attribute, SyntaxNodeAnalysisContext context)
+    {
+        var symbol = context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol;
+        return symbol is IMethodSymbol ctor
+               && ctor.ContainingType is { } containingType
+               && string.Equals(containingType.Name, "TraitAttribute", StringComparison.Ordinal)
+               && XunitTestHelper.IsXunitNamespace(containingType.ContainingNamespace);
+    }
+
     private static bool IsTraitCategoryAttribute(AttributeSyntax attribute, SyntaxNodeAnalysisContext context)
     {
         // A qualified attribute writes Xunit.Trait. The last segment is the name either way.
@@ -98,17 +113,7 @@ public sealed class MissingTraitCategoryAnalyzer : DiagnosticAnalyzer
             ? qualified.Right.Identifier.ValueText
             : attribute.Name.ToString();
 
-        if (!string.Equals(name, "Trait", StringComparison.Ordinal)
-            && !string.Equals(name, "TraitAttribute", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var symbol = context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol;
-        if (symbol is not IMethodSymbol ctor
-            || ctor.ContainingType is not { } containingType
-            || !string.Equals(containingType.Name, "TraitAttribute", StringComparison.Ordinal)
-            || !XunitTestHelper.IsXunitNamespace(containingType.ContainingNamespace))
+        if (!IsTraitName(name) || !IsXunitTraitConstructor(attribute, context))
         {
             return false;
         }

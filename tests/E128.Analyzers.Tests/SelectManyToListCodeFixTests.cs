@@ -6,11 +6,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SelectManyToListCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<SelectManyToListAnalyzer, SelectManyToListCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<SelectManyToListAnalyzer, SelectManyToListCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source) =>
-        CodeFixTestRunner.NoFixAsync<SelectManyToListAnalyzer, SelectManyToListCodeFixProvider>(source);
+    private static Task VerifyNoFixAsync(string source)
+    {
+        return CodeFixTestRunner.NoFixAsync<SelectManyToListAnalyzer, SelectManyToListCodeFixProvider>(source);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

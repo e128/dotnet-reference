@@ -15,7 +15,7 @@ internal static class FipsTypeClassifier
     ///     <c lang="csharp">MD5.Create()</c> and the .NET 5 and later one-shot helpers
     ///     (<c lang="csharp">MD5.HashData</c>). Both type rules inspect the declaring type of these members.
     /// </summary>
-    public static readonly ImmutableHashSet<string> OneShotMembers = ImmutableHashSet.Create(
+    internal static readonly ImmutableHashSet<string> OneShotMembers = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "Create",
         "HashData",
@@ -53,15 +53,17 @@ internal static class FipsTypeClassifier
         "Cbc",
         "Ecb");
 
-    /// <summary>Returns the cached verdict for <paramref name="type" /> in <paramref name="compilation" />.</summary>
-    public static TypeVerdict GetVerdict(Compilation compilation, ITypeSymbol type)
+    /// <summary>
+    ///     Returns the cached verdict for <paramref name="type" /> in <paramref name="compilation" />.
+    /// </summary>
+    internal static TypeVerdict GetVerdict(Compilation compilation, ITypeSymbol type)
     {
         var cache = TypeVerdictCache.For(compilation);
 
         if (!cache.TryGetValue(type, out var verdict))
         {
             verdict = Classify(type);
-            cache.TryAdd(type, verdict);
+            _ = cache.TryAdd(type, verdict);
         }
 
         return verdict;
@@ -115,6 +117,15 @@ internal static class FipsTypeClassifier
     /// </summary>
     private static bool HasCipherContext(ITypeSymbol type, string fragment)
     {
+        return HasCipherRoleSuffix(type, fragment)
+               || HasCipherBaseType(type)
+               || HasCipherInterface(type)
+               || (string.Equals(type.Name, fragment, StringComparison.OrdinalIgnoreCase)
+                   && IsInCryptographicNamespace(type));
+    }
+
+    private static bool HasCipherRoleSuffix(ITypeSymbol type, string fragment)
+    {
         foreach (var role in CipherRoleWords)
         {
             if (type.Name.EndsWith(fragment + role, StringComparison.OrdinalIgnoreCase))
@@ -123,6 +134,11 @@ internal static class FipsTypeClassifier
             }
         }
 
+        return false;
+    }
+
+    private static bool HasCipherBaseType(ITypeSymbol type)
+    {
         for (var baseType = type.BaseType; baseType is not null; baseType = baseType.BaseType)
         {
             if (baseType.Name.IndexOf("Cipher", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -132,6 +148,11 @@ internal static class FipsTypeClassifier
             }
         }
 
+        return false;
+    }
+
+    private static bool HasCipherInterface(ITypeSymbol type)
+    {
         foreach (var contract in type.AllInterfaces)
         {
             if (contract.Name.IndexOf("Cipher", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -140,11 +161,11 @@ internal static class FipsTypeClassifier
             }
         }
 
-        if (!string.Equals(type.Name, fragment, StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
+        return false;
+    }
 
+    private static bool IsInCryptographicNamespace(ITypeSymbol type)
+    {
         for (var ns = type.ContainingNamespace; ns is not null && !ns.IsGlobalNamespace; ns = ns.ContainingNamespace)
         {
             if (ns.Name.IndexOf("crypt", StringComparison.OrdinalIgnoreCase) >= 0 ||

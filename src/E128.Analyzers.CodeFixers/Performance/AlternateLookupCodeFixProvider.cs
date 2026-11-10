@@ -80,7 +80,7 @@ public sealed class AlternateLookupCodeFixProvider : E128CodeFixProviderBase
         ExpressionSyntax span)
     {
         var arguments = invocation.ArgumentList.Arguments
-            .Select((argument, index) => index == 0 ? span.WithoutTrivia().ToFullString() : argument.ToFullString());
+            .Select((argument, index) => index is 0 ? span.WithoutTrivia().ToFullString() : argument.ToFullString());
 
         return member.Expression is IdentifierNameSyntax receiverName
             ? SyntaxFactory.ParseExpression(

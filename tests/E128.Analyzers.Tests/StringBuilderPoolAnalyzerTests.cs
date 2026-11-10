@@ -30,7 +30,7 @@ public sealed class StringBuilderPoolAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyWithPoolAsync(string code, params DiagnosticResult[] expected)

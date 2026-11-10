@@ -62,7 +62,7 @@ public sealed class ConstantOperandAssertionAnalyzer : DiagnosticAnalyzer
 
         var arguments = invocation.Arguments;
 
-        if (arguments.Length == 0)
+        if (arguments.Length is 0)
         {
             return;
         }
@@ -71,7 +71,7 @@ public sealed class ConstantOperandAssertionAnalyzer : DiagnosticAnalyzer
         {
             // A literal, not merely a constant: comparing two distinct named constants is a
             // deliberate value pin, while a literal-to-literal comparison can never surprise anyone.
-            if (arguments[i].Value.Kind != OperationKind.Literal)
+            if (arguments[i].Value.Kind is not OperationKind.Literal)
             {
                 return;
             }

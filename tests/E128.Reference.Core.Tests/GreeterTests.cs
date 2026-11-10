@@ -42,7 +42,7 @@ public sealed class GreeterTests
     [Trait("Category", "CI")]
     public void Constructor_Throws_WhenDefaultNameIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new Greeter(null!));
+        _ = Assert.Throws<ArgumentNullException>(static () => new Greeter(null!));
     }
 
     [Theory]
@@ -51,6 +51,6 @@ public sealed class GreeterTests
     [InlineData("   ")]
     public void Constructor_Throws_WhenDefaultNameIsWhiteSpace(string defaultName)
     {
-        Assert.Throws<ArgumentException>(() => new Greeter(defaultName));
+        _ = Assert.Throws<ArgumentException>(() => new Greeter(defaultName));
     }
 }

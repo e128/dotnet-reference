@@ -140,7 +140,7 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
         MethodDeclarationSyntax method,
         List<InvocationExpressionSyntax> syncCalls)
     {
-        return method.ReplaceNodes(syncCalls, (original, rewritten) =>
+        return method.ReplaceNodes(syncCalls, static (_, rewritten) =>
         {
             if (rewritten.Expression is not MemberAccessExpressionSyntax memberAccess)
             {
@@ -174,9 +174,9 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
                                  && !TaskFromResultSyncIoAnalyzer.IsInNestedFunction(invocation, method))
             .ToList();
 
-        return method.ReplaceNodes(fromResultCalls, (original, rewritten) =>
+        return method.ReplaceNodes(fromResultCalls, static (_, rewritten) =>
         {
-            return rewritten.ArgumentList.Arguments.Count != 1
+            return rewritten.ArgumentList.Arguments.Count is not 1
                 ? rewritten
                 : (SyntaxNode)rewritten.ArgumentList.Arguments[0].Expression
                     .WithLeadingTrivia(rewritten.GetLeadingTrivia())

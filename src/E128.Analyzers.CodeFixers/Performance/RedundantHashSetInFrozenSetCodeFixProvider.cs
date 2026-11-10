@@ -50,10 +50,10 @@ public sealed class RedundantHashSetInFrozenSetCodeFixProvider : E128CodeFixProv
                && hashSetCreation.ArgumentList?.Arguments.FirstOrDefault()
                    is { Expression: not CollectionExpressionSyntax }
                && semanticModel.GetSymbolInfo(hashSetCreation, cancellationToken).Symbol is IMethodSymbol constructor
-               && constructor.Parameters.Length == 1
+               && constructor.Parameters.Length is 1
                && constructor.Parameters[0].Type is INamedTypeSymbol parameterType
                && parameterType.OriginalDefinition.SpecialType
-                   == SpecialType.System_Collections_Generic_IEnumerable_T;
+                   is SpecialType.System_Collections_Generic_IEnumerable_T;
     }
 
     private static Task<Document> RemoveHashSetAsync(

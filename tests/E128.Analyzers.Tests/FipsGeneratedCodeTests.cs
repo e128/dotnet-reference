@@ -89,24 +89,29 @@ public sealed class FipsGeneratedCodeTests
     ///     analyzer runs over the snippet, so a second analyzer that reports on it fails the test.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the identifier has no snippet.</exception>
-    private static string RuleCase(string id) => id switch
+    private static string RuleCase(string id)
     {
-        "E128071" => UnapprovedHashCase(),
-        "E128075" => InsecureRandomCase(),
-        "E128142" => DirectInstantiationCase(),
-        "E128143" => RsaKeySizeCase(),
-        "E128144" => CipherModeCase(),
-        "E128145" => PbkdfIterationCase(),
-        "E128146" => TlsVersionCase(),
-        "E128147" => DeprecatedRngCase(),
-        "E128148" => ForbiddenAlgorithmNameCase(),
-        "E128149" => AesGcmTagSizeCase(),
-        "E128150" => Sha3Case(),
-        "E128151" => HmacKeyLengthCase(),
-        _ => throw new ArgumentOutOfRangeException(nameof(id), id, "No generated-code case for this rule.")
-    };
+        return id switch
+        {
+            "E128071" => UnapprovedHashCase(),
+            "E128075" => InsecureRandomCase(),
+            "E128142" => DirectInstantiationCase(),
+            "E128143" => RsaKeySizeCase(),
+            "E128144" => CipherModeCase(),
+            "E128145" => PbkdfIterationCase(),
+            "E128146" => TlsVersionCase(),
+            "E128147" => DeprecatedRngCase(),
+            "E128148" => ForbiddenAlgorithmNameCase(),
+            "E128149" => AesGcmTagSizeCase(),
+            "E128150" => Sha3Case(),
+            "E128151" => HmacKeyLengthCase(),
+            _ => throw new ArgumentOutOfRangeException(nameof(id), id, "No generated-code case for this rule.")
+        };
+    }
 
-    private static string UnapprovedHashCase() => """
+    private static string UnapprovedHashCase()
+    {
+        return """
                                                    using System.Security.Cryptography;
 
                                                    class C
@@ -117,8 +122,11 @@ public sealed class FipsGeneratedCodeTests
                                                        }
                                                    }
                                                    """;
+    }
 
-    private static string InsecureRandomCase() => """
+    private static string InsecureRandomCase()
+    {
+        return """
                                                    using System;
 
                                                    class C
@@ -129,8 +137,11 @@ public sealed class FipsGeneratedCodeTests
                                                        }
                                                    }
                                                    """;
+    }
 
-    private static string DirectInstantiationCase() => """
+    private static string DirectInstantiationCase()
+    {
+        return """
                                                         using System.Security.Cryptography;
 
                                                         class C
@@ -141,8 +152,11 @@ public sealed class FipsGeneratedCodeTests
                                                             }
                                                         }
                                                         """;
+    }
 
-    private static string RsaKeySizeCase() => """
+    private static string RsaKeySizeCase()
+    {
+        return """
                                               using System.Security.Cryptography;
 
                                               class C
@@ -153,8 +167,11 @@ public sealed class FipsGeneratedCodeTests
                                                   }
                                               }
                                               """;
+    }
 
-    private static string CipherModeCase() => """
+    private static string CipherModeCase()
+    {
+        return """
                                               using System.Security.Cryptography;
 
                                               class C
@@ -165,8 +182,11 @@ public sealed class FipsGeneratedCodeTests
                                                   }
                                               }
                                               """;
+    }
 
-    private static string PbkdfIterationCase() => """
+    private static string PbkdfIterationCase()
+    {
+        return """
                                                    using System.Security.Cryptography;
 
                                                    class C
@@ -177,8 +197,11 @@ public sealed class FipsGeneratedCodeTests
                                                        }
                                                    }
                                                    """;
+    }
 
-    private static string TlsVersionCase() => """
+    private static string TlsVersionCase()
+    {
+        return """
                                               using System.Security.Authentication;
 
                                               class C
@@ -189,8 +212,11 @@ public sealed class FipsGeneratedCodeTests
                                                   }
                                               }
                                               """;
+    }
 
-    private static string DeprecatedRngCase() => """
+    private static string DeprecatedRngCase()
+    {
+        return """
                                                  using System.Security.Cryptography;
 
                                                  class C
@@ -201,8 +227,11 @@ public sealed class FipsGeneratedCodeTests
                                                      }
                                                  }
                                                  """;
+    }
 
-    private static string ForbiddenAlgorithmNameCase() => """
+    private static string ForbiddenAlgorithmNameCase()
+    {
+        return """
                                                            namespace Org.Ciphers
                                                            {
                                                                class RC4Engine
@@ -218,8 +247,11 @@ public sealed class FipsGeneratedCodeTests
                                                                }
                                                            }
                                                            """;
+    }
 
-    private static string AesGcmTagSizeCase() => """
+    private static string AesGcmTagSizeCase()
+    {
+        return """
                                                  using System.Security.Cryptography;
 
                                                  class C
@@ -230,8 +262,11 @@ public sealed class FipsGeneratedCodeTests
                                                      }
                                                  }
                                                  """;
+    }
 
-    private static string Sha3Case() => """
+    private static string Sha3Case()
+    {
+        return """
                                         using System.Security.Cryptography;
 
                                         class C
@@ -242,8 +277,11 @@ public sealed class FipsGeneratedCodeTests
                                             }
                                         }
                                         """;
+    }
 
-    private static string HmacKeyLengthCase() => """
+    private static string HmacKeyLengthCase()
+    {
+        return """
                                                  using System.Security.Cryptography;
 
                                                  class C
@@ -254,19 +292,20 @@ public sealed class FipsGeneratedCodeTests
                                                      }
                                                  }
                                                  """;
+    }
 
     private static Task VerifyFileAsync(string fileName, string code)
     {
-        var test = new AllAnalyzersTest
-        {
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
+        var test = new AllAnalyzersTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net100 };
         test.TestState.Sources.Add((fileName, code));
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private sealed class AllAnalyzersTest : CSharpAnalyzerTest<FipsUnapprovedHashAnalyzer, DefaultVerifier>
     {
-        protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers() => AllAnalyzers;
+        protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers()
+        {
+            return AllAnalyzers;
+        }
     }
 }

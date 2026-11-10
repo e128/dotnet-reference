@@ -18,6 +18,7 @@ namespace E128.Benchmarks;
 public class CoreBenchmarks
 {
     private const int SeededGreetings = 100;
+    private const int RecentCount = 10;
 
     private readonly Greeter _greeter = new();
     private readonly InMemoryGreetingRepository _repository = new();
@@ -41,14 +42,26 @@ public class CoreBenchmarks
     }
 
     [Benchmark]
-    public string GreetDefault() => _greeter.Greet();
+    public string GreetDefault()
+    {
+        return _greeter.Greet();
+    }
 
     [Benchmark]
-    public string GreetNamed() => _greeter.Greet("Ada");
+    public string GreetNamed()
+    {
+        return _greeter.Greet("Ada");
+    }
 
     [Benchmark]
-    public Task<Greeting> GreetAndSaveAsync() => _service.GreetAsync(_request, CancellationToken.None);
+    public Task<Greeting> GreetAndSaveAsync()
+    {
+        return _service.GreetAsync(_request, CancellationToken.None);
+    }
 
     [Benchmark]
-    public Task<IReadOnlyList<Greeting>> GetRecentTenAsync() => _repository.GetRecentAsync(10, CancellationToken.None);
+    public Task<IReadOnlyList<Greeting>> GetRecentTenAsync()
+    {
+        return _repository.GetRecentAsync(RecentCount, CancellationToken.None);
+    }
 }

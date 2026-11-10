@@ -63,12 +63,20 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (waitPositions.Count == 0)
+        if (waitPositions.Count is 0)
         {
             return;
         }
 
-        var lastWait = waitPositions.Max();
+        ReportUnguardedReads(context, method, fileReads, waitPositions.Max());
+    }
+
+    private static void ReportUnguardedReads(
+        SyntaxNodeAnalysisContext context,
+        MethodDeclarationSyntax method,
+        List<InvocationExpressionSyntax> fileReads,
+        int lastWait)
+    {
         var checkedPositions = CollectExistsCheckPositions(method);
 
         foreach (var invocation in fileReads)
@@ -91,19 +99,29 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
 
     private static bool IsProcessWaitCall(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
-        var methodName = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
+        var methodName = GetInvocationName(invocation);
 
         return (string.Equals(methodName, "WaitForExit", StringComparison.Ordinal)
                 || string.Equals(methodName, "WaitForExitAsync", StringComparison.Ordinal))
                && context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
                && string.Equals(method.Name, methodName, StringComparison.Ordinal)
-               && string.Equals(method.ContainingType?.Name, "Process", StringComparison.Ordinal)
-               && string.Equals(method.ContainingType?.ContainingNamespace?.ToDisplayString(), "System.Diagnostics", StringComparison.Ordinal);
+               && IsSystemDiagnosticsProcess(method.ContainingType);
+    }
+
+    private static string? GetInvocationName(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
+    }
+
+    private static bool IsSystemDiagnosticsProcess(INamedTypeSymbol? type)
+    {
+        return string.Equals(type?.Name, "Process", StringComparison.Ordinal)
+               && string.Equals(type?.ContainingNamespace?.ToDisplayString(), "System.Diagnostics", StringComparison.Ordinal);
     }
 
     private static Dictionary<string, int> CollectExistsCheckPositions(MethodDeclarationSyntax method)
@@ -112,40 +130,56 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
 
         foreach (var node in method.DescendantNodes())
         {
-            if (node is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Exists" } memberAccess
-                && memberAccess.Expression is IdentifierNameSyntax identifier)
-            {
-                // outputFile.Exists (FileInfo style)
-                result[identifier.Identifier.ValueText] = memberAccess.SpanStart;
-            }
-            else if (node is InvocationExpressionSyntax invocation
-                     && invocation.Expression is MemberAccessExpressionSyntax access
-                     && string.Equals(access.Name.Identifier.ValueText, "Exists", StringComparison.Ordinal)
-                     && access.Expression is IdentifierNameSyntax { Identifier.ValueText: "File" })
-            {
-                // File.Exists(outputFile)
-                var root = ExtractPathRoot(invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression);
-                if (root is not null)
-                {
-                    result[root] = invocation.SpanStart;
-                }
-            }
+            RecordExistsCheck(node, result);
         }
 
         return result;
+    }
+
+    private static void RecordExistsCheck(SyntaxNode node, Dictionary<string, int> result)
+    {
+        if (node is MemberAccessExpressionSyntax memberAccess
+            && IsNamed(memberAccess.Name, "Exists")
+            && memberAccess.Expression is IdentifierNameSyntax identifier)
+        {
+            // outputFile.Exists (FileInfo style)
+            result[identifier.Identifier.ValueText] = memberAccess.SpanStart;
+        }
+        else if (node is InvocationExpressionSyntax invocation && IsFileExistsCall(invocation))
+        {
+            // File.Exists(outputFile)
+            var root = ExtractPathRoot(invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression);
+            if (root is not null)
+            {
+                result[root] = invocation.SpanStart;
+            }
+        }
+    }
+
+    private static bool IsFileExistsCall(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax access
+               && string.Equals(access.Name.Identifier.ValueText, "Exists", StringComparison.Ordinal)
+               && access.Expression is IdentifierNameSyntax fileIdentifier
+               && IsNamed(fileIdentifier, "File");
     }
 
     internal static bool IsFileReadCall(InvocationExpressionSyntax invocation)
     {
         return invocation.Expression is MemberAccessExpressionSyntax memberAccess
                && FileReadMethods.Contains(memberAccess.Name.Identifier.ValueText)
-               && (memberAccess.Expression is IdentifierNameSyntax { Identifier.ValueText: "File" }
+               && ((memberAccess.Expression is IdentifierNameSyntax fileIdentifier && IsNamed(fileIdentifier, "File"))
                    || IsQualifiedFileAccess(memberAccess.Expression));
     }
 
     private static bool IsQualifiedFileAccess(ExpressionSyntax expression)
     {
-        return expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "File" };
+        return expression is MemberAccessExpressionSyntax access && IsNamed(access.Name, "File");
+    }
+
+    private static bool IsNamed(SimpleNameSyntax name, string expected)
+    {
+        return string.Equals(name.Identifier.ValueText, expected, StringComparison.Ordinal);
     }
 
     internal static string? ExtractPathRoot(ExpressionSyntax? expression)

@@ -67,30 +67,7 @@ public sealed class CompositeDetectionSpecificityAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         ArgumentListSyntax? argumentList)
     {
-        if (argumentList is null || argumentList.Arguments.Count != 1)
-        {
-            return;
-        }
-
-        var arg = argumentList.Arguments[0].Expression;
-
-        var elements = arg switch
-        {
-            CollectionExpressionSyntax collection => collection.Elements,
-            _ => default
-        };
-
-        if (elements.Count != 1)
-        {
-            return;
-        }
-
-        var singleElement = elements[0];
-        var elementExpression = singleElement switch
-        {
-            ExpressionElementSyntax exprElement => exprElement.Expression,
-            _ => null
-        };
+        var elementExpression = GetSingleElementExpression(argumentList);
 
         if (elementExpression is not ObjectCreationExpressionSyntax innerCreation)
         {
@@ -108,13 +85,30 @@ public sealed class CompositeDetectionSpecificityAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (IsGenericIdSelector(selectorValue))
+        if (!IsGenericIdSelector(selectorValue))
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                context.Node.GetLocation(),
-                selectorValue));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            context.Node.GetLocation(),
+            selectorValue));
+    }
+
+    private static ExpressionSyntax? GetSingleElementExpression(ArgumentListSyntax? argumentList)
+    {
+        if (argumentList is null || argumentList.Arguments.Count is not 1)
+        {
+            return null;
+        }
+
+        if (argumentList.Arguments[0].Expression is not CollectionExpressionSyntax { Elements.Count: 1 } collection)
+        {
+            return null;
+        }
+
+        return collection.Elements[0] is ExpressionElementSyntax exprElement ? exprElement.Expression : null;
     }
 
     private static bool IsCompositeDetectionType(TypeSyntax? type)
@@ -143,7 +137,7 @@ public sealed class CompositeDetectionSpecificityAnalyzer : DiagnosticAnalyzer
 
     private static string? GetSingleStringArgument(ArgumentListSyntax? argumentList)
     {
-        if (argumentList is null || argumentList.Arguments.Count != 1)
+        if (argumentList is null || argumentList.Arguments.Count is not 1)
         {
             return null;
         }
@@ -165,12 +159,17 @@ public sealed class CompositeDetectionSpecificityAnalyzer : DiagnosticAnalyzer
         for (var i = 1; i < selector.Length; i++)
         {
             var c = selector[i];
-            if (c is not (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_'))
+            if (!IsSelectorChar(c))
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static bool IsSelectorChar(char c)
+    {
+        return c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '-' or '_';
     }
 }

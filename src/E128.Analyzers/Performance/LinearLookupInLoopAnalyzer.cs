@@ -33,6 +33,31 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
         "FindAll",
         "FindIndex");
 
+    private static readonly ImmutableHashSet<string> LinqLambdaMethods = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "Where",
+        "Select",
+        "SelectMany",
+        "Any",
+        "All",
+        "First",
+        "FirstOrDefault",
+        "Single",
+        "SingleOrDefault",
+        "Last",
+        "LastOrDefault",
+        "Count",
+        "Exists",
+        "ForEach");
+
+    private static readonly ImmutableHashSet<string> LinearCollectionMetadataNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "IList`1",
+        "ICollection`1",
+        "IReadOnlyList`1",
+        "IReadOnlyCollection`1",
+        "IEnumerable`1");
+
     private const string QueryableMetadataName = "System.Linq.IQueryable`1";
 
     private static readonly ImmutableArray<string> O1MetadataNames =
@@ -59,7 +84,7 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var o1Types = ResolveO1Types(compilationContext.Compilation);
             var queryableType = compilationContext.Compilation.GetTypeByMetadataName(QueryableMetadataName);
@@ -105,25 +130,8 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!LinearMethods.Contains(methodName) && !IsWhereCountPattern(invocation, memberAccess, methodName))
-        {
-            return;
-        }
-
-        if (!IsInsideLoopOrLinqLambda(invocation))
-        {
-            return;
-        }
-
-        if (IsInsideConstantBoundForLoop(invocation))
-        {
-            return;
-        }
-
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
-        var resolvedSymbol = symbolInfo.Symbol
-                             ?? (symbolInfo.CandidateSymbols.Length > 0 ? symbolInfo.CandidateSymbols[0] : null);
-        if (resolvedSymbol is not IMethodSymbol)
+        if (!IsLinearLookupCandidate(invocation, memberAccess, methodName)
+            || !ResolvesToMethod(context, invocation))
         {
             return;
         }
@@ -156,6 +164,25 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
             invocation.GetLocation(),
             methodName,
             receiverName));
+    }
+
+    private static bool IsLinearLookupCandidate(
+        InvocationExpressionSyntax invocation,
+        MemberAccessExpressionSyntax memberAccess,
+        string methodName)
+    {
+        return (LinearMethods.Contains(methodName) || IsWhereCountPattern(invocation, memberAccess, methodName))
+               && IsInsideLoopOrLinqLambda(invocation)
+               && !IsInsideConstantBoundForLoop(invocation);
+    }
+
+    private static bool ResolvesToMethod(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
+    {
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
+        var resolvedSymbol = symbolInfo.Symbol
+                             ?? (symbolInfo.CandidateSymbols.Length > 0 ? symbolInfo.CandidateSymbols[0] : null);
+
+        return resolvedSymbol is IMethodSymbol;
     }
 
     private static bool TryGetMemberAccess(
@@ -192,23 +219,28 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
     {
         for (var current = node.Parent; current is not null; current = current.Parent)
         {
-            if (current is ForEachStatementSyntax or ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
+            if (IsLoopStatement(current) || (current is LambdaExpressionSyntax && IsLinqLambdaArgument(current)))
             {
                 return true;
             }
 
-            if (current is LambdaExpressionSyntax && IsLinqLambdaArgument(current))
-            {
-                return true;
-            }
-
-            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax or LocalFunctionStatementSyntax)
+            if (IsMemberBoundary(current))
             {
                 return false;
             }
         }
 
         return false;
+    }
+
+    private static bool IsLoopStatement(SyntaxNode node)
+    {
+        return node is ForEachStatementSyntax or ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax;
+    }
+
+    private static bool IsMemberBoundary(SyntaxNode node)
+    {
+        return node is MethodDeclarationSyntax or ConstructorDeclarationSyntax or LocalFunctionStatementSyntax;
     }
 
     private static bool IsLinqLambdaArgument(SyntaxNode lambda)
@@ -223,21 +255,7 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var name = access.Name.Identifier.ValueText;
-        return string.Equals(name, "Where", StringComparison.Ordinal)
-               || string.Equals(name, "Select", StringComparison.Ordinal)
-               || string.Equals(name, "SelectMany", StringComparison.Ordinal)
-               || string.Equals(name, "Any", StringComparison.Ordinal)
-               || string.Equals(name, "All", StringComparison.Ordinal)
-               || string.Equals(name, "First", StringComparison.Ordinal)
-               || string.Equals(name, "FirstOrDefault", StringComparison.Ordinal)
-               || string.Equals(name, "Single", StringComparison.Ordinal)
-               || string.Equals(name, "SingleOrDefault", StringComparison.Ordinal)
-               || string.Equals(name, "Last", StringComparison.Ordinal)
-               || string.Equals(name, "LastOrDefault", StringComparison.Ordinal)
-               || string.Equals(name, "Count", StringComparison.Ordinal)
-               || string.Equals(name, "Exists", StringComparison.Ordinal)
-               || string.Equals(name, "ForEach", StringComparison.Ordinal);
+        return LinqLambdaMethods.Contains(access.Name.Identifier.ValueText);
     }
 
     private static bool IsInsideConstantBoundForLoop(SyntaxNode node)
@@ -288,12 +306,12 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
 
     private static bool IsLinearLookupType(ITypeSymbol type, string methodName)
     {
-        if (type.SpecialType == SpecialType.System_String)
+        if (type.SpecialType is SpecialType.System_String)
         {
             return false;
         }
 
-        if (type.TypeKind == TypeKind.Array)
+        if (type.TypeKind is TypeKind.Array)
         {
             return string.Equals(methodName, "Contains", StringComparison.Ordinal)
                    || string.Equals(methodName, "Any", StringComparison.Ordinal);
@@ -301,23 +319,13 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
 
         foreach (var iface in type.AllInterfaces)
         {
-            var name = iface.OriginalDefinition.MetadataName;
-            if (string.Equals(name, "IList`1", StringComparison.Ordinal)
-                || string.Equals(name, "ICollection`1", StringComparison.Ordinal)
-                || string.Equals(name, "IReadOnlyList`1", StringComparison.Ordinal)
-                || string.Equals(name, "IReadOnlyCollection`1", StringComparison.Ordinal)
-                || string.Equals(name, "IEnumerable`1", StringComparison.Ordinal))
+            if (LinearCollectionMetadataNames.Contains(iface.OriginalDefinition.MetadataName))
             {
                 return true;
             }
         }
 
-        var typeMeta = type.OriginalDefinition.MetadataName;
-        return string.Equals(typeMeta, "IEnumerable`1", StringComparison.Ordinal)
-               || string.Equals(typeMeta, "ICollection`1", StringComparison.Ordinal)
-               || string.Equals(typeMeta, "IList`1", StringComparison.Ordinal)
-               || string.Equals(typeMeta, "IReadOnlyList`1", StringComparison.Ordinal)
-               || string.Equals(typeMeta, "IReadOnlyCollection`1", StringComparison.Ordinal);
+        return LinearCollectionMetadataNames.Contains(type.OriginalDefinition.MetadataName);
     }
 
     private static string GetReceiverName(MemberAccessExpressionSyntax memberAccess)

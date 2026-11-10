@@ -123,18 +123,19 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
         // Case 2: .GetAwaiter() — diagnostic is on the "GetAwaiter" identifier.
         // Walk up: GetAwaiter name -> MemberAccess (task.GetAwaiter) -> Invocation (task.GetAwaiter())
         //       -> MemberAccess (.GetResult) -> Invocation (.GetResult())
-        if (diagnosticNode is IdentifierNameSyntax { Identifier.ValueText: "GetAwaiter" }
-            && diagnosticNode.Parent is MemberAccessExpressionSyntax getAwaiterAccess
-            && getAwaiterAccess.Parent is InvocationExpressionSyntax getAwaiterInvocation
-            && getAwaiterInvocation.Parent is MemberAccessExpressionSyntax getResultAccess
-            && getResultAccess.Parent is InvocationExpressionSyntax getResultInvocation)
+        if (diagnosticNode is not IdentifierNameSyntax getAwaiterName
+            || !string.Equals(getAwaiterName.Identifier.ValueText, "GetAwaiter", StringComparison.Ordinal)
+            || diagnosticNode.Parent is not MemberAccessExpressionSyntax getAwaiterAccess
+            || getAwaiterAccess.Parent is not InvocationExpressionSyntax getAwaiterInvocation
+            || getAwaiterInvocation.Parent is not MemberAccessExpressionSyntax getResultAccess
+            || getResultAccess.Parent is not InvocationExpressionSyntax getResultInvocation)
         {
-            taskExpression = getAwaiterAccess.Expression;
-            nodeToReplace = getResultInvocation;
-            return true;
+            return false;
         }
 
-        return false;
+        taskExpression = getAwaiterAccess.Expression;
+        nodeToReplace = getResultInvocation;
+        return true;
     }
 
 }

@@ -117,7 +117,7 @@ public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
     {
         var properties = type.GetMembers()
             .OfType<IPropertySymbol>()
-            .Where(p => p.SetMethod is { IsInitOnly: true });
+            .Where(static p => p.SetMethod is { IsInitOnly: true });
 
         foreach (var prop in properties)
         {

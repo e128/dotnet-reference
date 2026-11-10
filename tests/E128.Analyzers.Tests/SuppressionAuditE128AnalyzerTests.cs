@@ -26,7 +26,7 @@ public sealed class SuppressionAuditE128AnalyzerTests
             TestBehaviors = TestBehaviors.SkipSuppressionCheck
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

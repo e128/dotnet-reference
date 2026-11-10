@@ -99,7 +99,7 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
             {
                 depth--;
             }
-            else if (ch is '*' or '+' && depth == 1)
+            else if (ch is '*' or '+' && depth is 1)
             {
                 return true;
             }
@@ -133,7 +133,7 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
             else if (pattern[j] == ')')
             {
                 depth--;
-                if (depth == 0)
+                if (depth is 0)
                 {
                     return j;
                 }

@@ -45,7 +45,7 @@ public sealed class UnguardedSplitIndexAnalyzer : DiagnosticAnalyzer
     {
         var reference = (IArrayElementReferenceOperation)context.Operation;
 
-        if (reference.Indices.Length != 1
+        if (reference.Indices.Length is not 1
             || reference.Indices[0].ConstantValue is not { HasValue: true, Value: int index }
             || index < 1
             || reference.Syntax is not ElementAccessExpressionSyntax access
@@ -54,10 +54,12 @@ public sealed class UnguardedSplitIndexAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsGuarded(reference.ArrayReference, access, context))
+        if (IsGuarded(reference.ArrayReference, access, context))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, access.GetLocation(), index));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, access.GetLocation(), index));
     }
 
     private static bool IsGuarded(IOperation array, SyntaxNode access, OperationAnalysisContext context)
@@ -79,7 +81,7 @@ public sealed class UnguardedSplitIndexAnalyzer : DiagnosticAnalyzer
     private static bool IsStringSplit(IInvocationOperation invocation)
     {
         return string.Equals(invocation.TargetMethod.Name, "Split", StringComparison.Ordinal)
-               && invocation.TargetMethod.ContainingType.SpecialType == SpecialType.System_String;
+               && invocation.TargetMethod.ContainingType.SpecialType is SpecialType.System_String;
     }
 
     private static bool IsInitializedFromSplit(ILocalSymbol local, OperationAnalysisContext context)
@@ -138,8 +140,9 @@ public sealed class UnguardedSplitIndexAnalyzer : DiagnosticAnalyzer
         return pattern switch
         {
             ListPatternSyntax => true,
-            RecursivePatternSyntax { PropertyPatternClause: { } clause } => clause.Subpatterns.Any(subpattern =>
-                subpattern.ExpressionColon?.Expression is IdentifierNameSyntax { Identifier.ValueText: "Length" }),
+            RecursivePatternSyntax { PropertyPatternClause: { } clause } => clause.Subpatterns.Any(static subpattern =>
+                subpattern.ExpressionColon?.Expression is IdentifierNameSyntax lengthName
+                && string.Equals(lengthName.Identifier.ValueText, "Length", StringComparison.Ordinal)),
             _ => false
         };
     }

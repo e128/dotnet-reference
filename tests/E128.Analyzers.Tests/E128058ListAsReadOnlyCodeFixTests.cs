@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class E128058ListAsReadOnlyCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ListAsReadOnlyAnalyzer, ListAsReadOnlyCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ListAsReadOnlyAnalyzer, ListAsReadOnlyCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

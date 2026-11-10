@@ -7,11 +7,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ChainedStringReplaceCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ChainedStringReplaceAnalyzer, ChainedStringReplaceCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ChainedStringReplaceAnalyzer, ChainedStringReplaceCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
-        CodeFixTestRunner.NoFixAsync<ChainedStringReplaceAnalyzer, ChainedStringReplaceCodeFixProvider>(source, expected: expected);
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
+    {
+        return CodeFixTestRunner.NoFixAsync<ChainedStringReplaceAnalyzer, ChainedStringReplaceCodeFixProvider>(source, expected: expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

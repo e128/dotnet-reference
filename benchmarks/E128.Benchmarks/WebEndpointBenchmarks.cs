@@ -3,10 +3,12 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using E128.Reference.Core.Models;
 using E128.Reference.Core.Repositories;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,16 +32,7 @@ public class WebEndpointBenchmarks : IDisposable
     private static readonly Uri GreetingsUri = new("/greetings", UriKind.Relative);
     private static readonly Uri RecentGreetingsUri = new($"/greetings?count={StoredGreetings}", UriKind.Relative);
 
-    private readonly WebApplicationFactory<Program> _factory = new WebApplicationFactory<Program>()
-        .WithWebHostBuilder(builder => builder.ConfigureTestServices(static services =>
-        {
-            var greetings = Enumerable.Range(0, StoredGreetings)
-                .Select(static i => new Greeting("Hello, Ada!", "Ada", DateTimeOffset.UnixEpoch.AddSeconds(i)))
-                .ToArray();
-
-            services.RemoveAll<IGreetingRepository>();
-            services.AddSingleton<IGreetingRepository>(new FixedGreetingRepository(greetings));
-        }));
+    private readonly FixedRepositoryFactory _factory = new();
 
     private readonly HttpClient _client;
     private readonly GreetingRequest _request = new("Ada");
@@ -54,8 +47,8 @@ public class WebEndpointBenchmarks : IDisposable
     public async Task WarmUpAsync()
     {
         // The first request builds the request delegates and JSON metadata. Keep that cost out of the measured runs.
-        using var response = await _client.PostAsJsonAsync(GreetingsUri, _request).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+        using var response = await _client.PostAsJsonAsync(GreetingsUri, _request, CancellationToken.None).ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
     }
 
     [GlobalCleanup]
@@ -84,21 +77,37 @@ public class WebEndpointBenchmarks : IDisposable
     [Benchmark]
     public async Task<string> GetRootAsync()
     {
-        using var response = await _client.GetAsync(RootUri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        using var response = await _client.GetAsync(RootUri, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None).ConfigureAwait(false);
+        return await response.Content.ReadAsStringAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
     [Benchmark]
     public async Task<HttpStatusCode> PostGreetingAsync()
     {
-        using var response = await _client.PostAsJsonAsync(GreetingsUri, _request).ConfigureAwait(false);
+        using var response = await _client.PostAsJsonAsync(GreetingsUri, _request, CancellationToken.None).ConfigureAwait(false);
         return response.StatusCode;
     }
 
     [Benchmark]
     public async Task<string> GetGreetingsAsync()
     {
-        using var response = await _client.GetAsync(RecentGreetingsUri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        using var response = await _client.GetAsync(RecentGreetingsUri, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None).ConfigureAwait(false);
+        return await response.Content.ReadAsStringAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    private sealed class FixedRepositoryFactory : WebApplicationFactory<Program>
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            _ = builder.ConfigureTestServices(static services =>
+            {
+                var greetings = Enumerable.Range(0, StoredGreetings)
+                    .Select(static i => new Greeting("Hello, Ada!", "Ada", DateTimeOffset.UnixEpoch.AddSeconds(i)))
+                    .ToArray();
+
+                _ = services.RemoveAll<IGreetingRepository>();
+                _ = services.AddSingleton<IGreetingRepository>(new FixedGreetingRepository(greetings));
+            });
+        }
     }
 }

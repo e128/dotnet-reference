@@ -16,7 +16,7 @@ public sealed class LinearLookupInLoopE128CodeFixTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = fixAllIterations
-        }.RunAsync();
+        }.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

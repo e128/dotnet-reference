@@ -17,7 +17,7 @@ public sealed class GuidNewGuidTempPathE128AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static DiagnosticResult Expect(int line, int column)

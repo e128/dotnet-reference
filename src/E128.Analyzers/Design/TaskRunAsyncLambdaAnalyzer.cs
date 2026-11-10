@@ -45,7 +45,7 @@ public sealed class TaskRunAsyncLambdaAnalyzer : DiagnosticAnalyzer
 
         var args = invocation.ArgumentList.Arguments;
 
-        if (args.Count == 0)
+        if (args.Count is 0)
         {
             return;
         }

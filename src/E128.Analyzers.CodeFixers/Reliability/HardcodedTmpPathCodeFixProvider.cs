@@ -26,7 +26,7 @@ public sealed class HardcodedTmpPathCodeFixProvider : E128CodeFixProviderBase
                 continue;
             }
 
-            diagnostic.Properties.TryGetValue(
+            _ = diagnostic.Properties.TryGetValue(
                 HardcodedTmpPathE128Analyzer.PropRelativeSuffix, out var suffix);
 
             CodeFixRegistration.Register(context, diagnostic, "Replace with Path.GetTempPath()", "ReplaceWithGetTempPath", ct => ReplaceWithGetTempPathAsync(context.Document, root, node, suffix, ct));

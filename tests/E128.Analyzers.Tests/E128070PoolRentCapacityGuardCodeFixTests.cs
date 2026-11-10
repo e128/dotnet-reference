@@ -8,8 +8,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class E128070PoolRentCapacityGuardCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<PoolRentCapacityGuardAnalyzer, PoolRentCapacityGuardCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<PoolRentCapacityGuardAnalyzer, PoolRentCapacityGuardCodeFixProvider>(source, fixedCode);
+    }
 
     private static Task VerifyFixWithCapacityAsync(string capacity, string source, string fixedCode)
     {
@@ -21,7 +23,7 @@ public sealed class E128070PoolRentCapacityGuardCodeFixTests
         };
         test.TestState.AnalyzerConfigFiles.Add(
             ("/.editorconfig", "is_global = true\ne128_pool_rent_max_capacity = " + capacity));
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

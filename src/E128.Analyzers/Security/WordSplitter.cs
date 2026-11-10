@@ -15,13 +15,7 @@ internal static class WordSplitter
 
         for (var i = 1; i <= name.Length; i++)
         {
-            var boundary = i == name.Length
-                           || separators.IndexOf(name[i]) >= 0
-                           || (char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
-                           || (char.IsUpper(name[i - 1]) && char.IsUpper(name[i])
-                               && i + 1 < name.Length && char.IsLower(name[i + 1]));
-
-            if (!boundary)
+            if (!IsBoundary(name, i, separators))
             {
                 continue;
             }
@@ -37,6 +31,20 @@ internal static class WordSplitter
         }
 
         return words;
+    }
+
+    private static bool IsBoundary(string name, int i, string separators)
+    {
+        return i == name.Length
+               || separators.IndexOf(name[i]) >= 0
+               || IsCaseBoundary(name, i);
+    }
+
+    private static bool IsCaseBoundary(string name, int i)
+    {
+        return (char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
+               || (char.IsUpper(name[i - 1]) && char.IsUpper(name[i])
+                   && i + 1 < name.Length && char.IsLower(name[i + 1]));
     }
 
     private static string TrimSeparators(string word, string separators)

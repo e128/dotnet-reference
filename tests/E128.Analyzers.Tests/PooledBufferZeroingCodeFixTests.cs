@@ -6,11 +6,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class PooledBufferZeroingCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<PooledBufferZeroingAnalyzer, PooledBufferZeroingCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<PooledBufferZeroingAnalyzer, PooledBufferZeroingCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string code) =>
-        CodeFixTestRunner.NoFixAsync<PooledBufferZeroingAnalyzer, PooledBufferZeroingCodeFixProvider>(code);
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return CodeFixTestRunner.NoFixAsync<PooledBufferZeroingAnalyzer, PooledBufferZeroingCodeFixProvider>(code);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

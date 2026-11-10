@@ -35,7 +35,8 @@ public sealed class ProcessOutputValidatorCodeFixProvider : E128CodeFixProviderB
         }
 
         var pathText = pathArg.ToString();
-        var receiverText = pathArg is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "FullName" } access
+        var receiverText = pathArg is MemberAccessExpressionSyntax access
+            && string.Equals(access.Name.Identifier.ValueText, "FullName", StringComparison.Ordinal)
             ? access.Expression.ToString()
             : null;
 
@@ -60,7 +61,7 @@ public sealed class ProcessOutputValidatorCodeFixProvider : E128CodeFixProviderB
                 break;
             }
 
-            var hasWait = statement.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation =>
+            var hasWait = statement.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(static invocation =>
                 invocation.Expression is MemberAccessExpressionSyntax memberAccess
                 && (string.Equals(memberAccess.Name.Identifier.ValueText, "WaitForExit", StringComparison.Ordinal)
                     || string.Equals(memberAccess.Name.Identifier.ValueText, "WaitForExitAsync", StringComparison.Ordinal)));

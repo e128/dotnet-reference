@@ -12,16 +12,9 @@ roslynator_refactorings.enabled = true
 roslynator_compiler_diagnostic_fixes.enabled = true
 
 # ── Blanket Defaults ──────────────────────────
-# All analyzer diagnostics are errors by default.
-# Only rules that deviate from error are listed below as overrides.
-
-# E128107/E128108: low-value test rules, kept at suggestion. A promoted severity lets format.sh
-# auto-apply the delete fix and remove tests without review.
-dotnet_diagnostic.E128107.severity = suggestion
-dotnet_diagnostic.E128108.severity = suggestion
-
-# E128218: design heuristic, kept at suggestion so a cluster report never blocks a build.
-dotnet_diagnostic.E128218.severity = suggestion
+# Every analyzer diagnostic is an error. A bulk key reaches only a rule that is enabled by
+# default, so the "Enabled Off-by-Default Rules" section below names each other rule.
+# The "Not Enabled" section lists the only rules that stay below error, with the reason.
 
 dotnet_analyzer_diagnostic.severity = error
 dotnet_analyzer_diagnostic.category-roslynator.severity = error
@@ -31,92 +24,369 @@ dotnet_diagnostic.CS0246.severity = error
 
 # CA2007: Scope to DLL projects only: library code must use ConfigureAwait(false); app code must not.
 # Microsoft docs explicitly endorse suppressing CA2007 for application projects.
-# MA0004 does not support project-type scoping, so CA2007 remains the enforcement source here.
+# MA0004, RCS1090, S3216 and VSTHRD111 do not support project-type scoping (see Not Enabled),
+# so CA2007 remains the enforcement source here.
 dotnet_diagnostic.CA2007.severity = error
 dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 
-# ── Disabled (none) ───────────────────────────
-# Rules permanently disabled: not applicable to this project.
-# Grouped by analyzer, alpha-sorted within each group.
-# Rule IDs are case-insensitive and the later line wins, so a line below the setup-owned
-# Meziantou block overrides it. This file does that for MA0004, MA0009, MA0032, MA0079,
-# MA0101, MA0127, MA0136, MA0141, MA0142, MA0148 and MA0149.
+# ── Enabled Off-by-Default Rules ──────────────
+# Each list below names every DiagnosticDescriptor with IsEnabledByDefault == false in the
+# pinned package version. Regenerate the lists after a package bump.
+# CA rules need no line here: AnalysisMode = All in Directory.Build.props enables them.
 
-# --- E128 (own analyzers redundant with third-party rules, no code fix) ---
-# E128 rules with a code fix stay enabled even when a third-party rule overlaps.
-dotnet_diagnostic.E128008.severity = none        # Sync-over-async (covered by VSTHRD002, SS034, MA0042)
-dotnet_diagnostic.E128020.severity = none        # 'in' with mutable struct (covered by RCS1242)
-dotnet_diagnostic.E128067.severity = none        # String concat in loop (covered by S1643, SS058)
-dotnet_diagnostic.E128075.severity = none        # Random in crypto context (covered by CA5394, S2245)
-dotnet_diagnostic.E128088.severity = none        # Enum switch missing cases (covered by IDE0010, SS018, SS019)
-dotnet_diagnostic.E128096.severity = none        # .Result on async local function (covered by VSTHRD002, SS034)
-dotnet_diagnostic.E128162.severity = none        # Local used after Dispose (covered by IDISP016)
-dotnet_diagnostic.E128193.severity = none        # Disposable field overwritten in a loop (covered by IDISP003)
-
-# --- CA (.NET Analyzers) ---
-# Favor MA rules over CA equivalents (project policy).
-dotnet_diagnostic.ca1002.severity = none         # Do not expose generic lists (covered by E128052)
-dotnet_diagnostic.ca1303.severity = none         # Do not pass literals as localized parameters
-dotnet_diagnostic.ca1416.severity = none         # Validate platform compatibility
-dotnet_diagnostic.ca1852.severity = none         # Seal internal types (covered by MA0053)
-dotnet_diagnostic.ca2252.severity = none         # This API requires opting into preview features
-
-# --- Compiler Warnings ---
-dotnet_diagnostic.cs1591.severity = none         # Missing XML comment for publicly visible type or member
-
-# --- IDE Analyzers ---
-dotnet_diagnostic.ide0005.severity = error       # Remove unnecessary using directive (explicit; also covered by blanket)
-dotnet_diagnostic.ide0011.severity = error       # Add braces
-dotnet_diagnostic.ide0022.severity = none        # Use expression body for methods
-dotnet_diagnostic.ide0057.severity = none        # Use range operator
-dotnet_diagnostic.ide0061.severity = none        # Use expression body for local functions
-dotnet_diagnostic.ide0066.severity = none        # Use switch expression
-dotnet_diagnostic.ide0210.severity = none        # Convert to top-level statements (destructive in dotnet format)
-dotnet_diagnostic.ide0290.severity = none        # Use primary constructors: too disruptive to enforce globally
+# --- E128 ---
+dotnet_diagnostic.E128218.severity = error       # Implicit state machine heuristic (cluster report)
 
 # --- Meziantou (MA) ---
-dotnet_diagnostic.ma0003.severity = none         # Add parameter name to improve readability
-dotnet_diagnostic.ma0004.severity = none         # Use ConfigureAwait(false): redundant with CA2007; CA2007 is scoped to DLL projects
-dotnet_diagnostic.ma0007.severity = none         # Add comma after last enum value
-dotnet_diagnostic.ma0009.severity = none         # Add null check after as
-dotnet_diagnostic.ma0016.severity = none         # Prefer collection abstraction (covered by E128052 with domain-aware exclusions + code fix)
-dotnet_diagnostic.ma0018.severity = none         # Do not declare static members on generic types (deprecated)
-dotnet_diagnostic.ma0038.severity = none         # Make method static (deprecated, use CA1822)
-dotnet_diagnostic.ma0041.severity = none         # Make property static (deprecated, use CA1822)
-dotnet_diagnostic.ma0141.severity = none         # Use pattern matching for null check (overlaps IDE0041)
-dotnet_diagnostic.ma0142.severity = none         # Use pattern matching for null check (overlaps IDE0041)
-dotnet_diagnostic.ma0148.severity = none         # Use pattern matching for discrete value
-dotnet_diagnostic.ma0149.severity = none         # Use pattern matching for discrete value
-dotnet_diagnostic.ma0155.severity = none         # Do not use async void methods (overlaps VSTHRD100)
-dotnet_diagnostic.ma0174.severity = none         # Record should use explicit 'class' keyword
-dotnet_diagnostic.ma0175.severity = none         # Record should not use explicit 'class' keyword
-dotnet_diagnostic.ma0177.severity = none         # Use single-line XML comment syntax
-dotnet_diagnostic.ma0181.severity = none         # Do not use cast
+dotnet_diagnostic.ma0032.severity = error
+dotnet_diagnostic.ma0080.severity = error
+dotnet_diagnostic.ma0104.severity = error
+dotnet_diagnostic.ma0107.severity = error
+dotnet_diagnostic.ma0109.severity = error
+dotnet_diagnostic.ma0112.severity = error
+dotnet_diagnostic.ma0121.severity = error
+dotnet_diagnostic.ma0135.severity = error
+dotnet_diagnostic.ma0137.severity = error
+dotnet_diagnostic.ma0138.severity = error
+dotnet_diagnostic.ma0141.severity = error
+dotnet_diagnostic.ma0142.severity = error
+dotnet_diagnostic.ma0148.severity = error
+dotnet_diagnostic.ma0149.severity = error
+dotnet_diagnostic.ma0155.severity = error
+dotnet_diagnostic.ma0156.severity = error
+dotnet_diagnostic.ma0157.severity = error
+dotnet_diagnostic.ma0161.severity = error
+dotnet_diagnostic.ma0162.severity = error
+dotnet_diagnostic.ma0167.severity = error
+dotnet_diagnostic.ma0168.severity = error
+dotnet_diagnostic.ma0170.severity = error
+dotnet_diagnostic.ma0171.severity = error
+dotnet_diagnostic.ma0172.severity = error
+dotnet_diagnostic.ma0175.severity = error
+dotnet_diagnostic.ma0180.severity = error
+dotnet_diagnostic.ma0187.severity = error
+dotnet_diagnostic.ma0209.severity = error
+dotnet_diagnostic.ma0210.severity = error
+dotnet_diagnostic.ma0211.severity = error
+dotnet_diagnostic.ma0213.severity = error
+dotnet_diagnostic.ma0215.severity = error
+dotnet_diagnostic.ma0217.severity = error
+dotnet_diagnostic.ma0221.severity = error
+dotnet_diagnostic.ma0222.severity = error
+dotnet_diagnostic.ma0223.severity = error
+dotnet_diagnostic.ma0224.severity = error
+dotnet_diagnostic.ma0225.severity = error
+dotnet_diagnostic.ma0226.severity = error
+dotnet_diagnostic.ma0227.severity = error
+dotnet_diagnostic.ma0228.severity = error
+dotnet_diagnostic.ma0229.severity = error
+dotnet_diagnostic.ma0230.severity = error
+dotnet_diagnostic.ma0231.severity = error
+dotnet_diagnostic.ma0232.severity = error
+dotnet_diagnostic.ma0233.severity = error
+dotnet_diagnostic.ma0234.severity = error
+dotnet_diagnostic.ma0235.severity = error
+dotnet_diagnostic.ma0236.severity = error
+dotnet_diagnostic.ma0237.severity = error
+dotnet_diagnostic.ma0238.severity = error
+dotnet_diagnostic.ma0239.severity = error
+dotnet_diagnostic.ma0243.severity = error
+dotnet_diagnostic.ma0245.severity = error
+
+# --- Roslynator (RCS) ---
+dotnet_diagnostic.rcs1007.severity = error
+dotnet_diagnostic.rcs1013.severity = error
+dotnet_diagnostic.rcs1018.severity = error
+dotnet_diagnostic.rcs1019.severity = error
+dotnet_diagnostic.rcs1046.severity = error
+dotnet_diagnostic.rcs1051.severity = error
+dotnet_diagnostic.rcs1052.severity = error
+dotnet_diagnostic.rcs1060.severity = error
+dotnet_diagnostic.rcs1078.severity = error
+dotnet_diagnostic.rcs1081.severity = error
+dotnet_diagnostic.rcs1094.severity = error
+dotnet_diagnostic.rcs1096.severity = error
+dotnet_diagnostic.rcs1126.severity = error
+dotnet_diagnostic.rcs1162.severity = error
+dotnet_diagnostic.rcs1207.severity = error
+dotnet_diagnostic.rcs1208.severity = error
+dotnet_diagnostic.rcs1248.severity = error
+dotnet_diagnostic.rcs1252.severity = error
+dotnet_diagnostic.rcs1253.severity = error
+dotnet_diagnostic.rcs1255.severity = error
+dotnet_diagnostic.rcs1260.severity = error
+dotnet_diagnostic.rcs1264.severity = error
+dotnet_diagnostic.ros0003.severity = error       # Analyzer requires config option to be specified (names the missing option)
+
+# --- Roslynator Formatting (RCS0xxx) ---
+dotnet_diagnostic.rcs0001.severity = error
+dotnet_diagnostic.rcs0002.severity = error
+dotnet_diagnostic.rcs0003.severity = error
+dotnet_diagnostic.rcs0005.severity = error
+dotnet_diagnostic.rcs0006.severity = error
+dotnet_diagnostic.rcs0007.severity = error
+dotnet_diagnostic.rcs0009.severity = error
+dotnet_diagnostic.rcs0010.severity = error
+dotnet_diagnostic.rcs0011.severity = error
+dotnet_diagnostic.rcs0015.severity = error
+dotnet_diagnostic.rcs0016.severity = error
+dotnet_diagnostic.rcs0020.severity = error
+dotnet_diagnostic.rcs0021.severity = error
+dotnet_diagnostic.rcs0023.severity = error
+dotnet_diagnostic.rcs0024.severity = error
+dotnet_diagnostic.rcs0025.severity = error
+dotnet_diagnostic.rcs0029.severity = error
+dotnet_diagnostic.rcs0030.severity = error
+dotnet_diagnostic.rcs0031.severity = error
+dotnet_diagnostic.rcs0032.severity = error
+dotnet_diagnostic.rcs0033.severity = error
+dotnet_diagnostic.rcs0034.severity = error
+dotnet_diagnostic.rcs0039.severity = error
+dotnet_diagnostic.rcs0041.severity = error
+dotnet_diagnostic.rcs0042.severity = error
+dotnet_diagnostic.rcs0045.severity = error
+dotnet_diagnostic.rcs0046.severity = error
+dotnet_diagnostic.rcs0048.severity = error
+dotnet_diagnostic.rcs0049.severity = error
+dotnet_diagnostic.rcs0050.severity = error
+dotnet_diagnostic.rcs0051.severity = error
+dotnet_diagnostic.rcs0052.severity = error
+dotnet_diagnostic.rcs0057.severity = error
+dotnet_diagnostic.rcs0058.severity = error
+dotnet_diagnostic.rcs0059.severity = error
+dotnet_diagnostic.rcs0060.severity = error
+
+# --- Microsoft.CodeAnalysis.Analyzers and PublicApiAnalyzers (RS) ---
+dotnet_diagnostic.rs0059.severity = error
+dotnet_diagnostic.rs0060.severity = error
+dotnet_diagnostic.rs0061.severity = error
 
 # --- SharpSource (SS) ---
-dotnet_diagnostic.ss039.severity = none          # Enum default must be "Unknown"/"None"
-dotnet_diagnostic.ss066.severity = suggestion    # Disposable field not disposed: false positives on ?.Dispose()
+dotnet_diagnostic.ss017.severity = error
 
 # --- SonarAnalyzer (S) ---
-dotnet_diagnostic.s4055.severity = none          # Literals should not be passed as localized parameters (not applicable: no localization)
+dotnet_diagnostic.s100.severity = error
+dotnet_diagnostic.s104.severity = error
+dotnet_diagnostic.s105.severity = error
+dotnet_diagnostic.s106.severity = error
+dotnet_diagnostic.s107.severity = error
+dotnet_diagnostic.s109.severity = error
+dotnet_diagnostic.s110.severity = error
+dotnet_diagnostic.s1109.severity = error
+dotnet_diagnostic.s1128.severity = error
+dotnet_diagnostic.s113.severity = error
+dotnet_diagnostic.s1147.severity = error
+dotnet_diagnostic.s1151.severity = error
+dotnet_diagnostic.s121.severity = error
+dotnet_diagnostic.s122.severity = error
+dotnet_diagnostic.s1226.severity = error
+dotnet_diagnostic.s1264.severity = error
+dotnet_diagnostic.s1309.severity = error
+dotnet_diagnostic.s131.severity = error
+dotnet_diagnostic.s1312.severity = error
+dotnet_diagnostic.s134.severity = error
+dotnet_diagnostic.s138.severity = error
+dotnet_diagnostic.s1449.severity = error
+dotnet_diagnostic.s1479.severity = error
+dotnet_diagnostic.s1541.severity = error
+dotnet_diagnostic.s1659.severity = error
+dotnet_diagnostic.s1698.severity = error
+dotnet_diagnostic.s1821.severity = error
+dotnet_diagnostic.s1858.severity = error
+dotnet_diagnostic.s2148.severity = error
+dotnet_diagnostic.s2156.severity = error
+dotnet_diagnostic.s2197.severity = error
+dotnet_diagnostic.s2221.severity = error
+dotnet_diagnostic.s2302.severity = error
+dotnet_diagnostic.s2327.severity = error
+dotnet_diagnostic.s2330.severity = error
+dotnet_diagnostic.s2333.severity = error
+dotnet_diagnostic.s2339.severity = error
+dotnet_diagnostic.s2342.severity = error
+dotnet_diagnostic.s2357.severity = error
+dotnet_diagnostic.s2360.severity = error
+dotnet_diagnostic.s2387.severity = error
+dotnet_diagnostic.s2436.severity = error
+dotnet_diagnostic.s2692.severity = error
+dotnet_diagnostic.s2760.severity = error
+dotnet_diagnostic.s2931.severity = error
+dotnet_diagnostic.s2952.severity = error
+dotnet_diagnostic.s3052.severity = error
+dotnet_diagnostic.s3059.severity = error
+dotnet_diagnostic.s3215.severity = error
+dotnet_diagnostic.s3234.severity = error
+dotnet_diagnostic.s3235.severity = error
+dotnet_diagnostic.s3249.severity = error
+dotnet_diagnostic.s3253.severity = error
+dotnet_diagnostic.s3254.severity = error
+dotnet_diagnostic.s3256.severity = error
+dotnet_diagnostic.s3257.severity = error
+dotnet_diagnostic.s3353.severity = error
+dotnet_diagnostic.s3366.severity = error
+dotnet_diagnostic.s3416.severity = error
+dotnet_diagnostic.s3441.severity = error
+dotnet_diagnostic.s3532.severity = error
+dotnet_diagnostic.s3717.severity = error
+dotnet_diagnostic.s3776.severity = error
+dotnet_diagnostic.s3872.severity = error
+dotnet_diagnostic.s3874.severity = error
+dotnet_diagnostic.s3876.severity = error
+dotnet_diagnostic.s3880.severity = error
+dotnet_diagnostic.s3884.severity = error
+dotnet_diagnostic.s3885.severity = error
+dotnet_diagnostic.s3898.severity = error
+dotnet_diagnostic.s3902.severity = error
+dotnet_diagnostic.s3906.severity = error
+dotnet_diagnostic.s3908.severity = error
+dotnet_diagnostic.s3909.severity = error
+dotnet_diagnostic.s3937.severity = error
+dotnet_diagnostic.s3956.severity = error
+dotnet_diagnostic.s3962.severity = error
+dotnet_diagnostic.s3967.severity = error
+dotnet_diagnostic.s3994.severity = error
+dotnet_diagnostic.s3995.severity = error
+dotnet_diagnostic.s3996.severity = error
+dotnet_diagnostic.s3997.severity = error
+dotnet_diagnostic.s4000.severity = error
+dotnet_diagnostic.s4002.severity = error
+dotnet_diagnostic.s4004.severity = error
+dotnet_diagnostic.s4005.severity = error
+dotnet_diagnostic.s4016.severity = error
+dotnet_diagnostic.s4018.severity = error
+dotnet_diagnostic.s4022.severity = error
+dotnet_diagnostic.s4023.severity = error
+dotnet_diagnostic.s4025.severity = error
+dotnet_diagnostic.s4026.severity = error
+dotnet_diagnostic.s4027.severity = error
+dotnet_diagnostic.s4039.severity = error
+dotnet_diagnostic.s4041.severity = error
+dotnet_diagnostic.s4047.severity = error
+dotnet_diagnostic.s4049.severity = error
+dotnet_diagnostic.s4056.severity = error
+dotnet_diagnostic.s4057.severity = error
+dotnet_diagnostic.s4058.severity = error
+dotnet_diagnostic.s4059.severity = error
+dotnet_diagnostic.s4060.severity = error
+dotnet_diagnostic.s4069.severity = error
+dotnet_diagnostic.s4212.severity = error
+dotnet_diagnostic.s4214.severity = error
+dotnet_diagnostic.s4225.severity = error
+dotnet_diagnostic.s4226.severity = error
+dotnet_diagnostic.s4261.severity = error
+dotnet_diagnostic.s4457.severity = error
+dotnet_diagnostic.s4462.severity = error
+dotnet_diagnostic.s5042.severity = error
+dotnet_diagnostic.s6354.severity = error
+dotnet_diagnostic.s6421.severity = error
+dotnet_diagnostic.s6423.severity = error
+dotnet_diagnostic.s6507.severity = error
+dotnet_diagnostic.s6513.severity = error
+dotnet_diagnostic.s6563.severity = error
+dotnet_diagnostic.s6566.severity = error
+dotnet_diagnostic.s6585.severity = error
+dotnet_diagnostic.s6602.severity = error
+dotnet_diagnostic.s6603.severity = error
+dotnet_diagnostic.s6605.severity = error
+dotnet_diagnostic.s6664.severity = error
+dotnet_diagnostic.s6669.severity = error
+dotnet_diagnostic.s6670.severity = error
+dotnet_diagnostic.s6802.severity = error
+dotnet_diagnostic.s6803.severity = error
+dotnet_diagnostic.s881.severity = error
 
-# --- VS Threading (VSTHRD) ---
-dotnet_diagnostic.vsthrd001.severity = none      # Avoid legacy thread switching APIs
-dotnet_diagnostic.vsthrd111.severity = none      # Add ConfigureAwait: VS extension model (JoinableTaskFactory), not relevant here
+# ── Not Enabled ───────────────────────────────
+# Each rule below stays below error because enabling it makes the build impossible to pass.
+# Two causes qualify: the rule contradicts another enforced rule or a framework requirement,
+# or the rule needs a file or option the repo does not have. Dislike of a rule never qualifies.
 
-# ── Suggestions (permanent) ───────────────────
-# Rules intentionally at suggestion: advisory, not blocking.
+# --- Opposite polarity of an enforced rule ---
+dotnet_diagnostic.ma0004.severity = none         # Use ConfigureAwait(false): opposite of "app code must not"; CA2007 is scoped to DLLs
+dotnet_diagnostic.rcs1090.severity = none        # Add/remove ConfigureAwait(false): same conflict as MA0004
+dotnet_diagnostic.s3216.severity = none          # ConfigureAwait(false) should be used: same conflict as MA0004
+dotnet_diagnostic.vsthrd111.severity = none      # Use ConfigureAwait(bool): same conflict as MA0004
+dotnet_diagnostic.ma0174.severity = none         # Record should use explicit 'class' keyword: opposite of MA0175
+dotnet_diagnostic.ma0177.severity = none         # Single-line XML summary: opposite of MA0211
+dotnet_diagnostic.ma0214.severity = none         # Use 'await' instead of returning the task: opposite of MA0215 and RCS1174
+dotnet_diagnostic.rcs1002.severity = none        # Remove braces: opposite of IDE0011, RCS1007 and csharp_prefer_braces
+dotnet_diagnostic.rcs1004.severity = none        # Remove braces from if-else: opposite of IDE0011 and RCS1126
+dotnet_diagnostic.rcs1016.severity = none        # Use block or expression body: one style for every member kind, while IDE0021 to IDE0027 set it per kind
+dotnet_diagnostic.rcs1231.severity = none        # Make parameter ref read-only: E128019 forbids 'in CancellationToken'
+dotnet_diagnostic.ide0048.severity = none        # Add parentheses for clarity: oscillates with IDE0046
+dotnet_diagnostic.rcs1123.severity = none        # Add parentheses by precedence: oscillates with IDE0046
 
-dotnet_diagnostic.ide0058.severity = suggestion  # Expression value is never used
-dotnet_diagnostic.ma0026.severity = suggestion   # Fix TODO comment
-dotnet_diagnostic.ma0032.severity = suggestion   # Specify a cancellation token
-dotnet_diagnostic.ma0079.severity = suggestion   # Forward CancellationToken using .WithCancellation()
-dotnet_diagnostic.ma0101.severity = suggestion   # String contains implicit end of line character
-dotnet_diagnostic.ma0109.severity = suggestion   # Consider adding overload with Span<T> or Memory<T>
-dotnet_diagnostic.ma0127.severity = suggestion   # Use String.Equals instead of is pattern
-dotnet_diagnostic.ma0136.severity = suggestion   # Raw string contains implicit end of line character
-dotnet_diagnostic.s1135.severity = suggestion    # Track uses of TODO tags
-dotnet_diagnostic.s3267.severity = suggestion    # Loop should be simplified by calling Select()
+# --- Design conflict ---
+dotnet_diagnostic.ide0290.severity = none        # Use primary constructors: captured parameters are mutable, and the design order puts immutability first
+dotnet_diagnostic.ide0210.severity = none        # Convert to top-level statements: destructive when format.sh applies the fix
+
+# --- Needs a file or option the repo lacks ---
+dotnet_diagnostic.s1451.severity = none          # Copyright header: needs a headerFormat option
+# RS0051 to RS0058: internal API tracking needs InternalAPI.Shipped.txt and InternalAPI.Unshipped.txt.
+# RS1020: needs an AnalyzerCategories.txt additional file. Both groups are off by default, so no line is needed.
+
+# --- Maintainer decision ---
+dotnet_diagnostic.cs1591.severity = none         # Missing XML comment for public member: maintainer turned it off
+dotnet_diagnostic.rcs0044.severity = none        # Use carriage return and linefeed as newline: maintainer turned it off
+dotnet_diagnostic.rs0017.severity = none         # Symbol removed from public API but not in Shipped file: maintainer turned it off
+dotnet_diagnostic.ma0007.severity = none         # Add a comma after the last value: maintainer turned it off
+dotnet_diagnostic.rs1007.severity = none         # Provide localizable arguments to diagnostic descriptor: maintainer turned it off
+dotnet_diagnostic.s3990.severity = none          # Assemblies should be marked with CLSCompliant: maintainer turned it off
+dotnet_diagnostic.s3992.severity = none          # Assemblies should explicitly specify COM visibility: maintainer turned it off
+dotnet_diagnostic.rcs0027.severity = none        # Place new line after or before binary operator: maintainer turned it off
+dotnet_diagnostic.rcs1223.severity = none        # Mark publicly visible type with DebuggerDisplay attribute: maintainer turned it off
+dotnet_diagnostic.rcs1111.severity = none        # Add braces to switch section with multiple statements: opposite of RCS1031, maintainer turned it off
+dotnet_diagnostic.rcs1031.severity = none        # Remove unnecessary braces: maintainer turned it off
+dotnet_diagnostic.rs0016.severity = none         # Add public types and members to the declared API: maintainer turned it off
+dotnet_diagnostic.rcs0055.severity = none        # Fix formatting of a binary expression chain: maintainer turned it off
+dotnet_diagnostic.ma0181.severity = none         # Do not use cast: maintainer turned it off
+dotnet_diagnostic.s3242.severity = none          # Use a more general parameter type: maintainer turned it off
+dotnet_diagnostic.ma0003.severity = none         # Name the parameter to improve code readability: maintainer turned it off
+dotnet_diagnostic.rs1015.severity = none         # Provide a non-null helpLinkUri to the diagnostic descriptor: maintainer turned it off
+dotnet_diagnostic.rcs0062.severity = none        # Place new line after/before arrow token of an expression body: maintainer turned it off
+dotnet_diagnostic.rs1028.severity = none         # Provide a non-null customTags to the diagnostic descriptor: maintainer turned it off
+dotnet_diagnostic.rcs1141.severity = none        # Add param element to documentation comment: maintainer turned it off
+dotnet_diagnostic.rcs1181.severity = none        # Convert comment to documentation comment: maintainer turned it off
+dotnet_diagnostic.rcs0012.severity = none        # Add blank line between single-line declarations: maintainer turned it off
+dotnet_diagnostic.s1067.severity = none          # Reduce the number of conditional operators in an expression: maintainer turned it off
+dotnet_diagnostic.s3267.severity = none          # Simplify loops with LINQ: maintainer turned it off
+dotnet_diagnostic.rcs0053.severity = none        # Fix formatting of a tuple: maintainer turned it off
+dotnet_diagnostic.rcs0061.severity = none        # Add blank line between switch sections: maintainer turned it off
+dotnet_diagnostic.s126.severity = none           # Add the missing else clause: maintainer turned it off
+dotnet_diagnostic.rcs0056.severity = none        # A line is too long: maintainer turned it off
+dotnet_diagnostic.ma0045.severity = none         # Use the async overload and make the method async: maintainer turned it off
+dotnet_diagnostic.rcs1146.severity = none        # Use conditional access: maintainer turned it off
+dotnet_diagnostic.s3358.severity = none          # Extract nested ternary into a statement: maintainer turned it off
+dotnet_diagnostic.s1227.severity = none          # Remove this break statement: maintainer turned it off
+dotnet_diagnostic.s1200.severity = none          # Split this class to reduce type dependencies: maintainer turned it off
+dotnet_diagnostic.s4055.severity = none          # Use ResourceManager for string literals: maintainer turned it off
+dotnet_diagnostic.s4017.severity = none          # Remove the nested type argument: maintainer turned it off
+dotnet_diagnostic.s103.severity = none           # Split this long line: maintainer turned it off
+dotnet_diagnostic.s1192.severity = none          # Define a constant for a repeated literal: maintainer turned it off
+dotnet_diagnostic.rcs0054.severity = none        # Fix formatting of a call chain: maintainer turned it off
+dotnet_diagnostic.ss039.severity = none          # Enum should specify a default value of 0: maintainer turned it off
+dotnet_diagnostic.s1301.severity = none          # Replace a switch with a ternary: maintainer turned it off
+dotnet_diagnostic.rcs0063.severity = none        # Remove unnecessary blank line: maintainer turned it off
+dotnet_diagnostic.ide0066.severity = none        # Use switch expression: maintainer turned it off
+dotnet_diagnostic.rcs0028.severity = none        # Place new line after/before conditional operator: maintainer turned it off
+dotnet_diagnostic.rcs0013.severity = none        # Add blank line between single-line declarations of different kind: maintainer turned it off
+dotnet_diagnostic.rcs0008.severity = none        # Add blank line between closing brace and next statement: maintainer turned it off
+dotnet_diagnostic.rcs1056.severity = none        # Avoid usage of using alias directive: Roslynator analyzer throws ArgumentNullException (AD0001)
+dotnet_diagnostic.ide0046.severity = none        # Simplify if statement to a conditional return: maintainer turned it off
+dotnet_diagnostic.rcs1250.severity = none        # Use explicit or implicit object creation: maintainer turned it off
+dotnet_diagnostic.ide0045.severity = none        # Simplify if statement to a conditional assignment: maintainer turned it off
+dotnet_diagnostic.s3240.severity = none          # Use the ?: operator: maintainer turned it off
+dotnet_diagnostic.rcs1211.severity = none        # Remove unnecessary else clause: maintainer turned it off
+dotnet_diagnostic.rcs0036.severity = none        # Remove blank line between single-line declarations of the same kind: maintainer turned it off
+dotnet_diagnostic.s4040.severity = none          # Prefer uppercasing to invariant lowercasing: maintainer turned it off
+dotnet_diagnostic.rcs1014.severity = none        # Use explicitly typed array: contradicts RCS1124, IDE0305, and IDE0300 on array collection expressions, maintainer turned it off
+dotnet_diagnostic.rcs1050.severity = none        # Add parentheses when creating new object: opposite of S3235, maintainer turned it off
+dotnet_diagnostic.ma0136.severity = none         # Raw string contains an implicit end of line: repo rule requires raw string test snippets, maintainer turned it off
+dotnet_diagnostic.rcs1238.severity = none        # Avoid nested ternary operators: same check as S3358, maintainer turned it off
+dotnet_diagnostic.ma0071.severity = none         # Avoid using redundant else: same check as RCS1211, maintainer turned it off
+
+# --- Destructive code fix ---
+# E128107/E128108: a promoted severity lets format.sh auto-apply the delete fix and remove tests without review.
+dotnet_diagnostic.E128107.severity = suggestion
+dotnet_diagnostic.E128108.severity = suggestion
 
 # ── Guardrails ───────────────────────────────
 # Rules enforced at error to prevent regression.
@@ -149,6 +419,8 @@ dotnet_diagnostic.ca5403.severity = error        # Do not hard-code certificate
 dotnet_diagnostic.syslib1045.severity = error    # Use GeneratedRegexAttribute
 
 # --- IDE Analyzers ---
+dotnet_diagnostic.ide0005.severity = error       # Remove unnecessary using directive
+dotnet_diagnostic.ide0011.severity = error       # Add braces
 dotnet_diagnostic.ide0016.severity = error       # Use throw expression
 dotnet_diagnostic.ide0017.severity = error       # Use object initializer
 dotnet_diagnostic.ide0028.severity = error       # Use collection initializer
@@ -159,9 +431,6 @@ dotnet_diagnostic.ide0034.severity = error       # Use simple default expression
 dotnet_diagnostic.ide0037.severity = error       # Use inferred/explicit tuple element names
 dotnet_diagnostic.ide0039.severity = error       # Use local function instead of anonymous function
 dotnet_diagnostic.ide0041.severity = error       # Use is-null check
-dotnet_diagnostic.ide0045.severity = error       # Use conditional expression over assignment
-dotnet_diagnostic.ide0046.severity = error       # Use conditional expression (ternary)
-dotnet_diagnostic.ide0048.severity = none        # Add parentheses for clarity (suppressed: oscillates with IDE0046)
 dotnet_diagnostic.ide0049.severity = error       # Name can be simplified
 dotnet_diagnostic.ide0054.severity = error       # Use compound assignment
 dotnet_diagnostic.ide0056.severity = error       # Use index operator
@@ -187,7 +456,6 @@ dotnet_diagnostic.ide0305.severity = error       # Use collection expression for
 
 # --- Meziantou (MA) ---
 dotnet_diagnostic.ma0036.severity = error        # Make class static (distinct from CA1822 which covers methods)
-dotnet_diagnostic.ma0071.severity = error        # Avoid using redundant else
 dotnet_diagnostic.ma0154.severity = error        # Use pattern matching
 dotnet_diagnostic.ma0184.severity = error        # Do not use interpolated string without parameters
 dotnet_diagnostic.ma0186.severity = error        # Equals method should use [NotNullWhen(true)] on parameter
@@ -199,37 +467,25 @@ dotnet_diagnostic.rcs1037.severity = error       # Remove trailing whitespace
 dotnet_diagnostic.rcs1068.severity = error       # Simplify logical negation
 dotnet_diagnostic.rcs1079.severity = error       # Throwing of new NotImplementedException: catches leftover stubs
 dotnet_diagnostic.rcs1080.severity = error       # Use Count/Length instead of Any()
-dotnet_diagnostic.rcs1084.severity = suggestion  # Use coalesce expression: kept at suggestion (auto-fix breaks nullable-to-DBNull patterns)
 dotnet_diagnostic.rcs1118.severity = error       # Mark local variable as const
-dotnet_diagnostic.rcs1123.severity = none        # Add parentheses according to operator precedence (suppressed: oscillates with IDE0046)
 dotnet_diagnostic.rcs1124.severity = error       # Inline local variable
 dotnet_diagnostic.rcs1140.severity = error       # Add exception element to documentation comment
-dotnet_diagnostic.rcs1141.severity = suggestion  # Add 'param' element to documentation comment
 dotnet_diagnostic.rcs1142.severity = error       # Add 'typeparam' element to documentation comment
-dotnet_diagnostic.rcs1146.severity = suggestion  # Add 'summary' element to documentation comment
 dotnet_diagnostic.rcs1151.severity = error       # Remove redundant cast
-dotnet_diagnostic.rcs1163.severity = suggestion  # Unused parameter: kept at suggestion (test helper lambdas have intentionally unused params)
 dotnet_diagnostic.rcs1174.severity = error       # Remove redundant async/await
-dotnet_diagnostic.rcs1181.severity = suggestion  # Convert comment to documentation comment
 dotnet_diagnostic.rcs1189.severity = error       # Use foreach instead of for
 dotnet_diagnostic.rcs1192.severity = error       # Unnecessary verbatim string literal
 dotnet_diagnostic.rcs1196.severity = error       # Call extension method as instance method
 dotnet_diagnostic.rcs1198.severity = error       # Avoid unnecessary boxing of value type
 dotnet_diagnostic.rcs1201.severity = error       # Use method chaining
-dotnet_diagnostic.rcs1211.severity = error       # Remove redundant else clause
 dotnet_diagnostic.rcs1212.severity = error       # Remove redundant assignment
 dotnet_diagnostic.rcs1214.severity = error       # Unnecessary interpolated string
 dotnet_diagnostic.rcs1217.severity = error       # Convert interpolated string to concatenation
-dotnet_diagnostic.rcs1223.severity = suggestion  # Mark publicly visible type with DebuggerDisplay attribute: useful for domain types, noisy for infrastructure
 dotnet_diagnostic.rcs1228.severity = error       # Unused element in documentation comment
-dotnet_diagnostic.rcs1231.severity = none        # Make parameter ref read-only: disabled; conflicts with CancellationToken 'in' guidance
-dotnet_diagnostic.rcs1238.severity = suggestion  # Avoid nested ternary operators
 dotnet_diagnostic.rcs1249.severity = error       # Unnecessary null-forgiving operator
 dotnet_diagnostic.rcs1261.severity = error       # Resource can be disposed asynchronously
 dotnet_diagnostic.rcs1262.severity = error       # Unnecessary raw string literal
-dotnet_diagnostic.rcs1267.severity = suggestion  # Use string interpolation instead of string.Concat
 
 # --- SonarAnalyzer (S) ---
 dotnet_diagnostic.s1121.severity = error         # Assignments should not be made from within sub-expressions
 dotnet_diagnostic.s2761.severity = error         # Simplify logical negation
-dotnet_diagnostic.s3358.severity = suggestion    # Ternary operators should not be nested: kept at suggestion (matches RCS1238)

@@ -32,7 +32,7 @@ public sealed class SearchValuesHoistingAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var searchValues = MetadataTypes.Find(start.Compilation, "System.Buffers.SearchValues");
             if (searchValues.IsEmpty)

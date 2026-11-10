@@ -27,7 +27,7 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
 
         // A parameter default is a compile-time constant, and ByteSize.FromBytes is a method call, so
         // the rewritten parameter gives CS1736. The developer has to pick the unit, so no fix is offered.
-        if (FindAncestor<ParameterSyntax>(token) is { Default: not null })
+        if (token.Parent?.FirstAncestorOrSelf<ParameterSyntax>() is { Default: not null })
         {
             return Task.CompletedTask;
         }
@@ -45,18 +45,19 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
     {
         _ = cancellationToken;
 
-        var newRoot = token.Parent switch
+        var parent = token.Parent ?? root;
+        var newRoot = parent switch
         {
-            _ when FindAncestor<LocalDeclarationStatementSyntax>(token) is { } local =>
+            _ when parent.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>() is { } local =>
                 FixLocalDeclaration(root, local),
 
-            _ when FindAncestor<PropertyDeclarationSyntax>(token) is { } property =>
+            _ when parent.FirstAncestorOrSelf<PropertyDeclarationSyntax>() is { } property =>
                 FixPropertyDeclaration(root, property),
 
-            _ when FindAncestor<ParameterSyntax>(token) is { } parameter =>
+            _ when parent.FirstAncestorOrSelf<ParameterSyntax>() is { } parameter =>
                 FixParameterDeclaration(root, parameter),
 
-            _ when FindAncestor<FieldDeclarationSyntax>(token) is { } field =>
+            _ when parent.FirstAncestorOrSelf<FieldDeclarationSyntax>() is { } field =>
                 FixFieldDeclaration(root, field),
 
             _ => root
@@ -140,7 +141,7 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
     // or local with more than one declarator would otherwise assign an int to ByteSize.
     private static VariableDeclarationSyntax WrapEveryInitializer(VariableDeclarationSyntax declaration)
     {
-        var variables = declaration.Variables.Select(variable =>
+        var variables = declaration.Variables.Select(static variable =>
             variable.Initializer is { } initializer
                 ? variable.WithInitializer(initializer.WithValue(WrapInFromBytes(initializer.Value)))
                 : variable);
@@ -179,11 +180,6 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
 
     private static SyntaxTokenList RemoveConstModifier(SyntaxTokenList modifiers)
     {
-        return SyntaxFactory.TokenList(modifiers.Where(m => !m.IsKind(SyntaxKind.ConstKeyword)));
-    }
-
-    private static T? FindAncestor<T>(SyntaxToken token) where T : SyntaxNode
-    {
-        return token.Parent?.AncestorsAndSelf().OfType<T>().FirstOrDefault();
+        return SyntaxFactory.TokenList(modifiers.Where(static m => !m.IsKind(SyntaxKind.ConstKeyword)));
     }
 }

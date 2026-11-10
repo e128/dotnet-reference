@@ -20,6 +20,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128056";
 
+    private const int HashMultiplier = 397;
     private const string FileMetadataName = "System.IO.File";
     private const string FileSystemInfoMetadataName = "System.IO.FileSystemInfo";
 
@@ -44,7 +45,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             // The rule names System.IO types. Without them the members below belong to some other
             // type, so the rule must not run at all.
@@ -70,7 +71,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         var method = (MethodDeclarationSyntax)context.Node;
 
         var guardedValues = CollectGuardedValues(context, method, fileType, fileSystemInfoType);
-        if (guardedValues.Count == 0)
+        if (guardedValues.Count is 0)
         {
             return;
         }
@@ -135,10 +136,12 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 
     private static void AddSymbol(HashSet<GuardedValue> target, GuardedValue? value)
     {
-        if (value is not null)
+        if (value is null)
         {
-            target.Add(value);
+            return;
         }
+
+        target.Add(value);
     }
 
     private static bool IsFileSystemInfoExists(
@@ -178,7 +181,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
             // GetHashCode body from reading SymbolEqualityComparer.Default.
             var receiverHash = receiver is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(receiver);
             var memberHash = member is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(member);
-            cachedHash = unchecked((receiverHash * 397) ^ memberHash);
+            cachedHash = unchecked((receiverHash * HashMultiplier) ^ memberHash);
         }
 
         public ISymbol? Receiver { get; }
@@ -211,7 +214,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         INamedTypeSymbol fileSystemInfoType)
     {
-        return invocation.ArgumentList.Arguments.Count == 0
+        return invocation.ArgumentList.Arguments.Count is 0
             ? null
             : GetGuardedValue(context, invocation.ArgumentList.Arguments[0].Expression, fileSystemInfoType);
     }

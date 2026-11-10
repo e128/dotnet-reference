@@ -19,7 +19,7 @@ public sealed class StaleReferenceAssembliesAnalyzerTests
             ReferenceAssemblies = Net100WithTesting
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     #region Does not fire

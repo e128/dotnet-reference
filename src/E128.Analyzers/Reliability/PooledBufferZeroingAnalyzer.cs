@@ -21,6 +21,8 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
 
     private const string ArrayPoolMetadataName = "System.Buffers.ArrayPool`1";
     private const string CryptographicOperationsMetadataName = "System.Security.Cryptography.CryptographicOperations";
+    private const int MinReturnArguments = 1;
+    private const int MaxReturnArguments = 2;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -56,7 +58,7 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var poolType = compilationContext.Compilation.GetTypeByMetadataName(ArrayPoolMetadataName);
             if (poolType is null)
@@ -86,7 +88,7 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count is < 1 or > 2)
+        if (args.Count is < MinReturnArguments or > MaxReturnArguments)
         {
             return;
         }
@@ -103,17 +105,10 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
 
         if (bufferSymbol is not null)
         {
-            var use = FindUseAfterReturn(invocation, bufferSymbol, model, context.CancellationToken);
-            if (use is not null)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(UseAfterReturnRule, use.GetLocation(), bufferSymbol.Name));
-            }
+            ReportUseAfterReturn(context, invocation, bufferSymbol);
         }
 
-        if (bufferSymbol is not null
-            && cryptoType is not null
-            && finallyClause is not null
-            && ZeroesWholeBufferBefore(finallyClause, invocation, bufferSymbol, cryptoType, model, context.CancellationToken))
+        if (IsZeroedBeforeReturn(bufferSymbol, cryptoType, finallyClause, invocation, context))
         {
             return;
         }
@@ -122,6 +117,33 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
             Rule,
             invocation.GetLocation(),
             args[0].Expression.ToString()));
+    }
+
+    private static bool IsZeroedBeforeReturn(
+        ISymbol? bufferSymbol,
+        INamedTypeSymbol? cryptoType,
+        FinallyClauseSyntax? finallyClause,
+        InvocationExpressionSyntax invocation,
+        SyntaxNodeAnalysisContext context)
+    {
+        return bufferSymbol is not null
+               && cryptoType is not null
+               && finallyClause is not null
+               && ZeroesWholeBufferBefore(finallyClause, invocation, bufferSymbol, cryptoType, context.SemanticModel, context.CancellationToken);
+    }
+
+    private static void ReportUseAfterReturn(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        ISymbol bufferSymbol)
+    {
+        var use = FindUseAfterReturn(invocation, bufferSymbol, context.SemanticModel, context.CancellationToken);
+        if (use is null)
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(UseAfterReturnRule, use.GetLocation(), bufferSymbol.Name));
     }
 
     // Scan the statements that follow the Return statement in each enclosing block. Stop at a reassignment.
@@ -141,28 +163,52 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
 
             if (ancestor is BlockSyntax block && current is StatementSyntax statement)
             {
-                var index = block.Statements.IndexOf(statement);
-                for (var i = index + 1; i < block.Statements.Count; i++)
+                var use = ScanFollowingStatements(block, statement, bufferSymbol, model, cancellationToken, out var reassigned);
+                if (reassigned)
                 {
-                    var next = block.Statements[i];
-                    if (Reassigns(next, bufferSymbol, model, cancellationToken))
-                    {
-                        return null;
-                    }
+                    return null;
+                }
 
-                    var use = next.DescendantNodesAndSelf()
-                        .OfType<IdentifierNameSyntax>()
-                        .FirstOrDefault(name => SymbolEqualityComparer.Default.Equals(
-                            model.GetSymbolInfo(name, cancellationToken).Symbol,
-                            bufferSymbol));
-                    if (use is not null)
-                    {
-                        return use;
-                    }
+                if (use is not null)
+                {
+                    return use;
                 }
             }
 
             current = ancestor;
+        }
+
+        return null;
+    }
+
+    private static IdentifierNameSyntax? ScanFollowingStatements(
+        BlockSyntax block,
+        StatementSyntax statement,
+        ISymbol bufferSymbol,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken,
+        out bool reassigned)
+    {
+        reassigned = false;
+        var index = block.Statements.IndexOf(statement);
+        for (var i = index + 1; i < block.Statements.Count; i++)
+        {
+            var next = block.Statements[i];
+            if (Reassigns(next, bufferSymbol, model, cancellationToken))
+            {
+                reassigned = true;
+                return null;
+            }
+
+            var use = next.DescendantNodesAndSelf()
+                .OfType<IdentifierNameSyntax>()
+                .FirstOrDefault(name => SymbolEqualityComparer.Default.Equals(
+                    model.GetSymbolInfo(name, cancellationToken).Symbol,
+                    bufferSymbol));
+            if (use is not null)
+            {
+                return use;
+            }
         }
 
         return null;
@@ -210,7 +256,7 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         // lambda may not run on every path.
         return finallyClause.Block.Statements
             .OfType<ExpressionStatementSyntax>()
-            .Select(statement => statement.Expression)
+            .Select(static statement => statement.Expression)
             .OfType<InvocationExpressionSyntax>()
             .Any(call => call.Span.End <= returnCall.SpanStart
                          && IsZeroMemoryOf(call, bufferSymbol, cryptoType, model, cancellationToken));
@@ -223,7 +269,7 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         System.Threading.CancellationToken cancellationToken)
     {
-        if (call.ArgumentList.Arguments.Count != 1
+        if (call.ArgumentList.Arguments.Count is not 1
             || model.GetSymbolInfo(call, cancellationToken).Symbol is not IMethodSymbol
             {
                 Name: "ZeroMemory"
@@ -247,13 +293,13 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         {
             if (invocation.Expression is MemberAccessExpressionSyntax access
                 && string.Equals(access.Name.Identifier.ValueText, "AsSpan", StringComparison.Ordinal)
-                && invocation.ArgumentList.Arguments.Count == 0)
+                && invocation.ArgumentList.Arguments.Count is 0)
             {
                 expression = access.Expression;
             }
             else if (invocation.Expression is MemberAccessExpressionSyntax asBytes
                      && string.Equals(asBytes.Name.Identifier.ValueText, "AsBytes", StringComparison.Ordinal)
-                     && invocation.ArgumentList.Arguments.Count == 1)
+                     && invocation.ArgumentList.Arguments.Count is 1)
             {
                 expression = invocation.ArgumentList.Arguments[0].Expression;
             }

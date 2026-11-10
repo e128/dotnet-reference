@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class PrimaryConstructorBackingFieldE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<PrimaryConstructorBackingFieldAnalyzer, PrimaryConstructorBackingFieldCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<PrimaryConstructorBackingFieldAnalyzer, PrimaryConstructorBackingFieldCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

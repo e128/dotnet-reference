@@ -25,6 +25,6 @@ internal static class EntryPoint
         var config = DefaultConfig.Instance
             .AddJob(Job.Default.WithToolchain(InProcessEmitToolchain.Instance));
 
-        BenchmarkSwitcher.FromAssembly(typeof(EntryPoint).Assembly).Run(args, config);
+        _ = BenchmarkSwitcher.FromAssembly(typeof(EntryPoint).Assembly).Run(args, config);
     }
 }

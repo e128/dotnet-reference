@@ -24,7 +24,7 @@ public sealed class DllImportToLibraryImportCodeFixTests
         };
         test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -49,6 +49,7 @@ public sealed class DllImportToLibraryImportCodeFixTests
             }
             """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task NoFix_WhenTheAttributeUsesAnArgumentLibraryImportLacks()

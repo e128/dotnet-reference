@@ -17,7 +17,7 @@ public sealed class FixedStringMutationAnalyzerTests
         };
         test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -55,6 +55,7 @@ public sealed class FixedStringMutationAnalyzerTests
                            }
                            """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheStringIsOnlyRead()

@@ -55,20 +55,18 @@ public sealed class StaticNumericIncrementCodeFixProvider : E128CodeFixProviderB
 
     private static ExpressionSyntax? ResolveExpression(SyntaxNode tokenNode)
     {
-        return tokenNode switch
+        return MatchMutation(tokenNode) ?? MatchMutation(tokenNode.Parent);
+    }
+
+    private static ExpressionSyntax? MatchMutation(SyntaxNode? node)
+    {
+        return node switch
         {
             PrefixUnaryExpressionSyntax p => p,
             PostfixUnaryExpressionSyntax p => p,
             AssignmentExpressionSyntax a when a.IsKind(SyntaxKind.AddAssignmentExpression)
                                               || a.IsKind(SyntaxKind.SubtractAssignmentExpression) => a,
-            _ => tokenNode.Parent switch
-            {
-                PrefixUnaryExpressionSyntax p => p,
-                PostfixUnaryExpressionSyntax p => p,
-                AssignmentExpressionSyntax a when a.IsKind(SyntaxKind.AddAssignmentExpression)
-                                                  || a.IsKind(SyntaxKind.SubtractAssignmentExpression) => a,
-                _ => null
-            }
+            _ => null
         };
     }
 
@@ -241,7 +239,7 @@ public sealed class StaticNumericIncrementCodeFixProvider : E128CodeFixProviderB
         }
 
         var newModifiers = fieldDeclaration.Modifiers
-            .Where(m => !m.IsKind(SyntaxKind.StaticKeyword))
+            .Where(static m => !m.IsKind(SyntaxKind.StaticKeyword))
             .ToArray();
 
         var newFieldDeclaration = newModifiers.Length > 0

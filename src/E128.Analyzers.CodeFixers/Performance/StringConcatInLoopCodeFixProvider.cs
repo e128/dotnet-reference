@@ -85,6 +85,19 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
         }
 
         var newLoop = ReplaceEveryAppend(loop, local, builderName, semanticModel, cancellationToken);
+        var newBlock = WrapLoopWithBuilder(block, loop, newLoop, target, builderName);
+
+        var newRoot = root.ReplaceNode(block, newBlock);
+        return UsingDirectives.AddIfMissing(newRoot, "System.Text");
+    }
+
+    private static BlockSyntax WrapLoopWithBuilder(
+        BlockSyntax block,
+        StatementSyntax loop,
+        StatementSyntax newLoop,
+        IdentifierNameSyntax target,
+        string builderName)
+    {
         var indentation = FixSyntax.TrailingWhitespace(loop.GetLeadingTrivia());
         var statements = new List<StatementSyntax>(block.Statements.Count + 2);
 
@@ -101,8 +114,7 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
             statements.Add(CreateReadBack(target.WithoutTrivia(), builderName, indentation));
         }
 
-        var newRoot = root.ReplaceNode(block, block.WithStatements(SyntaxFactory.List(statements)));
-        return UsingDirectives.AddIfMissing(newRoot, "System.Text");
+        return block.WithStatements(SyntaxFactory.List(statements));
     }
 
     // Every concatenation on the local becomes an append, not only the reported one. A second fix

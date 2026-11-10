@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SkipInitCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<SkipInitAnalyzer, SkipInitCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<SkipInitAnalyzer, SkipInitCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -35,6 +37,7 @@ public sealed class SkipInitCodeFixTests
             }
             """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Fix_SpellsOutTheTypeForAVarDeclaration()

@@ -24,7 +24,7 @@ public sealed class ParallelForEachAsyncCapAnalyzerTests
             ReferenceAssemblies = references
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

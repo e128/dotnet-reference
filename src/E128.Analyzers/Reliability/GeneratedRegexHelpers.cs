@@ -72,7 +72,7 @@ internal static class GeneratedRegexHelpers
             {
                 depth--;
             }
-            else if (ch is '*' or '+' && depth == 1)
+            else if (ch is '*' or '+' && depth is 1)
             {
                 return true;
             }
@@ -106,7 +106,7 @@ internal static class GeneratedRegexHelpers
             else if (pattern[j] is ')')
             {
                 depth--;
-                if (depth == 0)
+                if (depth is 0)
                 {
                     return j;
                 }
@@ -116,44 +116,43 @@ internal static class GeneratedRegexHelpers
         return -1;
     }
 
+    private const int WhitespaceEscapeLength = 2;
+
     internal static bool HasOverlappingQuantifiers(string pattern)
     {
-        for (var i = 0; i < pattern.Length - 2; i++)
+        for (var i = 0; i < pattern.Length - WhitespaceEscapeLength; i++)
         {
-            if (pattern[i] != '\\' || pattern[i + 1] != 's')
+            var afterIndex = WhitespaceQuantifierEnd(pattern, i);
+            if (afterIndex < 0)
             {
                 continue;
             }
 
-            var quantifierIndex = i + 2;
-            if (quantifierIndex >= pattern.Length)
-            {
-                continue;
-            }
-
-            if (pattern[quantifierIndex] is not '*' and not '+')
-            {
-                continue;
-            }
-
-            var afterIndex = quantifierIndex + 1;
-            if (afterIndex < pattern.Length && pattern[afterIndex] is '?')
-            {
-                afterIndex++;
-            }
-
-            if (HasOverlappingElementAfter(pattern, afterIndex))
-            {
-                return true;
-            }
-
-            if (HasOverlappingElementBefore(pattern, i))
+            if (HasOverlappingElementAfter(pattern, afterIndex) || HasOverlappingElementBefore(pattern, i))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    // Returns the index after a whitespace escape and its quantifier, or -1 when none starts at index.
+    private static int WhitespaceQuantifierEnd(string pattern, int index)
+    {
+        if (pattern[index] != '\\' || pattern[index + 1] != 's')
+        {
+            return -1;
+        }
+
+        var quantifierIndex = index + WhitespaceEscapeLength;
+        if (quantifierIndex >= pattern.Length || pattern[quantifierIndex] is not '*' and not '+')
+        {
+            return -1;
+        }
+
+        var afterIndex = quantifierIndex + 1;
+        return afterIndex < pattern.Length && pattern[afterIndex] is '?' ? afterIndex + 1 : afterIndex;
     }
 
     private static bool HasOverlappingElementAfter(string pattern, int index)
@@ -165,16 +164,27 @@ internal static class GeneratedRegexHelpers
 
         var ch = pattern[index];
 
-        return ch is '.'
-            ? index + 1 < pattern.Length && pattern[index + 1] is '*' or '+' or '?'
-            : ch is '('
-                ? GroupContainsOverlappingContent(pattern, index)
-                : ch is '[' && index + 1 < pattern.Length && pattern[index + 1] is '^' && NegatedClassOverlapsWhitespace(pattern, index);
+        if (ch is '.')
+        {
+            return IsQuantifierAfter(pattern, index);
+        }
+
+        if (ch is '(')
+        {
+            return GroupContainsOverlappingContent(pattern, index);
+        }
+
+        return ch is '[' && index + 1 < pattern.Length && pattern[index + 1] is '^' && NegatedClassOverlapsWhitespace(pattern, index);
+    }
+
+    private static bool IsQuantifierAfter(string pattern, int index)
+    {
+        return index + 1 < pattern.Length && pattern[index + 1] is '*' or '+' or '?';
     }
 
     private static bool HasOverlappingElementBefore(string pattern, int backslashSIndex)
     {
-        if (backslashSIndex == 0)
+        if (backslashSIndex is 0)
         {
             return false;
         }
@@ -184,7 +194,7 @@ internal static class GeneratedRegexHelpers
 
         if (prevCh is '?')
         {
-            if (prevIndex == 0)
+            if (prevIndex is 0)
             {
                 return false;
             }
@@ -195,37 +205,32 @@ internal static class GeneratedRegexHelpers
 
         if (prevCh is '*' or '+')
         {
-            if (prevIndex == 0)
-            {
-                return false;
-            }
-
-            var elementCh = pattern[prevIndex - 1];
-            if (elementCh is '.')
-            {
-                return true;
-            }
-
-            if (elementCh is ')')
-            {
-                var openParen = FindMatchingOpenParen(pattern, prevIndex - 1);
-                if (openParen >= 0)
-                {
-                    return GroupContainsOverlappingContent(pattern, openParen);
-                }
-            }
+            return QuantifiedElementOverlaps(pattern, prevIndex);
         }
 
-        if (prevCh is ')')
+        return prevCh is ')' && GroupBeforeOverlaps(pattern, prevIndex);
+    }
+
+    private static bool QuantifiedElementOverlaps(string pattern, int quantifierIndex)
+    {
+        if (quantifierIndex is 0)
         {
-            var openParen = FindMatchingOpenParen(pattern, prevIndex);
-            if (openParen >= 0)
-            {
-                return GroupContainsOverlappingContent(pattern, openParen);
-            }
+            return false;
         }
 
-        return false;
+        var elementCh = pattern[quantifierIndex - 1];
+        if (elementCh is '.')
+        {
+            return true;
+        }
+
+        return elementCh is ')' && GroupBeforeOverlaps(pattern, quantifierIndex - 1);
+    }
+
+    private static bool GroupBeforeOverlaps(string pattern, int closeIndex)
+    {
+        var openParen = FindMatchingOpenParen(pattern, closeIndex);
+        return openParen >= 0 && GroupContainsOverlappingContent(pattern, openParen);
     }
 
     private static bool GroupContainsOverlappingContent(string pattern, int openParenIndex)
@@ -247,29 +252,38 @@ internal static class GeneratedRegexHelpers
                 continue;
             }
 
-            if (ch is '(')
+            var verdict = ClassifyGroupChar(pattern, j, ref depth);
+            if (verdict is not null)
             {
-                depth++;
-            }
-            else if (ch is ')')
-            {
-                depth--;
-                if (depth == 0)
-                {
-                    return false;
-                }
-            }
-            else if (ch is '.' && depth == 1)
-            {
-                var nextJ = j + 1;
-                if (nextJ < pattern.Length && pattern[nextJ] is '*' or '+' or '?')
-                {
-                    return true;
-                }
+                return verdict.Value;
             }
         }
 
         return false;
+    }
+
+    // Returns a final answer when the scan can stop, or null to keep scanning.
+    private static bool? ClassifyGroupChar(string pattern, int index, ref int depth)
+    {
+        var ch = pattern[index];
+        if (ch is '(')
+        {
+            depth++;
+            return null;
+        }
+
+        if (ch is ')')
+        {
+            depth--;
+            return depth is 0 ? false : null;
+        }
+
+        if (ch is '.' && depth is 1 && IsQuantifierAfter(pattern, index))
+        {
+            return true;
+        }
+
+        return null;
     }
 
     private static bool NegatedClassOverlapsWhitespace(string pattern, int bracketIndex)
@@ -320,7 +334,7 @@ internal static class GeneratedRegexHelpers
             else if (pattern[j] is '(')
             {
                 depth--;
-                if (depth == 0)
+                if (depth is 0)
                 {
                     return j;
                 }

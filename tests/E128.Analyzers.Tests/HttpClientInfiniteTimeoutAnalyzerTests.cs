@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HttpClientInfiniteTimeoutAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

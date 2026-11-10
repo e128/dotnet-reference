@@ -33,7 +33,7 @@ public sealed class PollingLoopNoTokenAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             var task = startContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
             var cancellationToken = startContext.Compilation.GetTypeByMetadataName(

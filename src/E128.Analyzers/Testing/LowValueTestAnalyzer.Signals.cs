@@ -57,17 +57,24 @@ public sealed partial class LowValueTestAnalyzer
                     continue;
                 }
 
-                foreach (var node in production.DescendantNodes())
-                {
-                    if (node is LiteralExpressionSyntax literal && IsReturnedValue(literal))
-                    {
-                        literals.Add(literal.Token.Text);
-                    }
-                }
+                AddReturnedLiterals(production, literals);
             }
         }
 
         return literals.ToImmutable();
+    }
+
+    private static void AddReturnedLiterals(
+        MethodDeclarationSyntax production,
+        ImmutableHashSet<string>.Builder literals)
+    {
+        foreach (var node in production.DescendantNodes())
+        {
+            if (node is LiteralExpressionSyntax literal && IsReturnedValue(literal))
+            {
+                _ = literals.Add(literal.Token.Text);
+            }
+        }
     }
 
     private static bool IsReturnedValue(SyntaxNode node)
@@ -155,7 +162,7 @@ public sealed partial class LowValueTestAnalyzer
             }
         }
 
-        if (literals.Count == 0)
+        if (literals.Count is 0)
         {
             return false;
         }
@@ -259,7 +266,7 @@ public sealed partial class LowValueTestAnalyzer
             }
         }
 
-        if (literals.Count == 0)
+        if (literals.Count is 0)
         {
             return false;
         }
@@ -385,7 +392,7 @@ public sealed partial class LowValueTestAnalyzer
 
     private static bool IsAllLiteralArguments(InvocationExpressionSyntax call)
     {
-        if (call.ArgumentList.Arguments.Count == 0)
+        if (call.ArgumentList.Arguments.Count is 0)
         {
             return false;
         }
@@ -437,7 +444,7 @@ public sealed partial class LowValueTestAnalyzer
 
     private static bool IsNullOnly(TestFacts facts)
     {
-        if (facts.Assertions.Length != 1)
+        if (facts.Assertions.Length is not 1)
         {
             return false;
         }

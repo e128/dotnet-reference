@@ -52,7 +52,7 @@ public sealed class DynamicallyAccessedMembersGuardCodeFixProvider : E128CodeFix
 
         SyntaxNode newRoot;
 
-        if (attributeList.Attributes.Count == 1)
+        if (attributeList.Attributes.Count is 1)
         {
             // Only one attribute in the list — remove the entire attribute list.
             newRoot = root.RemoveNode(attributeList, SyntaxRemoveOptions.KeepNoTrivia)!;

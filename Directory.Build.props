@@ -34,20 +34,13 @@
     <!-- ============================================== -->
     <!-- Code Analysis                                  -->
     <!--                                                -->
-    <!-- Base mode is Recommended. Security,            -->
-    <!-- Reliability and Performance are raised to All  -->
-    <!-- to enable rules that are off by default in     -->
-    <!-- those categories. A per-category mode          -->
-    <!-- overrides the base. See AnalysisMode and       -->
-    <!-- AnalysisMode<Category> in the .NET docs.       -->
-    <!-- Rule severities are set in .globalconfig.      -->
+    <!-- Mode is All in every category, so every CA     -->
+    <!-- rule that is off by default runs. The severity -->
+    <!-- of each rule is set in .globalconfig.          -->
     <!-- ============================================== -->
     <PropertyGroup>
         <AnalysisLevel>latest-all</AnalysisLevel>
-        <AnalysisMode>Recommended</AnalysisMode>
-        <AnalysisModeSecurity>All</AnalysisModeSecurity>
-        <AnalysisModeReliability>All</AnalysisModeReliability>
-        <AnalysisModePerformance>All</AnalysisModePerformance>
+        <AnalysisMode>All</AnalysisMode>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>

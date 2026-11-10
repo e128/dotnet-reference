@@ -17,6 +17,12 @@ public sealed class FipsCipherModeAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128144";
 
+    private const long EcbValue = 2;
+
+    private const long OfbValue = 3;
+
+    private const long CfbValue = 4;
+
     private static readonly ImmutableHashSet<string> ForbiddenModes = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "ECB",
@@ -56,15 +62,17 @@ public sealed class FipsCipherModeAnalyzer : DiagnosticAnalyzer
         var fieldReference = (IFieldReferenceOperation)context.Operation;
         var field = fieldReference.Field;
 
-        if (ForbiddenModes.Contains(field.Name) &&
-            FipsSymbolHelpers.IsCryptographyType(field.ContainingType, "CipherMode") &&
-            !FipsSymbolHelpers.IsComparison(fieldReference))
+        if (!ForbiddenModes.Contains(field.Name) ||
+            !FipsSymbolHelpers.IsCryptographyType(field.ContainingType, "CipherMode") ||
+            FipsSymbolHelpers.IsComparison(fieldReference))
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                fieldReference.Syntax.GetLocation(),
-                field.Name));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            fieldReference.Syntax.GetLocation(),
+            field.Name));
     }
 
     /// <summary>
@@ -76,7 +84,7 @@ public sealed class FipsCipherModeAnalyzer : DiagnosticAnalyzer
         var conversion = (IConversionOperation)context.Operation;
         if (conversion.IsImplicit ||
             !FipsSymbolHelpers.IsCryptographyType(conversion.Type, "CipherMode") ||
-            conversion.Operand.Type?.TypeKind == TypeKind.Enum ||
+            conversion.Operand.Type?.TypeKind is TypeKind.Enum ||
             conversion.ConstantValue is not { HasValue: true, Value: { } value } ||
             ModeOfValue(Convert.ToInt64(value, CultureInfo.InvariantCulture)) is not { } mode ||
             FipsSymbolHelpers.IsComparison(conversion))
@@ -96,23 +104,28 @@ public sealed class FipsCipherModeAnalyzer : DiagnosticAnalyzer
         var method = invocation.TargetMethod;
 
         var mode = ModeOfMethod(method.Name);
-        if (mode is not null && FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "SymmetricAlgorithm"))
+        if (mode is null || !FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "SymmetricAlgorithm"))
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                invocation.Syntax.GetLocation(),
-                mode));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            invocation.Syntax.GetLocation(),
+            mode));
     }
 
     // CipherMode values: CBC is 1, ECB is 2, OFB is 3, CFB is 4 and CTS is 5.
-    private static string? ModeOfValue(long value) => value switch
+    private static string? ModeOfValue(long value)
     {
-        2 => "ECB",
-        3 => "OFB",
-        4 => "CFB",
-        _ => null,
-    };
+        return value switch
+        {
+            EcbValue => "ECB",
+            OfbValue => "OFB",
+            CfbValue => "CFB",
+            _ => null,
+        };
+    }
 
     private static string? ModeOfMethod(string name)
     {

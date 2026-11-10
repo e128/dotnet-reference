@@ -130,21 +130,21 @@ public sealed class MidNameUnderscoreAnalyzer : DiagnosticAnalyzer
         }
 
         // Only one underscore at position 0: _foo — leading underscore prefix, OK
-        if (underscoreIndex == 0)
+        if (underscoreIndex is 0)
         {
             return false;
         }
 
         // Single-char prefix followed by underscore: s_foo, m_foo, t_foo — Hungarian prefix, OK
-        if (underscoreIndex == 1)
+        if (underscoreIndex is not 1)
         {
-            // But if there's another underscore later, that's still a violation:
-            // s_foo_bar has a mid-name underscore after the prefix
-            var nextUnderscore = name.IndexOf('_', underscoreIndex + 1);
-            return nextUnderscore > 0;
+            // Underscore at index >= 2: mid-name underscore, violation
+            return true;
         }
 
-        // Underscore at index >= 2: mid-name underscore, violation
-        return true;
+        // But if there's another underscore later, that's still a violation:
+        // s_foo_bar has a mid-name underscore after the prefix
+        var nextUnderscore = name.IndexOf('_', underscoreIndex + 1);
+        return nextUnderscore > 0;
     }
 }

@@ -7,9 +7,8 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!-- RS2007: the Roslyn 4.14.0 meta-analyzer rejects valid unshipped.md content -->
-    <!-- RS0016/RS0017: inherited override members (Initialize, SupportedDiagnostics, etc.) are
-         tracked at the type+constructor level only in PublicAPI.Shipped.txt -->
-    <NoWarn>$(NoWarn);RS2007;RS0016;RS0017;NU5128</NoWarn>
+    <!-- NU5128: the package declares no dependencies, so NuGet warns that lib/netstandard2.0 has no match -->
+    <NoWarn>$(NoWarn);RS2007;NU5128</NoWarn>
     <!-- PolySharp: netstandard2.0 polyfill for nullable analysis attributes only -->
     <PolySharpIncludeGeneratedTypes>
       System.Diagnostics.CodeAnalysis.NotNullWhenAttribute;System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute
@@ -18,7 +17,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>2.6.5</Version>
+    <Version>2.6.6</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>

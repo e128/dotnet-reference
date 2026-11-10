@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class FileSystemInfoEqualityCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<FileSystemInfoEqualityAnalyzer, FileSystemInfoEqualityCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<FileSystemInfoEqualityAnalyzer, FileSystemInfoEqualityCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -73,6 +75,8 @@ public sealed class FileSystemInfoEqualityCodeFixTests
                                 """);
     }
 
-    private static Task VerifyNoFixAsync(string code) =>
-        CodeFixTestRunner.NoFixAsync<FileSystemInfoEqualityAnalyzer, FileSystemInfoEqualityCodeFixProvider>(code);
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return CodeFixTestRunner.NoFixAsync<FileSystemInfoEqualityAnalyzer, FileSystemInfoEqualityCodeFixProvider>(code);
+    }
 }

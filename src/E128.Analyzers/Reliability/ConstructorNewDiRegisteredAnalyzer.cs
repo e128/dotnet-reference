@@ -84,11 +84,13 @@ public sealed class ConstructorNewDiRegisteredAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-                is IMethodSymbol { IsGenericMethod: true, TypeArguments.Length: >= 1 } method
-            && method.TypeArguments[0] is INamedTypeSymbol registeredType)
+                is not IMethodSymbol { IsGenericMethod: true, TypeArguments.Length: >= 1 } method
+            || method.TypeArguments[0] is not INamedTypeSymbol registeredType)
         {
-            registeredTypes.Add(registeredType);
+            return;
         }
+
+        registeredTypes.Add(registeredType);
     }
 
     private static void CollectConstructorNew(
@@ -103,10 +105,12 @@ public sealed class ConstructorNewDiRegisteredAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetSymbolInfo(creation.Type, context.CancellationToken).Symbol
-            is INamedTypeSymbol createdType)
+            is not INamedTypeSymbol createdType)
         {
-            candidates.Add((creation.GetLocation(), createdType));
+            return;
         }
+
+        candidates.Add((creation.GetLocation(), createdType));
     }
 
     private static void ReportViolations(
@@ -120,7 +124,7 @@ public sealed class ConstructorNewDiRegisteredAnalyzer : DiagnosticAnalyzer
             registered.Add(type);
         }
 
-        if (registered.Count == 0)
+        if (registered.Count is 0)
         {
             return;
         }

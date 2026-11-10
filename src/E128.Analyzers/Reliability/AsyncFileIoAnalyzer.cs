@@ -54,14 +54,7 @@ public sealed class AsyncFileIoAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var syntaxName = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
-
-        if (syntaxName is not null && syntaxName.EndsWith("Async", StringComparison.Ordinal))
+        if (AsyncContextSyntaxHelper.HasAsyncSuffixSyntaxName(invocation))
         {
             return;
         }

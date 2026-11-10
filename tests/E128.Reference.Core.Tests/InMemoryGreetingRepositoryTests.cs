@@ -20,14 +20,14 @@ public sealed class InMemoryGreetingRepositoryTests
     [Trait("Category", "CI")]
     public Task SaveAsync_Throws_WhenGreetingIsNull()
     {
-        return Assert.ThrowsAsync<ArgumentNullException>(() => _repository.SaveAsync(null!));
+        return Assert.ThrowsAsync<ArgumentNullException>(() => _repository.SaveAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public async Task GetRecentAsync_ReturnsEmpty_WhenNoGreetingsSaved()
     {
-        var result = await _repository.GetRecentAsync(10);
+        var result = await _repository.GetRecentAsync(10, TestContext.Current.CancellationToken);
 
         Assert.Empty(result);
     }
@@ -38,9 +38,9 @@ public sealed class InMemoryGreetingRepositoryTests
     {
         var greeting = new Greeting("Hello, World!", "World", BaseTime);
 
-        await _repository.SaveAsync(greeting);
+        await _repository.SaveAsync(greeting, TestContext.Current.CancellationToken);
 
-        var result = await _repository.GetRecentAsync(10);
+        var result = await _repository.GetRecentAsync(10, TestContext.Current.CancellationToken);
         var single = Assert.Single(result);
         Assert.Equal(greeting, single);
     }
@@ -52,10 +52,10 @@ public sealed class InMemoryGreetingRepositoryTests
         var older = new Greeting("older", "A", BaseTime.AddMinutes(-5));
         var newer = new Greeting("newer", "B", BaseTime);
 
-        await _repository.SaveAsync(older);
-        await _repository.SaveAsync(newer);
+        await _repository.SaveAsync(older, TestContext.Current.CancellationToken);
+        await _repository.SaveAsync(newer, TestContext.Current.CancellationToken);
 
-        var result = await _repository.GetRecentAsync(10);
+        var result = await _repository.GetRecentAsync(10, TestContext.Current.CancellationToken);
         Assert.Equal("newer", result[0].Message);
         Assert.Equal("older", result[1].Message);
     }
@@ -67,10 +67,10 @@ public sealed class InMemoryGreetingRepositoryTests
         for (var i = 0; i < 5; i++)
         {
             await _repository.SaveAsync(
-                new Greeting("msg-" + i.ToString(CultureInfo.InvariantCulture), "X", BaseTime.AddMinutes(i)));
+                new Greeting("msg-" + i.ToString(CultureInfo.InvariantCulture), "X", BaseTime.AddMinutes(i)), TestContext.Current.CancellationToken);
         }
 
-        var result = await _repository.GetRecentAsync(2);
+        var result = await _repository.GetRecentAsync(2, TestContext.Current.CancellationToken);
 
         Assert.Equal(2, result.Count);
     }
@@ -109,7 +109,7 @@ public sealed class InMemoryGreetingRepositoryTests
             {
                 for (var i = 0; i < perWriter; i++)
                 {
-                    var save = _repository.SaveAsync(new Greeting("msg", "X", BaseTime));
+                    var save = _repository.SaveAsync(new Greeting("msg", "X", BaseTime), TestContext.Current.CancellationToken);
                     Assert.True(save.IsCompletedSuccessfully);
                 }
             }))
@@ -119,7 +119,7 @@ public sealed class InMemoryGreetingRepositoryTests
         {
             for (var i = 0; i < 200; i++)
             {
-                var read = _repository.GetRecentAsync(10);
+                var read = _repository.GetRecentAsync(10, TestContext.Current.CancellationToken);
                 Assert.True(read.IsCompletedSuccessfully);
             }
         });
@@ -133,7 +133,7 @@ public sealed class InMemoryGreetingRepositoryTests
 
         Assert.Empty(errors);
 
-        var all = await _repository.GetRecentAsync(int.MaxValue);
+        var all = await _repository.GetRecentAsync(int.MaxValue, TestContext.Current.CancellationToken);
         Assert.Equal(writerCount * perWriter, all.Count);
     }
 }

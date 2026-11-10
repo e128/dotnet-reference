@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -62,7 +63,7 @@ public sealed class TestCodeCommentAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(Rule, TrimmedLocation(trivia)));
+            context.ReportDiagnostic(Diagnostic.Create(Rule, TrimmedLocation(trivia, context.CancellationToken)));
         }
     }
 
@@ -70,9 +71,9 @@ public sealed class TestCodeCommentAnalyzer : DiagnosticAnalyzer
     // that leading trivia IS the "///" exterior marker, so Span alone reports a location that
     // starts after it. FullSpan includes the marker; trimming only the trailing newline
     // (present on doc comments, absent on plain // comments) yields the visible comment text.
-    private static Location TrimmedLocation(SyntaxTrivia trivia)
+    private static Location TrimmedLocation(SyntaxTrivia trivia, CancellationToken cancellationToken)
     {
-        var sourceText = trivia.SyntaxTree!.GetText();
+        var sourceText = trivia.SyntaxTree!.GetText(cancellationToken);
         var text = sourceText.ToString(trivia.FullSpan).TrimEnd('\r', '\n');
         return Location.Create(trivia.SyntaxTree, new TextSpan(trivia.FullSpan.Start, text.Length));
     }
@@ -89,14 +90,24 @@ public sealed class TestCodeCommentAnalyzer : DiagnosticAnalyzer
     {
         foreach (var method in classDeclaration.Members.OfType<MethodDeclarationSyntax>())
         {
-            foreach (var attrList in method.AttributeLists)
+            if (HasFactOrTheoryAttribute(method, context))
             {
-                foreach (var attribute in attrList.Attributes)
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasFactOrTheoryAttribute(MethodDeclarationSyntax method, SyntaxNodeAnalysisContext context)
+    {
+        foreach (var attrList in method.AttributeLists)
+        {
+            foreach (var attribute in attrList.Attributes)
+            {
+                if (XunitTestHelper.IsFactOrTheoryAttribute(attribute, context.SemanticModel, context.CancellationToken))
                 {
-                    if (XunitTestHelper.IsFactOrTheoryAttribute(attribute, context.SemanticModel, context.CancellationToken))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
@@ -16,11 +17,11 @@ namespace E128.Analyzers.Security;
 /// </summary>
 internal static partial class FipsSymbolHelpers
 {
-    public const string Cryptography = "System.Security.Cryptography";
+    internal const string Cryptography = "System.Security.Cryptography";
 
-    public const string AspNetCryptography = "Microsoft.AspNetCore.Cryptography";
+    internal const string AspNetCryptography = "Microsoft.AspNetCore.Cryptography";
 
-    public const string KeyDerivation = "Microsoft.AspNetCore.Cryptography.KeyDerivation";
+    internal const string KeyDerivation = "Microsoft.AspNetCore.Cryptography.KeyDerivation";
 
     internal const int MaxResolveDepth = 4;
 
@@ -44,32 +45,46 @@ internal static partial class FipsSymbolHelpers
     ///     Returns the fully qualified type name without <c lang="csharp">global::</c>. Call this only when reporting,
     ///     because formatting allocates.
     /// </summary>
-    public static string? FullName(ITypeSymbol? type) =>
-        type?.ToDisplayString(FullyQualifiedNoGlobal);
+    internal static string? FullName(ITypeSymbol? type)
+    {
+        return type?.ToDisplayString(FullyQualifiedNoGlobal);
+    }
 
-    /// <summary>Returns true when <paramref name="type" /> is a top-level type with the given name and namespace.</summary>
-    public static bool IsType(ITypeSymbol? type, string name, string dottedNamespace) =>
-        type is INamedTypeSymbol { ContainingType: null } named &&
+    /// <summary>
+    ///     Returns true when <paramref name="type" /> is a top-level type with the given name and namespace.
+    /// </summary>
+    internal static bool IsType(ITypeSymbol? type, string name, string dottedNamespace)
+    {
+        return type is INamedTypeSymbol { ContainingType: null } named &&
         string.Equals(named.Name, name, StringComparison.Ordinal) &&
         Namespaces.Equals(named.ContainingNamespace, dottedNamespace);
+    }
 
-    public static bool IsCryptographyType(ITypeSymbol? type, string name) =>
-        IsType(type, name, Cryptography);
+    internal static bool IsCryptographyType(ITypeSymbol? type, string name)
+    {
+        return IsType(type, name, Cryptography);
+    }
 
-    /// <summary>Returns true when <paramref name="type" /> is a top-level cryptography type whose name is in the set.</summary>
-    public static bool IsCryptographyType(ITypeSymbol? type, ImmutableHashSet<string> names) =>
-        type is INamedTypeSymbol { ContainingType: null } named &&
+    /// <summary>
+    ///     Returns true when <paramref name="type" /> is a top-level cryptography type whose name is in the set.
+    /// </summary>
+    internal static bool IsCryptographyType(ITypeSymbol? type, ImmutableHashSet<string> names)
+    {
+        return type is INamedTypeSymbol { ContainingType: null } named &&
         names.Contains(named.Name) &&
         Namespaces.Equals(named.ContainingNamespace, Cryptography);
+    }
 
-    public static bool IsInCryptographyNamespace(ITypeSymbol? type) =>
-        type is INamedTypeSymbol named && Namespaces.Equals(named.ContainingNamespace, Cryptography);
+    internal static bool IsInCryptographyNamespace(ITypeSymbol? type)
+    {
+        return type is INamedTypeSymbol named && Namespaces.Equals(named.ContainingNamespace, Cryptography);
+    }
 
     /// <summary>
     ///     Returns true when the type sits in System.Security.Cryptography or one of its child namespaces,
     ///     such as <c lang="csharp">System.Security.Cryptography.X509Certificates</c>.
     /// </summary>
-    public static bool IsInCryptographyNamespaceTree(ITypeSymbol? type)
+    internal static bool IsInCryptographyNamespaceTree(ITypeSymbol? type)
     {
         if (type is not INamedTypeSymbol named)
         {
@@ -87,16 +102,26 @@ internal static partial class FipsSymbolHelpers
         return false;
     }
 
-    /// <summary>Returns true when the type, or one of its base types, is the named cryptography type.</summary>
-    public static bool DerivesFromCryptographyType(ITypeSymbol? type, string name) =>
-        DerivesFromType(type, name, Cryptography);
+    /// <summary>
+    ///     Returns true when the type, or one of its base types, is the named cryptography type.
+    /// </summary>
+    internal static bool DerivesFromCryptographyType(ITypeSymbol? type, string name)
+    {
+        return DerivesFromType(type, name, Cryptography);
+    }
 
-    /// <summary>Returns true when the type, or one of its base types, is the named top-level type.</summary>
-    public static bool DerivesFromType(ITypeSymbol? type, string name, string dottedNamespace) =>
-        FindBaseType(type, name, dottedNamespace) is not null;
+    /// <summary>
+    ///     Returns true when the type, or one of its base types, is the named top-level type.
+    /// </summary>
+    internal static bool DerivesFromType(ITypeSymbol? type, string name, string dottedNamespace)
+    {
+        return FindBaseType(type, name, dottedNamespace) is not null;
+    }
 
-    /// <summary>Returns the type or base type that is the named top-level type, or null.</summary>
-    public static ITypeSymbol? FindBaseType(ITypeSymbol? type, string name, string dottedNamespace)
+    /// <summary>
+    ///     Returns the type or base type that is the named top-level type, or null.
+    /// </summary>
+    internal static ITypeSymbol? FindBaseType(ITypeSymbol? type, string name, string dottedNamespace)
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
@@ -113,7 +138,7 @@ internal static partial class FipsSymbolHelpers
     ///     Returns the argument bound to the parameter at <paramref name="ordinal" />. The lookup uses the
     ///     parameter, not the array position, because named arguments can reorder the source.
     /// </summary>
-    public static IArgumentOperation? ArgumentAt(ImmutableArray<IArgumentOperation> arguments, int ordinal)
+    internal static IArgumentOperation? ArgumentAt(ImmutableArray<IArgumentOperation> arguments, int ordinal)
     {
         foreach (var argument in arguments)
         {
@@ -126,8 +151,10 @@ internal static partial class FipsSymbolHelpers
         return null;
     }
 
-    /// <summary>Returns the argument bound to the parameter with the given name, or null.</summary>
-    public static IArgumentOperation? ArgumentNamed(ImmutableArray<IArgumentOperation> arguments, string parameterName)
+    /// <summary>
+    ///     Returns the argument bound to the parameter with the given name, or null.
+    /// </summary>
+    internal static IArgumentOperation? ArgumentNamed(ImmutableArray<IArgumentOperation> arguments, string parameterName)
     {
         foreach (var argument in arguments)
         {
@@ -145,7 +172,7 @@ internal static partial class FipsSymbolHelpers
     ///     such as <c lang="csharp">System.Collections.Generic.List&lt;T&gt;</c>. A type in any other namespace belongs to
     ///     application or third-party code.
     /// </summary>
-    public static bool IsBclType(ITypeSymbol? type)
+    internal static bool IsBclType(ITypeSymbol? type)
     {
         var ns = type?.ContainingNamespace;
         if (ns is null || ns.IsGlobalNamespace)
@@ -158,7 +185,8 @@ internal static partial class FipsSymbolHelpers
             ns = parent;
         }
 
-        return ns.Name is "System" or "Microsoft";
+        return string.Equals(ns.Name, "System", StringComparison.Ordinal) ||
+            string.Equals(ns.Name, "Microsoft", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -168,7 +196,7 @@ internal static partial class FipsSymbolHelpers
     ///     Each name reports once per call.
     /// </summary>
     /// <typeparam name="TState">The type of the state passed to both delegates.</typeparam>
-    public static void ReportHashNameArguments<TState>(
+    internal static void ReportHashNameArguments<TState>(
         IMethodSymbol? method,
         ImmutableArray<IArgumentOperation> arguments,
         SyntaxNode syntax,
@@ -176,17 +204,7 @@ internal static partial class FipsSymbolHelpers
         Func<TState, string, bool> isForbidden,
         Action<TState, SyntaxNode, string> report)
     {
-        var hasHashParameter = false;
-        foreach (var argument in arguments)
-        {
-            if (IsCryptographyType(argument.Parameter?.Type, HashAlgorithmNameType))
-            {
-                hasHashParameter = true;
-                break;
-            }
-        }
-
-        if (!hasHashParameter)
+        if (!HasHashNameParameter(arguments))
         {
             return;
         }
@@ -196,14 +214,27 @@ internal static partial class FipsSymbolHelpers
             return;
         }
 
-        var seen = default(NameSet);
+        var seen = NewNameSet();
         foreach (var argument in arguments)
         {
             if (IsCryptographyType(argument.Parameter?.Type, HashAlgorithmNameType))
             {
-                ReportNames(argument.Value, syntax, ref seen, state, isForbidden, report);
+                ReportNames(argument.Value, syntax, seen, state, isForbidden, report);
             }
         }
+    }
+
+    private static bool HasHashNameParameter(ImmutableArray<IArgumentOperation> arguments)
+    {
+        foreach (var argument in arguments)
+        {
+            if (IsCryptographyType(argument.Parameter?.Type, HashAlgorithmNameType))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -212,23 +243,22 @@ internal static partial class FipsSymbolHelpers
     ///     field with an initializer resolves at its use, so its initializer is skipped.
     /// </summary>
     /// <typeparam name="TState">The type of the state passed to both delegates.</typeparam>
-    public static void ReportHashNameStores<TState>(
+    internal static void ReportHashNameStores<TState>(
         IOperation operation,
         TState state,
         Func<TState, string, bool> isForbidden,
         Action<TState, SyntaxNode, string> report)
     {
-        var seen = default(NameSet);
         switch (operation)
         {
             case IFieldInitializerOperation { InitializedFields.Length: 1 } field
                 when !field.InitializedFields[0].IsReadOnly && IsCryptographyType(field.InitializedFields[0].Type, HashAlgorithmNameType):
-                ReportNames(field.Value, field.Value.Syntax, ref seen, state, isForbidden, report);
+                ReportNames(field.Value, field.Value.Syntax, NewNameSet(), state, isForbidden, report);
                 break;
 
             case IPropertyInitializerOperation { InitializedProperties.Length: 1 } property
                 when IsCryptographyType(property.InitializedProperties[0].Type, HashAlgorithmNameType):
-                ReportNames(property.Value, property.Value.Syntax, ref seen, state, isForbidden, report);
+                ReportNames(property.Value, property.Value.Syntax, NewNameSet(), state, isForbidden, report);
                 break;
 
             case IFieldInitializerOperation or IPropertyInitializerOperation:
@@ -245,18 +275,21 @@ internal static partial class FipsSymbolHelpers
                             return;
                         }
 
-                        var assigned = default(NameSet);
-                        ReportNames(value, syntax, ref assigned, context.state, context.isForbidden, context.report);
+                        ReportNames(value, syntax, NewNameSet(), context.state, context.isForbidden, context.report);
                     });
-
                 break;
         }
+    }
+
+    private static HashSet<string> NewNameSet()
+    {
+        return new HashSet<string>(StringComparer.Ordinal);
     }
 
     private static void ReportNames<TState>(
         IOperation value,
         SyntaxNode syntax,
-        ref NameSet seen,
+        HashSet<string> seen,
         TState state,
         Func<TState, string, bool> isForbidden,
         Action<TState, SyntaxNode, string> report)
@@ -274,7 +307,7 @@ internal static partial class FipsSymbolHelpers
     ///     Reads every hash name an expression can produce: one name, or both arms of a conditional, a <c lang="csharp">??</c> or
     ///     a switch expression, including arms held in an unreassigned local or a <c lang="csharp">readonly</c> field.
     /// </summary>
-    public static IEnumerable<string> HashAlgorithmNames(IOperation? operation, int depth = 0)
+    internal static IEnumerable<string> HashAlgorithmNames(IOperation? operation, int depth = 0)
     {
         operation = Unwrap(operation);
         if (operation is null || depth > MaxResolveDepth)
@@ -307,73 +340,41 @@ internal static partial class FipsSymbolHelpers
         }
     }
 
-    /// <summary>Reads the names from both arms of a conditional, a <c lang="csharp">??</c> or a switch expression.</summary>
+    /// <summary>
+    ///     Reads the names from both arms of a conditional, a <c lang="csharp">??</c> or a switch expression.
+    /// </summary>
     private static IEnumerable<string> BranchHashAlgorithmNames(IOperation operation, int depth)
     {
-        if (operation is IConditionalOperation conditional)
+        return operation switch
         {
-            foreach (var name in HashAlgorithmNames(conditional.WhenTrue, depth + 1))
-            {
-                yield return name;
-            }
+            IConditionalOperation conditional => ArmHashAlgorithmNames(conditional.WhenTrue, conditional.WhenFalse, depth),
+            ICoalesceOperation coalesce => ArmHashAlgorithmNames(coalesce.Value, coalesce.WhenNull, depth),
+            ISwitchExpressionOperation switchExpression => SwitchArmHashAlgorithmNames(switchExpression, depth),
+            _ => [],
+        };
+    }
 
-            foreach (var name in HashAlgorithmNames(conditional.WhenFalse, depth + 1))
-            {
-                yield return name;
-            }
-
-            yield break;
+    private static IEnumerable<string> ArmHashAlgorithmNames(IOperation? first, IOperation? second, int depth)
+    {
+        foreach (var name in HashAlgorithmNames(first, depth + 1))
+        {
+            yield return name;
         }
 
-        if (operation is ICoalesceOperation coalesce)
+        foreach (var name in HashAlgorithmNames(second, depth + 1))
         {
-            foreach (var name in HashAlgorithmNames(coalesce.Value, depth + 1))
-            {
-                yield return name;
-            }
-
-            foreach (var name in HashAlgorithmNames(coalesce.WhenNull, depth + 1))
-            {
-                yield return name;
-            }
-
-            yield break;
-        }
-
-        if (operation is ISwitchExpressionOperation switchExpression)
-        {
-            foreach (var arm in switchExpression.Arms)
-            {
-                foreach (var name in HashAlgorithmNames(arm.Value, depth + 1))
-                {
-                    yield return name;
-                }
-            }
+            yield return name;
         }
     }
 
-    /// <summary>Tracks the names already reported for one call site or store, so a repeated name reports once.</summary>
-    private struct NameSet
+    private static IEnumerable<string> SwitchArmHashAlgorithmNames(ISwitchExpressionOperation switchExpression, int depth)
     {
-        private string? _first;
-        private HashSet<string>? _others;
-
-        public bool Add(string name)
+        foreach (var arm in switchExpression.Arms)
         {
-            if (_first is null)
+            foreach (var name in HashAlgorithmNames(arm.Value, depth + 1))
             {
-                _first = name;
-                return true;
+                yield return name;
             }
-
-            if (string.Equals(_first, name, StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            _others ??= new HashSet<string>(StringComparer.Ordinal);
-
-            return _others.Add(name);
         }
     }
 
@@ -381,7 +382,7 @@ internal static partial class FipsSymbolHelpers
     ///     Returns the arguments whose parameter type is <c lang="csharp">System.Security.Cryptography.HashAlgorithmName</c>.
     ///     Allocates only when at least one argument matches.
     /// </summary>
-    public static ImmutableArray<IArgumentOperation> HashNameArguments(ImmutableArray<IArgumentOperation> arguments)
+    internal static ImmutableArray<IArgumentOperation> HashNameArguments(ImmutableArray<IArgumentOperation> arguments)
     {
         var count = 0;
         foreach (var argument in arguments)
@@ -392,7 +393,7 @@ internal static partial class FipsSymbolHelpers
             }
         }
 
-        if (count == 0)
+        if (count is 0)
         {
             return [];
         }
@@ -414,7 +415,7 @@ internal static partial class FipsSymbolHelpers
     ///     declaration or a plain assignment) in the rest of the same block, or null when the value does not
     ///     land in a local or the local is never used again. <paramref name="block" /> is that block.
     /// </summary>
-    public static ILocalReferenceOperation? FindFirstLocalUse(IOperation creation, out IBlockOperation? block)
+    internal static ILocalReferenceOperation? FindFirstLocalUse(IOperation creation, out IBlockOperation? block)
     {
         block = null;
         var local = GetReceivingLocal(creation);
@@ -423,31 +424,39 @@ internal static partial class FipsSymbolHelpers
             return null;
         }
 
-        // The block that holds the statement, or the body of a 'using (var x = ...)' statement whose resource
-        // is the creation, so the first statement of that body counts as the first use.
-        IBlockOperation? parentBlock = null;
-        for (var statement = creation; statement.Parent is not null; statement = statement.Parent)
-        {
-            if (statement.Parent is IUsingOperation { Body: IBlockOperation body } usingStatement && usingStatement.Resources == statement)
-            {
-                parentBlock = body;
-                break;
-            }
-
-            if (statement.Parent is IBlockOperation enclosing)
-            {
-                parentBlock = enclosing;
-                break;
-            }
-        }
-
+        var parentBlock = FindEnclosingBlock(creation);
         if (parentBlock is null)
         {
             return null;
         }
 
         block = parentBlock;
-        var end = creation.Syntax.Span.End;
+
+        return FindFirstReferenceAfter(parentBlock, local, creation.Syntax.Span.End);
+    }
+
+    private static IBlockOperation? FindEnclosingBlock(IOperation creation)
+    {
+        // The block that holds the statement, or the body of a 'using (var x = ...)' statement whose resource
+        // is the creation, so the first statement of that body counts as the first use.
+        for (var statement = creation; statement.Parent is not null; statement = statement.Parent)
+        {
+            if (statement.Parent is IUsingOperation { Body: IBlockOperation body } usingStatement && usingStatement.Resources == statement)
+            {
+                return body;
+            }
+
+            if (statement.Parent is IBlockOperation enclosing)
+            {
+                return enclosing;
+            }
+        }
+
+        return null;
+    }
+
+    private static ILocalReferenceOperation? FindFirstReferenceAfter(IBlockOperation parentBlock, ILocalSymbol local, int end)
+    {
         ILocalReferenceOperation? first = null;
         foreach (var descendant in parentBlock.Descendants())
         {
@@ -467,8 +476,9 @@ internal static partial class FipsSymbolHelpers
     ///     Returns true when <paramref name="use" /> is the receiver of <c lang="csharp">use.Property = value</c> written as its
     ///     own statement directly in <paramref name="block" />, so the assignment runs before any later code.
     /// </summary>
-    public static bool IsUnconditionalPropertyAssignment(ILocalReferenceOperation use, string propertyName, IBlockOperation? block) =>
-        block is not null &&
+    internal static bool IsUnconditionalPropertyAssignment(ILocalReferenceOperation use, string propertyName, IBlockOperation? block)
+    {
+        return block is not null &&
         use.Parent is IPropertyReferenceOperation property &&
         string.Equals(property.Property.Name, propertyName, StringComparison.Ordinal) &&
         property.Instance == use &&
@@ -476,30 +486,38 @@ internal static partial class FipsSymbolHelpers
         assignment.Target == property &&
         assignment.Parent is IExpressionStatementOperation statement &&
         statement.Parent == block;
+    }
 
     /// <summary>
     ///     Returns true when <paramref name="target" /> is a property or field reference named
     ///     <paramref name="memberName" />. Callers use it as a cheap pre-check before any type lookup.
     /// </summary>
-    public static bool IsCandidateAssignmentTarget(IOperation? target, string memberName) => target switch
+    internal static bool IsCandidateAssignmentTarget(IOperation? target, string memberName)
     {
-        IPropertyReferenceOperation property => string.Equals(property.Property.Name, memberName, StringComparison.Ordinal),
-        IFieldReferenceOperation field => string.Equals(field.Field.Name, memberName, StringComparison.Ordinal),
-        _ => false,
-    };
+        return target switch
+        {
+            IPropertyReferenceOperation property => string.Equals(property.Property.Name, memberName, StringComparison.Ordinal),
+            IFieldReferenceOperation field => string.Equals(field.Field.Name, memberName, StringComparison.Ordinal),
+            _ => false,
+        };
+    }
 
     /// <summary>
     ///     Returns false when <paramref name="assignment" /> is a simple or compound assignment whose target cannot be
     ///     the member named <paramref name="memberName" />. A tuple deconstruction returns true, because any element
     ///     can match. Call it before <see cref="ForEachAssignment{TState}" /> to skip an unrelated assignment.
     /// </summary>
-    public static bool MayAssignMember(IOperation assignment, string memberName) =>
-        assignment is not IAssignmentOperation single ||
+    internal static bool MayAssignMember(IOperation assignment, string memberName)
+    {
+        return assignment is not IAssignmentOperation single ||
         assignment is IDeconstructionAssignmentOperation ||
         IsCandidateAssignmentTarget(single.Target, memberName);
+    }
 
-    /// <summary>Returns true when the object initializer of <paramref name="creation" /> assigns the property.</summary>
-    public static bool InitializerAssigns(IObjectCreationOperation creation, string propertyName)
+    /// <summary>
+    ///     Returns true when the object initializer of <paramref name="creation" /> assigns the property.
+    /// </summary>
+    internal static bool InitializerAssigns(IObjectCreationOperation creation, string propertyName)
     {
         if (creation.Initializer is null)
         {
@@ -525,7 +543,7 @@ internal static partial class FipsSymbolHelpers
     ///     and avoid a closure allocation on every operation.
     /// </summary>
     /// <typeparam name="TState">The type of the state passed to the check delegate.</typeparam>
-    public static void ForEachAssignment<TState>(IOperation operation, TState state, Action<TState, IOperation, IOperation, SyntaxNode> check)
+    internal static void ForEachAssignment<TState>(IOperation operation, TState state, Action<TState, IOperation, IOperation, SyntaxNode> check)
     {
         if (operation is IDeconstructionAssignmentOperation deconstruction)
         {
@@ -547,10 +565,12 @@ internal static partial class FipsSymbolHelpers
             return;
         }
 
-        if (operation is IAssignmentOperation assignment)
+        if (operation is not IAssignmentOperation assignment)
         {
-            check(state, assignment.Target, assignment.Value, assignment.Syntax);
+            return;
         }
+
+        check(state, assignment.Target, assignment.Value, assignment.Syntax);
     }
 
     /// <summary>
@@ -559,7 +579,7 @@ internal static partial class FipsSymbolHelpers
     ///     <c lang="csharp">Equals</c> or <c lang="csharp">HasFlag</c> call, or the receiver of that call.
     ///     A comparison reads a value and does not select it.
     /// </summary>
-    public static bool IsComparison(IOperation operation)
+    internal static bool IsComparison(IOperation operation)
     {
         var parent = operation.Parent;
         while (parent is IConversionOperation)
@@ -568,18 +588,28 @@ internal static partial class FipsSymbolHelpers
         }
 
         // The receiver of an Equals or HasFlag call reads the value; only the argument position could mislead a name check.
-        var receiverComparison = parent is IInvocationOperation { TargetMethod.Name: "Equals" or "HasFlag" } comparisonCall &&
+        var receiverComparison = parent is IInvocationOperation comparisonCall &&
+            IsEqualsOrHasFlag(comparisonCall.TargetMethod) &&
             comparisonCall.Instance == operation;
 
         return receiverComparison ||
             parent is IBinaryOperation { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals }
             or IConstantPatternOperation
-            or ISingleValueCaseClauseOperation
-            or IArgumentOperation { Parent: IInvocationOperation { TargetMethod.Name: "Equals" or "HasFlag" } };
+            or ISingleValueCaseClauseOperation ||
+            (parent is IArgumentOperation { Parent: IInvocationOperation argumentCall } &&
+             IsEqualsOrHasFlag(argumentCall.TargetMethod));
     }
 
-    /// <summary>Removes conversion wrappers to reach the value an expression produces.</summary>
-    public static IOperation? Unwrap(IOperation? operation)
+    private static bool IsEqualsOrHasFlag(IMethodSymbol method)
+    {
+        return string.Equals(method.Name, "Equals", StringComparison.Ordinal) ||
+            string.Equals(method.Name, "HasFlag", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Removes conversion wrappers to reach the value an expression produces.
+    /// </summary>
+    internal static IOperation? Unwrap(IOperation? operation)
     {
         while (operation is IConversionOperation conversion)
         {
@@ -594,7 +624,7 @@ internal static partial class FipsSymbolHelpers
     ///     <see cref="string" />), including <c lang="csharp">const</c> fields, folded expressions and string concatenations.
     /// </summary>
     /// <typeparam name="T">The constant type.</typeparam>
-    public static bool TryGetConstant<T>(IOperation? operation, [MaybeNullWhen(false)] out T value)
+    internal static bool TryGetConstant<T>(IOperation? operation, [MaybeNullWhen(false)] out T value)
     {
         if (operation is { ConstantValue: { HasValue: true, Value: T constant } })
         {
@@ -612,7 +642,7 @@ internal static partial class FipsSymbolHelpers
     ///     writes. A parameter or a reassigned value is not resolved.
     /// </summary>
     /// <typeparam name="T">The constant type.</typeparam>
-    public static bool TryGetResolvedConstant<T>(IOperation? operation, [MaybeNullWhen(false)] out T value, int depth = 0)
+    internal static bool TryGetResolvedConstant<T>(IOperation? operation, [MaybeNullWhen(false)] out T value, int depth = 0)
     {
         operation = Unwrap(operation);
 
@@ -628,7 +658,7 @@ internal static partial class FipsSymbolHelpers
     ///     declaration, resolves, so the initializer is the value every read sees. A declaration in a syntax tree
     ///     outside the compilation (a field from a referenced project) does not resolve.
     /// </summary>
-    public static IOperation? ResolveInitializer(IOperation? operation)
+    internal static IOperation? ResolveInitializer(IOperation? operation)
     {
         operation = Unwrap(operation);
 
@@ -637,29 +667,36 @@ internal static partial class FipsSymbolHelpers
             return null;
         }
 
-        SyntaxReference? declaration = null;
-        if (operation is IFieldReferenceOperation { Field.IsReadOnly: true } field)
-        {
-            if (field.Field.DeclaringSyntaxReferences.Length == 1 &&
-                model.Compilation.ContainsSyntaxTree(field.Field.DeclaringSyntaxReferences[0].SyntaxTree) &&
-                !IsAssignedInConstructor(field.Field, model.Compilation))
-            {
-                declaration = field.Field.DeclaringSyntaxReferences[0];
-            }
-        }
-        else if (operation is ILocalReferenceOperation local &&
-                 IsNeverReassigned(local) &&
-                 local.Local.DeclaringSyntaxReferences.Length == 1)
-        {
-            declaration = local.Local.DeclaringSyntaxReferences[0];
-        }
-
-        var syntax = declaration?.GetSyntax();
+        var declaration = FindResolvableDeclaration(operation, model.Compilation);
+        var syntax = declaration?.GetSyntax(CancellationToken.None);
 
         return syntax is VariableDeclaratorSyntax { Initializer.Value: { } value } &&
             model.Compilation.ContainsSyntaxTree(syntax.SyntaxTree)
-                ? model.Compilation.GetSemanticModel(syntax.SyntaxTree).GetOperation(value)
+                ? model.Compilation.GetSemanticModel(syntax.SyntaxTree).GetOperation(value, CancellationToken.None)
                 : null;
+    }
+
+    private static SyntaxReference? FindResolvableDeclaration(IOperation operation, Compilation compilation)
+    {
+        if (operation is IFieldReferenceOperation { Field.IsReadOnly: true } field)
+        {
+            var references = field.Field.DeclaringSyntaxReferences;
+
+            return references.Length is 1 &&
+                compilation.ContainsSyntaxTree(references[0].SyntaxTree) &&
+                !IsAssignedInConstructor(field.Field, compilation)
+                    ? references[0]
+                    : null;
+        }
+
+        if (operation is not ILocalReferenceOperation local ||
+            !IsNeverReassigned(local) ||
+            local.Local.DeclaringSyntaxReferences.Length is not 1)
+        {
+            return null;
+        }
+
+        return local.Local.DeclaringSyntaxReferences[0];
     }
 
     /// <summary>
@@ -668,7 +705,7 @@ internal static partial class FipsSymbolHelpers
     ///     with a known constant object identifier, either written inline or held in a <c lang="csharp">readonly</c> field or an
     ///     unreassigned local.
     /// </summary>
-    public static bool TryGetHashAlgorithmName(IOperation? operation, out string name, int depth = 0)
+    internal static bool TryGetHashAlgorithmName(IOperation? operation, out string name, int depth = 0)
     {
         name = string.Empty;
         operation = Unwrap(operation);
@@ -681,64 +718,76 @@ internal static partial class FipsSymbolHelpers
 
     private static bool TryGetDirectHashAlgorithmName(IOperation? operation, out string name)
     {
-        name = string.Empty;
         operation = Unwrap(operation);
 
-        if (operation is IPropertyReferenceOperation { Property: { IsStatic: true } property } &&
-            IsCryptographyType(property.ContainingType, HashAlgorithmNameType))
+        return TryGetPropertyHashName(operation, out name) ||
+            TryGetConstructedHashName(operation, out name) ||
+            TryGetFromOidHashName(operation, out name);
+    }
+
+    private static bool TryGetPropertyHashName(IOperation? operation, out string name)
+    {
+        name = string.Empty;
+        if (operation is not IPropertyReferenceOperation { Property: { IsStatic: true } property } ||
+            !IsCryptographyType(property.ContainingType, HashAlgorithmNameType))
         {
-            name = property.Name;
-            return true;
+            return false;
         }
 
-        if (operation is IObjectCreationOperation creation &&
-            IsCryptographyType(creation.Type, HashAlgorithmNameType) &&
-            creation.Arguments.Length == 1 &&
-            TryGetConstant<string>(creation.Arguments[0].Value, out var text))
+        name = property.Name;
+
+        return true;
+    }
+
+    private static bool TryGetConstructedHashName(IOperation? operation, out string name)
+    {
+        name = string.Empty;
+        if (operation is not IObjectCreationOperation creation ||
+            !IsCryptographyType(creation.Type, HashAlgorithmNameType) ||
+            creation.Arguments.Length is not 1 ||
+            !TryGetConstant<string>(creation.Arguments[0].Value, out var text))
         {
-            name = text;
-            return true;
+            return false;
         }
 
-        if (operation is IInvocationOperation { TargetMethod: { IsStatic: true, Name: "FromOid" } fromOid } oidCall &&
-            IsCryptographyType(fromOid.ContainingType, HashAlgorithmNameType) &&
-            TryGetConstant<string>(ArgumentAt(oidCall.Arguments, 0)?.Value, out var oid) &&
-            HashNameFromOid(oid) is { } oidName)
+        name = text;
+
+        return true;
+    }
+
+    private static bool TryGetFromOidHashName(IOperation? operation, out string name)
+    {
+        name = string.Empty;
+        if (operation is not IInvocationOperation { TargetMethod: { IsStatic: true } fromOid } oidCall ||
+            !string.Equals(fromOid.Name, "FromOid", StringComparison.Ordinal) ||
+            !IsCryptographyType(fromOid.ContainingType, HashAlgorithmNameType) ||
+            !TryGetConstant<string>(ArgumentAt(oidCall.Arguments, 0)?.Value, out var oid) ||
+            HashNameFromOid(oid) is not { } oidName)
         {
-            name = oidName;
-            return true;
+            return false;
         }
 
-        return false;
+        name = oidName;
+
+        return true;
     }
 
     /// <summary>
     ///     Returns true when <paramref name="word" /> appears in <paramref name="name" /> as a whole word:
     ///     bounded by the start or end, an underscore, a digit, or a camelCase change.
     /// </summary>
-    public static bool ContainsWord(string name, string word)
+    internal static bool ContainsWord(string name, string word)
     {
-        var camelCase = false;
-        foreach (var character in name)
-        {
-            if (char.IsLower(character))
-            {
-                camelCase = true;
-                break;
-            }
-        }
-
+        var camelCase = HasLowerCaseLetter(name);
         var index = 0;
         while ((index = name.IndexOf(word, index, StringComparison.OrdinalIgnoreCase)) >= 0)
         {
             var afterPosition = index + word.Length;
-            var before = index == 0 ? '\0' : name[index - 1];
+            var before = index is 0 ? '\0' : name[index - 1];
             var after = afterPosition >= name.Length ? '\0' : name[afterPosition];
 
-            var boundaryBefore = before == '\0' || before == '_' || char.IsDigit(before) || (camelCase && char.IsUpper(name[index]));
-            var boundaryAfter = after == '\0' || after == '_' || char.IsDigit(after) || (camelCase && char.IsUpper(after));
-
-            if (boundaryBefore && boundaryAfter)
+            if (IsWordEdge(before, camelCase && char.IsUpper(name[index])) &&
+                IsWordEdge(after, camelCase && char.IsUpper(after)))
             {
                 return true;
             }
@@ -749,14 +798,35 @@ internal static partial class FipsSymbolHelpers
         return false;
     }
 
-    private static string? HashNameFromOid(string oid) => oid.Trim() switch
+    private static bool HasLowerCaseLetter(string name)
     {
-        "1.3.14.3.2.26" => "SHA1",
-        "1.2.840.113549.2.5" => "MD5",
-        "1.3.36.3.2.1" => "RIPEMD160",
-        "2.16.840.1.101.3.4.2.8" => "SHA3_256",
-        "2.16.840.1.101.3.4.2.9" => "SHA3_384",
-        "2.16.840.1.101.3.4.2.10" => "SHA3_512",
-        _ => null,
-    };
+        foreach (var character in name)
+        {
+            if (char.IsLower(character))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsWordEdge(char neighbor, bool caseChange)
+    {
+        return neighbor is '\0' or '_' || char.IsDigit(neighbor) || caseChange;
+    }
+
+    private static string? HashNameFromOid(string oid)
+    {
+        return oid.Trim() switch
+        {
+            "1.3.14.3.2.26" => "SHA1",
+            "1.2.840.113549.2.5" => "MD5",
+            "1.3.36.3.2.1" => "RIPEMD160",
+            "2.16.840.1.101.3.4.2.8" => "SHA3_256",
+            "2.16.840.1.101.3.4.2.9" => "SHA3_384",
+            "2.16.840.1.101.3.4.2.10" => "SHA3_512",
+            _ => null,
+        };
+    }
 }

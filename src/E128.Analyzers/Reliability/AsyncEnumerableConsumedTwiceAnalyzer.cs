@@ -50,7 +50,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var asyncEnumerableType = compilationContext.Compilation.GetTypeByMetadataName(
                 "System.Collections.Generic.IAsyncEnumerable`1");
@@ -75,14 +75,17 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
     {
         return node switch
         {
-            MethodDeclarationSyntax method => (SyntaxNode?)method.Body ?? method.ExpressionBody?.Expression,
-            LocalFunctionStatementSyntax localFunction => (SyntaxNode?)localFunction.Body
-                                                          ?? localFunction.ExpressionBody?.Expression,
-            AccessorDeclarationSyntax accessor => (SyntaxNode?)accessor.Body
-                                                  ?? accessor.ExpressionBody?.Expression,
-            AnonymousFunctionExpressionSyntax anonymous => (SyntaxNode?)anonymous.Body,
+            MethodDeclarationSyntax method => BodyOrExpression(method.Body, method.ExpressionBody),
+            LocalFunctionStatementSyntax localFunction => BodyOrExpression(localFunction.Body, localFunction.ExpressionBody),
+            AccessorDeclarationSyntax accessor => BodyOrExpression(accessor.Body, accessor.ExpressionBody),
+            AnonymousFunctionExpressionSyntax anonymous => anonymous.Body,
             _ => null
         };
+    }
+
+    private static SyntaxNode? BodyOrExpression(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody)
+    {
+        return (SyntaxNode?)body ?? expressionBody?.Expression;
     }
 
     private static void AnalyzeBody(SyntaxNodeAnalysisContext context, INamedTypeSymbol? asyncEnumerableType)
@@ -115,7 +118,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
             if (node is AssignmentExpressionSyntax assignment
                 && model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is { } assigned)
             {
-                firstSites.Remove(assigned);
+                _ = firstSites.Remove(assigned);
             }
 
             if (!TryGetEnumeratedSequence(node, model, asyncEnumerableType, cancellationToken, out var expression, out var symbol))
@@ -199,12 +202,14 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
 
     private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
     {
+        var current = expression;
+
         while (true)
         {
-            switch (expression)
+            switch (current)
             {
                 case ParenthesizedExpressionSyntax parenthesized:
-                    expression = parenthesized.Expression;
+                    current = parenthesized.Expression;
                     continue;
 
                 case InvocationExpressionSyntax
@@ -212,11 +217,11 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
                     Expression: MemberAccessExpressionSyntax access,
                     ArgumentList.Arguments.Count: 1
                 } when IsWrapper(access.Name.Identifier.ValueText):
-                    expression = access.Expression;
+                    current = access.Expression;
                     continue;
 
                 default:
-                    return expression;
+                    return current;
             }
         }
     }

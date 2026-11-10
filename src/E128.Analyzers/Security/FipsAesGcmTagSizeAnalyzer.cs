@@ -18,6 +18,8 @@ public sealed class FipsAesGcmTagSizeAnalyzer : DiagnosticAnalyzer
 
     private const int RequiredTagBytes = 16;
 
+    private const int BitsPerByte = 8;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use the full 16-byte AES-GCM tag",
@@ -53,12 +55,14 @@ public sealed class FipsAesGcmTagSizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (FipsSymbolHelpers.ArgumentNamed(creation.Arguments, "tagSizeInBytes") is { } argument &&
-            FipsSymbolHelpers.TryGetResolvedConstant<int>(argument.Value, out var tagBytes) &&
-            tagBytes < RequiredTagBytes)
+        if (FipsSymbolHelpers.ArgumentNamed(creation.Arguments, "tagSizeInBytes") is not { } argument ||
+            !FipsSymbolHelpers.TryGetResolvedConstant<int>(argument.Value, out var tagBytes) ||
+            tagBytes >= RequiredTagBytes)
         {
-            Report(context, creation, tagBytes);
+            return;
         }
+
+        Report(context, creation, tagBytes);
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
@@ -72,18 +76,22 @@ public sealed class FipsAesGcmTagSizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (FipsSymbolHelpers.ArgumentNamed(invocation.Arguments, "tag") is { } argument &&
-            FipsSymbolHelpers.TryGetConstantByteLength(argument.Value, out var tagBytes) &&
-            tagBytes < RequiredTagBytes)
+        if (FipsSymbolHelpers.ArgumentNamed(invocation.Arguments, "tag") is not { } argument ||
+            !FipsSymbolHelpers.TryGetConstantByteLength(argument.Value, out var tagBytes) ||
+            tagBytes >= RequiredTagBytes)
         {
-            Report(context, invocation, tagBytes);
+            return;
         }
+
+        Report(context, invocation, tagBytes);
     }
 
-    private static void Report(OperationAnalysisContext context, IOperation operation, int tagBytes) =>
+    private static void Report(OperationAnalysisContext context, IOperation operation, int tagBytes)
+    {
         context.ReportDiagnostic(Diagnostic.Create(
             Rule,
             operation.Syntax.GetLocation(),
             tagBytes,
-            tagBytes * 8));
+            tagBytes * BitsPerByte));
+    }
 }

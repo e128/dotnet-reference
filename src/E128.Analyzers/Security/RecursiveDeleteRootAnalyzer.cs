@@ -56,7 +56,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             // The rule names two System.IO types. When either is absent the members below belong
             // to some other type, so the rule must not run.
@@ -107,7 +107,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (ClassifyPath(path, model, pathTypes, cancellationToken) != PathSafety.Unsafe)
+        if (ClassifyPath(path, model, pathTypes, cancellationToken) is not PathSafety.Unsafe)
         {
             return;
         }
@@ -149,7 +149,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             // Directory.Delete(string, bool) and Directory.Delete(string, bool, bool). The recursive
             // flag is the second parameter on both overloads.
             if (method.Parameters.Length < 2
-                || method.Parameters[1].Type.SpecialType != SpecialType.System_Boolean)
+                || method.Parameters[1].Type.SpecialType is not SpecialType.System_Boolean)
             {
                 return false;
             }
@@ -180,8 +180,8 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         path = invocation;
         recursive = invocation;
 
-        if (method.Parameters.Length != 1
-            || method.Parameters[0].Type.SpecialType != SpecialType.System_Boolean
+        if (method.Parameters.Length is not 1
+            || method.Parameters[0].Type.SpecialType is not SpecialType.System_Boolean
             || invocation.Expression is not MemberAccessExpressionSyntax memberAccess
             || FindArgument(invocation, method, parameterIndex: 0) is not { } recursiveArgument)
         {
@@ -313,28 +313,38 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         if (FindPathInvocation(unwrapped, CombineMethodName, pathTypes, model, cancellationToken)
             is { } combine)
         {
-            var arguments = combine.ArgumentList.Arguments;
-            if (arguments.Count == 0)
-            {
-                return PathSafety.Unknown;
-            }
-
-            var first = arguments[0].Expression;
-            var isSafe = IsFixedRoot(first, model, cancellationToken)
-                         || IsTempRooted(first, model, pathTypes, cancellationToken);
-            var isUnsafe = !isSafe && IsParameterOrMemberRead(first, model, cancellationToken);
-
-            return (isSafe, isUnsafe) switch
-            {
-                (true, _) => PathSafety.Safe,
-                (_, true) => PathSafety.Unsafe,
-                _ => PathSafety.Unknown
-            };
+            return ClassifyCombine(combine, model, pathTypes, cancellationToken);
         }
 
         return IsParameterOrMemberRead(unwrapped, model, cancellationToken)
             ? PathSafety.Unsafe
             : PathSafety.Unknown;
+    }
+
+    // Path.Combine(first, ...) takes its safety from the first argument.
+    private static PathSafety ClassifyCombine(
+        InvocationExpressionSyntax combine,
+        SemanticModel model,
+        ImmutableArray<INamedTypeSymbol> pathTypes,
+        CancellationToken cancellationToken)
+    {
+        var arguments = combine.ArgumentList.Arguments;
+        if (arguments.Count is 0)
+        {
+            return PathSafety.Unknown;
+        }
+
+        var first = arguments[0].Expression;
+        var isSafe = IsFixedRoot(first, model, cancellationToken)
+                     || IsTempRooted(first, model, pathTypes, cancellationToken);
+        var isUnsafe = !isSafe && IsParameterOrMemberRead(first, model, cancellationToken);
+
+        return (isSafe, isUnsafe) switch
+        {
+            (true, _) => PathSafety.Safe,
+            (_, true) => PathSafety.Unsafe,
+            _ => PathSafety.Unknown
+        };
     }
 
     // A constant that names a drive root or the Unix root, such as "/", "\\", "C:\\" or "C:/".
@@ -350,11 +360,25 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
 
         var trimmed = value.Trim();
 
-        return trimmed is "/" or "\\"
-               || (trimmed.Length is 2 or 3
-                   && char.IsLetter(trimmed[0])
-                   && trimmed[1] == ':'
-                   && (trimmed.Length == 2 || trimmed[2] is '\\' or '/'));
+        return string.Equals(trimmed, "/", StringComparison.Ordinal)
+               || string.Equals(trimmed, "\\", StringComparison.Ordinal)
+               || IsDriveRoot(trimmed);
+    }
+
+    // "C:" or "C:\\" or "C:/".
+    private static bool IsDriveRoot(string value)
+    {
+        const int bareDriveLength = 2;
+        const int separatedDriveLength = 3;
+
+        if (value.Length is not (bareDriveLength or separatedDriveLength)
+            || !char.IsLetter(value[0])
+            || value[1] is not ':')
+        {
+            return false;
+        }
+
+        return value.Length is bareDriveLength || value[bareDriveLength] is '\\' or '/';
     }
 
     // A constant string that starts at a filesystem root: a leading separator, a UNC prefix, or a
@@ -370,7 +394,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
 
     private static bool IsRootedPath(string value)
     {
-        return value.Length != 0
+        return value.Length is not 0
                && (value[0] is '/' or '\\'
                    || (value.Length >= 2 && char.IsLetter(value[0]) && value[1] == ':'));
     }
@@ -459,7 +483,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         return isLiteral
                || (model.GetSymbolInfo(unwrapped, cancellationToken).Symbol
                        is IFieldSymbol { IsConst: true } field
-                   && field.Type.SpecialType == SpecialType.System_String);
+                   && field.Type.SpecialType is SpecialType.System_String);
     }
 
     private static bool IsParameterOrMemberRead(
@@ -562,24 +586,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         {
             var parent = node.Parent;
 
-            if (parent is ParenthesizedExpressionSyntax)
-            {
-                // Parentheses never change the value.
-            }
-            else if (parent is PrefixUnaryExpressionSyntax prefix
-                     && prefix.IsKind(SyntaxKind.LogicalNotExpression)
-                     && !encloses
-                     && !seenNot)
-            {
-                seenNot = true;
-            }
-            else if (parent is BinaryExpressionSyntax binary
-                     && binary.IsKind(allowedBinary)
-                     && (encloses || seenNot))
-            {
-                // The other operand of this operator does not change what the call proves.
-            }
-            else
+            if (parent is null || !CanPassThrough(parent, allowedBinary, encloses, ref seenNot))
             {
                 return false;
             }
@@ -588,6 +595,34 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         }
 
         return encloses || seenNot;
+    }
+
+    private static bool CanPassThrough(
+        SyntaxNode parent,
+        SyntaxKind allowedBinary,
+        bool encloses,
+        ref bool seenNot)
+    {
+        // Parentheses never change the value.
+        if (parent is ParenthesizedExpressionSyntax)
+        {
+            return true;
+        }
+
+        if (parent is PrefixUnaryExpressionSyntax prefix
+            && prefix.IsKind(SyntaxKind.LogicalNotExpression)
+            && !encloses
+            && !seenNot)
+        {
+            seenNot = true;
+
+            return true;
+        }
+
+        // The other operand of a binary operator does not change what the call proves.
+        return parent is BinaryExpressionSyntax binary
+               && binary.IsKind(allowedBinary)
+               && (encloses || seenNot);
     }
 
     private static IEnumerable<(IfStatementSyntax If, bool Encloses)> CandidateGuards(SyntaxNode deleteInvocation)
@@ -602,19 +637,9 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
                 yield return (ancestor, true);
             }
 
-            if (current is BlockSyntax block)
+            if (current is BlockSyntax block && FindPrecedingIf(block, deleteInvocation) is { } preceding)
             {
-                // Only the statement directly before the delete can guard it. An earlier if is too
-                // far away to prove the value at the delete.
-                for (var index = 1; index < block.Statements.Count; index++)
-                {
-                    if (block.Statements[index].Span.Contains(deleteInvocation.Span)
-                        && block.Statements[index - 1] is IfStatementSyntax preceding)
-                    {
-                        yield return (preceding, false);
-                        break;
-                    }
-                }
+                yield return (preceding, false);
             }
 
             if (current is MemberDeclarationSyntax)
@@ -622,6 +647,22 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
                 break;
             }
         }
+    }
+
+    // Only the statement directly before the delete can guard it. An earlier if is too far away to
+    // prove the value at the delete.
+    private static IfStatementSyntax? FindPrecedingIf(BlockSyntax block, SyntaxNode deleteInvocation)
+    {
+        for (var index = 1; index < block.Statements.Count; index++)
+        {
+            if (block.Statements[index].Span.Contains(deleteInvocation.Span)
+                && block.Statements[index - 1] is IfStatementSyntax preceding)
+            {
+                return preceding;
+            }
+        }
+
+        return null;
     }
 
     private static ExpressionSyntax? FindStartsWithSubject(
@@ -897,7 +938,7 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
     {
         return string.Join(
             string.Empty,
-            expression.ToString().Where(character => !char.IsWhiteSpace(character)));
+            expression.ToString().Where(static character => !char.IsWhiteSpace(character)));
     }
 
     private static string DisplayName(

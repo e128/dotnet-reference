@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -44,7 +45,8 @@ internal static partial class FipsSymbolHelpers
             return true;
         }
 
-        targets = values = default;
+        targets = default;
+        values = default;
 
         return false;
     }
@@ -65,7 +67,7 @@ internal static partial class FipsSymbolHelpers
         }
 
         assigned = ComputeIsAssignedInConstructor(field, compilation);
-        cache.TryAdd(field, assigned);
+        _ = cache.TryAdd(field, assigned);
 
         return assigned;
     }
@@ -96,9 +98,9 @@ internal static partial class FipsSymbolHelpers
     {
         foreach (var reference in method.DeclaringSyntaxReferences)
         {
-            var syntax = reference.GetSyntax();
+            var syntax = reference.GetSyntax(CancellationToken.None);
             if (!compilation.ContainsSyntaxTree(syntax.SyntaxTree) ||
-                compilation.GetSemanticModel(syntax.SyntaxTree).GetOperation(syntax) is not { } body)
+                compilation.GetSemanticModel(syntax.SyntaxTree).GetOperation(syntax, CancellationToken.None) is not { } body)
             {
                 continue;
             }
@@ -150,12 +152,15 @@ internal static partial class FipsSymbolHelpers
         return written;
     }
 
-    private static bool IsWrite(IOperation reference) => reference.Parent switch
+    private static bool IsWrite(IOperation reference)
     {
-        IAssignmentOperation assignment => assignment.Target == reference,
-        IIncrementOrDecrementOperation => true,
-        IArgumentOperation argument => argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out,
-        ITupleOperation { Parent: IDeconstructionAssignmentOperation deconstruction } tuple => deconstruction.Target == tuple,
-        _ => false,
-    };
+        return reference.Parent switch
+        {
+            IAssignmentOperation assignment => assignment.Target == reference,
+            IIncrementOrDecrementOperation => true,
+            IArgumentOperation argument => argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out,
+            ITupleOperation { Parent: IDeconstructionAssignmentOperation deconstruction } tuple => deconstruction.Target == tuple,
+            _ => false,
+        };
+    }
 }

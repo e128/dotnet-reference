@@ -17,7 +17,7 @@ public sealed class FixedBufferFieldAnalyzerTests
         };
         test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -43,6 +43,7 @@ public sealed class FixedBufferFieldAnalyzerTests
                            }
                            """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenOneDeclarationHoldsSeveralBuffers()

@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class JsonSerializerOptionsMutationAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

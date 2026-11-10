@@ -7,11 +7,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ProcessStartInfoArgumentCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ProcessStartInfoArgumentAnalyzer, ProcessStartInfoArgumentCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ProcessStartInfoArgumentAnalyzer, ProcessStartInfoArgumentCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
-        CodeFixTestRunner.NoFixAsync<ProcessStartInfoArgumentAnalyzer, ProcessStartInfoArgumentCodeFixProvider>(source, expected: expected);
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
+    {
+        return CodeFixTestRunner.NoFixAsync<ProcessStartInfoArgumentAnalyzer, ProcessStartInfoArgumentCodeFixProvider>(source, expected: expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

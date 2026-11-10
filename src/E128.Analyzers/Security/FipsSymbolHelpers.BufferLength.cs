@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
@@ -11,6 +12,7 @@ internal static partial class FipsSymbolHelpers
     // Cap how much source-derived text the helpers decode or scan. A hostile literal must not
     // inflate analyzer memory and time. An over-cap value falls through to the fail-closed report.
     private const int MaxEncodedConstantLength = 1 << 20;
+    private const int HexCharsPerByte = 2;
 
     /// <summary>
     ///     Reads the byte length of a buffer when it is a fixed-size array (<c lang="csharp">new byte[N]</c>,
@@ -18,7 +20,7 @@ internal static partial class FipsSymbolHelpers
     ///     string with a constant argument, either written inline or held in a <c lang="csharp">readonly</c> field or an
     ///     unreassigned local.
     /// </summary>
-    public static bool TryGetConstantByteLength(IOperation? operation, out int length, int depth = 0)
+    internal static bool TryGetConstantByteLength(IOperation? operation, out int length, int depth = 0)
     {
         length = 0;
         operation = Unwrap(operation);
@@ -34,32 +36,10 @@ internal static partial class FipsSymbolHelpers
                 return false;
 
             case IArrayCreationOperation array:
-                if (array.DimensionSizes.Length == 1 && TryGetConstant<int>(array.DimensionSizes[0], out var size))
-                {
-                    length = size;
-                    return true;
-                }
-
-                // 'new byte[] { ... }' carries no dimension size, so the element count is the length.
-                if (array.Initializer is not null)
-                {
-                    length = array.Initializer.ElementValues.Length;
-                    return true;
-                }
-
-                return false;
+                return TryGetArrayCreationLength(array, out length);
 
             case ICollectionExpressionOperation collection:
-                foreach (var element in collection.Elements)
-                {
-                    if (element is ISpreadOperation)
-                    {
-                        return false;
-                    }
-                }
-
-                length = collection.Elements.Length;
-                return true;
+                return TryGetCollectionLength(collection, out length);
 
             case IImplicitIndexerReferenceOperation { Argument: { } rangeArgument } indexer
                 when Unwrap(rangeArgument) is IRangeOperation range:
@@ -80,7 +60,42 @@ internal static partial class FipsSymbolHelpers
         }
     }
 
-    private static bool TryGetKnownByteLength(IInvocationOperation invocation, out int length, int depth)
+    private static bool TryGetArrayCreationLength(IArrayCreationOperation array, out int length)
+    {
+        length = 0;
+        if (array.DimensionSizes.Length is 1 && TryGetConstant<int>(array.DimensionSizes[0], out var size))
+        {
+            length = size;
+            return true;
+        }
+
+        // 'new byte[] { ... }' carries no dimension size, so the element count is the length.
+        if (array.Initializer is null)
+        {
+            return false;
+        }
+
+        length = array.Initializer.ElementValues.Length;
+        return true;
+    }
+
+    private static bool TryGetCollectionLength(ICollectionExpressionOperation collection, out int length)
+    {
+        length = 0;
+        foreach (var element in collection.Elements)
+        {
+            if (element is ISpreadOperation)
+            {
+                return false;
+            }
+        }
+
+        length = collection.Elements.Length;
+        return true;
+    }
+
+    private static bool TryGetKnownByteLength(
+IInvocationOperation invocation, out int length, int depth)
     {
         length = 0;
         if (depth >= MaxResolveDepth)
@@ -93,26 +108,48 @@ internal static partial class FipsSymbolHelpers
             return true;
         }
 
-        if (string.Equals(invocation.TargetMethod.Name, "GetBytes", StringComparison.Ordinal) &&
-            Namespaces.Equals(invocation.TargetMethod.ContainingNamespace, "System.Text") &&
-            Unwrap(ResolveInitializer(invocation.Instance) ?? invocation.Instance) is IPropertyReferenceOperation encodingProperty &&
-            encodingProperty.Property.IsStatic &&
-            IsType(encodingProperty.Property.ContainingType, "Encoding", "System.Text") &&
-            TryGetResolvedConstant<string>(ArgumentAt(invocation.Arguments, 0)?.Value, out var text, depth + 1) &&
-            GetEncoding(encodingProperty.Property.Name) is { } encoding)
-        {
-            if (text.Length > MaxEncodedConstantLength)
-            {
-                return false;
-            }
+        return TryGetEncodedStringLength(invocation, out length, depth) ||
+            TryGetConvertedLength(invocation, out length, depth);
+    }
 
-            length = encoding.GetByteCount(text);
-            return true;
+    private static bool TryGetEncodedStringLength(IInvocationOperation invocation, out int length, int depth)
+    {
+        length = 0;
+        if (GetEncodingProperty(invocation) is not { } encodingProperty ||
+            !TryGetResolvedConstant<string>(ArgumentAt(invocation.Arguments, 0)?.Value, out var text, depth + 1) ||
+            GetEncoding(encodingProperty.Property.Name) is not { } encoding ||
+            text.Length > MaxEncodedConstantLength)
+        {
+            return false;
         }
+
+        length = encoding.GetByteCount(text);
+
+        return true;
+    }
+
+    // Returns the static Encoding property that a GetBytes call reads from, or null.
+    private static IPropertyReferenceOperation? GetEncodingProperty(IInvocationOperation invocation)
+    {
+        if (!string.Equals(invocation.TargetMethod.Name, "GetBytes", StringComparison.Ordinal) ||
+            !Namespaces.Equals(invocation.TargetMethod.ContainingNamespace, "System.Text"))
+        {
+            return null;
+        }
+
+        return Unwrap(ResolveInitializer(invocation.Instance) ?? invocation.Instance) is IPropertyReferenceOperation { Property.IsStatic: true } property &&
+            IsType(property.Property.ContainingType, "Encoding", "System.Text")
+                ? property
+                : null;
+    }
+
+    private static bool TryGetConvertedLength(IInvocationOperation invocation, out int length, int depth)
+    {
+        length = 0;
 
         return invocation.TargetMethod.IsStatic &&
             IsType(invocation.TargetMethod.ContainingType, "Convert", "System") &&
-            invocation.Arguments.Length == 1 &&
+            invocation.Arguments.Length is 1 &&
             TryGetResolvedConstant<string>(invocation.Arguments[0].Value, out var encoded, depth + 1) &&
             invocation.TargetMethod.Name switch
             {
@@ -135,11 +172,7 @@ internal static partial class FipsSymbolHelpers
         var isSubArray = string.Equals(method.Name, "GetSubArray", StringComparison.Ordinal) &&
             IsType(method.ContainingType, "RuntimeHelpers", "System.Runtime.CompilerServices");
 
-        if (!isSubArray &&
-            ((!string.Equals(method.Name, "Slice", StringComparison.Ordinal) &&
-              !string.Equals(method.Name, "AsSpan", StringComparison.Ordinal) &&
-              !string.Equals(method.Name, "AsMemory", StringComparison.Ordinal)) ||
-             !Namespaces.Equals(method.ContainingNamespace, "System")))
+        if (!isSubArray && !IsSliceMethodName(method))
         {
             return false;
         }
@@ -147,6 +180,19 @@ internal static partial class FipsSymbolHelpers
         // An extension method receives the source as its first argument, so the extra arguments follow it.
         var source = invocation.Instance ?? ArgumentAt(invocation.Arguments, 0)?.Value;
         var extraArguments = invocation.Instance is null ? invocation.Arguments.Length - 1 : invocation.Arguments.Length;
+
+        return TryGetSliceLengthFromArguments(invocation, source, extraArguments, isSubArray, out length, depth);
+    }
+
+    private static bool TryGetSliceLengthFromArguments(
+        IInvocationOperation invocation,
+        IOperation? source,
+        int extraArguments,
+        bool isSubArray,
+        out int length,
+        int depth)
+    {
+        length = 0;
 
         if (ArgumentNamed(invocation.Arguments, "range") is { } rangeArgument)
         {
@@ -156,21 +202,41 @@ internal static partial class FipsSymbolHelpers
 
         if (ArgumentNamed(invocation.Arguments, nameof(length)) is { } lengthArgument)
         {
-            if (TryGetResolvedConstant<int>(lengthArgument.Value, out var count, depth + 1) && count >= 0)
-            {
-                length = count;
-
-                return true;
-            }
-
-            return false;
+            return TryGetExplicitLength(lengthArgument, out length, depth);
         }
 
-        if (extraArguments == 0)
+        if (extraArguments is 0)
         {
             return !isSubArray && TryGetConstantByteLength(source, out length, depth + 1);
         }
 
+        return TryGetStartedSliceLength(invocation, source, out length, depth);
+    }
+
+    private static bool IsSliceMethodName(IMethodSymbol method)
+    {
+        return Namespaces.Equals(method.ContainingNamespace, "System") &&
+            (string.Equals(method.Name, "Slice", StringComparison.Ordinal) ||
+             string.Equals(method.Name, "AsSpan", StringComparison.Ordinal) ||
+             string.Equals(method.Name, "AsMemory", StringComparison.Ordinal));
+    }
+
+    private static bool TryGetExplicitLength(IArgumentOperation lengthArgument, out int length, int depth)
+    {
+        length = 0;
+        if (!TryGetResolvedConstant<int>(lengthArgument.Value, out var count, depth + 1) || count < 0)
+        {
+            return false;
+        }
+
+        length = count;
+
+        return true;
+    }
+
+    private static bool TryGetStartedSliceLength(IInvocationOperation invocation, IOperation? source, out int length, int depth)
+    {
+        length = 0;
         var startArgument = ArgumentNamed(invocation.Arguments, "start") ?? ArgumentNamed(invocation.Arguments, "startIndex");
         if (startArgument is null ||
             !TryGetIndexValue(startArgument.Value, source, depth, out var start) ||
@@ -274,7 +340,7 @@ internal static partial class FipsSymbolHelpers
     private static bool TryGetHexByteLength(string value, out int length)
     {
         length = 0;
-        if (value.Length > MaxEncodedConstantLength || value.Length % 2 != 0)
+        if (value.Length > MaxEncodedConstantLength || value.Length % HexCharsPerByte is not 0)
         {
             return false;
         }
@@ -291,15 +357,18 @@ internal static partial class FipsSymbolHelpers
         return true;
     }
 
-    private static Encoding? GetEncoding(string propertyName) => propertyName switch
+    private static Encoding? GetEncoding(string propertyName)
     {
-        "UTF8" => Encoding.UTF8,
-        "ASCII" => Encoding.ASCII,
-        "Unicode" => Encoding.Unicode,
-        "Latin1" => Encoding.GetEncoding("iso-8859-1"),
-        "UTF32" => Encoding.UTF32,
-        _ => null,
-    };
+        return propertyName switch
+        {
+            "UTF8" => Encoding.UTF8,
+            "ASCII" => Encoding.ASCII,
+            "Unicode" => Encoding.Unicode,
+            "Latin1" => Encoding.GetEncoding("iso-8859-1"),
+            "UTF32" => Encoding.UTF32,
+            _ => null,
+        };
+    }
 
     private static bool TryGetStackAllocLength(IOperation operation, out int length)
     {
@@ -312,7 +381,7 @@ internal static partial class FipsSymbolHelpers
 
         if (operation.Syntax is not StackAllocArrayCreationExpressionSyntax stackAlloc ||
             stackAlloc.Type is not ArrayTypeSyntax { RankSpecifiers.Count: 1 } arrayType ||
-            arrayType.RankSpecifiers[0].Sizes.Count != 1)
+            arrayType.RankSpecifiers[0].Sizes.Count is not 1)
         {
             return false;
         }
@@ -335,13 +404,13 @@ internal static partial class FipsSymbolHelpers
             return false;
         }
 
-        var constant = model.GetConstantValue(sizeExpression);
-        if (constant.HasValue && constant.Value is int count)
+        var constant = model.GetConstantValue(sizeExpression, CancellationToken.None);
+        if (!constant.HasValue || constant.Value is not int count)
         {
-            length = count;
-            return true;
+            return false;
         }
 
-        return false;
+        length = count;
+        return true;
     }
 }

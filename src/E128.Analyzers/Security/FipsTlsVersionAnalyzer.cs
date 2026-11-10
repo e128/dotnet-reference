@@ -73,21 +73,25 @@ public sealed class FipsTlsVersionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (IsProtocolType(field.ContainingType) && !IsRead(fieldReference))
+        if (!IsProtocolType(field.ContainingType) || IsRead(fieldReference))
         {
-            Report(
-                context,
-                fieldReference,
-                $"'{field.Name}' enables a TLS/SSL protocol below 1.2, which is not permitted; use Tls12 or Tls13");
+            return;
         }
+
+        Report(
+            context,
+            fieldReference,
+            $"'{field.Name}' enables a TLS/SSL protocol below 1.2, which is not permitted; use Tls12 or Tls13");
     }
 
     /// <summary>
     ///     Returns true when the protocol value is read, not selected: a comparison, a bit test, or a mask that
     ///     removes the protocol.
     /// </summary>
-    private static bool IsRead(IOperation operand) =>
-        FipsSymbolHelpers.IsComparison(operand) || IsMaskTest(operand) || IsMaskRemoval(operand);
+    private static bool IsRead(IOperation operand)
+    {
+        return FipsSymbolHelpers.IsComparison(operand) || IsMaskTest(operand) || IsMaskRemoval(operand);
+    }
 
     /// <summary>
     ///     Returns true for <c lang="csharp">x &amp; SslProtocols.Tls11</c> when the result feeds a comparison, an
@@ -145,22 +149,28 @@ public sealed class FipsTlsVersionAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static bool IsProtocolType(ITypeSymbol? type) =>
-        FipsSymbolHelpers.IsType(type, "SslProtocols", "System.Security.Authentication") ||
+    private static bool IsProtocolType(ITypeSymbol? type)
+    {
+        return FipsSymbolHelpers.IsType(type, "SslProtocols", "System.Security.Authentication") ||
         FipsSymbolHelpers.IsType(type, "SecurityProtocolType", "System.Net");
+    }
 
-    private static bool HasWeakBits(IOperation operation) =>
-        operation.ConstantValue is { HasValue: true, Value: { } value } &&
+    private static bool HasWeakBits(IOperation operation)
+    {
+        return operation.ConstantValue is { HasValue: true, Value: { } value } &&
         Convert.ToInt64(value, CultureInfo.InvariantCulture) is var bits &&
         (bits & WeakProtocolBits) != 0;
+    }
 
-    /// <summary>Reports a numeric cast such as <c lang="csharp">(SslProtocols)192</c> that includes a weak protocol bit.</summary>
+    /// <summary>
+    ///     Reports a numeric cast such as <c lang="csharp">(SslProtocols)192</c> that includes a weak protocol bit.
+    /// </summary>
     private static void AnalyzeNumericCast(OperationAnalysisContext context)
     {
         var conversion = (IConversionOperation)context.Operation;
         if (conversion.IsImplicit ||
             !IsProtocolType(conversion.Type) ||
-            conversion.Operand.Type?.TypeKind == TypeKind.Enum ||
+            conversion.Operand.Type?.TypeKind is TypeKind.Enum ||
             !HasWeakBits(conversion) ||
             IsRead(conversion))
         {
@@ -180,7 +190,7 @@ public sealed class FipsTlsVersionAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeNegation(OperationAnalysisContext context)
     {
         var negation = (IUnaryOperation)context.Operation;
-        if (negation.OperatorKind != UnaryOperatorKind.BitwiseNegation ||
+        if (negation.OperatorKind is not UnaryOperatorKind.BitwiseNegation ||
             !IsProtocolType(negation.Type) ||
             FipsSymbolHelpers.Unwrap(negation.Operand) is not IFieldReferenceOperation operand ||
             ForbiddenMembers.Contains(operand.Field.Name) ||
@@ -221,22 +231,29 @@ public sealed class FipsTlsVersionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        string? message = null;
-        if (string.Equals(name, StrongCryptoSwitch, StringComparison.Ordinal))
+        var message = MessageForSwitch(name);
+        if (message is null)
         {
-            message = "Setting 'DontEnableSchUseStrongCrypto' to true disables strong crypto and re-enables weak TLS; remove this switch";
-        }
-        else if (string.Equals(name, SystemDefaultSwitch, StringComparison.Ordinal))
-        {
-            message = "Setting 'DontEnableSystemDefaultTlsVersions' to true stops the operating system from choosing the protocol and re-enables TLS 1.0 and 1.1; remove this switch";
+            return;
         }
 
-        if (message is not null)
-        {
-            Report(context, invocation, message);
-        }
+        Report(context, invocation, message);
     }
 
-    private static void Report(OperationAnalysisContext context, IOperation operation, string message) =>
+    private static string? MessageForSwitch(string? name)
+    {
+        if (string.Equals(name, StrongCryptoSwitch, StringComparison.Ordinal))
+        {
+            return "Setting 'DontEnableSchUseStrongCrypto' to true disables strong crypto and re-enables weak TLS; remove this switch";
+        }
+
+        return string.Equals(name, SystemDefaultSwitch, StringComparison.Ordinal)
+            ? "Setting 'DontEnableSystemDefaultTlsVersions' to true stops the operating system from choosing the protocol and re-enables TLS 1.0 and 1.1; remove this switch"
+            : null;
+    }
+
+    private static void Report(OperationAnalysisContext context, IOperation operation, string message)
+    {
         context.ReportDiagnostic(Diagnostic.Create(Rule, operation.Syntax.GetLocation(), message));
+    }
 }

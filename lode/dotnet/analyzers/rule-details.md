@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-07T14:35:25Z*
+*Updated: 2026-11-09T23:44:15Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -247,4 +247,4 @@ application policy.
 - [analyzers.md](../analyzers.md): strategy, configuration split, suppression policy
 - [rule-details-performance.md](rule-details-performance.md): performance rule details
 - [rule-details-reliability.md](rule-details-reliability.md): reliability rule details
-- [redundant-rules.md](redundant-rules.md): rules disabled because another analyzer covers the shape
+- [redundant-rules.md](redundant-rules.md): rules that another analyzer also covers

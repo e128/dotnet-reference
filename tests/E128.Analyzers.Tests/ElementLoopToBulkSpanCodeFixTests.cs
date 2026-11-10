@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ElementLoopToBulkSpanCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ElementLoopToBulkSpanAnalyzer, ElementLoopToBulkSpanCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ElementLoopToBulkSpanAnalyzer, ElementLoopToBulkSpanCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

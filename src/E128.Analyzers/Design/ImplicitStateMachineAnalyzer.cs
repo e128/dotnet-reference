@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -22,6 +23,8 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
     internal const string OptionKey = "e128_min_state_flags";
 
     private const int DefaultMinFlags = 3;
+    private const int MinClusterMembersPerSite = 2;
+    private const int MinWriteArguments = 2;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -32,8 +35,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         true,
         "Several mutable bool fields change together, so they encode one state with scattered transitions. " +
         "Replace them with one enum and one transition method. Set e128_min_state_flags to change the minimum cluster size.",
-        null,
-        WellKnownDiagnosticTags.CompilationEnd);
+        customTags: WellKnownDiagnosticTags.CompilationEnd);
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -96,7 +98,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var evidence = GetEvidence(evidenceMap, containingType, obsoleteAttribute);
+        var evidence = GetEvidence(evidenceMap, containingType, obsoleteAttribute, context.CancellationToken);
         if (evidence is null || !evidence.IsCandidate(memberReference.Member))
         {
             return;
@@ -119,18 +121,23 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             assignment.Syntax.GetLocation()));
     }
 
-    private static void RecordConditionRead(
-        OperationAnalysisContext context,
-        ConcurrentDictionary<ISymbol, TypeEvidence> evidenceMap,
-        INamedTypeSymbol? obsoleteAttribute)
+    private static IOperation? GetCondition(IOperation operation)
     {
-        var condition = context.Operation switch
+        return operation switch
         {
             IConditionalOperation conditional => conditional.Condition,
             IWhileLoopOperation whileLoop => whileLoop.Condition,
             IForLoopOperation forLoop => forLoop.Condition,
             _ => null
         };
+    }
+
+    private static void RecordConditionRead(
+        OperationAnalysisContext context,
+        ConcurrentDictionary<ISymbol, TypeEvidence> evidenceMap,
+        INamedTypeSymbol? obsoleteAttribute)
+    {
+        var condition = GetCondition(context.Operation);
 
         if (condition is null)
         {
@@ -143,12 +150,28 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var evidence = GetEvidence(evidenceMap, containingType, obsoleteAttribute);
+        var evidence = GetEvidence(evidenceMap, containingType, obsoleteAttribute, context.CancellationToken);
         if (evidence is null || !evidence.HasCandidates)
         {
             return;
         }
 
+        var (members, negated) = CollectConditionMembers(condition, evidence);
+        if (members.Count < MinClusterMembersPerSite)
+        {
+            return;
+        }
+
+        evidence.AddRead((
+            members.ToImmutableArray(),
+            negated.ToImmutableArray(),
+            condition.Syntax.GetLocation()));
+    }
+
+    private static (HashSet<ISymbol> Members, HashSet<ISymbol> Negated) CollectConditionMembers(
+        IOperation condition,
+        TypeEvidence evidence)
+    {
         var members = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
         var negated = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
         foreach (var descendant in condition.DescendantsAndSelf())
@@ -168,13 +191,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (members.Count >= 2)
-        {
-            evidence.AddRead((
-                members.ToImmutableArray(),
-                negated.ToImmutableArray(),
-                condition.Syntax.GetLocation()));
-        }
+        return (members, negated);
     }
 
     private static void RecordInvocation(
@@ -184,26 +201,8 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol? interlockedType,
         INamedTypeSymbol? volatileType)
     {
-        if (context.Operation is not IInvocationOperation invocation)
-        {
-            return;
-        }
-
-        var method = invocation.TargetMethod;
-        var isInterlocked = interlockedType is not null
-                            && SymbolEqualityComparer.Default.Equals(method.ContainingType, interlockedType)
-                            && string.Equals(method.Name, "Exchange", StringComparison.Ordinal);
-        var isVolatile = volatileType is not null
-                         && SymbolEqualityComparer.Default.Equals(method.ContainingType, volatileType)
-                         && string.Equals(method.Name, "Write", StringComparison.Ordinal);
-
-        if ((!isInterlocked && !isVolatile)
-            || invocation.Arguments.Length < 2
-            || invocation.Arguments[0].Value is not IFieldReferenceOperation fieldReference
-            || fieldReference.Instance is not IInstanceReferenceOperation
-            {
-                ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
-            })
+        if (context.Operation is not IInvocationOperation invocation
+            || GetWrittenField(invocation, interlockedType, volatileType) is not { } fieldReference)
         {
             return;
         }
@@ -214,7 +213,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var evidence = GetEvidence(evidenceMap, containingType, obsoleteAttribute);
+        var evidence = GetEvidence(evidenceMap, containingType, obsoleteAttribute, context.CancellationToken);
         if (evidence is null || !evidence.IsCandidate(fieldReference.Field))
         {
             return;
@@ -233,6 +232,34 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             value,
             GetBodyKey(invocation, body),
             invocation.Syntax.GetLocation()));
+    }
+
+    // Matches Interlocked.Exchange or Volatile.Write on a field of the containing instance.
+    private static IFieldReferenceOperation? GetWrittenField(
+        IInvocationOperation invocation,
+        INamedTypeSymbol? interlockedType,
+        INamedTypeSymbol? volatileType)
+    {
+        var method = invocation.TargetMethod;
+        if (!(IsMethodOf(method, interlockedType, "Exchange") || IsMethodOf(method, volatileType, "Write"))
+            || invocation.Arguments.Length < MinWriteArguments
+            || invocation.Arguments[0].Value is not IFieldReferenceOperation fieldReference
+            || fieldReference.Instance is not IInstanceReferenceOperation
+            {
+                ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
+            })
+        {
+            return null;
+        }
+
+        return fieldReference;
+    }
+
+    private static bool IsMethodOf(IMethodSymbol method, INamedTypeSymbol? owner, string name)
+    {
+        return owner is not null
+               && SymbolEqualityComparer.Default.Equals(method.ContainingType, owner)
+               && string.Equals(method.Name, name, StringComparison.Ordinal);
     }
 
     private static bool IsNegated(IOperation reference, IOperation condition)
@@ -265,10 +292,10 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
     private static bool IsNegatingComparison(IBinaryOperation binary)
     {
-        return binary.OperatorKind == BinaryOperatorKind.NotEquals
+        return binary.OperatorKind is BinaryOperatorKind.NotEquals
             ? IsBooleanConstant(binary.RightOperand, true)
               || IsBooleanConstant(binary.LeftOperand, true)
-            : binary.OperatorKind == BinaryOperatorKind.Equals
+            : binary.OperatorKind is BinaryOperatorKind.Equals
               && (IsBooleanConstant(binary.RightOperand, false)
                   || IsBooleanConstant(binary.LeftOperand, false));
     }
@@ -295,7 +322,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             var evidence = pair.Value;
             var type = evidence.Type;
 
-            if (!evidence.HasCandidates || type.Locations.Length == 0)
+            if (!evidence.HasCandidates || type.Locations.Length is 0)
             {
                 continue;
             }
@@ -351,7 +378,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
         var names = string.Join(
             ", ",
-            cluster.Select(member => member.Name).OrderBy(name => name, StringComparer.Ordinal));
+            cluster.Select(static member => member.Name).OrderBy(static name => name, StringComparer.Ordinal));
 
         context.ReportDiagnostic(Diagnostic.Create(
             Rule,
@@ -488,7 +515,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        return count >= 2 && (sawUnknown || (sawTrue && sawFalse));
+        return count >= MinClusterMembersPerSite && (sawUnknown || (sawTrue && sawFalse));
     }
 
     private static Location? FindCoRead(
@@ -498,7 +525,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         Location? earliest = null;
         foreach (var (members, negated, location) in reads)
         {
-            if (CountClusterMembers(members, cluster) < 2
+            if (CountClusterMembers(members, cluster) < MinClusterMembersPerSite
                 || !ContainsClusterMember(negated, cluster))
             {
                 continue;
@@ -543,23 +570,25 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
     private static TypeEvidence? GetEvidence(
         ConcurrentDictionary<ISymbol, TypeEvidence> evidenceMap,
         INamedTypeSymbol type,
-        INamedTypeSymbol? obsoleteAttribute)
+        INamedTypeSymbol? obsoleteAttribute,
+        CancellationToken cancellationToken)
     {
         return IsAnalyzedType(type)
             ? evidenceMap.GetOrAdd(
                 type.OriginalDefinition,
-                symbol => CreateEvidence((INamedTypeSymbol)symbol, obsoleteAttribute))
+                symbol => CreateEvidence((INamedTypeSymbol)symbol, obsoleteAttribute, cancellationToken))
             : null;
     }
 
     private static TypeEvidence CreateEvidence(
         INamedTypeSymbol type,
-        INamedTypeSymbol? obsoleteAttribute)
+        INamedTypeSymbol? obsoleteAttribute,
+        CancellationToken cancellationToken)
     {
         var evidence = new TypeEvidence(type);
         foreach (var member in type.GetMembers())
         {
-            if (IsCandidateMember(member, obsoleteAttribute))
+            if (IsCandidateMember(member, obsoleteAttribute, cancellationToken))
             {
                 evidence.AddCandidate(member);
             }
@@ -588,40 +617,53 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
     private static bool IsAnalyzedType(INamedTypeSymbol type)
     {
-        return type.TypeKind == TypeKind.Class && !type.IsRecord && !type.IsStatic;
+        return type.TypeKind is TypeKind.Class && !type.IsRecord && !type.IsStatic;
     }
 
-    private static bool IsCandidateMember(ISymbol member, INamedTypeSymbol? obsoleteAttribute)
+    private static bool IsCandidateMember(
+        ISymbol member,
+        INamedTypeSymbol? obsoleteAttribute,
+        CancellationToken cancellationToken)
     {
         return !member.IsStatic
                && !HasAttribute(member, obsoleteAttribute)
                && (member switch
                {
-                   IFieldSymbol field => !field.IsConst
-                                         && !field.IsReadOnly
-                                         && !field.IsImplicitlyDeclared
-                                         && field.Type.SpecialType == SpecialType.System_Boolean,
-                   IPropertySymbol property => property.Type.SpecialType == SpecialType.System_Boolean
-                                               && !property.IsIndexer
-                                               && !property.IsAbstract
-                                               && !property.IsOverride
-                                               && property.ExplicitInterfaceImplementations.IsEmpty
-                                               && property.SetMethod is { IsInitOnly: false }
-                                               && IsAutoProperty(property),
+                   IFieldSymbol field => IsMutableBoolField(field),
+                   IPropertySymbol property => IsMutableBoolAutoProperty(property, cancellationToken),
                    _ => false
                });
     }
 
-    private static bool IsAutoProperty(IPropertySymbol property)
+    private static bool IsMutableBoolField(IFieldSymbol field)
     {
-        if (property.DeclaringSyntaxReferences.Length == 0)
+        return !field.IsConst
+               && !field.IsReadOnly
+               && !field.IsImplicitlyDeclared
+               && field.Type.SpecialType is SpecialType.System_Boolean;
+    }
+
+    private static bool IsMutableBoolAutoProperty(IPropertySymbol property, CancellationToken cancellationToken)
+    {
+        return property.Type.SpecialType is SpecialType.System_Boolean
+               && !property.IsIndexer
+               && !property.IsAbstract
+               && !property.IsOverride
+               && property.ExplicitInterfaceImplementations.IsEmpty
+               && property.SetMethod is { IsInitOnly: false }
+               && IsAutoProperty(property, cancellationToken);
+    }
+
+    private static bool IsAutoProperty(IPropertySymbol property, CancellationToken cancellationToken)
+    {
+        if (property.DeclaringSyntaxReferences.Length is 0)
         {
             return false;
         }
 
         foreach (var reference in property.DeclaringSyntaxReferences)
         {
-            if (reference.GetSyntax() is not PropertyDeclarationSyntax declaration
+            if (reference.GetSyntax(cancellationToken) is not PropertyDeclarationSyntax declaration
                 || declaration.AccessorList is not { } accessors)
             {
                 return false;
@@ -734,7 +776,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
         internal void AddCandidate(ISymbol candidate)
         {
-            _candidates.TryAdd(candidate, 0);
+            _ = _candidates.TryAdd(candidate, 0);
         }
 
         internal bool IsCandidate(ISymbol candidate)

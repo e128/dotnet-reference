@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -50,7 +51,7 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count != 1)
+        if (args.Count is not 1)
         {
             return;
         }
@@ -68,12 +69,12 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
 
         var argument = args[0].Expression;
 
-        if (IsGuardedByMathMin(argument, context.SemanticModel))
+        if (IsGuardedByMathMin(argument, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
 
-        if (IsSafeLiteral(argument, context.SemanticModel))
+        if (IsSafeLiteral(argument, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
@@ -92,12 +93,12 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (method.Parameters.Length != 1)
+        if (method.Parameters.Length is not 1)
         {
             return false;
         }
 
-        if (method.Parameters[0].Type.SpecialType != SpecialType.System_Int32)
+        if (method.Parameters[0].Type.SpecialType is not SpecialType.System_Int32)
         {
             return false;
         }
@@ -116,11 +117,11 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
                    && string.Equals(containingType.ConstructedFrom.Name, "ArrayPool", StringComparison.Ordinal));
     }
 
-    private static bool IsGuardedByMathMin(ExpressionSyntax expression, SemanticModel model)
+    private static bool IsGuardedByMathMin(ExpressionSyntax expression, SemanticModel model, CancellationToken cancellationToken)
     {
         if (expression is InvocationExpressionSyntax innerInvocation)
         {
-            var innerSymbol = model.GetSymbolInfo(innerInvocation).Symbol;
+            var innerSymbol = model.GetSymbolInfo(innerInvocation, cancellationToken).Symbol;
             if (innerSymbol is IMethodSymbol innerMethod
                 && string.Equals(innerMethod.Name, "Min", StringComparison.Ordinal)
                 && string.Equals(innerMethod.ContainingType?.Name, "Math", StringComparison.Ordinal))
@@ -129,26 +130,25 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (expression is IdentifierNameSyntax identifier)
+        if (expression is not IdentifierNameSyntax identifier)
         {
-            var symbol = model.GetSymbolInfo(identifier).Symbol;
-            if (symbol is ILocalSymbol local)
-            {
-                return IsLocalAssignedFromMathMin(local, model);
-            }
+            return false;
         }
 
-        return false;
+        var symbol = model.GetSymbolInfo(identifier, cancellationToken).Symbol;
+
+        return symbol is ILocalSymbol local
+               && IsLocalAssignedFromMathMin(local, model, cancellationToken);
     }
 
-    private static bool IsLocalAssignedFromMathMin(ILocalSymbol local, SemanticModel model)
+    private static bool IsLocalAssignedFromMathMin(ILocalSymbol local, SemanticModel model, CancellationToken cancellationToken)
     {
         // Resolve the declaration through the symbol instead of rescanning the method body.
         // This is O(1) and cannot match a shadowed name from another scope.
         foreach (var reference in local.DeclaringSyntaxReferences)
         {
             if (reference.SyntaxTree != model.SyntaxTree
-                || reference.GetSyntax() is not VariableDeclaratorSyntax
+                || reference.GetSyntax(cancellationToken) is not VariableDeclaratorSyntax
                 {
                     Initializer.Value: InvocationExpressionSyntax initInvocation
                 })
@@ -156,7 +156,7 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var initSymbol = model.GetSymbolInfo(initInvocation).Symbol;
+            var initSymbol = model.GetSymbolInfo(initInvocation, cancellationToken).Symbol;
             if (initSymbol is IMethodSymbol initMethod
                 && string.Equals(initMethod.Name, "Min", StringComparison.Ordinal)
                 && string.Equals(initMethod.ContainingType?.Name, "Math", StringComparison.Ordinal))
@@ -168,9 +168,9 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsSafeLiteral(ExpressionSyntax expression, SemanticModel model)
+    private static bool IsSafeLiteral(ExpressionSyntax expression, SemanticModel model, CancellationToken cancellationToken)
     {
-        var constantValue = model.GetConstantValue(expression);
+        var constantValue = model.GetConstantValue(expression, cancellationToken);
 
         return constantValue is { HasValue: true, Value: int value }
                && value != int.MaxValue

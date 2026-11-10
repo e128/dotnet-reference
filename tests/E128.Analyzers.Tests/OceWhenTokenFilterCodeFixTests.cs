@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class OceWhenTokenFilterCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<OceWhenTokenFilterAnalyzer, OceWhenTokenFilterCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<OceWhenTokenFilterAnalyzer, OceWhenTokenFilterCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

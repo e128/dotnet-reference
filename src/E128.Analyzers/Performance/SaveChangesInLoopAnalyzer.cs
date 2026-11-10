@@ -42,7 +42,7 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             // Fail closed. A compilation without Entity Framework Core cannot contain the
             // call this rule describes, and a look-alike type named DbContext is not EF.

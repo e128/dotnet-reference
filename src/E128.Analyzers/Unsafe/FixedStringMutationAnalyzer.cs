@@ -51,7 +51,7 @@ public sealed class FixedStringMutationAnalyzer : DiagnosticAnalyzer
         {
             if (variable.Initializer?.Value is not { } value
                 || context.SemanticModel.GetTypeInfo(value, context.CancellationToken).Type?.SpecialType
-                    != SpecialType.System_String)
+                    is not SpecialType.System_String)
             {
                 continue;
             }

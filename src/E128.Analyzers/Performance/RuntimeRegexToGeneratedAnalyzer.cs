@@ -12,6 +12,9 @@ public sealed class RuntimeRegexToGeneratedAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128123";
 
+    // A Regex constructor takes a pattern and, at most, one options argument.
+    private const int MaxConstructorArguments = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use GeneratedRegex for a constant pattern",
@@ -31,7 +34,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var regex = MetadataTypes.Find(start.Compilation, "System.Text.RegularExpressions.Regex");
 
@@ -59,7 +62,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzer : DiagnosticAnalyzer
 
         if (!HasModifier(field, SyntaxKind.StaticKeyword)
             || !HasModifier(field, SyntaxKind.ReadOnlyKeyword)
-            || field.Declaration.Variables.Count != 1
+            || field.Declaration.Variables.Count is not 1
             || field.Parent is not TypeDeclarationSyntax)
         {
             return;
@@ -92,7 +95,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzer : DiagnosticAnalyzer
         var argumentList = creation.ArgumentList;
 
         return argumentList is not null
-            && argumentList.Arguments.Count is > 0 and <= 2
+            && argumentList.Arguments.Count is > 0 and <= MaxConstructorArguments
             && argumentList.Arguments[0].Expression is LiteralExpressionSyntax literal
             && literal.IsKind(SyntaxKind.StringLiteralExpression);
     }

@@ -46,7 +46,7 @@ public sealed class WhenAnyResultUnobservedAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
             MetadataTypes.RegisterForType(
                 start,
                 "System.Threading.Tasks.Task",

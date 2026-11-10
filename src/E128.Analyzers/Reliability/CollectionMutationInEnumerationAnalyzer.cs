@@ -92,10 +92,12 @@ public sealed class CollectionMutationInEnumerationAnalyzer : DiagnosticAnalyzer
             _ => false
         });
 
-        if (mutated)
+        if (!mutated)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, collection.GetLocation(), collectionSymbol.Name));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, collection.GetLocation(), collectionSymbol.Name));
     }
 
     /// <summary>
@@ -141,10 +143,15 @@ public sealed class CollectionMutationInEnumerationAnalyzer : DiagnosticAnalyzer
         };
 
         return type is not null
-               && (type.SpecialType == SpecialType.System_String
-                   || type.OriginalDefinition.ContainingNamespace?.ToDisplayString() is
-                       "System.Collections.Immutable" or "System.Collections.Frozen"
-                       or "System.Collections.Concurrent");
+               && (type.SpecialType is SpecialType.System_String
+                   || IsSafeCollectionNamespace(type.OriginalDefinition.ContainingNamespace?.ToDisplayString()));
+    }
+
+    private static bool IsSafeCollectionNamespace(string? name)
+    {
+        return string.Equals(name, "System.Collections.Immutable", StringComparison.Ordinal)
+               || string.Equals(name, "System.Collections.Frozen", StringComparison.Ordinal)
+               || string.Equals(name, "System.Collections.Concurrent", StringComparison.Ordinal);
     }
 
     private static bool IsMutatingCall(

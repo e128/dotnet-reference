@@ -38,8 +38,8 @@ public sealed class InModifierHelperTests
     /// </summary>
     private static SyntaxTokenList List(string source)
     {
-        var tree = SyntaxFactory.ParseSyntaxTree($"class C {{ {source} int x; }}");
-        return tree.GetRoot().DescendantNodes().OfType<FieldDeclarationSyntax>().First().Modifiers;
+        var tree = SyntaxFactory.ParseSyntaxTree($"class C {{ {source} int x; }}", cancellationToken: TestContext.Current.CancellationToken);
+        return tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<FieldDeclarationSyntax>().First().Modifiers;
     }
 
     private static SyntaxTokenList Modify(string source, SyntaxKind kind)
@@ -49,6 +49,6 @@ public sealed class InModifierHelperTests
 
     private static string Text(SyntaxTokenList modifiers)
     {
-        return string.Join(' ', modifiers.Select(modifier => modifier.ValueText).ToList());
+        return string.Join(' ', modifiers.Select(static modifier => modifier.ValueText).ToList());
     }
 }

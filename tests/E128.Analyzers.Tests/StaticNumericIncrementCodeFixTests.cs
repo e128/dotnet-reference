@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StaticNumericIncrementCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<StaticNumericIncrementAnalyzer, StaticNumericIncrementCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<StaticNumericIncrementAnalyzer, StaticNumericIncrementCodeFixProvider>(source, fixedCode);
+    }
 
     #region Interlocked fix
 

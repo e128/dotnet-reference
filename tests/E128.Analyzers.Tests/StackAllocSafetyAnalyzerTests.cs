@@ -21,7 +21,7 @@ public sealed class StackAllocSafetyAnalyzerTests
 
         }
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

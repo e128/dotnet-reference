@@ -24,7 +24,7 @@ public sealed class ConstructorNewDiRegisteredE128CodeFixTests
             ReferenceAssemblies = Net100WithDi
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

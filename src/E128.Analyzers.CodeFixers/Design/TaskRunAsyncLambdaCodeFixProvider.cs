@@ -34,7 +34,7 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : E128CodeFixProviderBase
 
         // A second argument, such as the cancellation token, would be dropped by the removal and the
         // work would no longer observe cancellation. Leave those calls to the developer.
-        if (args.Count != 1)
+        if (args.Count is not 1)
         {
             return Task.CompletedTask;
         }

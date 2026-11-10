@@ -13,17 +13,20 @@ public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClass
 {
     private readonly HttpClient _client = factory.CreateClient();
 
-    public void Dispose() => _client.Dispose();
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
 
     [Fact]
     [Trait("Category", "CI")]
     public async Task Root_ReturnsOk_WithGreeting()
     {
-        using var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync(new Uri("/", UriKind.Relative), HttpCompletionOption.ResponseHeadersRead, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Hello, World!", content);
     }
 
@@ -31,13 +34,13 @@ public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClass
     [Trait("Category", "CI")]
     public async Task Greetings_ReturnsOk_WithSourceGeneratedJson()
     {
-        using var created = await _client.PostAsJsonAsync("/greetings", new GreetingRequest("Ada"));
+        using var created = await _client.PostAsJsonAsync("/greetings", new GreetingRequest("Ada"), TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
 
-        using var response = await _client.GetAsync("/greetings?count=1", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync(new Uri("/greetings?count=1", UriKind.Relative), HttpCompletionOption.ResponseHeadersRead, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("\"recipientName\":\"Ada\"", content, StringComparison.Ordinal);
     }
 
@@ -45,7 +48,7 @@ public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClass
     [Trait("Category", "CI")]
     public async Task Health_ReturnsOk()
     {
-        using var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync(new Uri("/health", UriKind.Relative), HttpCompletionOption.ResponseHeadersRead, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

@@ -41,7 +41,7 @@ public sealed class HttpRequestInLoopAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
             MetadataTypes.RegisterForType(
                 startContext,
                 "System.Net.Http.HttpClient",

@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class DateTimeDirectUseCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<DateTimeDirectUseAnalyzer, DateTimeDirectUseCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<DateTimeDirectUseAnalyzer, DateTimeDirectUseCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

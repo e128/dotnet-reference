@@ -59,7 +59,7 @@ public sealed class UnvalidatedJwtIdentityRealPackageTests
             ReferenceAssemblies = Net100WithJwt
         };
         test.TestState.Sources.Add(Stubs);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Theory]

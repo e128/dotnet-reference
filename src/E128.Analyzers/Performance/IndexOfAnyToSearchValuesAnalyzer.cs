@@ -33,7 +33,7 @@ public sealed class IndexOfAnyToSearchValuesAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             // SearchValues<T> arrived in .NET 8. Without it the suggested replacement does not
             // compile, so an older target framework must get no report.
@@ -66,7 +66,7 @@ public sealed class IndexOfAnyToSearchValuesAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (method.ContainingType?.SpecialType != SpecialType.System_String)
+        if (method.ContainingType?.SpecialType is not SpecialType.System_String)
         {
             return;
         }
@@ -76,6 +76,7 @@ public sealed class IndexOfAnyToSearchValuesAnalyzer : DiagnosticAnalyzer
 
     private static bool IsIndexOfAnyName(string name)
     {
-        return name is "IndexOfAny" or "LastIndexOfAny";
+        return string.Equals(name, "IndexOfAny", StringComparison.Ordinal)
+               || string.Equals(name, "LastIndexOfAny", StringComparison.Ordinal);
     }
 }

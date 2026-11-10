@@ -41,7 +41,7 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
             MetadataTypes.RegisterForType(
                 startContext,
                 GcHandleMetadataName,
@@ -155,14 +155,14 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
             return local is not null;
         }
 
-        if (invocation.Parent is AssignmentExpressionSyntax assignment
-            && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
+        if (invocation.Parent is not AssignmentExpressionSyntax assignment
+            || !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
-            local = model.GetSymbolInfo(assignment.Left, token).Symbol as ILocalSymbol;
-            return local is not null;
+            return false;
         }
 
-        return false;
+        local = model.GetSymbolInfo(assignment.Left, token).Symbol as ILocalSymbol;
+        return local is not null;
     }
 
     private static bool Frees(

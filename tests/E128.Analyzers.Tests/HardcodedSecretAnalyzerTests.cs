@@ -13,8 +13,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HardcodedSecretAnalyzerTests
 {
-    private static Task VerifyAsync(string code) =>
-        AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>(code);
+    private static Task VerifyAsync(string code)
+    {
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>(code);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -383,7 +385,7 @@ public sealed class HardcodedSecretAnalyzerTests
             "namespace Xunit { public sealed class FactAttribute { } }",
             references));
 
-        await test.RunAsync();
+        await test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -412,7 +414,7 @@ public sealed class HardcodedSecretAnalyzerTests
             "namespace NUnit.Framework { public sealed class TestAttribute : System.Attribute { } }",
             references));
 
-        await test.RunAsync();
+        await test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -438,7 +440,7 @@ public sealed class HardcodedSecretAnalyzerTests
             "namespace Microsoft.VisualStudio.TestTools.UnitTesting { public sealed class TestMethodAttribute : System.Attribute { } }",
             references));
 
-        await test.RunAsync();
+        await test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static PortableExecutableReference EmitStub(
@@ -448,12 +450,12 @@ public sealed class HardcodedSecretAnalyzerTests
     {
         var compilation = CSharpCompilation.Create(
             assemblyName,
-            [CSharpSyntaxTree.ParseText(source)],
+            [CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken)],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
         using var stream = new MemoryStream();
-        var result = compilation.Emit(stream);
+        var result = compilation.Emit(stream, cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(result.Success);
 
         return MetadataReference.CreateFromImage(stream.ToArray());

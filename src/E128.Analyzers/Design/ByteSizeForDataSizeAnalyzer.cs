@@ -48,9 +48,9 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
     {
         var (type, name, location) = context.Symbol switch
         {
-            IPropertySymbol p => (p.Type, p.Name, p.Locations.IsEmpty ? null : p.Locations[0]),
-            IParameterSymbol p => (p.Type, p.Name, p.Locations.IsEmpty ? null : p.Locations[0]),
-            IFieldSymbol f => (f.Type, f.Name, f.Locations.IsEmpty ? null : f.Locations[0]),
+            IPropertySymbol p => (p.Type, p.Name, FirstLocation(p)),
+            IParameterSymbol p => (p.Type, p.Name, FirstLocation(p)),
+            IFieldSymbol f => (f.Type, f.Name, FirstLocation(f)),
             _ => default
         };
 
@@ -61,27 +61,25 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
 
         var effectiveType = TypeSymbols.UnwrapNullable(type);
 
-        if (!IsNumericType(effectiveType))
-        {
-            return;
-        }
-
-        if (ByteSizeType.Is(effectiveType))
-        {
-            return;
-        }
-
-        if (ByteSizeType.Is(context.Symbol.ContainingType))
-        {
-            return;
-        }
-
-        if (!NameSuffixes.Matches(name, DataSizeSuffixes))
+        if (!IsDataSizeCandidate(effectiveType, context.Symbol.ContainingType, name))
         {
             return;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, location, name));
+    }
+
+    private static Location? FirstLocation(ISymbol symbol)
+    {
+        return symbol.Locations.IsEmpty ? null : symbol.Locations[0];
+    }
+
+    private static bool IsDataSizeCandidate(ITypeSymbol type, ITypeSymbol? containingType, string name)
+    {
+        return IsNumericType(type)
+            && !ByteSizeType.Is(type)
+            && !ByteSizeType.Is(containingType)
+            && NameSuffixes.Matches(name, DataSizeSuffixes);
     }
 
     private static void AnalyzeVariableDeclarator(OperationAnalysisContext context)
@@ -93,26 +91,18 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
 
         var type = TypeSymbols.UnwrapNullable(local.Type);
 
-        if (!IsNumericType(type) || ByteSizeType.Is(type))
-        {
-            return;
-        }
-
-        if (ByteSizeType.Is(local.ContainingType))
-        {
-            return;
-        }
-
-        if (!NameSuffixes.Matches(local.Name, DataSizeSuffixes))
+        if (!IsDataSizeCandidate(type, local.ContainingType, local.Name))
         {
             return;
         }
 
         var location = local.Locations.IsEmpty ? null : local.Locations[0];
-        if (location is not null)
+        if (location is null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, location, local.Name));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, location, local.Name));
     }
 
     private static bool IsNumericType(ITypeSymbol type)

@@ -35,7 +35,7 @@ public sealed class HttpClientResponseHeadersReadAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var httpClientType = compilationContext.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClient");
             if (httpClientType is null)

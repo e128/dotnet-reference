@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class EncodingDefaultE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<EncodingDefaultAnalyzer, EncodingDefaultCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<EncodingDefaultAnalyzer, EncodingDefaultCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

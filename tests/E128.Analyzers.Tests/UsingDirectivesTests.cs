@@ -37,7 +37,7 @@ public sealed class UsingDirectivesTests
 
         var result = (CompilationUnitSyntax)UsingDirectives.AddIfMissing(root, "System.Text");
 
-        Assert.Single(result.Usings);
+        _ = Assert.Single(result.Usings);
     }
 
     [Fact]

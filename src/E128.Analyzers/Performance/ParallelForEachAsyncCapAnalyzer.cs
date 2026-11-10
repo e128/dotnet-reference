@@ -40,7 +40,7 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var parallelType = compilationContext.Compilation.GetTypeByMetadataName(ParallelMetadataName);
             if (parallelType is null)
@@ -67,39 +67,16 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-
-        if (!string.Equals(
-            memberAccess.Name.Identifier.ValueText,
-            ForEachAsyncMethodName,
-            StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
-        if (symbolInfo.Symbol is not IMethodSymbol method)
-        {
-            return;
-        }
-
-        if (!SymbolEqualityComparer.Default.Equals(method.ContainingType, parallelType))
+        if (GetForEachAsyncMethod(context, invocation, parallelType) is not { } method)
         {
             return;
         }
 
         var optionsArgument = GetOptionsArgument(invocation, method, parallelOptionsType);
-        if (optionsArgument is null)
-        {
-            Report(context, invocation);
-            return;
-        }
 
         // "default" or "default(ParallelOptions)" builds an options object with no degree cap.
-        if (optionsArgument.IsKind(SyntaxKind.DefaultLiteralExpression)
+        if (optionsArgument is null
+            || optionsArgument.IsKind(SyntaxKind.DefaultLiteralExpression)
             || optionsArgument is DefaultExpressionSyntax)
         {
             Report(context, invocation);
@@ -118,10 +95,34 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (creation.Initializer is null || !SetsMaxDegreeOfParallelism(creation.Initializer))
+        if (creation.Initializer is not null && SetsMaxDegreeOfParallelism(creation.Initializer))
         {
-            Report(context, invocation);
+            return;
         }
+
+        Report(context, invocation);
+    }
+
+    private static IMethodSymbol? GetForEachAsyncMethod(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol parallelType)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
+            || !string.Equals(
+                memberAccess.Name.Identifier.ValueText,
+                ForEachAsyncMethodName,
+                StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
+
+        return symbolInfo.Symbol is IMethodSymbol found
+            && SymbolEqualityComparer.Default.Equals(found.ContainingType, parallelType)
+            ? found
+            : null;
     }
 
     private static ExpressionSyntax? GetOptionsArgument(
@@ -137,14 +138,9 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
         {
             if (argument.NameColon is NameColonSyntax nameColon)
             {
-                var name = nameColon.Name.Identifier.ValueText;
-                for (var i = 0; i < parameters.Length; i++)
+                if (HasNamedParallelOptions(parameters, nameColon.Name.Identifier.ValueText, parallelOptionsType))
                 {
-                    if (string.Equals(parameters[i].Name, name, StringComparison.Ordinal)
-                        && IsParallelOptions(parameters[i].Type, parallelOptionsType))
-                    {
-                        return argument.Expression;
-                    }
+                    return argument.Expression;
                 }
 
                 continue;
@@ -160,6 +156,23 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
         }
 
         return null;
+    }
+
+    private static bool HasNamedParallelOptions(
+        ImmutableArray<IParameterSymbol> parameters,
+        string name,
+        INamedTypeSymbol parallelOptionsType)
+    {
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            if (string.Equals(parameters[i].Name, name, StringComparison.Ordinal)
+                && IsParallelOptions(parameters[i].Type, parallelOptionsType))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsParallelOptions(ITypeSymbol type, INamedTypeSymbol parallelOptionsType)

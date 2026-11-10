@@ -47,7 +47,7 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProvi
         }
 
         if (semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol
-            || methodSymbol.TypeArguments.Length != 1)
+            || methodSymbol.TypeArguments.Length is not 1)
         {
             return;
         }
@@ -71,7 +71,7 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProvi
     {
         var concreteType = methodSymbol.TypeArguments[0];
         var nonMarkerInterfaces = concreteType.AllInterfaces
-            .Where(i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
+            .Where(static i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
             .ToList();
 
         foreach (var iface in nonMarkerInterfaces)
@@ -85,7 +85,7 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProvi
 
     private static bool HasNoFactoryOrParameterlessFactory(InvocationExpressionSyntax invocation)
     {
-        if (invocation.ArgumentList.Arguments.Count == 0)
+        if (invocation.ArgumentList.Arguments.Count is 0)
         {
             return true;
         }
@@ -103,6 +103,6 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProvi
         };
 
         return body is ObjectCreationExpressionSyntax creation
-               && (creation.ArgumentList?.Arguments.Count ?? 0) == 0;
+               && (creation.ArgumentList?.Arguments.Count ?? 0) is 0;
     }
 }

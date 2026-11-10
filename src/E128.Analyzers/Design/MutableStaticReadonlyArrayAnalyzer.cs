@@ -144,6 +144,6 @@ public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
         }
 
         // No explicit access modifier means private for class members
-        return access == 0 || (access & (Private | Internal)) != 0;
+        return access is 0 || (access & (Private | Internal)) is not 0;
     }
 }

@@ -294,7 +294,7 @@ public sealed class ComplexityCeilingE128AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyWithCeilingAsync(string ceiling, string code, params DiagnosticResult[] expected)
@@ -307,7 +307,7 @@ public sealed class ComplexityCeilingE128AnalyzerTests
         test.TestState.AnalyzerConfigFiles.Add(
             ("/.globalconfig", "is_global = true\ne128_max_complexity = " + ceiling));
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

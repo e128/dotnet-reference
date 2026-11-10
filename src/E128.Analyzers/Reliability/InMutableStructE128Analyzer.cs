@@ -69,6 +69,6 @@ public sealed class InMutableStructE128Analyzer : DiagnosticAnalyzer
 
     private static bool IsMutableStruct(INamedTypeSymbol type)
     {
-        return type.IsValueType && !type.IsReadOnly && !type.IsRefLikeType && type.SpecialType == SpecialType.None && type.TypeKind != TypeKind.Enum;
+        return type.IsValueType && !type.IsReadOnly && !type.IsRefLikeType && type.SpecialType is SpecialType.None && type.TypeKind is not TypeKind.Enum;
     }
 }

@@ -80,10 +80,12 @@ public sealed class FipsSha3Analyzer : DiagnosticAnalyzer
         var creation = (IObjectCreationOperation)context.Operation;
         var syntax = creation.Syntax;
 
-        if (!ReportType(context, creation.Type, syntax))
+        if (ReportType(context, creation.Type, syntax))
         {
-            ReportHashNameArguments(context, creation.Constructor, creation.Arguments, syntax);
+            return;
         }
+
+        ReportHashNameArguments(context, creation.Constructor, creation.Arguments, syntax);
     }
 
     private static void AnalyzePropertyReference(OperationAnalysisContext context)
@@ -92,24 +94,28 @@ public sealed class FipsSha3Analyzer : DiagnosticAnalyzer
         var property = reference.Property;
 
         // RSAEncryptionPadding.OaepSHA3_256 and its siblings.
-        if (property.IsStatic &&
-            property.Name.StartsWith("OaepSHA3_", StringComparison.Ordinal) &&
-            FipsSymbolHelpers.IsCryptographyType(property.ContainingType, "RSAEncryptionPadding"))
+        if (!property.IsStatic ||
+            !property.Name.StartsWith("OaepSHA3_", StringComparison.Ordinal) ||
+            !FipsSymbolHelpers.IsCryptographyType(property.ContainingType, "RSAEncryptionPadding"))
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                reference.Syntax.GetLocation(),
-                property.Name.Substring("Oaep".Length)));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            reference.Syntax.GetLocation(),
+            property.Name.Substring("Oaep".Length)));
     }
 
     private static void AnalyzeMethodReference(OperationAnalysisContext context)
     {
         var reference = (IMethodReferenceOperation)context.Operation;
-        if (reference.Method.IsStatic)
+        if (!reference.Method.IsStatic)
         {
-            ReportType(context, reference.Method.ContainingType, reference.Syntax);
+            return;
         }
+
+        _ = ReportType(context, reference.Method.ContainingType, reference.Syntax);
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context)
@@ -131,24 +137,30 @@ public sealed class FipsSha3Analyzer : DiagnosticAnalyzer
         OperationAnalysisContext context,
         IMethodSymbol? method,
         ImmutableArray<IArgumentOperation> arguments,
-        SyntaxNode syntax) =>
+        SyntaxNode syntax)
+    {
         FipsSymbolHelpers.ReportHashNameArguments(
             method,
             arguments,
             syntax,
             context,
             static (_, name) => Sha3AlgorithmNames.Contains(name),
-            static (state, node, name) => Report(state, node, name));
+            Report);
+    }
 
-    private static void AnalyzeHashNameStore(OperationAnalysisContext context) =>
+    private static void AnalyzeHashNameStore(OperationAnalysisContext context)
+    {
         FipsSymbolHelpers.ReportHashNameStores(
             context.Operation,
             context,
             static (_, name) => Sha3AlgorithmNames.Contains(name),
-            static (state, node, name) => Report(state, node, name));
+            Report);
+    }
 
-    private static void Report(OperationAnalysisContext context, SyntaxNode syntax, string name) =>
+    private static void Report(OperationAnalysisContext context, SyntaxNode syntax, string name)
+    {
         context.ReportDiagnostic(Diagnostic.Create(Rule, syntax.GetLocation(), name));
+    }
 
     private static bool ReportType(OperationAnalysisContext context, ITypeSymbol? type, SyntaxNode syntax)
     {

@@ -25,6 +25,9 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
 
     private const string FixedTimeEqualsMethodName = "FixedTimeEquals";
 
+    // The static form SequenceEqual(left, right) passes both operands as arguments.
+    private const int BinaryArgumentCount = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [TimingSafeComparisonAnalyzer.DiagnosticId];
 
@@ -85,9 +88,9 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
         CancellationToken cancellationToken)
     {
         return model.GetTypeInfo(operands.Left, cancellationToken).Nullability.FlowState
-               != NullableFlowState.MaybeNull
+               is not NullableFlowState.MaybeNull
                && model.GetTypeInfo(operands.Right, cancellationToken).Nullability.FlowState
-               != NullableFlowState.MaybeNull;
+               is not NullableFlowState.MaybeNull;
     }
 
     private static (ExpressionSyntax Left, ExpressionSyntax Right)? GetSequenceEqualOperands(
@@ -103,7 +106,7 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
             ? arguments.Count switch
             {
                 1 => (memberAccess.Expression, arguments[0].Expression),
-                2 => (arguments[0].Expression, arguments[1].Expression),
+                BinaryArgumentCount => (arguments[0].Expression, arguments[1].Expression),
                 _ => null
             }
             : null;

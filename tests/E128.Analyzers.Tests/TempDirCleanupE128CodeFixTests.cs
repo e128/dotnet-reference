@@ -18,7 +18,7 @@ public sealed class TempDirCleanupE128CodeFixTests
             CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
             NumberOfFixAllIterations = 1
         };
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public sealed class TempDirCleanupE128CodeFixTests
             NumberOfFixAllInDocumentIterations = 0
         };
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

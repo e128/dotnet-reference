@@ -152,7 +152,7 @@ public sealed class LazyFieldThreadSafetyAnalyzer : DiagnosticAnalyzer
                    is { } modeArgument
             ? model.GetConstantValue(modeArgument.Expression, token) is { HasValue: true, Value: int mode }
               && mode == noneValue
-            : FindArgument(constructor, argumentList, parameter => string.Equals(parameter.Name, "isThreadSafe", StringComparison.Ordinal))
+            : FindArgument(constructor, argumentList, static parameter => string.Equals(parameter.Name, "isThreadSafe", StringComparison.Ordinal))
                   is { } flagArgument
               && model.GetConstantValue(flagArgument.Expression, token) is { HasValue: true, Value: false };
     }
@@ -174,29 +174,40 @@ public sealed class LazyFieldThreadSafetyAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var arguments = argumentList.Arguments;
-
-            for (var index = 0; index < arguments.Count; index++)
+            var argument = FindArgumentForParameter(argumentList.Arguments, parameter);
+            if (argument is not null)
             {
-                var argument = arguments[index];
+                return argument;
+            }
+        }
 
-                if (argument.NameColon is { } nameColon)
-                {
-                    if (string.Equals(
-                            nameColon.Name.Identifier.ValueText,
-                            parameter.Name,
-                            StringComparison.Ordinal))
-                    {
-                        return argument;
-                    }
+        return null;
+    }
 
-                    continue;
-                }
+    private static ArgumentSyntax? FindArgumentForParameter(
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        IParameterSymbol parameter)
+    {
+        for (var index = 0; index < arguments.Count; index++)
+        {
+            var argument = arguments[index];
 
-                if (index == parameter.Ordinal)
+            if (argument.NameColon is { } nameColon)
+            {
+                if (string.Equals(
+                        nameColon.Name.Identifier.ValueText,
+                        parameter.Name,
+                        StringComparison.Ordinal))
                 {
                     return argument;
                 }
+
+                continue;
+            }
+
+            if (index == parameter.Ordinal)
+            {
+                return argument;
             }
         }
 

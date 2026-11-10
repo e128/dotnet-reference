@@ -51,9 +51,9 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
-            if (XunitTestHelper.IsTestCompilation(start.Compilation))
+            if (XunitTestHelper.IsTestCompilation(start.Compilation, start.CancellationToken))
             {
                 return;
             }
@@ -127,7 +127,7 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Host.Length == 0)
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Host.Length is 0)
         {
             return false;
         }

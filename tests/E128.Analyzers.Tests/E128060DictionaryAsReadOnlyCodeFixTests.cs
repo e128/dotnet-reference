@@ -18,7 +18,7 @@ public sealed class E128060DictionaryAsReadOnlyCodeFixTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             NumberOfFixAllIterations = 1
         };
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

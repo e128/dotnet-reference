@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UnsafeAddArrayDataReferenceCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<UnsafeAddArrayDataReferenceAnalyzer, UnsafeAddArrayDataReferenceCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<UnsafeAddArrayDataReferenceAnalyzer, UnsafeAddArrayDataReferenceCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -37,6 +39,7 @@ public sealed class UnsafeAddArrayDataReferenceCodeFixTests
             }
             """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Fix_ParenthesizesACastArray()

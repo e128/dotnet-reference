@@ -35,7 +35,7 @@ public sealed class CaptiveDependencyAnalyzerTests
             MarkupOptions = MarkupOptions.UseFirstDescriptor
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     private static Task VerifyEfCoreAsync(string code, params DiagnosticResult[] expected)

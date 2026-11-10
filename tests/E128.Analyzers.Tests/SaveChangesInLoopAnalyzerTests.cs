@@ -30,8 +30,10 @@ public sealed class SaveChangesInLoopAnalyzerTests
                                            }
                                            """;
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code, expected);
+    }
 
     private static Task VerifyWithEfAsync(string code, params DiagnosticResult[] expected)
     {

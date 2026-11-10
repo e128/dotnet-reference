@@ -152,7 +152,7 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
     {
         var constant = context.SemanticModel.GetConstantValue(expression, context.CancellationToken);
 
-        return (constant.HasValue && constant.Value is string constantText && constantText.Length == 0)
+        return (constant.HasValue && constant.Value is string constantText && constantText.Length is 0)
                || (expression is MemberAccessExpressionSyntax memberAccess
                    && string.Equals(memberAccess.Name.Identifier.ValueText, "Empty", StringComparison.Ordinal)
                    && string.Equals(memberAccess.Expression.ToString(), "string", StringComparison.Ordinal));

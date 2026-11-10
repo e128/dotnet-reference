@@ -51,10 +51,12 @@ public sealed class QuerySelectorAllMaterializationAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (expression is IdentifierNameSyntax identifier)
+        if (expression is not IdentifierNameSyntax identifier)
         {
-            AnalyzeVariableAssignment(context, identifier);
+            return;
         }
+
+        AnalyzeVariableAssignment(context, identifier);
     }
 
     private static bool TryReportUnmaterializedQsa(
@@ -99,34 +101,30 @@ public sealed class QuerySelectorAllMaterializationAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var initExpression = declarator.Initializer.Value;
-
-            foreach (var invocation in initExpression.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>())
+            if (TryReportInitializer(context, declarator.Initializer.Value))
             {
-                if (!IsQuerySelectorAllInvocation(invocation))
-                {
-                    continue;
-                }
-
-                if (IsInsideLambda(invocation, initExpression))
-                {
-                    continue;
-                }
-
-                if (HasMaterializingParent(invocation, initExpression))
-                {
-                    continue;
-                }
-
-                if (!IsAngleSharpMethod(context, invocation))
-                {
-                    continue;
-                }
-
-                context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
                 return;
             }
         }
+    }
+
+    private static bool TryReportInitializer(SyntaxNodeAnalysisContext context, ExpressionSyntax initExpression)
+    {
+        foreach (var invocation in initExpression.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>())
+        {
+            if (!IsQuerySelectorAllInvocation(invocation)
+                || IsInsideLambda(invocation, initExpression)
+                || HasMaterializingParent(invocation, initExpression)
+                || !IsAngleSharpMethod(context, invocation))
+            {
+                continue;
+            }
+
+            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+            return true;
+        }
+
+        return false;
     }
 
     private static bool IsInsideLambda(SyntaxNode node, SyntaxNode boundary)

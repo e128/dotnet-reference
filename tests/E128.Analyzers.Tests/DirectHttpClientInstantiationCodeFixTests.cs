@@ -10,8 +10,10 @@ public sealed class DirectHttpClientInstantiationCodeFixTests
     private static readonly ReferenceAssemblies Net100WithHttp = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.Extensions.Http", "10.0.6")]);
 
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider>(source, fixedCode, references: Net100WithHttp);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider>(source, fixedCode, references: Net100WithHttp);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
@@ -167,6 +169,8 @@ public sealed class DirectHttpClientInstantiationCodeFixTests
             """);
     }
 
-    private static Task VerifyNoFixAsync(string code) =>
-        CodeFixTestRunner.NoFixAsync<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider>(code, references: Net100WithHttp);
+    private static Task VerifyNoFixAsync(string code)
+    {
+        return CodeFixTestRunner.NoFixAsync<DirectHttpClientInstantiationAnalyzer, DirectHttpClientInstantiationCodeFixProvider>(code, references: Net100WithHttp);
+    }
 }

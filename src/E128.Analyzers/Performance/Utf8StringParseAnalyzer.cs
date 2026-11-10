@@ -41,7 +41,7 @@ public sealed class Utf8StringParseAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var encoding = start.Compilation.GetTypeByMetadataName("System.Text.Encoding");
             var readOnlySpan = start.Compilation.GetTypeByMetadataName("System.ReadOnlySpan`1");
@@ -51,7 +51,7 @@ public sealed class Utf8StringParseAnalyzer : DiagnosticAnalyzer
             if (encoding is null
                 || readOnlySpan is null
                 || formatProvider is null
-                || byteType.TypeKind == TypeKind.Error)
+                || byteType.TypeKind is TypeKind.Error)
             {
                 return;
             }
@@ -74,43 +74,9 @@ public sealed class Utf8StringParseAnalyzer : DiagnosticAnalyzer
 
         var model = context.SemanticModel;
 
-        if (model.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
-            || method.IsGenericMethod
-            || method.Parameters.Length == 0
-            || method.Parameters[0].Type.SpecialType != SpecialType.System_String)
-        {
-            return;
-        }
-
-        if (!string.Equals(method.Name, "Parse", StringComparison.Ordinal)
-            && !string.Equals(method.Name, "TryParse", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (invocation.ArgumentList is null
-            || invocation.ArgumentList.Arguments.Count != method.Parameters.Length
-            || invocation.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax getString)
-        {
-            return;
-        }
-
-        if (!IsUtf8GetString(getString, model, parseContext.Encoding, context.CancellationToken))
-        {
-            return;
-        }
-
-        if (getString.ArgumentList.Arguments.Count != 1
-            || !IsByteSource(
-                getString.ArgumentList.Arguments[0].Expression,
-                model,
-                parseContext,
-                context.CancellationToken))
-        {
-            return;
-        }
-
-        if (!TryFindOverload(method, parseContext, out var addProvider))
+        if (GetParseMethod(invocation, model, context.CancellationToken) is not { } method
+            || GetUtf8GetStringCall(invocation, method, model, parseContext, context.CancellationToken) is not { } getString
+            || !TryFindOverload(method, parseContext, out var addProvider))
         {
             return;
         }
@@ -123,6 +89,42 @@ public sealed class Utf8StringParseAnalyzer : DiagnosticAnalyzer
                     new KeyValuePair<string, string?>(AddProviderKey, addProvider ? "true" : "false")
                 ]),
             method.Name));
+    }
+
+    // Returns the method when the call is a string Parse or TryParse overload.
+    private static IMethodSymbol? GetParseMethod(
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        return model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol { IsGenericMethod: false } method
+            && method.Parameters.Length is not 0
+            && method.Parameters[0].Type.SpecialType is SpecialType.System_String
+            && (string.Equals(method.Name, "Parse", StringComparison.Ordinal)
+                || string.Equals(method.Name, "TryParse", StringComparison.Ordinal))
+            ? method
+            : null;
+    }
+
+    // Returns the Encoding.UTF8.GetString call that feeds the first argument, when its source is bytes.
+    private static InvocationExpressionSyntax? GetUtf8GetStringCall(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        SemanticModel model,
+        ParseContext parseContext,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        if (invocation.ArgumentList is null
+            || invocation.ArgumentList.Arguments.Count != method.Parameters.Length
+            || invocation.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax getString
+            || !IsUtf8GetString(getString, model, parseContext.Encoding, cancellationToken)
+            || getString.ArgumentList.Arguments.Count is not 1
+            || !IsByteSource(getString.ArgumentList.Arguments[0].Expression, model, parseContext, cancellationToken))
+        {
+            return null;
+        }
+
+        return getString;
     }
 
     private static bool IsUtf8GetString(
@@ -149,14 +151,14 @@ public sealed class Utf8StringParseAnalyzer : DiagnosticAnalyzer
         var type = model.GetTypeInfo(expression, cancellationToken).Type;
 
         return type is IArrayTypeSymbol array
-            ? array.ElementType.SpecialType == SpecialType.System_Byte
+            ? array.ElementType.SpecialType is SpecialType.System_Byte
             : type is INamedTypeSymbol named
                 && SymbolEqualityComparer.Default.Equals(named, parseContext.SpanByte);
     }
 
     internal static bool TryFindOverload(IMethodSymbol method, ParseContext parseContext, out bool addProvider)
     {
-        var expected = new List<ITypeSymbol> { parseContext.SpanByte };
+        List<ITypeSymbol> expected = [parseContext.SpanByte];
 
         for (var index = 1; index < method.Parameters.Length; index++)
         {

@@ -1,5 +1,5 @@
 # Performance Rule Details
-*Updated: 2026-11-07T17:31:31Z*
+*Updated: 2026-11-09T23:44:15Z*
 
 Behavior notes for the performance rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -23,7 +23,7 @@ Uses `RegisterCompilationStartAction` to pre-resolve O(1) type symbols, then `Re
 
 ### E128067: String concatenation in loop
 
-Disabled in `.globalconfig` (see [redundant-rules.md](redundant-rules.md)). Flags `string +=` inside loops. Each iteration allocates a new string, creating O(n²) total allocations. Registers on `SyntaxKind.AddAssignmentExpression` and checks `SpecialType.System_String`. Code fix is a placeholder (string-to-StringBuilder refactoring is too invasive for automation).
+Overlaps S1643 and SS058 (see [redundant-rules.md](redundant-rules.md)). Flags `string +=` inside loops. Each iteration allocates a new string, creating O(n²) total allocations. Registers on `SyntaxKind.AddAssignmentExpression` and checks `SpecialType.System_String`. Code fix is a placeholder (string-to-StringBuilder refactoring is too invasive for automation).
 
 ### E128068: Sort in loop (O(n² log n))
 
@@ -214,4 +214,4 @@ Tier 2 rules E128211 to E128217 live in
 
 - [rule-details.md](rule-details.md): the remaining rule details
 - [performance.md](performance.md): analyzer hot-path rules
-- [redundant-rules.md](redundant-rules.md): rules disabled because another analyzer covers the shape
+- [redundant-rules.md](redundant-rules.md): rules that another analyzer also covers

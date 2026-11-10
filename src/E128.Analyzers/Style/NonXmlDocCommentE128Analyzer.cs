@@ -52,7 +52,7 @@ public sealed class NonXmlDocCommentE128Analyzer : DiagnosticAnalyzer
         // fix removes the comment, which would drop that reason and trip IDE0079. Only a
         // disable counts: a restore that ends an earlier pragma block lands in the next
         // member's leading trivia and must not suppress this rule.
-        if (leadingTrivia.Any(trivia => trivia.GetStructure() is PragmaWarningDirectiveTriviaSyntax pragma
+        if (leadingTrivia.Any(static trivia => trivia.GetStructure() is PragmaWarningDirectiveTriviaSyntax pragma
             && pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword)))
         {
             return;

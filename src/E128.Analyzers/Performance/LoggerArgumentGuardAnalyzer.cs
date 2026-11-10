@@ -33,7 +33,7 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var loggerExtensions = MetadataTypes.Find(
                 start.Compilation,
@@ -121,9 +121,9 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
     {
         return ContainsGuard(condition, receiver, level)
             || condition.DescendantNodesAndSelf()
-                .Where(node => node is IdentifierNameSyntax or InvocationExpressionSyntax
+                .Where(static node => node is IdentifierNameSyntax or InvocationExpressionSyntax
                     && node.Parent is not PrefixUnaryExpressionSyntax)
-                .SelectMany(node => GetBackingExpressions(model.GetSymbolInfo(node, cancellationToken).Symbol))
+                .SelectMany(node => GetBackingExpressions(model.GetSymbolInfo(node, cancellationToken).Symbol, cancellationToken))
                 .Any(expression => ContainsGuard(expression, receiver, level));
     }
 
@@ -163,29 +163,44 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
     }
 
     // One level of indirection: a local that holds the check, or a helper method or property that returns it.
-    private static IEnumerable<SyntaxNode> GetBackingExpressions(ISymbol? symbol)
+    private static IEnumerable<SyntaxNode> GetBackingExpressions(
+        ISymbol? symbol,
+        System.Threading.CancellationToken cancellationToken)
     {
-        var references = symbol is ILocalSymbol or IMethodSymbol or IPropertySymbol
-            ? symbol.DeclaringSyntaxReferences
-            : [];
-
-        foreach (var reference in references)
+        if (symbol is not (ILocalSymbol or IMethodSymbol or IPropertySymbol))
         {
-            var body = reference.GetSyntax() switch
-            {
-                VariableDeclaratorSyntax declarator => declarator.Initializer?.Value,
-                MethodDeclarationSyntax method => method.ExpressionBody?.Expression ?? (SyntaxNode?)method.Body,
-                PropertyDeclarationSyntax property => property.ExpressionBody?.Expression
-                    ?? (SyntaxNode?)property.AccessorList?.Accessors.FirstOrDefault()?.Body
-                    ?? property.AccessorList?.Accessors.FirstOrDefault()?.ExpressionBody?.Expression,
-                _ => null,
-            };
+            yield break;
+        }
+
+        foreach (var reference in symbol.DeclaringSyntaxReferences)
+        {
+            var body = GetBackingBody(reference.GetSyntax(cancellationToken));
 
             if (body is not null)
             {
                 yield return body;
             }
         }
+    }
+
+    private static SyntaxNode? GetBackingBody(SyntaxNode declaration)
+    {
+        return declaration switch
+        {
+            VariableDeclaratorSyntax declarator => declarator.Initializer?.Value,
+            MethodDeclarationSyntax method => method.ExpressionBody?.Expression ?? (SyntaxNode?)method.Body,
+            PropertyDeclarationSyntax property => GetPropertyBody(property),
+            _ => null,
+        };
+    }
+
+    private static SyntaxNode? GetPropertyBody(PropertyDeclarationSyntax property)
+    {
+        var accessor = property.AccessorList?.Accessors.FirstOrDefault();
+
+        return property.ExpressionBody?.Expression
+            ?? (SyntaxNode?)accessor?.Body
+            ?? accessor?.ExpressionBody?.Expression;
     }
 
     private static bool HasEarlyReturnGuard(BlockSyntax block, SyntaxNode child, ExpressionSyntax receiver, string level)
@@ -225,7 +240,7 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
     {
         if (candidate.Expression is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "IsEnabled" } access
             || !SyntaxFactory.AreEquivalent(access.Expression, receiver)
-            || candidate.ArgumentList.Arguments.Count != 1)
+            || candidate.ArgumentList.Arguments.Count is not 1)
         {
             return false;
         }
@@ -256,7 +271,7 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
             if (argument.Expression is BinaryExpressionSyntax binary
                 && binary.IsKind(SyntaxKind.AddExpression)
                 && !semanticModel.GetConstantValue(binary, cancellationToken).HasValue
-                && semanticModel.GetTypeInfo(binary, cancellationToken).Type?.SpecialType == SpecialType.System_String)
+                && semanticModel.GetTypeInfo(binary, cancellationToken).Type?.SpecialType is SpecialType.System_String)
             {
                 return true;
             }

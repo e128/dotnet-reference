@@ -6,8 +6,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ProcessOutputValidatorE128CodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<ProcessOutputValidatorAnalyzer, ProcessOutputValidatorCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<ProcessOutputValidatorAnalyzer, ProcessOutputValidatorCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

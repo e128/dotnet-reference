@@ -34,7 +34,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
 
         var orExpr = node.AncestorsAndSelf()
             .OfType<BinaryExpressionSyntax>()
-            .FirstOrDefault(b => b.IsKind(SyntaxKind.LogicalOrExpression));
+            .FirstOrDefault(static b => b.IsKind(SyntaxKind.LogicalOrExpression));
         if (orExpr is null)
         {
             return;

@@ -23,7 +23,7 @@ public sealed class PresizeCollectionCodeFixProvider : E128CodeFixProviderBase
         var diagnostic = context.Diagnostics[0];
         if (!diagnostic.Properties.TryGetValue(PresizeCollectionAnalyzer.CapacityProperty, out var capacity)
             || capacity is null
-            || capacity.Length == 0)
+            || capacity.Length is 0)
         {
             return Task.CompletedTask;
         }

@@ -10,8 +10,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class GcHandleFreeAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>(code, expected);
+    }
 
     /// <summary>
     ///     Removing every metadata reference makes GCHandle unresolvable, which is the fail-closed path the
@@ -25,9 +27,9 @@ public sealed class GcHandleFreeAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             CompilerDiagnostics = CompilerDiagnostics.None
         };
-        test.SolutionTransforms.Add((solution, projectId) =>
+        test.SolutionTransforms.Add(static (solution, projectId) =>
             solution.WithProjectMetadataReferences(projectId, ImmutableArray<MetadataReference>.Empty));
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

@@ -32,7 +32,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
 
         await RunPodmanAsync($"build --tag {ImageName} .");
         await RunPodmanAsync($"run -d --name {ContainerName} -p {HostPort}:8080 {ImageName}");
-        await WaitForHealthy();
+        await WaitForHealthyAsync();
     }
 
     public async ValueTask DisposeAsync()
@@ -59,11 +59,11 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
             Assert.Skip("Podman not available");
         }
 
-        using var response = await _client.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync(new Uri("/", UriKind.Relative), HttpCompletionOption.ResponseHeadersRead, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Hello, World!", content);
     }
 
@@ -76,22 +76,22 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
             Assert.Skip("Podman not available");
         }
 
-        using var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _client.GetAsync(new Uri("/health", UriKind.Relative), HttpCompletionOption.ResponseHeadersRead, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Healthy", content);
     }
 
-    private async Task WaitForHealthy()
+    private async Task WaitForHealthyAsync()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         while (!cts.Token.IsCancellationRequested)
         {
             try
             {
-                using var response = await _client.GetAsync("/health", HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                using var response = await _client.GetAsync(new Uri("/health", UriKind.Relative), HttpCompletionOption.ResponseHeadersRead, cts.Token);
                 if (response.IsSuccessStatusCode)
                 {
                     return;
@@ -124,7 +124,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
         try
         {
             using var process = new Process();
-            process.StartInfo = new ProcessStartInfo
+            process.StartInfo = new()
             {
                 FileName = "podman",
                 ArgumentList = { "info" },
@@ -133,7 +133,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
                 RedirectStandardError = true,
                 UseShellExecute = false
             };
-            process.Start();
+            _ = process.Start();
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             try
             {
@@ -145,7 +145,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
                 return false;
             }
 
-            return process.ExitCode == 0;
+            return process.ExitCode is 0;
         }
         catch (Win32Exception)
         {
@@ -164,7 +164,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
     private static async Task RunPodmanAsync(string arguments, bool throwOnError = true)
     {
         using var process = new Process();
-        process.StartInfo = new ProcessStartInfo
+        process.StartInfo = new()
         {
             FileName = "podman",
             WorkingDirectory = RepoRoot,
@@ -177,8 +177,8 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
             process.StartInfo.ArgumentList.Add(token);
         }
 
-        process.Start();
-        var stderr = await process.StandardError.ReadToEndAsync();
+        _ = process.Start();
+        var stderr = await process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
         try
         {
@@ -190,11 +190,13 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
             throw new InvalidOperationException($"'podman {arguments}' timed out after 2 minutes", ex);
         }
 
-        if (throwOnError && process.ExitCode != 0)
+        if (!throwOnError || process.ExitCode is 0)
         {
-            throw new InvalidOperationException(
-                $"'podman {arguments}' failed (exit {process.ExitCode.ToString(CultureInfo.InvariantCulture)}): {stderr}");
+            return;
         }
+
+        throw new InvalidOperationException(
+            $"'podman {arguments}' failed (exit {process.ExitCode.ToString(CultureInfo.InvariantCulture)}): {stderr}");
     }
 
     /// <summary>

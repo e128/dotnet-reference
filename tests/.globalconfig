@@ -5,50 +5,29 @@ is_global = true
 # Higher global_level wins over root (level 100).
 global_level = 101
 
-# CA1515: Make types public (xUnit requires public/internal types for test discovery)
-dotnet_diagnostic.CA1515.severity = none
-
-# CA1707: Underscores in test names (Method_Condition_Result naming convention)
-dotnet_diagnostic.CA1707.severity = none
-
-# CA1062: Null check constructor parameters (xUnit injects via fixture: always non-null)
-dotnet_diagnostic.CA1062.severity = none
+# Every rule is an error in tests, with the exceptions below. Each exception exists because
+# enabling the rule contradicts a framework requirement or a written repo convention.
 
 # CA2007, MA0004, VSTHRD111: ConfigureAwait in tests
-# xUnit1030 governs ConfigureAwait in test methods; test projects compile as ConsoleApplication
-# but are tooling, not production app code.
+# xUnit1030 forbids ConfigureAwait(false) in test methods, so these three rules contradict it.
+# Test projects compile as ConsoleApplication but are tooling, not production app code.
 dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.MA0004.severity = none
 dotnet_diagnostic.VSTHRD111.severity = none
 
-# VSTHRD200: Async suffix (test method names don't need Async suffix)
-dotnet_diagnostic.VSTHRD200.severity = none
+# CA1707, S100, RCS1046: Test names use Method_Condition_Result, not Async suffixes
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.S100.severity = none
+dotnet_diagnostic.RCS1046.severity = none
 
-# CA2234: Pass Uri instead of string (test convenience: string URLs acceptable in test data)
-dotnet_diagnostic.CA2234.severity = none
+# S4018: Test runner helpers take explicit type arguments that pick the analyzer under test
+dotnet_diagnostic.S4018.severity = none
 
-# MA0040, xunit1051: Ambient CancellationToken (xUnit v3 ambient token too noisy)
-dotnet_diagnostic.MA0040.severity = none
-dotnet_diagnostic.xunit1051.severity = none
-
-# SS037: HttpMessageHandler not reused (tests use fake handlers)
-dotnet_diagnostic.SS037.severity = none
-
-# SS003: Integer division (intentional division in test assertions and setup)
-dotnet_diagnostic.SS003.severity = none
-
-# SS059: Sync using (sync using for MemoryStream in tests)
-dotnet_diagnostic.SS059.severity = none
-
-# MA0006: Use string.Equals instead of == (test LINQ predicates frequently compare strings with ==)
-dotnet_diagnostic.MA0006.severity = suggestion
-
-# E128043, MA0191: Null-forgiving operator (tests legitimately pass null to non-nullable params for guard clause testing)
+# E128043, MA0191: Null-forgiving operator
+# A guard-clause test must pass null to a non-nullable parameter. Only `null!` compiles
+# warning-free, so the two rules that ban the operator contradict that test.
 dotnet_diagnostic.E128043.severity = none
 dotnet_diagnostic.MA0191.severity = none
-
-# E128064: Disk write-then-read round-trip (fixtures for file I/O analyzers legitimately round-trip through disk)
-dotnet_diagnostic.E128064.severity = none
 
 # E128062: Minimum framework version for test reference assemblies (net10.0 = 100)
 e128_minimum_framework_version = 100

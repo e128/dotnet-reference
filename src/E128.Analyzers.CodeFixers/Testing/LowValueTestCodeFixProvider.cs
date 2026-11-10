@@ -92,7 +92,7 @@ public sealed class LowValueTestCodeFixProvider : E128CodeFixProviderBase
         return IsBlankOrIndent(leading)
             ? type.WithCloseBraceToken(
                 type.CloseBraceToken.WithLeadingTrivia(
-                    SyntaxFactory.TriviaList(leading.Where(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)))))
+                    SyntaxFactory.TriviaList(leading.Where(static trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)))))
             : type;
     }
 

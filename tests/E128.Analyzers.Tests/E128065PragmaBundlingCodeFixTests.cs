@@ -18,7 +18,7 @@ public sealed class E128065PragmaBundlingCodeFixTests
             NumberOfFixAllIterations = 1,
             TestBehaviors = TestBehaviors.SkipSuppressionCheck
         };
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

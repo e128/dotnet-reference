@@ -26,7 +26,7 @@ public sealed class PooledBufferZeroingCodeFixProvider : E128CodeFixProviderBase
     {
         var diagnostic = context.Diagnostics[0];
         if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
-            || invocation.ArgumentList.Arguments.Count == 0)
+            || invocation.ArgumentList.Arguments.Count is 0)
         {
             return Task.CompletedTask;
         }

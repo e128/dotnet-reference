@@ -173,26 +173,41 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // A new instance assigned to the same variable starts a fresh, unfrozen options object.
-            if (node is AssignmentExpressionSyntax assignment
-                && SymbolEqualityComparer.Default.Equals(
-                    context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol,
-                    symbol))
-            {
-                used = false;
-            }
-            else if (node is InvocationExpressionSyntax invocation
-                     && IsSerializerCall(invocation, serializerTypes, context)
-                     && PassesSymbol(invocation, symbol, context))
-            {
-                used = true;
-            }
+            used = UpdateUsed(used, node, symbol, serializerTypes, context);
         }
 
-        if (used)
+        if (!used)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, mutation.GetLocation()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, mutation.GetLocation()));
+    }
+
+    private static bool UpdateUsed(
+        bool used,
+        SyntaxNode node,
+        ISymbol symbol,
+        ImmutableArray<INamedTypeSymbol> serializerTypes,
+        SyntaxNodeAnalysisContext context)
+    {
+        // A new instance assigned to the same variable starts a fresh, unfrozen options object.
+        if (node is AssignmentExpressionSyntax assignment
+            && SymbolEqualityComparer.Default.Equals(
+                context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol,
+                symbol))
+        {
+            return false;
+        }
+
+        if (node is InvocationExpressionSyntax invocation
+            && IsSerializerCall(invocation, serializerTypes, context)
+            && PassesSymbol(invocation, symbol, context))
+        {
+            return true;
+        }
+
+        return used;
     }
 
     // A lambda or a local function can run later or never, so a call inside one is not a use

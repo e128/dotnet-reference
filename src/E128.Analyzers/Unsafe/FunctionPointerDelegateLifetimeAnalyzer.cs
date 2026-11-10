@@ -32,7 +32,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var marshal = MetadataTypes.Find(start.Compilation, "System.Runtime.InteropServices.Marshal");
             if (marshal.IsEmpty)
@@ -55,7 +55,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
                 memberAccess.Identifier.ValueText,
                 "GetFunctionPointerForDelegate",
                 StringComparison.Ordinal)
-            || invocation.ArgumentList.Arguments.Count != 1)
+            || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return;
         }
@@ -104,24 +104,39 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
 
         foreach (var node in scope.DescendantNodes())
         {
-            // Passing the delegate to another call (GC.KeepAlive, list.Add, a registry) hands it to an owner.
-            if (node is InvocationExpressionSyntax call
-                && call != delegateExpression.FirstAncestorOrSelf<InvocationExpressionSyntax>()
-                && call.ArgumentList.Arguments.Any(argument => Refers(argument.Expression, symbol, model, cancellationToken)))
-            {
-                return true;
-            }
-
-            if (node is AssignmentExpressionSyntax assignment
-                && Refers(assignment.Right, symbol, model, cancellationToken)
-                && (assignment.Left is ElementAccessExpressionSyntax
-                    || model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is IFieldSymbol or IPropertySymbol))
+            if (IsPassedToOtherCall(node, delegateExpression, symbol, model, cancellationToken)
+                || IsStoredInOwner(node, symbol, model, cancellationToken))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    // Passing the delegate to another call (GC.KeepAlive, list.Add, a registry) hands it to an owner.
+    private static bool IsPassedToOtherCall(
+        SyntaxNode node,
+        ExpressionSyntax delegateExpression,
+        ISymbol symbol,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        return node is InvocationExpressionSyntax call
+            && call != delegateExpression.FirstAncestorOrSelf<InvocationExpressionSyntax>()
+            && call.ArgumentList.Arguments.Any(argument => Refers(argument.Expression, symbol, model, cancellationToken));
+    }
+
+    private static bool IsStoredInOwner(
+        SyntaxNode node,
+        ISymbol symbol,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        return node is AssignmentExpressionSyntax assignment
+            && Refers(assignment.Right, symbol, model, cancellationToken)
+            && (assignment.Left is ElementAccessExpressionSyntax
+                || model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is IFieldSymbol or IPropertySymbol);
     }
 
     private static bool Refers(

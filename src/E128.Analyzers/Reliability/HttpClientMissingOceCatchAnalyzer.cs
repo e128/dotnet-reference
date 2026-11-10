@@ -52,7 +52,7 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(startContext =>
+        context.RegisterCompilationStartAction(static startContext =>
         {
             // The rule names System.Net.Http types. Without them the method names below belong to
             // some other type, so the rule must not run at all.
@@ -81,7 +81,7 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
     {
         var method = (MethodDeclarationSyntax)context.Node;
 
-        if (!method.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)))
+        if (!method.Modifiers.Any(static m => m.IsKind(SyntaxKind.AsyncKeyword)))
         {
             return;
         }
@@ -102,39 +102,46 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (httpClientCalls.Count == 0)
+        if (httpClientCalls.Count is 0)
         {
             return;
         }
 
         foreach (var tryStatement in method.Body.DescendantNodes().OfType<TryStatementSyntax>())
         {
-            if (!httpClientCalls.Exists(call => tryStatement.Block.Span.Contains(call.Span)))
+            if (httpClientCalls.Exists(call => tryStatement.Block.Span.Contains(call.Span)))
+            {
+                ReportBroadCatches(context, tryStatement, exceptionType, operationCanceledType);
+            }
+        }
+    }
+
+    private static void ReportBroadCatches(
+        SyntaxNodeAnalysisContext context,
+        TryStatementSyntax tryStatement,
+        INamedTypeSymbol exceptionType,
+        INamedTypeSymbol? operationCanceledType)
+    {
+        for (var i = 0; i < tryStatement.Catches.Count; i++)
+        {
+            var catchClause = tryStatement.Catches[i];
+
+            if (!IsBroadExceptionCatch(context, catchClause, exceptionType))
             {
                 continue;
             }
 
-            for (var i = 0; i < tryStatement.Catches.Count; i++)
+            var precedingCatches = tryStatement.Catches.Take(i);
+            if (precedingCatches.Any(preceding => IsOperationCanceledExceptionCatch(context, preceding, operationCanceledType)))
             {
-                var catchClause = tryStatement.Catches[i];
-
-                if (!IsBroadExceptionCatch(context, catchClause, exceptionType))
-                {
-                    continue;
-                }
-
-                var precedingCatches = tryStatement.Catches.Take(i);
-                if (precedingCatches.Any(preceding => IsOperationCanceledExceptionCatch(context, preceding, operationCanceledType)))
-                {
-                    continue;
-                }
-
-                var span = TextSpan.FromBounds(
-                    catchClause.CatchKeyword.SpanStart,
-                    catchClause.Declaration?.CloseParenToken.Span.End ?? catchClause.CatchKeyword.Span.End);
-
-                context.ReportDiagnostic(Diagnostic.Create(Rule, Location.Create(catchClause.SyntaxTree, span)));
+                continue;
             }
+
+            var span = TextSpan.FromBounds(
+                catchClause.CatchKeyword.SpanStart,
+                catchClause.Declaration?.CloseParenToken.Span.End ?? catchClause.CatchKeyword.Span.End);
+
+            context.ReportDiagnostic(Diagnostic.Create(Rule, Location.Create(catchClause.SyntaxTree, span)));
         }
     }
 

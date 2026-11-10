@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class E128064DiskRoundtripCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<DiskRoundtripAnalyzer, DiskRoundtripCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<DiskRoundtripAnalyzer, DiskRoundtripCodeFixProvider>(source, fixedCode);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

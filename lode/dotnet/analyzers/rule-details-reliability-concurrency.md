@@ -1,5 +1,5 @@
 # Reliability Rule Details: Concurrency
-*Updated: 2026-11-07T14:35:25Z*
+*Updated: 2026-11-09T23:44:15Z*
 
 Behavior notes for the reliability rules that cover async and concurrent code.
 The complete rule table, the severity, and the code-fix status live in
@@ -143,5 +143,5 @@ Two descriptors share the `E128159` id. The test harness sets
   reliability rules
 - [rule-details.md](rule-details.md): the remaining rule details
 - [pooled-buffer-rules.md](pooled-buffer-rules.md): buffer ownership rules
-- [redundant-rules.md](redundant-rules.md): rules disabled because another
-  analyzer covers the shape
+- [redundant-rules.md](redundant-rules.md): rules that another
+  analyzer also covers

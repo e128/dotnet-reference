@@ -10,7 +10,7 @@ internal static class TypeSymbols
     internal static ITypeSymbol UnwrapNullable(ITypeSymbol type)
     {
         return type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } named
-               && named.TypeArguments.Length == 1
+               && named.TypeArguments.Length is 1
             ? named.TypeArguments[0]
             : type;
     }

@@ -17,7 +17,7 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
         };
         test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -54,6 +54,7 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
                            }
                            """);
     }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheStackLocalLivesInAnAsyncMethod()

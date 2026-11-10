@@ -70,7 +70,8 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
         KnownTypes known,
         ImmutableArray<(SyntaxTree Tree, int Ceiling)> ceilings)
     {
-        var constructor = (ConstructorDeclarationSyntax)context.Node; Check(context, constructor.ParameterList, constructor.Identifier, known, ceilings);
+        var constructor = (ConstructorDeclarationSyntax)context.Node;
+        Check(context, constructor.ParameterList, constructor.Identifier, known, ceilings);
     }
 
     private static void AnalyzePrimaryConstructor(
@@ -80,10 +81,12 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
     {
         var type = (TypeDeclarationSyntax)context.Node;
 
-        if (type.ParameterList is { } parameters)
+        if (type.ParameterList is not { } parameters)
         {
-            Check(context, parameters, type.Identifier, known, ceilings);
+            return;
         }
+
+        Check(context, parameters, type.Identifier, known, ceilings);
     }
 
     private static void Check(
@@ -114,17 +117,19 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (count > ceiling)
+        if (count <= ceiling)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), identifier.ValueText, count, ceiling));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), identifier.ValueText, count, ceiling));
     }
 
     private static bool IsDependency(ITypeSymbol type, KnownTypes known)
     {
         // Special types cover object, string, primitives, and the generic collection interfaces.
         // Arrays, structs, enums, and delegates fail the type kind check, so a params array never counts.
-        if (type.SpecialType != SpecialType.None
+        if (type.SpecialType is not SpecialType.None
             || type.TypeKind is not (TypeKind.Class or TypeKind.Interface)
             || type.IsRecord
             || SymbolEqualityComparer.Default.Equals(type, known.Uri))

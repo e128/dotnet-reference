@@ -7,11 +7,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UntimedProcessExitCodeFixTests
 {
-    private static Task VerifyFixAsync(string source, string fixedCode) =>
-        CodeFixTestRunner.RunAsync<UntimedProcessExitAnalyzer, UntimedProcessExitCodeFixProvider>(source, fixedCode);
+    private static Task VerifyFixAsync(string source, string fixedCode)
+    {
+        return CodeFixTestRunner.RunAsync<UntimedProcessExitAnalyzer, UntimedProcessExitCodeFixProvider>(source, fixedCode);
+    }
 
-    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected) =>
-        CodeFixTestRunner.NoFixAsync<UntimedProcessExitAnalyzer, UntimedProcessExitCodeFixProvider>(source, expected: expected);
+    private static Task VerifyNoFixAsync(string source, params DiagnosticResult[] expected)
+    {
+        return CodeFixTestRunner.NoFixAsync<UntimedProcessExitAnalyzer, UntimedProcessExitCodeFixProvider>(source, expected: expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

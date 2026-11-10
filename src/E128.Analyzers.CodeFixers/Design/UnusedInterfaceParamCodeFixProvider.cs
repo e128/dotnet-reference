@@ -23,7 +23,7 @@ public sealed class UnusedInterfaceParamCodeFixProvider : E128CodeFixProviderBas
     // A rename touches the whole solution, so the batch fixer loses one of two edits in the same
     // document. Apply the renames in sequence instead.
     private static readonly SequentialRenameFixAllProvider s_fixAllProvider =
-        new((_, symbolName) => symbolName is null || symbolName.StartsWith("_", StringComparison.Ordinal)
+        new(static (_, symbolName) => symbolName is null || symbolName.StartsWith("_", StringComparison.Ordinal)
                 ? null
                 : "_" + symbolName,
             nameof(UnusedInterfaceParamCodeFixProvider));

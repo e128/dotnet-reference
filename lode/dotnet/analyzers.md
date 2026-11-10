@@ -1,9 +1,11 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-11-09T22:31:09Z*
+*Updated: 2026-11-10T00:55:30Z*
 
 ## Strategy: Deny by Default
 
-All analyzer diagnostics default to `error` via `.globalconfig` (`dotnet_analyzer_diagnostic.severity = error`). Rules are relaxed only when justified.
+All analyzer diagnostics default to `error` via `.globalconfig` (`dotnet_analyzer_diagnostic.severity = error`). A rule stays below `error` only when enabling it makes the build impossible to pass. See § Rules Not Enabled.
+
+A bulk key reaches only a rule that is enabled by default. `.globalconfig` therefore names every default-off rule of every installed package with its own `error` line. The CA rules need no line because `AnalysisMode = All` enables them.
 
 ## Configuration Split
 
@@ -22,7 +24,7 @@ Per [Microsoft guidance](https://learn.microsoft.com/en-us/dotnet/fundamentals/c
 
 **`.globalconfig` is purely for analyzer configuration.** It handles rule severity (`dotnet_diagnostic.*`) and enabling (`roslynator_analyzers.enabled_by_default`). It does NOT support editor style settings like indentation, whitespace, or formatting preferences. Put those in `.editorconfig`.
 
-**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` carry the `:error`/`:suggestion`/`:silent` suffix on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). The `.globalconfig` lists explicit `dotnet_diagnostic.IDE*` overrides only where the behavior deviates from the blanket `dotnet_analyzer_diagnostic.severity = error`. That avoids silent drift when rule IDs change. The `tests/.globalconfig` and `benchmarks/.globalconfig` use `global_level = 101` to override the root `global_level = 100`.
+**Inline severity vs `dotnet_diagnostic.*`.** Style rules in `.editorconfig` carry the `:error` suffix on the option value (e.g., `csharp_style_var_for_built_in_types = true:error`). An option suffix of `:silent` or `:suggestion` beats the bulk key, so the repo uses neither. The only `:silent` options left are `csharp_style_prefer_primary_constructors` and `csharp_style_prefer_top_level_statements`, because IDE0290 and IDE0210 are off. The `.globalconfig` lists explicit `dotnet_diagnostic.IDE*` entries only for guardrails and for rules that stay off. That avoids silent drift when rule IDs change. The seven `*_experimental` blank-line options (IDE2000 to IDE2006) are set to `false:error`, because `true` allows the construct and silences the rule. The `tests/.globalconfig` and `benchmarks/.globalconfig` use `global_level = 101` to override the root `global_level = 100`.
 
 ## MSBuild Properties
 
@@ -30,17 +32,14 @@ In `Directory.Build.props`:
 
 ```xml
 <AnalysisLevel>latest-all</AnalysisLevel>
-<AnalysisMode>Recommended</AnalysisMode>
-<AnalysisModeSecurity>All</AnalysisModeSecurity>
-<AnalysisModeReliability>All</AnalysisModeReliability>
-<AnalysisModePerformance>All</AnalysisModePerformance>
+<AnalysisMode>All</AnalysisMode>
 <EnableNETAnalyzers>true</EnableNETAnalyzers>
 <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 ```
 
 Key interactions:
-- `AnalysisLevel=latest-all` sets mode `All` in every category. A compound `AnalysisLevel` wins over `AnalysisMode` and over `AnalysisMode<Category>`, so the three category lines above change nothing. Use `<AnalysisLevel>latest</AnalysisLevel>` or a version such as `10.0` to let the category overrides apply.
+- `AnalysisLevel=latest-all` and `AnalysisMode=All` both select mode `All` in every category. A compound `AnalysisLevel` wins over `AnalysisMode<Category>`, so the repo sets no category line. Do not set `AnalysisMode` below `All`, because the CA rules that are off in `Recommended` would stop running.
 - `EnforceCodeStyleInBuild` makes IDE rules (IDE*) fire during `dotnet build`
 - `TreatWarningsAsErrors` promotes all enabled warnings to errors
 
@@ -62,8 +61,8 @@ Declared in `Directory.Build.props` with `PrivateAssets="all"` (zero runtime imp
 
 IDisposableAnalyzers enables every rule by default. The blanket
 `dotnet_analyzer_diagnostic.severity = error` promotes each one to an error,
-including the `Info` default of IDISP014. Two E128 rules are disabled because
-an IDISP rule covers the same code. See [redundant-rules.md](analyzers/redundant-rules.md).
+including the `Info` default of IDISP014. Two E128 rules overlap an IDISP rule,
+and both stay enabled. See [redundant-rules.md](analyzers/redundant-rules.md).
 The package sits outside the maintenance window of
 [dependency-policy.md](../dependency-policy.md). The project keeps it as an
 explicit exception.
@@ -73,11 +72,11 @@ explicit exception.
 - Never use `#pragma warning disable` or `[SuppressMessage]` without user approval
 - Never use the null-forgiving operator `!`: `E128043` (every use) and `MA0191` (only `null!` and `default!`) enforce this as error. Test projects relax both for guard-clause assertions
 - Editorconfig severity downgrades require justification
-- Test project relaxations go in `tests/.globalconfig`, not inline suppressions
+- Test project relaxations go in `tests/.globalconfig`, not inline suppressions. Each one resolves a conflict with xUnit or with the test naming convention. See § Common Test Overrides.
 
 ## Key Meziantou Rules Enabled as Error
 
-A setup-owned block in the root `.globalconfig` sets the Meziantou Performance, Security, and Usage rules to `error`. The block opens with a `repository-setup:begin meziantou` comment that carries a SHA-256 hash. Do not edit the block by hand. Put an override in a `global_level = 101` file instead.
+The root `.globalconfig` sets every Meziantou rule to `error`, including the 56 rules that are off by default. The `.globalconfig` carries no setup-owned Meziantou block. Put an override for a test or benchmark project in a `global_level = 101` file.
 
 The table below is aligned with Meziantou's [comparison table](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/comparison-with-other-analyzers.md):
 
@@ -106,7 +105,7 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 
 ## Public API Tracking (E128.Analyzers)
 
-`Microsoft.CodeAnalysis.PublicApiAnalyzers` enforces API compatibility via `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`. Inherited override members are excluded via `<NoWarn>RS0016;RS0017</NoWarn>`. The project's `.editorconfig` suppresses `RCS9004` project-wide (`SeparatedSyntaxList<T>.Count` is O(1)).
+`Microsoft.CodeAnalysis.PublicApiAnalyzers` enforces API compatibility via `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`. RS0016 and RS0017 are `none` in the root `.globalconfig`, so no `PublicAPI` entries are required. The project carries no `NoWarn` for either. The `NoWarn` list holds only RS2007 and NU5128. The project's `.editorconfig` sets `RCS9004` to `none` (`SeparatedSyntaxList<T>.Count` is O(1), and the rule conflicts with RCS1080).
 
 ## Custom Analyzers: E128.Analyzers
 
@@ -114,7 +113,7 @@ The analyzer project targets `netstandard2.0` (required for Roslyn analyzers) wh
 
 Rules span categories: Design, Reliability, Performance, Unsafe, Maintainability, Security, Style, Testing, and FileSystem. Most rules ship with a code fix. Several rules carry a diagnostic only, because the remediation is context-specific. Examples are `E128045` Direct Console usage, `E128046` Excessive inheritance, E128125 to E128129, and E128136 to E128138. Every rule from E128175 to E128217 is diagnostic only except E128205 and E128209, which ship a code fix. The rules E128154, E128156, E128160, and E128162 are diagnostic only. So are the FIPS rules E128142 to E128151. E128071 and E128075 ship a code fix. See `src/E128.Analyzers/README.md` for the complete rule table, code-fix status, and usage examples.
 
-Redundant E128 rules are disabled in `.globalconfig`, whether or not a code fix ships. See [redundant-rules.md](analyzers/redundant-rules.md).
+E128 rules that overlap a third-party rule stay enabled in `.globalconfig`. One construct can report two diagnostics. See [redundant-rules.md](analyzers/redundant-rules.md). Only E128107 and E128108 stay at `suggestion`, because their code fix deletes tests.
 
 Key rules by category (not exhaustive):
 
@@ -135,22 +134,22 @@ Individual rule behavior, detection shapes, and exclusions live in [rule-details
 
 ## Common Test Overrides
 
-Rules suppressed in test projects (via `tests/.globalconfig` at `global_level=101`):
+Rules relaxed in test projects (via `tests/.globalconfig` at `global_level=101`). Each row resolves a conflict. Every other rule runs at `error` in tests.
 
-| Rule      | Reason                                                       |
-| --------- | ------------------------------------------------------------ |
-| CA1515    | xUnit requires public types for discovery                    |
-| CA1707    | Underscores in test method names                             |
-| CA1062    | xUnit fixture injection is always non-null                   |
-| CA2007    | ConfigureAwait not needed in test methods                    |
-| CA2234    | String URLs acceptable in test data                          |
-| MA0040    | Ambient CancellationToken too noisy in tests                 |
-| SS003     | Integer division intentional in test assertions              |
-| SS037     | Tests use fake HttpMessageHandlers                           |
-| SS059     | Sync using for MemoryStream acceptable in tests              |
-| VSTHRD200 | Test methods need no Async suffix                         |
-| xunit1051 | xUnit v3 ambient CancellationToken too noisy                 |
-| MA0006    | Relaxed to suggestion: test LINQ predicates use string `==` |
+| Rule     | Reason                                                              |
+| -------- | ------------------------------------------------------------------- |
+| CA2007   | Conflicts with xUnit1030, which forbids `ConfigureAwait(false)`     |
+| MA0004   | Same conflict with xUnit1030                                        |
+| VSTHRD111 | Same conflict with xUnit1030                                       |
+| CA1707   | Test names use the `Method_Condition_Result` form                   |
+| S100     | Same naming form                                                    |
+| RCS1046  | Same naming form: test names carry no `Async` suffix               |
+| S4018    | Test runner helpers take explicit type arguments                    |
+| E128043  | Guard-clause tests pass `null!` on purpose                          |
+| MA0191   | Same guard-clause tests                                             |
+| E128097  | Test-specific exception kept from the earlier configuration         |
+
+The same file sets `e128_minimum_framework_version = 100`. The test projects also keep `RS1036`, `RS1038`, `RS1041`, `RS2007`, `RS2008` and `S2699` in `NoWarn`, with a reason beside each in the csproj.
 
 ## ConfigureAwait Scoping (CA2007)
 
@@ -161,7 +160,36 @@ dotnet_diagnostic.CA2007.severity = error
 dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
 ```
 
-The setup-owned Meziantou block sets MA0004 to `error`. MA0004 has no project-type scoping, so the root `.globalconfig` sets it back to `none` below the block. CA2007 stays the enforcement source for library code.
+MA0004, RCS1090, S3216 and VSTHRD111 report the same `ConfigureAwait` fact but have no project-type scoping. They stay at `none` in the root `.globalconfig`. CA2007 stays the enforcement source for library code.
+
+## Roslynator Required Options
+
+Some Roslynator rules need a style option. A rule without its option reports ROS0003 at error. `.editorconfig` sets one `roslynator_*` key for each such rule, under "Roslynator Options". Add the key in the same change that enables a new Roslynator rule.
+
+## Rules Not Enabled
+
+Every rule runs at `error` except the rules below. Each one conflicts with another enforced rule, needs a file or option the repo lacks, or has a destructive fix. `.globalconfig` carries a reason beside each line.
+
+| Rule                  | State        | Reason                                                       |
+| --------------------- | ------------ | ------------------------------------------------------------ |
+| MA0004, RCS1090, S3216, VSTHRD111 | `none` | `ConfigureAwait` polarity. CA2007 scopes it to libraries. |
+| MA0174                | `none`       | Opposite of MA0175                                           |
+| MA0177                | `none`       | Opposite of MA0211                                           |
+| MA0214                | `none`       | Opposite of MA0215 and RCS1174                               |
+| RCS1002, RCS1004      | `none`       | Opposite of the braces rules                                 |
+| RCS1231               | `none`       | E128019 covers it                                            |
+| RCS1016               | `none`       | One body style for every member kind. IDE0021 to IDE0027 set it per kind. |
+| IDE0048, RCS1123      | `none`       | Oscillate with IDE0046                                       |
+| IDE0290               | `none`       | Primary constructors conflict with the immutability order    |
+| IDE0210               | `none`       | Top-level statements fix is destructive in format            |
+| S1451                 | `none`       | Needs a `headerFormat` option the repo lacks                 |
+| RS0051 to RS0058      | off          | Need `InternalAPI` files                                     |
+| RS1020                | off          | Needs `AnalyzerCategories.txt`                               |
+| CS1591, RCS0044, RS0017, MA0007, RS1007, RCS0036, S3990, S3992, RCS0027, RCS1223, RS0016, RCS0055, MA0181, S3242, MA0003, RS1015, RCS0062, RS1028, RCS1141, RCS1181, RCS0012, S1067, S3267, RCS0053, RCS0061, S126, RCS0056, MA0045, RCS1146, S3358, S1227, S1200, S4055, S4017, S103, S1192, RCS0054, SS039, S1301, RCS0063, IDE0066, RCS0028, RCS0013, RCS0008, RCS1056, IDE0046, RCS1250, IDE0045, S3240, RCS1211, RCS1111, RCS1031, S4040, RCS1014, RCS1050, MA0136, RCS1238, MA0071 | `none` | Maintainer decision. No conflict behind them. |
+| RCS9004               | `none`       | Conflicts with RCS1080. Set in the two analyzer-project `.editorconfig` files only. |
+| E128107, E128108      | `suggestion` | The code fix deletes tests. `tests/E128.Analyzers.Tests/.globalconfig` sets `none`. |
+
+The benchmarks project also sets CA1515 to `none`, because BenchmarkDotNet needs public types.
 
 ## Source Generators
 

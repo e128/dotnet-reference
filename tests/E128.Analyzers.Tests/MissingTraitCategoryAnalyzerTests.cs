@@ -19,7 +19,7 @@ public sealed class MissingTraitCategoryAnalyzerTests
             ReferenceAssemblies = Net100WithXunit
         };
         test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync();
+        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

@@ -40,7 +40,7 @@ public sealed class RedundantHashSetInFrozenSetE128Analyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
             MetadataTypes.RegisterForType(
                 compilationContext,
                 HashSetMetadataName,

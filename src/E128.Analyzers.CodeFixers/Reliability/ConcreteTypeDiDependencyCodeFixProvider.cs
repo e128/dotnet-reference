@@ -21,6 +21,8 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class ConcreteTypeDiDependencyCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int RegistrationTypeArgumentCount = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConcreteTypeDiDependencyAnalyzer.DiagnosticId];
 
@@ -79,7 +81,7 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : E128CodeFixProvide
                 continue;
             }
 
-            if (genericName.TypeArgumentList.Arguments.Count != 2)
+            if (genericName.TypeArgumentList.Arguments.Count is not RegistrationTypeArgumentCount)
             {
                 continue;
             }

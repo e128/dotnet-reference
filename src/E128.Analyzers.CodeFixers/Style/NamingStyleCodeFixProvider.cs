@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Globalization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +27,9 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
     private const string SuffixKey = "Suffix";
     private const string WordSeparatorKey = "WordSeparator";
     private const string CapitalizationSchemeKey = "CapitalizationScheme";
+
+    // An acronym split looks two characters back: the uppercase run before the lowercase letter.
+    private const int AcronymLookback = 2;
 
     private static readonly ImmutableArray<string> s_knownPrefixes = ["s_", "m_", "_", "I", "T"];
 
@@ -103,26 +107,35 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
         }
 
         // Fall back to the provided symbol name (production) or read it from properties (tests).
-        var symbolName = symbolNameFallback;
-        if (string.IsNullOrEmpty(symbolName) &&
-            (!props.TryGetValue(SymbolNameKey, out symbolName) || string.IsNullOrEmpty(symbolName)))
+        var symbolName = ResolveSymbolName(props, symbolNameFallback);
+        if (symbolName is null)
         {
             return null;
         }
 
-        props.TryGetValue(PrefixKey, out var prefix);
-        props.TryGetValue(SuffixKey, out var suffix);
-        props.TryGetValue(WordSeparatorKey, out var wordSeparator);
-        props.TryGetValue(CapitalizationSchemeKey, out var capitalizationScheme);
+        _ = props.TryGetValue(PrefixKey, out var prefix);
+        _ = props.TryGetValue(SuffixKey, out var suffix);
+        _ = props.TryGetValue(WordSeparatorKey, out var wordSeparator);
+        _ = props.TryGetValue(CapitalizationSchemeKey, out var capitalizationScheme);
 
         prefix ??= string.Empty;
         suffix ??= string.Empty;
         wordSeparator ??= string.Empty;
         capitalizationScheme ??= "PascalCase";
 
-        return symbolName is not string nonNullName
-            ? null
-            : BuildCompliantName(nonNullName, prefix, suffix, wordSeparator, capitalizationScheme);
+        return BuildCompliantName(symbolName, prefix, suffix, wordSeparator, capitalizationScheme);
+    }
+
+    private static string? ResolveSymbolName(ImmutableDictionary<string, string?> props, string? symbolNameFallback)
+    {
+        if (!string.IsNullOrEmpty(symbolNameFallback))
+        {
+            return symbolNameFallback;
+        }
+
+        return props.TryGetValue(SymbolNameKey, out var fromProperties) && !string.IsNullOrEmpty(fromProperties)
+            ? fromProperties
+            : null;
     }
 
     internal static string BuildCompliantName(
@@ -142,7 +155,7 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             ? baseName.Split([wordSeparator], StringSplitOptions.RemoveEmptyEntries)
             : SplitByCaseTransition(baseName);
 
-        if (words.Length == 0)
+        if (words.Length is 0)
         {
             words = [baseName];
         }
@@ -153,13 +166,8 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
 
     private static string StripExistingAffixes(string name, string requiredPrefix, string requiredSuffix)
     {
-        var result = name;
-
         // Strip suffix first (so prefix stripping works on the trimmed name).
-        if (!string.IsNullOrEmpty(requiredSuffix) && result.EndsWith(requiredSuffix, StringComparison.Ordinal))
-        {
-            result = result.Substring(0, result.Length - requiredSuffix.Length);
-        }
+        var result = StripSuffix(name, requiredSuffix);
 
         // If the name already starts with the required prefix, strip it before re-applying below.
         if (!string.IsNullOrEmpty(requiredPrefix) && result.StartsWith(requiredPrefix, StringComparison.Ordinal))
@@ -167,48 +175,67 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             return result.Substring(requiredPrefix.Length);
         }
 
-        // For single-char letter prefixes, strip a wrong-case variant when followed by an uppercase
-        // character — this signals the prefix was intended but cased incorrectly (e.g., "iFetcher"
-        // when prefix is "I"). Without this, capitalization later produces "IFetcher" and then the
-        // prefix is prepended again to yield "IIFetcher".
-        if (!string.IsNullOrEmpty(requiredPrefix)
-            && requiredPrefix.Length == 1
-            && char.IsLetter(requiredPrefix[0])
-            && result.Length > 1
-            && char.ToUpperInvariant(result[0]) == char.ToUpperInvariant(requiredPrefix[0])
-            && result[0] != requiredPrefix[0]
-            && char.IsUpper(result[1]))
+        if (IsWrongCaseLetterPrefix(result, requiredPrefix))
         {
             return result.Substring(1);
         }
 
-        // Strip any common wrong prefix so we get the bare identifier words.
+        return StripKnownWrongPrefix(result, requiredPrefix);
+    }
+
+    private static string StripSuffix(string name, string requiredSuffix)
+    {
+        return !string.IsNullOrEmpty(requiredSuffix) && name.EndsWith(requiredSuffix, StringComparison.Ordinal)
+            ? name.Substring(0, name.Length - requiredSuffix.Length)
+            : name;
+    }
+
+    // For single-char letter prefixes, a wrong-case variant followed by an uppercase character
+    // signals the prefix was intended but cased incorrectly (for example, "iFetcher" when the
+    // prefix is "I"). Without the strip, capitalization later produces "IFetcher" and then the
+    // prefix is prepended again to yield "IIFetcher".
+    private static bool IsWrongCaseLetterPrefix(string name, string requiredPrefix)
+    {
+        return !string.IsNullOrEmpty(requiredPrefix)
+               && requiredPrefix.Length is 1
+               && char.IsLetter(requiredPrefix[0])
+               && name.Length > 1
+               && char.ToUpperInvariant(name[0]) == char.ToUpperInvariant(requiredPrefix[0])
+               && name[0] != requiredPrefix[0]
+               && char.IsUpper(name[1]);
+    }
+
+    // Strip any common wrong prefix so the result is the bare identifier words.
+    private static string StripKnownWrongPrefix(string name, string requiredPrefix)
+    {
         foreach (var known in s_knownPrefixes)
         {
-            if (string.Equals(known, requiredPrefix, StringComparison.Ordinal))
+            if (string.Equals(known, requiredPrefix, StringComparison.Ordinal)
+                || !name.StartsWith(known, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            if (result.StartsWith(known, StringComparison.Ordinal))
+            var afterKnown = name.Substring(known.Length);
+            if (IsLetterPrefixInsideWord(known, afterKnown))
             {
-                var afterKnown = result.Substring(known.Length);
-
-                // Single-char letter prefixes ("I" for interfaces, "T" for type params) only
-                // count as a prefix when the next character is uppercase. "IndexFilenames" starts
-                // with "I" but the "I" is part of the word — not a naming prefix.
-                if (known.Length == 1 && char.IsLetter(known[0]) &&
-                    (afterKnown.Length == 0 || !char.IsUpper(afterKnown[0])))
-                {
-                    continue;
-                }
-
-                result = afterKnown;
-                break;
+                continue;
             }
+
+            return afterKnown;
         }
 
-        return result;
+        return name;
+    }
+
+    // Single-char letter prefixes ("I" for interfaces, "T" for type params) only count as a prefix
+    // when the next character is uppercase. "IndexFilenames" starts with "I", but the "I" is part
+    // of the word and not a naming prefix.
+    private static bool IsLetterPrefixInsideWord(string known, string afterKnown)
+    {
+        return known.Length is 1
+               && char.IsLetter(known[0])
+               && (afterKnown.Length is 0 || !char.IsUpper(afterKnown[0]));
     }
 
     internal static string[] SplitByCaseTransition(string name)
@@ -234,7 +261,7 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
                 wordStart = i;
             }
             // Split when transitioning from multiple uppercase to uppercase+lowercase: "ABCDef" → "ABC|Def"
-            else if (i >= 2 && char.IsUpper(prev) && char.IsLower(curr) && char.IsUpper(name[i - 2]))
+            else if (i >= AcronymLookback && char.IsUpper(prev) && char.IsLower(curr) && char.IsUpper(name[i - AcronymLookback]))
             {
                 var segment = name.Substring(wordStart, i - 1 - wordStart);
                 if (!string.IsNullOrEmpty(segment))
@@ -252,7 +279,7 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
 
     private static string ApplyCapitalization(string[] words, string wordSeparator, string scheme)
     {
-        return words.Length == 0
+        return words.Length is 0
             ? string.Empty
             : scheme switch
             {
@@ -291,7 +318,7 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
                 builder.Append(separator);
             }
 
-            if (i == 0)
+            if (i is 0)
             {
                 AppendLowered(builder, words[i]);
             }
@@ -332,7 +359,7 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
 
             foreach (var c in words[i])
             {
-                builder.Append(char.ToLowerInvariant(c));
+                builder.Append(LowerInvariant(c));
             }
         }
 
@@ -349,7 +376,7 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
                 builder.Append(separator);
             }
 
-            if (i == 0)
+            if (i is 0)
             {
                 AppendCapitalized(builder, words[i]);
             }
@@ -369,11 +396,7 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        builder.Append(char.ToUpperInvariant(word[0]));
-        if (word.Length > 1)
-        {
-            builder.Append(word, 1, word.Length - 1);
-        }
+        builder.Append(char.ToUpperInvariant(word[0])).Append(word, 1, word.Length - 1);
     }
 
     private static void AppendLowered(StringBuilder builder, string word)
@@ -383,10 +406,11 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        builder.Append(char.ToLowerInvariant(word[0]));
-        if (word.Length > 1)
-        {
-            builder.Append(word, 1, word.Length - 1);
-        }
+        builder.Append(LowerInvariant(word[0])).Append(word, 1, word.Length - 1);
+    }
+
+    private static char LowerInvariant(char c)
+    {
+        return CultureInfo.InvariantCulture.TextInfo.ToLower(c);
     }
 }

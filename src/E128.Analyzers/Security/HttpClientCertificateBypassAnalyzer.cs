@@ -100,7 +100,8 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
 
         foreach (var argument in creation.Arguments)
         {
-            if (argument.Parameter is { Name: SslStreamCallbackParameterName }
+            if (argument.Parameter is { } callbackParameter
+                && string.Equals(callbackParameter.Name, SslStreamCallbackParameterName, StringComparison.Ordinal)
                 && argument.Value.Syntax is ExpressionSyntax value
                 && AcceptsEveryCertificate(
                     value,
@@ -136,14 +137,16 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (AcceptsEveryCertificate(
+        if (!AcceptsEveryCertificate(
                 assignment.Right,
                 context.SemanticModel,
                 depth: 0,
                 context.CancellationToken))
         {
-            context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation()));
+            return;
         }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation()));
     }
 
     private static string? GetAssignedMemberName(ExpressionSyntax left)
@@ -260,7 +263,7 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
     {
         // A block with one return statement is the only block shape the rule can decide. Any extra
         // statement can reject a certificate, and the rule cannot read its intent.
-        return block.Statements.Count == 1
+        return block.Statements.Count is 1
                && block.Statements[0] is ReturnStatementSyntax { Expression: { } returned }
                && IsAlwaysTrue(ExpressionUnwrapper.Parentheses(returned), model, cancellationToken);
     }

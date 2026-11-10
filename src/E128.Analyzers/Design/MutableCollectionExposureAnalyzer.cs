@@ -19,6 +19,8 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128052";
     internal const string SuggestedTypeKey = "SuggestedType";
 
+    private const int TwoTypeArguments = 2;
+
     private static readonly ImmutableArray<string> ExcludedContainingTypeSuffixes =
     [
         "Builder",
@@ -68,7 +70,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
             var typeMap = BuildTypeMap(compilationContext.Compilation);
             if (typeMap.IsEmpty)
@@ -108,27 +110,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
     {
         var method = (IMethodSymbol)context.Symbol;
 
-        if (!IsPublicOrInternal(method))
-        {
-            return;
-        }
-
-        if (method.MethodKind != MethodKind.Ordinary)
-        {
-            return;
-        }
-
-        if (method.ContainingType?.TypeKind == TypeKind.Interface)
-        {
-            return;
-        }
-
-        if (method.IsAbstract || method.IsOverride)
-        {
-            return;
-        }
-
-        if (IsExcludedContainingType(method.ContainingType))
+        if (!IsCandidateMethod(method))
         {
             return;
         }
@@ -172,27 +154,7 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
     {
         var property = (IPropertySymbol)context.Symbol;
 
-        if (!IsPublicOrInternal(property))
-        {
-            return;
-        }
-
-        if (property.ContainingType?.TypeKind == TypeKind.Interface)
-        {
-            return;
-        }
-
-        if (property.IsOverride)
-        {
-            return;
-        }
-
-        if (HasMutableSetAccessor(property))
-        {
-            return;
-        }
-
-        if (IsExcludedContainingType(property.ContainingType))
+        if (!IsCandidateProperty(property))
         {
             return;
         }
@@ -221,6 +183,25 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
                 propertyType.ToDisplayString(),
                 suggestion));
         }
+    }
+
+    private static bool IsCandidateMethod(IMethodSymbol method)
+    {
+        return IsPublicOrInternal(method)
+            && method.MethodKind is MethodKind.Ordinary
+            && method.ContainingType?.TypeKind is not TypeKind.Interface
+            && !method.IsAbstract
+            && !method.IsOverride
+            && !IsExcludedContainingType(method.ContainingType);
+    }
+
+    private static bool IsCandidateProperty(IPropertySymbol property)
+    {
+        return IsPublicOrInternal(property)
+            && property.ContainingType?.TypeKind is not TypeKind.Interface
+            && !property.IsOverride
+            && !HasMutableSetAccessor(property)
+            && !IsExcludedContainingType(property.ContainingType);
     }
 
     private static bool HasMutableSetAccessor(IPropertySymbol property)
@@ -264,10 +245,16 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         }
 
         var args = type.TypeArguments;
-        return args.Length == 1
-            ? string.Format(CultureInfo.InvariantCulture, template, args[0].ToDisplayString())
-            : args.Length == 2
-                ? string.Format(CultureInfo.InvariantCulture, template, args[0].ToDisplayString(), args[1].ToDisplayString())
-                : null;
+        if (args.Length is 1)
+        {
+            return string.Format(CultureInfo.InvariantCulture, template, args[0].ToDisplayString());
+        }
+
+        if (args.Length is not TwoTypeArguments)
+        {
+            return null;
+        }
+
+        return string.Format(CultureInfo.InvariantCulture, template, args[0].ToDisplayString(), args[1].ToDisplayString());
     }
 }

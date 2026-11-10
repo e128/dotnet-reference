@@ -54,7 +54,7 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : E128CodeFixProvi
         }
 
         var nonMarkerInterfaces = returnType.AllInterfaces
-            .Where(i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
+            .Where(static i => !ConcreteOnlyDiRegistrationAnalyzer.MarkerInterfaces.Contains(i.ToDisplayString()))
             .ToList();
 
         foreach (var iface in nonMarkerInterfaces)

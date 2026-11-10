@@ -14,7 +14,7 @@ public sealed class CliAppTests
         var parseResult = CliApp.CreateRootCommand().Parse([]);
         parseResult.InvocationConfiguration.Output = output;
 
-        var exitCode = await parseResult.InvokeAsync();
+        var exitCode = await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(0, exitCode);
         Assert.Equal("Hello, World!", output.ToString().TrimEnd());
@@ -28,7 +28,7 @@ public sealed class CliAppTests
         var parseResult = CliApp.CreateRootCommand().Parse(["--name", "Claude"]);
         parseResult.InvocationConfiguration.Output = output;
 
-        var exitCode = await parseResult.InvokeAsync();
+        var exitCode = await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(0, exitCode);
         Assert.Equal("Hello, Claude!", output.ToString().TrimEnd());
@@ -42,7 +42,7 @@ public sealed class CliAppTests
         var parseResult = CliApp.CreateRootCommand().Parse(["-n", "World"]);
         parseResult.InvocationConfiguration.Output = output;
 
-        var exitCode = await parseResult.InvokeAsync();
+        var exitCode = await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(0, exitCode);
         Assert.Equal("Hello, World!", output.ToString().TrimEnd());

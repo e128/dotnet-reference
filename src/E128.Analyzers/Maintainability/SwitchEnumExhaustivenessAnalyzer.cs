@@ -63,30 +63,45 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
         {
             foreach (var label in section.Labels)
             {
-                if (label is DefaultSwitchLabelSyntax)
+                if (CollectLabel(context, label, casedNames))
                 {
                     return;
-                }
-
-                if (label is CasePatternSwitchLabelSyntax patternLabel)
-                {
-                    if (IsCatchAllPattern(patternLabel))
-                    {
-                        return;
-                    }
-
-                    AddPatternMembers(context.SemanticModel, patternLabel.Pattern, casedNames, context.CancellationToken);
-                    continue;
-                }
-
-                if (label is CaseSwitchLabelSyntax caseLabel)
-                {
-                    AddCasedMemberName(context.SemanticModel, caseLabel.Value, casedNames, context.CancellationToken);
                 }
             }
         }
 
         ReportIfIncomplete(context, switchStatement.SwitchKeyword, enumType, casedNames);
+    }
+
+    // Returns true when the label makes the switch exhaustive (default or catch-all pattern).
+    private static bool CollectLabel(
+        SyntaxNodeAnalysisContext context,
+        SwitchLabelSyntax label,
+        HashSet<string> casedNames)
+    {
+        if (label is DefaultSwitchLabelSyntax)
+        {
+            return true;
+        }
+
+        if (label is CasePatternSwitchLabelSyntax patternLabel)
+        {
+            if (IsCatchAllPattern(patternLabel))
+            {
+                return true;
+            }
+
+            AddPatternMembers(context.SemanticModel, patternLabel.Pattern, casedNames, context.CancellationToken);
+            return false;
+        }
+
+        if (label is not CaseSwitchLabelSyntax caseLabel)
+        {
+            return false;
+        }
+
+        AddCasedMemberName(context.SemanticModel, caseLabel.Value, casedNames, context.CancellationToken);
+        return false;
     }
 
     private static void AnalyzeSwitchExpression(SyntaxNodeAnalysisContext context)
@@ -158,8 +173,8 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
     private static INamedTypeSymbol? GetEnumType(SemanticModel model, ExpressionSyntax expression, CancellationToken cancellationToken)
     {
         return model.GetTypeInfo(expression, cancellationToken).Type is INamedTypeSymbol namedType
-               && namedType.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T
-               && namedType.TypeKind == TypeKind.Enum
+               && namedType.OriginalDefinition.SpecialType is not SpecialType.System_Nullable_T
+               && namedType.TypeKind is TypeKind.Enum
             ? namedType
             : null;
     }
@@ -170,10 +185,12 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
         HashSet<string> casedNames,
         CancellationToken cancellationToken)
     {
-        if (model.GetSymbolInfo(expression, cancellationToken).Symbol is IFieldSymbol field)
+        if (model.GetSymbolInfo(expression, cancellationToken).Symbol is not IFieldSymbol field)
         {
-            casedNames.Add(field.Name);
+            return;
         }
+
+        casedNames.Add(field.Name);
     }
 
     private static void ReportIfIncomplete(

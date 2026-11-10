@@ -30,10 +30,10 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : E128CodeFixProv
                 Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax generic },
             } invocation
             || !string.Equals(generic.Identifier.ValueText, "ReadUnaligned", StringComparison.Ordinal)
-            || generic.TypeArgumentList.Arguments.Count != 1
+            || generic.TypeArgumentList.Arguments.Count is not 1
             || generic.TypeArgumentList.Arguments[0] is not PredefinedTypeSyntax predefinedType
             || !predefinedType.Keyword.IsKind(SyntaxKind.BoolKeyword)
-            || invocation.ArgumentList.Arguments.Count != 1)
+            || invocation.ArgumentList.Arguments.Count is not 1)
         {
             return Task.CompletedTask;
         }

@@ -1,3 +1,4 @@
+using System;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -11,7 +12,7 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 internal static class AsyncContextSyntaxHelper
 {
-    public static bool IsInsideAsyncContext(SyntaxNode node)
+    internal static bool IsInsideAsyncContext(SyntaxNode node)
     {
         foreach (var ancestor in node.Ancestors())
         {
@@ -33,5 +34,18 @@ internal static class AsyncContextSyntaxHelper
         }
 
         return false;
+    }
+
+    // True when the called name written in the source already ends in Async.
+    internal static bool HasAsyncSuffixSyntaxName(InvocationExpressionSyntax invocation)
+    {
+        var syntaxName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
+
+        return syntaxName is not null && syntaxName.EndsWith("Async", StringComparison.Ordinal);
     }
 }

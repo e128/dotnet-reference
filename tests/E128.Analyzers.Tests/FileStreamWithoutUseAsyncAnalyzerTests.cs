@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class FileStreamWithoutUseAsyncAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]

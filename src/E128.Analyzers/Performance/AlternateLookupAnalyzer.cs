@@ -17,6 +17,8 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128133";
 
+    private const int DictionaryTypeArgumentCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use an alternate lookup instead of a temporary string key",
@@ -27,6 +29,19 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
         "A key of the form 'new string(span)' allocates a string on every lookup. " +
         "GetAlternateLookup<ReadOnlySpan<char>>() compares the span in place. It works only " +
         "when the collection uses the default or an ordinal comparer.");
+
+    private static readonly ImmutableHashSet<string> KeyLookupMethodNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "Add",
+        "TryAdd",
+        "TryGetValue",
+        "ContainsKey",
+        "Contains",
+        "Remove",
+        "TryRemove",
+        "GetOrAdd",
+        "AddOrUpdate",
+        "TryUpdate");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -40,14 +55,14 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(start =>
+        context.RegisterCompilationStartAction(static start =>
         {
             var stringType = start.Compilation.GetSpecialType(SpecialType.System_String);
             var charType = start.Compilation.GetSpecialType(SpecialType.System_Char);
             var readOnlySpan = start.Compilation.GetTypeByMetadataName("System.ReadOnlySpan`1");
 
-            if (stringType.TypeKind == TypeKind.Error
-                || charType.TypeKind == TypeKind.Error
+            if (stringType.TypeKind is TypeKind.Error
+                || charType.TypeKind is TypeKind.Error
                 || readOnlySpan is null)
             {
                 return;
@@ -78,7 +93,7 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
     {
         var access = (ElementAccessExpressionSyntax)context.Node;
 
-        if (access.ArgumentList.Arguments.Count != 1
+        if (access.ArgumentList.Arguments.Count is not 1
             || access.Expression is not IdentifierNameSyntax receiver
             || !IsStringKeyed(receiver, context.SemanticModel, lookup, allowsIndexer: true, context.CancellationToken)
             || FindAllocatingKey(access.ArgumentList.Arguments[0].Expression, context.SemanticModel, lookup,
@@ -105,7 +120,7 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
             }
             || !IsKeyLookupMethod(methodName)
             || !IsStringKeyed(receiver, context.SemanticModel, lookup, allowsIndexer: false, context.CancellationToken)
-            || invocation.ArgumentList.Arguments.Count == 0
+            || invocation.ArgumentList.Arguments.Count is 0
             || FindAllocatingKey(invocation.ArgumentList.Arguments[0].Expression, context.SemanticModel, lookup,
                 context.CancellationToken) is not { } key
             || !HasOrdinalComparer(receiver, context.SemanticModel, context.CancellationToken))
@@ -120,8 +135,7 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
     // which takes a value, is never a lookup key.
     private static bool IsKeyLookupMethod(string methodName)
     {
-        return methodName is "Add" or "TryAdd" or "TryGetValue" or "ContainsKey" or "Contains"
-            or "Remove" or "TryRemove" or "GetOrAdd" or "AddOrUpdate" or "TryUpdate";
+        return KeyLookupMethodNames.Contains(methodName);
     }
 
     private static bool IsStringKeyed(
@@ -140,11 +154,11 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
 
         return SymbolEqualityComparer.Default.Equals(definition, lookup.Dictionary)
                 || SymbolEqualityComparer.Default.Equals(definition, lookup.ConcurrentDictionary)
-            ? type.TypeArguments.Length == 2 && type.TypeArguments[0].SpecialType == SpecialType.System_String
+            ? type.TypeArguments.Length is DictionaryTypeArgumentCount && type.TypeArguments[0].SpecialType is SpecialType.System_String
             : !allowsIndexer
                 && SymbolEqualityComparer.Default.Equals(definition, lookup.HashSet)
-                && type.TypeArguments.Length == 1
-                && type.TypeArguments[0].SpecialType == SpecialType.System_String;
+                && type.TypeArguments.Length is 1
+                && type.TypeArguments[0].SpecialType is SpecialType.System_String;
     }
 
     private static ObjectCreationExpressionSyntax? FindAllocatingKey(
@@ -155,7 +169,7 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
     {
         if (expression is not ObjectCreationExpressionSyntax creation
             || creation.ArgumentList is null
-            || creation.ArgumentList.Arguments.Count != 1
+            || creation.ArgumentList.Arguments.Count is not 1
             || model.GetTypeInfo(creation, cancellationToken).Type is not { SpecialType: SpecialType.System_String })
         {
             return null;
@@ -178,7 +192,23 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         System.Threading.CancellationToken cancellationToken)
     {
-        var declarator = model.GetSymbolInfo(receiver, cancellationToken).Symbol switch
+        var declarator = GetDeclarator(receiver, model, cancellationToken);
+
+        return declarator?.Initializer?.Value switch
+        {
+            null => false,
+            CollectionExpressionSyntax => true,
+            BaseObjectCreationExpressionSyntax creation => IsOrdinalCreation(creation, model, cancellationToken),
+            _ => false
+        };
+    }
+
+    private static VariableDeclaratorSyntax? GetDeclarator(
+        IdentifierNameSyntax receiver,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        return model.GetSymbolInfo(receiver, cancellationToken).Symbol switch
         {
             ILocalSymbol local => local.DeclaringSyntaxReferences.FirstOrDefault()
                 ?.GetSyntax(cancellationToken) as VariableDeclaratorSyntax,
@@ -186,21 +216,17 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
                 ?.GetSyntax(cancellationToken) as VariableDeclaratorSyntax,
             _ => null
         };
+    }
 
-        switch (declarator?.Initializer?.Value)
-        {
-            case null:
-                return false;
-            case CollectionExpressionSyntax:
-                return true;
-            case BaseObjectCreationExpressionSyntax creation:
-                var arguments = creation.ArgumentList?.Arguments ?? default;
+    private static bool IsOrdinalCreation(
+        BaseObjectCreationExpressionSyntax creation,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        var arguments = creation.ArgumentList?.Arguments ?? default;
 
-                return arguments.Count == 0
-                    || (arguments.Count == 1 && IsOrdinalComparer(arguments[0].Expression, model, cancellationToken));
-            default:
-                return false;
-        }
+        return arguments.Count is 0
+            || (arguments.Count is 1 && IsOrdinalComparer(arguments[0].Expression, model, cancellationToken));
     }
 
     private static bool IsOrdinalComparer(
@@ -212,8 +238,9 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
             && (string.Equals(property.ContainingType.ToDisplayString(), "System.StringComparer", StringComparison.Ordinal)
                 ? string.Equals(property.Name, "Ordinal", StringComparison.Ordinal)
                 : string.Equals(property.Name, "Default", StringComparison.Ordinal)
-                    && property.ContainingType is { Name: "EqualityComparer", TypeArguments.Length: 1 } comparer
-                    && comparer.TypeArguments[0].SpecialType == SpecialType.System_String);
+                    && property.ContainingType is { TypeArguments.Length: 1 } comparer
+                    && string.Equals(comparer.Name, "EqualityComparer", StringComparison.Ordinal)
+                    && comparer.TypeArguments[0].SpecialType is SpecialType.System_String);
     }
 
     internal sealed class LookupContext

@@ -7,8 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class DisposableFieldInLoopAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected) =>
-        AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>(code, expected);
+    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
+    {
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>(code, expected);
+    }
 
     [Fact]
     [Trait("Category", "CI")]
