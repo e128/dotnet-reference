@@ -1,7 +1,7 @@
 # .NET 11 Upgrade Plan
 *Created: 2026-11-07T04:25:42Z*
 
-*Updated: 2026-11-07T04:25:42Z*
+*Updated: 2026-11-10T20:42:20Z*
 
 ## Metadata
 
@@ -37,6 +37,43 @@ at a time, and never on a Roslyn component.
 
 The whole plan runs on the GA SDK. An RC build never reaches the pin.
 
+## Second Objective: Union Results and Guidance Rules
+
+The TFM move is the first objective. The plan carries a second one that the
+source plan does not have. Recent work on union types and railway-oriented
+flow in C# 15 shows a shape worth teaching. The repository should adopt it,
+then ship an analyzer that points a developer or an agent at it.
+
+The end state has three parts:
+
+1. The reference application expresses expected failure as a union result
+   type, and composes it through a small set of generic helpers.
+2. A generic helper states its requirement in the type system, so the one
+   correct call is also the easiest call. A caller cannot reach the wrong
+   shape through the helper.
+3. An `E128.Analyzers` rule family names the older shapes and leads to the
+   newer .NET 11 feature. That family is the part that scales, because an
+   agent reads a diagnostic and a code fix, not a design document.
+
+The design goal is one shape that holds under pressure. Each helper takes the
+narrowest signature that admits every result union and no other type. A helper
+constrained that way removes a special case at each call site. The compiler
+then rejects the wrong call, and the analyzer explains the rejection.
+
+The union shape depends on what the GA compiler accepts. `union` and `closed`
+ship as preview scaffolding (CL-31). A union type used as a generic constraint
+is the open question (CL-32). Phase 0 answers it, and the answer selects one of
+three designs in § Union Constraint Gate. The plan never assumes the answer.
+
+This objective lands as two phases, after the TFM proves green:
+
+- Phase 6 rewrites the application result types and adds the generic helpers.
+- Phase 7 builds the guidance rule family over what Phase 6 proved.
+
+The analyzer work carries one reach risk of its own. A rule that reads `union`
+syntax must not raise the host floor of the published package. § Union Rule
+Reach Gate states the constraint and the exits.
+
 ## What Changes From The Source Plan
 
 The pugworks plan targets one application solution. This repository publishes
@@ -53,6 +90,7 @@ does not carry: the package keeps `net10.0` reach.
 | Runtime async end state is one unconditional property | End state is a conditional property group | An unconditional switch breaks the analyzer reach and the `net10.0` leg |
 | `specs/`, `pug-claims-gate`, `metrics-stamp` | `scripts/internal/plan-gate.sh` and `scripts/internal/plan-close.sh` | The source gate engine does not exist here (CL-20) |
 | Apple ReadyToRun target discussion | Kept, and the Debian container is added | The container is the published artifact that gains the floor |
+| Union adoption in the application | Kept, and expanded into the rewrite plus a rule family | The source plan treats unions as a later library decision. This repository treats them as the end state |
 
 ## Claims Register
 
@@ -88,6 +126,11 @@ does not carry: the package keeps `net10.0` reach.
 | CL-28 | `scripts/podman.sh` exists for the container check | `scripts/podman.sh` | `scripts/help.sh \| rg podman` | confirmed | durable |
 | CL-29 | The solution holds ten projects, five under `src/` and five under `tests/` | `E128.Reference.slnx` | `scripts/solution-inventory.sh --json` reports ten | confirmed | durable |
 | CL-30 | `scripts/assert.sh` offers `--build-pass`, `--test-pass`, and `--clean-working-tree` | `scripts/assert.sh` | `rg -n -e "--build-pass" -e "--test-pass" scripts/assert.sh` | confirmed | durable |
+| CL-31 | `union` and `closed` ship as preview scaffolding. `union` needs `UnionAttribute` and `IUnion`, and `closed` needs `ClosedAttribute` | C# 15 documentation | Probe in Phase 0, then record whether `EnablePreviewFeatures` is required | unverified | short-lived |
+| CL-32 | A union type in a generic constraint (`where T : union`) is documented for C# 15 | none | Probe in Phase 0. Two fallbacks are listed in § Union Constraint Gate | unverified | short-lived |
+| CL-33 | The repository holds no result, railway, or discriminated-union type. `Reference.Core` carries a greeter, two models, a repository, and a service | `src/E128.Reference.Core` | `rg -n -e "class .*Result" -e "record .*Result" -e OneOf -e Either src` returns only analyzer type names | confirmed | short-lived |
+| CL-34 | Both analyzer assemblies compile against `Microsoft.CodeAnalysis.CSharp` at the pinned `net10.0` band, which cannot parse C# 15 union syntax | `Directory.Packages.props` Roslyn group | Probe in Phase 0. Record whether an interface-only union declaration parses at that band | unverified | short-lived |
+| CL-35 | The last assigned diagnostic ID is `E128218`, and new rules continue from it | `src/E128.Analyzers/AnalyzerReleases.Shipped.md` | `scripts/analyzer-stats.sh --json` reports the highest assigned ID | confirmed | short-lived |
 
 ## Requirements
 
@@ -121,6 +164,12 @@ does not carry: the package keeps `net10.0` reach.
     Phases 1 to 3 has two candidate causes.
 16. The analyzer test project proves both bands from one project, and the
     `net10.0` leg runs under the `net10.0` SDK in CI.
+17. The reference application expresses expected failure as a union result
+    type, and one generic helper composes it for every result union.
+18. A union rule in the published package adds no minimum host compiler. The
+    `net10.0` reach holds after the rule lands.
+19. The guidance rule family names an older shape and its replacement, and each
+    rule ships a code fix only when the fix is mechanical.
 
 ## Analyzer Reach Gate
 
@@ -140,6 +189,46 @@ A failing check has three exits, and the plan takes the first that works:
 2. Drop the package or the API when nothing needs it.
 3. Stop. Record the blocker in context.md, and leave `TargetFramework` alone.
 
+## Union Constraint Gate
+
+The constraint question decides the helper shape. Phase 0 probes it, and the
+plan takes the first design that compiles.
+
+| Design | Helper signature | Applies when | Cost |
+|--------|------------------|--------------|------|
+| 1. Union constraint | `static TOut Match<TUnion, TOut>(this TUnion value, ...) where TUnion : union` | The compiler accepts `union` in a `where` clause (CL-32) | None. The constraint states intent, and the compiler rejects a non-union caller |
+| 2. Union interface constraint | `static TOut Match<TUnion, TOut>(this TUnion value, ...) where TUnion : IUnion` | The interface is public and usable as a constraint, but the `union` keyword is not | One interface constraint. A hand-written type can still satisfy it |
+| 3. Per-type overloads | One helper per result union, or one `IResult` interface owned by the repository | Neither of the above compiles | Duplication per union type. The analyzer still guides callers |
+
+Design 1 is the target. Design 3 is the floor. The plan records the answer in
+context.md § Architectural Decisions and does not rewrite a helper twice.
+
+A generic helper on a union is only safe when the union is closed to the
+declaration site. A hand-rolled type that implements `IUnion` would satisfy
+Design 2 without listing its cases. The helper must therefore read the case
+list from the attribute or the interface, never from a convention.
+
+## Union Rule Reach Gate
+
+A rule that names C# 15 syntax risks the published package reach. The analyzer
+assemblies build against the Roslyn band of the `net10.0` SDK (CL-34), and that
+band does not parse a `union` declaration. The gate holds these checks:
+
+| Check | Pass condition | Failure mode |
+|-------|----------------|--------------|
+| Rule source | The rule uses no C# 15 Roslyn API, so the assembly still compiles at the pinned band | The package build fails, or the pin must move and the `net10.0` reach drops |
+| Rule trigger | The rule reads the syntax tree by node name, or reads `UnionAttribute` and `IUnion` by metadata name | A rule that needs a typed union node raises the floor |
+| Dormant on a `net10.0` host | The rule reports nothing on a `net10.0` compilation, because no union syntax parses there | A false positive in a consumer that cannot use the feature |
+| Test leg | C# 15 snippet tests are excluded from the `net10.0` leg | The leg fails to parse its own test data |
+
+A failing check has three exits, and the plan takes the first that works:
+
+1. Rewrite the rule against syntax node names and metadata names.
+2. Move the rule to a rule family that reports only on a `net11.0` compilation,
+   gated on the language version the compilation reports.
+3. Stop. Record the blocker in context.md, and keep the rule out of the package
+   until the support-window decision in § Roadmap Handoff.
+
 ## Verifiable Behaviors
 
 | # | Given | When | Then |
@@ -158,6 +247,11 @@ A failing check has three exits, and the plan takes the first that works:
 | 12 | Runtime async is on for every application project | The analyzer suite runs on the `net10.0` leg | The suite still passes, and no analyzer project carries the switch |
 | 13 | A release build with the switch on | The property group is read | The switch is gated on `net11.0` and on `IsRoslynComponent` not true |
 | 14 | The lode | It is read after Phase 5 | No lode file describes `net10.0` as the current target |
+| 15 | A result union in `Reference.Core` | A caller composes it with the generic helper | The call site carries no cast, no exception, and no type test |
+| 16 | The generic helper under Design 1 | A non-union type is passed as the type argument | The build fails, so the constraint rejects the wrong call |
+| 17 | The reference application | `scripts/test.sh --all` runs | The suite passes at or above the baseline count, and the result-path tests cover each case |
+| 18 | The guidance rule family | The analyzer suite runs | Each rule reports on its named older shape and stays silent on the union shape |
+| 19 | The published package | A `net10.0` project consumes it | The union rules load, report nothing, and raise no analyzer load warning |
 
 ## Architecture Approach
 
@@ -249,6 +343,37 @@ The switch does change two surfaces:
 - A custom `[AsyncMethodBuilder]` would opt a method out. CL-15 shows the
   repository has none.
 
+### Union Result Shape
+
+`Reference.Core` owns one result union for expected failure. Every service and
+repository returns it, so a caller sees one shape. The example below is
+illustrative. The final spelling comes from the Phase 0 probe (CL-31).
+
+```csharp
+public union GreetingResult(Greeting Ok, GreetingError Error);
+```
+
+The generic helper sits beside it, and it is the only path a caller needs:
+
+```csharp
+public static TOut Match<TUnion, TOut>(this TUnion value, Func<TUnion, TOut> match)
+    where TUnion : union;
+```
+
+The constraint carries the whole teaching load. A caller writes one call. A
+wrong type argument fails the build. No overload set appears at the call site,
+and no exception carries an expected failure.
+
+The rule family reads the two shapes the same way. It reports the older shape,
+which is a `bool` return with an `out` value, a tuple of a flag and a payload,
+or a string status with a nullable payload. It offers the union as the
+replacement. Each rule reads only syntax it already knows, so it compiles at
+the pinned Roslyn band (CL-34).
+
+The rule family starts small. Phase 6 supplies the evidence, because every
+rewrite records the shape it replaced. A candidate that finds no hit in the
+rewritten code does not ship. The candidate list is not a target.
+
 ## Critical Paths
 
 | File or Component | Review Type | Reason |
@@ -261,6 +386,8 @@ The switch does change two surfaces:
 | `Dockerfile` | standard | Base image band, and the container is the ReadyToRun artifact that gains the floor |
 | `.globalconfig` | standard | Blanket error severity turns every new SDK rule into a build failure |
 | `README.md` and `AGENTS.md` | standard | Both state the current target |
+| `src/E128.Reference.Core/Services` and `Repositories` | strict | The result union reaches every service signature, and it is the first union in the solution |
+| `src/E128.Analyzers/Design` | strict | Each guidance rule must compile at the pinned Roslyn band and stay dormant on a `net10.0` host |
 | `lode/dotnet/project-structure.md`, `lode/dotnet-reference/dep-map.md` | standard | Both describe the current TFM and SDK pins |
 
 ## Implementation Plan
@@ -303,32 +430,52 @@ the end state is one group and the per-project lines are gone.
 
 ### Phase 5: Verification and Hardening
 Run the full suite on both legs, confirm the ReadyToRun floor, run the
-container, and record the lode state. Any library API adoption is out of scope
-and goes to the roadmap through § Roadmap Handoff.
+container, and record the lode state.
 
-### Phase 6: Code Review Gate
+### Phase 6: Union Result Rewrite
+Build the result union in `Reference.Core` from the § Union Constraint Gate
+answer. Rewrite every service and repository that reports expected failure
+through a boolean, a nullable, or an exception. Compose the call sites through
+the generic helper. Each rewrite records the shape it replaced, and that record
+is the input to Phase 7. The phase closes green before any rule is written.
+
+### Phase 7: Guidance Rule Family
+Build the rules the Phase 6 record justifies. Each rule names one older shape
+and one replacement. Pass § Union Rule Reach Gate before the rule enters the
+package. Register each rule in `AnalyzerReleases.Unshipped.md` and in the
+`src/E128.Analyzers/README.md` table. Exclude the C# 15 snippet tests from the
+`net10.0` leg.
+
+### Phase 8: Code Review Gate
 Run the `mr-sparkle-dotnet` skill over the plan branch, then triage every
 finding into a fix or a recorded reason. Any fix re-runs its targeted tests.
 The gate sits before the format pass, so its fixes reach the full-suite check.
 
-### Phase 7: Algorithmic Complexity Audit
-Phase 1 rewrites loop exits, so this phase reads every loop and recursive call
-in the changed files and judges each against the input size and the output
-size. Anything worse than linear in the input plus the output is replaced here.
-A loop moved into a helper to satisfy an analyzer stays put, because that hides
-the cost.
+### Phase 9: Algorithmic Complexity Audit
+Phase 1 rewrites loop exits, and Phase 7 adds rules, so this phase reads every
+loop and recursive call in the changed files and judges each against the input
+size and the output size. Anything worse than linear in the input plus the
+output is replaced here. A loop moved into a helper to satisfy an analyzer
+stays put, because that hides the cost.
+
+### Phase 10: Retrospective
+Record the upgrade cost, close the plan, and add the surviving § Roadmap
+Handoff rows to `plans/roadmap.md`.
 
 ## Roadmap Handoff
 
-These need no source change to compile. Each one is a later decision that
-depends on when the `net10.0` support window closes.
+Each row is a later decision. The first three depend on when the `net10.0`
+support window closes. The last three depend on the Phase 0 answer or on a
+follow-up feature.
 
 | Candidate | Repo anchor | Why it waits |
 |-----------|-------------|--------------|
 | Bump `Microsoft.CodeAnalysis.*` past the `net10.0` band | `Directory.Packages.props` Roslyn group | Closes `net10.0` analyzer support, so it needs a support-window decision first |
 | Raise the `e128_minimum_framework_version` default from 100 to 110 | `StaleReferenceAssembliesAnalyzer` | The default must follow the snippet band, and the tests sit at 100 today |
 | Drop the analyzer test project multi-targeting and the SDK 10 CI job | `tests/E128.Analyzers.Tests`, `.github/workflows/ci.yml` | Same support-window decision |
-| Adopt `union` and `closed` for result types | Reference.Core result types | Needs the Phase 0 attribute answer and a per-type switch audit |
+| Adopt `closed` for the result error hierarchy | `Reference.Core` result types | Needs the Phase 0 attribute answer. `union` lands in Phase 6 |
+| Rewrite a union rule against a typed Roslyn union node | `src/E128.Analyzers/Design` | The typed node needs a Roslyn band that parses C# 15, which closes the `net10.0` reach |
+| Apply the union result to the web and CLI entry points | `src/E128.Reference.Web`, `src/E128.Reference.Cli` | Phase 6 covers the core. The entry points map a result to a status code and an exit code, and each mapping needs its own tests |
 
 ## Testing Strategy
 
@@ -348,6 +495,17 @@ Runtime async keeps every observable contract, so it adds no test case. Its
 gates are the existing suite per project and the counters sample. A
 stack-trace assertion is the one test shape that would newly fail, and CL-15
 shows the suite has none.
+
+The union result adds tests at the call site, not at the helper. One test per
+service proves each case reaches its caller, and one test proves the composed
+path returns the same value the exception path returned.
+
+A union rule is proven by a snippet test. The snippet declares
+`UnionAttribute` and `IUnion` itself, so the test runs at the pinned Roslyn
+band without a `net11.0` reference assembly set. A snippet that uses a `union`
+declaration parses only at the C# 15 language version, so its test is excluded
+from the `net10.0` leg. The reach proof stays in the `net10.0` leg, and the
+union rule proof stays in the `net11.0` leg.
 
 ## Success Criteria
 
@@ -372,9 +530,16 @@ shows the suite has none.
 - [ ] Runtime async stayed off through Phase 3, proven by a surviving `[AsyncStateMachine]` attribute
 - [ ] Every Code Review Gate finding is fixed or recorded with a reason
 - [ ] Every loop and recursive call in the changed files is judged against the input and output size
+- [ ] `Reference.Core` exposes one result union, and every service and repository returns it
+- [ ] One generic helper composes every result union, and the selected design matches the Phase 0 answer in § Union Constraint Gate
+- [ ] The build rejects a non-union type argument to the helper under Design 1, proven by one negative snippet
+- [ ] Every guidance rule compiles at the pinned Roslyn band, reports nothing on a `net10.0` compilation, and carries a snippet test
+- [ ] The `net10.0` leg excludes every C# 15 snippet test and still reports a nonzero count
+- [ ] Each shipped rule names the older shape it replaced in Phase 6. A candidate with no hit does not ship
 
 ### MAYBE (best-effort)
 - [ ] The doubling of the local analyzer suite stays within a recorded budget, so `scripts/test.sh` needs no framework flag
 - [ ] Allocation per operation drops on synchronous application paths
+- [ ] Design 1 compiles, so no per-type overload and no repository-owned `IResult` interface is needed
 - [ ] No test needs a suppression added for the bump
 - [ ] The Roadmap Handoff list is added to `plans/roadmap.md`
