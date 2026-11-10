@@ -1,13 +1,20 @@
 name: CI
 
+# Pull requests are the only gate. A push to main repeats the suite the PR
+# already ran, so it is omitted and workflow_dispatch covers manual runs.
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+# One run per ref. A new push cancels the in-flight run instead of stacking
+# full suites on the same PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   DOTNET_NOLOGO: true
@@ -19,6 +26,7 @@ jobs:
   ci:
     name: Format + Build + Test
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -35,12 +43,18 @@ jobs:
       - name: Format check
         run: dotnet format E128.Reference.slnx --verify-no-changes
 
+      # Release and Debug compile different paths: Release clears
+      # EnablePreviewFeatures while Debug sets it. Validate Release, but skip
+      # ReadyToRun, whose precompiled images are discarded by this run anyway.
       - name: Build (Release)
-        run: dotnet build E128.Reference.slnx --configuration Release -clp:ErrorsOnly
+        run: >
+          dotnet build E128.Reference.slnx
+          --configuration Release
+          -p:ReadyToRun=false
+          -clp:ErrorsOnly
 
-      # Coverage collects in Debug. The Release build still validates Release
-      # compilation, and the in-process coverage extension avoids the
-      # ReadyToRun images that stall the analyzer test host.
+      # Coverage collects in Debug. The in-process coverage extension avoids
+      # the ReadyToRun images that stall the analyzer test host.
       - name: Build (Debug, coverage)
         run: dotnet build E128.Reference.slnx --configuration Debug -clp:ErrorsOnly
 
@@ -74,14 +88,21 @@ jobs:
         continue-on-error: true
         run: bash scripts/coverage-areas.sh --markdown >> "$GITHUB_STEP_SUMMARY"
 
-  shellcheck:
-    name: Shell Lint
+  # Shell lint, agent mirror, guardrails, and the secret scan share one runner
+  # and one full-history checkout instead of three separate spins.
+  lint:
+    name: Lint + Scan
     runs-on: ubuntu-26.04
+    timeout-minutes: 15
     env:
       SHELLCHECK_VERSION: 0.11.0
       SHELLCHECK_SHA256: 8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Install shellcheck
         run: |
@@ -92,12 +113,6 @@ jobs:
 
       - name: Lint shell scripts
         run: bash scripts/lint-shell.sh
-
-  harness:
-    name: Agent Mirror Check
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Check opencode agent mirror
         run: bash scripts/internal/opencode-agents.sh check
@@ -114,17 +129,6 @@ jobs:
           done < <(grep -oE '"[a-z][a-z0-9-]*"' .opencode/plugins/e128-guardrails/index.ts \
             | tr -d '"' | grep -E '^(block-|pre-|post-|init-|validate-|stop-|user-)' | sort -u)
           exit "$missing"
-
-  secrets:
-    name: Secret Scan
-    runs-on: ubuntu-26.04
-    env:
-      GITLEAKS_VERSION: 8.30.1
-      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
 
       - name: Install gitleaks
         run: |

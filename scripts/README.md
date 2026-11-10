@@ -18,7 +18,7 @@ hot loop. Keep the 4.0 floor until the repository drops the older interpreters.
 
 `shellcheck` is required. `scripts/lint-shell.sh` runs it at warning severity
 over every `.sh` file. `scripts/check.sh`, `scripts/ci.sh`,
-`scripts/internal/precommit.sh`, and the CI `shellcheck` job all call that
+`scripts/internal/precommit.sh`, and the CI `lint` job all call that
 script. Never call raw `shellcheck` in a gate.
 
 Other required tools: see [tooling.md](../.claude/rules/tooling.md).
@@ -53,7 +53,7 @@ Other required tools: see [tooling.md](../.claude/rules/tooling.md).
 | `help.sh`              | List all scripts with descriptions                            |
 | `context.sh`           | Combines status + diff + plans in one call                    |
 | `loop.sh`              | Poll-until-condition with timeout                             |
-| `update.sh`            | Check for outdated NuGet packages                             |
+| `update.sh`            | Check or update outdated NuGet packages                       |
 | `dep-check.sh`         | Check NuGet dependencies for outdated and vulnerable packages |
 | `gh-actions-update.sh` | Check GitHub Actions for outdated versions                    |
 | `lint-yaml.sh`         | Validate YAML syntax                                          |

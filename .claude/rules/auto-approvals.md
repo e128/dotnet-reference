@@ -86,6 +86,6 @@ These actions require explicit approval and belong to neither tier above:
 `.claude/hooks/block-raw-git` and `.claude/hooks/block-raw-commands` enforce the
 deterministic script routing at execution time. The plugin
 `.opencode/plugins/e128-guardrails/index.ts` runs the same scripts on
-opencode, so both harnesses share one decision. The CI job named `harness`
+opencode, so both harnesses share one decision. The CI job named `lint`
 fails when the plugin names a hook script that does not exist. See
 [lode/infrastructure/opencode-guardrails.md](../../lode/infrastructure/opencode-guardrails.md).

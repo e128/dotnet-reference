@@ -21,7 +21,7 @@ invocation to them.
 - `scripts/check.sh`
 - `scripts/ci.sh`
 - `scripts/internal/precommit.sh`, over the staged shell files only
-- the CI job named `shellcheck`
+- the CI job named `lint`
 
 shellcheck parses every file it reads, so a syntax error fails the same run. A
 separate `bash -n` call is not needed.

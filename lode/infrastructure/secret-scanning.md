@@ -1,5 +1,5 @@
 # Secret Scanning
-*Updated: 2026-11-04T01:07:49Z*
+*Updated: 2026-11-10T14:10:59Z*
 
 The repository scans for secrets with gitleaks in two places: locally before each commit, and in CI over the full git history. Both use the default gitleaks ruleset plus the allowlist in `.gitleaks.toml`.
 
@@ -13,7 +13,7 @@ The repository scans for secrets with gitleaks in two places: locally before eac
 
 ## CI Scan
 
-The `secrets` job in `.github/workflows/ci.yml` runs in parallel with the `ci` job. It checks out the full history (`fetch-depth: 0`) and runs `gitleaks git --no-banner --redact --exit-code 1`.
+The `lint` job in `.github/workflows/ci.yml` runs in parallel with the `ci` job. It checks out the full history (`fetch-depth: 0`) and runs `gitleaks git --no-banner --redact --exit-code 1`.
 
 The job installs gitleaks from the GitHub release tarball. The workflow pins the tool version and the SHA-256 checksum in the job `env` block (`GITLEAKS_VERSION`, `GITLEAKS_SHA256`). The install step fails when the checksum does not match. Change both values together when you upgrade.
 
@@ -22,7 +22,7 @@ flowchart LR
     A[Staged diff] -->|precommit.sh| B{gitleaks installed?}
     B -->|yes| C[Scan staged diff]
     B -->|no| D[Warn and skip]
-    E[Push to CI] -->|secrets job| F[Scan full history]
+    E[Pull request] -->|lint job| F[Scan full history]
 ```
 
 ## Allowlist

@@ -1,5 +1,5 @@
 # Code Coverage
-*Updated: 2026-11-07T13:17:11Z*
+*Updated: 2026-11-10T14:10:59Z*
 
 Coverage collects in process through the Microsoft.Testing.Platform extension.
 The CI gate requires 80 percent line coverage in total and in every measured
@@ -37,9 +37,10 @@ dotnet test --solution E128.Reference.slnx \
 The extension writes one GUID-named Cobertura file per test module. Consumers
 read the whole `test-results` directory, then merge classes across reports.
 
-CI builds Release to validate that configuration. It then builds Debug and
-runs the coverage pass in Debug. This avoids the ReadyToRun images that stall
-the analyzer test host under instrumentation.
+CI builds Release to validate that configuration. That validation build runs
+with `ReadyToRun=false`, because it discards the precompiled images. CI then
+builds Debug and runs the coverage pass in Debug. This avoids the ReadyToRun
+images that stall the analyzer test host under instrumentation.
 
 ## Instrumentation Contracts
 
