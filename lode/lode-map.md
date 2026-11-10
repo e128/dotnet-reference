@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-09T23:44:15Z*
+*Updated: 2026-11-10T14:10:59Z*
 
 ## Generated Docs
 
@@ -77,5 +77,5 @@
 - [agent-worktree-builds.md](infrastructure/agent-worktree-builds.md): The nested-worktree .globalconfig collision and how a delegated build avoids it
 - [scaffolding-heuristics.md](infrastructure/scaffolding-heuristics.md): Simplification-agent heuristic definitions (H1-H6)
 - [scoring-rubric.md](infrastructure/scoring-rubric.md): Shared four-dimension scoring rubric for strategic analysis agents
-- [secret-scanning.md](infrastructure/secret-scanning.md): gitleaks scan in precommit.sh and the CI secrets job
+- [secret-scanning.md](infrastructure/secret-scanning.md): gitleaks scan in precommit.sh and the CI lint job
 - [script-performance.md](infrastructure/script-performance.md): Bash performance rules: fork avoidance, the subshell trap, the version floor, byte-diff and shellcheck verification

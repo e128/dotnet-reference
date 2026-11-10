@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-11-09T21:16:25Z*
+*Updated: 2026-11-10T16:58:28Z*
 
 ## Harness Portability Capability Map
 
@@ -223,7 +223,7 @@ the staged shell files.
 `scripts/lint-shell.sh` is the one shell linter. It runs `shellcheck` at
 warning severity over every tracked `.sh` file. `scripts/check.sh`,
 `scripts/ci.sh`, `scripts/internal/precommit.sh`, and the CI job named
-`shellcheck` all call it. Never add a second raw `shellcheck` call to a gate.
+`lint` all call it. Never add a second raw `shellcheck` call to a gate.
 The tool is required, and CI pins the version by SHA256. See
 [shellcheck-validation.md](../../.claude/rules/shellcheck-validation.md).
 

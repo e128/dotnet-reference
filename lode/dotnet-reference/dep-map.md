@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-09T22:27:38Z*
+*Updated: 2026-11-10T16:58:36Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -65,7 +65,7 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 | Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj`               |
 | CI SDK version        | `10.0.x`                                   | `.github/workflows/ci.yml` `setup-dotnet` |
 | CI platform           | `ubuntu-26.04`                             | `.github/workflows/ci.yml`            |
-| Secret scanner        | gitleaks, version and SHA-256 pinned in job `env` | `.github/workflows/ci.yml` (`secrets` job) |
+| Secret scanner        | gitleaks, version and SHA-256 pinned in job `env` | `.github/workflows/ci.yml` (`lint` job) |
 | Test runner           | Microsoft.Testing.Platform                 | `global.json`                         |
 
 > `rollForward: "latestPatch"` in `global.json` pins the SDK to the `10.0.403`

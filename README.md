@@ -260,12 +260,12 @@ podman compose down
 
 ## CI/CD
 
-**GitHub Actions** (`.github/workflows/ci.yml`) runs four jobs:
+**GitHub Actions** (`.github/workflows/ci.yml`) runs on a pull request to `main`, and on manual dispatch. A push to `main` does not repeat the suite. A concurrency group cancels an in-flight run when the same pull request receives a new push.
 
-1. **Format + Build + Test**: format check (`dotnet format --verify-no-changes`), Release and Debug builds, CI-category tests with coverage, and an 80% line and assembly coverage gate
-2. **Shell Lint**: `scripts/lint-shell.sh` runs shellcheck over every tracked shell script
-3. **Agent Mirror Check**: checks that the opencode agent mirror is current, then verifies every guardrail hook referenced by the plugin exists
-4. **Secret Scan**: gitleaks scan over the full git history
+Two jobs run in parallel:
+
+1. **Format + Build + Test**: format check (`dotnet format --verify-no-changes`), a Release build with ReadyToRun disabled, a Debug build that feeds coverage, CI-category tests with coverage, and an 80% line and assembly coverage gate
+2. **Lint + Scan**: `scripts/lint-shell.sh` runs shellcheck over every tracked shell script. The job then checks that the opencode agent mirror is current, verifies every guardrail hook referenced by the plugin exists, and runs a gitleaks scan over the full git history
 
 **NuGet publishing** (`.github/workflows/publish.yml`) starts on a push to `main` that changes `src/E128.Analyzers/` or `src/E128.Analyzers.CodeFixers/`. The workflow uses OIDC trusted publishing, so it needs no API key. It skips the push when the version already exists on nuget.org.
 

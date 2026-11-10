@@ -1,5 +1,5 @@
 # opencode v2 Guardrail Parity
-*Updated: 2026-11-08T13:47:01Z*
+*Updated: 2026-11-10T16:58:28Z*
 
 Claude Code enforces guardrails through hook scripts under `.claude/hooks/`.
 opencode v2 has no hook file. Its plugin API carries the same interception.
@@ -37,7 +37,7 @@ A hook blocks by exiting with status 2 and writing the reason to stderr. A
 status of null means a signal or a timeout. The plugin treats that as no
 verdict rather than as a block.
 
-The CI job named `harness` fails when the plugin names a hook script that does
+The CI job named `lint` fails when the plugin names a hook script that does
 not exist. A renamed script cannot silently disable a guardrail.
 
 ## Blocking Guardrails
