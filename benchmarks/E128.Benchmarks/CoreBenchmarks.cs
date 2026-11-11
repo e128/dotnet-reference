@@ -54,7 +54,7 @@ public class CoreBenchmarks
     }
 
     [Benchmark]
-    public Task<Greeting> GreetAndSaveAsync()
+    public Task<GreetingResult> GreetAndSaveAsync()
     {
         return _service.GreetAsync(_request, CancellationToken.None);
     }

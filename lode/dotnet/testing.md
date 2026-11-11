@@ -1,9 +1,9 @@
-# .NET 10 Testing
-*Updated: 2026-11-07T05:28:39Z*
+# .NET 11 Testing
+*Updated: 2026-11-10T22:47:34Z*
 
 ## Microsoft Testing Platform (MTP)
 
-MTP is the required test runner for .NET 10. VSTest is no longer supported. MTP is built natively into xUnit v3 (not an adapter layer).
+MTP is the required test runner for the .NET SDK. VSTest is no longer supported. MTP is built natively into xUnit v3 (not an adapter layer).
 
 ### Required Configuration
 
@@ -27,7 +27,7 @@ Test `.csproj` files only need `<IsTestProject>true</IsTestProject>`, everything
 
 ### Package Choice
 
-- `xunit.v3.mtp-v2`, MTP v2 runner (recommended for .NET 10). Direct MTP integration.
+- `xunit.v3.mtp-v2`, MTP v2 runner (recommended for the .NET SDK). Direct MTP integration.
 - `xunit.v3`, includes MTP v1 runner + VSTest adapter. Needed only for IDE compatibility with older tooling.
 
 ### Key Differences from v2
@@ -59,6 +59,9 @@ scripts/test.sh --trait "Category=Podman"
 
 # Terse output is the default (--json is a legacy no-op alias)
 scripts/test.sh --json
+
+# One framework leg of the multi-target analyzer test project
+scripts/test.sh --all --framework net11.0
 ```
 
 ### Via dotnet test (raw)
@@ -125,7 +128,7 @@ Minimal `.csproj` template (all versions from CPM):
 - Test naming: `MethodName_ExpectedBehavior_WhenCondition` (e.g., `GreetAsync_ReturnsGreeting_WithDefaultName`)
 - No reflection in tests, use `internal` + `InternalsVisibleTo`
 - RED phase stubs use `Assert.Fail("message")`
-- No net48 rule: code and tests target .NET 10 and `netstandard2.0` only (AGENTS.md)
+- No net48 rule: code and tests target .NET 11 and `netstandard2.0` only (AGENTS.md)
 - Every test method has `[Trait("Category", "CI")]` (or appropriate category)
 
 ## Related

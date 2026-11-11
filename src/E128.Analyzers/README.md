@@ -5,10 +5,19 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.6.6" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.7.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
+
+### Supported hosts
+
+Both analyzer assemblies target `netstandard2.0`, and the package carries no
+dependency of its own. It loads in a .NET 10 host compiler and a .NET 11 host
+compiler from that one build.
+
+The rules read syntax and symbols, so they work on any C# project. A rule stays
+silent where the target framework cannot express what it looks for.
 
 ## Rules
 
@@ -729,7 +738,7 @@ private static readonly string[] NotsSupportedExtensions = [];
 
 ### E128062 &mdash; Stale ReferenceAssemblies in tests
 
-Flags `ReferenceAssemblies.Net.Net80` / `Net90` usages in test code when the configured minimum framework version is higher. Tests that use older reference assemblies may miss API availability issues specific to the production target framework. Configurable via `e128_minimum_framework_version` in `.globalconfig` (default: 100 for net10.0).
+Flags `ReferenceAssemblies.Net.Net80` / `Net90` usages in test code when the configured minimum framework version is higher. Tests that use older reference assemblies may miss API availability issues specific to the production target framework. Configurable via `e128_minimum_framework_version` in `.globalconfig` (default: 100 for net10.0). The known versions run from `Net60` to `Net110`.
 
 ```csharp
 // Before (warns — project targets net10.0)

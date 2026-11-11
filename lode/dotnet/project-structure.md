@@ -1,9 +1,9 @@
-# .NET 10 Project Structure
-*Updated: 2026-11-09T22:31:48Z*
+# .NET 11 Project Structure
+*Updated: 2026-11-10T22:47:34Z*
 
 ## Solution Format
 
-.NET 10 SDK defaults to `.slnx` (XML-based) when running `dotnet new sln`. The format is GA, supported by Visual Studio 2022+, Rider, and the .NET CLI. Benefits: fewer merge conflicts (no GUIDs), human-readable XML, aligns with `.csproj` format.
+The .NET SDK defaults to `.slnx` (XML-based) when running `dotnet new sln`. The format is GA, supported by Visual Studio 2022+, Rider, and the .NET CLI. Benefits: fewer merge conflicts (no GUIDs), human-readable XML, aligns with `.csproj` format.
 
 Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 
@@ -63,7 +63,7 @@ Key properties:
 
 The exact SDK version is the source of truth in `global.json` (`scripts/sdk-version.sh`).
 
-The `test.runner` setting is **required** for `dotnet test` on .NET 10 SDK. Without it, MTP projects fail with a VSTest compatibility error.
+The `test.runner` setting is **required** for `dotnet test`. Without it, MTP projects fail with a VSTest compatibility error.
 
 ## NuGet Security
 

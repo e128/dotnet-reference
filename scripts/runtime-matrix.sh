@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-declare -a flags
+flags=()
 
 # ── SDK pin ──
 sdk="$(bash "$SCRIPT_DIR/sdk-version.sh" --json | jq -r '.sdk // "unknown"')"
@@ -37,12 +37,14 @@ esac
 
 # ── Target frameworks (per project; fall back to Directory.Build.props default) ──
 default_tfm="$(rg -oN '<TargetFramework>([^<]+)</TargetFramework>' -r '$1' "$ROOT/Directory.Build.props" 2>/dev/null | head -1 || true)"
-declare -a fw_proj fw_path fw_tfm fw_src
+fw_proj=(); fw_path=(); fw_tfm=(); fw_src=()
 while IFS=$'\t' read -r pname ppath _pkind; do
     [[ -z "$pname" ]] && continue
     csproj="$ROOT/$ppath"
     [[ -f "$csproj" ]] || continue
-    tfm="$(rg -oN '<TargetFrameworks?>([^<]+)</TargetFrameworks?>' -r '$1' "$csproj" 2>/dev/null | head -1 || true)"
+    # A project can declare the property twice, the second behind an SDK condition.
+    # Report every distinct value, or the matrix hides the conditional leg.
+    tfm="$(rg -oN '<TargetFrameworks?[^>]*>([^<]+)</TargetFrameworks?>' -r '$1' "$csproj" 2>/dev/null | tr ';' '\n' | sort -u | paste -sd ';' - || true)"
     if [[ -n "$tfm" ]]; then
         src="csproj"
     else
@@ -53,7 +55,7 @@ while IFS=$'\t' read -r pname ppath _pkind; do
 done < <(bash "$SCRIPT_DIR/solution-inventory.sh" --json | jq -r '.projects[] | [.name, .path, .kind] | @tsv')
 
 # ── Docker base images ──
-declare -a dk_file dk_image dk_tag dk_stage dk_status
+dk_file=(); dk_image=(); dk_tag=(); dk_stage=(); dk_status=()
 while IFS= read -r dockerfile; do
     [[ -z "$dockerfile" ]] && continue
     rel="${dockerfile#"$ROOT"/}"
@@ -100,7 +102,7 @@ if [[ "$JSON" == true ]]; then
             "${dk_file[$i]}" "${dk_image[$i]}" "${dk_tag[$i]}" "${dk_stage[$i]}" "${dk_status[$i]}"
     done | jq -R -s 'split("\n")|map(select(length>0)|split("\t")|{file:.[0],image:.[1],tag:.[2],stage:.[3],status:.[4]})')"
 
-    flags_json="$(printf '%s\n' "${flags[@]}" | grep -v '^$' | jq -R '.' | jq -s '.')"
+    flags_json="$(printf '%s\n' "${flags[@]}" | jq -R 'select(length>0)' | jq -s '.')"
 
     jq -n \
         --arg sdk "$sdk" \

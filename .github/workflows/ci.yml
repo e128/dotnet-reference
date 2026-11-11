@@ -32,7 +32,7 @@ jobs:
 
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '11.0.x'
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -138,3 +138,54 @@ jobs:
 
       - name: Scan history
         run: ./gitleaks git --no-banner --redact --exit-code 1
+
+  # The published analyzer ships as netstandard2.0 and must load in a net10.0
+  # consumer. This job is the reach proof. It packs the package, then builds a
+  # net10.0 fixture that consumes it under SDK 10, which is the compiler a
+  # net10.0 consumer uses. The repository itself stays on net11.0.
+  net10-consumer:
+    name: Package reach (net10 consumer)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The repository pin needs SDK 11 for the pack. The fixture pins SDK 10 in
+      # its own global.json, which is the band a net10.0 consumer builds with.
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: |
+            11.0.x
+            10.0.x
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-net10-${{ runner.os }}-${{ hashFiles('Directory.Packages.props') }}
+          restore-keys: nuget-net10-${{ runner.os }}-
+
+      - name: Pack the analyzer
+        run: dotnet pack src/E128.Analyzers/E128.Analyzers.csproj -c Release -o ./artifacts/nupkgs
+
+      # The fixture source stays clean, so a diagnostic cannot prove the analyzer ran. The
+      # analyzer report does prove it: it lists every rule that executed, with its timing.
+      # Detailed verbosity is required, because the report logs at that level.
+      - name: Build the net10.0 consumer fixture
+        run: |
+          set -euo pipefail
+          cd tests/Net10Consumer
+          dotnet build -p:ReportAnalyzer=true -v:d 2>&1 | tee ../../net10-consumer.log
+
+      - name: "Gate: the analyzer loaded and ran"
+        run: |
+          set -euo pipefail
+          log=net10-consumer.log
+          if grep -Eq "CS8032|AD0001|Failed to load analyzer" "$log"; then
+            echo "The analyzer did not load cleanly in the net10.0 host."
+            grep -E "CS8032|AD0001|Failed to load analyzer" "$log"
+            exit 1
+          fi
+          if ! grep -q "NonXmlDocCommentE128Analyzer (E128024)" "$log"; then
+            echo "The analyzer report does not list E128024, so the packaged analyzer did not run."
+            exit 1
+          fi

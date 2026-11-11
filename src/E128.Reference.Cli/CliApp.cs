@@ -13,10 +13,10 @@ internal static class CliApp
         var rootCommand = new RootCommand("E128 Reference CLI — hello world with System.CommandLine") { nameOption };
 
         var greeter = new Greeter();
-        rootCommand.SetAction(async (parseResult, _) =>
+        rootCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var name = parseResult.GetValue(nameOption);
-            await parseResult.InvocationConfiguration.Output.WriteLineAsync(greeter.Greet(name));
+            await parseResult.InvocationConfiguration.Output.WriteLineAsync(greeter.Greet(name), cancellationToken);
         });
 
         return rootCommand;

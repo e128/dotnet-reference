@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-10T14:10:59Z*
+*Updated: 2026-11-10T22:47:34Z*
 
 ## Generated Docs
 
@@ -21,7 +21,8 @@
 ## dotnet/
 
 - [build-performance.md](dotnet/build-performance.md): Build timing, analyzer cost, and the --fast path
-- [project-structure.md](dotnet/project-structure.md): .NET 10 solution format, CPM, build props/targets, global.json
+- [project-structure.md](dotnet/project-structure.md): .NET 11 solution format, CPM, build props/targets, global.json
+- [net11-upgrade.md](dotnet/net11-upgrade.md): .NET 11 rules for two SDK bands, conditional TFM list, analyzer reach, unions, closed hierarchies, runtime async
 - [testing.md](dotnet/testing.md): MTP, xUnit v3, test configuration, categories, conventions
 - [code-coverage.md](dotnet/code-coverage.md): In-process MTP coverage, Cobertura reports, area mapping, and the CI floors
 - [test-patterns.md](dotnet/test-patterns.md): Test family patterns (A-D), fake conventions, naming rules

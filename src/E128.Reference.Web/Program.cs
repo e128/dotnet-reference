@@ -29,8 +29,14 @@ app.MapGet("/", static (Greeter greeter) => greeter.Greet());
 
 app.MapPost("/greetings", static async (GreetingRequest request, IGreetingService service, CancellationToken cancellationToken) =>
 {
-    var greeting = await service.GreetAsync(request, cancellationToken);
-    return Results.Created(new Uri("/greetings", UriKind.Relative), greeting);
+    var result = await service.GreetAsync(request, cancellationToken);
+
+    return result switch
+    {
+        Greeting greeting => Results.Created(new Uri("/greetings", UriKind.Relative), greeting),
+        GreetingError error => Results.BadRequest(error.Message),
+        null => Results.Problem("Unknown greeting result.")
+    };
 });
 
 app.MapGet("/greetings", static async (IGreetingRepository repository, int? count, CancellationToken cancellationToken) =>

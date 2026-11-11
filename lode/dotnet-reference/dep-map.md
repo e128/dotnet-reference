@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-10T16:58:36Z*
+*Updated: 2026-11-10T23:33:05Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -8,9 +8,9 @@
 
 | Project                   | SDK              | Target          | Role                            | Direct Packages               |
 | ------------------------- | ---------------- | --------------- | ------------------------------- | ----------------------------- |
-| `E128.Reference.Core`     | `Microsoft.NET.Sdk`     | `net10.0`  | Shared library for Web + Cli    | None                         |
-| `E128.Reference.Web`      | `Microsoft.NET.Sdk.Web` | `net10.0`  | ASP.NET Core web service        | None (project ref only)        |
-| `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net10.0`  | Console executable              | `System.CommandLine` |
+| `E128.Reference.Core`     | `Microsoft.NET.Sdk`     | `net11.0`  | Shared library for Web + Cli    | None                         |
+| `E128.Reference.Web`      | `Microsoft.NET.Sdk.Web` | `net11.0`  | ASP.NET Core web service        | None (project ref only)        |
+| `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net11.0`  | Console executable              | `System.CommandLine` |
 | `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
 | `E128.Analyzers.CodeFixers` | `Microsoft.NET.Sdk`   | `netstandard2.0` | Code fix DLL packed into `E128.Analyzers` | `Microsoft.CodeAnalysis.CSharp.Workspaces` + project ref to `E128.Analyzers` |
 
@@ -45,11 +45,15 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 
 | Base image                              | Tag            | Type         |
 | --------------------------------------- | -------------- | ------------ |
-| `mcr.microsoft.com/dotnet/aspnet`       | `10.0-resolute`   | .NET runtime (production, E128.Reference.Web) |
-| `mcr.microsoft.com/dotnet/sdk`          | `10.0-resolute`   | .NET SDK (restore + build stages)             |
+| `mcr.microsoft.com/dotnet/aspnet`       | `11.0-resolute`   | .NET runtime (production, E128.Reference.Web) |
+| `mcr.microsoft.com/dotnet/sdk`          | `11.0-resolute`   | .NET SDK (restore + build stages)             |
 
-> Tags are pinned to a minor version (`:10.0-resolute`), not a digest. They drift with
+> Tags are pinned to a minor version (`:11.0-resolute`), not a digest. They drift with
 > patch releases but do not track `:latest`. No unpinned tags.
+
+Release builds set `ReadyToRun` true, so the container carries precompiled
+images and gains a CPU floor. On Linux, .NET 11 compiles ReadyToRun against the
+`x86-64-v3` target. A host below that target cannot run the image.
 
 ---
 
@@ -57,18 +61,18 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 
 | Artifact              | Value                                      | Source                                |
 | --------------------- | ------------------------------------------ | ------------------------------------- |
-| Runtime image         | `mcr.microsoft.com/dotnet/aspnet:10.0-resolute`  | `Dockerfile` (final `runtime` stage) |
-| SDK/build image       | `mcr.microsoft.com/dotnet/sdk:10.0-resolute`     | `Dockerfile` (`restore`/`build` stages) |
+| Runtime image         | `mcr.microsoft.com/dotnet/aspnet:11.0-resolute`  | `Dockerfile` (final `runtime` stage) |
+| SDK/build image       | `mcr.microsoft.com/dotnet/sdk:11.0-resolute`     | `Dockerfile` (`restore`/`build` stages) |
 | .NET SDK pin          | see `global.json`                          | `global.json`                         |
-| SDK rollForward       | `latestPatch`                             | `global.json` (pins the SDK to the `10.0.403` line) |
-| Target framework      | `net10.0` (all except `E128.Analyzers`)    | `Directory.Build.props`               |
+| SDK rollForward       | `latestPatch`                             | `global.json` (pins the SDK to the `11.0.1xx` line) |
+| Target framework      | `net11.0` (all except `E128.Analyzers`)    | `Directory.Build.props`               |
 | Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj`               |
-| CI SDK version        | `10.0.x`                                   | `.github/workflows/ci.yml` `setup-dotnet` |
+| CI SDK version        | `11.0.x`                                   | `.github/workflows/ci.yml` `setup-dotnet` |
 | CI platform           | `ubuntu-26.04`                             | `.github/workflows/ci.yml`            |
 | Secret scanner        | gitleaks, version and SHA-256 pinned in job `env` | `.github/workflows/ci.yml` (`lint` job) |
 | Test runner           | Microsoft.Testing.Platform                 | `global.json`                         |
 
-> `rollForward: "latestPatch"` in `global.json` pins the SDK to the `10.0.403`
+> `rollForward: "latestPatch"` in `global.json` pins the SDK to the `11.0.1xx`
 > line. A major SDK bump needs a manual edit of `global.json`.
 
 ---
@@ -92,13 +96,13 @@ Exposes `GET /`, `POST /greetings`, `GET /greetings`, and `/health` (via
 
 ```mermaid
 graph TB
-  subgraph repobox["E128.Reference.Web (C# / .NET 10)"]
-    web["E128.Reference.Web\nASP.NET Core / net10.0"]
+  subgraph repobox["E128.Reference.Web (C# / .NET 11)"]
+    web["E128.Reference.Web\nASP.NET Core / net11.0"]
     core["E128.Reference.Core\n(shared library)"]
   end
 
   subgraph runtime["Runtime Image"]
-    img["mcr.microsoft.com/dotnet/aspnet:10.0-resolute"]
+    img["mcr.microsoft.com/dotnet/aspnet:11.0-resolute"]
   end
 
   web --> core
@@ -163,7 +167,6 @@ Versions are pinned centrally in `Directory.Packages.props`.
 | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing` | Roslyn analyzer test harness      |
 | `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing`  | Roslyn code fix test harness      |
 | `Microsoft.AspNetCore.Mvc.Testing`               | Integration test web host         |
-| `Microsoft.Extensions.Diagnostics.Testing`       | Fake logger / time provider harness |
 | `Microsoft.Testing.Extensions.HangDump`          | Hang detection in CI              |
 | `Microsoft.Testing.Extensions.TrxReport`         | TRX report output                 |
 | `Microsoft.Testing.Extensions.CodeCoverage`      | In-process Cobertura coverage     |

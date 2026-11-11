@@ -147,7 +147,7 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
             var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(cachedTree);
             return options.TryGetValue(ResolversOptionKey, out var rawValue) && !string.IsNullOrWhiteSpace(rawValue)
                 ? ParseAllowlist(rawValue)
-                : [];
+                : ImmutableHashSet<string>.Empty.WithComparer(StringComparer.Ordinal);
         });
     }
 
@@ -219,5 +219,4 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
 
         return false;
     }
-
 }

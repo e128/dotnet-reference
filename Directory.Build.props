@@ -22,7 +22,7 @@
     <!-- Language & Framework                           -->
     <!-- ============================================== -->
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -139,7 +139,6 @@
         <TieredCompilation>true</TieredCompilation>
         <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
         <ReadyToRun>true</ReadyToRun>
-        <EnablePreviewFeatures>false</EnablePreviewFeatures>
         <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
 
@@ -151,7 +150,6 @@
     <!-- (not public API) changes.                      -->
     <!-- ============================================== -->
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-        <EnablePreviewFeatures>true</EnablePreviewFeatures>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>
 

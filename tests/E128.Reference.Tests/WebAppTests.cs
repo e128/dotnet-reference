@@ -44,6 +44,24 @@ public sealed class WebAppTests(WebApplicationFactory<Program> factory) : IClass
         Assert.Contains("\"recipientName\":\"Ada\"", content, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     A blank name is the expected failure the result union carries, so the endpoint answers
+    ///     with the failure case instead of creating a greeting.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "CI")]
+    public async Task Greetings_ReturnsBadRequest_WhenNameIsBlank()
+    {
+        using var response = await _client.PostAsJsonAsync("/greetings", new GreetingRequest(" "), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        // ASP.NET also answers 400 when the body fails to bind, so assert the reason
+        // too. A broken request shape would otherwise pass this test.
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains("A recipient name cannot be blank.", body, StringComparison.Ordinal);
+    }
+
     [Fact]
     [Trait("Category", "CI")]
     public async Task Health_ReturnsOk()

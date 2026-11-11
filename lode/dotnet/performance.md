@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-11-09T13:48:18Z*
+*Updated: 2026-11-10T23:33:05Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -23,6 +23,12 @@ it into a project file. It sets these:
 - `IlcFoldIdenticalMethodBodies` true, to fold identical method bodies.
 - `OptimizationPreference` Size, `TrimMode` link, and
   `InvariantGlobalization` true when a project sets `PublishAot`.
+- `runtime-async=on` for a `net11.0` target that is not a Roslyn component, not
+  a test project, and not a benchmark project. One conditional group in
+  `Directory.Build.targets` covers the three application projects. That file
+  loads after the project body, so the role markers are set when the condition
+  runs. The analyzer assemblies and the `net10.0` leg stay off the switch. A
+  method that keeps `[AsyncStateMachine]` is not using runtime async.
 
 The three runtime projects set `IsAotCompatible` true. The property turns on
 the trim and AOT analyzers and marks the assembly trimmable. The web project

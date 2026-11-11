@@ -124,7 +124,7 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
 
     private static AssignmentExpressionSyntax? FindReplaceAssignment(StatementSyntax body)
     {
-        foreach (var statement in body is BlockSyntax block ? block.Statements : new SyntaxList<StatementSyntax>(body))
+        foreach (var statement in body is BlockSyntax block ? block.Statements : SyntaxFactory.SingletonList(body))
         {
             if (statement is ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax assignment })
             {
@@ -182,7 +182,7 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
 
         // The collapse character is a runtime value. FormatLiteral puts the quotes and the escapes
         // back, so a newline or a quote stays a valid character literal.
-        var charLiteral = SymbolDisplay.FormatLiteral(collapseChar, quote: true);
+        var charLiteral = SymbolDisplay.FormatLiteral(collapseChar, true);
         var replacement = SyntaxFactory.ParseStatement(BuildCollapseBlock(receiverName, charLiteral))
             .WithLeadingTrivia(whileStatement.GetLeadingTrivia())
             .WithTrailingTrivia(whileStatement.GetTrailingTrivia())
