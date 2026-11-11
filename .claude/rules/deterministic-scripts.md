@@ -40,6 +40,7 @@ terse JSON by default. Pass `--verbose` for the full log.
 | ad-hoc `fd -e slnx\|csproj`, `ls src/`, or `IsPackable` greps    | `scripts/solution-inventory.sh [--json\|--packable\|--readmes]` |
 | an eyeball diff of `scripts/README.md` against `help.sh`         | `scripts/readme-table-diff.sh [--json]`                         |
 | an eyeball diff of the analyzer README rule table against source | `scripts/readme-table-diff.sh --analyzer [--json]`              |
+| a manual README claim audit (version, SDK, project table)        | `scripts/internal/readme-audit.sh [--json]`                     |
 | ad-hoc `jq` over session JSONL                                   | `scripts/session-mine.sh <subcmd> [--json]`                     |
 | ad-hoc `jq` over JSONL for error trends and tool counts          | `scripts/session-health.sh [<subcmd>] [--json]`                 |
 | ad-hoc `fd` or `ls` over `.claude/agents/` and `.claude/skills/` | `scripts/catalog-stats.sh [--json]`                             |

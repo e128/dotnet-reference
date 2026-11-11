@@ -47,4 +47,25 @@ public sealed class CliAppTests
         Assert.Equal(0, exitCode);
         Assert.Equal("Hello, World!", output.ToString().TrimEnd());
     }
+
+    /// <summary>
+    ///     A blank name is the expected failure case of the result union, so the command reports
+    ///     that case through its own exit code and writes the reason to standard error.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "CI")]
+    public async Task Invoke_WithBlankName_ReturnsExpectedFailureExitCode()
+    {
+        await using var output = new StringWriter();
+        await using var error = new StringWriter();
+        var parseResult = CliApp.CreateRootCommand().Parse(["--name", " "]);
+        parseResult.InvocationConfiguration.Output = output;
+        parseResult.InvocationConfiguration.Error = error;
+
+        var exitCode = await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Equal("A recipient name cannot be blank.", error.ToString().TrimEnd());
+        Assert.Equal(string.Empty, output.ToString());
+    }
 }

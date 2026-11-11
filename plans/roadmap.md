@@ -3,15 +3,15 @@
 
 ## .NET 11 Follow-Up
 
-- Bump `Microsoft.CodeAnalysis.*` past the `net10.0` band. This closes `net10.0` analyzer support, so it needs a support-window decision first (`Directory.Packages.props`).
-- Raise the `e128_minimum_framework_version` default from 100 to 110. The default must follow the snippet band (`StaleReferenceAssembliesAnalyzer`).
-- Drop the analyzer test project multi-targeting and the `net10-consumer` CI job, once the support window closes.
-- Rewrite a union rule against the typed `UnionDeclarationSyntax`. It needs an `RSEXPERIMENTAL006` suppression, which this repository does not take without approval.
-- Apply the union result to the web and CLI entry points. Each maps a result case to a status code or an exit code, and each mapping needs its own test.
-- Evaluate Zstandard compression on the web response path.
-- Evaluate the NuGet package publication age guard in `nuget.config`.
+### Blocked
+
+- Bump `Microsoft.CodeAnalysis.*` past the current band. nuget.org publishes no newer `Microsoft.CodeAnalysis.CSharp` release than the current pin, so the analyzer cannot move to the SDK 11 Roslyn band yet. Check the package index before the bump.
+- Raise the `e128_minimum_framework_version` default from 100 to 110. `Microsoft.CodeAnalysis.Analyzer.Testing` exposes `ReferenceAssemblies.Net` codes up to `Net100` only, and its newest release adds no `Net110`. The default follows the snippet band, so it stays at 100.
 - Adopt `closed` for the result error hierarchy once the error set holds more than one case. With one case the modifier adds nothing, and `CS8509` has nothing to catch.
-- Review what still has to live in the two `netstandard2.0` analyzer projects. Move every type that never ships and needs no Roslyn API into a private `net11.0` project, so it can use the current language band. That pin (`LangVersion` `14.0`) and the Roslyn `5.9.0` pin exist only to keep the shipped package loadable in a `net10.0` host. Anything the analyzers call at run time stays `netstandard2.0`. Start with the test-only surface in `src/E128.Analyzers/Testing/`.
+
+### Awaiting Approval
+
+- Rewrite a union rule against the typed `UnionDeclarationSyntax`. It needs an `RSEXPERIMENTAL006` suppression, which this repository does not take without approval.
 
 ## Implicit State Machine Rule
 

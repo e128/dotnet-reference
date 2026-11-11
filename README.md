@@ -114,7 +114,7 @@ scripts/podman.sh test
 
 | Tool         | Version | macOS                        | Ubuntu/Debian                    | Windows                                  |
 | ------------ | ------- | ---------------------------- | -------------------------------- | ---------------------------------------- |
-| .NET SDK     | 10.0+   | `brew install dotnet`        | [Microsoft docs][dotnet-install] | `winget install Microsoft.DotNet.SDK.10` |
+| .NET SDK     | 11.0+   | `brew install dotnet`        | [Microsoft docs][dotnet-install] | `winget install Microsoft.DotNet.SDK.11` |
 | bash         | 4.0+    | `brew install bash`          | Included (5.1+)                  | WSL2 recommended                         |
 | shellcheck   | 0.11.0+ | `brew install shellcheck`    | `sudo apt install shellcheck`    | WSL2 recommended                         |
 | ripgrep (rg) | 14+     | `brew install ripgrep`       | `sudo apt install ripgrep`       | `winget install BurntSushi.ripgrep.MSVC` |
@@ -175,7 +175,7 @@ scripts/podman.sh test
 ├── docs/                     # Architecture and guide documents
 ├── dotnet-tools.json         # Repository-local .NET tool manifest
 ├── lode/                     # Project knowledge documentation
-├── nuget.config              # Single source and source mapping
+├── nuget.config              # Single source, source mapping, and 72-hour publish age
 ├── opencode.json             # opencode v2 config: model, instructions, MCP, permissions, policies
 ├── plans/                    # Structured planning documents
 ├── prompts/                  # System prompt for Lode sessions

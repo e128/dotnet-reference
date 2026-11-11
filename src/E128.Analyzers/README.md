@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.7.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.7.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -13,8 +13,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ### Supported hosts
 
 Both analyzer assemblies target `netstandard2.0`, and the package carries no
-dependency of its own. It loads in a .NET 10 host compiler and a .NET 11 host
-compiler from that one build.
+dependency of its own. It loads in a .NET 11 host compiler from that one build.
 
 The rules read syntax and symbols, so they work on any C# project. A rule stays
 silent where the target framework cannot express what it looks for.
@@ -3083,7 +3082,7 @@ No code fix. The state names and the legal transitions are domain decisions.
 
 ## Requirements
 
-- .NET SDK 10.0+ (targets `netstandard2.0`, runs in any modern Roslyn host)
+- .NET SDK 11.0+ (targets `netstandard2.0`, runs in any modern Roslyn host)
 - Visual Studio 2022 17.8+, Rider 2024.1+, or `dotnet build` from CLI
 
 ## License

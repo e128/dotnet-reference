@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-09T13:50:59Z*
+*Updated: 2026-11-11T03:20:00Z*
 
 ## Overview
 
@@ -85,6 +85,11 @@ The promote script refuses a version that already has a section at the top of
 `Shipped.md`. Bump the version first, then promote. Run it with `--dry-run` to
 see the counts before it writes.
 
+`version-bump.sh` skips a project whose branch changes no `.cs` file. A
+metadata-only change to the analyzer project therefore needs a hand edit of
+`<Version>`, then the release checks. Never leave the version on a number that
+nuget.org already carries, because the publish job skips an existing version.
+
 **Pre-first-release:** keep all rules in `Unshipped.md`; `Shipped.md` starts with `; No shipped releases yet.`
 
 The `/yeet` skill enforces the whole workflow on every run. It calls
@@ -153,6 +158,8 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.6.1   | (none)        | Shared-helper refactor. E128056 also flags `File.OpenText`, and E128058 also fires on `Task<T>` and `ValueTask<T>` returns. |
 | 2.6.2   | (none)        | Shared-helper extraction, FIPS name-table dedup, and rule false-negative fixes. No rule set change. |
 | 2.6.3   | (none)        | Build-dependency update: Meziantou.Analyzer 3.0.322 and PolySharp 1.17.0. No rule set change. |
+| 2.7.0   | (none)        | The repository moves to `net11.0`. E128062 recognizes `Net110` as a known reference-assembly version. |
+| 2.7.1   | (none)        | Packaging metadata only. The package claim narrows to the `net11.0` host, and the `net10.0` reach proof is removed. |
 
 ## Sources
 

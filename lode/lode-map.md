@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-10T22:47:34Z*
+*Updated: 2026-11-11T03:20:00Z*
 
 ## Generated Docs
 
@@ -29,7 +29,8 @@
 - [architecture-testing.md](dotnet/architecture-testing.md): ArchUnitNET structural invariant tests (layers, naming, sealed)
 - [analyzers.md](dotnet/analyzers.md): Deny-by-default strategy, analyzer packages, suppression policy
 - [release-tracking.md](dotnet/release-tracking.md): AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
-- [performance.md](dotnet/performance.md): Runtime knobs, profiling ladder, safe C# hot-path tips, ASP.NET Core
+- [performance.md](dotnet/performance.md): Runtime knobs, profiling ladder, safe C# hot-path tips
+- [aspnet-core-performance.md](dotnet/aspnet-core-performance.md): Web request path, Zstandard compression decision, request logging
 - [benchmarks.md](dotnet/benchmarks.md): BenchmarkDotNet starter project: classes, invariants, the sealing-gate gap, and the deferred comparison
 - [unsafe-code.md](dotnet/unsafe-code.md): No-unsafe-code policy, E128 rule coverage map, known gaps
 - [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes

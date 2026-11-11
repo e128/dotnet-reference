@@ -1,8 +1,8 @@
-# System Architecture — E128.Reference
+# System Architecture: E128.Reference
 
-> **One sentence:** A single .NET 10 solution of four production projects (Core, Web, Cli, Analyzers) and five test projects, governed by shared MSBuild props and a build-time analyzer ProjectReference that analyzes every project except itself.
+> **One sentence:** A single .NET 11 solution of five production projects (Core, Web, Cli, Analyzers, CodeFixers), a benchmark project, and five test projects, governed by shared MSBuild props and a build-time analyzer reference that analyzes every other project.
 
-*Updated: 2026-05-29T19:02:39Z*
+*Updated: 2026-11-11T03:24:51Z*
 
 ---
 
@@ -12,25 +12,30 @@
 graph TB
   subgraph build["Shared build configuration (repo root)"]
     props["Directory.Build.props<br/>TFM, analysis, analyzer packages"]
-    targets["Directory.Build.targets<br/>test config + analyzer ProjectReference"]
+    targets["Directory.Build.targets<br/>runtime async, MTP, analyzer ProjectReference"]
     pkgs["Directory.Packages.props<br/>CPM version pins"]
-    gj["global.json<br/>SDK 10.0.400 + MTP runner"]
+    gj["global.json<br/>SDK 11.0.100 and MTP runner"]
     gc[".globalconfig<br/>deny-by-default severities"]
-    ec[".editorconfig<br/>style + formatting"]
+    ec[".editorconfig<br/>style and formatting"]
   end
 
-  subgraph prod["src/ — production"]
-    core["E128.Reference.Core<br/>(net10.0) domain library"]
-    web["E128.Reference.Web<br/>(net10.0) minimal API"]
-    cli["E128.Reference.Cli<br/>(net10.0) System.CommandLine"]
+  subgraph prod["src/ production"]
+    core["E128.Reference.Core<br/>(net11.0) domain library"]
+    web["E128.Reference.Web<br/>(net11.0) minimal API"]
+    cli["E128.Reference.Cli<br/>(net11.0) System.CommandLine"]
     ana["E128.Analyzers<br/>(netstandard2.0) Roslyn suite"]
+    fix["E128.Analyzers.CodeFixers<br/>(netstandard2.0) code fixes"]
+  end
+
+  subgraph bench["benchmarks/"]
+    benchp["E128.Benchmarks<br/>(net11.0) BenchmarkDotNet"]
   end
 
   subgraph test["tests/"]
     coret["E128.Reference.Core.Tests"]
-    webt["E128.Reference.Tests<br/>(integration)"]
+    webt["E128.Reference.Tests<br/>integration and Podman smoke"]
     clit["E128.Reference.Cli.Tests"]
-    archt["Architecture.Tests<br/>(ArchUnitNET)"]
+    archt["Architecture.Tests<br/>ArchUnitNET"]
     anat["E128.Analyzers.Tests"]
   end
 
@@ -38,73 +43,76 @@ graph TB
   cli --> core
   props --> prod
   targets --> prod
-  ana -. "OutputItemType=Analyzer<br/>(all projects except itself)" .-> prod
+  ana -. "OutputItemType=Analyzer<br/>(every project except itself)" .-> prod
+  fix --> ana
   coret --> core
   webt --> web
   clit --> cli
   archt --> prod
   anat --> ana
+  benchp --> core
 ```
 
 ## Architectural Layers
 
-### Layer 1 — Build & Analysis Configuration
+### Layer 1: Build and Analysis Configuration
 
-The repository root holds all cross-cutting configuration. Every project inherits it; no project redefines it.
+The repository root holds all cross-cutting configuration. Every project inherits it, and no project redefines it.
 
-| File                      | Responsibility                                                            |
-| ------------------------- | ------------------------------------------------------------------------- |
-| `Directory.Build.props`   | TFM, language version, nullable, analysis level/mode, analyzer packages   |
-| `Directory.Build.targets` | `IsTestProject` config (MTP, `OutputType=Exe`); analyzer `ProjectReference` |
-| `Directory.Packages.props`| Central Package Management version pins                                   |
-| `global.json`             | SDK pin (`10.0.400`) and MTP test runner selection                        |
-| `.globalconfig`           | Analyzer diagnostic severities (blanket `error`)                          |
-| `.editorconfig`           | Code style, formatting, naming, inline severity hints                     |
+| File                       | Responsibility                                                                |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| `Directory.Build.props`    | TFM, language version, nullable, analysis level and mode, analyzer packages   |
+| `Directory.Build.targets`  | Runtime async for application projects, MTP test settings, analyzer reference |
+| `Directory.Packages.props` | Central Package Management version pins                                       |
+| `global.json`              | SDK pin and MTP test runner selection                                         |
+| `.globalconfig`            | Analyzer diagnostic severities, blanket `error`                               |
+| `.editorconfig`            | Code style, formatting, naming, and scoped severity hints                     |
 
-### Layer 2 — Production Code
+### Layer 2: Production Code
 
-| Project               | SDK                       | TFM              | Role                              |
-| --------------------- | ------------------------- | ---------------- | --------------------------------- |
-| `E128.Reference.Core` | `Microsoft.NET.Sdk`       | `net10.0`        | Shared domain library             |
-| `E128.Reference.Web`  | `Microsoft.NET.Sdk.Web`   | `net10.0`        | Minimal-API web service (Kestrel) |
-| `E128.Reference.Cli`  | `Microsoft.NET.Sdk`       | `net10.0`        | Console app (System.CommandLine)  |
-| `E128.Analyzers`      | `Microsoft.NET.Sdk`       | `netstandard2.0` | Roslyn analyzer + code-fix suite  |
+| Project                      | SDK                     | TFM              | Role                               |
+| ---------------------------- | ----------------------- | ---------------- | ---------------------------------- |
+| `E128.Reference.Core`        | `Microsoft.NET.Sdk`     | `net11.0`        | Shared domain library              |
+| `E128.Reference.Web`         | `Microsoft.NET.Sdk.Web` | `net11.0`        | Minimal API web service on Kestrel |
+| `E128.Reference.Cli`         | `Microsoft.NET.Sdk`     | `net11.0`        | Console app on System.CommandLine  |
+| `E128.Analyzers`             | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer suite              |
+| `E128.Analyzers.CodeFixers`  | `Microsoft.NET.Sdk`     | `netstandard2.0` | Code fix providers for the suite   |
 
-### Layer 3 — Tests
+### Layer 3: Tests
 
-Five projects, each carrying `<IsTestProject>true</IsTestProject>` and inheriting MTP config. See [../engineering/testing-strategy.md](../engineering/testing-strategy.md).
+Five projects, each carrying `<IsTestProject>true</IsTestProject>` and inheriting the MTP configuration. See [../engineering/testing-strategy.md](../engineering/testing-strategy.md).
 
 ## Inter-Service Communication
 
-There is no runtime inter-service communication — the production apps are independent processes that share a library. The most important "communication" is at **build time**: the analyzer wires itself into every project's compilation.
+There is no runtime inter-service communication. The production apps are independent processes that share a library. The important communication happens at build time, where the analyzer joins every project's compilation.
 
 ```mermaid
 graph LR
-  ana["E128.Analyzers.dll"] -->|"ProjectReference<br/>OutputItemType=Analyzer<br/>ReferenceOutputAssembly=false"| compile["Roslyn compilation<br/>of every other project"]
-  compile -->|"diagnostics (error by default)"| build["dotnet build result"]
+  ana["E128.Analyzers.dll"] -->|"ProjectReference with<br/>OutputItemType=Analyzer<br/>and ReferenceOutputAssembly=false"| compile["Roslyn compilation<br/>of every other project"]
+  compile -->|"diagnostics, error by default"| build["dotnet build result"]
 ```
 
 Rules:
-- The analyzer is referenced via `Directory.Build.targets`, gated on `IsRoslynComponent != true` so the analyzer does not analyze itself.
-- The condition also checks the `.csproj` exists, so the solution still builds if the analyzer project is removed.
+- `Directory.Build.targets` adds the analyzer reference, gated on `IsRoslynComponent != true`, so the analyzer never analyzes itself.
+- The condition also checks that the analyzer csproj exists, so the solution still builds when the project is absent.
 
 ## Multi-Tenancy Model
 
-Not applicable. The reference web service is single-tenant and stateless (in-memory store only).
+Not applicable. The reference web service is single-tenant and stateless, with an in-memory store only.
 
-## Authentication & Authorization
+## Authentication and Authorization
 
-The reference apps implement **no authentication** — they are demonstrators. The security posture that matters is build-time and supply-chain (see [security.md](security.md)). The one authenticated flow in the system is the **release pipeline**:
+The reference apps implement no authentication. They are demonstrators, and the security posture that matters is build-time and supply-chain, which [security.md](security.md) covers. The one authenticated flow in the system is the release pipeline:
 
 ```mermaid
 sequenceDiagram
   participant GA as GitHub Actions
   participant OIDC as GitHub OIDC
   participant NG as nuget.org
-  GA->>OIDC: Request OIDC token (id-token: write)
-  OIDC-->>GA: Short-lived token
-  GA->>NG: Exchange token for temporary API key
-  NG-->>GA: Scoped publish credential
+  GA->>OIDC: request an OIDC token (id-token: write)
+  OIDC-->>GA: short-lived token
+  GA->>NG: exchange the token for a temporary API key
+  NG-->>GA: scoped publish credential
   GA->>NG: dotnet nuget push E128.Analyzers
 ```
 
@@ -112,23 +120,23 @@ sequenceDiagram
 
 ```mermaid
 graph TB
-  health["GET /health<br/>(AddHealthChecks)"] --> ops["Operational liveness"]
-  ci["CI logs<br/>(format/build/test)"] --> dev["Developer feedback"]
-  trx["TRX report<br/>(Microsoft.Testing.Extensions.TrxReport)"] --> dev
-  hang["HangDump<br/>(Microsoft.Testing.Extensions.HangDump)"] --> dev
+  health["GET /health<br/>AddHealthChecks"] --> ops["operational liveness"]
+  ci["CI logs<br/>format, build, test"] --> dev["developer feedback"]
+  trx["TRX report<br/>Microsoft.Testing.Extensions.TrxReport"] --> dev
+  hang["HangDump<br/>Microsoft.Testing.Extensions.HangDump"] --> dev
 ```
 
-The reference apps include a health endpoint; deeper telemetry (logging/metrics/tracing) is intentionally out of scope for the reference surface. Test observability comes from TRX reports and hang dumps in CI.
+The reference apps include a health endpoint. Deeper telemetry (logging, metrics, and tracing) stays out of scope for the reference surface. Test observability comes from TRX reports and hang dumps in CI, and coverage comes from the in-process Cobertura collector.
 
 ## Technology Decisions Summary
 
-| Decision                          | Chosen                              | Alternatives considered                 |
-| --------------------------------- | ----------------------------------- | --------------------------------------- |
-| Web style                         | Minimal API                         | MVC controllers                         |
-| CLI framework                     | System.CommandLine                  | Spectre.Console, raw args               |
-| DI container                      | `Microsoft.Extensions.DependencyInjection` | none / manual wiring             |
-| Test runner                       | Microsoft Testing Platform (xUnit v3)| VSTest (retired on .NET 10)            |
-| Architecture enforcement          | ArchUnitNET                         | convention-only / code review           |
-| Analyzer TFM                      | `netstandard2.0`                    | `net10.0`                               |
-| Package management                | CPM + transitive pinning            | per-project versions                    |
-| Solution format                   | `.slnx` (XML)                       | legacy `.sln` (GUID-based)              |
+| Decision                 | Chosen                                     | Alternatives considered             |
+| ------------------------ | ------------------------------------------ | ----------------------------------- |
+| Web style                | Minimal API                                | MVC controllers                     |
+| CLI framework            | System.CommandLine                         | Spectre.Console, raw arguments      |
+| DI container             | `Microsoft.Extensions.DependencyInjection` | manual wiring                       |
+| Test runner              | Microsoft Testing Platform with xUnit v3   | VSTest, which is retired            |
+| Architecture enforcement | ArchUnitNET                                | convention only, code review        |
+| Analyzer TFM             | `netstandard2.0`                           | `net11.0`, which closes older hosts |
+| Package management       | Central Package Management with pinning    | per-project versions                |
+| Solution format          | `.slnx` (XML)                              | legacy `.sln`                       |
