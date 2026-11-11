@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class E128059UnusedInterfaceParamAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<UnusedInterfaceParamAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task UnusedInterfaceParam_Reports_WhenParamIsNotReferenced()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnusedInterfaceParamAnalyzer>("""
                            interface IProcessor
                            {
                                string Process(string input);
@@ -44,7 +31,7 @@ public sealed class E128059UnusedInterfaceParamAnalyzerTests
     {
         // The code fix skips underscore-prefixed parameters, so the analyzer must not report
         // a diagnostic that offers no fix.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnusedInterfaceParamAnalyzer>("""
                            interface IProcessor
                            {
                                string Process(string _input);
@@ -63,7 +50,7 @@ public sealed class E128059UnusedInterfaceParamAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnusedInterfaceParam_NoReport_WhenAllParamsAreUsed()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnusedInterfaceParamAnalyzer>("""
                            interface IProcessor
                            {
                                string Process(string input);
@@ -82,7 +69,7 @@ public sealed class E128059UnusedInterfaceParamAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnusedInterfaceParam_NoReport_WhenCancellationTokenIsUnused()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnusedInterfaceParamAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            interface IWorker
@@ -103,7 +90,7 @@ public sealed class E128059UnusedInterfaceParamAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnusedInterfaceParam_NoReport_WhenMethodIsNotInterfaceImplementation()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnusedInterfaceParamAnalyzer>("""
                            class Utility
                            {
                                public string Process(string input)
@@ -118,7 +105,7 @@ public sealed class E128059UnusedInterfaceParamAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnusedInterfaceParam_Reports_OnlyUnusedParams_WhenSomeParamsUsed()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnusedInterfaceParamAnalyzer>("""
                            interface ITransformer
                            {
                                string Transform(string input, string prefix);

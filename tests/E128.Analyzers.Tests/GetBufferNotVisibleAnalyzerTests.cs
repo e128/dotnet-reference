@@ -1,24 +1,18 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class GetBufferNotVisibleAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>(code, expected);
-    }
-
     #region Fires
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenByteArrayLocalIsCreatedWithoutTheFlag()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -35,7 +29,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenPubliclyVisibleIsFalse()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -52,7 +46,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTargetTypedNewOmitsTheFlag()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -69,7 +63,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenLocalIsReassignedFromAnExposingStream()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -87,7 +81,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenLocalIsDeclaredAndUsedInsideALambda()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -109,7 +103,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenParameterIsAssignedInTheSameMethod()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -130,7 +124,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenStreamIsCreatedEmpty()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -147,7 +141,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenStreamIsCreatedWithACapacity()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -164,7 +158,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenPubliclyVisibleIsTrue()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -181,7 +175,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenPubliclyVisibleIsNotConstant()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -198,7 +192,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenParameterIsAssignedAnExposingStream()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -215,7 +209,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenLocalIsReassignedToAnExposingStream()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -233,7 +227,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenLocalIsDeclaredOutsideALambdaAndUsedInsideIt()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -255,7 +249,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenReceiverIsAField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -273,7 +267,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenCreationIsInAFieldInitializer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -290,7 +284,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenCreationIsInADifferentMethod()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -311,7 +305,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenReceiverIsAMethodResult()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -328,7 +322,7 @@ public sealed class GetBufferNotVisibleAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenReceiverTypeIsNotMemoryStream()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetBufferNotVisibleAnalyzer>("""
                            class Buffer
                            {
                                public byte[] GetBuffer() => new byte[0];

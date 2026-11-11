@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class HttpClientResponseHeadersReadE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<HttpClientResponseHeadersReadAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task GetAsyncCall_WithoutCompletionOption_Fires_E128010()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientResponseHeadersReadAnalyzer>("""
                            using System.Net.Http;
                            using System.Threading;
                            using System.Threading.Tasks;
@@ -41,7 +28,7 @@ public sealed class HttpClientResponseHeadersReadE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task SendAsyncCall_WithoutCompletionOption_Fires_E128010()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientResponseHeadersReadAnalyzer>("""
                            using System.Net.Http;
                            using System.Threading;
                            using System.Threading.Tasks;
@@ -60,7 +47,7 @@ public sealed class HttpClientResponseHeadersReadE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GetAsyncCall_UriOnly_Fires_E128010()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientResponseHeadersReadAnalyzer>("""
                            using System.Net.Http;
                            using System.Threading.Tasks;
                            class C
@@ -77,7 +64,7 @@ public sealed class HttpClientResponseHeadersReadE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GetAsyncCall_WithResponseHeadersRead_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientResponseHeadersReadAnalyzer>("""
                            using System.Net.Http;
                            using System.Threading;
                            using System.Threading.Tasks;
@@ -95,7 +82,7 @@ public sealed class HttpClientResponseHeadersReadE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NonHttpClient_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientResponseHeadersReadAnalyzer>("""
                            using System.Threading.Tasks;
                            class FakeClient
                            {

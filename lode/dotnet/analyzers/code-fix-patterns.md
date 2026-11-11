@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-11-07T18:08:42Z*
+*Updated: 2026-11-11T13:22:57Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 The emitted text rules live in [code-fix-output.md](code-fix-output.md). The
@@ -170,6 +170,13 @@ if (interpolated is null)
     return; // no code action, so no dead fix
 }
 ```
+
+`E128CodeFixProviderBase` fetches the syntax root once and passes it to
+`RegisterFixesAsync(context, root)`. That hook stays: almost every provider
+locates the reported node from that root, so moving the fetch into each provider
+would copy the same null guard 100 or more times. A provider that registers
+from the diagnostic alone overrides `RegisterCodeFixesAsync` directly and
+skips the fetch.
 
 The rule also covers a rewrite that needs statements outside the reported node.
 `StringConcatInLoopCodeFixProvider` builds the whole method body first. It

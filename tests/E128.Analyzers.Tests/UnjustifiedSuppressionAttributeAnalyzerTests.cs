@@ -8,20 +8,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<UnjustifiedSuppressionAttributeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task NullJustification_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnjustifiedSuppressionAttributeAnalyzer>("""
                            using System.Diagnostics.CodeAnalysis;
                            class C
                            {
@@ -35,7 +26,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
     [Trait("Category", "CI")]
     public Task SuppressMessageWithoutJustification_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnjustifiedSuppressionAttributeAnalyzer>("""
                            using System.Diagnostics.CodeAnalysis;
                            class C
                            {
@@ -49,7 +40,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ExcludeFromCodeCoverageBare_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnjustifiedSuppressionAttributeAnalyzer>("""
                            using System.Diagnostics.CodeAnalysis;
                            [{|E128173:ExcludeFromCodeCoverage|}]
                            class C
@@ -62,7 +53,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
     [Trait("Category", "CI")]
     public Task EmptyJustification_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnjustifiedSuppressionAttributeAnalyzer>("""
                            using System.Diagnostics.CodeAnalysis;
                            class C
                            {
@@ -76,7 +67,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
     [Trait("Category", "CI")]
     public Task WithJustification_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnjustifiedSuppressionAttributeAnalyzer>("""
                            using System.Diagnostics.CodeAnalysis;
                            [ExcludeFromCodeCoverage(Justification = "Entry point only.")]
                            class C
@@ -91,7 +82,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
     [Trait("Category", "CI")]
     public Task OtherAttribute_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnjustifiedSuppressionAttributeAnalyzer>("""
                            using System;
                            class C
                            {

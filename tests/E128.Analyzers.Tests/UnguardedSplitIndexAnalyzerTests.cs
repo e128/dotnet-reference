@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UnguardedSplitIndexAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<UnguardedSplitIndexAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task InlineSplitIndexOne_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string M(string line) => {|E128170:line.Split(',')[1]|};
@@ -33,7 +22,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task LocalSplitIndexTwoWithoutGuard_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string M(string line)
@@ -49,7 +38,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task LengthReadAfterIndex_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                int M(string line)
@@ -66,7 +55,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task IndexZero_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string M(string line) => line.Split(',')[0];
@@ -78,7 +67,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task FromEndIndex_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string M(string line) => line.Split(',')[^1];
@@ -90,7 +79,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task LengthChecked_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string? M(string line)
@@ -112,7 +101,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonConstantIndexAndOtherArray_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string M(string line, int i, string[] other) => line.Split(',')[i] + other[1];
@@ -124,7 +113,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonStringSplit_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class Splitter
                            {
                                public string[] Split(char c) => new string[3];
@@ -141,7 +130,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyPatternOnLength_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string M(string line)
@@ -157,7 +146,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task ListPattern_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string M(string line)
@@ -173,7 +162,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task NullConditionalLengthRead_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                string M(string line)
@@ -194,7 +183,7 @@ public sealed class UnguardedSplitIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task PatternGuardAfterIndex_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnguardedSplitIndexAnalyzer>("""
                            class C
                            {
                                bool M(string line)

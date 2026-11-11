@@ -1,31 +1,18 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class MultiStringEqualsOrChainAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<MultiStringEqualsOrChainAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     #region Fires — string.Equals with StringComparison
 
     [Fact]
     [Trait("Category", "CI")]
     public Task StringEquals_ThreeChain_OrdinalIgnoreCase_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task StringEquals_ThreeChain_Ordinal_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -53,7 +40,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task EqualityOperator_ThreeChain_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            class C
                            {
                                bool M(string text) =>
@@ -66,7 +53,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task StringEquals_FourChain_SingleDiagnostic_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -84,7 +71,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task StringEquals_TwoChain_BelowThreshold_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -98,7 +85,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task StringEquals_MixedOperands_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -112,7 +99,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task StringEquals_MixedComparison_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -126,7 +113,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task AndOperator_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -140,7 +127,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task EqualityOperator_LiteralOnLeft_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            class C
                            {
                                bool M(string text) =>
@@ -153,7 +140,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     [Trait("Category", "CI")]
     public Task EqualityOperator_IntLiterals_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            class C
                            {
                                bool M(int n) =>
@@ -171,7 +158,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task MixedHead_ThreeQualifyingLeaves_Fires()
     {
         // Non-qualifying leaf at the head; qualifying sub-group of 3 follows.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -186,7 +173,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task MixedTail_ThreeQualifyingLeaves_Fires()
     {
         // Non-qualifying leaf at the tail; qualifying sub-group of 3 precedes.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {
@@ -201,7 +188,7 @@ public sealed class MultiStringEqualsOrChainAnalyzerTests
     public Task MixedHead_TwoQualifyingLeaves_NoFire()
     {
         // Non-qualifying leaf + only 2 qualifying — below threshold, no fire.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MultiStringEqualsOrChainAnalyzer>("""
                            using System;
                            class C
                            {

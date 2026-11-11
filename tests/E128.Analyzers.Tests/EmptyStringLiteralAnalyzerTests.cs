@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class EmptyStringLiteralAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<EmptyStringLiteralAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task VariableDeclaration_EmptyLiteral_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                void M()
@@ -38,7 +25,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReturnStatement_EmptyLiteral_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                string M() => {|E128002:""|};
@@ -50,7 +37,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     [Trait("Category", "CI")]
     public Task AttributeArgument_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                [System.Obsolete("")]
@@ -63,7 +50,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstField_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                private const string K = "";
@@ -75,7 +62,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     [Trait("Category", "CI")]
     public Task DefaultParameter_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                void M(string s = "") { }
@@ -87,7 +74,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     [Trait("Category", "CI")]
     public Task SwitchCaseLabel_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                int M(string s)
@@ -109,7 +96,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     public Task Pattern_NoFire()
     {
         // string.Empty is not a constant, so it cannot replace a pattern.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                bool M(string s) => s is "";
@@ -121,7 +108,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     [Trait("Category", "CI")]
     public Task SwitchExpressionArm_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                int M(string s) => s switch
@@ -137,7 +124,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonEmptyLiteral_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                void M()
@@ -152,7 +139,7 @@ public sealed class EmptyStringLiteralAnalyzerTests
     [Trait("Category", "CI")]
     public Task GotoCaseLiteral_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EmptyStringLiteralAnalyzer>("""
                            class C
                            {
                                void M(string s)

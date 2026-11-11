@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ImmutableArrayDefaultAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ImmutableArrayDefaultAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task UninitializedField_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ImmutableArrayDefaultAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {
@@ -38,7 +25,7 @@ public sealed class ImmutableArrayDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task InitializedField_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ImmutableArrayDefaultAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {
@@ -53,7 +40,7 @@ public sealed class ImmutableArrayDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task FieldAssignedInConstructor_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ImmutableArrayDefaultAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {
@@ -73,7 +60,7 @@ public sealed class ImmutableArrayDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyWithoutInitializer_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ImmutableArrayDefaultAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {
@@ -88,7 +75,7 @@ public sealed class ImmutableArrayDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task OtherFieldType_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ImmutableArrayDefaultAnalyzer>("""
                            class C
                            {
                                private int[] values;
@@ -102,7 +89,7 @@ public sealed class ImmutableArrayDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task DeconstructionAssignment_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ImmutableArrayDefaultAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {
@@ -120,7 +107,7 @@ public sealed class ImmutableArrayDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task OutArgument_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ImmutableArrayDefaultAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {
@@ -143,7 +130,7 @@ public sealed class ImmutableArrayDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task ImmutableInterlockedRefArgument_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ImmutableArrayDefaultAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {

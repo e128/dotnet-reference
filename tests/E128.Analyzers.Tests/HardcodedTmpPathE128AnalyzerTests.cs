@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class HardcodedTmpPathE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<HardcodedTmpPathE128Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ExactTmp_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedTmpPathE128Analyzer>("""
                            class C
                            {
                                void M()
@@ -38,7 +25,7 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TmpPrefix_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedTmpPathE128Analyzer>("""
                            class C
                            {
                                void M()
@@ -53,7 +40,7 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WindowsTemp_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedTmpPathE128Analyzer>("""
                            class C
                            {
                                void M()
@@ -68,7 +55,7 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WindowsWindowsTemp_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedTmpPathE128Analyzer>("""
                            class C
                            {
                                void M()
@@ -83,7 +70,7 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task PathGetTempPath_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedTmpPathE128Analyzer>("""
                            class C
                            {
                                void M()
@@ -98,7 +85,7 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TmpFooWithoutSlash_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedTmpPathE128Analyzer>("""
                            class C
                            {
                                void M()
@@ -113,7 +100,7 @@ public sealed class HardcodedTmpPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TemporaryPath_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedTmpPathE128Analyzer>("""
                            class C
                            {
                                void M()

@@ -8,21 +8,28 @@ namespace E128.Analyzers.Tests;
 
 public sealed partial class ImplicitStateMachineAnalyzerTests
 {
-    private static Task VerifyAsync(string code, string? minFlags = null)
+    private static Task VerifyAsync(
+        string code,
+        string? minFlags = null,
+        string? minTransitionBodies = null)
     {
-        var test = new CSharpAnalyzerTest<ImplicitStateMachineAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-
+        var config = string.Empty;
         if (minFlags is not null)
         {
-            test.TestState.AnalyzerConfigFiles.Add(
-                ("/.editorconfig", "is_global = true\ne128_min_state_flags = " + minFlags));
+            config += "e128_min_state_flags = " + minFlags;
         }
 
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        if (minTransitionBodies is not null)
+        {
+            config += (config.Length > 0 ? "\n" : string.Empty)
+                + "e128_state_min_transition_bodies = " + minTransitionBodies;
+        }
+
+        return AnalyzerTestRunner.VerifyAsync<ImplicitStateMachineAnalyzer>(
+            code,
+            options: config.Length > 0
+                ? new AnalyzerTestOptions { AnalyzerConfig = ("/.editorconfig", "is_global = true\n" + config) }
+                : null);
     }
 
     [Fact]
@@ -474,18 +481,55 @@ public sealed partial class ImplicitStateMachineAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Struct_Silent()
+    public Task MutableStruct_Fires()
     {
         return VerifyAsync("""
-                           struct Flags
+                           struct {|E128218:Flags|}
                            {
                                private bool _a;
                                private bool _b;
                                private bool _c;
 
-                               public bool A => _a;
-                               public bool B => _b;
-                               public bool C => _c;
+                               public void SelectA()
+                               {
+                                   _a = true;
+                                   _b = false;
+                               }
+
+                               public void SelectB()
+                               {
+                                   _a = false;
+                                   _b = true;
+                                   _c = !_c;
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReadonlyStruct_Silent()
+    {
+        return VerifyAsync("""
+                           readonly struct Flags
+                           {
+                               private readonly bool _a;
+                               private readonly bool _b;
+                               private readonly bool _c;
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task RecordStruct_Silent()
+    {
+        return VerifyAsync("""
+                           record struct Flags
+                           {
+                               private bool _a;
+                               private bool _b;
+                               private bool _c;
 
                                public void Set()
                                {

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,19 +7,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class DisposableSingletonFactoryE128AnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithDi };
+
     private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
-
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<DisposableSingletonFactoryAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithDi
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
 
     #region Fires
 
@@ -28,7 +19,7 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task AddSingleton_FactoryLambda_ReturnsDisposable_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableSingletonFactoryAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            class MyService : IDisposable
@@ -42,14 +33,14 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
                                    services.AddSingleton({|E128031:sp => new MyService()|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task AddSingleton_FactoryLambda_ParenthesizedLambda_ReturnsDisposable_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableSingletonFactoryAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            class MyService : IDisposable
@@ -63,7 +54,7 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
                                    services.AddSingleton({|E128031:(IServiceProvider sp) => new MyService()|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Fires
@@ -74,7 +65,7 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task AddSingleton_GenericOverload_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableSingletonFactoryAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            class MyService : IDisposable
@@ -88,14 +79,14 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
                                    services.AddSingleton<MyService>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task AddSingleton_FactoryLambda_NonDisposable_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableSingletonFactoryAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            class MyService { }
                            class Startup
@@ -105,14 +96,14 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
                                    services.AddSingleton(sp => new MyService());
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task AddScoped_FactoryLambda_Disposable_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableSingletonFactoryAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            class MyService : IDisposable
@@ -126,7 +117,7 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
                                    services.AddScoped(sp => new MyService());
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -134,7 +125,7 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
     public Task AddSingleton_GenericWithLambda_StillFires()
     {
         // Even with a generic type arg, the lambda still returns an IDisposable.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableSingletonFactoryAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            interface IMyService { }
@@ -149,7 +140,7 @@ public sealed class DisposableSingletonFactoryE128AnalyzerTests
                                    services.AddSingleton<IMyService>({|E128031:sp => new MyService()|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Does Not Fire

@@ -104,12 +104,8 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         "SignHash",
         "SetHashAlgorithm");
 
-    // Object identifiers for SHA-1, MD5 and RIPEMD-160.
-    private static readonly ImmutableHashSet<string> ForbiddenHashOids = ImmutableHashSet.Create(
-        StringComparer.Ordinal,
-        "1.3.14.3.2.26",
-        "1.2.840.113549.2.5",
-        "1.3.36.3.2.1");
+    // Object identifiers for SHA-1, MD5 and RIPEMD-160. FipsSymbolHelpers owns the OID table.
+    private static readonly ImmutableHashSet<string> ForbiddenHashOids = FipsSymbolHelpers.ForbiddenHashOids;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,

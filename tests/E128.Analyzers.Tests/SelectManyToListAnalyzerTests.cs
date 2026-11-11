@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SelectManyToListAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<SelectManyToListAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenSelectManyFollowedByToList()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SelectManyToListAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -41,7 +28,7 @@ public sealed class SelectManyToListAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenSelectManyNotFollowedByToList()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SelectManyToListAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -59,7 +46,7 @@ public sealed class SelectManyToListAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenToListWithoutSelectMany()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SelectManyToListAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C

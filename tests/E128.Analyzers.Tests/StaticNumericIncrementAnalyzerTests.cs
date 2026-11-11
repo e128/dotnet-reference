@@ -1,31 +1,18 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class StaticNumericIncrementAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<StaticNumericIncrementAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     #region Fires -- unary ++/--
 
     [Fact]
     [Trait("Category", "CI")]
     public Task FiresOnStaticInt_PostfixIncrement()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static int _counter;
@@ -38,7 +25,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticInt_PrefixIncrement()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static int _counter;
@@ -51,7 +38,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticInt_PostfixDecrement()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static int _counter;
@@ -64,7 +51,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticInt_PrefixDecrement()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static int _counter;
@@ -77,7 +64,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticLong_PostfixIncrement()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static long _counter;
@@ -90,7 +77,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticDouble_PostfixIncrement()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static double _counter;
@@ -103,7 +90,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticFloat_PostfixDecrement()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static float _counter;
@@ -120,7 +107,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticInt_AddAssignment()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static int _counter;
@@ -133,7 +120,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticLong_SubtractAssignment()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static long _counter;
@@ -146,7 +133,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticDouble_AddAssignment()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static double _value;
@@ -165,7 +152,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     {
         // static readonly + mutation is CS0198 (compiler error), so this test
         // verifies the analyzer doesn't fire when the field is only referenced.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static readonly int _counter = 0;
@@ -178,7 +165,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenStaticVolatileInt()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static volatile int _counter;
@@ -191,7 +178,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenInstanceField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private int _counter;
@@ -204,7 +191,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenLocalVariable()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                void M()
@@ -220,7 +207,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenLocalVariableWithAddAssignment()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                void M()
@@ -236,7 +223,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenParameterIncrement()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                void M(int counter) { counter++; }
@@ -248,7 +235,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenStaticStringField_IncrementNotApplicable()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static string _value;
@@ -261,7 +248,7 @@ public sealed class StaticNumericIncrementAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenStaticIntField_NotAMutationOperator()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticNumericIncrementAnalyzer>("""
                            class C
                            {
                                private static int _counter;

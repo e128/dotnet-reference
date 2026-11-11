@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ParameterEnumeratedTwice_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -40,7 +34,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task EnumeratedInSeparateBranches_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -69,7 +63,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReassignedBetweenEnumerations_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -97,7 +91,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task LocalEnumeratedTwice_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -129,7 +123,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task FieldViaThisEnumeratedTwice_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -161,7 +155,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task AwaitForeachThenGetAsyncEnumerator_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -183,7 +177,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task WithCancellationWrapperEnumeratedTwice_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -207,7 +201,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task ThreeEnumerations_ReportsAtSecondAndThird()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -235,7 +229,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task SingleEnumeration_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -255,7 +249,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task InlineCreatedSequence_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -285,7 +279,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task IteratorWithYieldReturn_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -311,7 +305,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task EnumeratorCancellationParameter_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Runtime.CompilerServices;
                            using System.Threading;
@@ -341,7 +335,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task DifferentSequences_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -365,7 +359,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task EnumeratedTwiceInsideOneLambda_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
@@ -393,7 +387,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task EnumeratedInDifferentSwitchSections_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -426,7 +420,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task EnumeratedTwiceInsideOneAccessor_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 
@@ -456,7 +450,7 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzerTests
     [Trait("Category", "CI")]
     public Task NestedLocalFunctionBody_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncEnumerableConsumedTwiceAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
 

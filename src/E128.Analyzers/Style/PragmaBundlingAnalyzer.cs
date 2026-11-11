@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace E128.Analyzers.Style;
@@ -45,21 +43,9 @@ public sealed class PragmaBundlingAnalyzer : DiagnosticAnalyzer
     {
         var root = context.Tree.GetRoot(context.CancellationToken);
 
-        foreach (var trivia in root.DescendantTrivia())
+        foreach (var (_, pragma) in PragmaWarningDirectives.Warning(root))
         {
-            if (!trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia))
-            {
-                continue;
-            }
-
-            var pragma = (PragmaWarningDirectiveTriviaSyntax)trivia.GetStructure()!;
-
-            if (!pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword))
-            {
-                continue;
-            }
-
-            if (pragma.ErrorCodes.Count <= 1)
+            if (!PragmaWarningDirectives.IsDisable(pragma) || pragma.ErrorCodes.Count <= 1)
             {
                 continue;
             }

@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -9,22 +8,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class FipsPbkdfIterationAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FipsPbkdfIterationAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task CompoundAssignment_IsSkipped()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -40,7 +28,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task LowIterationCount_Reports_E128145()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -56,7 +44,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task MinimumIterationCount_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -72,7 +60,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task WeakPrf_Reports_E128145()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -88,7 +76,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task StaticPbkdf2LowCount_Reports_E128145()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -104,7 +92,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task StaticPbkdf2Strong_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -120,7 +108,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task DefaultIterationOverload_Reports_E128145()
     {
-        return VerifyAsync(
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>(
             """
             using System.Security.Cryptography;
             class C
@@ -139,7 +127,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnreadableIterationCount_Reports_E128145()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -155,7 +143,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task IterationCountAssignment_ReplacesDefaultCountReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -172,7 +160,7 @@ public sealed class FipsPbkdfIterationAnalyzerTests
     [Trait("Category", "CI")]
     public Task LowIterationCountAssignment_Reports_E128145()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsPbkdfIterationAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {

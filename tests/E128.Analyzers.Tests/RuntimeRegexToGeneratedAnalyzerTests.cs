@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class RuntimeRegexToGeneratedAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<RuntimeRegexToGeneratedAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenThePatternIsAConstant()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RuntimeRegexToGeneratedAnalyzer>("""
                            using System.Text.RegularExpressions;
                            class C
                            {
@@ -34,7 +23,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenThePatternIsAComputedValue()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RuntimeRegexToGeneratedAnalyzer>("""
                            using System.Text.RegularExpressions;
                            class C
                            {
@@ -57,7 +46,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenRegexIsAUserType()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RuntimeRegexToGeneratedAnalyzer>("""
                            class Regex
                            {
                                public Regex(string pattern)
@@ -76,7 +65,7 @@ public sealed class RuntimeRegexToGeneratedAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheTypeIsQualified()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RuntimeRegexToGeneratedAnalyzer>("""
                            class C
                            {
                                {|E128123:private static readonly System.Text.RegularExpressions.Regex Digits = new System.Text.RegularExpressions.Regex("[0-9]+");|}

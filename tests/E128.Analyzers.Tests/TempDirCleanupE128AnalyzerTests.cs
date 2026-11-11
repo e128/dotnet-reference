@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class TempDirCleanupE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<TempDirCleanupAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task TempDirCleanup_Reports_WhenFieldInitializerHasGetTempPath()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TempDirCleanupAnalyzer>("""
                            using System.IO;
                            class {|E128054:MyTests|}
                            {
@@ -36,7 +23,7 @@ public sealed class TempDirCleanupE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TempDirCleanup_Reports_WhenConstructorHasGetTempPath()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TempDirCleanupAnalyzer>("""
                            using System.IO;
                            class {|E128054:MyTests|}
                            {
@@ -53,7 +40,7 @@ public sealed class TempDirCleanupE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TempDirCleanup_NoReport_WhenIAsyncLifetimeImplemented()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TempDirCleanupAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            interface IAsyncLifetime
@@ -74,7 +61,7 @@ public sealed class TempDirCleanupE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TempDirCleanup_NoReport_WhenIDisposableImplemented()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TempDirCleanupAnalyzer>("""
                            using System;
                            using System.IO;
                            class MyTests : IDisposable
@@ -89,7 +76,7 @@ public sealed class TempDirCleanupE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TempDirCleanup_NoReport_WhenIAsyncDisposableImplemented()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TempDirCleanupAnalyzer>("""
                            using System;
                            using System.IO;
                            using System.Threading.Tasks;
@@ -109,7 +96,7 @@ public sealed class TempDirCleanupE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TempDirCleanup_NoReport_WhenNoGetTempPath()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TempDirCleanupAnalyzer>("""
                            using System.IO;
                            class MyTests
                            {
@@ -122,7 +109,7 @@ public sealed class TempDirCleanupE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TempDirCleanup_NoReport_WhenGetTempPathInMethod()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TempDirCleanupAnalyzer>("""
                            using System.IO;
                            class MyTests
                            {

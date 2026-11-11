@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,58 +7,47 @@ namespace E128.Analyzers.Tests;
 
 public sealed class E128065PragmaBundlingAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<PragmaBundlingAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            // Pragma-targeting analyzer: skip the suppression check to avoid the harness
-            // injecting #pragma warning disable E128065 and creating self-referential behavior.
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+
+    private static AnalyzerTestOptions Options => new() { TestBehaviors = TestBehaviors.SkipSuppressionCheck };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBundling_Reports_WhenTwoIdsOnOneLine()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBundlingAnalyzer>("""
                            {|E128065:#pragma warning disable CA2007, MA0004|}
                            class Foo { }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBundling_Reports_WhenThreeIdsOnOneLine()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBundlingAnalyzer>("""
                            {|E128065:#pragma warning disable CA1849, MA0042, MA0045|}
                            class Foo { }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBundling_NoReport_WhenSingleId()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBundlingAnalyzer>("""
                            #pragma warning disable CA2007
                            class Foo { }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBundling_NoReport_WhenBareDisable()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBundlingAnalyzer>("""
                            #pragma warning disable
                            class Foo { }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -67,12 +55,12 @@ public sealed class E128065PragmaBundlingAnalyzerTests
     public Task PragmaBundling_NoReport_WhenRestoreHasMultipleIds()
     {
         // restore directives are exempt — only disable is flagged
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBundlingAnalyzer>("""
                            #pragma warning disable CA2007
                            #pragma warning disable MA0004
                            class Foo { }
                            #pragma warning restore CA2007, MA0004
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -80,10 +68,10 @@ public sealed class E128065PragmaBundlingAnalyzerTests
     public Task PragmaBundling_Reports_AtDisableOnly_WhenPairPresent()
     {
         // disable fires, restore does not
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBundlingAnalyzer>("""
                            {|E128065:#pragma warning disable CA2007, MA0004|}
                            class Foo { }
                            #pragma warning restore CA2007, MA0004
-                           """);
+                           """, options: Options);
     }
 }

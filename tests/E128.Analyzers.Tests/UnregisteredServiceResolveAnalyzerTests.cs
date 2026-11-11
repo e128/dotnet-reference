@@ -8,23 +8,14 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UnregisteredServiceResolveAnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithDiAndHttp, MarkupOptions = MarkupOptions.UseFirstDescriptor };
+
     private static readonly ReferenceAssemblies Net100WithDiAndHttp = ReferenceAssemblies.Net.Net100
         .AddPackages([
                          new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6"),
                          new PackageIdentity("Microsoft.Extensions.Http", "10.0.6")
                      ]);
-
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<UnregisteredServiceResolveAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithDiAndHttp,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
 
     private static Task VerifyWithoutHttpAsync(string code, params DiagnosticResult[] expected)
     {
@@ -61,7 +52,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsResolve_WhenNoRegistrationExists()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            interface IShape { }
@@ -80,14 +71,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var shape = {|E128103:provider.GetRequiredService<IShape>()|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsConstructorParameter_WhenRegisteredTypeDependsOnUnregisteredService()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            interface IShape { }
                            class Consumer
@@ -101,7 +92,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    services.AddSingleton<Consumer>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Fires
@@ -112,7 +103,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenGetServiceIsUsed()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            interface IShape { }
@@ -123,14 +114,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var shape = provider.GetService<IShape>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenServiceIsFrameworkProvided()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            using Microsoft.Extensions.DependencyInjection;
@@ -156,14 +147,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var consumers = provider.GetRequiredService<IEnumerable<Consumer>>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenServiceIsRegisteredAsInterfaceImplementation()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            interface IShape { }
@@ -182,14 +173,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var shape = provider.GetRequiredService<IShape>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenServiceIsRegisteredAsOpenGeneric()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            interface IRepository<T> { }
@@ -209,14 +200,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var repository = provider.GetRequiredService<IRepository<Thing>>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenConstructorParameterIsOnUnregisteredType()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            interface IShape { }
                            class Square : IShape { }
@@ -231,7 +222,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    services.AddSingleton<Square>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Does Not Fire
@@ -242,7 +233,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNamedClientResolve_WhenNoAddHttpClientRegistrationExists()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System.Net.Http;
                            class Consumer
                            {
@@ -251,14 +242,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var client = {|E128103:factory.CreateClient("api")|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenNamedClientIsRegistered()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System.Net.Http;
                            using Microsoft.Extensions.DependencyInjection;
                            class Startup
@@ -275,14 +266,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var client = factory.CreateClient("api");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenNamedClientIsRegisteredForATypedClient()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System.Net.Http;
                            using Microsoft.Extensions.DependencyInjection;
                            class ApiClient { }
@@ -300,14 +291,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var client = factory.CreateClient("api");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenClientNameIsEmpty()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            class Consumer
@@ -318,14 +309,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var fromEmptyLiteral = factory.CreateClient("");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenClientIsUnnamed()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System.Net.Http;
                            class Consumer
                            {
@@ -334,7 +325,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var client = factory.CreateClient();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -364,7 +355,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNamedClientResolve_OncePerName()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System.Net.Http;
                            class Consumer
                            {
@@ -374,14 +365,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var second = factory.CreateClient("api");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNamedClientResolve_WhenAddHttpClientIsDeclaredOnAnotherType()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System.Net.Http;
                            class Registrations
                            {
@@ -395,7 +386,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var client = {|E128103:factory.CreateClient("api")|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Named HttpClient
@@ -406,7 +397,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsResolve_WhenRegisteredTypeSharesShortNameAcrossNamespaces()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            namespace Alpha
@@ -431,7 +422,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var shape = {|E128103:provider.GetRequiredService<Beta.Shape>()|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -478,7 +469,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenServiceIsFrameworkProvidedWithoutAGenericRegistration()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            namespace Stubs
@@ -506,14 +497,14 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                    var image = provider.GetRequiredService<Stubs.IImageEmbeddingService>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnregisteredServiceResolveAnalyzer_ReportsNothing_WhenResolveSitsInsideRegistrationFactory()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.DependencyInjection;
                            interface IShape { }
@@ -537,7 +528,7 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
                                }
                            }
                            class Shape : IShape { }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]

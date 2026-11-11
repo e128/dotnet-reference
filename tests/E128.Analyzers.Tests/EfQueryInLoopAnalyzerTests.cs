@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -42,13 +41,7 @@ public sealed class EfQueryInLoopAnalyzerTests
 
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<EfQueryInLoopAnalyzer, DefaultVerifier>
-        {
-            TestCode = EfStub + code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<EfQueryInLoopAnalyzer>(EfStub + code, expected);
     }
 
     [Fact]

@@ -1,86 +1,75 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class PointerAndLengthParameterAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<PointerAndLengthParameterAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+    private static AnalyzerTestOptions Options => new() { AllowUnsafe = true };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenAMethodTakesAPointerAndAnInt()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PointerAndLengthParameterAnalyzer>("""
                            class C
                            {
                                unsafe void Copy(byte* {|E128136:source|}, int length)
                                {
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheLengthIsUnsigned()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PointerAndLengthParameterAnalyzer>("""
                            class C
                            {
                                unsafe void Copy(byte* {|E128136:source|}, uint count)
                                {
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_OnEveryPointerParameter()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PointerAndLengthParameterAnalyzer>("""
                            class C
                            {
                                unsafe void Copy(byte* {|E128136:source|}, byte* {|E128136:destination|}, int length)
                                {
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenBothParametersArePointers()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PointerAndLengthParameterAnalyzer>("""
                            class C
                            {
                                unsafe void Copy(byte* source, byte* destination)
                                {
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheBufferIsASpan()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PointerAndLengthParameterAnalyzer>("""
                            using System;
                            class C
                            {
@@ -88,20 +77,20 @@ public sealed class PointerAndLengthParameterAnalyzerTests
                                {
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenThePointerHasNoLength()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PointerAndLengthParameterAnalyzer>("""
                            class C
                            {
                                unsafe void Store(byte* destination)
                                {
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

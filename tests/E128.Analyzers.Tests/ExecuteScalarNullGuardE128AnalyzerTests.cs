@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ExecuteScalarNullGuardE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ExecuteScalarNullGuardAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ConvertToInt32_WrappingExecuteScalar_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExecuteScalarNullGuardAnalyzer>("""
                            using System;
                            using System.Data;
                            using System.Data.Common;
@@ -42,7 +29,7 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConvertToInt64_WrappingExecuteScalar_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExecuteScalarNullGuardAnalyzer>("""
                            using System;
                            using System.Data;
                            using System.Data.Common;
@@ -61,7 +48,7 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConvertToInt32_WrappingExecuteScalarAsync_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExecuteScalarNullGuardAnalyzer>("""
                            using System;
                            using System.Data;
                            using System.Data.Common;
@@ -81,7 +68,7 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConvertToInt32_NormalValue_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExecuteScalarNullGuardAnalyzer>("""
                            using System;
 
                            class C
@@ -100,7 +87,7 @@ public sealed class ExecuteScalarNullGuardE128AnalyzerTests
     {
         // The analyzer only fires when ExecuteScalar is the direct argument —
         // if the user extracts it into a local variable with a null check, no diagnostic.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExecuteScalarNullGuardAnalyzer>("""
                            using System;
                            using System.Data;
                            using System.Data.Common;

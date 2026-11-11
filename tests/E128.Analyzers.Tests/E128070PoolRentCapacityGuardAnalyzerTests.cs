@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class E128070PoolRentCapacityGuardAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<PoolRentCapacityGuardAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Rent_IntMaxValue_Literal_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -41,7 +28,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_IntMaxValue_Constant_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -60,7 +47,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_Variable_NoGuard_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -78,7 +65,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_MathMin_Guard_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -96,7 +83,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_MathMin_ReverseArgs_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -114,7 +101,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_Literal_SmallValue_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -132,7 +119,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_NoArgs_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -150,7 +137,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_GuardedVariable_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -169,7 +156,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_StaticMethod_IntMaxValue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -186,7 +173,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_CustomPoolType_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            namespace Microsoft.Extensions.ObjectPool
                            {
@@ -222,7 +209,7 @@ public sealed class E128070PoolRentCapacityGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rent_ConstantBelowThreshold_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PoolRentCapacityGuardAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C

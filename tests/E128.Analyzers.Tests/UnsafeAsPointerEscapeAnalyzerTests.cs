@@ -1,30 +1,19 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UnsafeAsPointerEscapeAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<UnsafeAsPointerEscapeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+    private static AnalyzerTestOptions Options => new() { AllowUnsafe = true };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenThePointerIsNotPinned()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAsPointerEscapeAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -33,14 +22,14 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
                                    void* pointer = {|E128125:Unsafe.AsPointer(ref values[0])|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheCallIsInsideAFixedBlock()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAsPointerEscapeAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -52,7 +41,7 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -60,7 +49,7 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
     public Task Reports_WhenTheStackLocalLivesInAnAsyncMethod()
     {
         // An async member moves its locals into a heap state machine, which moves during a collection.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAsPointerEscapeAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            using System.Threading.Tasks;
                            class C
@@ -75,14 +64,14 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
                                    await Task.Yield();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenThePointerTargetsAStackLocal()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAsPointerEscapeAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -93,6 +82,6 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
                                    void* second = Unsafe.AsPointer(ref parameter);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

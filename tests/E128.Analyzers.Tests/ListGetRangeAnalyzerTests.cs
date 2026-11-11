@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ListGetRangeAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ListGetRangeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenCalledOnList()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ListGetRangeAnalyzer>("""
                            #nullable enable
                            using System.Collections.Generic;
                            class C
@@ -41,7 +28,7 @@ public sealed class ListGetRangeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenResultStaysList()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ListGetRangeAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -60,7 +47,7 @@ public sealed class ListGetRangeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenReceiverMaybeNull()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ListGetRangeAnalyzer>("""
                            #nullable enable
                            using System.Collections.Generic;
                            class C
@@ -77,7 +64,7 @@ public sealed class ListGetRangeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenNullableContextIsDisabled()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ListGetRangeAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -93,7 +80,7 @@ public sealed class ListGetRangeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenCalledOnNonList()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ListGetRangeAnalyzer>("""
                            class MyCollection
                            {
                                public int[] GetRange(int start, int count) => new int[count];

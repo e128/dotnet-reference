@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.FileSystem;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class CollectionPathE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<CollectionPathAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ListOfStringWithPathName_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionPathAnalyzer>("""
                            using System.Collections.Generic;
 
                            public class Service
@@ -37,7 +24,7 @@ public sealed class CollectionPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task IReadOnlyListOfStringWithDirName_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionPathAnalyzer>("""
                            using System.Collections.Generic;
 
                            public class Service
@@ -51,7 +38,7 @@ public sealed class CollectionPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task IEnumerableOfStringWithPathName_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionPathAnalyzer>("""
                            using System.Collections.Generic;
 
                            public class Service
@@ -65,7 +52,7 @@ public sealed class CollectionPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ListOfStringWithNonPathName_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionPathAnalyzer>("""
                            using System.Collections.Generic;
 
                            public class Service
@@ -79,7 +66,7 @@ public sealed class CollectionPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ListOfFileInfo_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionPathAnalyzer>("""
                            using System.Collections.Generic;
                            using System.IO;
 
@@ -94,7 +81,7 @@ public sealed class CollectionPathE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task XPathExclusion_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionPathAnalyzer>("""
                            using System.Collections.Generic;
 
                            public class Service

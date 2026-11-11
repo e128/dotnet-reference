@@ -26,9 +26,9 @@ internal static class MetadataTypes
     }
 
     /// <summary>
-    ///     Registers the syntax action only when the compilation defines the metadata name. The
-    ///     lookup uses <see cref="Compilation.GetTypeByMetadataName" />, so an ambiguous name turns
-    ///     the rule off.
+    ///     Registers the syntax action once per type that carries the metadata name. An ambiguous
+    ///     name registers every match, so the rule still runs. A report cannot duplicate, because
+    ///     each action compares the bound symbol to one type.
     /// </summary>
     internal static void RegisterForType(
         CompilationStartAnalysisContext context,
@@ -36,14 +36,11 @@ internal static class MetadataTypes
         Action<SyntaxNodeAnalysisContext, INamedTypeSymbol> action,
         params SyntaxKind[] syntaxKinds)
     {
-        var type = context.Compilation.GetTypeByMetadataName(metadataName);
-        if (type is null)
+        foreach (var type in Find(context.Compilation, metadataName))
         {
-            return;
+            context.RegisterSyntaxNodeAction(
+                nodeContext => action(nodeContext, type),
+                syntaxKinds);
         }
-
-        context.RegisterSyntaxNodeAction(
-            nodeContext => action(nodeContext, type),
-            syntaxKinds);
     }
 }

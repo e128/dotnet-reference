@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ObsoleteWithoutMessageAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<ObsoleteWithoutMessageAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task BareObsolete_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -35,7 +24,7 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task EmptyMessage_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -49,7 +38,7 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task OnlyNamedArguments_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -63,7 +52,7 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task WithMessage_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -80,7 +69,7 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task NullMessage_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -94,7 +83,7 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReorderedNamedArgumentsWithEmptyMessage_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -108,7 +97,7 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReorderedNamedArgumentsWithMessage_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -122,7 +111,7 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task OtherAttribute_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
                            using System;
                            sealed class ObsoleteAttribute : Attribute { }
                            class C

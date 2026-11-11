@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class NullForgivingOperatorE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<NullForgivingOperatorAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task NullForgiving_OnVariableAssignment_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NullForgivingOperatorAnalyzer>("""
                            #nullable enable
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class NullForgivingOperatorE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NullForgiving_OnMethodReturn_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NullForgivingOperatorAnalyzer>("""
                            #nullable enable
                            class C
                            {
@@ -52,7 +39,7 @@ public sealed class NullForgivingOperatorE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NullForgiving_OnPropertyAccess_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NullForgivingOperatorAnalyzer>("""
                            #nullable enable
                            class C
                            {
@@ -68,7 +55,7 @@ public sealed class NullForgivingOperatorE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NoNullForgiving_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NullForgivingOperatorAnalyzer>("""
                            #nullable enable
                            class C
                            {

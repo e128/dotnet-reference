@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ProcessStartInfoArgumentAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ProcessStartInfoArgumentAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_InterpolatedStringArguments_WithoutArgumentList()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessStartInfoArgumentAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -43,7 +30,7 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_EmptyStringArguments()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessStartInfoArgumentAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -63,7 +50,7 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenArgumentListPopulated()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessStartInfoArgumentAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -83,7 +70,7 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_ArgumentsAssignedAfterConstruction()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessStartInfoArgumentAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -100,7 +87,7 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenArgumentsAssignedOnAnUnrelatedType()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessStartInfoArgumentAnalyzer>("""
                            using System.Diagnostics;
                            class Wrapper { public string Arguments { get; set; } = string.Empty; }
 
@@ -119,7 +106,7 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenArgumentsAssignedWithAnEmptyString()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessStartInfoArgumentAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -136,7 +123,7 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_BareIdentifierArguments_RealRegressionShape()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessStartInfoArgumentAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -159,7 +146,7 @@ public sealed class ProcessStartInfoArgumentAnalyzerTests
     [Trait("Category", "CI")]
     public Task TargetTypedCreation_Reports()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessStartInfoArgumentAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {

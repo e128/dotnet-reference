@@ -1,3 +1,11 @@
+## Release 2.8.0
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------
+E128218 | E128-Design | Info | E128-Design | Info | Recognizes a forwarding accessor pair, a mutable struct, and a cross-type write. Adds `e128_state_min_transition_bodies`.
+
 ## Release 2.7.0
 
 ### Changed Rules

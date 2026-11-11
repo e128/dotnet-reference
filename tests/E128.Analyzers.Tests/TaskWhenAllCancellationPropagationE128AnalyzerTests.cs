@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class TaskWhenAllCancellationPropagationE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<TaskWhenAllCancellationPropagationAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task WhenAll_HttpClient_NoCt_FiresE128038()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskWhenAllCancellationPropagationAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Net.Http;
@@ -44,7 +31,7 @@ public sealed class TaskWhenAllCancellationPropagationE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_HttpClient_WithCt_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskWhenAllCancellationPropagationAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Net.Http;
@@ -65,7 +52,7 @@ public sealed class TaskWhenAllCancellationPropagationE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_NoCancellationTokenParam_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskWhenAllCancellationPropagationAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Net.Http;
@@ -85,7 +72,7 @@ public sealed class TaskWhenAllCancellationPropagationE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_NonHttpClientMethod_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskWhenAllCancellationPropagationAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Threading;

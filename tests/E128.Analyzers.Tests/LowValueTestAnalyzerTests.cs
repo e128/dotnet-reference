@@ -1,8 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,39 +7,20 @@ namespace E128.Analyzers.Tests;
 
 public sealed partial class LowValueTestAnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithXunit };
+
     private static readonly ReferenceAssemblies Net100WithXunit = ReferenceAssemblies.Net.Net100
         .AddPackages([
             new PackageIdentity("xunit.v3.core", "3.2.2"),
             new PackageIdentity("xunit.v3.assert", "3.2.2")
         ]);
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<LowValueTestAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithXunit
-        };
-        test.SolutionTransforms.Add(static (solution, projectId) =>
-        {
-            var project = solution.GetProject(projectId)!;
-            var options = (CSharpCompilationOptions)project.CompilationOptions!;
-            return solution.WithProjectCompilationOptions(
-                projectId,
-                options.WithSpecificDiagnosticOptions(
-                    options.SpecificDiagnosticOptions
-                        .SetItem("E128107", ReportDiagnostic.Info)
-                        .SetItem("E128108", ReportDiagnostic.Warn)));
-        });
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task BareSize_ReportsSuggestion_WhenBodyIsThreeStatementsWithOneAssertion()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Subject
@@ -55,14 +33,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal(3, left + right);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NameMirror_ReportsSuggestion_WhenTestNameRepeatsTargetMethodName()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Parser
@@ -79,14 +57,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal("alpha", value);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NullOnly_ReportsNothing_WhenSoleAssertionIsNotNull()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Parser
@@ -104,14 +82,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.NotNull(value);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ToStringComparison_ReportsNothing_WhenSoleAssertionTargetsToString()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public static class Calculator
@@ -127,14 +105,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal("3", Calculator.Add(1, 2).ToString());
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoAssertion_ReportsSuggestion_WhenBodyCallsProductionAndAwaitsNothing()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Parser
@@ -150,14 +128,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    new Parser().Parse("alpha");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoAssertion_ReportsNothing_WhenBodyAwaitsAVerifierHelper()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using System.Threading.Tasks;
                            using Xunit;
 
@@ -178,14 +156,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    await Verifier.Verify("alpha");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SingleRowTheory_ReportsSuggestion_WhenTheoryCarriesOneDataRow()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Subject
@@ -198,14 +176,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal(2, doubled);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task LiteralEcho_ReportsSuggestion_WhenAssertionComparesLiteralWithLiteralOnlyCall()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public static class Calculator
@@ -221,14 +199,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal(1, Calculator.Echo(1));
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task MultipleConditions_ReportWarning_WhenNameMirrorAndLiteralEchoMatch()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public static class Calculator
@@ -244,14 +222,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal(1, Calculator.Echo(1));
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ExceptionMessageLock_ReportsSuggestion_WhenAssertionPinsExceptionMessage()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using System;
                            using Xunit;
 
@@ -278,7 +256,7 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal("Value must not be empty", exception.Message);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -287,7 +265,7 @@ public sealed partial class LowValueTestAnalyzerTests
     {
         // A substring check pins a documented hint, which is the contract, not a leak. Only an exact
         // equality check locks the whole message.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using System;
                            using Xunit;
 
@@ -314,14 +292,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Contains("BRAVE_API_KEY", exception.Message, StringComparison.Ordinal);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task MockVerifyOnly_ReportsSuggestion_WhenSoleAssertionIsVerifyWithLambda()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using System;
                            using System.Linq.Expressions;
                            using System.Threading.Tasks;
@@ -351,14 +329,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    await spy.VerifyAsync(sender => sender.Send("alpha"));
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task LogAssert_ReportsSuggestion_WhenSoleAssertionTargetsLogger()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using System.Threading.Tasks;
                            using Xunit;
 
@@ -399,14 +377,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    await logger.VerifyLoggedAsync("startup");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ConstructorPassthrough_ReportsSuggestion_WhenLiteralIsReadBackOffConstructedObject()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Parser
@@ -428,14 +406,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal(3, parser.Limit);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SelfFulfillingExpected_ReportsSuggestion_WhenBothOperandsAreTheSameExpression()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Parser
@@ -452,14 +430,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal(parser.Value, parser.Value);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task MagicConstantEcho_ReportsSuggestion_WhenExpectedLiteralAppearsInProductionBody()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public static class Limits
@@ -475,14 +453,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal(42, Limits.Max());
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task OrderLock_ReportsSuggestion_WhenExactOrderIsPinnedOnASetResult()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using System.Collections.Generic;
                            using Xunit;
 
@@ -499,14 +477,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal(new[] { 1, 2, 3 }, NumberSet.Values);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task DuplicateCoverage_ReportsSuggestion_WhenTwoTestsShareMethodAndLiteralArguments()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public static class Calculator
@@ -530,14 +508,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.NotEqual(0, sum);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoAssertion_ReportsNothing_WhenBodyCallsAThrowBasedAssertion()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Architecture
@@ -555,14 +533,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    target.Check();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task BareSize_ReportsNothing_WhenBodyCallsProductionCode()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Greeter
@@ -580,14 +558,14 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal("Hello, Claude!", result);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NameMirror_ReportsNothing_WhenTestNameAlsoStatesTheBehavior()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LowValueTestAnalyzer>("""
                            using Xunit;
 
                            public sealed class Parser
@@ -605,6 +583,6 @@ public sealed partial class LowValueTestAnalyzerTests
                                    Assert.Equal("alpha", value);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,39 +7,31 @@ namespace E128.Analyzers.Tests;
 
 public sealed class MissingTraitCategoryAnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithXunit };
+
     private static readonly ReferenceAssemblies Net100WithXunit = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("xunit.v3.core", "3.2.2")]);
-
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<MissingTraitCategoryAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithXunit
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_FactMethod_WithoutTrait()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            using Xunit;
                            public sealed class MyTests
                            {
                                [{|E128073:Fact|}]
                                public void Should_Work() { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_TheoryMethod_WithoutTrait()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            using Xunit;
                            public sealed class MyTests
                            {
@@ -48,14 +39,14 @@ public sealed class MissingTraitCategoryAnalyzerTests
                                [InlineData(1)]
                                public void Should_Work(int x) { _ = x; }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoReport_WhenTraitPresent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            using Xunit;
                            public sealed class MyTests
                            {
@@ -63,14 +54,14 @@ public sealed class MissingTraitCategoryAnalyzerTests
                                [Trait("Category", "CI")]
                                public void Should_Work() { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoReport_WhenTraitPresentOnTheory()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            using Xunit;
                            public sealed class MyTests
                            {
@@ -79,26 +70,26 @@ public sealed class MissingTraitCategoryAnalyzerTests
                                [Trait("Category", "CI")]
                                public void Should_Work(int x) { _ = x; }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoReport_WhenNonTestMethod()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            public sealed class MyClass
                            {
                                public void NotATest() { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoReport_WhenTraitHasDifferentCategoryValue()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            using Xunit;
                            public sealed class MyTests
                            {
@@ -106,14 +97,14 @@ public sealed class MissingTraitCategoryAnalyzerTests
                                [Trait("Category", "Podman")]
                                public void Should_Work() { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_MultipleMethodsMissing()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            using Xunit;
                            public sealed class MyTests
                            {
@@ -128,14 +119,14 @@ public sealed class MissingTraitCategoryAnalyzerTests
                                [InlineData(1)]
                                public void Third(int x) { _ = x; }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoReport_WhenClassLevelTraitPresent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            using Xunit;
                            [Trait("Category", "CI")]
                            public sealed class MyTests
@@ -143,14 +134,14 @@ public sealed class MissingTraitCategoryAnalyzerTests
                                [Fact]
                                public void Should_Work() { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoReport_WhenTheTraitIsQualified()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MissingTraitCategoryAnalyzer>("""
                            using Xunit;
                            public sealed class MyTests
                            {
@@ -158,6 +149,6 @@ public sealed class MissingTraitCategoryAnalyzerTests
                                [Xunit.Trait("Category", "CI")]
                                public void Should_Work() { }
                            }
-                           """);
+                           """, options: Options);
     }
 }

@@ -1,28 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class PooledBufferZeroingAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<PooledBufferZeroingAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenReturnIsOutsideFinally()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System.Buffers;
                            using System.Security.Cryptography;
                            class C
@@ -41,7 +29,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenFinallyHasNoZeroMemory()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System.Buffers;
                            class C
                            {
@@ -62,7 +50,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenOnlyClearArrayIsUsed()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System.Buffers;
                            class C
                            {
@@ -83,7 +71,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenZeroMemoryCoversOnlyASlice()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            using System.Security.Cryptography;
@@ -107,7 +95,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenZeroMemoryFollowsReturn()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System.Buffers;
                            using System.Security.Cryptography;
                            class C
@@ -130,7 +118,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenFinallyZeroesWholeArrayBeforeReturn()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System.Buffers;
                            using System.Security.Cryptography;
                            class C
@@ -153,7 +141,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenZeroMemoryUsesAsSpan()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            using System.Security.Cryptography;
@@ -177,7 +165,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenReturnIsOnANonPoolType()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            class Counter
                            {
                                public void Return(byte[] data) { }
@@ -196,7 +184,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenZeroMemoryIsConditional()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System.Buffers;
                            using System.Security.Cryptography;
                            class C
@@ -223,7 +211,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenBufferIsUsedAfterReturn()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System.Buffers;
                            using System.Security.Cryptography;
                            class C
@@ -248,7 +236,7 @@ public sealed class PooledBufferZeroingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenBufferIsReassignedAfterReturn()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PooledBufferZeroingAnalyzer>("""
                            using System.Buffers;
                            using System.Security.Cryptography;
                            class C

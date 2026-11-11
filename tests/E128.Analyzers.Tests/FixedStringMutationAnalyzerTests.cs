@@ -1,30 +1,19 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FixedStringMutationAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<FixedStringMutationAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+    private static AnalyzerTestOptions Options => new() { AllowUnsafe = true };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenAStringIsPinnedAsAWritablePointer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedStringMutationAnalyzer>("""
                            unsafe class C
                            {
                                void M(string text)
@@ -35,14 +24,14 @@ public sealed class FixedStringMutationAnalyzerTests
                                    }|}
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenAnArrayIsPinned()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedStringMutationAnalyzer>("""
                            unsafe class C
                            {
                                void M(char[] buffer)
@@ -53,14 +42,14 @@ public sealed class FixedStringMutationAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheStringIsOnlyRead()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedStringMutationAnalyzer>("""
                            unsafe class C
                            {
                                int M(string text)
@@ -71,14 +60,14 @@ public sealed class FixedStringMutationAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheWriteUsesPointerArithmetic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedStringMutationAnalyzer>("""
                            unsafe class C
                            {
                                void M(string text)
@@ -89,14 +78,14 @@ public sealed class FixedStringMutationAnalyzerTests
                                    }|}
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenOnlyThePointerItselfMoves()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedStringMutationAnalyzer>("""
                            unsafe class C
                            {
                                void M(string text)
@@ -108,6 +97,6 @@ public sealed class FixedStringMutationAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -15,19 +13,7 @@ public sealed class ConstructorDependencyCeilingAnalyzerTests
 
     private static Task VerifyAsync(string code, string? ceiling = null)
     {
-        var test = new CSharpAnalyzerTest<ConstructorDependencyCeilingAnalyzer, DefaultVerifier>
-        {
-            TestCode = Types + "\n" + code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-
-        if (ceiling is not null)
-        {
-            test.TestState.AnalyzerConfigFiles.Add(
-                ("/.editorconfig", "is_global = true\ne128_max_ctor_dependencies = " + ceiling));
-        }
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<ConstructorDependencyCeilingAnalyzer>(Types + "\n" + code, options: new AnalyzerTestOptions { AnalyzerConfig = ("/.editorconfig", "is_global = true\ne128_max_ctor_dependencies = " + ceiling) });
     }
 
     [Fact]

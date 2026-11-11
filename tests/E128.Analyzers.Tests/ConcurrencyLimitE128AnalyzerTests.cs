@@ -1,30 +1,17 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ConcurrencyLimitE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ConcurrencyLimitAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task SemaphoreSlim_ZeroInitialCount_DoesNotFire()
     {
         // Zero is a legal initial count, so a gate that starts closed is not a defect.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -40,7 +27,7 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task SemaphoreSlim_ZeroInitialCountWithMaxCount_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -56,7 +43,7 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task MaxDegreeOfParallelism_OnAReceiver_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -72,7 +59,7 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task SemaphoreSlim_NegativeCount_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -88,7 +75,7 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task SemaphoreSlim_PositiveCount_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -104,7 +91,7 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ParallelOptions_ZeroDegree_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -120,7 +107,7 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ParallelOptions_MinusOne_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -136,7 +123,7 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ChannelCreateBounded_Zero_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading.Channels;
                            class C
                            {
@@ -152,7 +139,7 @@ public sealed class ConcurrencyLimitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ChannelCreateBounded_Positive_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcurrencyLimitAnalyzer>("""
                            using System.Threading.Channels;
                            class C
                            {

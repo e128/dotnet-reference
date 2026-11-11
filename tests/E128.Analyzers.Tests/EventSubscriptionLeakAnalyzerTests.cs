@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class EventSubscriptionLeakAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task SubscriptionToOwnInstanceEvent_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class C : IDisposable
                            {
@@ -38,7 +32,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task SubscriptionToOwnStaticEvent_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class C : IDisposable
                            {
@@ -59,7 +53,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task RemovalInDisposeAsyncCore_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            using System.Threading.Tasks;
                            class Publisher
@@ -92,7 +86,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task LambdaThatReadsAField_WithNoRemoval_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -117,7 +111,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task LambdaThatReadsAField_RemovedInDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -143,7 +137,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task StaticHandler_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -170,7 +164,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task InstanceMethodGroup_WithNoRemoval_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -197,7 +191,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task ThisQualifiedMethodGroup_WithNoRemoval_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -224,7 +218,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task TypeWithoutDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -246,7 +240,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task LambdaWithoutAnInstanceRead_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -270,7 +264,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task RemovalInAnOrdinaryMethod_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -299,7 +293,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task RemovalInAHelperCalledFromDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -333,7 +327,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task RemovalOnAnotherPublisherInstance_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -361,7 +355,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task RemovalInDisposeAsync_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            using System.Threading.Tasks;
                            class Publisher
@@ -389,7 +383,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task RemovalOfADifferentEvent_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher
                            {
@@ -417,7 +411,7 @@ public sealed class EventSubscriptionLeakAnalyzerTests
     [Trait("Category", "CI")]
     public Task OwnedPublisherFieldDisposedInDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EventSubscriptionLeakAnalyzer>("""
                            using System;
                            class Publisher : IDisposable
                            {

@@ -1,10 +1,10 @@
 # Implicit State Machine Rule
-*Updated: 2026-11-09T23:44:15Z*
+*Updated: 2026-11-11T03:39:00Z*
 
-E128218 flags a class that uses several mutable `bool` fields as one state.
-The fields change together, so their valid combinations are constrained in
-scattered code. The rule reports a cluster, not a defect. A review decides the
-remedy.
+E128218 flags a class or a mutable struct that uses several mutable `bool`
+members as one state. The members change together, so their valid combinations
+are constrained in scattered code. The rule reports a cluster, not a defect. A
+review decides the remedy.
 
 The implementation lives in `src/E128.Analyzers/Design/ImplicitStateMachineAnalyzer.cs`.
 The tests live in `tests/E128.Analyzers.Tests/ImplicitStateMachineAnalyzerTests.cs`.
@@ -13,9 +13,10 @@ The design detail lives in
 
 ## What The Rule Detects
 
-The rule sees three facts:
+The rule sees four facts:
 
 - the declarations of instance `bool` fields and auto-properties
+- the declaration of a property pair that forwards to one field
 - the writes to those members, including the constant value written
 - the conditions that read several members together
 
@@ -43,8 +44,9 @@ site. The rule therefore ships at `Info`, and the repository sets it to
 | Severity | `Info` |
 | Code fix | None |
 | Option | `e128_min_state_flags`, default `3`, minimum `2` |
+| Option | `e128_state_min_transition_bodies`, default `1`, minimum `1` |
 
-The rule reads the option per analyzed type from its declaring file, so a
+The rule reads both options per analyzed type from its declaring file, so a
 project `.editorconfig` applies.
 
 The rule has no code fix. The state names and the legal transitions are domain
@@ -69,6 +71,19 @@ public void Pause()
 A reset method that writes every member to `false` does not count. That shape is
 cleanup, not a transition.
 
+A write from another type counts when it names a candidate through a setter.
+
+```csharp
+public void Pause(Machine machine)
+{
+    machine.IsRunning = false;
+    machine.IsPaused = true;
+}
+```
+
+The owning type must have at least one transition in its own body. The gate
+keeps a configuration object out of the report.
+
 ### Co-read
 
 A condition reads two or more cluster members, and at least one of them is
@@ -85,22 +100,26 @@ if (_isRunning && !_isPaused)
 
 ## Scope And Exclusions
 
-The rule analyzes classes only. It skips records, structs, interfaces, static
-classes, and types outside the current compilation.
+The rule analyzes classes and mutable structs. It skips records, `readonly`
+structs, interfaces, static classes, and types outside the current compilation.
 
 A member is a candidate when it is an instance `bool` field, or a `bool`
 auto-property with a setter. A field is excluded when it is `static`, `const`,
-`readonly`, implicitly declared, or `[Obsolete]`. A property with accessor
-bodies is outside the scope.
+`readonly`, implicitly declared, or `[Obsolete]`.
+
+A property pair with a getter and a setter that only read and write one field
+shares that field as its canonical member. The pair counts once. A computed
+property is outside the scope.
 
 A candidate joins the cluster only when its transitions are not one-way. A
 member written only to `true`, or only to `false`, is ignored. An unknown write,
 such as `_flag = !_flag`, keeps the member.
 
 A write in a constructor, a static constructor, or a destructor is not a
-transition. A write through `Interlocked.Exchange` or `Volatile.Write` is a
-transition. A write in a lambda or a local function is grouped with that body,
-not with the enclosing method.
+transition. A write inside a property accessor is storage, not a transition. A
+write through `Interlocked.Exchange` or `Volatile.Write` is a transition. A
+write in a lambda or a local function is grouped with that body, not with the
+enclosing method.
 
 ## Report Shape
 
@@ -115,7 +134,8 @@ not with the enclosing method.
 | --- | --- | --- |
 | Reset method clears several fields | One body writes several fields | Require a mixed value |
 | Disposal flag plus state fields | Dispose writes both | Ignore one-way fields |
-| Options or DTO with public setters | External writers form a cluster | Analyze fields and auto-properties, and require internal writes |
+| Options or DTO with public setters | External writers form a cluster | Require at least one internal write |
+| One setup method assigns several flags | One body holds the only mixed write | `e128_state_min_transition_bodies` set to `2` |
 | Feature switches read together | Four toggled members read in one condition | Higher co-read threshold and a negated read |
 | Cache validity pair | A reset writes both | `Info` severity |
 
@@ -132,17 +152,20 @@ default `Info`.
 
 ## Known Gaps
 
-- A property with accessor bodies is outside the scope.
-- A transition in another type through a public setter is outside the scope.
+- A computed property is outside the scope.
+- A write from another assembly is outside the scope.
 - A write through a ref alias or an `Unsafe` API is missed.
 - A conditional write through `Interlocked.CompareExchange` is missed.
-- A mutable struct with several `bool` members is outside the scope.
 - A two-member cluster needs `e128_min_state_flags = 2`.
+- A cluster of one transition body needs `e128_state_min_transition_bodies`
+  left at its default.
 
 ## Related
 
 - [implicit-state-machine-rule-design.md](implicit-state-machine-rule-design.md):
-  field rules, evidence, registration, examples, and test coverage
+  field rules, evidence, registration, and test coverage
+- [implicit-state-machine-rule-examples.md](implicit-state-machine-rule-examples.md):
+  positive and negative snippets
 - [analyzer-candidates.md](analyzer-candidates.md): candidate ledger and ID
   allocation
 - [analyzers/new-analyzer-checklist.md](analyzers/new-analyzer-checklist.md):

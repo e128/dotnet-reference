@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class JsonSerializerOptionsMutationAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task PropertyWriteAfterSerialize_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -36,7 +30,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConvertersAddAfterDeserialize_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -56,7 +50,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task FieldWriteAfterSerialize_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -77,7 +71,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task SerializeInsideLambdaBeforeWrite_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System;
                            using System.Text.Json;
 
@@ -98,7 +92,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task SerializeAndWriteInSeparateBranches_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -124,7 +118,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyWriteBeforeUse_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -143,7 +137,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyWriteWithoutUse_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -161,7 +155,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task WriteToOtherInstance_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -182,7 +176,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyReceiverWrite_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -203,7 +197,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task WriteInNestedLambda_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C
@@ -224,7 +218,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnrelatedSerializerCall_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class Serializer
@@ -252,7 +246,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task UserTypeWithSameMemberNames_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            class Options
                            {
                                internal bool WriteIndented { get; set; }
@@ -283,7 +277,7 @@ public sealed class JsonSerializerOptionsMutationAnalyzerTests
     [Trait("Category", "CI")]
     public Task WriteAfterReassignment_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonSerializerOptionsMutationAnalyzer>("""
                            using System.Text.Json;
 
                            class C

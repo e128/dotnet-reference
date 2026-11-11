@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UntimedProcessExitAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<UntimedProcessExitAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_NoArgWaitForExit()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntimedProcessExitAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class UntimedProcessExitAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_TimeboxedWaitForExit()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntimedProcessExitAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -55,7 +42,7 @@ public sealed class UntimedProcessExitAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_NoArgAsyncWaitForExit()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntimedProcessExitAnalyzer>("""
                            using System.Diagnostics;
                            using System.Threading.Tasks;
                            class C
@@ -72,7 +59,7 @@ public sealed class UntimedProcessExitAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_ParameterCancellationToken()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntimedProcessExitAnalyzer>("""
                            using System.Diagnostics;
                            using System.Threading;
                            using System.Threading.Tasks;
@@ -90,7 +77,7 @@ public sealed class UntimedProcessExitAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_TimeoutCtsToken()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntimedProcessExitAnalyzer>("""
                            using System;
                            using System.Diagnostics;
                            using System.Threading;
@@ -110,7 +97,7 @@ public sealed class UntimedProcessExitAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_TimeSpanOverload()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntimedProcessExitAnalyzer>("""
                            using System;
                            using System.Diagnostics;
                            class C

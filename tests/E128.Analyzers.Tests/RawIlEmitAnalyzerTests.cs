@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class RawIlEmitAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<RawIlEmitAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenCodeEmitsAnOpCode()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RawIlEmitAnalyzer>("""
                            using System.Reflection.Emit;
                            class C
                            {
@@ -37,7 +26,7 @@ public sealed class RawIlEmitAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenCodeEmitsAnInstruction()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RawIlEmitAnalyzer>("""
                            using System.Reflection.Emit;
                            class C
                            {
@@ -54,7 +43,7 @@ public sealed class RawIlEmitAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheReceiverIsNotAnIlGenerator()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RawIlEmitAnalyzer>("""
                            class Emitter
                            {
                                public void Emit(int value)
@@ -75,7 +64,7 @@ public sealed class RawIlEmitAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheMethodOnlyReceivesAGenerator()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RawIlEmitAnalyzer>("""
                            using System.Reflection.Emit;
                            class C
                            {

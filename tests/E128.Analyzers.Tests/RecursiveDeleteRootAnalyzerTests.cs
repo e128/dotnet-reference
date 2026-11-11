@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class RecursiveDeleteRootAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ParameterPath_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -32,7 +26,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task FieldReadPath_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -50,7 +44,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyReadPath_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -68,7 +62,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task CombineWithParameter_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -84,7 +78,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task DirectoryInfoDeleteOnParameter_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -100,7 +94,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task CombineWithProperty_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -118,7 +112,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonRecursiveDelete_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -134,7 +128,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task TempPathRoot_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -150,7 +144,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task CombineUnderTempPath_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -166,7 +160,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task RelativeStringLiteral_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -182,7 +176,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task RootedStringLiteral_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -198,7 +192,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task DriveRootedStringLiteral_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -214,7 +208,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task GetFullPathOfTempPath_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -230,7 +224,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task StartsWithGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -255,7 +249,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task CultureSensitiveGuard_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -275,7 +269,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task GuardWithoutComparisonOverload_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -294,7 +288,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task SeparatorBoundedLiteralGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -314,7 +308,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task SeparatorBoundedRootWithDirectorySeparatorChar_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -334,7 +328,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task PrefixWithoutSeparatorBoundary_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -354,7 +348,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task LocalSafeRootGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -376,7 +370,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReadOnlyFieldGuardRoot_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -398,7 +392,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task GetOnlyPropertyGuardRoot_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -420,7 +414,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task LocalAliasOfParameter_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -438,7 +432,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReassignedAfterGuard_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -460,7 +454,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task NegatedGuardAroundDelete_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -479,7 +473,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task GuardOrCondition_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -498,7 +492,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task PrecedingGuardWithoutExit_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -519,7 +513,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task PrecedingNegatedGuardThatReturns_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -540,7 +534,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task MutablePropertyAsGuardRoot_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -561,7 +555,7 @@ public sealed class RecursiveDeleteRootAnalyzerTests
     [Trait("Category", "CI")]
     public Task FilesystemRootLiteral_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
                            using System.IO;
                            class C
                            {

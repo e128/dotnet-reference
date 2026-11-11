@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class DisposableFieldInLoopAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ForeachOverwrite_WithNoDispose_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -42,7 +36,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task ForeachOverwrite_WithThisQualifiedDisposeBeforeTheLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -69,7 +63,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task ForeachOverwrite_WithOnlyADisposeAfterTheAssignment_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -96,7 +90,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task ForeachOverwrite_WithAContinueBeforeTheDispose_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -128,7 +122,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task ForeachOverwrite_WithADisposeOnAnotherField_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -156,7 +150,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task AssignmentOutsideALoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -179,7 +173,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonDisposableFieldInsideALoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class C
                            {
@@ -199,7 +193,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task WhileOverwrite_WithNoDispose_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -227,7 +221,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyAssignmentsInALoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -253,7 +247,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task DisposeInTheLoopBeforeTheAssignment_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class Res : IDisposable
                            {
@@ -280,7 +274,7 @@ public sealed class DisposableFieldInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstrainedTypeParameterField_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DisposableFieldInLoopAnalyzer>("""
                            using System;
                            class C<T> where T : IDisposable, new()
                            {

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ProcessOutputDrainAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ProcessOutputDrainAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task RedirectedOutputNeverRead_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -41,7 +28,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task RedirectedErrorNeverRead_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -59,7 +46,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReadToEndBeforeWait_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -78,7 +65,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task EventHandlerBeforeWait_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -97,7 +84,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReadAfterWait_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -116,7 +103,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReadOnAnotherProcess_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -135,7 +122,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoRedirectedStream_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -153,7 +140,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task StartInfoLocalPassedToProcessStart_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -171,7 +158,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task StartInfoLocalAssignedToProcess_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -191,7 +178,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task InitializerFlagOnOtherProcess_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
@@ -212,7 +199,7 @@ public sealed class ProcessOutputDrainAnalyzerTests
     [Trait("Category", "CI")]
     public Task HelperReceivesOutputStream_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputDrainAnalyzer>("""
                            using System.Diagnostics;
                            using System.IO;
                            class C

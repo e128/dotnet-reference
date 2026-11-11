@@ -10,13 +10,7 @@ public sealed class InsecureRandomInCryptoContextAnalyzerTests
 {
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<InsecureRandomInCryptoContextAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<InsecureRandomInCryptoContextAnalyzer>(code, expected);
     }
 
     private static Task VerifyAsync(string[] sources, params DiagnosticResult[] expected)

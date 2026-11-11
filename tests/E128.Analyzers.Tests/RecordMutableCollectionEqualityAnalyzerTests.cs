@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class RecordMutableCollectionEqualityAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task PositionalRecordClass_ListParameter_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            record Person({|E128177:List<string> Names|});
@@ -27,7 +21,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task RecordThatDeclaresGetHashCode_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
 
@@ -44,7 +38,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task DerivedRecord_InheritsBaseGetHashCode_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            record Base
@@ -63,7 +57,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task NominalRecordClass_DictionaryProperty_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            record Order
@@ -77,7 +71,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task RecordStruct_ArrayParameter_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            record struct Point({|E128177:int[] Coordinates|});
                            """);
     }
@@ -86,7 +80,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task NominalRecordClass_MutableField_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            record Inventory
@@ -100,7 +94,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task PositionalRecord_IListParameter_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            record Group({|E128177:IList<int> Items|});
@@ -111,7 +105,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task NominalRecordClass_HashSetProperty_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            record Tags
@@ -125,7 +119,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task ImmutableCollectionAndStringMembers_DoNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Frozen;
                            using System.Collections.Generic;
                            using System.Collections.Immutable;
@@ -149,7 +143,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonRecordClass_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            class Holder
@@ -163,7 +157,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task ExpressionBodiedProperty_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            record Cache
@@ -177,7 +171,7 @@ public sealed class RecordMutableCollectionEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task StaticMember_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RecordMutableCollectionEqualityAnalyzer>("""
                            using System.Collections.Generic;
 
                            record Registry

@@ -80,33 +80,21 @@ internal static class FileSystemPathHelpers
     }
 
     // Returns true if the name (dashes stripped) suggests a file system path.
-    // Extends PathNamePatterns with CLI-specific terms: "input", "output", and "file"
-    // ("file" is intentionally excluded from PathNamePatterns for parameter names to avoid
-    // firing on `fileName` string params, but `--file` CLI options are almost always file paths).
     internal static bool IsPathCliName(string name)
     {
-        return PathNamePatterns.IsPathName(name)
-               || name.IndexOf("input", StringComparison.OrdinalIgnoreCase) >= 0
-               || name.IndexOf("output", StringComparison.OrdinalIgnoreCase) >= 0
-               || name.IndexOf("file", StringComparison.OrdinalIgnoreCase) >= 0;
+        return PathNamePatterns.IsPathCliName(name);
     }
 
     // Returns description and the full suggestion string for the diagnostic message.
     // typeName is "Option" or "Argument" — the suggestion includes the correct generic wrapper.
     internal static (string Description, string Suggestion) GetCliSuggestion(string strippedName, string typeName)
     {
-        if (strippedName.IndexOf("dir", StringComparison.OrdinalIgnoreCase) >= 0
-            || strippedName.IndexOf("folder", StringComparison.OrdinalIgnoreCase) >= 0)
+        return PathNamePatterns.Classify(strippedName) switch
         {
-            return ("directory path", $"'{typeName}<DirectoryInfo>'");
-        }
-
-        if (strippedName.IndexOf("file", StringComparison.OrdinalIgnoreCase) >= 0)
-        {
-            return ("file path", $"'{typeName}<FileInfo>'");
-        }
-
-        // Ambiguous (path, input, output, etc.) — suggest either.
-        return ("file system path", $"'{typeName}<FileInfo>' or '{typeName}<DirectoryInfo>'");
+            PathNameKind.Directory => ("directory path", $"'{typeName}<DirectoryInfo>'"),
+            PathNameKind.File => ("file path", $"'{typeName}<FileInfo>'"),
+            PathNameKind.Ambiguous => ("file system path", $"'{typeName}<FileInfo>' or '{typeName}<DirectoryInfo>'"),
+            _ => ("file system path", $"'{typeName}<FileInfo>' or '{typeName}<DirectoryInfo>'")
+        };
     }
 }

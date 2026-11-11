@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -22,22 +21,11 @@ public sealed class CompositeDetectionSpecificityAnalyzerTests
                                               }
                                               """;
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<CompositeDetectionSpecificityAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenSingleResourceDetectionWithGenericIdSelector()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<CompositeDetectionSpecificityAnalyzer>($$"""
                              {{DetectionRuleStubs}}
                              class C
                              {
@@ -58,7 +46,7 @@ public sealed class CompositeDetectionSpecificityAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenMultipleBranches()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<CompositeDetectionSpecificityAnalyzer>($$"""
                              {{DetectionRuleStubs}}
                              class C
                              {
@@ -77,7 +65,7 @@ public sealed class CompositeDetectionSpecificityAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenSingleDomainDetection()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<CompositeDetectionSpecificityAnalyzer>($$"""
                              {{DetectionRuleStubs}}
                              class C
                              {
@@ -95,7 +83,7 @@ public sealed class CompositeDetectionSpecificityAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenSingleResourceDetectionWithMainId()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<CompositeDetectionSpecificityAnalyzer>($$"""
                              {{DetectionRuleStubs}}
                              class C
                              {

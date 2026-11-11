@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,63 +7,51 @@ namespace E128.Analyzers.Tests;
 
 public sealed class E128055PragmaBalanceAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<PragmaBalanceAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            // E128055 fires on unbalanced pragmas; the framework's suppression-check phase
-            // adds an unbalanced #pragma warning disable E128055, which would cause a
-            // self-referential diagnostic. Skip the suppression check to avoid this.
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+
+    private static AnalyzerTestOptions Options => new() { TestBehaviors = TestBehaviors.SkipSuppressionCheck };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBalance_Reports_WhenPragmaDisableHasNoRestore()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBalanceAnalyzer>("""
                            {|E128055:#pragma warning disable CS0168|}
                            class Foo { }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBalance_NoReport_WhenPragmaDisableIsRestored()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBalanceAnalyzer>("""
                            #pragma warning disable CS0168
                            class Foo { }
                            #pragma warning restore CS0168
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBalance_Reports_OnlyUnrestoredIds_WhenMultiIdPragma()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBalanceAnalyzer>("""
                            {|E128055:#pragma warning disable CA2007, CS0168|}
                            class Foo { }
                            #pragma warning restore CS0168
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBalance_NoReport_WhenBareRestoreCoversAll()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBalanceAnalyzer>("""
                            #pragma warning disable CS0168
                            #pragma warning disable CA2007
                            class Foo { }
                            #pragma warning restore
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -72,43 +59,43 @@ public sealed class E128055PragmaBalanceAnalyzerTests
     public Task PragmaBalance_Reports_WhenRestoreComesBeforeDisable()
     {
         // Directives apply in document order. A restore clears only a disable that precedes it.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBalanceAnalyzer>("""
                            #pragma warning restore CS0168
                            {|E128055:#pragma warning disable CS0168|}
                            class Foo { }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBalance_Reports_WhenMultipleDisablesOnlyOneRestored()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBalanceAnalyzer>("""
                            {|E128055:#pragma warning disable CA2007|}
                            #pragma warning disable CS0168
                            class Foo { }
                            #pragma warning restore CS0168
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBalance_Reports_WhenABareDisableIsNeverRestored()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBalanceAnalyzer>("""
                            {|E128055:#pragma warning disable|}
                            class Foo { }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PragmaBalance_Silent_WhenABareDisableIsRestored()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PragmaBalanceAnalyzer>("""
                            #pragma warning disable
                            class Foo { }
                            #pragma warning restore
-                           """);
+                           """, options: Options);
     }
 }

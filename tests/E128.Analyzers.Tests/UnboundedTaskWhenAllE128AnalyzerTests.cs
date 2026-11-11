@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UnboundedTaskWhenAllE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<UnboundedTaskWhenAllAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task WhenAll_AsyncSelect_NoThrottle_FiresE128037()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Threading.Tasks;
@@ -42,7 +29,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_AsyncSelect_WithSemaphore_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Threading;
@@ -68,7 +55,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_AsyncSelectThroughToArray_NoThrottle_FiresE128037()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Threading.Tasks;
@@ -87,7 +74,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_AsyncSelectThroughToArray_WithSemaphore_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Threading;
@@ -114,7 +101,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     public Task WhenAll_PlainLambdaReturningTask_FiresE128037()
     {
         // The fan-out is unbounded whether or not the lambda carries the async keyword.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            using System.Threading.Tasks;
@@ -133,7 +120,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_TaskRunListInLoop_FiresE128037()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
                            class C
@@ -156,7 +143,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_TaskRunWithoutLoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
                            class C
@@ -175,7 +162,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_TaskRunListWithSemaphore_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading;
                            using System.Threading.Tasks;
@@ -203,7 +190,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_TaskRunInBoundedLoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
                            class C
@@ -226,7 +213,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_TaskRunWithWaitAsyncTimeout_FiresE128037()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
@@ -250,7 +237,7 @@ public sealed class UnboundedTaskWhenAllE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenAll_MultipleArgs_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnboundedTaskWhenAllAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {

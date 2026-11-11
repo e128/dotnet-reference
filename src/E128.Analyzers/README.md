@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.7.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.8.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -3028,23 +3028,28 @@ No code fix. The `in` modifier or a class change is a caller decision.
 
 ### E128218: Boolean flags encode one state
 
-Flags a class that uses several mutable `bool` members as one state. The rule
-reports when one method writes two or more of those members, or when one
-condition reads two or more of them and at least one read is negated.
+Flags a class or a mutable struct that uses several mutable `bool` members as
+one state. The rule reports when one method writes two or more of those members,
+or when one condition reads two or more of them and at least one read is
+negated.
 
 A member counts only when its transitions are not one-way. A member written only
 to `true`, or only to `false`, is ignored. A write in a constructor or a
 destructor is not a transition. A write through `Interlocked.Exchange` or
 `Volatile.Write` is a transition.
 
-The rule analyzes fields and auto-properties. A property with accessor bodies is
-outside its scope.
+The rule analyzes fields, auto-properties, and a property pair that forwards to
+one field. The field is the canonical member, so the pair counts once. A
+computed property is outside the scope. A write from another type through a
+public setter counts only when the owning type also has an internal transition.
+A `readonly` struct and a `record struct` are outside the scope.
 
 The default minimum cluster size is three. Set `e128_min_state_flags` in
-`.editorconfig` to change it. The minimum accepted value is two. The rule reads
-the option per source file, so a project-level `.editorconfig` applies. The
-rule stays at `Info` because a pair of independent flags can look like one
-state at a single call site.
+`.editorconfig` to change it. The minimum accepted value is two. Set
+`e128_state_min_transition_bodies` to require more than one transition body.
+The default is one. The rule reads both options per source file, so a
+project-level `.editorconfig` applies. The rule stays at `Info` because a pair
+of independent flags can look like one state at a single call site.
 
 ```csharp
 // Before (info)

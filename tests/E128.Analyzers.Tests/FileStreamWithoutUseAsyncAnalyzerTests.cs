@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FileStreamWithoutUseAsyncAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ConstructorWithNoUseAsyncParameter_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -32,7 +26,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task UseAsyncFalse_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -48,7 +42,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task UseAsyncNamedFalse_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -64,7 +58,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task UseAsyncTrue_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -80,7 +74,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonConstantUseAsync_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -96,7 +90,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileOptionsNone_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -112,7 +106,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileOptionsAsynchronous_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -128,7 +122,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileOptionsAsynchronousCombinedWithAnotherFlag_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -144,7 +138,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileOptionsNamedAsynchronous_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -160,7 +154,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonConstantFileOptions_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -176,7 +170,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task SafeFileHandleOverload_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            using Microsoft.Win32.SafeHandles;
                            class C
@@ -193,7 +187,7 @@ public sealed class FileStreamWithoutUseAsyncAnalyzerTests
     [Trait("Category", "CI")]
     public Task UserTypeNamedFileStream_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileStreamWithoutUseAsyncAnalyzer>("""
                            using System.IO;
                            class FileStream
                            {

@@ -12,46 +12,6 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 internal static class DiskIoCatalog
 {
-    private static readonly HashSet<string> FileWriteValueMethods = new(StringComparer.Ordinal)
-    {
-        "WriteAllText",
-        "WriteAllTextAsync",
-        "WriteAllBytes",
-        "WriteAllBytesAsync",
-        "WriteAllLines",
-        "WriteAllLinesAsync",
-        "AppendAllText",
-        "AppendAllTextAsync",
-        "AppendAllLines",
-        "AppendAllLinesAsync"
-    };
-
-    private static readonly HashSet<string> FileReadValueMethods = new(StringComparer.Ordinal)
-    {
-        "ReadAllText",
-        "ReadAllTextAsync",
-        "ReadAllBytes",
-        "ReadAllBytesAsync",
-        "ReadAllLines",
-        "ReadAllLinesAsync"
-    };
-
-    // File.* factories that produce a Stream/StreamWriter targeting a path for WRITE.
-    private static readonly HashSet<string> FileWriteFactories = new(StringComparer.Ordinal)
-    {
-        "Create",
-        "CreateText",
-        "OpenWrite",
-        "AppendText"
-    };
-
-    // File.* factories that produce a Stream/StreamReader targeting a path for READ.
-    private static readonly HashSet<string> FileReadFactories = new(StringComparer.Ordinal)
-    {
-        "OpenRead",
-        "OpenText"
-    };
-
     private static readonly HashSet<string> WriterWriteMethods = new(StringComparer.Ordinal)
     {
         "Write",
@@ -69,6 +29,7 @@ internal static class DiskIoCatalog
         "Append"
     };
 
+    // The one source for File.* method membership. Every predicate below derives from this map.
     private static readonly Dictionary<string, IoKind> FileMethodKinds = new(StringComparer.Ordinal)
     {
         ["WriteAllText"] = IoKind.Text,
@@ -102,22 +63,38 @@ internal static class DiskIoCatalog
 
     internal static bool IsFileWriteValueMethod(string name)
     {
-        return FileWriteValueMethods.Contains(name);
+        return IsValueMethod(name) && !name.StartsWith("Read", StringComparison.Ordinal);
     }
 
     internal static bool IsFileReadValueMethod(string name)
     {
-        return FileReadValueMethods.Contains(name);
+        return IsValueMethod(name) && name.StartsWith("Read", StringComparison.Ordinal);
     }
 
     internal static bool IsFileWriteFactory(string name)
     {
-        return FileWriteFactories.Contains(name);
+        return IsFactory(name)
+               && !name.StartsWith("OpenRead", StringComparison.Ordinal)
+               && !name.StartsWith("OpenText", StringComparison.Ordinal);
     }
 
     internal static bool IsFileReadFactory(string name)
     {
-        return FileReadFactories.Contains(name);
+        return IsFactory(name)
+               && (name.StartsWith("OpenRead", StringComparison.Ordinal)
+                   || name.StartsWith("OpenText", StringComparison.Ordinal));
+    }
+
+    private static bool IsValueMethod(string name)
+    {
+        return FileMethodKinds.TryGetValue(name, out var kind)
+               && kind is IoKind.Text or IoKind.Bytes or IoKind.Lines;
+    }
+
+    private static bool IsFactory(string name)
+    {
+        return FileMethodKinds.TryGetValue(name, out var kind)
+               && kind is IoKind.Stream or IoKind.Writer;
     }
 
     internal static bool IsAsyncName(string name)

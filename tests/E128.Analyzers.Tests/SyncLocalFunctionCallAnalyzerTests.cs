@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,17 +7,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SyncLocalFunctionCallAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<SyncLocalFunctionCallAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+
+    private static AnalyzerTestOptions Options => new() { MarkupOptions = MarkupOptions.UseFirstDescriptor };
 
     /// <summary>
     ///     AC-1: E128096 fires on async local function invoked via .Result in a synchronous method.
@@ -27,7 +17,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_Fires_OnLocalFunctionResult()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SyncLocalFunctionCallAnalyzer>("""
                            using System.Threading.Tasks;
 
                            class C
@@ -38,7 +28,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                                    _ = {|E128096:FetchAsync()|}.Result;
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     /// <summary>
@@ -48,7 +38,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_Fires_OnLocalFunctionWait()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SyncLocalFunctionCallAnalyzer>("""
                            using System.Threading.Tasks;
 
                            class C
@@ -59,7 +49,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                                    {|E128096:LoadAsync()|}.Wait();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     /// <summary>
@@ -69,7 +59,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_DoesNotFire_WhenContainingMethodAsync()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SyncLocalFunctionCallAnalyzer>("""
                            using System.Threading.Tasks;
 
                            class C
@@ -81,7 +71,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                                    await Task.CompletedTask;
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     /// <summary>
@@ -91,7 +81,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_DoesNotFire_OnNonAsyncLocalFunction()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SyncLocalFunctionCallAnalyzer>("""
                            using System.Threading.Tasks;
 
                            class C
@@ -102,7 +92,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                                    _ = FetchAsync().Result;
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     /// <summary>
@@ -112,7 +102,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_DoesNotFire_OnMethodDeclaration()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SyncLocalFunctionCallAnalyzer>("""
                            using System.Threading.Tasks;
 
                            class C
@@ -123,7 +113,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                                    _ = FetchAsync().Result;
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     /// <summary>
@@ -133,7 +123,7 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
     [Trait("Category", "CI")]
     public Task SyncLocalFunctionCallAnalyzer_Fires_OnTaskTReturnType()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SyncLocalFunctionCallAnalyzer>("""
                            using System.Threading.Tasks;
 
                            class C
@@ -144,6 +134,6 @@ public sealed class SyncLocalFunctionCallAnalyzerTests
                                    _ = {|E128096:GetCountAsync()|}.Result;
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

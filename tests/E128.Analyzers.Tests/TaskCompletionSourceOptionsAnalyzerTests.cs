@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,23 +7,14 @@ namespace E128.Analyzers.Tests;
 
 public sealed class TaskCompletionSourceOptionsAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<TaskCompletionSourceOptionsAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+
+    private static AnalyzerTestOptions Options => new() { MarkupOptions = MarkupOptions.UseFirstDescriptor };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoOptionsArgument_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -33,14 +23,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    return {|E128159:new TaskCompletionSource<int>()|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task EmptyOptionsArgument_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -49,14 +39,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    return {|E128159:new TaskCompletionSource<int>(TaskCreationOptions.None)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task FlagPresent_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -65,14 +55,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    return new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ComputedOptions_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -82,14 +72,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    return new TaskCompletionSource<int>(options);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task UnrelatedCreation_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -98,14 +88,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    return new List<int>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SetResultOnField_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -116,14 +106,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    {|E128159:source.SetResult(1)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SetExceptionOnStaticField_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System;
                            using System.Threading.Tasks;
                            class C
@@ -135,14 +125,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    {|E128159:C.Source.SetException(new InvalidOperationException())|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SetCanceledOnField_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -153,14 +143,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    {|E128159:this.source.SetCanceled()|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SetResultOnField_GuardedByInterlocked_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C
@@ -176,14 +166,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task TrySetResultOnField_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -194,14 +184,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    source.TrySetResult(1);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SetResultOnLocal_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -213,14 +203,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    source.SetResult(1);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SetResultOnParameter_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -229,14 +219,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    source.SetResult(1);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SetResultOnProperty_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -247,14 +237,14 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    Source.SetResult(1);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task SetResultOnUserType_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskCompletionSourceOptionsAnalyzer>("""
                            class Source
                            {
                                internal void SetResult(int value)
@@ -270,6 +260,6 @@ public sealed class TaskCompletionSourceOptionsAnalyzerTests
                                    source.SetResult(1);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

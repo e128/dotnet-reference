@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FipsUnapprovedHashE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FipsUnapprovedHashAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task MD5Create_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task SHA1Create_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -55,7 +42,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task DESCreate_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -71,7 +58,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task RC2Create_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -87,7 +74,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TripleDESCreate_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -103,7 +90,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task HMACMD5HashData_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -120,7 +107,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewHMACMD5_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -137,7 +124,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewHMACSHA1_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -154,7 +141,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewMD5CryptoServiceProvider_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -172,7 +159,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewSHA1CryptoServiceProvider_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -190,7 +177,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewSHA1Managed_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -208,7 +195,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewDESCryptoServiceProvider_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -226,7 +213,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewTripleDESCryptoServiceProvider_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -244,7 +231,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewRC2CryptoServiceProvider_Reports_E128071()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -262,7 +249,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task SHA256Create_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -278,7 +265,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task SHA256HashData_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -295,7 +282,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task HMACSHA256HashData_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -312,7 +299,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewHMACSHA256_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -329,7 +316,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NewHMACSHA1_TargetTyped_Reports()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -346,7 +333,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaEncryptWithPkcs1Padding_Reports()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -362,7 +349,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaSignWithPkcs1Padding_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -379,7 +366,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     public Task CipherNamedTypeWithForbiddenFactoryName_NoReport()
     {
         // E128148 owns the type. Its verdict stops the factory-name analysis, so the call site gets one diagnostic.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            namespace System.Security.Cryptography
                            {
                                class BlowfishEngine
@@ -402,7 +389,7 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task Pkcs1KeyExchangeFormatter_Reports()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -428,6 +415,6 @@ public sealed class FipsUnapprovedHashE128AnalyzerTests
             "    }\n" +
             "}\n";
 
-        return VerifyAsync(code);
+        return AnalyzerTestRunner.VerifyAsync<FipsUnapprovedHashAnalyzer>(code);
     }
 }

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class NonXmlDocCommentE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<NonXmlDocCommentE128Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task SlashSlashAboveMethod_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                {|E128024:// This does something|}
@@ -36,7 +23,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task XmlDocAboveMethod_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                /// <summary>This is proper XML doc.</summary>
@@ -49,7 +36,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task CommentInsideBody_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                void DoSomething()
@@ -65,7 +52,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task BlankLineBetweenCommentAndMethod_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                {|E128024:// Separated by blank line|}
@@ -79,7 +66,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task MultipleCommentLines_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                {|E128024:// First line|}
@@ -93,7 +80,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task CommentAboveProperty_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                // This is above a property, not a method
@@ -106,7 +93,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task CommentAboveLocalFunction_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                void Outer()
@@ -122,7 +109,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task DecorativeSeparatorNotAboveMethod_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                public int A { get; set; }
@@ -137,7 +124,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task PragmaJustification_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                            #pragma warning disable CA1822
@@ -156,7 +143,7 @@ public sealed class NonXmlDocCommentE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task CommentsAfterARestore_Fire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonXmlDocCommentE128Analyzer>("""
                            class Foo
                            {
                                void A() { }

@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-08T18:38:19Z*
+*Updated: 2026-11-11T03:58:51Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -14,7 +14,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `MetadataTypes.Unsafe` | The single owner of the `System.Runtime.CompilerServices.Unsafe` metadata name. |
 | `MetadataTypes.Find` | Returns every type with the metadata name. Survives an ambiguous reference. |
 | `MetadataTypes.Contains` | True when a symbol is one of the resolved types. |
-| `MetadataTypes.RegisterForType` | Registers a syntax action only when `GetTypeByMetadataName` resolves. An ambiguous name turns the rule off. |
+| `MetadataTypes.RegisterForType` | Registers one syntax action per type that carries the metadata name. An ambiguous name registers every match, so the rule still runs. A bound symbol matches one type, so a report cannot duplicate. |
 | `OptionReader.ReadInt` | Reads one bounded integer config option. A missing, malformed, or below-minimum value yields the fallback. |
 | `TypeSymbols.UnwrapNullable` | Returns `T` for a `Nullable<T>` argument. |
 | `TypeSymbols.DerivesFrom` | Walks the base chain. A null base type matches nothing. |
@@ -26,6 +26,10 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `ByteSizeType.Is` | True for `Pug.Core.Classes.ByteSize`. |
 | `ReturnTypes.Get` | Returns the return type of a method or the type of a property. |
 | `ReadOnlyCollectionExposure.Find` | Takes an operation and its containing symbol, not a diagnostic context. Returns the location of a mutable `List` or `Dictionary` field or property that a member exposes as a read-only interface. Unwraps `Task<T>` and `ValueTask<T>`. `MutableCollectionKind` selects the collection. |
+| `MutableCollectionCatalog` | One list of mutable collection types, their kind, the read-only interface name that replaces each, and the display template. The exposure rule and the read-only return rules both read it. |
+| `PragmaWarningDirectives.Warning` | Enumerates each `#pragma warning` directive with its trivia. `IsDisable` classifies it. The suppression rules share it. |
+| `PathNamePatterns` | One path-name classifier. `IsPathName` gates a parameter name, `IsPathCliName` adds the CLI terms, and `Classify` returns `File`, `Directory`, or `Ambiguous`. |
+| `DiskIoCatalog.FileMethodKinds` | One map from a `System.IO.File` method name to its `IoKind`. The write, read, and factory predicates derive from it. |
 | `TaskTypes.IsTaskOrValueTask` | True for `Task` and `ValueTask`, including their generic forms. |
 | `Blittability.IsBlittable` | True when a type copies as a raw bit pattern. A struct that holds a bool or decimal returns false. |
 | `TrackerReference` | Reads `e128_tracked_ref_pattern` and matches a work-item reference. A regex timeout counts as no match, so the rule still reports. |

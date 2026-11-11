@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SearchValuesHoistingAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<SearchValuesHoistingAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheTableIsBuiltAtTheCallSite()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SearchValuesHoistingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -38,7 +27,7 @@ public sealed class SearchValuesHoistingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheTableIsAStaticReadonlyField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SearchValuesHoistingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -57,7 +46,7 @@ public sealed class SearchValuesHoistingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheArgumentIsAParameter()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SearchValuesHoistingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -74,7 +63,7 @@ public sealed class SearchValuesHoistingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheArgumentIsAnInstanceField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SearchValuesHoistingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -93,7 +82,7 @@ public sealed class SearchValuesHoistingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheArgumentCallsAnInstanceMethod()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SearchValuesHoistingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -114,7 +103,7 @@ public sealed class SearchValuesHoistingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheArgumentIsAStaticReadonlyField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SearchValuesHoistingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C
@@ -133,7 +122,7 @@ public sealed class SearchValuesHoistingAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheTableIsAStaticPropertyInitializer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SearchValuesHoistingAnalyzer>("""
                            using System;
                            using System.Buffers;
                            class C

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class JsonDocumentLifetimeE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<JsonDocumentLifetimeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task JsonDocumentParse_NoUsingScope_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonDocumentLifetimeAnalyzer>("""
                            using System.Text.Json;
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task JsonDocumentParse_UsingDeclaration_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonDocumentLifetimeAnalyzer>("""
                            using System.Text.Json;
                            class C
                            {
@@ -56,7 +43,7 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task JsonDocumentParse_UsingDeclaration_RootElementEscapes_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonDocumentLifetimeAnalyzer>("""
                            using System.Text.Json;
                            class C
                            {
@@ -73,7 +60,7 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task JsonDocumentParse_UsingDeclaration_RootElementCloned_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonDocumentLifetimeAnalyzer>("""
                            using System.Text.Json;
                            class C
                            {
@@ -90,7 +77,7 @@ public sealed class JsonDocumentLifetimeE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task JsonDocumentParse_UsingStatement_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<JsonDocumentLifetimeAnalyzer>("""
                            using System.Text.Json;
                            class C
                            {

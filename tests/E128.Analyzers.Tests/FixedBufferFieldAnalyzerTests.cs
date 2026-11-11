@@ -1,72 +1,61 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FixedBufferFieldAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<FixedBufferFieldAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+    private static AnalyzerTestOptions Options => new() { AllowUnsafe = true };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenAFixedSizeBufferIsDeclared()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedBufferFieldAnalyzer>("""
                            unsafe struct Buffer
                            {
                                {|E128119:public fixed byte Data[16];|}
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheFieldIsNotFixed()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedBufferFieldAnalyzer>("""
                            unsafe struct Buffer
                            {
                                public int Data;
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenOneDeclarationHoldsSeveralBuffers()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedBufferFieldAnalyzer>("""
                            unsafe struct S
                            {
                                {|E128119:public fixed byte A[4], B[8];|}
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheSizeIsAConstant()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FixedBufferFieldAnalyzer>("""
                            unsafe struct S
                            {
                                private const int Size = 16;
 
                                {|E128119:public fixed byte Data[Size];|}
                            }
-                           """);
+                           """, options: Options);
     }
 }

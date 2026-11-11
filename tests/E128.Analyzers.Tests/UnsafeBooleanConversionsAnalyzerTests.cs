@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UnsafeBooleanConversionsAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<UnsafeBooleanConversionsAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenIntIsReadAsBool()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeBooleanConversionsAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            class C
                            {
@@ -38,7 +27,7 @@ public sealed class UnsafeBooleanConversionsAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenBoolIsReadAsInt()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeBooleanConversionsAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            class C
                            {
@@ -55,7 +44,7 @@ public sealed class UnsafeBooleanConversionsAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenNeitherTypeIsBool()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeBooleanConversionsAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            class C
                            {
@@ -72,7 +61,7 @@ public sealed class UnsafeBooleanConversionsAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheResultIsUsedAsAReference()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeBooleanConversionsAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            class C
                            {

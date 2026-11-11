@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,19 +7,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ConcreteTypeDiDependencyE128AnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithDi };
+
     private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
-
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ConcreteTypeDiDependencyAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithDi
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
 
     #region Fires
 
@@ -28,7 +19,7 @@ public sealed class ConcreteTypeDiDependencyE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConcreteParam_OnlyInterfaceRegistered_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcreteTypeDiDependencyAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            interface IMyService { }
                            class MyService : IMyService { }
@@ -43,7 +34,7 @@ public sealed class ConcreteTypeDiDependencyE128AnalyzerTests
                                    services.AddSingleton<IMyService, MyService>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Fires
@@ -54,7 +45,7 @@ public sealed class ConcreteTypeDiDependencyE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConcreteParam_DirectlyRegistered_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcreteTypeDiDependencyAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            interface IMyService { }
                            class MyService : IMyService { }
@@ -70,14 +61,14 @@ public sealed class ConcreteTypeDiDependencyE128AnalyzerTests
                                    services.AddSingleton<MyService>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task InterfaceParam_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcreteTypeDiDependencyAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            interface IMyService { }
                            class MyService : IMyService { }
@@ -92,20 +83,20 @@ public sealed class ConcreteTypeDiDependencyE128AnalyzerTests
                                    services.AddSingleton<IMyService, MyService>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ConcreteParam_NotRegisteredAtAll_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConcreteTypeDiDependencyAnalyzer>("""
                            class MyService { }
                            class Consumer
                            {
                                public Consumer(MyService svc) { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Does Not Fire

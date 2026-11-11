@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,28 +7,20 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ConstantOperandAssertionAnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithXunit };
+
     private static readonly ReferenceAssemblies Net100WithXunit = ReferenceAssemblies.Net.Net100
         .AddPackages([
             new PackageIdentity("xunit.v3.core", "3.2.2"),
             new PackageIdentity("xunit.v3.assert", "3.2.2")
         ]);
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ConstantOperandAssertionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithXunit
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ConstantOperandAssertionAnalyzer_ReportsAssertion_WhenBothOperandsAreLiterals()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstantOperandAssertionAnalyzer>("""
                            using Xunit;
 
                            public static class Subject
@@ -39,14 +30,14 @@ public sealed class ConstantOperandAssertionAnalyzerTests
                                    {|E128104:Assert.Equal("alpha", "alpha")|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ConstantOperandAssertionAnalyzer_ReportsAssertion_WhenBothOperandsAreNumericLiterals()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstantOperandAssertionAnalyzer>("""
                            using Xunit;
 
                            public static class Subject
@@ -56,14 +47,14 @@ public sealed class ConstantOperandAssertionAnalyzerTests
                                    {|E128104:Assert.Equal(2, 2)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ConstantOperandAssertionAnalyzer_ReportsNothing_WhenOneOperandIsNotConstant()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstantOperandAssertionAnalyzer>("""
                            using Xunit;
 
                            public static class Subject
@@ -78,14 +69,14 @@ public sealed class ConstantOperandAssertionAnalyzerTests
                                    Assert.Equal("alpha", result.Name);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ConstantOperandAssertionAnalyzer_ReportsNothing_WhenAnOperandIsANamedConstant()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstantOperandAssertionAnalyzer>("""
                            using Xunit;
 
                            public static class Subject
@@ -97,14 +88,14 @@ public sealed class ConstantOperandAssertionAnalyzerTests
                                    Assert.Equal(Expected, actual);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ConstantOperandAssertionAnalyzer_ReportsNothing_WhenADynamicSkipCarriesALiteralReason()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstantOperandAssertionAnalyzer>("""
                            using Xunit;
 
                            public static class Subject
@@ -114,6 +105,6 @@ public sealed class ConstantOperandAssertionAnalyzerTests
                                    Assert.Skip("the fixture needs a network share");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

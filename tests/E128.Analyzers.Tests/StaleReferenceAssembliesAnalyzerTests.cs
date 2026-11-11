@@ -9,19 +9,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class StaleReferenceAssembliesAnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithTesting };
+
     private static readonly ReferenceAssemblies Net100WithTesting = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.CodeAnalysis.CSharp.Analyzer.Testing", "1.1.3")]);
-
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<StaleReferenceAssembliesAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithTesting
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
 
     private static Task VerifyWithMinimumVersionAsync(int minimumVersion, string code, params DiagnosticResult[] expected)
     {
@@ -42,13 +34,13 @@ public sealed class StaleReferenceAssembliesAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenNet100()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaleReferenceAssembliesAnalyzer>("""
                            using Microsoft.CodeAnalysis.Testing;
                            class Tests
                            {
                                private static readonly ReferenceAssemblies Assemblies = ReferenceAssemblies.Net.Net100;
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Does not fire
@@ -59,39 +51,39 @@ public sealed class StaleReferenceAssembliesAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnNet80_WhenDefaultMinimumIs100()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaleReferenceAssembliesAnalyzer>("""
                            using Microsoft.CodeAnalysis.Testing;
                            class Tests
                            {
                                private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net80|};
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task FiresOnNet90_WhenDefaultMinimumIs100()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaleReferenceAssembliesAnalyzer>("""
                            using Microsoft.CodeAnalysis.Testing;
                            class Tests
                            {
                                private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net90|};
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task FiresOnNet80_InFieldAssignment()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaleReferenceAssembliesAnalyzer>("""
                            using Microsoft.CodeAnalysis.Testing;
                            class Tests
                            {
                                private static readonly ReferenceAssemblies Assemblies = {|E128062:ReferenceAssemblies.Net.Net80|};
                            }
-                           """);
+                           """, options: Options);
     }
 
     /// <summary>

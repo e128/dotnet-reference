@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FipsRsaKeySizeAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FipsRsaKeySizeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ShortRsaKey_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task StrongRsaKey_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -55,7 +42,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortCurve_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -71,7 +58,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task FactoryWithoutCurve_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -87,7 +74,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ApprovedCurve_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -103,7 +90,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaCreatedByName_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -119,7 +106,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnresolvableCurveName_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -135,7 +122,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task CurveFromParameter_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -151,7 +138,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortKeySizeAssignment_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -167,7 +154,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task CompoundKeySizeAssignment_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -183,7 +170,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortEllipticCurveKeySize_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -199,7 +186,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ApprovedP521Curve_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -215,7 +202,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaCreatedByName_ReportsUnverifiableKeySize_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -231,7 +218,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaImportedFromParameters_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -247,7 +234,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaImportedFromHandle_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -264,7 +251,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaImportedFromBlob_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -280,7 +267,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaImportedFromPem_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -296,7 +283,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task RsaFromCertificate_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
                            class C
                            {
@@ -312,7 +299,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task CurveFromFriendlyName_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -328,7 +315,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task CurveFromObjectIdentifier_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -344,7 +331,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task CurveInStructInitializer_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -360,7 +347,7 @@ public sealed class FipsRsaKeySizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorWithoutCurve_Reports_E128143()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {

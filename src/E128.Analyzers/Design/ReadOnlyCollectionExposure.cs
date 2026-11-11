@@ -1,4 +1,3 @@
-using System;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -31,7 +30,8 @@ internal static class ReadOnlyCollectionExposure
             returnedValue = conversion.Operand;
         }
 
-        if (returnedValue.Type is not { } returnedType || !IsMutableCollection(kind, returnedType))
+        if (returnedValue.Type is not { } returnedType
+            || !MutableCollectionCatalog.IsMutable(kind, returnedType))
         {
             return null;
         }
@@ -43,7 +43,7 @@ internal static class ReadOnlyCollectionExposure
         }
 
         var expectedReturn = UnwrapTask(ReturnTypes.Get(containingSymbol));
-        return expectedReturn is not null && IsReadOnlyInterface(kind, expectedReturn)
+        return expectedReturn is not null && MutableCollectionCatalog.IsReadOnlyInterface(kind, expectedReturn)
             ? returnedValue.Syntax.GetLocation()
             : null;
     }
@@ -53,27 +53,5 @@ internal static class ReadOnlyCollectionExposure
         return type is INamedTypeSymbol { TypeArguments.Length: 1 } named && TaskTypes.IsTaskOrValueTask(named)
             ? named.TypeArguments[0]
             : type;
-    }
-
-    private static bool IsMutableCollection(MutableCollectionKind kind, ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol namedType
-               && string.Equals(namedType.Name, MutableName(kind), StringComparison.Ordinal)
-               && Namespaces.Equals(namedType.ContainingNamespace, "System.Collections.Generic");
-    }
-
-    private static bool IsReadOnlyInterface(MutableCollectionKind kind, ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol namedType
-               && Namespaces.Equals(namedType.ContainingNamespace, "System.Collections.Generic")
-               && (kind is MutableCollectionKind.List
-                   ? string.Equals(namedType.Name, "IReadOnlyList", StringComparison.Ordinal)
-                       || string.Equals(namedType.Name, "IReadOnlyCollection", StringComparison.Ordinal)
-                   : string.Equals(namedType.Name, "IReadOnlyDictionary", StringComparison.Ordinal));
-    }
-
-    private static string MutableName(MutableCollectionKind kind)
-    {
-        return kind is MutableCollectionKind.List ? "List" : "Dictionary";
     }
 }

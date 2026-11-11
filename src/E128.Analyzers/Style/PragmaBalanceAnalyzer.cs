@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -57,29 +56,19 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
     {
         var open = new Dictionary<string, Location>(StringComparer.Ordinal);
 
-        foreach (var trivia in root.DescendantTrivia())
+        foreach (var (_, pragma) in PragmaWarningDirectives.Warning(root))
         {
-            if (!trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia))
-            {
-                continue;
-            }
-
-            ApplyPragma(trivia.GetStructure() as PragmaWarningDirectiveTriviaSyntax, open);
+            ApplyPragma(pragma, open);
         }
 
         return open;
     }
 
     private static void ApplyPragma(
-        PragmaWarningDirectiveTriviaSyntax? pragma,
+        PragmaWarningDirectiveTriviaSyntax pragma,
         Dictionary<string, Location> open)
     {
-        if (pragma is null)
-        {
-            return;
-        }
-
-        var isDisable = pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword);
+        var isDisable = PragmaWarningDirectives.IsDisable(pragma);
 
         if (!pragma.ErrorCodes.Any())
         {

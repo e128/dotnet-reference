@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class InRefStructE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<InRefStructE128Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task InReadOnlySpan_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InRefStructE128Analyzer>("""
                            using System;
                            class C
                            {
@@ -36,7 +23,7 @@ public sealed class InRefStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InSpan_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InRefStructE128Analyzer>("""
                            using System;
                            class C
                            {
@@ -49,7 +36,7 @@ public sealed class InRefStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InReadOnlySpanByte_StaticMethod_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InRefStructE128Analyzer>("""
                            using System;
                            class C
                            {
@@ -62,7 +49,7 @@ public sealed class InRefStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ReadOnlySpan_ByValue_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InRefStructE128Analyzer>("""
                            using System;
                            class C
                            {
@@ -75,7 +62,7 @@ public sealed class InRefStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InRegularStruct_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InRefStructE128Analyzer>("""
                            readonly struct BigData { public readonly long A, B, C, D; }
                            class C
                            {
@@ -88,7 +75,7 @@ public sealed class InRefStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NoParameters_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InRefStructE128Analyzer>("""
                            class C
                            {
                                void M() { }

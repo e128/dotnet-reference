@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class LinearLookupInLoopE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<LinearLookupInLoopAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ListContains_InForeach_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -45,7 +32,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ListContains_InForLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -67,7 +54,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ListContains_InWhileLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -91,7 +78,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task DoWhileLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -114,7 +101,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task LinqAny_InForeach_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -136,7 +123,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ListIndexOf_InForeach_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -157,7 +144,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ListRemove_InForeach_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -178,7 +165,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task LinqContains_InWhereLambda_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -197,7 +184,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task LinqContains_InSelectLambda_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -216,7 +203,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task LinqAny_InWhereLambda_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -235,7 +222,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ArrayContains_InForeach_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -257,7 +244,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task IEnumerableContains_InForeach_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -278,7 +265,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task HashSetContains_InForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -299,7 +286,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task DictionaryContainsKey_InForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -320,7 +307,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ContainsOutsideLoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -337,7 +324,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstantBoundForLoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -357,7 +344,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ISetContains_InForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -377,7 +364,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task HashSetContains_InLinqWhere_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -396,7 +383,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task StringContains_InForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -416,7 +403,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task StringIndexOf_InForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -436,7 +423,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task QueryableAny_InForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections;
                            using System.Collections.Generic;
                            using System.Linq;
@@ -457,7 +444,7 @@ public sealed class LinearLookupInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task StringContains_InLinqWhere_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LinearLookupInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C

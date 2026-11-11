@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class TimingSafeComparisonAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<TimingSafeComparisonAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task SpanEquality_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System;
 
                            class C
@@ -40,7 +27,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task ByteArrayEquality_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            class C
                            {
                                bool M(byte[] computedTag, byte[] expectedTag)
@@ -55,7 +42,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task SequenceEqualOnTag_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System.Linq;
 
                            class C
@@ -72,7 +59,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task StaticMemoryExtensionsSequenceEqual_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System;
 
                            class C
@@ -89,7 +76,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task StaticEnumerableSequenceEqual_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System.Linq;
 
                            class C
@@ -106,7 +93,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task HmacResultSequenceEqual_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
 
@@ -124,7 +111,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task HmacInstanceComputeHash_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System.Linq;
                            using System.Security.Cryptography;
 
@@ -144,7 +131,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task HmacHashProperty_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System.Linq;
                            using System.Security.Cryptography;
 
@@ -164,7 +151,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task IncrementalHmacResult_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System.Linq;
                            using System.Security.Cryptography;
 
@@ -185,7 +172,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task IncrementalPlainHashResult_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System.Linq;
                            using System.Security.Cryptography;
 
@@ -206,7 +193,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task LowercaseTagName_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System.Linq;
 
                            class C
@@ -223,7 +210,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task ContentHashEquality_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System;
 
                            class C
@@ -240,7 +227,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task FixedTimeEquals_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System.Security.Cryptography;
 
                            class C
@@ -257,7 +244,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task HexOfHmacStringEquality_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
 
@@ -275,7 +262,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task Base64OfHmacLocalStringNotEquals_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
 
@@ -294,7 +281,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task StringEqualsOnSignatureName_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            using System;
 
                            class C
@@ -311,7 +298,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task InstanceEqualsOnMacName_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            class C
                            {
                                bool M(string requestMac, string other)
@@ -326,7 +313,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task TokenAgainstExpectedToken_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            class C
                            {
                                bool M(string token, string expectedToken)
@@ -341,7 +328,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task StringTagAgainstLiteral_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            class C
                            {
                                bool M(string htmlTag)
@@ -356,7 +343,7 @@ public sealed class TimingSafeComparisonAnalyzerTests
     [Trait("Category", "CI")]
     public Task StringHashNames_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TimingSafeComparisonAnalyzer>("""
                            class C
                            {
                                bool M(string firstHash, string secondHash, string name, string title)

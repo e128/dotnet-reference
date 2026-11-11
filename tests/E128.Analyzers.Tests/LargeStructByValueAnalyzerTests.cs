@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
+using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -208,7 +209,7 @@ public sealed class LargeStructByValueAnalyzerTests
                 }
             }
             """,
-            allowUnsafe: true);
+            options: new AnalyzerTestOptions { AllowUnsafe = true });
     }
 
     [Fact]
@@ -260,6 +261,6 @@ public sealed class LargeStructByValueAnalyzerTests
                 }
             }
             """,
-            compilerDiagnostics: Microsoft.CodeAnalysis.Testing.CompilerDiagnostics.None);
+            options: new AnalyzerTestOptions { CompilerDiagnostics = CompilerDiagnostics.None });
     }
 }

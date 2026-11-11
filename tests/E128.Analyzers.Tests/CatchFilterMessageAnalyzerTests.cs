@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class CatchFilterMessageAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_MessageMember()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -37,7 +31,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenALambdaParameterShadowsTheName()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            using System.Linq;
                            class Item { public string Message => ""; }
@@ -60,7 +54,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_MessageThroughAConditionalAccess()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -81,7 +75,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_StackTraceMember()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -102,7 +96,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_ToStringMember()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -123,7 +117,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_MessageOnRenamedVariable()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -144,7 +138,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_MessageAndStackTrace()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -165,7 +159,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_HResultRead()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -186,7 +180,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_InnerExceptionRead()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -207,7 +201,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_MessageOnOtherObject()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class Holder
                            {
@@ -232,7 +226,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_MethodCallOnException()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -254,7 +248,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_CatchDeclaresNoVariable()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {
@@ -275,7 +269,7 @@ public sealed class CatchFilterMessageAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_MessageReadInCatchBody()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CatchFilterMessageAnalyzer>("""
                            using System;
                            class C
                            {

@@ -21,7 +21,7 @@ public sealed class PragmaBalanceCodeFixProvider : E128CodeFixProviderBase
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [PragmaBalanceAnalyzer.DiagnosticId];
 
-    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
+    public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var diagnostic = context.Diagnostics[0];
         if (!diagnostic.Properties.TryGetValue(PragmaBalanceAnalyzer.DiagnosticIdKey, out var suppressedId)

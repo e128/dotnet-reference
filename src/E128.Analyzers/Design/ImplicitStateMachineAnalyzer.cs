@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
@@ -21,8 +22,10 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128218";
     internal const string OptionKey = "e128_min_state_flags";
+    internal const string MinTransitionBodiesOptionKey = "e128_state_min_transition_bodies";
 
     private const int DefaultMinFlags = 3;
+    private const int DefaultMinTransitionBodies = 1;
     private const int MinClusterMembersPerSite = 2;
     private const int MinWriteArguments = 2;
 
@@ -34,7 +37,8 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Info,
         true,
         "Several mutable bool fields change together, so they encode one state with scattered transitions. " +
-        "Replace them with one enum and one transition method. Set e128_min_state_flags to change the minimum cluster size.",
+        "Replace them with one enum and one transition method. Set e128_min_state_flags to change the minimum cluster size. " +
+        "Set e128_state_min_transition_bodies to require more than one transition body.",
         customTags: WellKnownDiagnosticTags.CompilationEnd);
 
     /// <inheritdoc />
@@ -84,28 +88,8 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
     {
         if (context.Operation is not IAssignmentOperation assignment
             || assignment.Target is not IMemberReferenceOperation memberReference
-            || memberReference.Instance is not IInstanceReferenceOperation
-            {
-                ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
-            })
-        {
-            return;
-        }
-
-        var containingType = context.ContainingSymbol?.ContainingType;
-        if (containingType is null)
-        {
-            return;
-        }
-
-        var evidence = GetEvidence(evidenceMap, containingType, obsoleteAttribute, context.CancellationToken);
-        if (evidence is null || !evidence.IsCandidate(memberReference.Member))
-        {
-            return;
-        }
-
-        var body = context.ContainingSymbol;
-        if (body is null)
+            || context.ContainingSymbol is not { } body
+            || TryResolveWriteTarget(context, memberReference, evidenceMap, obsoleteAttribute) is not { } target)
         {
             return;
         }
@@ -114,11 +98,57 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             ? GetConstantBool(assignment.Value)
             : null;
 
-        evidence.AddWrite((
-            memberReference.Member,
+        target.Evidence.AddWrite((
+            target.Member,
             value,
             GetBodyKey(assignment, body),
-            assignment.Syntax.GetLocation()));
+            assignment.Syntax.GetLocation(),
+            target.IsInternal));
+    }
+
+    private static (TypeEvidence Evidence, ISymbol Member, bool IsInternal)? TryResolveWriteTarget(
+        OperationAnalysisContext context,
+        IMemberReferenceOperation memberReference,
+        ConcurrentDictionary<ISymbol, TypeEvidence> evidenceMap,
+        INamedTypeSymbol? obsoleteAttribute)
+    {
+        if (memberReference.Member.ContainingType is not { } owner
+            || context.ContainingSymbol?.ContainingType is not { } containingType
+            || !IsWriteInstanceValid(memberReference, owner, containingType))
+        {
+            return null;
+        }
+
+        var evidence = GetEvidence(evidenceMap, owner, obsoleteAttribute, context.CancellationToken);
+        if (evidence is null)
+        {
+            return null;
+        }
+
+        var member = evidence.Resolve(memberReference.Member);
+        if (!evidence.IsCandidate(member))
+        {
+            return null;
+        }
+
+        var isInternal = SymbolEqualityComparer.Default.Equals(owner, containingType);
+        return (evidence, member, isInternal);
+    }
+
+    private static bool IsWriteInstanceValid(
+        IMemberReferenceOperation memberReference,
+        INamedTypeSymbol owner,
+        INamedTypeSymbol containingType)
+    {
+        if (SymbolEqualityComparer.Default.Equals(owner, containingType))
+        {
+            return memberReference.Instance is IInstanceReferenceOperation
+            {
+                ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
+            };
+        }
+
+        return memberReference.Instance is not null && !owner.DeclaringSyntaxReferences.IsEmpty;
     }
 
     private static IOperation? GetCondition(IOperation operation)
@@ -180,13 +210,18 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
                 && memberReference.Instance is IInstanceReferenceOperation
                 {
                     ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
-                }
-                && evidence.IsCandidate(memberReference.Member))
+                })
             {
-                members.Add(memberReference.Member);
+                var member = evidence.Resolve(memberReference.Member);
+                if (!evidence.IsCandidate(member))
+                {
+                    continue;
+                }
+
+                members.Add(member);
                 if (IsNegated(memberReference, condition))
                 {
-                    negated.Add(memberReference.Member);
+                    negated.Add(member);
                 }
             }
         }
@@ -214,7 +249,13 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         }
 
         var evidence = GetEvidence(evidenceMap, containingType, obsoleteAttribute, context.CancellationToken);
-        if (evidence is null || !evidence.IsCandidate(fieldReference.Field))
+        if (evidence is null)
+        {
+            return;
+        }
+
+        var member = evidence.Resolve(fieldReference.Field);
+        if (!evidence.IsCandidate(member))
         {
             return;
         }
@@ -228,10 +269,11 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         var value = GetConstantBool(invocation.Arguments[1].Value);
 
         evidence.AddWrite((
-            fieldReference.Field,
+            member,
             value,
             GetBodyKey(invocation, body),
-            invocation.Syntax.GetLocation()));
+            invocation.Syntax.GetLocation(),
+            IsInternal: true));
     }
 
     // Matches Interlocked.Exchange or Volatile.Write on a field of the containing instance.
@@ -319,43 +361,69 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
     {
         foreach (var pair in evidenceMap)
         {
-            var evidence = pair.Value;
-            var type = evidence.Type;
-
-            if (!evidence.HasCandidates || type.Locations.Length is 0)
-            {
-                continue;
-            }
-
-            var tree = type.Locations[0].SourceTree;
-            if (tree is null)
-            {
-                continue;
-            }
-
-            // Read per type so a project .editorconfig applies, not only a global config.
-            var minFlags = ReadMinFlags(context.Options.AnalyzerConfigOptionsProvider.GetOptions(tree));
-            var transitionWrites = CollectTransitionWrites(evidence.Writes, out var bodyWrites, out var bodyLocations);
-            var cluster = BuildCluster(evidence.Candidates, transitionWrites);
-
-            if (cluster.Count < minFlags)
-            {
-                continue;
-            }
-
-            var clusterSet = new HashSet<ISymbol>(cluster, SymbolEqualityComparer.Default);
-            var coWrite = FindCoWrite(bodyWrites, bodyLocations, clusterSet);
-            var coRead = coWrite is null && cluster.Count >= minFlags + 1
-                ? FindCoRead(evidence.Reads, clusterSet)
-                : null;
-
-            if (coWrite is null && coRead is null)
-            {
-                continue;
-            }
-
-            ReportType(context, type, cluster, coWrite, coRead);
+            TryReportType(context, pair.Value);
         }
+    }
+
+    private static void TryReportType(CompilationAnalysisContext context, TypeEvidence evidence)
+    {
+        var type = evidence.Type;
+        if (!evidence.HasCandidates || !evidence.HasInternalWrite || type.Locations.Length is 0)
+        {
+            return;
+        }
+
+        var tree = type.Locations[0].SourceTree;
+        if (tree is null)
+        {
+            return;
+        }
+
+        // Read per type so a project .editorconfig applies, not only a global config.
+        var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(tree);
+        if (!TryFindStateEvidence(evidence, options, out var cluster, out var coWrite, out var coRead))
+        {
+            return;
+        }
+
+        ReportType(context, type, cluster, coWrite, coRead);
+    }
+
+    private static bool TryFindStateEvidence(
+        TypeEvidence evidence,
+        AnalyzerConfigOptions options,
+        out List<ISymbol> cluster,
+        out Location? coWrite,
+        out Location? coRead)
+    {
+        cluster = [];
+        coWrite = null;
+        coRead = null;
+
+        var minFlags = ReadMinFlags(options);
+        var transitionWrites = CollectTransitionWrites(
+            evidence.Writes,
+            out var bodyWrites,
+            out var bodyLocations);
+        cluster = BuildCluster(evidence.Candidates, transitionWrites);
+
+        if (cluster.Count < minFlags)
+        {
+            return false;
+        }
+
+        var clusterSet = new HashSet<ISymbol>(cluster, SymbolEqualityComparer.Default);
+        if (CountTransitionBodies(bodyWrites, clusterSet) < ReadMinTransitionBodies(options))
+        {
+            return false;
+        }
+
+        coWrite = FindCoWrite(bodyWrites, bodyLocations, clusterSet);
+        coRead = coWrite is null && cluster.Count >= minFlags + 1
+            ? FindCoRead(evidence.Reads, clusterSet)
+            : null;
+
+        return coWrite is not null || coRead is not null;
     }
 
     private static void ReportType(
@@ -391,7 +459,7 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
     }
 
     private static Dictionary<ISymbol, WriteStats> CollectTransitionWrites(
-        (ISymbol Member, bool? Value, ISymbol Body, Location Location)[] writes,
+        (ISymbol Member, bool? Value, ISymbol Body, Location Location, bool IsInternal)[] writes,
         out Dictionary<ISymbol, Dictionary<ISymbol, bool?>> bodyWrites,
         out Dictionary<ISymbol, Location> bodyLocations)
     {
@@ -399,9 +467,9 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         bodyWrites = new Dictionary<ISymbol, Dictionary<ISymbol, bool?>>(SymbolEqualityComparer.Default);
         bodyLocations = new Dictionary<ISymbol, Location>(SymbolEqualityComparer.Default);
 
-        foreach (var (member, value, body, location) in writes)
+        foreach (var (member, value, body, location, _) in writes)
         {
-            if (IsLifecycleBody(body))
+            if (IsLifecycleBody(body) || IsAccessorBody(body))
             {
                 continue;
             }
@@ -567,6 +635,26 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         return count;
     }
 
+    private static int CountTransitionBodies(
+        Dictionary<ISymbol, Dictionary<ISymbol, bool?>> bodyWrites,
+        HashSet<ISymbol> cluster)
+    {
+        var count = 0;
+        foreach (var pair in bodyWrites)
+        {
+            foreach (var member in pair.Value.Keys)
+            {
+                if (cluster.Contains(member))
+                {
+                    count++;
+                    break;
+                }
+            }
+        }
+
+        return count;
+    }
+
     private static TypeEvidence? GetEvidence(
         ConcurrentDictionary<ISymbol, TypeEvidence> evidenceMap,
         INamedTypeSymbol type,
@@ -594,7 +682,31 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        foreach (var member in type.GetMembers())
+        {
+            if (member is IPropertySymbol property
+                && TryGetForwardedFieldName(property, cancellationToken) is { } name
+                && FindField(type, name) is { } field
+                && evidence.IsCandidate(field))
+            {
+                evidence.AddCanonical(property, field);
+            }
+        }
+
         return evidence;
+    }
+
+    private static IFieldSymbol? FindField(INamedTypeSymbol type, string name)
+    {
+        foreach (var member in type.GetMembers(name))
+        {
+            if (member is IFieldSymbol field)
+            {
+                return field;
+            }
+        }
+
+        return null;
     }
 
     private static ISymbol GetBodyKey(IOperation operation, ISymbol containingSymbol)
@@ -617,7 +729,8 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
     private static bool IsAnalyzedType(INamedTypeSymbol type)
     {
-        return type.TypeKind is TypeKind.Class && !type.IsRecord && !type.IsStatic;
+        return (type.TypeKind is TypeKind.Class && !type.IsRecord && !type.IsStatic)
+               || (type.TypeKind is TypeKind.Struct && !type.IsRecord && !type.IsReadOnly);
     }
 
     private static bool IsCandidateMember(
@@ -681,11 +794,157 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
+    // A property with a getter and a setter that only read and write one field
+    // names that field. The field is the canonical member, so the pair counts once.
+    private static string? TryGetForwardedFieldName(
+        IPropertySymbol property,
+        CancellationToken cancellationToken)
+    {
+        if (!IsForwardableProperty(property))
+        {
+            return null;
+        }
+
+        string? forwarded = null;
+        foreach (var reference in property.DeclaringSyntaxReferences)
+        {
+            if (!TryGetAccessorFieldName(reference, cancellationToken, out var name))
+            {
+                return null;
+            }
+
+            if (forwarded is not null && !string.Equals(forwarded, name, StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            forwarded = name;
+        }
+
+        return forwarded;
+    }
+
+    private static bool IsForwardableProperty(IPropertySymbol property)
+    {
+        return !property.IsStatic
+               && !property.IsIndexer
+               && !property.IsAbstract
+               && !property.IsOverride
+               && property.ExplicitInterfaceImplementations.IsEmpty
+               && property.Type.SpecialType is SpecialType.System_Boolean
+               && property.SetMethod is { IsInitOnly: false };
+    }
+
+    private static bool TryGetAccessorFieldName(
+        SyntaxReference reference,
+        CancellationToken cancellationToken,
+        out string name)
+    {
+        name = string.Empty;
+        if (reference.GetSyntax(cancellationToken) is not PropertyDeclarationSyntax { AccessorList: { } accessors })
+        {
+            return false;
+        }
+
+        string? getter = null;
+        string? setter = null;
+        foreach (var accessor in accessors.Accessors)
+        {
+            if (accessor.IsKind(SyntaxKind.GetAccessorDeclaration))
+            {
+                getter = GetGetterFieldName(accessor);
+                if (getter is null)
+                {
+                    return false;
+                }
+            }
+            else if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
+            {
+                setter = GetSetterFieldName(accessor);
+                if (setter is null)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        if (getter is null || setter is null || !string.Equals(getter, setter, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        name = getter;
+        return true;
+    }
+
+    private static string? GetGetterFieldName(AccessorDeclarationSyntax accessor)
+    {
+        var expression = accessor.ExpressionBody is { } arrow
+            ? arrow.Expression
+            : FirstReturnedExpression(accessor.Body);
+
+        return GetSimpleMemberName(expression);
+    }
+
+    private static string? GetSetterFieldName(AccessorDeclarationSyntax accessor)
+    {
+        var expression = accessor.ExpressionBody is { } arrow
+            ? arrow.Expression
+            : FirstStatementExpression(accessor.Body);
+
+        return expression is AssignmentExpressionSyntax assignment
+               && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+               && assignment.Right is IdentifierNameSyntax valueName
+               && string.Equals(valueName.Identifier.ValueText, "value", StringComparison.Ordinal)
+            ? GetSimpleMemberName(assignment.Left)
+            : null;
+    }
+
+    private static ExpressionSyntax? FirstReturnedExpression(BlockSyntax? body)
+    {
+        return body is { Statements.Count: 1 }
+               && body.Statements[0] is ReturnStatementSyntax { Expression: { } returned }
+            ? returned
+            : null;
+    }
+
+    private static ExpressionSyntax? FirstStatementExpression(BlockSyntax? body)
+    {
+        return body is { Statements.Count: 1 }
+               && body.Statements[0] is ExpressionStatementSyntax { Expression: { } statement }
+            ? statement
+            : null;
+    }
+
+    private static string? GetSimpleMemberName(ExpressionSyntax? expression)
+    {
+        return expression switch
+        {
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax, Name: IdentifierNameSyntax name } =>
+                name.Identifier.ValueText,
+            _ => null
+        };
+    }
+
     private static bool IsLifecycleBody(ISymbol body)
     {
         return body is IMethodSymbol
         {
             MethodKind: MethodKind.Constructor or MethodKind.StaticConstructor or MethodKind.Destructor
+        };
+    }
+
+    // An accessor body is the storage for a property, not a transition.
+    private static bool IsAccessorBody(ISymbol body)
+    {
+        return body is IMethodSymbol
+        {
+            MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet
         };
     }
 
@@ -721,6 +980,15 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             minimum: 2);
     }
 
+    private static int ReadMinTransitionBodies(AnalyzerConfigOptions options)
+    {
+        return OptionReader.ReadInt(
+            options,
+            MinTransitionBodiesOptionKey,
+            DefaultMinTransitionBodies,
+            minimum: 1);
+    }
+
     private sealed class WriteStats
     {
         private bool _sawTrue;
@@ -751,12 +1019,21 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         private readonly ConcurrentDictionary<ISymbol, byte> _candidates =
             new(SymbolEqualityComparer.Default);
 
-        private readonly ConcurrentQueue<(ISymbol Member, bool? Value, ISymbol Body, Location Location)> _writes = new();
+        private readonly ConcurrentQueue<(
+            ISymbol Member,
+            bool? Value,
+            ISymbol Body,
+            Location Location,
+            bool IsInternal)> _writes = new();
 
         private readonly ConcurrentQueue<(
             ImmutableArray<ISymbol> Members,
             ImmutableArray<ISymbol> NegatedMembers,
             Location Location)> _reads = new();
+
+        private readonly Dictionary<ISymbol, ISymbol> _canonical = new(SymbolEqualityComparer.Default);
+
+        private int _hasInternalWrite;
 
         internal TypeEvidence(INamedTypeSymbol type)
         {
@@ -767,9 +1044,12 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
 
         internal bool HasCandidates => !_candidates.IsEmpty;
 
+        internal bool HasInternalWrite => Volatile.Read(ref _hasInternalWrite) is not 0;
+
         internal ImmutableArray<ISymbol> Candidates => [.. _candidates.Keys];
 
-        internal (ISymbol Member, bool? Value, ISymbol Body, Location Location)[] Writes => [.. _writes];
+        internal (ISymbol Member, bool? Value, ISymbol Body, Location Location, bool IsInternal)[] Writes =>
+            [.. _writes];
 
         internal (ImmutableArray<ISymbol> Members, ImmutableArray<ISymbol> NegatedMembers, Location Location)[] Reads =>
             [.. _reads];
@@ -779,13 +1059,33 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             _ = _candidates.TryAdd(candidate, 0);
         }
 
+        internal void AddCanonical(ISymbol property, ISymbol field)
+        {
+            _canonical[property] = field;
+        }
+
+        internal ISymbol Resolve(ISymbol member)
+        {
+            return _canonical.TryGetValue(member, out var canonical) ? canonical : member;
+        }
+
         internal bool IsCandidate(ISymbol candidate)
         {
             return _candidates.ContainsKey(candidate);
         }
 
-        internal void AddWrite((ISymbol Member, bool? Value, ISymbol Body, Location Location) record)
+        internal void AddWrite((
+            ISymbol Member,
+            bool? Value,
+            ISymbol Body,
+            Location Location,
+            bool IsInternal) record)
         {
+            if (record.IsInternal)
+            {
+                Volatile.Write(ref _hasInternalWrite, 1);
+            }
+
             _writes.Enqueue(record);
         }
 

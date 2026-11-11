@@ -10,11 +10,6 @@ namespace E128.Analyzers.Tests;
 
 public sealed class PfxImportEphemeralKeySetAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>(code, expected);
-    }
-
     /// <summary>
     ///     Removing every metadata reference makes the certificate types unresolvable, which is the
     ///     fail-closed path the analyzer takes when a type is absent.
@@ -36,7 +31,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorOmitsFlags_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System;
                            using System.Security.Cryptography.X509Certificates;
 
@@ -54,7 +49,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorNamedArgumentsOmitFlags_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System;
                            using System.Security.Cryptography.X509Certificates;
 
@@ -72,7 +67,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorMachineKeySet_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System;
                            using System.Security.Cryptography.X509Certificates;
 
@@ -90,7 +85,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorEphemeralKeySet_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System;
                            using System.Security.Cryptography.X509Certificates;
 
@@ -108,7 +103,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorEphemeralKeySetWithExportable_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System;
                            using System.Security.Cryptography.X509Certificates;
 
@@ -129,7 +124,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorNonConstantFlags_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System;
                            using System.Security.Cryptography.X509Certificates;
 
@@ -147,7 +142,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorNoFlagsParameter_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -164,7 +159,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorByteArray_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -181,7 +176,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorReadOnlySpanByte_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System;
                            using System.Security.Cryptography.X509Certificates;
 
@@ -199,7 +194,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorShadowedByUserType_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class X509Certificate2
@@ -223,7 +218,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12OmitsFlags_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -240,7 +235,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12FromFileOmitsFlags_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -257,7 +252,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12CollectionOmitsFlags_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -274,7 +269,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12CollectionFromFileOmitsFlags_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -291,7 +286,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12CollectionEphemeralKeySet_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -311,7 +306,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12MachineKeySet_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -328,7 +323,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12EphemeralKeySet_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -345,7 +340,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12EphemeralKeySetWithExportable_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C
@@ -365,7 +360,7 @@ public sealed class PfxImportEphemeralKeySetAnalyzerTests
     [Trait("Category", "CI")]
     public Task LoadPkcs12NonConstantFlags_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PfxImportEphemeralKeySetAnalyzer>("""
                            using System.Security.Cryptography.X509Certificates;
 
                            class C

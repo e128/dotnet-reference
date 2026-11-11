@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FipsHmacKeyLengthAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FipsHmacKeyLengthAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ShortKeyCtor_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortInitializerArrayKey_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -55,7 +42,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task FullKeyCtor_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -71,7 +58,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortStaticKey_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -87,7 +74,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task FullStaticKey_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -103,7 +90,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task EncodedStringKey_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            using System.Text;
                            class C
@@ -120,7 +107,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task HexStringKey_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System;
                            using System.Security.Cryptography;
                            class C
@@ -137,7 +124,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortSha384Key_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -153,7 +140,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task FullSha384Key_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -169,7 +156,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortTryHashData_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -185,7 +172,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortHashDataAsync_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.IO;
                            using System.Security.Cryptography;
                            class C
@@ -202,7 +189,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortKeyPropertyAssignment_Reports_E128151()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -219,7 +206,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task FullKeyPropertyAssignment_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -236,7 +223,7 @@ public sealed class FipsHmacKeyLengthAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonConstantKeyLength_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsHmacKeyLengthAnalyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {

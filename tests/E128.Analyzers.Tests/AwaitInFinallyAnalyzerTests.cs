@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class AwaitInFinallyAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Await_InFinally_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -38,7 +32,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task EveryAwait_InFinally_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -61,7 +55,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task Await_InTryBlock_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -83,7 +77,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task Await_InCatchClause_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -108,7 +102,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task Await_InLocalFunctionDeclaredInFinally_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -133,7 +127,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task Await_InLambdaDeclaredInFinally_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System;
                            using System.Threading.Tasks;
                            class C
@@ -156,7 +150,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NestedFinally_InsideOuterFinally_ReportsOnce()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -184,7 +178,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task Await_InOuterFinally_AfterNestedTry_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -213,7 +207,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task Await_InNestedTryBlockInsideFinally_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -241,7 +235,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task Await_InNestedCatchInsideFinally_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -269,7 +263,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task AwaitUsingInFinally_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System;
                            using System.Threading.Tasks;
                            class C
@@ -294,7 +288,7 @@ public sealed class AwaitInFinallyAnalyzerTests
     [Trait("Category", "CI")]
     public Task AwaitForeachInFinally_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AwaitInFinallyAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
                            class C

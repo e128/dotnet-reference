@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -9,24 +8,13 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SuppressionAuditE128AnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { TestBehaviors = TestBehaviors.SkipSuppressionCheck };
+
     private static DiagnosticResult Diagnostic(int line, int column)
     {
         return new DiagnosticResult("E128047", DiagnosticSeverity.Warning)
             .WithLocation(line, column);
-    }
-
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<SuppressionAuditAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            // The analyzer flags #pragma warning disable directives, so the framework's
-            // automatic suppression-via-pragma check creates a circular diagnostic.
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -39,7 +27,7 @@ public sealed class SuppressionAuditE128AnalyzerTests
                             #pragma warning restore CS1591
                             """;
 
-        return VerifyAsync(code, Diagnostic(1, 1));
+        return AnalyzerTestRunner.VerifyAsync<SuppressionAuditAnalyzer>(code, Diagnostic(1, 1), options: Options);
     }
 
     [Fact]
@@ -52,7 +40,7 @@ public sealed class SuppressionAuditE128AnalyzerTests
                             #pragma warning restore CS1591
                             """;
 
-        return VerifyAsync(code);
+        return AnalyzerTestRunner.VerifyAsync<SuppressionAuditAnalyzer>(code, options: Options);
     }
 
     [Fact]
@@ -66,7 +54,7 @@ public sealed class SuppressionAuditE128AnalyzerTests
                             #pragma warning restore CS1591
                             """;
 
-        return VerifyAsync(code);
+        return AnalyzerTestRunner.VerifyAsync<SuppressionAuditAnalyzer>(code, options: Options);
     }
 
     [Fact]
@@ -79,6 +67,6 @@ public sealed class SuppressionAuditE128AnalyzerTests
                             #pragma warning restore CS1591
                             """;
 
-        return VerifyAsync(code);
+        return AnalyzerTestRunner.VerifyAsync<SuppressionAuditAnalyzer>(code, options: Options);
     }
 }

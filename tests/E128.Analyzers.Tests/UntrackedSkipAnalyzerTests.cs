@@ -8,40 +8,34 @@ namespace E128.Analyzers.Tests;
 
 public sealed class UntrackedSkipAnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithXunit };
+
     private static readonly ReferenceAssemblies Net100WithXunit = ReferenceAssemblies.Net.Net100
         .AddPackages([
             new PackageIdentity("xunit.v3.core", "3.2.2"),
             new PackageIdentity("xunit.v3.assert", "3.2.2")
         ]);
 
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<UntrackedSkipAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithXunit
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task SkipWithReasonOnly_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntrackedSkipAnalyzer>("""
                            using Xunit;
                            public class T
                            {
                                [Fact({|E128168:Skip = "flaky on CI"|})]
                                public void A() { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task TheorySkipEmpty_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntrackedSkipAnalyzer>("""
                            using Xunit;
                            public class T
                            {
@@ -49,7 +43,7 @@ public sealed class UntrackedSkipAnalyzerTests
                                [InlineData(1)]
                                public void A(int x) { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -81,21 +75,21 @@ public sealed class UntrackedSkipAnalyzerTests
     [Trait("Category", "CI")]
     public Task SkipWithTrackerReference_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntrackedSkipAnalyzer>("""
                            using Xunit;
                            public class T
                            {
                                [Fact(Skip = "AB#4521 flaky on CI")]
                                public void A() { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task FactWithoutSkip_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntrackedSkipAnalyzer>("""
                            using Xunit;
                            public class T
                            {
@@ -105,14 +99,14 @@ public sealed class UntrackedSkipAnalyzerTests
                                [Fact(DisplayName = "named")]
                                public void B() { }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NonTestAttributeWithSkip_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UntrackedSkipAnalyzer>("""
                            using System;
                            sealed class MarkerAttribute : Attribute
                            {
@@ -123,6 +117,6 @@ public sealed class UntrackedSkipAnalyzerTests
                                [Marker(Skip = "later")]
                                void A() { }
                            }
-                           """);
+                           """, options: Options);
     }
 }

@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class CultureStringComparerAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<CultureStringComparerAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenADictionaryUsesTheCurrentCulture()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CultureStringComparerAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -38,7 +27,7 @@ public sealed class CultureStringComparerAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenASetUsesTheInvariantCultureAndIgnoresCase()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CultureStringComparerAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -55,7 +44,7 @@ public sealed class CultureStringComparerAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheCreationIsTargetTyped()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CultureStringComparerAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -72,7 +61,7 @@ public sealed class CultureStringComparerAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheComparerIsAlreadyOrdinal()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CultureStringComparerAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -89,7 +78,7 @@ public sealed class CultureStringComparerAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheSortedCollectionUsesACultureComparer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CultureStringComparerAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -106,7 +95,7 @@ public sealed class CultureStringComparerAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheSortedSetUsesACultureComparer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CultureStringComparerAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -123,7 +112,7 @@ public sealed class CultureStringComparerAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheComparerIsNotAStringComparer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CultureStringComparerAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -140,7 +129,7 @@ public sealed class CultureStringComparerAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheTypeIsNotACollection()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CultureStringComparerAnalyzer>("""
                            using System;
                            class C
                            {

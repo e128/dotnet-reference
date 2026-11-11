@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -30,20 +31,12 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         "Options"
     ];
 
-    /// <summary>
-    ///     Mutable type metadata names -> suggested immutable interface display names.
-    ///     Keyed by the unbound generic metadata name (e.g. "System.Collections.Generic.List`1").
-    ///     Value is (metadata name of immutable interface, display template like "IReadOnlyList&lt;{0}&gt;").
-    /// </summary>
+    // Mutable type metadata names -> suggested immutable interface display names.
+    // MutableCollectionCatalog owns the list.
     private static readonly ImmutableArray<(string MetadataName, string DisplayTemplate)> MutableTypeEntries =
     [
-        ("System.Collections.Generic.List`1", "IReadOnlyList<{0}>"),
-        ("System.Collections.Generic.Dictionary`2", "IReadOnlyDictionary<{0}, {1}>"),
-        ("System.Collections.Generic.HashSet`1", "IReadOnlySet<{0}>"),
-        ("System.Collections.Generic.SortedSet`1", "IReadOnlySet<{0}>"),
-        ("System.Collections.Generic.SortedDictionary`2", "IReadOnlyDictionary<{0}, {1}>"),
-        ("System.Collections.Generic.SortedList`2", "IReadOnlyDictionary<{0}, {1}>"),
-        ("System.Collections.ObjectModel.Collection`1", "IReadOnlyList<{0}>")
+        .. MutableCollectionCatalog.Entries.Select(
+            static entry => (entry.MetadataName, entry.DisplayTemplate))
     ];
 
     internal static readonly DiagnosticDescriptor Rule = new(
