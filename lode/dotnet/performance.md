@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-11-10T23:33:05Z*
+*Updated: 2026-11-11T03:20:00Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -182,39 +182,10 @@ to the line size. An x64 or Neoverse arm64 line is 64 bytes. An Apple M-series
 line is 128 bytes. Padding costs a field and a suppression, so add it only
 after a measurement.
 
-## ASP.NET Core
+## See Also
 
-- `WebApplication.CreateBuilder` loads more than the app needs.
-  `CreateSlimBuilder` reduces the set. Measure the startup and the request
-  path before a switch.
-- Keep the middleware count small.
-- Keep the host log level above Information. `Program.cs` sets the minimum
-  level to Warning. See [Request Logging](#request-logging).
-- Register the source-generated JSON metadata. `AppJsonContext` in the Web
-  project owns it, and `Program.cs` inserts its resolver at the head of the
-  resolver chain. Register a new response type in that context.
-- Reuse one `Utf8JsonWriter` through `Reset(response.BodyWriter)` for a
-  handwritten response.
-
-`JavaScriptEncoder.UnsafeRelaxedJsonEscaping` is safe only for a JSON
-response. Never place its output in HTML or a script block. A custom encoder
-also disables the source-generated serialization fast path. Benchmark the
-pair before a switch, because the two gains can cancel.
-
-Both `CreateSlimBuilder` and the source-generated JSON metadata were measured
-on this app. Neither moved `GET /` or `GET /greetings` beyond the run-to-run
-noise of about 2 percent. Cold start moved by 4 percent, which is inside the
-same noise. The app keeps the generated context for AOT readiness and does not
-claim a latency win. `CreateSlimBuilder` is not in use.
-
-## Request Logging
-
-`Program.cs` sets the minimum log level to Warning. A per-request Information
-log costs a console write and a monitor lock on the request thread.
-
-On a Release publish over loopback, the change moved the median service time
-on `GET /` from 0.072 ms to 0.062 ms at `-c 1`. It removed two log lines per
-request. Throughput at `-c 20` stayed inside the noise.
+- [aspnet-core-performance.md](aspnet-core-performance.md): the request path,
+  response compression, and request logging for the Web project
 
 ## Change Protocol
 

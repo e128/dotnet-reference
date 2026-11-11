@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-10T23:19:08Z*
+*Updated: 2026-11-11T03:20:00Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
@@ -60,11 +60,11 @@ version costs three files and no edits.
 ## Build Metadata
 
 - **Target framework**: the analyzer targets `netstandard2.0`, and the package
-  carries one build. That single build loads in a .NET 10 host compiler and a
-  .NET 11 host compiler, because Roslyn loads an analyzer forward. The
-  `netstandard2.0` placeholder is what lists the package as supported for both.
-  A second `net10.0` or `net11.0` build would load faster in a modern host, but
-  it would close the older host, so the repository does not ship one.
+  carries one build. The support window is the .NET 11 host, and the repository
+  tests that host only. Roslyn loads the assembly forward into an older host,
+  but that reach is neither claimed nor tested.
+  A second `net11.0` build would load faster in a modern host, and it would
+  close the older hosts, so the repository does not ship one.
 - **SDK roll forward**: `global.json` sets `latestPatch`. A new SDK patch keeps
   analyzer output stable, because a feature-band bump needs an edit to the pin.
 - **Banned symbols**: no `BannedSymbols.txt` file exists. No shared diagnostic

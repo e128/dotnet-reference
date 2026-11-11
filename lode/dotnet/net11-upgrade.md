@@ -1,23 +1,15 @@
 # .NET 11 Upgrade Practices
-*Updated: 2026-11-11T03:01:25Z*
+*Updated: 2026-11-11T03:20:00Z*
 
 Rules this repository follows on the `net11.0` band. Each rule came from a probe
 on the GA SDK. See [project-structure.md](project-structure.md)
 for the solution shape and [analyzers/package-layout.md](analyzers/package-layout.md)
 for the published package layout.
 
-## Two Bands, One Root
+## One SDK Root
 
-The GA SDK installs side by side with the `net10.0` SDK in one root. A bare
-`dotnet` then lists both bands.
-
-| Band | Use |
-|------|-----|
-| SDK `11.0.1xx` | Primary target, `net11.0` builds, package publish |
-| SDK `10.0.4xx` | The `net10.0` analyzer proof only |
-
-Run a proof by naming the root when `PATH` may resolve the other binary. Record
-the band beside the result. A proof without a named band is not evidence.
+The repository builds and tests on SDK `11.0.1xx` only. A second SDK root can
+sit on the same machine, and the shell may resolve it first.
 
 A non-interactive shell can resolve an older root first. A script that then
 reads a `global.json` pinned to the new band fails SDK resolution with a
@@ -31,50 +23,40 @@ band. The analyzer test project is not multi-targeted.
 
 Two rules follow:
 
-1. Do not pass a TFM override on the command line to reach the other band. A
-   global `TargetFramework` or `TargetFrameworks` property leaks into project
-   references and breaks the `netstandard2.0` restore of the analyzer projects.
-2. Prove the `net10.0` package reach with a consumer fixture instead, not with a
-   second leg of the suite. See `tests/Net10Consumer`.
+1. Do not pass a TFM override on the command line. A global `TargetFramework` or
+   `TargetFrameworks` property leaks into project references and breaks the
+   `netstandard2.0` restore of the analyzer projects.
+2. The analyzer test project carries one framework. Do not add a second leg.
 
 ## Analyzer Reach
 
-The published package must load in a `net10.0` host and a `net11.0` host from
-one assembly. Three rules hold that reach:
+The analyzer support window is `net11.0`. Both analyzer assemblies stay
+`netstandard2.0`, and the repository proves the package only in a `net11.0`
+host. Three rules hold that shape:
 
-1. Both analyzer assemblies stay `netstandard2.0`.
-2. The shipped `Microsoft.CodeAnalysis.CSharp` pin stays in the host band that
-   the `net10.0` SDK compiler provides. Roslyn loads an analyzer built on an
-   older band forward, never backward.
-3. Both analyzer projects pin `LangVersion` to `14.0`. The SDK 10 compiler must
-   build the sources, and `latest` there is C# 14. A C# 15 form in analyzer
-   source fails `CS8652` before the package is ever loaded.
+1. Both analyzer assemblies target `netstandard2.0`. Roslyn loads an analyzer
+   built on an older Roslyn band forward, never backward.
+2. The shipped `Microsoft.CodeAnalysis.CSharp` pin follows the current release
+   on nuget.org. NuGet publishes that pin behind the SDK compiler and not with
+   it, so the pin can lag the SDK band until a suitable release appears. Check
+   the package index before a bump. See
+   [dependency-policy.md](../dependency-policy.md).
+3. Both analyzer projects pin `LangVersion` to `14.0`. The reason is the
+   formatter, not an older compiler. On `latest` it rewrites a collection
+   initializer with a constructor argument into the C# 15 collection
+   expression argument form, and that edit touches every analyzer file.
 4. A test-only Roslyn package may move to the SDK 11 band, because it never
    ships.
 
 ```mermaid
 flowchart LR
-    A[netstandard2.0 analyzer<br/>Roslyn 5.9.0 pin] --> B[SDK 10 host<br/>Roslyn 5.9.0]
-    A --> C[SDK 11 host<br/>Roslyn 5.12.0]
-    D[Roslyn 5.12.0 analyzer] -.->|load fails| B
+    A[netstandard2.0 analyzer<br/>nuget pin] --> B[SDK 11 host<br/>current Roslyn]
+    A -.->|not tested| C[older host]
 ```
 
-Prove the reach with a consumer, not with a pack. A pack-only check proves the
-assembly builds, not that a host loads it.
-
-`tests/Net10Consumer` is that consumer. It carries its own `global.json` pinned
-to SDK 10, its own `Directory.Build.props` and `.targets` so no repository
-analyzer reaches it, and a `nuget.config` that serves `E128.*` from
-`artifacts/nupkgs`.
-
-The fixture source stays clean, so no diagnostic can prove the analyzer ran.
-The analyzer report does. The CI build passes `ReportAnalyzer=true` with
-detailed verbosity, and the report lists every rule that executed. The job
-fails when the report omits `E128024` or when the log carries a load warning.
-
-Do not add a deliberate violation to the fixture. The root `.globalconfig`
-escalates every analyzer diagnostic to error, so a violation fails the build
-before the report is read.
+The package still loads in an older host, because Roslyn loads it forward. The
+repository does not claim or test that reach. The build proves that the package
+assembles, and the suite proves that each rule runs in the current host.
 
 ## Union Results
 
@@ -132,7 +114,7 @@ The group belongs in `Directory.Build.targets`. A `.props` group evaluates
 before the project body sets `IsTestProject`, `IsRoslynComponent`, or a similar
 role marker, so a `.props` condition reads them as empty and matches too much.
 
-Never apply the switch to a `netstandard2.0` analyzer or to a `net10.0` leg.
+Never apply the switch to a `netstandard2.0` analyzer.
 `<UseRuntimeAsync>false</UseRuntimeAsync>` opts one project out. The absence of
 `[AsyncStateMachine]` on a method detects the switch.
 
@@ -154,10 +136,6 @@ Run these in order, and name the SDK band for each:
 2. `scripts/build.sh --warnings` reports zero warnings and zero errors.
 3. `scripts/format.sh --check` reports no finding.
 4. `scripts/test.sh --all` reports the suite count.
-5. `scripts/test.sh --all --framework net10.0` proves the `net10.0` leg of the
-   test project. It does not prove the analyzer reach, because the active SDK
-   compiles both legs. The reach proof is the `net10-consumer` CI job, which
-   builds the same project under SDK 10.
 
 ## See Also
 

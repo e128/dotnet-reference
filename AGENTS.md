@@ -83,8 +83,8 @@ Apply these questions before you settle a design, and again in review.
 - Implicit usings are disabled (`<ImplicitUsings>disable</ImplicitUsings>`).
   Give every `.cs` file explicit `using` directives.
 - Target .NET 11 and later, plus `netstandard2.0` for analyzer assemblies.
-  Those are the only supported targets. The analyzer package keeps `net10.0`
-  reach.
+  Those are the only supported targets. The analyzer support window is
+  `net11.0`.
 - Ban everything specific to .NET Framework (net48 and any `net4x`). Never
   write a `net4x` target framework, a `ReferenceAssemblies.NetFramework`
   test, a `#if NET48` branch, a Framework-only API, or a polyfill for one.

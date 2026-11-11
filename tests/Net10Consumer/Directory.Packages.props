@@ -1,3 +1,0 @@
-<Project>
-  <!-- Stops central package management, because this fixture pins the packed package version. -->
-</Project>

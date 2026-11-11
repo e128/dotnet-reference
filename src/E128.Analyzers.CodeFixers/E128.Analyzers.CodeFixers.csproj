@@ -13,6 +13,8 @@
     <!-- The fix providers keep the E128.Analyzers namespace hierarchy. Only the assembly
          changes, so analyzer types and their fix providers read alike. -->
     <RootNamespace>E128.Analyzers</RootNamespace>
+    <!-- C# 14 for the same reason as the analyzer project: it stops the
+         formatter from rewriting sources into a C# 15 form. -->
     <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>
     <IsRoslynComponent>true</IsRoslynComponent>

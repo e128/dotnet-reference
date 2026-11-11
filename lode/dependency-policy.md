@@ -1,5 +1,5 @@
 # Dependency Policy
-*Updated: 2026-11-10T14:49:14Z*
+*Updated: 2026-11-11T03:20:00Z*
 
 ## Selection Criteria
 
@@ -55,3 +55,4 @@ Renovate manages dependency PRs via `renovate.json`. Key rules:
 - **Cleared sources**: `<clear />` removes inherited feeds, and only `nuget.org` is configured.
 - **Trusted signers**: three NuGet.org certificate fingerprints (SHA-256) are pinned.
 - **Package source mapping**: all packages (`*`) are mapped to the `nuget.org` source, preventing feed substitution.
+- **Minimum publish age**: the `nuget.org` source sets `minPublishAgeHours` to 72, which matches the Renovate 3 day delay. The setting gates automatic version selection only. It covers `dotnet package add`, `dotnet package update`, and a floating reference. An ordinary restore of a pinned version ignores it. Do not treat it as an age check on the whole dependency graph.

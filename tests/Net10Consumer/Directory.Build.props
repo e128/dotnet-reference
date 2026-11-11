@@ -1,4 +1,0 @@
-<Project>
-  <!-- Stops the repository props walk, so this fixture carries no repository analyzers.
-       It consumes E128.Analyzers as a package, exactly as a net10.0 consumer does. -->
-</Project>
