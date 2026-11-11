@@ -42,7 +42,12 @@ if [[ "$SKIP_PRECOMMIT" == false ]]; then
     fi
 fi
 
-# Commit with the message plus a name-only co-author trailer (no email — global privacy rule)
-git commit -m "$MSG" -m "$COAUTHOR_TRAILER"
+# Commit with the message plus a name-only co-author trailer (no email — global privacy rule).
+# Skip the append when the message already carries a trailer, so it never ships twice.
+if printf '%s\n' "$MSG" | rg -qi '^Co-Authored-By:'; then
+    git commit -m "$MSG"
+else
+    git commit -m "$MSG" -m "$COAUTHOR_TRAILER"
+fi
 
 ok "Committed: $MSG"

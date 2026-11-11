@@ -149,6 +149,10 @@ Apply these questions before you settle a design, and again in review.
 - Write commit messages in the imperative mood with a concise summary.
 - Never put an email address in a commit message. No `noreply@` address.
   No email in any trailer. A `user@example.com` placeholder is allowed.
+- Never write a `Co-Authored-By` trailer in a commit message.
+  `scripts/internal/commit.sh` appends `Co-Authored-By: Claude` itself, so a
+  hand-written trailer ships as a duplicate line. [duplicate trailer,
+  PR #150]
 - Name branches `feature/`, `fix/`, or `refactor/`.
 - Squash all local commits before push. Ship one clean commit per PR.
 - Run `scripts/status.sh` before staging. A file staged, added, or removed
