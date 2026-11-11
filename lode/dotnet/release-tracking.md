@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-11T14:28:22Z*
+*Updated: 2026-11-11T14:30:45Z*
 
 ## Overview
 
@@ -161,6 +161,7 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.7.0   | (none)        | The repository moves to `net11.0`. E128062 recognizes `Net110` as a known reference-assembly version. |
 | 2.7.1   | (none)        | Packaging metadata only. The package claim narrows to the `net11.0` host, and the `net10.0` reach proof is removed. |
 | 2.8.0   | (none)        | Shared-helper refactor. E128218 also recognizes a forwarding accessor pair, a mutable struct, and a cross-type write, and it reads the `e128_state_min_transition_bodies` option. |
+| 2.8.1   | (none)        | Version-only release. Repacks the 2.8.0 content with no rule set change. |
 
 ## Sources
 
