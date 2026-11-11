@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FipsSha3AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FipsSha3Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task UserDefinedProbeWithHashName_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
 
                            static class Probe
@@ -45,7 +32,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task BclProbeWithHashName_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
 
                            class C
@@ -62,7 +49,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task RepeatedHashNameInOneCall_ReportsOnce()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
 
                            class C
@@ -83,7 +70,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConditionalInReadonlyField_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System;
                            using System.Security.Cryptography;
 
@@ -114,7 +101,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task Sha3HashData_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -130,7 +117,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task Sha256HashData_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -146,7 +133,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task OaepSha3Padding_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -162,7 +149,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task ShakeType_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -178,7 +165,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task HmacSha3Type_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -194,7 +181,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task KmacType_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -210,7 +197,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task Sha3HashNameInLocal_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -231,7 +218,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task Sha3HashNameAssignedToField_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -249,7 +236,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task Sha3HashNameInMutableFieldInitializer_Reports_E128150()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {
@@ -262,7 +249,7 @@ public sealed class FipsSha3AnalyzerTests
     [Trait("Category", "CI")]
     public Task IsSupportedRead_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsSha3Analyzer>("""
                            using System.Security.Cryptography;
                            class C
                            {

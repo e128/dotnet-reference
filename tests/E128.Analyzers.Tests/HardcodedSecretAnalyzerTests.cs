@@ -13,16 +13,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HardcodedSecretAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>(code);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task FieldNamedPassword_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                const string AdminPassword = {|E128165:"hunter2hunter2"|};
@@ -34,7 +29,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyInitializerNamedApiKey_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                public string ApiKey { get; set; } = {|E128165:"key-value-1234567890"|};
@@ -46,7 +41,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task AssignmentToSecret_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string clientSecret;
@@ -63,7 +58,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task NamedArgumentPassword_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                void Login(string user, string password) { }
@@ -80,7 +75,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConnectionStringWithPassword_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Db = {|E128165:"Server=db.contoso.com;Database=app;User Id=sa;Password=P@ssw0rd!;"|};
@@ -92,7 +87,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConnectionStringWithoutPassword_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Db = "Server=db.contoso.com;Database=app;Integrated Security=true;";
@@ -104,7 +99,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConnectionStringFormatPlaceholder_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Db = "Server=db.contoso.com;Database=app;Password={0};";
@@ -116,7 +111,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task LookupKeyAndHeaderNames_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                const string ConnectionStringName = "DefaultConnection";
@@ -130,7 +125,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task ShortOrSpacedValue_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Password = "";
@@ -144,7 +139,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnrelatedName_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Greeting = "hello-world-12345";
@@ -156,7 +151,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task TestCompilation_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            namespace Xunit
                            {
                                public sealed class FactAttribute : System.Attribute
@@ -183,7 +178,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task TokenName_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                const string AccessToken = {|E128165:"abcd1234efgh5678"|};
@@ -197,7 +192,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task PatternArnAndIdNames_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                const string SecretsManagerArnPattern = "arn:aws:secretsmanager:.*";
@@ -212,7 +207,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task CoalesceAndConditional_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                static string Lookup() => null;
@@ -227,7 +222,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConditionalCondition_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Password = "hunter2hunter2" == "x" ? "a" : "b";
@@ -239,7 +234,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task IndexerKeyPassword_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            using System.Collections.Generic;
 
                            class C
@@ -262,7 +257,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyGetterReturn_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Password
@@ -282,7 +277,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReturnInsideMethod_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Password()
@@ -297,7 +292,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task Utf8Literal_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            using System;
 
                            class C
@@ -311,7 +306,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task UrlQueryString_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Url = "https://example.com/login?host=example.com&password=hunter2hunter2";
@@ -323,7 +318,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConnectionStringWithSpacesAroundEquals_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                string Db = {|E128165:"Server = db.contoso.com; Database = app; Password = P@ssw0rd!"|};
@@ -335,7 +330,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task HeaderAndConfigPathValues_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                const string ApiKey = "X-Api-Key";
@@ -349,7 +344,7 @@ public sealed class HardcodedSecretAnalyzerTests
     [Trait("Category", "CI")]
     public Task EnvironmentVariableNameValue_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>("""
                            class C
                            {
                                public const string BraveApiKey = "BRAVE_API_KEY";

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class HttpClientCertificateBypassAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<HttpClientCertificateBypassAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task InitializerLambdaReturnsTrue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -44,7 +31,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task BlockBodyReturnsTrue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -65,7 +52,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task DangerousValidator_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -86,7 +73,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task CallbackChecksPolicyErrors_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -107,7 +94,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task ServicePointManagerCallback_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            class C
                            {
                                void M()
@@ -122,7 +109,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task AnonymousMethodReturnsTrue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -143,7 +130,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task ParenthesizedTrue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -164,7 +151,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task MethodGroupReturningTrue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -191,7 +178,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task SocketsHandlerSslOptionsAssignment_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -210,7 +197,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task SslOptionsInitializer_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Security;
                            class C
                            {
@@ -229,7 +216,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task SslOptionsCallbackChecksPolicyErrors_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Security;
                            class C
                            {
@@ -248,7 +235,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task SslStreamCallbackReturnsTrue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.IO;
                            using System.Net.Security;
                            class C
@@ -265,7 +252,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task SslStreamCallbackChecksPolicyErrors_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.IO;
                            using System.Net.Security;
                            class C
@@ -282,7 +269,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task LambdaOrTrue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -303,7 +290,7 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
     [Trait("Category", "CI")]
     public Task BlockReturnsConstantTrue_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {

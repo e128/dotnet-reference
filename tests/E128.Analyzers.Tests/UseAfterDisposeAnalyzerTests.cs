@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UseAfterDisposeAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<UseAfterDisposeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task MemberCallAfterDispose_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -41,7 +28,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task SecondDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -59,7 +46,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReassignmentAfterDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -78,7 +65,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task UsingStatement_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -95,7 +82,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task LocalFunctionCalledBeforeDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -115,7 +102,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task LambdaBody_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System;
                            using System.IO;
                            class C
@@ -135,7 +122,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task UseBeforeDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -153,7 +140,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task BracelessIfDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -171,7 +158,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task NameofAfterDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -189,7 +176,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task NullPatternAfterDispose_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -207,7 +194,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task DisposeInIfReadInElse_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -231,7 +218,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task DisposeInSwitchSectionReadInOtherSection_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -256,7 +243,7 @@ public sealed class UseAfterDisposeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReadInLaterNestedStatement_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UseAfterDisposeAnalyzer>("""
                            using System.IO;
                            class C
                            {

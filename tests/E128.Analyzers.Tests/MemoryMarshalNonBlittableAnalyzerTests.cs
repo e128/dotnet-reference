@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class MemoryMarshalNonBlittableAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<MemoryMarshalNonBlittableAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenReadingABool()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MemoryMarshalNonBlittableAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -38,7 +27,7 @@ public sealed class MemoryMarshalNonBlittableAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenCastingToDecimal()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MemoryMarshalNonBlittableAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -55,7 +44,7 @@ public sealed class MemoryMarshalNonBlittableAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenReadingAnInt()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MemoryMarshalNonBlittableAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -72,7 +61,7 @@ public sealed class MemoryMarshalNonBlittableAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenAStructHoldsABool()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MemoryMarshalNonBlittableAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            struct Header

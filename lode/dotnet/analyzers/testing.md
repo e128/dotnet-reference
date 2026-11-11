@@ -1,6 +1,6 @@
 # Analyzer Testing
 
-*Updated: 2026-11-07T14:35:25Z*
+*Updated: 2026-11-11T13:23:09Z*
 
 How a test drives an analyzer and a code fix. The harness types live in
 `Microsoft.CodeAnalysis.CSharp.Testing`. The repo wrapper lives in
@@ -120,11 +120,18 @@ confirm the test count in the run output.
 
 ## Repo Harness
 
-- Build the test directly with `CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>`
-  or `CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>`. Most test files
-  call `test.RunAsync()`, not a static verifier helper.
-- Route an analyzer test through `AnalyzerTestRunner.VerifyAsync` for the
-  default reference set and an optional analyzer config file.
+- Every analyzer test routes through `AnalyzerTestRunner.VerifyAsync`. That
+  runner owns the test object, the default reference set, and the optional
+  files and compilation switches. `AnalyzerTestOptions` carries the non-default
+  settings.
+- The runner takes one diagnostic, a `DiagnosticResult[]`, or two diagnostics
+  as separate arguments. A test names the expected set it has, and the runner
+  wraps it.
+- Call the runner directly from the test. A private `VerifyAsync` helper earns
+  its place only when it injects setup the call cannot express: a stub preamble,
+  a reference set, a language version, or an options value tied to a parameter.
+  A helper that only renames the call is deleted.
+- No test file builds `CSharpAnalyzerTest` itself.
 - Route a code fix test through `CodeFixTestRunner.RunAsync` for a fix and
   `CodeFixTestRunner.NoFixAsync` for a decline.
 - The shared stub types live in `tests/E128.Analyzers.Tests/TestStubs.cs`.

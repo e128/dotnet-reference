@@ -10,9 +10,12 @@ public sealed class UntrackedTodoAnalyzerTests
     {
         return AnalyzerTestRunner.VerifyAsync<UntrackedTodoAnalyzer>(
             code,
-            analyzerConfig: pattern is null
-                ? null
-                : ("/.editorconfig", "is_global = true\ne128_tracked_ref_pattern = " + pattern));
+            options: new AnalyzerTestOptions
+            {
+                AnalyzerConfig = pattern is null
+                    ? null
+                    : ("/.editorconfig", "is_global = true\ne128_tracked_ref_pattern = " + pattern)
+            });
     }
 
     [Fact]

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<RedundantHashSetInFrozenSetE128Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task HashSetWithCollectionExpression_ToFrozenSet_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RedundantHashSetInFrozenSetE128Analyzer>("""
                            using System;
                            using System.Collections.Frozen;
                            using System.Collections.Generic;
@@ -38,7 +25,7 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task HashSetWithCollectionInitializer_ToFrozenSet_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RedundantHashSetInFrozenSetE128Analyzer>("""
                            using System;
                            using System.Collections.Frozen;
                            using System.Collections.Generic;
@@ -53,7 +40,7 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task HashSetWithNoComparer_ToFrozenSet_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RedundantHashSetInFrozenSetE128Analyzer>("""
                            using System.Collections.Frozen;
                            using System.Collections.Generic;
                            class C
@@ -67,7 +54,7 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ArrayToFrozenSet_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RedundantHashSetInFrozenSetE128Analyzer>("""
                            using System;
                            using System.Collections.Frozen;
                            class C
@@ -81,7 +68,7 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ListToFrozenSet_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RedundantHashSetInFrozenSetE128Analyzer>("""
                            using System;
                            using System.Collections.Frozen;
                            using System.Collections.Generic;
@@ -96,7 +83,7 @@ public sealed class RedundantHashSetInFrozenSetE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task HashSetWithoutToFrozenSet_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<RedundantHashSetInFrozenSetE128Analyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C

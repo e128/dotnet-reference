@@ -10,11 +10,7 @@ public sealed class ManualSpanSumAnalyzerTests
 {
     private static Task VerifyAsync(string code)
     {
-        return new CSharpAnalyzerTest<ManualSpanSumAnalyzer, DefaultVerifier>
-        {
-            TestCode = "using System;\n\n" + TestStubs.TensorPrimitives + "\n\n" + code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<ManualSpanSumAnalyzer>("using System;\n\n" + TestStubs.TensorPrimitives + "\n\n" + code);
     }
 
     private static Task VerifyWithoutStubAsync(string code)

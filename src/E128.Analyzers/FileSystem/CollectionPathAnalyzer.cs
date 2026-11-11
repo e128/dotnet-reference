@@ -156,11 +156,8 @@ public sealed class CollectionPathAnalyzer : DiagnosticAnalyzer
 
     private static (string Description, string SuggestedType) GetSuggestion(string paramName)
     {
-        if (paramName.IndexOf("dir", StringComparison.OrdinalIgnoreCase) >= 0)
-        {
-            return ("directory paths", "DirectoryInfo");
-        }
-
-        return ("file paths", "FileInfo");
+        return PathNamePatterns.Classify(paramName) is PathNameKind.Directory
+            ? ("directory paths", "DirectoryInfo")
+            : ("file paths", "FileInfo");
     }
 }

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ProcessOutputValidatorAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ProcessOutputValidatorAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ProcessOutputValidatorAnalyzer_FlagsOutputUse_WhenNoExistenceCheck()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputValidatorAnalyzer>("""
                            using System.Diagnostics;
                            using System.IO;
                            class C
@@ -41,7 +28,7 @@ public sealed class ProcessOutputValidatorAnalyzerTests
     [Trait("Category", "CI")]
     public Task ProcessOutputValidatorAnalyzer_DoesNotFlag_WhenExistenceCheckPresent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputValidatorAnalyzer>("""
                            using System.Diagnostics;
                            using System.IO;
                            class C
@@ -63,7 +50,7 @@ public sealed class ProcessOutputValidatorAnalyzerTests
     [Trait("Category", "CI")]
     public Task ProcessOutputValidatorAnalyzer_DoesNotFlag_WhenAsyncWaitHasCheck()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ProcessOutputValidatorAnalyzer>("""
                            using System.Diagnostics;
                            using System.IO;
                            using System.Threading.Tasks;

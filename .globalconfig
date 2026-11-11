@@ -235,6 +235,7 @@ dotnet_diagnostic.s3880.severity = error
 dotnet_diagnostic.s3884.severity = error
 dotnet_diagnostic.s3885.severity = error
 dotnet_diagnostic.s3898.severity = error
+dotnet_diagnostic.s3900.severity = error
 dotnet_diagnostic.s3902.severity = error
 dotnet_diagnostic.s3906.severity = error
 dotnet_diagnostic.s3908.severity = error

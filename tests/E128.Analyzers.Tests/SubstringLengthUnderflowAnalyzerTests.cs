@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SubstringLengthUnderflowAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task EarlyReturnLengthGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -36,7 +30,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task EarlyReturnGuardEndingInBothBranchesOfAnIf_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -63,7 +57,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task EarlyReturnGuardEndingInANestedBlock_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -85,7 +79,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task LengthGuardThatDoesNotExit_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -105,7 +99,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task ElseBranchOfLongerThanTest_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -127,7 +121,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task ThenBranchOfLongerThanTest_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -147,7 +141,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task ElseBranchOfShorterThanTest_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -169,7 +163,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task LengthMinusOne_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -184,7 +178,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task LengthMinusStartMinusOne_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value, int start)
@@ -199,7 +193,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstantFieldReceiver_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                private static readonly string Value = "text";
@@ -216,7 +210,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task LengthGuardInEnclosingIf_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -236,7 +230,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task LengthGuardInConditional_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -251,7 +245,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task GuardOnOtherString_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value, string other)
@@ -271,7 +265,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task LengthMinusVariable_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value, int start)
@@ -286,7 +280,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstantCount_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -301,7 +295,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task OneArgumentOverload_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -316,7 +310,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task NotNullOrEmptyGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -336,7 +330,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task NotNullOrWhiteSpaceGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -356,7 +350,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task EndsWithGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -376,7 +370,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task StartsWithGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -396,7 +390,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task ContainsGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -416,7 +410,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task IndexOfGuard_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -436,7 +430,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task NegatedContainsGuard_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value)
@@ -456,7 +450,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonEmptyGuardOnOtherString_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class C
                            {
                                static string M(string value, string other)
@@ -476,7 +470,7 @@ public sealed class SubstringLengthUnderflowAnalyzerTests
     [Trait("Category", "CI")]
     public Task UserTypeSubstring_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SubstringLengthUnderflowAnalyzer>("""
                            class Text
                            {
                                internal int Length => 0;

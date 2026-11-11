@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.FileSystem;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,14 +9,7 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
 {
     private static Task VerifyAsync(string testCode, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<FileSystemPathAnalyzer, DefaultVerifier>
-        {
-            TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>(testCode, expected, options: new AnalyzerTestOptions { MarkupOptions = MarkupOptions.UseFirstDescriptor });
     }
 
     [Fact]

@@ -121,8 +121,10 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
             context.ReportDiagnostic(Diagnostic.Create(Rule,
                 param.Identifier.GetLocation(),
-                PropertiesForDescription(useSite.Description),
-                name, useSite.Description, useSite.Type));
+                PropertiesForSuggestedType(useSite.Suggestion),
+                name,
+                Describe(useSite.Suggestion),
+                TypeName(useSite.Suggestion)));
         }
     }
 
@@ -236,11 +238,11 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         set.Add(root);
     }
 
-    private static List<(string ArgName, string Description, string Type)> CollectIoSites(
+    private static List<(string ArgName, SuggestedType Suggestion)> CollectIoSites(
         SyntaxNodeAnalysisContext context,
         BlockSyntax body)
     {
-        var sites = new List<(string ArgName, string Description, string Type)>();
+        var sites = new List<(string ArgName, SuggestedType Suggestion)>();
 
         foreach (var node in body.DescendantNodes())
         {
@@ -260,10 +262,10 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         return sites;
     }
 
-    private static (string ArgName, string Description, string Type)? FindSiteForParameter(
+    private static (string ArgName, SuggestedType Suggestion)? FindSiteForParameter(
         string paramName,
         Dictionary<string, HashSet<string>> localRoots,
-        List<(string ArgName, string Description, string Type)> sites)
+        List<(string ArgName, SuggestedType Suggestion)> sites)
     {
         foreach (var site in sites)
         {
@@ -277,7 +279,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static (string ArgName, string Description, string Type)? GetInvocationSite(
+    private static (string ArgName, SuggestedType Suggestion)? GetInvocationSite(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
@@ -318,14 +320,12 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         return isSystemIo ? ToSite(argId.Identifier.ValueText, info.Suggestion) : null;
     }
 
-    private static (string ArgName, string Description, string Type) ToSite(string argName, SuggestedType suggestion)
+    private static (string ArgName, SuggestedType Suggestion) ToSite(string argName, SuggestedType suggestion)
     {
-        return suggestion is SuggestedType.FileInfo
-            ? (argName, "file path", "FileInfo")
-            : (argName, "directory path", "DirectoryInfo");
+        return (argName, suggestion);
     }
 
-    private static (string ArgName, string Description, string Type)? GetCreationSite(
+    private static (string ArgName, SuggestedType Suggestion)? GetCreationSite(
         SyntaxNodeAnalysisContext context,
         ObjectCreationExpressionSyntax creation)
     {
@@ -386,24 +386,27 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
         var rule = string.Equals(typeName, "Argument", StringComparison.Ordinal) ? ArgumentRule : OptionRule;
         var (description, suggestion) = FileSystemPathHelpers.GetCliSuggestion(strippedName, typeName);
+        var properties = string.Equals(description, "file path", StringComparison.Ordinal)
+            ? FileInfoProperties
+            : DirectoryInfoProperties;
         context.ReportDiagnostic(Diagnostic.Create(rule,
             stringTypeArg.GetLocation(),
-            PropertiesForDescription(description),
+            properties,
             rawName, description, suggestion));
     }
 
-    private static ImmutableDictionary<string, string?> PropertiesForDescription(string description)
+    private static ImmutableDictionary<string, string?> PropertiesForSuggestedType(SuggestedType suggestion)
     {
-        if (string.Equals(description, "file path", StringComparison.Ordinal))
-        {
-            return FileInfoProperties;
-        }
+        return suggestion is SuggestedType.FileInfo ? FileInfoProperties : DirectoryInfoProperties;
+    }
 
-        if (string.Equals(description, "directory path", StringComparison.Ordinal))
-        {
-            return DirectoryInfoProperties;
-        }
+    private static string Describe(SuggestedType suggestion)
+    {
+        return suggestion is SuggestedType.FileInfo ? "file path" : "directory path";
+    }
 
-        return AmbiguousProperties;
+    private static string TypeName(SuggestedType suggestion)
+    {
+        return suggestion is SuggestedType.FileInfo ? SuggestedFileInfo : SuggestedDirectoryInfo;
     }
 }

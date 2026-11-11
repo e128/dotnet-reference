@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ReadonlyStructInitPropertyAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ReadonlyStructInitPropertyAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_GetOnlyProperty_InReadonlyStruct()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly struct Point
                            {
                                public int {|E128074:X|} { get; }
@@ -37,7 +24,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenPropertyHasInit()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly struct Point
                            {
                                public int X { get; init; }
@@ -50,7 +37,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenNonReadonlyStruct()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public struct MutablePoint
                            {
                                public int X { get; }
@@ -62,7 +49,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenClass()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public class MyClass
                            {
                                public int X { get; }
@@ -74,7 +61,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenStaticProperty()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly struct Config
                            {
                                public static int DefaultValue { get; } = 42;
@@ -86,7 +73,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenExpressionBodiedComputedProperty()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly struct Wrapper
                            {
                                public int Value { get; init; }
@@ -99,7 +86,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenGetAccessorHasABody()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly struct Wrapper
                            {
                                private readonly int _value;
@@ -113,7 +100,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenGetAccessorHasAnExpressionBody()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly struct Wrapper
                            {
                                private readonly int _value;
@@ -127,7 +114,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_OnlyGetOnlyProperties_MixedWithInit()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly struct Mixed
                            {
                                public int {|E128074:A|} { get; }
@@ -141,7 +128,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenReadonlyRecord()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly record struct PointRecord(int X, int Y);
                            """);
     }
@@ -150,7 +137,7 @@ public sealed class ReadonlyStructInitPropertyAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_WhenPropertyIsIndexer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ReadonlyStructInitPropertyAnalyzer>("""
                            public readonly struct Wrapper
                            {
                                private readonly int[] _data;

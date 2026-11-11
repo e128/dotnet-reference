@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SemaphoreSlimReleaseAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task WaitAsyncWithFollowingTryFinally_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C
@@ -42,7 +36,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task WaitAsyncWithNoTry_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C
@@ -61,7 +55,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task WaitWithNoArguments_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -78,7 +72,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task WaitAsyncWithTryCatchAndNoFinally_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System;
                            using System.Threading;
                            using System.Threading.Tasks;
@@ -104,7 +98,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReleaseOnADifferentSemaphore_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C
@@ -131,7 +125,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task WaitWithTimeoutOverload_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -158,7 +152,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task LocalSemaphoreWithFollowingTryFinally_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C
@@ -184,7 +178,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task WaitInsideEnclosingTry_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C
@@ -210,7 +204,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task UnrelatedTypeWithWaitAndRelease_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            class Gate
                            {
                                public void Wait() { }
@@ -231,7 +225,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReleaseBeforeAnExitingReturn_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C
@@ -262,7 +256,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReleaseUnderAConditionInFinally_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C
@@ -291,7 +285,7 @@ public sealed class SemaphoreSlimReleaseAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReturnBetweenWaitAndTry_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SemaphoreSlimReleaseAnalyzer>("""
                            using System.Threading;
                            using System.Threading.Tasks;
                            class C

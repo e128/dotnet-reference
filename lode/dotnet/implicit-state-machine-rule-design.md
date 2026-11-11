@@ -1,5 +1,5 @@
 # Implicit State Machine Rule Design
-*Updated: 2026-11-09T15:56:00Z*
+*Updated: 2026-11-11T03:39:00Z*
 
 This file details the E128218 rule in
 [implicit-state-machine-rule.md](implicit-state-machine-rule.md).
@@ -10,12 +10,16 @@ coverage.
 
 A member is a candidate when all of these hold:
 
-- it is an instance field or auto-property of the analyzed class
+- it is an instance field or auto-property of the analyzed class or struct
 - its type is exactly `bool`, not `bool?`
 - a field is not `const`, `readonly`, or implicitly declared
 - a property has a setter that is not `init`-only
 - a property has no accessor body and no expression body
 - it is not marked `[Obsolete]`
+
+A property pair with an explicit body joins through its field. The getter must
+return one field, and the setter must assign that same field from `value`. The
+field is the canonical member, so the pair occupies one cluster slot.
 
 ```csharp
 sealed class Download
@@ -24,6 +28,7 @@ sealed class Download
     private readonly bool _trace;             // removed, cannot change
     public bool IsPaused { get; set; }        // candidate
     public bool IsReady { get => _isRunning; } // removed, no setter
+    public bool IsBusy { get => _isRunning; set => _isRunning = value; } // maps to _isRunning
 }
 ```
 
@@ -65,6 +70,22 @@ if (_isRunning && !_isPaused)
 
 Negation covers `!`, `== false`, `!= true`, `is false`, and `is not true`.
 
+### Cross-type write
+
+A body in another type can write a candidate through a setter. That write joins
+the evidence of the owning type, and it keeps the writer as its body key. The
+owning type must have at least one transition in its own body. The gate keeps a
+configuration object out of the report.
+
+A write inside a property accessor is storage, not a transition. The rule skips
+it, so a forwarding pair is counted at its use sites.
+
+### Transition bodies
+
+The cluster reports when the count of bodies that write a cluster member meets
+`e128_state_min_transition_bodies`. The default is one. A value of two requires
+two separate transition bodies.
+
 ### Deferred
 
 Mutual exclusion across every write is strong evidence. It needs a whole-type
@@ -84,104 +105,20 @@ start.RegisterCompilationEndAction(ctx => Report(ctx, map));
 ```
 
 Resolve members with `SymbolEqualityComparer.Default`. Never match a member by
-name. Read the option per analyzed type from its declaring file, so a project
+name, with one exception. The forwarding detector reads the field name from the
+accessor syntax and finds that name in the declaring type. A diagnostic analyzer
+must not call `Compilation.GetSemanticModel`, and the name is unique inside one
+type.
+
+Read both options per analyzed type from its declaring file, so a project
 `.editorconfig` applies. A loop condition comes from `IWhileLoopOperation` or
 `IForLoopOperation`, because `ILoopOperation` has no `Condition` member. A
 write through `Interlocked.Exchange` or `Volatile.Write` is a transition write.
 
 ## Worked Examples
 
-### Positive: fields
-
-```csharp
-sealed class Player
-{
-    private bool _isIdle;
-    private bool _isRunning;
-    private bool _isPaused;
-
-    public void Start()  { _isIdle = false; _isRunning = true; }
-    public void Stop()   { _isRunning = false; _isIdle = true; }
-    public void Pause()  { _isRunning = false; _isPaused = true; }
-    public void Resume() { _isPaused = false; _isRunning = true; }
-}
-```
-
-The rule reports the type. The remedy is one `PlayerState` enum with `Idle`,
-`Running`, and `Paused`, plus one transition method.
-
-### Positive: auto-properties
-
-```csharp
-sealed class UiState
-{
-    public bool IsLoading { get; set; }
-    public bool HasError { get; set; }
-    public bool IsComplete { get; set; }
-
-    public void Load()
-    {
-        IsLoading = true;
-        HasError = false;
-        IsComplete = false;
-    }
-
-    public void Fail()
-    {
-        IsLoading = false;
-        HasError = true;
-        IsComplete = false;
-    }
-
-    public void Complete()
-    {
-        IsLoading = false;
-        HasError = false;
-        IsComplete = true;
-    }
-}
-```
-
-The rule reports the type. The three auto-properties are two-valued, and each
-method mixes the values.
-
-### Negative: reset only
-
-```csharp
-sealed class Flags
-{
-    private bool _a;
-    private bool _b;
-    private bool _c;
-
-    public void ToggleA() { _a = !_a; }
-    public void ToggleB() { _b = !_b; }
-    public void ToggleC() { _c = !_c; }
-
-    public void Reset()
-    {
-        _a = false;
-        _b = false;
-        _c = false;
-    }
-}
-```
-
-The members are two-valued, but `Reset` writes the same value to all of them.
-The type does not report.
-
-### Negative: external property writes
-
-```csharp
-sealed class Options
-{
-    public bool UseCache { get; set; }
-    public bool UseRetry { get; set; }
-    public bool UseCompression { get; set; }
-}
-```
-
-The type has no internal write, so no cluster forms.
+The examples live in
+[implicit-state-machine-rule-examples.md](implicit-state-machine-rule-examples.md).
 
 ## Test Coverage
 
@@ -207,13 +144,20 @@ The test file covers these cases:
 | Init-only, get-only, and static properties | Silent |
 | Abstract properties | Silent |
 | External property writes | Silent |
-| Explicit property accessor bodies | Silent |
+| Forwarding accessor pair | Report |
+| Computed property | Silent |
+| Forwarding pair, minimum set to two | Report |
+| Forwarding pair, default minimum | Silent |
+| Cross-type write through a setter | Report |
+| Cross-type write with no internal transition | Silent |
 | `Volatile.Write` co-write | Report |
 | `Interlocked.Exchange` co-write | Report |
 | `readonly`, `const`, and `static` fields | Silent |
 | `bool?` members | Silent |
 | Record type | Silent |
-| Struct type | Silent |
+| Mutable struct | Report |
+| `readonly` struct | Silent |
+| `record struct` | Silent |
 | Partial type | Report |
 | Generic type | Report |
 | Constructor-only writes | Silent |
@@ -223,24 +167,30 @@ The test file covers these cases:
 | Local function mixed co-write | Report |
 | `[Obsolete]` field | Silent |
 | Field initializers only | Silent |
-| Labeled corpus: three state machines and three near misses | 3 report, 3 silent |
+| Two transition bodies, option set to two | Report |
+| One transition body, default | Report |
+| One transition body, option set to two | Silent |
+| Labeled corpus: state machines and near misses | Every labeled type matches |
 
 Every test carries `[Trait("Category", "CI")]`. The rule has no code fix, so the
 fixed text equals the input text.
 
 ## Known Gaps
 
-- A property with accessor bodies is outside the scope.
-- A transition in another type through a public setter is outside the scope.
+- A computed property is outside the scope.
+- A write from another assembly is outside the scope.
 - A write through a ref alias or an `Unsafe` API is missed.
 - A conditional write through `Interlocked.CompareExchange` is missed.
-- A mutable struct with several `bool` members is outside the scope.
 - A two-member cluster needs `e128_min_state_flags = 2`.
+- A cluster of one transition body needs `e128_state_min_transition_bodies`
+  left at its default.
 
 ## Related
 
 - [implicit-state-machine-rule.md](implicit-state-machine-rule.md): concept,
   detector families, contract, and false positive budget
+- [implicit-state-machine-rule-examples.md](implicit-state-machine-rule-examples.md):
+  positive and negative snippets
 - [analyzer-candidates.md](analyzer-candidates.md): candidate ledger and ID
   allocation
 - [analyzers/rule-details.md](analyzers/rule-details.md): detection shape for a

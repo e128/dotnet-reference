@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class HttpClientMissingOceCatchE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<HttpClientMissingOceCatchAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task BroadCatchWithoutOce_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientMissingOceCatchAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            using System.Threading.Tasks;
@@ -50,7 +37,7 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task OceCatchBeforeBroadCatch_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientMissingOceCatchAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            using System.Threading;
@@ -82,7 +69,7 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NonAsyncMethod_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientMissingOceCatchAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            using System.Threading.Tasks;
@@ -109,7 +96,7 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WhenFilteredCatch_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientMissingOceCatchAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            using System.Threading.Tasks;
@@ -136,7 +123,7 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task BareCatchWithHttpClient_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientMissingOceCatchAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            using System.Threading.Tasks;
@@ -165,7 +152,7 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     {
         // A domain client that declares GetAsync does not throw the HttpClient cancellation this
         // rule is about.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientMissingOceCatchAnalyzer>("""
                            using System;
                            using System.Threading.Tasks;
 
@@ -197,7 +184,7 @@ public sealed class HttpClientMissingOceCatchE128AnalyzerTests
     public Task LocalTypeNamedException_NoDiagnostic()
     {
         // The catch handles one derived type, so it is narrower than catch (System.Exception).
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientMissingOceCatchAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            using System.Threading.Tasks;

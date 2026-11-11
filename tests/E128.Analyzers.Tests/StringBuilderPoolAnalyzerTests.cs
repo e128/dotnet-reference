@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -22,20 +21,9 @@ public sealed class StringBuilderPoolAnalyzerTests
                                     }
                                     """;
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<StringBuilderPoolAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     private static Task VerifyWithPoolAsync(string code, params DiagnosticResult[] expected)
     {
-        return VerifyAsync(code + PoolType, expected);
+        return AnalyzerTestRunner.VerifyAsync<StringBuilderPoolAnalyzer>(code + PoolType, expected);
     }
 
     [Fact]
@@ -96,7 +84,7 @@ public sealed class StringBuilderPoolAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoDiagnostic_WhenInsidePoolImplementation()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StringBuilderPoolAnalyzer>("""
                            using System.Text;
                            namespace Pug.Core.Text
                            {
@@ -115,7 +103,7 @@ public sealed class StringBuilderPoolAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoDiagnostic_WhenPoolTypeMissing()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StringBuilderPoolAnalyzer>("""
                            using System.Text;
                            class C
                            {
@@ -133,7 +121,7 @@ public sealed class StringBuilderPoolAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoDiagnostic_WhenNoStringBuilder()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StringBuilderPoolAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {

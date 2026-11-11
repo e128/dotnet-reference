@@ -1,30 +1,19 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UnsafeReadWriteAlignmentAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<UnsafeReadWriteAlignmentAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+    private static AnalyzerTestOptions Options => new() { AllowUnsafe = true };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenReadingThroughAPointer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeReadWriteAlignmentAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -33,14 +22,14 @@ public sealed class UnsafeReadWriteAlignmentAnalyzerTests
                                    return {|E128113:Unsafe.Read<int>(pointer)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenWritingThroughAPointer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeReadWriteAlignmentAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -49,14 +38,14 @@ public sealed class UnsafeReadWriteAlignmentAnalyzerTests
                                    {|E128113:Unsafe.Write<int>(pointer, 1)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheUnalignedVariantIsUsed()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeReadWriteAlignmentAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -65,6 +54,6 @@ public sealed class UnsafeReadWriteAlignmentAnalyzerTests
                                    return Unsafe.ReadUnaligned<int>(pointer);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

@@ -10,11 +10,6 @@ namespace E128.Analyzers.Tests;
 
 public sealed class GcHandleFreeAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>(code, expected);
-    }
-
     /// <summary>
     ///     Removing every metadata reference makes GCHandle unresolvable, which is the fail-closed path the
     ///     analyzer takes when the type is absent.
@@ -36,7 +31,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocAssignedToLocal_NotFreed_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -52,7 +47,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocAssignedAfterDeclaration_NotFreed_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -69,7 +64,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocAssignedToLocal_Freed_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -86,7 +81,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocFreedInFinally_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -110,7 +105,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocInsideALambdaFreedLaterInTheMethod_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -130,7 +125,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocPassedToMethod_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -151,7 +146,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocStoredInField_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -170,7 +165,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocResultAssignedToField_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -188,7 +183,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocReturned_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -205,7 +200,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocStoredInCollection_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Runtime.InteropServices;
                            class C
@@ -224,7 +219,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task AllocDiscarded_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class C
                            {
@@ -240,7 +235,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task UserDefinedGCHandleType_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using System.Runtime.InteropServices;
                            class GCHandle
                            {
@@ -278,7 +273,7 @@ public sealed class GcHandleFreeAnalyzerTests
     [Trait("Category", "CI")]
     public Task BareAllocAfterUsingStatic_NotFreed_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GcHandleFreeAnalyzer>("""
                            using static System.Runtime.InteropServices.GCHandle;
                            class C
                            {

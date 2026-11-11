@@ -1,54 +1,43 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FunctionPointerTypeAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<FunctionPointerTypeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
 
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+    private static AnalyzerTestOptions Options => new() { AllowUnsafe = true };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_OnAField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerTypeAnalyzer>("""
                            unsafe class C
                            {
                                {|E128200:delegate*<int, int>|} field;
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_OnAnUnmanagedPointer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerTypeAnalyzer>("""
                            unsafe class C
                            {
                                {|E128200:delegate* unmanaged[Cdecl]<int, void>|} field;
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_OnALocal()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerTypeAnalyzer>("""
                            unsafe class C
                            {
                                void M()
@@ -56,18 +45,18 @@ public sealed class FunctionPointerTypeAnalyzerTests
                                    {|E128200:delegate*<int, int>|} f = null;
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheTypeIsADelegate()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerTypeAnalyzer>("""
                            class C
                            {
                                System.Func<int, int> field;
                            }
-                           """);
+                           """, options: Options);
     }
 }

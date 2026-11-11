@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class PrimaryConstructorBackingFieldE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<PrimaryConstructorBackingFieldAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ReadonlyFieldFromPrimaryCtorParam_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PrimaryConstructorBackingFieldAnalyzer>("""
                            class C(int value)
                            {
                                private readonly int {|E128017:_value|} = value;
@@ -35,7 +22,7 @@ public sealed class PrimaryConstructorBackingFieldE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task MutableFieldFromPrimaryCtorParam_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PrimaryConstructorBackingFieldAnalyzer>("""
                            class C(int value)
                            {
                                private int _value = value;
@@ -48,7 +35,7 @@ public sealed class PrimaryConstructorBackingFieldE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task StructWithPrimaryCtorField_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<PrimaryConstructorBackingFieldAnalyzer>("""
                            struct S(int value)
                            {
                                private readonly int _value = value;

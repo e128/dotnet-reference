@@ -7,10 +7,13 @@ namespace E128.Reference.Core;
 /// </summary>
 public sealed class Greeter
 {
-    private const string FallbackName = "World";
+    /// <summary>
+    ///     The one owner of the default greeting name. Every caller reads this property.
+    /// </summary>
+    public static string DefaultGreetingName => "World";
 
     public Greeter()
-        : this(FallbackName)
+        : this(DefaultGreetingName)
     {
     }
 

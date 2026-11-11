@@ -1,5 +1,5 @@
 # FIPS Cryptography Rules
-*Updated: 2026-11-09T23:44:15Z*
+*Updated: 2026-11-11T03:58:57Z*
 
 The Security analyzer set enforces organization cryptography policy. All rules
 report an error, so a policy break fails the build by default. E128071 and
@@ -74,6 +74,12 @@ and `FipsSymbolHelpers.Assignments`. The buffer-length helpers cap
 source-derived encoded text at 1 MiB before a decode or scan. An over-cap value
 falls through to the fail-closed report. Rules call the helpers instead of
 matching source text. `FipsTypeClassifier` holds the type verdict.
+
+The helper also owns the hash tables. `Sha3TypeNames` and `Sha3AlgorithmNames`
+hold the SHA-3 spellings for `FipsSha3Analyzer`. `HashOutputBytes` maps a hash
+name to its output length for `FipsHmacKeyLengthAnalyzer`. `HashNamesByOid` maps
+an object identifier to its hash name, and `ForbiddenHashOids` derives the
+blocked subset for `FipsUnapprovedHashAnalyzer`. No rule keeps a private copy.
 
 Invariants:
 

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,25 +7,17 @@ namespace E128.Analyzers.Tests;
 
 public sealed class TestCodeCommentAnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithXunit };
+
     private static readonly ReferenceAssemblies Net100WithXunit = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("xunit.v3.core", "3.2.2")]);
-
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<TestCodeCommentAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithXunit
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_Reports_WhenFactBodyHasLineComment()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestCodeCommentAnalyzer>("""
                             using Xunit;
 
                             public class C
@@ -38,14 +29,14 @@ public sealed class TestCodeCommentAnalyzerTests
                                     var x = 1;
                                 }
                             }
-                            """);
+                            """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_Reports_WhenTestClassHelperHasDocComment()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestCodeCommentAnalyzer>("""
                             using Xunit;
 
                             public class C
@@ -60,14 +51,14 @@ public sealed class TestCodeCommentAnalyzerTests
                                 {
                                 }
                             }
-                            """);
+                            """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_ReportsNothing_WhenTypeHasNoXunitAttribute()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestCodeCommentAnalyzer>("""
                             public class D
                             {
                                 public void M()
@@ -76,7 +67,7 @@ public sealed class TestCodeCommentAnalyzerTests
                                     var x = 1;
                                 }
                             }
-                            """);
+                            """, options: Options);
     }
 
     [Fact]
@@ -85,7 +76,7 @@ public sealed class TestCodeCommentAnalyzerTests
     {
         // The comment is leading trivia of the class itself. It sits outside the type body, and the
         // code fix would delete a license header or a type doc comment.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestCodeCommentAnalyzer>("""
                             using Xunit;
 
                             /// <summary>Covers the parser.</summary>
@@ -96,6 +87,6 @@ public sealed class TestCodeCommentAnalyzerTests
                                 {
                                 }
                             }
-                            """);
+                            """, options: Options);
     }
 }

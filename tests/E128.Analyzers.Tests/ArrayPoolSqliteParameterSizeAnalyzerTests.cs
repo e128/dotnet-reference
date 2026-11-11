@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -29,17 +27,6 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
                                          }
                                          """;
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ArrayPoolSqliteParameterSizeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     /// <summary>
     ///     VB1: AddWithValue with pooled buffer, no .Size set.
     /// </summary>
@@ -47,7 +34,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_Reports_WhenAddWithValueUsesPooledBuffer_WithoutSize()
     {
-        return VerifyAsync(PooledPreamble + """
+        return AnalyzerTestRunner.VerifyAsync<ArrayPoolSqliteParameterSizeAnalyzer>(PooledPreamble + """
                                             class C
                                             {
                                                 void M()
@@ -67,7 +54,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_Reports_WhenValueAssignedPooledBuffer_WithoutSize()
     {
-        return VerifyAsync(PooledPreamble + """
+        return AnalyzerTestRunner.VerifyAsync<ArrayPoolSqliteParameterSizeAnalyzer>(PooledPreamble + """
                                             class C
                                             {
                                                 void M()
@@ -87,7 +74,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_NoDiag_WhenSizeIsSet()
     {
-        return VerifyAsync(PooledPreamble + """
+        return AnalyzerTestRunner.VerifyAsync<ArrayPoolSqliteParameterSizeAnalyzer>(PooledPreamble + """
                                             class C
                                             {
                                                 void M()
@@ -108,7 +95,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_NoDiag_WhenBufferIsNewByteArray()
     {
-        return VerifyAsync(PlainPreamble + """
+        return AnalyzerTestRunner.VerifyAsync<ArrayPoolSqliteParameterSizeAnalyzer>(PlainPreamble + """
                                            class C
                                            {
                                                void M()
@@ -128,7 +115,7 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_NoDiag_WhenValueIsNotByteArray()
     {
-        return VerifyAsync(PlainPreamble + """
+        return AnalyzerTestRunner.VerifyAsync<ArrayPoolSqliteParameterSizeAnalyzer>(PlainPreamble + """
                                            class C
                                            {
                                                void M()

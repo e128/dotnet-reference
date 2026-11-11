@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -9,17 +8,6 @@ namespace E128.Analyzers.Tests;
 
 public sealed class GuidNewGuidTempPathE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<GuidNewGuidTempPathE128Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     private static DiagnosticResult Expect(int line, int column)
     {
         return new DiagnosticResult("E128025", DiagnosticSeverity.Warning)
@@ -42,14 +30,14 @@ public sealed class GuidNewGuidTempPathE128AnalyzerTests
                                 }
                             }
                             """;
-        return VerifyAsync(code, Expect(8, 62));
+        return AnalyzerTestRunner.VerifyAsync<GuidNewGuidTempPathE128Analyzer>(code, Expect(8, 62));
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task GuidNotInPathContext_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GuidNewGuidTempPathE128Analyzer>("""
                            using System;
 
                            class Foo
@@ -78,14 +66,14 @@ public sealed class GuidNewGuidTempPathE128AnalyzerTests
                                 }
                             }
                             """;
-        return VerifyAsync(code, Expect(8, 62));
+        return AnalyzerTestRunner.VerifyAsync<GuidNewGuidTempPathE128Analyzer>(code, Expect(8, 62));
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task GuidInNonPathInterpolation_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GuidNewGuidTempPathE128Analyzer>("""
                            using System;
 
                            class Foo

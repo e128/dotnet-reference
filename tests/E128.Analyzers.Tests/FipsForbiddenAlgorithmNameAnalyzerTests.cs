@@ -25,22 +25,11 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
                                               }
                                               """;
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FipsForbiddenAlgorithmNameAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task VendoredCipherInSystemNamespace_Reports_E128148()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>("""
                            namespace System.Vendor;
                            class BlowfishEngine
                            {
@@ -92,7 +81,7 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
     [Trait("Category", "CI")]
     public Task BlowfishCreation_Reports_E128148()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>("""
                            class BlowfishEngine
                            {
                            }
@@ -111,7 +100,7 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
     [Trait("Category", "CI")]
     public Task Rc4Factory_Reports_E128148()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>("""
                            class RC4Engine
                            {
                                public static RC4Engine Create() => default;
@@ -131,7 +120,7 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
     [Trait("Category", "CI")]
     public Task IdeaEngine_Reports_E128148()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>("""
                            class IdeaEngine
                            {
                            }
@@ -150,7 +139,7 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
     [Trait("Category", "CI")]
     public Task PlainIdeaWord_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>("""
                            class Idea
                            {
                            }
@@ -176,7 +165,7 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
     {
         var code = ThirdPartyCiphers + "\nclass C { void M() { var cipher = {|E128148:new Org.Ciphers." + typeName + "()|}; } }";
 
-        return VerifyAsync(code);
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>(code);
     }
 
     [Theory]
@@ -189,14 +178,14 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
     {
         var code = ThirdPartyCiphers + "\nclass C { void M() { var value = new Org.Ciphers." + typeName + "(); } }";
 
-        return VerifyAsync(code);
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>(code);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task IdeaRoleWordAtEnd_Reports_E128148()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>("""
                            namespace Org.Misc
                            {
                                class IdeaRankingAlgorithm { }
@@ -232,14 +221,14 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
     {
         var code = "namespace App.Planning { class " + typeName + " { } }\nclass C { void M() { var value = new App.Planning." + typeName + "(); } }";
 
-        return VerifyAsync(code);
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>(code);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task IdeaServiceInCryptographicNamespace_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>("""
                            namespace Org.Ciphers { class IdeaService { } }
 
                            class C
@@ -256,7 +245,7 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzerTests
     [Trait("Category", "CI")]
     public Task CryptographicIdeaUses_Report_E128148()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsForbiddenAlgorithmNameAnalyzer>("""
                            namespace Org.Cryptography { class Idea { } }
 
                            namespace Org.Misc

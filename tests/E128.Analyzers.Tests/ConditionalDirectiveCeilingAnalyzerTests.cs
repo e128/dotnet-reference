@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Maintainability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -10,18 +8,7 @@ public sealed class ConditionalDirectiveCeilingAnalyzerTests
 {
     private static Task VerifyAsync(string code, string? config = null)
     {
-        var test = new CSharpAnalyzerTest<ConditionalDirectiveCeilingAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-
-        if (config is not null)
-        {
-            test.TestState.AnalyzerConfigFiles.Add(("/.globalconfig", "is_global = true\n" + config));
-        }
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<ConditionalDirectiveCeilingAnalyzer>(code, options: new AnalyzerTestOptions { AnalyzerConfig = ("/.globalconfig", "is_global = true\n" + config) });
     }
 
     [Fact]

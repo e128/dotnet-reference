@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class DateTimeParseRoundtripE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<DateTimeParseRoundtripAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task DateTimeParse_MissingDateTimeStyles_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DateTimeParseRoundtripAnalyzer>("""
                            using System;
                            using System.Globalization;
                            class C
@@ -40,7 +27,7 @@ public sealed class DateTimeParseRoundtripE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task DateTimeParseExact_MissingDateTimeStyles_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DateTimeParseRoundtripAnalyzer>("""
                            using System;
                            using System.Globalization;
                            class C
@@ -57,7 +44,7 @@ public sealed class DateTimeParseRoundtripE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task DateTimeParse_WithDateTimeStyles_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DateTimeParseRoundtripAnalyzer>("""
                            using System;
                            using System.Globalization;
                            class C

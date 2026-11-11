@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class DirectHttpClientInstantiationAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<DirectHttpClientInstantiationAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task NewHttpClientNoArgs_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DirectHttpClientInstantiationAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class DirectHttpClientInstantiationAnalyzerTests
     [Trait("Category", "CI")]
     public Task NewHttpClientNoArgs_AsField_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DirectHttpClientInstantiationAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -52,7 +39,7 @@ public sealed class DirectHttpClientInstantiationAnalyzerTests
     [Trait("Category", "CI")]
     public Task NewHttpClientWithHandler_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DirectHttpClientInstantiationAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -69,7 +56,7 @@ public sealed class DirectHttpClientInstantiationAnalyzerTests
     [Trait("Category", "CI")]
     public Task UserDefinedHttpClient_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DirectHttpClientInstantiationAnalyzer>("""
                            class HttpClient
                            {
                                public HttpClient() { }

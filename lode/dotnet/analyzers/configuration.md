@@ -1,6 +1,6 @@
 # Analyzer Configuration
 
-*Updated: 2026-11-04T15:43:52Z*
+*Updated: 2026-11-11T13:26:18Z*
 
 How a rule reads a configuration value. The project-level file split lives in
 [Analyzers](../analyzers.md) § Configuration Split. This file covers the
@@ -26,6 +26,12 @@ per-file-name switch belongs on `GetOptions(tree)`.
 `StaleReferenceAssembliesAnalyzer` reads `e128_minimum_framework_version` from
 `GetOptions(tree)`, so a path-scoped `.editorconfig` can override the project
 value. The repo sets the project value in `tests/.globalconfig`.
+
+The repo value is `100`. `Microsoft.CodeAnalysis.Analyzer.Testing` exposes
+`ReferenceAssemblies.Net` codes up to `Net100`, and its latest release adds no
+`Net110`. A higher default would flag the `Net100` snippets that every test
+uses, and no replacement snippet version exists. Raise the value when the
+package publishes a `Net110` band.
 
 The code fix reaches the same surface through
 `document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider`. Read the value

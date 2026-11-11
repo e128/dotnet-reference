@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -156,13 +155,7 @@ public sealed class OptionsValidationMissingAnalyzerTests
 
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<OptionsValidationMissingAnalyzer, DefaultVerifier>
-        {
-            TestCode = Stubs + "\n" + code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<OptionsValidationMissingAnalyzer>(Stubs + "\n" + code, expected);
     }
 
     #region Fires

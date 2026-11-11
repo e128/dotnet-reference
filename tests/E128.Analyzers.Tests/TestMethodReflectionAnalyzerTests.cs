@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Maintainability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class TestMethodReflectionAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<TestMethodReflectionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task FactMethod_BindingFlags_FiresE128090()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            using System.Reflection;
                            class FactAttribute : Attribute { }
@@ -43,7 +30,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     public Task FactMethod_BareBindingFlagsType_FiresE128090()
     {
         // The type name reaches no member access, so the identifier action must report it.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            using System.Reflection;
                            class FactAttribute : Attribute { }
@@ -62,7 +49,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task TheoryMethod_GetMethod_FiresE128090()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            using System.Reflection;
                            class TheoryAttribute : Attribute { }
@@ -81,7 +68,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonTestMethod_GetMethod_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            class C
                            {
@@ -97,7 +84,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task FactMethod_GetProperty_FiresE128090()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            using System.Reflection;
                            class FactAttribute : Attribute { }
@@ -116,7 +103,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task FactMethod_GetField_FiresE128090()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            using System.Reflection;
                            class FactAttribute : Attribute { }
@@ -137,7 +124,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     {
         // The receiver text carries no "BindingFlags", so only the resolved symbol can match.
         // The report covers the receiver, as it does for a non-aliased receiver.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            using BF = System.Reflection.BindingFlags;
                            class FactAttribute : Attribute { }
@@ -157,7 +144,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     public Task FactMethod_TypeBuilderDerivedReceiver_FiresE128090()
     {
         // TypeBuilder derives from System.Type, so its reflection-shaped member counts too.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            using System.Reflection.Emit;
                            class FactAttribute : Attribute { }
@@ -176,7 +163,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task FactMethod_UserTypeNamedBindingFlags_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            class FactAttribute : Attribute { }
                            class BindingFlags
@@ -198,7 +185,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task FactMethod_GetFieldOnNonTypeReceiver_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            class FactAttribute : Attribute { }
                            class FieldReader
@@ -221,7 +208,7 @@ public sealed class TestMethodReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task SetupCode_BindingFlags_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TestMethodReflectionAnalyzer>("""
                            using System;
                            using System.Reflection;
                            class FactAttribute : Attribute { }

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class E128056FileInfoToctouAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FileInfoToctouAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task FileInfoToctou_Reports_WhenExistsCheckFollowedByFileRead()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class Loader
@@ -41,7 +28,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileInfoToctou_Reports_WhenStaticExistsCheckFollowedByReadOfTheSamePath()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            class Loader
                            {
@@ -58,7 +45,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileInfoToctou_NoReport_WhenTheExistsCheckGuardsADifferentPath()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            class Loader
                            {
@@ -77,7 +64,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     {
         // The guarded value keys on the (receiver, member) pair, so configA.Path and configB.Path
         // name different files even though both bind to the same property symbol.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            class Config
                            {
@@ -98,7 +85,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileInfoToctou_NoReport_WhenReadIsGuardedWithTryCatch()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class Loader
@@ -123,7 +110,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileInfoToctou_NoReport_WhenNoExistsCheckPresent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class Loader
@@ -149,7 +136,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     {
         // Both arguments bind to Path.Combine. A call names no storage location, so it cannot
         // stand for a guarded value.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            class Loader
                            {
@@ -167,7 +154,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     public Task FileInfoToctou_NoReport_WhenTheReadUsesADifferentPropertyOfTheSameObject()
     {
         // InputPath and OutputPath are separate properties, so the check guards a different value.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            class Options { public string InputPath { get; set; } = ""; public string OutputPath { get; set; } = ""; }
                            class Loader
@@ -185,7 +172,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileInfoToctou_Reports_WhenTheReadUsesTheGuardedProperty()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            class Options { public string Path { get; set; } = ""; }
                            class Loader
@@ -204,7 +191,7 @@ public sealed class E128056FileInfoToctouAnalyzerTests
     public Task FileInfoToctou_NoReport_WhenTheSameNameBelongsToAnotherScope()
     {
         // The nested path parameter is a different symbol from the one the check guarded.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileInfoToctouAnalyzer>("""
                            using System.IO;
                            class Loader
                            {

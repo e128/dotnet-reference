@@ -6,5 +6,6 @@ namespace E128.Analyzers.Design;
 internal enum MutableCollectionKind
 {
     List = 0,
-    Dictionary = 1
+    Dictionary = 1,
+    Set = 2
 }

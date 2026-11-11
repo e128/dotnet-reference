@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SealedByDefaultAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<SealedByDefaultAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ClassWithNonObjectBase_NoSubclass_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Base { }
                            class {|E128005:Derived|} : Base { }
                            """);
@@ -33,7 +20,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task ClassWithNonObjectBase_HasSubclass_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Base { }
                            class Middle : Base { }
                            sealed class Leaf : Middle { }
@@ -44,7 +31,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task DirectObjectSubclass_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Foo { }
                            """);
     }
@@ -53,7 +40,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task AbstractClass_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Base { }
                            abstract class Derived : Base { }
                            """);
@@ -63,7 +50,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task SealedClass_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Base { }
                            sealed class Derived : Base { }
                            """);
@@ -73,7 +60,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task RecordClass_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            record class Base(int X);
                            record class Derived(int X, int Y) : Base(X);
                            """);
@@ -84,7 +71,7 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task TypeConstraint_NoFire()
     {
         // Sealing Mid would make `where T : Mid` fail with CS0701.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Root { }
                            class Mid : Root { }
                            class Holder<T> where T : Mid { }
@@ -95,7 +82,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task MethodConstraint_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Root { }
                            class Mid : Root { }
                            static class Entry
@@ -109,7 +96,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task LocalFunctionConstraint_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Root { }
                            class Mid : Root { }
                            class Holder
@@ -127,7 +114,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task NestedTypeConstraint_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Root { }
                            class Mid : Root { }
                            class Outer<T> where T : Mid
@@ -142,7 +129,7 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task ComImportClass_NoFire()
     {
         // CS0424 forbids a base class on a ComImport type, so the rule never sees one.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            using System.Runtime.InteropServices;
 
                            class Root { }
@@ -157,7 +144,7 @@ public sealed class SealedByDefaultAnalyzerTests
     public Task GenericConstraint_NoFire()
     {
         // The constraint names a constructed type; the original definition carries the rule.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Root<T> { }
                            class Mid<T> : Root<T> { }
                            class Holder<T> where T : Mid<int> { }
@@ -168,7 +155,7 @@ public sealed class SealedByDefaultAnalyzerTests
     [Trait("Category", "CI")]
     public Task ClassNotUsedAsConstraint_StillFires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SealedByDefaultAnalyzer>("""
                            class Root { }
                            class {|E128005:Mid|} : Root { }
                            class {|E128005:Other|} : Root { }

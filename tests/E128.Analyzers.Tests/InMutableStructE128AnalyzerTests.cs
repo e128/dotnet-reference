@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class InMutableStructE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<InMutableStructE128Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task InMutableStruct_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            struct MutableStruct { public int X; }
                            class C
                            {
@@ -36,7 +23,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InGenericMutableStruct_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            struct Batch<T> { public T[] Items; }
                            class Activity { }
                            class C
@@ -50,7 +37,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InGenericWrapper_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            struct Wrapper<T> { public T Value; }
                            class C
                            {
@@ -63,7 +50,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InMixedStruct_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            struct MixedStruct { public readonly int X; public int Y; }
                            class C
                            {
@@ -76,7 +63,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ReadonlyStruct_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            readonly struct ImmutablePoint { public int X { get; } }
                            class C
                            {
@@ -89,7 +76,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task DateTime_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            using System;
                            class C
                            {
@@ -102,7 +89,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task RefStruct_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            using System;
                            class C
                            {
@@ -115,7 +102,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task Primitive_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            class C
                            {
                                void M(in int value) { }
@@ -127,7 +114,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task Enum_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            using System;
                            class C
                            {
@@ -140,7 +127,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task WithoutInModifier_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            struct MutableStruct { public int X; }
                            class C
                            {
@@ -153,7 +140,7 @@ public sealed class InMutableStructE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task CancellationToken_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InMutableStructE128Analyzer>("""
                            using System.Threading;
                            class C
                            {

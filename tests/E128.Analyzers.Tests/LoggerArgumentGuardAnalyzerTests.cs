@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,21 +7,17 @@ namespace E128.Analyzers.Tests;
 
 public sealed class LoggerArgumentGuardAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<LoggerArgumentGuardAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-                .AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "10.0.13")]),
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithLogging };
+
+    private static readonly ReferenceAssemblies Net100WithLogging = ReferenceAssemblies.Net.Net100
+        .AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "10.0.13")]);
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheMessageIsInterpolated()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -31,14 +26,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    {|E128122:logger.LogInformation($"count {count}")|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheMessageIsConcatenated()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -47,14 +42,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    {|E128122:logger.LogWarning("name " + name)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheMessageIsAConstant()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -63,14 +58,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    logger.LogInformation("started");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheAdditionIsNumeric()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -79,14 +74,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    logger.LogInformation("{Sum}", a + b);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenAnEarlyReturnGuardPrecedesTheCall()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -100,14 +95,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    logger.LogInformation($"count {count}");
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenACompoundConditionGuardsTheCall()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -119,14 +114,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheGuardIsDisjoinedWithAnotherCondition()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -138,14 +133,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheGuardChecksAnotherLevel()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -157,14 +152,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheCallIsInTheElseBranch()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -179,14 +174,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenAHelperPropertyHoldsTheGuard()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -207,14 +202,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenALocalHoldsTheGuard()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -227,14 +222,14 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheHelperChecksAnotherLevel()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<LoggerArgumentGuardAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -255,6 +250,6 @@ public sealed class LoggerArgumentGuardAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

@@ -96,7 +96,6 @@ done
 parse_float "$MIN_LINE"
 parse_float "$MIN_ASSEMBLY"
 require_tool jq
-require_tool xmllint
 EXPECTED_JSON="$(printf '%s\n' "${EXPECTED_MODULES[@]}" | jq -R -s 'split("\n") | map(select(length > 0))')"
 
 # Resolve --file into a list of report paths, keeping one path per file name.
@@ -136,10 +135,11 @@ resolve_reports() {
 
 # Print one TSV record per class-level line: package, class, file, line, hits,
 # branch hits, branch total. Method lines sit inside <methods> and are skipped,
-# so a line is never counted twice.
+# so a line is never counted twice. Splitting on "<" puts one element on each
+# line, so the parse needs no XML tool.
 parse_report() {
     local report="$1"
-    xmllint --format "$report" 2>/dev/null | awk '
+    tr '<' '\n' < "$report" | awk '
         BEGIN { OFS = "\t" }
 
         function attr(line, name,    s) {
@@ -150,12 +150,12 @@ parse_report() {
             return s
         }
 
-        /<package / { pkg = attr($0, "name"); next }
-        /<class /   { cls = attr($0, "name"); file = attr($0, "filename"); next }
-        /<methods>/ { in_methods = 1; next }
-        /<\/methods>/ { in_methods = 0; next }
+        /^package / { pkg = attr($0, "name"); next }
+        /^class /   { cls = attr($0, "name"); file = attr($0, "filename"); next }
+        /^methods>/ { in_methods = 1; next }
+        /^\/methods>/ { in_methods = 0; next }
 
-        /<line / {
+        /^line / {
             if (in_methods || cls == "") next
             number = attr($0, "number")
             hits = attr($0, "hits")
@@ -236,7 +236,7 @@ build_records() {
 list_packages() {
     local report
     for report in "${REPORTS[@]}"; do
-        xmllint --format "$report" 2>/dev/null | awk '
+        tr '<' '\n' < "$report" | awk '
             function attr(line, name,    s) {
                 if (!match(line, name "=\"[^\"]*\"")) return ""
                 s = substr(line, RSTART, RLENGTH)
@@ -244,7 +244,7 @@ list_packages() {
                 sub(/\"$/, "", s)
                 return s
             }
-            /<package / {
+            /^package / {
                 name = attr($0, "name")
                 if (name != "") print name
             }

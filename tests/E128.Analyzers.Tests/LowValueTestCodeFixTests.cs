@@ -8,7 +8,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
@@ -27,14 +26,12 @@ public sealed class LowValueTestCodeFixTests
     {
         // The analyzer defers every report to the compilation end action, so no diagnostic exists at
         // the local stage. The framework check for a local diagnostic is skipped for that reason.
-        return new CSharpCodeFixTest<LowValueTestAnalyzer, LowValueTestCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = Net100WithXunit,
-            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
-            NumberOfFixAllIterations = 1
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<LowValueTestAnalyzer, LowValueTestCodeFixProvider>(
+            source,
+            fixedCode,
+            references: Net100WithXunit,
+            fixAllIterations: 1,
+            behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck);
     }
 
     [Fact]

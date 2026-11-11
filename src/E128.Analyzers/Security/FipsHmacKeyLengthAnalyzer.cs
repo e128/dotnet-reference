@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -29,15 +28,7 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
     ///     (<c lang="csharp">SHA-256</c>, <c lang="csharp">SHA3_256</c>) and an HMAC type name without its prefix
     ///     (<c lang="csharp">HMACSHA256</c>) share it.
     /// </summary>
-    private static readonly Dictionary<string, int> HashOutputBytes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["SHA256"] = 32,
-        ["SHA3256"] = 32,
-        ["SHA384"] = 48,
-        ["SHA3384"] = 48,
-        ["SHA512"] = 64,
-        ["SHA3512"] = 64,
-    };
+    private static readonly ImmutableDictionary<string, int> HashOutputBytes = FipsSymbolHelpers.HashOutputBytes;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,

@@ -1,31 +1,18 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<StaticReadonlyFrozenCollectionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     #region Fires
 
     [Fact]
     [Trait("Category", "CI")]
     public Task FiresOnHashSet_WhenStaticReadonlyWithInitializer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -38,7 +25,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnHashSet_WhenStaticReadonlyWithComparer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -52,7 +39,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnDictionary_WhenStaticReadonlyWithInitializer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -65,7 +52,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnDictionary_WhenStaticReadonlyWithComparer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -83,7 +70,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenAlreadyFrozenSet()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System;
                            using System.Collections.Frozen;
                            using System.Collections.Generic;
@@ -99,7 +86,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenAlreadyFrozenDictionary()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System.Collections.Frozen;
                            using System.Collections.Generic;
                            class C
@@ -114,7 +101,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenInstanceField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -127,7 +114,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenNotReadonly()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -140,7 +127,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenInitializedInStaticConstructor()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -158,7 +145,7 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenImmutableHashSet()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<StaticReadonlyFrozenCollectionAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {

@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -14,22 +12,11 @@ namespace E128.Analyzers.Tests;
 /// </summary>
 public sealed class OptionsBindInitE128CodeFixTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<OptionsBindInitAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task AnalyzerFires_OnMixedInitAndSetProperties()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<OptionsBindInitAnalyzer>("""
                            namespace Microsoft.Extensions.Configuration
                            {
                                public interface IConfiguration

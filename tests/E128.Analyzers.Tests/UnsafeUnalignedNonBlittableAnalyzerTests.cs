@@ -1,31 +1,19 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UnsafeUnalignedNonBlittableAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        var test = new CSharpAnalyzerTest<UnsafeUnalignedNonBlittableAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
 
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+    private static AnalyzerTestOptions Options => new() { AllowUnsafe = true };
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenReadingABool()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeUnalignedNonBlittableAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -34,14 +22,14 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzerTests
                                    return {|E128139:Unsafe.ReadUnaligned<bool>(ref source)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenReadingABoolFromAnInArgument()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeUnalignedNonBlittableAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -50,14 +38,14 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzerTests
                                    return {|E128139:Unsafe.ReadUnaligned<bool>(in source)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenWritingABool()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeUnalignedNonBlittableAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -66,14 +54,14 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzerTests
                                    {|E128139:Unsafe.WriteUnaligned<bool>(ref destination, value)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheStructHoldsABool()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeUnalignedNonBlittableAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            struct Flag
                            {
@@ -86,14 +74,14 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzerTests
                                    return {|E128139:Unsafe.ReadUnaligned<Flag>(ref source)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task Silent_WhenTheTypeIsBlittable()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeUnalignedNonBlittableAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            unsafe class C
                            {
@@ -102,6 +90,6 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzerTests
                                    return Unsafe.ReadUnaligned<int>(ref source);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

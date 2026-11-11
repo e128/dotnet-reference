@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class AlternateLookupAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<AlternateLookupAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheIndexerKeyIsAStringFromASpan()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AlternateLookupAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
 
@@ -41,7 +30,7 @@ public sealed class AlternateLookupAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenContainsKeyTakesAStringFromACharArray()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AlternateLookupAnalyzer>("""
                            using System.Collections.Generic;
 
                            class C
@@ -61,7 +50,7 @@ public sealed class AlternateLookupAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheComparerIsOrdinal()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AlternateLookupAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
 
@@ -81,7 +70,7 @@ public sealed class AlternateLookupAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheComparerIsCultureAware()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AlternateLookupAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
 
@@ -102,7 +91,7 @@ public sealed class AlternateLookupAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheCollectionTypeIsUnknown()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AlternateLookupAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
 
@@ -120,7 +109,7 @@ public sealed class AlternateLookupAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheKeyIsNotBuiltFromASpan()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AlternateLookupAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
 

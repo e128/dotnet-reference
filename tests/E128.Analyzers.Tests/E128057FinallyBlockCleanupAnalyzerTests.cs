@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class E128057FinallyBlockCleanupAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FinallyBlockCleanupAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task FinallyCleanup_Reports_WhenFileDeleteIsNotInTryCatch()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FinallyBlockCleanupAnalyzer>("""
                            using System.IO;
                            class Processor
                            {
@@ -43,7 +30,7 @@ public sealed class E128057FinallyBlockCleanupAnalyzerTests
     [Trait("Category", "CI")]
     public Task FinallyCleanup_NoReport_WhenFileDeleteIsInTryCatch()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FinallyBlockCleanupAnalyzer>("""
                            using System.IO;
                            class Processor
                            {
@@ -67,7 +54,7 @@ public sealed class E128057FinallyBlockCleanupAnalyzerTests
     [Trait("Category", "CI")]
     public Task FinallyCleanup_Reports_WhenDirectoryDeleteIsNotInTryCatch()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FinallyBlockCleanupAnalyzer>("""
                            using System.IO;
                            class Processor
                            {
@@ -87,7 +74,7 @@ public sealed class E128057FinallyBlockCleanupAnalyzerTests
     [Trait("Category", "CI")]
     public Task FinallyCleanup_NoReport_WhenFinallyHasNoDangerousCall()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FinallyBlockCleanupAnalyzer>("""
                            class Processor
                            {
                                void Process()

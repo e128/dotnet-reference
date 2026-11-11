@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -79,13 +77,9 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzerTests
 
     private static Task VerifyAsync(string source)
     {
-        var test = new CSharpAnalyzerTest<UnvalidatedJwtIdentityAnalyzer, DefaultVerifier>
-        {
-            TestCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.Sources.Add(Stubs);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<UnvalidatedJwtIdentityAnalyzer>(
+            source,
+            options: new AnalyzerTestOptions { Sources = [Stubs] });
     }
 
     [Fact]

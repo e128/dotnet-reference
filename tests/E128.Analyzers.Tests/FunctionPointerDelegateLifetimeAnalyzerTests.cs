@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FunctionPointerDelegateLifetimeAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<FunctionPointerDelegateLifetimeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheDelegateIsALocal()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerDelegateLifetimeAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -38,7 +27,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheDelegateIsAField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerDelegateLifetimeAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -57,7 +46,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheDelegateIsATemporary()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerDelegateLifetimeAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -82,7 +71,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheLocalIsStoredInAField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerDelegateLifetimeAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -103,7 +92,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheLocalIsKeptAliveExplicitly()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerDelegateLifetimeAnalyzer>("""
                            using System;
                            using System.Runtime.InteropServices;
                            class C
@@ -122,7 +111,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheLocalIsAddedToACollection()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerDelegateLifetimeAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            using System.Runtime.InteropServices;

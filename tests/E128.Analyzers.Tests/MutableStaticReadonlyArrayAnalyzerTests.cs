@@ -1,31 +1,18 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class MutableStaticReadonlyArrayAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<MutableStaticReadonlyArrayAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     #region Fires
 
     [Fact]
     [Trait("Category", "CI")]
     public Task FiresOnStaticReadonlyStringArray_WithCollectionExpression()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            using System;
                            class C
                            {
@@ -38,7 +25,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticReadonlyStringArray_WithArrayInitializer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                private static readonly {|E128061:string[] Names = new[] { "a", "b" }|};
@@ -50,7 +37,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticReadonlyIntArray()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                private static readonly {|E128061:int[] Ports = [80, 443]|};
@@ -62,7 +49,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnStaticReadonlyArray_WithExplicitTypeInNew()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                private static readonly {|E128061:string[] Suffixes = new string[] { "s_", "m_" }|};
@@ -74,7 +61,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task FiresOnInternalStaticReadonlyArray()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                internal static readonly {|E128061:string[] Labels = ["x", "y"]|};
@@ -90,7 +77,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenAlreadyImmutableArray()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {
@@ -103,7 +90,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenInstanceReadonlyArray()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                private readonly string[] _items = ["a", "b"];
@@ -115,7 +102,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenStaticButNotReadonly()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                private static string[] Names = ["a", "b"];
@@ -127,7 +114,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenReadonlyButNotStatic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                private readonly string[] Names = ["a", "b"];
@@ -139,7 +126,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenNoInitializer()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                private static readonly string[] Names;
@@ -152,7 +139,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenStaticReadonlyList()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -165,7 +152,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenPublicField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                public static readonly string[] Names = ["a", "b"];
@@ -177,7 +164,7 @@ public sealed class MutableStaticReadonlyArrayAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoesNotFire_WhenConstField()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MutableStaticReadonlyArrayAnalyzer>("""
                            class C
                            {
                                private const string Names = "a";

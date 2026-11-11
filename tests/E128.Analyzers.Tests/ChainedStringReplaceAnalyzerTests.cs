@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ChainedStringReplaceAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ChainedStringReplaceAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_ChainOfTwoOrMoreReplaceCalls()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ChainedStringReplaceAnalyzer>("""
                            class C
                            {
                                void M(string value)
@@ -38,7 +25,7 @@ public sealed class ChainedStringReplaceAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_SingleReplaceCall()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ChainedStringReplaceAnalyzer>("""
                            class C
                            {
                                void M(string value)
@@ -53,7 +40,7 @@ public sealed class ChainedStringReplaceAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_ReplaceUntilStableLoop()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ChainedStringReplaceAnalyzer>("""
                            using System;
                            class C
                            {
@@ -72,7 +59,7 @@ public sealed class ChainedStringReplaceAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoReport_NonStringReceiver()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ChainedStringReplaceAnalyzer>("""
                            using System.Text;
                            class C
                            {

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FileSystemInfoEqualityAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FileSystemInfoEqualityAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task FileInfo_Equality_ReportsOnEquals()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemInfoEqualityAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -36,7 +23,7 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task DirectoryInfo_Inequality_ReportsOnNotEquals()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemInfoEqualityAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -49,7 +36,7 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileInfo_EqualsMethod_ReportsOnInstanceCall()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemInfoEqualityAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -62,7 +49,7 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileInfo_NullComparison_DoesNotReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemInfoEqualityAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -75,7 +62,7 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task FileInfo_FullNameComparison_DoesNotReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemInfoEqualityAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -88,7 +75,7 @@ public sealed class FileSystemInfoEqualityAnalyzerTests
     [Trait("Category", "CI")]
     public Task String_Equality_DoesNotReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemInfoEqualityAnalyzer>("""
                            class C
                            {
                                bool M(string a, string b) => a == b;

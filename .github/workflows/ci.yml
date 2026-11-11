@@ -58,9 +58,6 @@ jobs:
       - name: Build (Debug, coverage)
         run: dotnet build E128.Reference.slnx --configuration Debug -clp:ErrorsOnly
 
-      - name: Install xmllint
-        run: command -v xmllint >/dev/null || (sudo apt-get update && sudo apt-get install -y libxml2-utils)
-
       - name: Test
         run: |
           dotnet test --solution E128.Reference.slnx \

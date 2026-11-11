@@ -1,8 +1,7 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -48,30 +47,27 @@ public sealed class ConfigurationKeyMissingAnalyzerTests
         (string Name, string Text)? extraFile = null,
         params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<ConfigurationKeyMissingAnalyzer, DefaultVerifier>
-        {
-            TestCode = code + ConfigurationStub,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-
+        var files = new List<(string Name, string Content)>();
         if (appSettings is not null)
         {
-            test.TestState.AdditionalFiles.Add(("appsettings.json", SourceText.From(appSettings)));
-        }
-
-        if (addedKeys is not null)
-        {
-            test.TestState.AnalyzerConfigFiles.Add(
-                ("/.editorconfig", "is_global = true\ne128_added_configuration_keys = " + addedKeys));
+            files.Add(("appsettings.json", appSettings));
         }
 
         if (extraFile is { } file)
         {
-            test.TestState.AdditionalFiles.Add((file.Name, SourceText.From(file.Text)));
+            files.Add((file.Name, file.Text));
         }
 
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<ConfigurationKeyMissingAnalyzer>(
+            code + ConfigurationStub,
+            expected,
+            options: new AnalyzerTestOptions
+            {
+                AnalyzerConfig = addedKeys is null
+                    ? null
+                    : ("/.editorconfig", "is_global = true\ne128_added_configuration_keys = " + addedKeys),
+                AdditionalFiles = files
+            });
     }
 
     [Fact]

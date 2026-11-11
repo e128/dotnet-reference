@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -816,17 +817,89 @@ internal static partial class FipsSymbolHelpers
         return neighbor is '\0' or '_' || char.IsDigit(neighbor) || caseChange;
     }
 
+    /// <summary>
+    ///     SHA-3, SHAKE and KMAC type names. One source for the SHA-3 policy rule and the HMAC length rule.
+    /// </summary>
+    internal static readonly ImmutableHashSet<string> Sha3TypeNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "SHA3_256",
+        "SHA3_384",
+        "SHA3_512",
+        "Shake128",
+        "Shake256",
+        "HMACSHA3_256",
+        "HMACSHA3_384",
+        "HMACSHA3_512",
+        "Kmac128",
+        "Kmac256",
+        "KmacXof128",
+        "KmacXof256");
+
+    /// <summary>
+    ///     SHA-3 hash names in every accepted spelling.
+    /// </summary>
+    internal static readonly ImmutableHashSet<string> Sha3AlgorithmNames = ImmutableHashSet.Create(
+        StringComparer.OrdinalIgnoreCase,
+        "SHA3_256",
+        "SHA3_384",
+        "SHA3_512",
+        "SHA3-256",
+        "SHA3-384",
+        "SHA3-512");
+
+    /// <summary>
+    ///     The hash output length in bytes, keyed by a name with its separators removed. A hash name
+    ///     (<c lang="csharp">SHA-256</c>, <c lang="csharp">SHA3_256</c>) and an HMAC type name without
+    ///     its prefix (<c lang="csharp">HMACSHA256</c>) share one key.
+    /// </summary>
+    internal static readonly ImmutableDictionary<string, int> HashOutputBytes = CreateHashOutputBytes();
+
+    private static readonly ImmutableHashSet<string> BlockedHashNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "SHA1",
+        "MD5",
+        "RIPEMD160");
+
+    private static readonly ImmutableDictionary<string, string> HashNamesByOid = CreateHashNamesByOid();
+
+    /// <summary>
+    ///     Object identifiers of the hashes that the cryptography policy blocks.
+    /// </summary>
+    internal static readonly ImmutableHashSet<string> ForbiddenHashOids = ImmutableHashSet.CreateRange(
+        StringComparer.Ordinal,
+        from pair in HashNamesByOid
+        where BlockedHashNames.Contains(pair.Value)
+        select pair.Key);
+
+    private static ImmutableDictionary<string, int> CreateHashOutputBytes()
+    {
+        const int Bytes256 = 32;
+        const int Bytes384 = 48;
+        const int Bytes512 = 64;
+        var builder = ImmutableDictionary.CreateBuilder<string, int>(StringComparer.OrdinalIgnoreCase);
+        builder.Add("SHA256", Bytes256);
+        builder.Add("SHA3256", Bytes256);
+        builder.Add("SHA384", Bytes384);
+        builder.Add("SHA3384", Bytes384);
+        builder.Add("SHA512", Bytes512);
+        builder.Add("SHA3512", Bytes512);
+        return builder.ToImmutable();
+    }
+
+    private static ImmutableDictionary<string, string> CreateHashNamesByOid()
+    {
+        var builder = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
+        builder.Add("1.3.14.3.2.26", "SHA1");
+        builder.Add("1.2.840.113549.2.5", "MD5");
+        builder.Add("1.3.36.3.2.1", "RIPEMD160");
+        builder.Add("2.16.840.1.101.3.4.2.8", "SHA3_256");
+        builder.Add("2.16.840.1.101.3.4.2.9", "SHA3_384");
+        builder.Add("2.16.840.1.101.3.4.2.10", "SHA3_512");
+        return builder.ToImmutable();
+    }
+
     private static string? HashNameFromOid(string oid)
     {
-        return oid.Trim() switch
-        {
-            "1.3.14.3.2.26" => "SHA1",
-            "1.2.840.113549.2.5" => "MD5",
-            "1.3.36.3.2.1" => "RIPEMD160",
-            "2.16.840.1.101.3.4.2.8" => "SHA3_256",
-            "2.16.840.1.101.3.4.2.9" => "SHA3_384",
-            "2.16.840.1.101.3.4.2.10" => "SHA3_512",
-            _ => null,
-        };
+        return HashNamesByOid.TryGetValue(oid.Trim(), out var name) ? name : null;
     }
 }

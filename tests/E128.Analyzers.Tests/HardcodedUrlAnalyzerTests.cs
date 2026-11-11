@@ -6,16 +6,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class HardcodedUrlAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>(code);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task HttpsLiteral_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class C
                            {
                                string Url = {|E128164:"https://api.contoso.com/v1"|};
@@ -27,7 +22,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task HttpLiteralInArgument_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            using System;
 
                            class C
@@ -41,7 +36,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task InterpolatedStringWithLiteralHost_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class C
                            {
                                string M(int id) => $"{|E128164:https://api.contoso.com/items/|}{id}";
@@ -53,7 +48,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task InterpolatedHost_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class C
                            {
                                string M(string host) => $"https://{host}/items";
@@ -65,7 +60,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task HostThatOnlyEndsWithAllowedSuffix_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class C
                            {
                                string A = {|E128164:"https://evilexample.com/x"|};
@@ -78,7 +73,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task NamespaceAndSchemaHosts_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class C
                            {
                                string A = "http://www.w3.org/2001/XMLSchema";
@@ -93,7 +88,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task AttributeArgument_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            using System;
 
                            [AttributeUsage(AttributeTargets.Class)]
@@ -113,7 +108,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonUrlText_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class C
                            {
                                string A = "https://";
@@ -127,7 +122,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task TestCompilation_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            namespace Xunit
                            {
                                public sealed class FactAttribute : System.Attribute
@@ -154,7 +149,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task OptionsClassInitializer_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class OllamaOptions
                            {
                                string BaseUrl { get; init; } = "http://localhost:11434";
@@ -166,7 +161,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstFieldInitializer_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class C
                            {
                                private const string BaseUrl = "https://api.contoso.com";
@@ -178,7 +173,7 @@ public sealed class HardcodedUrlAnalyzerTests
     [Trait("Category", "CI")]
     public Task LocalConstInitializer_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HardcodedUrlAnalyzer>("""
                            class C
                            {
                                string M()

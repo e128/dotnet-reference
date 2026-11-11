@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Unsafe;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class UnsafeAddArrayDataReferenceAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<UnsafeAddArrayDataReferenceAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenAddingOverTheArrayDataReference()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAddArrayDataReferenceAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            using System.Runtime.InteropServices;
                            class C
@@ -38,7 +27,7 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenAddingOverAPlainReference()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAddArrayDataReferenceAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            class C
                            {
@@ -55,7 +44,7 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheArrayIsMultiDimensional()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAddArrayDataReferenceAnalyzer>("""
                            using System.Runtime.CompilerServices;
                            using System.Runtime.InteropServices;
                            class C

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,26 +7,20 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SwallowedAssertionAnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithXunit };
+
     private static readonly ReferenceAssemblies Net100WithXunit = ReferenceAssemblies.Net.Net100
         .AddPackages([
             new PackageIdentity("xunit.v3.core", "3.2.2"),
             new PackageIdentity("xunit.v3.assert", "3.2.2")
         ]);
 
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<SwallowedAssertionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithXunit
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task CatchExceptionWithoutRethrow_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using System;
                            using Xunit;
                            public class T
@@ -44,14 +37,14 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task BareCatch_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using Xunit;
                            public class T
                            {
@@ -67,14 +60,14 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task CatchThatRethrows_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using System;
                            using Xunit;
                            public class T
@@ -92,14 +85,14 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NarrowCatch_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using System;
                            using Xunit;
                            public class T
@@ -116,14 +109,14 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task CatchWithExceptionFilter_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using System;
                            using Xunit;
                            public class T
@@ -140,14 +133,14 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ThrowInsideNestedLambda_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using System;
                            using Xunit;
                            public class T
@@ -165,14 +158,14 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ThrowInsideLocalFunction_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using System;
                            using Xunit;
                            public class T
@@ -190,14 +183,14 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task CatchThatCallsAssertFail_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using System;
                            using Xunit;
                            public class T
@@ -215,14 +208,14 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task TryWithoutAssert_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwallowedAssertionAnalyzer>("""
                            using System;
                            public class T
                            {
@@ -237,6 +230,6 @@ public sealed class SwallowedAssertionAnalyzerTests
                                    }
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

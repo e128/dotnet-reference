@@ -10,17 +10,6 @@ namespace E128.Analyzers.Tests;
 
 public sealed class TaskFromResultSyncIoAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<TaskFromResultSyncIoAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     private static Task VerifyWithReferencesAsync(ReferenceAssemblies referenceAssemblies, string code)
     {
         var test = new CSharpAnalyzerTest<TaskFromResultSyncIoAnalyzer, DefaultVerifier>
@@ -53,7 +42,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_ReportsDiagnostic_WhenSyncFileReadAllTextWrappedInFromResult()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -71,7 +60,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_ReportsDiagnostic_WhenSyncFileWriteAllBytesWrappedInFromResult()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -89,7 +78,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_ReportsDiagnostic_WhenSyncFileReadAllLinesWrappedInFromResult()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -108,7 +97,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     public Task TaskFromResultSyncIoAnalyzer_ReportsDiagnostic_WhenTheOnlyAwaitIsInsideALambda()
     {
         // An await inside a lambda does not make the enclosing method async.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System;
                            using System.IO;
                            using System.Threading.Tasks;
@@ -136,7 +125,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     {
         // The fix leaves a FromResult inside a nested function alone, so the analyzer must not
         // report it either.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System;
                            using System.IO;
                            using System.Threading.Tasks;
@@ -178,7 +167,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     {
         // File.Copy and File.ReadLines have no overload that awaits. Reporting them would leave
         // a fix that adds async and no await, so the rule stays silent.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -197,7 +186,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenPureExpressionWrapped()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -213,7 +202,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenMethodAlreadyAsync()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -231,7 +220,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenConstantReturnedFromResult()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {
@@ -247,7 +236,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenNoSyncIoCallsExist()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.Linq;
                            using System.Collections.Generic;
                            using System.Threading.Tasks;
@@ -268,7 +257,7 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task TaskFromResultSyncIoAnalyzer_NoDiagnostic_WhenValueTaskFromResultWithNoIo()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>("""
                            using System.Threading.Tasks;
                            class C
                            {

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -37,29 +36,29 @@ public sealed class UnvalidatedJwtIdentityRealPackageTests
 
     private static Task VerifyAsync(string body)
     {
-        var test = new CSharpAnalyzerTest<UnvalidatedJwtIdentityAnalyzer, DefaultVerifier>
-        {
-            TestCode = $$"""
-                         using System.Collections.Generic;
-                         using System.IdentityModel.Tokens.Jwt;
-                         using System.Linq;
-                         using System.Security.Claims;
-                         using System.Threading.Tasks;
-                         using Microsoft.AspNetCore.Http;
-                         using Microsoft.IdentityModel.JsonWebTokens;
-                         using Microsoft.IdentityModel.Tokens;
-                         class C
-                         {
-                             async Task M(HttpContext context, JwtSecurityTokenHandler handler, JsonWebTokenHandler json, TokenValidationParameters parameters, string token)
-                             {
-                                 {{body}}
-                             }
-                         }
-                         """,
-            ReferenceAssemblies = Net100WithJwt
-        };
-        test.TestState.Sources.Add(Stubs);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<UnvalidatedJwtIdentityAnalyzer>(
+            $$"""
+              using System.Collections.Generic;
+              using System.IdentityModel.Tokens.Jwt;
+              using System.Linq;
+              using System.Security.Claims;
+              using System.Threading.Tasks;
+              using Microsoft.AspNetCore.Http;
+              using Microsoft.IdentityModel.JsonWebTokens;
+              using Microsoft.IdentityModel.Tokens;
+              class C
+              {
+                  async Task M(HttpContext context, JwtSecurityTokenHandler handler, JsonWebTokenHandler json, TokenValidationParameters parameters, string token)
+                  {
+                      {{body}}
+                  }
+              }
+              """,
+            options: new AnalyzerTestOptions
+            {
+                References = Net100WithJwt,
+                Sources = [Stubs]
+            });
     }
 
     [Theory]

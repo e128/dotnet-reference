@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -9,17 +8,6 @@ namespace E128.Analyzers.Tests;
 
 public sealed class GetAttributeElementTypeAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<GetAttributeElementTypeAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     private static DiagnosticResult Expect(int line, int column)
     {
         return new DiagnosticResult("E128078", DiagnosticSeverity.Warning)
@@ -49,14 +37,14 @@ public sealed class GetAttributeElementTypeAnalyzerTests
                                 }
                             }
                             """;
-        return VerifyAsync(code, Expect(15, 25));
+        return AnalyzerTestRunner.VerifyAsync<GetAttributeElementTypeAnalyzer>(code, Expect(15, 25));
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NoDiagnostic_WhenHrefOnAnchor()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetAttributeElementTypeAnalyzer>("""
                            namespace AngleSharp.Dom
                            {
                                public interface IElement
@@ -81,7 +69,7 @@ public sealed class GetAttributeElementTypeAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoDiagnostic_WhenHrefOnLink()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetAttributeElementTypeAnalyzer>("""
                            namespace AngleSharp.Dom
                            {
                                public interface IElement
@@ -106,7 +94,7 @@ public sealed class GetAttributeElementTypeAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoDiagnostic_WhenNonHrefAttribute()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GetAttributeElementTypeAnalyzer>("""
                            namespace AngleSharp.Dom
                            {
                                public interface IElement

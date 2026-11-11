@@ -15,29 +15,9 @@ public sealed class FipsSha3Analyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128150";
 
-    private static readonly ImmutableHashSet<string> Sha3Types = ImmutableHashSet.Create(
-        StringComparer.Ordinal,
-        "SHA3_256",
-        "SHA3_384",
-        "SHA3_512",
-        "Shake128",
-        "Shake256",
-        "HMACSHA3_256",
-        "HMACSHA3_384",
-        "HMACSHA3_512",
-        "Kmac128",
-        "Kmac256",
-        "KmacXof128",
-        "KmacXof256");
+    private static readonly ImmutableHashSet<string> Sha3Types = FipsSymbolHelpers.Sha3TypeNames;
 
-    private static readonly ImmutableHashSet<string> Sha3AlgorithmNames = ImmutableHashSet.Create(
-        StringComparer.OrdinalIgnoreCase,
-        "SHA3_256",
-        "SHA3_384",
-        "SHA3_512",
-        "SHA3-256",
-        "SHA3-384",
-        "SHA3-512");
+    private static readonly ImmutableHashSet<string> Sha3AlgorithmNames = FipsSymbolHelpers.Sha3AlgorithmNames;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ParallelCollectionIndexAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ParallelCollectionIndexAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ParallelCollectionIndexAnalyzer_ReportsIndex_WhenLengthGuardIsAbsent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ParallelCollectionIndexAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
 
@@ -43,7 +30,7 @@ public sealed class ParallelCollectionIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task ParallelCollectionIndexAnalyzer_ReportsIndex_WhenTheForLoopBoundComesFromAnotherCollection()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ParallelCollectionIndexAnalyzer>("""
                            using System.Collections.Generic;
 
                            public static class Subject
@@ -63,7 +50,7 @@ public sealed class ParallelCollectionIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task ParallelCollectionIndexAnalyzer_ReportsNothing_WhenLengthGuardIsPresent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ParallelCollectionIndexAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
 
@@ -83,7 +70,7 @@ public sealed class ParallelCollectionIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task ParallelCollectionIndexAnalyzer_ReportsNothing_WhenTheForLoopCarriesALengthGuard()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ParallelCollectionIndexAnalyzer>("""
                            using System.Collections.Generic;
 
                            public static class Subject
@@ -103,7 +90,7 @@ public sealed class ParallelCollectionIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task ParallelCollectionIndexAnalyzer_ReportsNothing_WhenTheIndexAndTheTargetShareOneCollection()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ParallelCollectionIndexAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
 
@@ -123,7 +110,7 @@ public sealed class ParallelCollectionIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task ParallelCollectionIndexAnalyzer_ReportsNothing_WhenTheLengthGuardUsesAQualifiedReceiver()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ParallelCollectionIndexAnalyzer>("""
                            using System.Collections.Generic;
 
                            public class Subject
@@ -145,7 +132,7 @@ public sealed class ParallelCollectionIndexAnalyzerTests
     [Trait("Category", "CI")]
     public Task ParallelCollectionIndexAnalyzer_ReportsNothing_WhenTheForLoopIteratesTheIndexedCollection()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ParallelCollectionIndexAnalyzer>("""
                            using System.Collections.Generic;
 
                            public static class Subject

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,18 +7,15 @@ namespace E128.Analyzers.Tests;
 
 public sealed class LoggerArgumentGuardCodeFixTests
 {
+    private static readonly ReferenceAssemblies Net100WithLogging = ReferenceAssemblies.Net.Net100
+        .AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "10.0.13")]);
+
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<
-            LoggerArgumentGuardAnalyzer,
-            LoggerArgumentGuardCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-                .AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "10.0.13")]),
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<LoggerArgumentGuardAnalyzer, LoggerArgumentGuardCodeFixProvider>(
+            source,
+            fixedCode,
+            references: Net100WithLogging);
     }
 
     [Fact]

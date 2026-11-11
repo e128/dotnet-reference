@@ -8,16 +8,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class FileSystemPathAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FileSystemPathAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+
+    private static AnalyzerTestOptions Options => new() { MarkupOptions = MarkupOptions.UseFirstDescriptor };
 
     private static Task VerifyWithRecordsAsync(string code, params DiagnosticResult[] expected)
     {
@@ -35,36 +27,36 @@ public sealed class FileSystemPathAnalyzerTests
     [Trait("Category", "CI")]
     public Task NamePattern_PathParam_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>("""
                            class C { void M(string {|E128001:path|}) { } }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NamePattern_FilePathParam_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>("""
                            class C { void M(string {|E128001:filePath|}) { } }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NamePattern_DirectoryParam_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>("""
                            class C { void M(string {|E128001:directory|}) { } }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NamePattern_ConstructorParam_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>("""
                            class C { public C(string {|E128001:path|}) { } }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
@@ -80,25 +72,25 @@ public sealed class FileSystemPathAnalyzerTests
     [Trait("Category", "CI")]
     public Task NamePattern_XPathParam_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>("""
                            class C { void M(string xPath) { } }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NamePattern_MessageParam_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>("""
                            class C { void M(string message) { } }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NamePattern_PathParam_NonEmptyBodyNoIO_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>("""
                            class C
                            {
                                void M(string path)
@@ -106,16 +98,16 @@ public sealed class FileSystemPathAnalyzerTests
                                    _ = path.Length;
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NamePattern_PathParam_NoBody_StillFires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>("""
                            interface I { void M(string {|E128001:path|}); }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]

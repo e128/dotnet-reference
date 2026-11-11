@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SortInLoopE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<SortInLoopAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ListSort_InForeach_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -44,7 +31,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task OrderBy_InForLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -65,7 +52,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task OrderByDescending_InWhileLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -88,7 +75,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InsertAtZero_InForeach_Fires_E128069()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -109,7 +96,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InsertAtNonZero_InForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -130,7 +117,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task RemoveAtZero_InWhile_Fires_E128153()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -150,7 +137,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task RemoveAtNonZero_InForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -170,7 +157,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task Sort_OutsideLoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -187,7 +174,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task OrderBy_OutsideLoop_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -205,7 +192,7 @@ public sealed class SortInLoopE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ArraySort_InForLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SortInLoopAnalyzer>("""
                            using System;
                            class C
                            {

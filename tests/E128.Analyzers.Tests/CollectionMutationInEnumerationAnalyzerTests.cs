@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class CollectionMutationInEnumerationAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<CollectionMutationInEnumerationAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task MutationInOwnLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -42,7 +29,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task IndexerSetInOwnLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -61,7 +48,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task MaterializedSource_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -81,7 +68,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task DifferentCollectionMutated_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -100,7 +87,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task SameFieldOnOtherInstance_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -121,7 +108,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task SameFieldThroughThis_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -142,7 +129,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task ImmutableCollection_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Immutable;
                            class C
                            {
@@ -161,7 +148,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task MutationInsideLambda_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System;
                            using System.Collections.Generic;
                            class C
@@ -182,7 +169,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task FieldMutatedInOwnLoop_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -203,7 +190,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task ReadOnlyMemberCall_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -223,7 +210,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task ArrayElementWriteInOwnLoop_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            class C
                            {
                                void M(int[] items)
@@ -241,7 +228,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task RemoveThenBreak_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -261,7 +248,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task RemoveThenReturn_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {
@@ -281,7 +268,7 @@ public sealed class CollectionMutationInEnumerationAnalyzerTests
     [Trait("Category", "CI")]
     public Task PlainRemoveInOwnLoop_StillFires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<CollectionMutationInEnumerationAnalyzer>("""
                            using System.Collections.Generic;
                            class C
                            {

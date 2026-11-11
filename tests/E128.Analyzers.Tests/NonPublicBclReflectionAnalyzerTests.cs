@@ -8,20 +8,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class NonPublicBclReflectionAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<NonPublicBclReflectionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenAMethodLookupAsksForNonPublicMembers()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>("""
                            using System.Reflection;
                            class C
                            {
@@ -37,7 +28,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenAFieldLookupAsksForNonPublicMembers()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>("""
                            using System.Reflection;
                            class C
                            {
@@ -74,7 +65,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheTypeIsNotAFrameworkType()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>("""
                            using System.Reflection;
                            class C
                            {
@@ -119,7 +110,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheLookupAsksForPublicMembers()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>("""
                            using System.Reflection;
                            class C
                            {
@@ -135,7 +126,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheReceiverIsNotATypeOfExpression()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>("""
                            using System;
                            using System.Reflection;
                            class C

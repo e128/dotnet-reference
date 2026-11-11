@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,17 +7,8 @@ namespace E128.Analyzers.Tests;
 
 public sealed class AsyncFileIoAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<AsyncFileIoAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
+
+    private static AnalyzerTestOptions Options => new() { MarkupOptions = MarkupOptions.UseFirstDescriptor };
 
     /// <summary>
     ///     AC-1: E128092 fires on a sync File.* call inside a fully synchronous method.
@@ -27,7 +17,7 @@ public sealed class AsyncFileIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task AsyncFileIoAnalyzer_Fires_OnSyncFileCallInSynchronousMethod()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncFileIoAnalyzer>("""
                            using System.IO;
 
                            class C
@@ -37,7 +27,7 @@ public sealed class AsyncFileIoAnalyzerTests
                                    {|E128092:File.ReadAllText(path)|};
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     /// <summary>
@@ -47,7 +37,7 @@ public sealed class AsyncFileIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task AsyncFileIoAnalyzer_DoesNotFire_WhenContainingMethodAlreadyAsync()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncFileIoAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
 
@@ -59,7 +49,7 @@ public sealed class AsyncFileIoAnalyzerTests
                                    await Task.CompletedTask;
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     /// <summary>
@@ -69,7 +59,7 @@ public sealed class AsyncFileIoAnalyzerTests
     [Trait("Category", "CI")]
     public Task AsyncFileIoAnalyzer_DoesNotFire_OnFileMemberWithoutAsyncSibling()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<AsyncFileIoAnalyzer>("""
                            using System.IO;
 
                            class C
@@ -79,6 +69,6 @@ public sealed class AsyncFileIoAnalyzerTests
                                    return File.Exists(path);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

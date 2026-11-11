@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class MonthTimeSpanAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task CompoundAddAssignment_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -34,7 +28,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task DateTimeAddThirtyDays_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -51,7 +45,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task DateTimeOffsetSubtractThirtyOneDays_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -68,7 +62,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task OperatorAddTwentyEightDays_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -85,7 +79,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task OperatorSubtractTwentyNineDays_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -102,7 +96,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoubleLiteralThirtyDays_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -119,7 +113,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoubleConstantThirtyDays_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -138,7 +132,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task FloatConstantThirtyDays_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -157,7 +151,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task LongConstantThirtyDays_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -176,7 +170,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task FractionalDays_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -193,7 +187,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task SevenDaySpan_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -210,7 +204,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonConstantDays_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -227,7 +221,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task SpanHeldInVariable_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -245,7 +239,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task FromDaysOutsideDateTimeArithmetic_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -262,7 +256,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task AddDaysCall_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class C
@@ -279,7 +273,7 @@ public sealed class MonthTimeSpanAnalyzerTests
     [Trait("Category", "CI")]
     public Task UserTypeWithFromDays_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<MonthTimeSpanAnalyzer>("""
                            using System;
 
                            class Span

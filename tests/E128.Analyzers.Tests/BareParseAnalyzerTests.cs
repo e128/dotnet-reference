@@ -1,30 +1,17 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class BareParseAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<BareParseAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task IntParse_InFinallyBlock_FiresE128089()
     {
         // The catch clauses guard only the try block, so the finally block stays unguarded.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -49,7 +36,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task IntParse_FiresE128089()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -65,7 +52,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task GuidParse_FiresE128089()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -81,7 +68,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task TimeSpanParse_FiresE128089()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -97,7 +84,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task DecimalParse_FiresE128089()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -113,7 +100,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task DoubleParse_FiresE128089()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -129,7 +116,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task BoolParse_FiresE128089()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -145,7 +132,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task DateTimeParse_FiresE128089()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -161,7 +148,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task EnumParse_FiresE128089()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -178,7 +165,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task IntParse_InTryCatchFormatException_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {
@@ -200,7 +187,7 @@ public sealed class BareParseAnalyzerTests
     [Trait("Category", "CI")]
     public Task IntParse_InTryCatchException_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<BareParseAnalyzer>("""
                            using System;
                            class C
                            {

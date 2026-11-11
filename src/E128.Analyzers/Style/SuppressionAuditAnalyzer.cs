@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace E128.Analyzers.Style;
@@ -46,16 +45,10 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeTrivia(SyntaxNode root, SyntaxTreeAnalysisContext context)
     {
-        foreach (var trivia in root.DescendantTrivia())
+        foreach (var (trivia, directive) in PragmaWarningDirectives.Warning(root))
         {
-            if (!trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia))
-            {
-                continue;
-            }
-
             // Only check #pragma warning disable, not restore.
-            if (trivia.GetStructure() is not PragmaWarningDirectiveTriviaSyntax directive
-                || !directive.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword))
+            if (!PragmaWarningDirectives.IsDisable(directive))
             {
                 continue;
             }

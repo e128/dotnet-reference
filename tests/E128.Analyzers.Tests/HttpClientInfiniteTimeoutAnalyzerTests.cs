@@ -1,22 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class HttpClientInfiniteTimeoutAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>(code, expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ObjectInitializer_WithInfiniteTimeSpan_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System.Net.Http;
                            using System.Threading;
                            class C
@@ -33,7 +27,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task ObjectInitializer_WithFromMillisecondsNegativeOne_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            class C
@@ -50,7 +44,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task TargetTypedObjectInitializer_WithTimeSpanMaxValue_IsSilent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            class C
@@ -68,7 +62,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyAssignment_WithQualifiedInfiniteTimeSpan_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System.Net.Http;
                            class C
                            {
@@ -84,7 +78,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task ConfigureHttpClientLambda_WithFromMillisecondsTimeoutInfinite_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            using System.Threading;
@@ -109,7 +103,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyAssignment_WithFiniteTimeout_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            class C
@@ -126,7 +120,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyAssignment_WithTimeoutBelowOneHundredMilliseconds_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            class C
@@ -145,7 +139,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task PropertyAssignment_WithComputedTimeout_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            class C
@@ -162,7 +156,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task FromMilliseconds_WithComputedArgument_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System;
                            using System.Net.Http;
                            class C
@@ -179,7 +173,7 @@ public sealed class HttpClientInfiniteTimeoutAnalyzerTests
     [Trait("Category", "CI")]
     public Task OtherTypeTimeoutProperty_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<HttpClientInfiniteTimeoutAnalyzer>("""
                            using System;
                            class Settings
                            {

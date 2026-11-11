@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ExcessiveInheritanceE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ExcessiveInheritanceAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ThreeLevelsDeep_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExcessiveInheritanceAnalyzer>("""
                            class A { }
                            class B : A { }
                            class C : B { }
@@ -35,7 +22,7 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TwoLevelsDeep_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExcessiveInheritanceAnalyzer>("""
                            class A { }
                            class B : A { }
                            class C : B { }
@@ -46,7 +33,7 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task SingleInheritance_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExcessiveInheritanceAnalyzer>("""
                            class A { }
                            class B : A { }
                            """);
@@ -56,7 +43,7 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task FourLevelsDeep_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExcessiveInheritanceAnalyzer>("""
                            class A { }
                            class B : A { }
                            class C : B { }
@@ -70,7 +57,7 @@ public sealed class ExcessiveInheritanceE128AnalyzerTests
     public Task StructInheritance_NoDiagnostic()
     {
         // Structs cannot have user-defined base types.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ExcessiveInheritanceAnalyzer>("""
                            struct S { }
                            """);
     }

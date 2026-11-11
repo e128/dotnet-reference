@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,19 +7,11 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
 {
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithDi };
+
     private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
         .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
-
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ConstructorNewDiRegisteredAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithDi
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
 
     #region Fires
 
@@ -28,7 +19,7 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorNew_DiRegisteredType_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstructorNewDiRegisteredAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            class MyService { }
                            class Consumer
@@ -45,14 +36,14 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
                                    services.AddSingleton<MyService>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ConstructorNew_DiRegisteredViaAddScoped_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstructorNewDiRegisteredAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            class MyService { }
                            class Consumer
@@ -69,7 +60,7 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
                                    services.AddScoped<MyService>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Fires
@@ -80,7 +71,7 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ConstructorNew_NotDiRegistered_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstructorNewDiRegisteredAnalyzer>("""
                            class MyService { }
                            class Consumer
                            {
@@ -89,14 +80,14 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
                                    var svc = new MyService();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task MethodNew_DiRegistered_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ConstructorNewDiRegisteredAnalyzer>("""
                            using Microsoft.Extensions.DependencyInjection;
                            class MyService { }
                            class Consumer
@@ -113,7 +104,7 @@ public sealed class ConstructorNewDiRegisteredE128AnalyzerTests
                                    services.AddSingleton<MyService>();
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     #endregion Does Not Fire

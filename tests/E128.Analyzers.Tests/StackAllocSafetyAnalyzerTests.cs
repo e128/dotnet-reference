@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -10,18 +8,7 @@ public sealed class StackAllocSafetyAnalyzerTests
 {
     private static Task VerifyAsync(string code, bool allowUnsafe = false)
     {
-        var test = new CSharpAnalyzerTest<StackAllocSafetyAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        if (allowUnsafe)
-        {
-            test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
-
-        }
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<StackAllocSafetyAnalyzer>(code, options: new AnalyzerTestOptions { AllowUnsafe = allowUnsafe });
     }
 
     [Fact]

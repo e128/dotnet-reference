@@ -1,31 +1,18 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class OptionsBindInitE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<OptionsBindInitAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     #region Fires
 
     [Fact]
     [Trait("Category", "CI")]
     public Task OptionsBindInit_PropertyWithInit_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<OptionsBindInitAnalyzer>("""
                            namespace Microsoft.Extensions.Configuration
                            {
                                public interface IConfiguration
@@ -63,7 +50,7 @@ public sealed class OptionsBindInitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task OptionsBindInit_MultipleInitProperties_FiresForEach()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<OptionsBindInitAnalyzer>("""
                            namespace Microsoft.Extensions.Configuration
                            {
                                public interface IConfiguration
@@ -106,7 +93,7 @@ public sealed class OptionsBindInitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task OptionsBindInit_PropertyWithSet_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<OptionsBindInitAnalyzer>("""
                            namespace Microsoft.Extensions.Configuration
                            {
                                public interface IConfiguration
@@ -144,7 +131,7 @@ public sealed class OptionsBindInitE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task OptionsBindInit_NoBindCall_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<OptionsBindInitAnalyzer>("""
                            public class MyOptions
                            {
                                public string Name { get; init; }

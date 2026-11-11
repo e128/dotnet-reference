@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Maintainability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SwitchEnumExhaustivenessAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<SwitchEnumExhaustivenessAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Analyzer_Reports_WhenEnumMemberUncased()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwitchEnumExhaustivenessAnalyzer>("""
                             class C
                             {
                                 void M(Color c)
@@ -51,7 +38,7 @@ public sealed class SwitchEnumExhaustivenessAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_ReportsNothing_WhenAllMembersCased()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwitchEnumExhaustivenessAnalyzer>("""
                             class C
                             {
                                 string M(Color c)
@@ -78,7 +65,7 @@ public sealed class SwitchEnumExhaustivenessAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_ReportsNothing_WhenCombinedLabelsCaseEveryMember()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwitchEnumExhaustivenessAnalyzer>("""
                             class C
                             {
                                 void M(Color c)
@@ -106,7 +93,7 @@ public sealed class SwitchEnumExhaustivenessAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_Reports_WhenCombinedLabelLeavesOneMemberUncased()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwitchEnumExhaustivenessAnalyzer>("""
                             class C
                             {
                                 void M(Color c)
@@ -132,7 +119,7 @@ public sealed class SwitchEnumExhaustivenessAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_ReportsNothing_WhenDefaultArmPresent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwitchEnumExhaustivenessAnalyzer>("""
                             class C
                             {
                                 void M(Color c)
@@ -160,7 +147,7 @@ public sealed class SwitchEnumExhaustivenessAnalyzerTests
     [Trait("Category", "CI")]
     public Task Analyzer_ReportsNothing_WhenGoverningTypeIsString()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SwitchEnumExhaustivenessAnalyzer>("""
                             class C
                             {
                                 void M(string s)

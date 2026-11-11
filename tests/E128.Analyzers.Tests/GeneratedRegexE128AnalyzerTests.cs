@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -10,24 +8,13 @@ public sealed class GeneratedRegexE128AnalyzerTests
 {
     private const string PartialImpl = "    private static partial System.Text.RegularExpressions.Regex DigitsOnly() => null!;";
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<GeneratedRegexAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     #region E128011 — Fires
 
     [Fact]
     [Trait("Category", "CI")]
     public Task GeneratedRegex_NoArgs_OnlyPattern_Fires()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -42,7 +29,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_WithOptions_NoTimeout_Fires()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -61,7 +48,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_WithPositionalTimeout_NoFire()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -76,7 +63,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_WithTimeoutAndCulture_NoFire()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -95,7 +82,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_CompiledAlone_FiresE128012()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -110,7 +97,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_CompiledOrIgnoreCase_FiresE128012()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -125,7 +112,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_CompiledNamedArgument_FiresE128012()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -140,7 +127,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_CompiledWithTimeout_FiresE128012()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -159,7 +146,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_RegexOptionsNone_NoE128012()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -174,7 +161,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_IgnoreCaseOnly_NoE128012()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -189,7 +176,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_PatternOnly_NoE128012()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -204,7 +191,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NonGeneratedRegex_Compiled_NoE128012()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>("""
                            using System;
 
                            [AttributeUsage(AttributeTargets.Method)]
@@ -229,7 +216,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_BackslashSStarFollowedByDotStar_FiresE128013()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -244,7 +231,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_BackslashSStarFollowedByDotPlus_FiresE128013()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -259,7 +246,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_AnchoredBackslashSStarDotPlusStar_FiresE128013()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -274,7 +261,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_LazyDotPlusBackslashSStarDollar_FiresE128013()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -293,7 +280,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_BackslashSStarFollowedByLiteral_NoE128013()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -308,7 +295,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_AnchoredBackslashSStarHashGroup_NoE128013()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -323,7 +310,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_BackslashSStarBetweenLiterals_NoE128013()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -338,7 +325,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_BackslashSStarFollowedByWordPlus_NoE128013()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -357,7 +344,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_DotPlusInsideQuantifiedGroup_FiresE128014()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -372,7 +359,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_WordPlusInsideQuantifiedGroup_FiresE128014()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -387,7 +374,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_AStarInsideStarGroup_FiresE128014()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -406,7 +393,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_WordPlusNoOuterQuantifier_NoE128014()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {
@@ -421,7 +408,7 @@ public sealed class GeneratedRegexE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task GeneratedRegex_DotPlusNoGroup_NoE128014()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
                              using System.Text.RegularExpressions;
                              partial class C
                              {

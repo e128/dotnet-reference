@@ -1,27 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class SequenceEqualLoopAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<SequenceEqualLoopAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Reports_WhenTheLoopReturnsFalseOnMismatch()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SequenceEqualLoopAnalyzer>("""
                            class C
                            {
                                bool M(int[] left, int[] right)
@@ -48,7 +37,7 @@ public sealed class SequenceEqualLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenNoLengthGuardPrecedesTheLoop()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SequenceEqualLoopAnalyzer>("""
                            class C
                            {
                                bool M(int[] left, int[] right)
@@ -70,7 +59,7 @@ public sealed class SequenceEqualLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenElementsAreFloatingPoint()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SequenceEqualLoopAnalyzer>("""
                            class C
                            {
                                bool M(double[] left, double[] right)
@@ -97,7 +86,7 @@ public sealed class SequenceEqualLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheBoundComesFromAnotherArray()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SequenceEqualLoopAnalyzer>("""
                            class C
                            {
                                bool M(int[] left, int[] right, int[] other)
@@ -124,7 +113,7 @@ public sealed class SequenceEqualLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task Silent_WhenTheLoopDoesMoreThanCompare()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SequenceEqualLoopAnalyzer>("""
                            class C
                            {
                                bool M(int[] left, int[] right)

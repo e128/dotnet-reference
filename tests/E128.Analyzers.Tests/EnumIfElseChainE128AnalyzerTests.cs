@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class EnumIfElseChainE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<EnumIfElseChainAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ThreeBranchEnumChain_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EnumIfElseChainAnalyzer>("""
                            enum Color { Red, Green, Blue }
 
                            class C
@@ -48,7 +35,7 @@ public sealed class EnumIfElseChainE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task TwoBranchEnumChain_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EnumIfElseChainAnalyzer>("""
                            enum Color { Red, Green }
 
                            class C
@@ -70,7 +57,7 @@ public sealed class EnumIfElseChainE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ThreeBranchNonEnumChain_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EnumIfElseChainAnalyzer>("""
                            class C
                            {
                                void M(int x)
@@ -87,7 +74,7 @@ public sealed class EnumIfElseChainE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task MixedEnumTypes_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<EnumIfElseChainAnalyzer>("""
                            enum Color { Red, Green, Blue }
                            enum Size { Small, Medium, Large }
 

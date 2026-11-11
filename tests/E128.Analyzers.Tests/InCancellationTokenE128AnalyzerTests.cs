@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class InCancellationTokenE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<InCancellationTokenE128Analyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task InCancellationToken_PublicMethod_FiresE128019()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InCancellationTokenE128Analyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -36,7 +23,7 @@ public sealed class InCancellationTokenE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InCancellationToken_PrivateMethod_FiresE128019()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InCancellationTokenE128Analyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -49,7 +36,7 @@ public sealed class InCancellationTokenE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InCancellationToken_StaticMethod_FiresE128019()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InCancellationTokenE128Analyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -62,7 +49,7 @@ public sealed class InCancellationTokenE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InCancellationToken_WithDefault_FiresE128019()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InCancellationTokenE128Analyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -75,7 +62,7 @@ public sealed class InCancellationTokenE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task CancellationToken_ByValue_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InCancellationTokenE128Analyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -88,7 +75,7 @@ public sealed class InCancellationTokenE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task CancellationToken_ByValueWithDefault_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InCancellationTokenE128Analyzer>("""
                            using System.Threading;
                            class C
                            {
@@ -101,7 +88,7 @@ public sealed class InCancellationTokenE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task InOtherStruct_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InCancellationTokenE128Analyzer>("""
                            struct BigStruct { public long A, B, C, D; }
                            class C
                            {
@@ -114,7 +101,7 @@ public sealed class InCancellationTokenE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task NoCancellationToken_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<InCancellationTokenE128Analyzer>("""
                            class C
                            {
                                void M(string name) { }

@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class QuerySelectorAllMaterializationAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<QuerySelectorAllMaterializationAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task QuerySelectorAll_DirectInForeach_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<QuerySelectorAllMaterializationAnalyzer>("""
                            using AngleSharp.Dom;
                            namespace AngleSharp.Dom
                            {
@@ -49,7 +36,7 @@ public sealed class QuerySelectorAllMaterializationAnalyzerTests
     [Trait("Category", "CI")]
     public Task QuerySelectorAll_WithLinqNoToList_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<QuerySelectorAllMaterializationAnalyzer>("""
                            using AngleSharp.Dom;
                            using System.Linq;
                            namespace AngleSharp.Dom
@@ -76,7 +63,7 @@ public sealed class QuerySelectorAllMaterializationAnalyzerTests
     [Trait("Category", "CI")]
     public Task QuerySelectorAll_ToList_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<QuerySelectorAllMaterializationAnalyzer>("""
                            using AngleSharp.Dom;
                            using System.Linq;
                            namespace AngleSharp.Dom
@@ -103,7 +90,7 @@ public sealed class QuerySelectorAllMaterializationAnalyzerTests
     [Trait("Category", "CI")]
     public Task QuerySelectorAll_ToArray_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<QuerySelectorAllMaterializationAnalyzer>("""
                            using AngleSharp.Dom;
                            using System.Linq;
                            namespace AngleSharp.Dom
@@ -130,7 +117,7 @@ public sealed class QuerySelectorAllMaterializationAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonAngleSharp_QuerySelectorAll_NoFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<QuerySelectorAllMaterializationAnalyzer>("""
                            namespace MyApp
                            {
                                public class MyDocument
@@ -155,7 +142,7 @@ public sealed class QuerySelectorAllMaterializationAnalyzerTests
     [Trait("Category", "CI")]
     public Task ForEach_OverVariable_AssignedFromQSA_WithoutToList_Reports()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<QuerySelectorAllMaterializationAnalyzer>("""
                            using AngleSharp.Dom;
                            namespace AngleSharp.Dom
                            {
@@ -182,7 +169,7 @@ public sealed class QuerySelectorAllMaterializationAnalyzerTests
     [Trait("Category", "CI")]
     public Task ForEach_OverVariable_AssignedFromQSA_WithToList_NoDiagnostic()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<QuerySelectorAllMaterializationAnalyzer>("""
                            using AngleSharp.Dom;
                            using System.Linq;
                            namespace AngleSharp.Dom

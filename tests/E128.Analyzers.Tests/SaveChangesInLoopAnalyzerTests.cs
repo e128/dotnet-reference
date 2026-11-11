@@ -30,19 +30,14 @@ public sealed class SaveChangesInLoopAnalyzerTests
                                            }
                                            """;
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code, expected);
-    }
-
     private static Task VerifyWithEfAsync(string code, params DiagnosticResult[] expected)
     {
-        return VerifyAsync(code + "\n" + EfStub, expected);
+        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code + "\n" + EfStub, expected);
     }
 
     private static Task VerifyWithEfExtensionAsync(string code, params DiagnosticResult[] expected)
     {
-        return VerifyAsync(code + "\n" + EfStub + "\n" + EfExtensionStub, expected);
+        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code + "\n" + EfStub + "\n" + EfExtensionStub, expected);
     }
 
     [Fact]
@@ -289,7 +284,7 @@ public sealed class SaveChangesInLoopAnalyzerTests
     [Trait("Category", "CI")]
     public Task WithoutEntityFrameworkReference_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>("""
                            using System.Collections.Generic;
 
                            class AppDb

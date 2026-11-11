@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ToListInForeachE128AnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ToListInForeachAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task ToListInForeach_DirectCall_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ToListInForeachAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -43,7 +30,7 @@ public sealed class ToListInForeachE128AnalyzerTests
     public Task ToListInForeach_QueryableSource_Fires()
     {
         // The call binds to Enumerable.ToList, because IQueryable<T> converts to IEnumerable<T>.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ToListInForeachAnalyzer>("""
                            using System.Linq;
                            class C
                            {
@@ -61,7 +48,7 @@ public sealed class ToListInForeachE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ToListInForeach_WithLinqChain_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ToListInForeachAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -80,7 +67,7 @@ public sealed class ToListInForeachE128AnalyzerTests
     [Trait("Category", "CI")]
     public Task ToArrayInForeach_DoesNotFire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ToListInForeachAnalyzer>("""
                            using System.Collections.Generic;
                            using System.Linq;
                            class C
@@ -101,7 +88,7 @@ public sealed class ToListInForeachE128AnalyzerTests
     {
         // A domain type with its own ToList() is not Enumerable.ToList, so the allocation advice
         // does not apply to it.
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<ToListInForeachAnalyzer>("""
                            using System.Collections.Generic;
                            class Bag
                            {

@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -15,22 +13,11 @@ public sealed class TextContentGuardAnalyzerTests
                                               }
                                               """;
 
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<TextContentGuardAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task GuardBeforeMatch_NoDiagnostic()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<TextContentGuardAnalyzer>($$"""
                              using System.Linq;
                              using System.Collections.Generic;
                              {{TestStubs.AngleSharpDom}}
@@ -48,7 +35,7 @@ public sealed class TextContentGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task SmallThreshold_NoDiagnostic()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<TextContentGuardAnalyzer>($$"""
                              using System.Linq;
                              using System.Collections.Generic;
                              {{TestStubs.AngleSharpDom}}
@@ -66,7 +53,7 @@ public sealed class TextContentGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task NonAngleSharp_NoDiagnostic()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<TextContentGuardAnalyzer>($$"""
                              using System.Linq;
                              using System.Collections.Generic;
                              {{NonAngleSharpStubs}}
@@ -84,7 +71,7 @@ public sealed class TextContentGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task GuardAfterMatch_ProducesDiagnostic()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<TextContentGuardAnalyzer>($$"""
                              using System.Linq;
                              using System.Collections.Generic;
                              {{TestStubs.AngleSharpDom}}
@@ -102,7 +89,7 @@ public sealed class TextContentGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task NoGuard_ProducesDiagnostic()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<TextContentGuardAnalyzer>($$"""
                              using System.Linq;
                              using System.Collections.Generic;
                              {{TestStubs.AngleSharpDom}}
@@ -120,7 +107,7 @@ public sealed class TextContentGuardAnalyzerTests
     [Trait("Category", "CI")]
     public Task StartsWith_NoGuard_ProducesDiagnostic()
     {
-        return VerifyAsync($$"""
+        return AnalyzerTestRunner.VerifyAsync<TextContentGuardAnalyzer>($$"""
                              using System.Linq;
                              using System.Collections.Generic;
                              {{TestStubs.AngleSharpDom}}

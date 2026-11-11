@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class FipsTlsVersionAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<FipsTlsVersionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Tls10Member_Reports_E128146()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System.Security.Authentication;
                            class C
                            {
@@ -39,7 +26,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task Tls12Member_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System.Security.Authentication;
                            class C
                            {
@@ -55,7 +42,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task NumericCast_Reports_E128146()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System.Security.Authentication;
                            class C
                            {
@@ -71,7 +58,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task WeakCryptoSwitch_Reports_E128146()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System;
                            class C
                            {
@@ -87,7 +74,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task StrongCryptoSwitchFalse_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System;
                            class C
                            {
@@ -103,7 +90,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task WeakSslProtocolsMembers_Report_E128146()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System.Security.Authentication;
                            class C
                            {
@@ -122,7 +109,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task WeakSecurityProtocolTypeMembers_Report_E128146()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System.Net;
                            class C
                            {
@@ -140,7 +127,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task ComplementOfAllowedProtocol_Reports_E128146()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System.Security.Authentication;
                            class C
                            {
@@ -156,7 +143,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task ProtocolComparison_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System.Security.Authentication;
                            class C
                            {
@@ -172,7 +159,7 @@ public sealed class FipsTlsVersionAnalyzerTests
     [Trait("Category", "CI")]
     public Task MaskRemoval_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<FipsTlsVersionAnalyzer>("""
                            using System.Security.Authentication;
                            class C
                            {

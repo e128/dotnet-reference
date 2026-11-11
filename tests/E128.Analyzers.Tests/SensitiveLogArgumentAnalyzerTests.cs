@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,21 +7,17 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SensitiveLogArgumentAnalyzerTests
 {
-    private static Task VerifyAsync(string code)
-    {
-        return new CSharpAnalyzerTest<SensitiveLogArgumentAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-                .AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "10.0.13")]),
-        }.RunAsync(TestContext.Current.CancellationToken);
-    }
+
+    private static AnalyzerTestOptions Options => new() { References = Net100WithLogging };
+
+    private static readonly ReferenceAssemblies Net100WithLogging = ReferenceAssemblies.Net.Net100
+        .AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "10.0.13")]);
 
     [Fact]
     [Trait("Category", "CI")]
     public Task PasswordArgument_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -31,14 +26,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("Login with {Password}", {|E128166:password|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task MemberAccessToken_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class Session { public string AccessToken { get; set; } = ""; }
                            class C
@@ -48,14 +43,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogDebug("Session {Token}", {|E128166:session.AccessToken|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task InterpolatedHole_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -64,14 +59,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogWarning({|E128166:$"key {apiKey}"|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task CancellationTokenAndMetadataNames_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using System.Threading;
                            using Microsoft.Extensions.Logging;
                            class C
@@ -81,14 +76,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("State {Token} {Count} {Name}", cancellationToken, tokenCount, secretName);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task OrdinaryArguments_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -97,14 +92,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("User {UserId} sent {Count}", userId, count);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task NonLoggerCall_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            class C
                            {
                                void Print(string text, string value) { }
@@ -114,14 +109,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    Print("pwd", password);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task LoggerMessageMethod_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            static partial class Log
                            {
@@ -133,14 +128,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    LoggedIn(logger, {|E128166:password|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task LoggerMessageMethodWithSafeArgument_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            static partial class Log
                            {
@@ -152,14 +147,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    LoggedIn(logger, userId);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ConditionalAccess_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class User { public string? Password { get; set; } }
                            class C
@@ -169,14 +164,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("Login {Value}", {|E128166:user?.Password|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task WrappedArguments_Fire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class User { public string Password { get; set; } = ""; }
                            class C
@@ -190,14 +185,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("E {Value}", {|E128166:user?.Password?.Trim()|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ExplicitParamsArray_Fires()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -206,14 +201,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("Login {Password}", new object[] { {|E128166:password|} });
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task EventIdExceptionAndTemplateArguments_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using System;
                            using Microsoft.Extensions.Logging;
                            class C
@@ -224,14 +219,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation(passwordMessage);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task ShortWordInsideLongerWord_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -240,14 +235,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("Run {Process} {Access}", processNumber, accessNumber);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task WholeWordShortNames_Fire()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            class C
                            {
@@ -256,14 +251,14 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("A {Value} {Other} {Third}", {|E128166:ssn|}, {|E128166:userSsn|}, {|E128166:dbPwd|});
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 
     [Fact]
     [Trait("Category", "CI")]
     public Task TestCompilation_Silent()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<SensitiveLogArgumentAnalyzer>("""
                            using Microsoft.Extensions.Logging;
                            namespace Xunit
                            {
@@ -287,6 +282,6 @@ public sealed class SensitiveLogArgumentAnalyzerTests
                                    logger.LogInformation("Login {Password}", password);
                                }
                            }
-                           """);
+                           """, options: Options);
     }
 }

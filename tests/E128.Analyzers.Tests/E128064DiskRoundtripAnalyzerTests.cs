@@ -1,29 +1,16 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class E128064DiskRoundtripAnalyzerTests
 {
-    private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<DiskRoundtripAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task TierA_WriteAllText_ReadAllText_Sync_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -40,7 +27,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierA_WriteAllText_ReadAllText_Async_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -58,7 +45,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierA_WriteAllBytes_ReadAllBytes_Sync_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -75,7 +62,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierA_WriteAllBytes_ReadAllBytes_Async_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -93,7 +80,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierA_WriteAllLines_ReadAllLines_Sync_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -110,7 +97,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierA_WriteAllLines_ReadAllLines_Async_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -128,7 +115,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierA_AppendAllText_ReadAllText_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -145,7 +132,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierA_CrossKind_WriteText_ReadBytes_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -162,7 +149,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierB_CreateText_ReadAllText_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -182,7 +169,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierB_Create_ReadAllBytes_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -202,7 +189,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierB_Create_ReadAllBytesAsync_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -223,7 +210,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierB_AppendText_ReadAllText_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -243,7 +230,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierC_StreamWriter_StreamReader_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -264,7 +251,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierC_StreamWriter_ReadAllText_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -284,7 +271,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierC_FileStreamWrite_FileStreamRead_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -305,7 +292,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierC_FileStreamWriteAsync_ReadAllBytesAsync_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class C
@@ -326,7 +313,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierD_FileInfoCreateText_ReadAllTextOnFullName_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -346,7 +333,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierD_FileInfoOpenWrite_OpenRead_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -367,7 +354,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_OnlyWrite_NoRead()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -383,7 +370,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_OnlyRead_NoWrite()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -399,7 +386,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_DifferentPaths_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -416,7 +403,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_PathReassigned_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -434,7 +421,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_WriteInIf_ReadInElse_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -458,7 +445,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_UserDefinedFileType_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            class File
                            {
                                public static void WriteAllText(string path, string content) { }
@@ -479,7 +466,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_ReadWriteAcrossMethods_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            class C
                            {
@@ -493,7 +480,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierE_FetchToDiskAsync_ReadAllTextAsync_ResultProperty_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading;
                            using System.Threading.Tasks;
@@ -514,7 +501,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task TierE_SaveToDisk_ReadAllBytes_ResultProperty_Flags()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class SaveResult { public string FilePath { get; init; } = ""; }
@@ -534,7 +521,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_TierE_GenericMethodName_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class FetchResult { public string HtmlFilePath { get; init; } = ""; }
@@ -554,7 +541,7 @@ public sealed class E128064DiskRoundtripAnalyzerTests
     [Trait("Category", "CI")]
     public Task Negative_TierE_DifferentResultVariable_NoReport()
     {
-        return VerifyAsync("""
+        return AnalyzerTestRunner.VerifyAsync<DiskRoundtripAnalyzer>("""
                            using System.IO;
                            using System.Threading.Tasks;
                            class FetchResult { public string HtmlFilePath { get; init; } = ""; }
