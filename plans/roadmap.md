@@ -1,5 +1,17 @@
 # Roadmap
-*Updated: 2026-11-08T18:06:23Z*
+*Updated: 2026-11-10T23:16:27Z*
+
+## .NET 11 Follow-Up
+
+- Bump `Microsoft.CodeAnalysis.*` past the `net10.0` band. This closes `net10.0` analyzer support, so it needs a support-window decision first (`Directory.Packages.props`).
+- Raise the `e128_minimum_framework_version` default from 100 to 110. The default must follow the snippet band (`StaleReferenceAssembliesAnalyzer`).
+- Drop the analyzer test project multi-targeting and the `net10-consumer` CI job, once the support window closes.
+- Rewrite a union rule against the typed `UnionDeclarationSyntax`. It needs an `RSEXPERIMENTAL006` suppression, which this repository does not take without approval.
+- Apply the union result to the web and CLI entry points. Each maps a result case to a status code or an exit code, and each mapping needs its own test.
+- Evaluate Zstandard compression on the web response path.
+- Evaluate the NuGet package publication age guard in `nuget.config`.
+- Adopt `closed` for the result error hierarchy once the error set holds more than one case. With one case the modifier adds nothing, and `CS8509` has nothing to catch.
+- Review what still has to live in the two `netstandard2.0` analyzer projects. Move every type that never ships and needs no Roslyn API into a private `net11.0` project, so it can use the current language band. That pin (`LangVersion` `14.0`) and the Roslyn `5.9.0` pin exist only to keep the shipped package loadable in a `net10.0` host. Anything the analyzers call at run time stays `netstandard2.0`. Start with the test-only surface in `src/E128.Analyzers/Testing/`.
 
 ## Implicit State Machine Rule
 

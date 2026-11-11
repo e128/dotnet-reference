@@ -2,6 +2,9 @@
 
     <PropertyGroup>
         <IsTestProject>true</IsTestProject>
+        <!-- One framework only. This project inherits net11.0 from Directory.Build.props.
+             The net10.0 package reach is proven by tests/Net10Consumer, which consumes the
+             packed analyzer as a package rather than building this suite on the older SDK. -->
         <!-- RS1036/RS1038/RS1041: FakeNamingViolationAnalyzer is a test-only DiagnosticAnalyzer in a .NET 10 project -->
         <!-- RS2007: Roslyn 4.14 rejects valid unshipped.md content -->
         <!-- RS2008: FakeNamingViolationAnalyzer uses IDE1006 which is not tracked in our release tracking -->

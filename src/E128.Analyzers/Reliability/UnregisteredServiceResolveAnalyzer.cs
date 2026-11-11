@@ -34,6 +34,11 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
     private const string RegisteredServicesOptionKey = "e128_registered_services";
 
+    private const string HttpClientFactoryTypeName = "System.Net.Http.IHttpClientFactory";
+
+    private const string HttpClientExtensionsTypeName =
+        "Microsoft.Extensions.DependencyInjection.HttpClientFactoryServiceCollectionExtensions";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "DI resolve without a registration in the compilation",
@@ -57,11 +62,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         "AddHttpClient(name, ...) registration in the same compilation. Without one the client carries no " +
         "registered configuration and the name is likely a typo.",
         customTags: WellKnownDiagnosticTags.CompilationEnd);
-
-    private const string HttpClientFactoryTypeName = "System.Net.Http.IHttpClientFactory";
-
-    private const string HttpClientExtensionsTypeName =
-        "Microsoft.Extensions.DependencyInjection.HttpClientFactoryServiceCollectionExtensions";
 
     // GetService<T>() is deliberately absent. It returns null on a miss rather than throwing, and a
     // null probe is a legitimate way to ask whether a service exists, so the rule would be wrong on
@@ -205,7 +205,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol { TypeArguments.Length: 1 } method
+                is not IMethodSymbol { TypeArguments.Length: 1 } method
             || method.TypeArguments[0] is not INamedTypeSymbol { Name.Length: > 0 } serviceType)
         {
             return;
@@ -425,7 +425,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         if (!options.TryGetValue(RegisteredServicesOptionKey, out var rawValue)
             || string.IsNullOrWhiteSpace(rawValue))
         {
-            return [];
+            return ImmutableHashSet<string>.Empty.WithComparer(StringComparer.Ordinal);
         }
 
         var entries = rawValue

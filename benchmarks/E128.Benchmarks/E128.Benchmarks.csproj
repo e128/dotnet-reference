@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <IsBenchmarkProject>true</IsBenchmarkProject>
   </PropertyGroup>
 
   <ItemGroup>

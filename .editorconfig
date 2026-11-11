@@ -318,3 +318,15 @@ resharper_wrap_before_primary_constructor_declaration_rpar = false
 resharper_wrap_lines = true
 resharper_wrap_chained_method_calls = wrap_if_long
 resharper_wrap_primary_constructor_parameters_style = chop_if_long
+#######################################
+# Union Result Types
+#######################################
+# The compiler generates Equals, GetHashCode, and the equality operators for a
+# union declaration. These rules analyze the type as a plain struct and cannot
+# see the generated members, so they are off for this file only. Approved on
+# 2026-11-10 for the net11 union result work.
+[src/E128.Reference.Core/Models/GreetingResult.cs]
+dotnet_diagnostic.CA1815.severity = none
+dotnet_diagnostic.CA2231.severity = none
+dotnet_diagnostic.SS017.severity = none
+dotnet_diagnostic.MA0186.severity = none

@@ -40,22 +40,23 @@ is_packable() {
     rg -q '<IsPackable>\s*true\s*</IsPackable>' "$1" 2>/dev/null
 }
 
-# Collect projects: path (relative), name, kind (src/test), packable.
-declare -a proj_paths proj_names proj_kinds proj_packable
+# Collect projects: path (relative), name, kind (src/test/benchmark), packable.
+proj_paths=(); proj_names=(); proj_kinds=(); proj_packable=()
 while IFS= read -r csproj; do
     [[ -z "$csproj" ]] && continue
     rel="${csproj#"$ROOT"/}"
     name="$(basename "$csproj" .csproj)"
     case "$rel" in
-        tests/*) kind="test" ;;
-        *)       kind="src" ;;
+        tests/*)     kind="test" ;;
+        benchmarks/*) kind="benchmark" ;;
+        *)           kind="src" ;;
     esac
     if is_packable "$csproj"; then packable="true"; else packable="false"; fi
     proj_paths+=("$rel")
     proj_names+=("$name")
     proj_kinds+=("$kind")
     proj_packable+=("$packable")
-done < <(fd -e csproj . "$ROOT/src" "$ROOT/tests" 2>/dev/null | sort)
+done < <(fd -e csproj . "$ROOT/src" "$ROOT/tests" "$ROOT/benchmarks" 2>/dev/null | sort)
 
 # READMEs (relative)
 mapfile -t readmes < <(fd README.md --type f "$ROOT" --exclude obj --exclude bin --exclude .git 2>/dev/null | sed "s#^$ROOT/##" | sort)

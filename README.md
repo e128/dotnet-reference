@@ -3,7 +3,7 @@
 [![CI](https://github.com/e128/dotnet-reference/actions/workflows/ci.yml/badge.svg)](https://github.com/e128/dotnet-reference/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/E128.Analyzers?logo=nuget&label=E128.Analyzers)](https://www.nuget.org/packages/E128.Analyzers/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
+[![.NET 11](https://img.shields.io/badge/.NET-11.0-512BD4)](https://dotnet.microsoft.com/)
 
 ## E128.Analyzers
 
@@ -59,7 +59,7 @@ Report an analyzer defect, or ask for a new rule, in the [issues](https://github
 
 ## Summary
 
-The rest of the repository is a .NET 10 reference application that runs the analyzers on its own code.
+The rest of the repository is a .NET 11 reference application that runs the analyzers on its own code.
 It shows conventions for web, CLI, and container applications.
 The build uses deny-by-default code analysis with third-party Roslyn analyzers.
 Tests run on xUnit v3 with the Microsoft Testing Platform. ArchUnitNET tests check structural invariants.

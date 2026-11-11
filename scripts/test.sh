@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Run tests via dotnet test + Microsoft Testing Platform.
-# Usage: test.sh [--all] [--verbose] [--trait KEY=VALUE] [CLASS_NAME...]
+# Usage: test.sh [--all] [--verbose] [--trait KEY=VALUE] [--framework TFM] [CLASS_NAME...]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 VERBOSE=false; ALL=false; DRY_RUN=false
 TRAIT="Category=CI"
 CLASSES=()
+FRAMEWORK=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -14,6 +15,7 @@ while [[ $# -gt 0 ]]; do
         --all)     ALL=true ;;
         --dry-run) DRY_RUN=true ;;
         --trait)   TRAIT="$2"; shift ;;
+        --framework) FRAMEWORK="$2"; shift ;;
         -*)        err "Unknown flag: $1"; exit 1 ;;
         *)         CLASSES+=("$1") ;;
     esac
@@ -22,14 +24,25 @@ done
 
 SOLUTION="$(find_solution)"
 
+if [[ -n "$FRAMEWORK" ]]; then
+    # A framework leg runs one project. A solution build with -f would push the
+    # single TFM into every project, including the netstandard2.0 analyzers.
+    TARGET_PROJECT="$(find_repo_root)/tests/E128.Analyzers.Tests/E128.Analyzers.Tests.csproj"
+    BUILD_CMD=(dotnet build "$TARGET_PROJECT" --nologo -clp:ErrorsOnly -f "$FRAMEWORK")
+    TEST_HEAD=(dotnet test "$TARGET_PROJECT" --no-build -f "$FRAMEWORK")
+else
+    BUILD_CMD=(dotnet build "$SOLUTION" --nologo -clp:ErrorsOnly)
+    TEST_HEAD=(dotnet test --solution "$SOLUTION" --no-build)
+fi
+
 # Build first (debug config for fast iteration)
-if ! dotnet build "$SOLUTION" --nologo -clp:ErrorsOnly > /dev/null 2>&1; then
+if ! "${BUILD_CMD[@]}" > /dev/null 2>&1; then
     err "Build failed — fix build errors before running tests"
     exit 1
 fi
 
 # Construct dotnet test command
-CMD=(dotnet test --solution "$SOLUTION" --no-build)
+CMD=("${TEST_HEAD[@]}")
 
 # MTP args go after the -- separator
 MTP_ARGS=()

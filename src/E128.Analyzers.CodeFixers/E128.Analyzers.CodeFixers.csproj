@@ -13,7 +13,7 @@
     <!-- The fix providers keep the E128.Analyzers namespace hierarchy. Only the assembly
          changes, so analyzer types and their fix providers read alike. -->
     <RootNamespace>E128.Analyzers</RootNamespace>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>

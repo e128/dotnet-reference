@@ -32,9 +32,10 @@ public sealed class GreetingServiceTests
     public async Task GreetAsync_ReturnsGreeting_WithDefaultName()
     {
         var result = await _service.GreetAsync(new GreetingRequest(), TestContext.Current.CancellationToken);
+        var greeting = GreetingOf(result);
 
-        Assert.Equal("Hello, World!", result.Message);
-        Assert.Equal("World", result.RecipientName);
+        Assert.Equal("Hello, World!", greeting.Message);
+        Assert.Equal("World", greeting.RecipientName);
     }
 
     [Fact]
@@ -42,9 +43,10 @@ public sealed class GreetingServiceTests
     public async Task GreetAsync_ReturnsGreeting_WithCustomName()
     {
         var result = await _service.GreetAsync(new GreetingRequest("Claude"), TestContext.Current.CancellationToken);
+        var greeting = GreetingOf(result);
 
-        Assert.Equal("Hello, Claude!", result.Message);
-        Assert.Equal("Claude", result.RecipientName);
+        Assert.Equal("Hello, Claude!", greeting.Message);
+        Assert.Equal("Claude", greeting.RecipientName);
     }
 
     [Fact]
@@ -53,7 +55,7 @@ public sealed class GreetingServiceTests
     {
         var result = await _service.GreetAsync(new GreetingRequest(), TestContext.Current.CancellationToken);
 
-        Assert.Equal(FixedTime, result.CreatedAt);
+        Assert.Equal(FixedTime, GreetingOf(result).CreatedAt);
     }
 
     [Fact]
@@ -65,6 +67,34 @@ public sealed class GreetingServiceTests
         var saved = await _repository.GetRecentAsync(1, TestContext.Current.CancellationToken);
         var single = Assert.Single(saved);
         Assert.Equal("Hello, Test!", single.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public async Task GreetAsync_ReturnsFailure_WhenNameIsMissing()
+    {
+        var result = await _service.GreetAsync(new GreetingRequest(" "), TestContext.Current.CancellationToken);
+
+        var error = result.Match(static value => value switch
+        {
+            GreetingError failure => failure,
+            _ => null
+        });
+
+        _ = Assert.IsType<GreetingError>(error);
+    }
+
+    /// <summary>
+    ///     Projects the success case through the union helper. A failure case fails the test with
+    ///     its own reason.
+    /// </summary>
+    /// <param name="result">The result union.</param>
+    /// <returns>The greeting.</returns>
+    private static Greeting GreetingOf(GreetingResult result)
+    {
+        var greeting = result.Match(static value => value is Greeting ok ? ok : null);
+
+        return Assert.IsType<Greeting>(greeting);
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider

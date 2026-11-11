@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Proves the published package reaches a net10.0 consumer. The source carries a
+       deliberate E128024 violation, so the build must report E128024. Any other diagnostic,
+       or none, means the analyzer did not load. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <E128AnalyzersVersion Condition="'$(E128AnalyzersVersion)' == ''">2.7.0</E128AnalyzersVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="E128.Analyzers" Version="$(E128AnalyzersVersion)" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

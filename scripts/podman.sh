@@ -66,7 +66,9 @@ case "$CMD" in
 
         # Test health endpoint
         BODY=$(curl -sf "http://localhost:$PORT/health")
-        if echo "$BODY" | grep -q '"status":"healthy"'; then
+        # MapHealthChecks answers with the HealthStatus text, not JSON, unless a
+        # response writer is registered.
+        if echo "$BODY" | grep -q "Healthy"; then
             ok "GET /health → healthy"
             PASS=$((PASS + 1))
         else

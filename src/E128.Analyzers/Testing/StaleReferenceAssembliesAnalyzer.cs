@@ -13,7 +13,8 @@ namespace E128.Analyzers.Testing;
 ///     E128062: Flags <c lang="csharp">ReferenceAssemblies.Net.Net80</c> / <c lang="csharp">Net90</c> usages in test code
 ///     when the configured minimum framework version is higher. Tests that use older reference
 ///     assemblies may miss API availability issues specific to the production target framework.
-///     Configurable via <c lang="csharp">e128_minimum_framework_version</c> in <c lang="csharp">.globalconfig</c> (default: 100).
+///     Configurable via <c lang="csharp">e128_minimum_framework_version</c> in <c lang="csharp">.globalconfig</c>
+///     (default: 100).
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class StaleReferenceAssembliesAnalyzer : DiagnosticAnalyzer
@@ -33,7 +34,8 @@ public sealed class StaleReferenceAssembliesAnalyzer : DiagnosticAnalyzer
                 new KeyValuePair<string, int>("Net70", 70),
                 new KeyValuePair<string, int>("Net80", 80),
                 new KeyValuePair<string, int>("Net90", 90),
-                new KeyValuePair<string, int>("Net100", 100)
+                new KeyValuePair<string, int>("Net100", 100),
+                new KeyValuePair<string, int>("Net110", 110)
             ]);
 
     internal static readonly DiagnosticDescriptor Rule = new(

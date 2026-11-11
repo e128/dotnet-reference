@@ -53,7 +53,7 @@ internal sealed class FakeNamingViolationAnalyzer : DiagnosticAnalyzer
         foreach (var variable in field.Declaration.Variables)
         {
             var name = variable.Identifier.ValueText;
-            if (name.StartsWith('_'))
+            if (name is ['_', ..])
             {
                 continue;
             }

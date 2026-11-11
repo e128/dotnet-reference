@@ -1,6 +1,21 @@
 <Project>
 
   <!-- ============================================== -->
+  <!-- Runtime Async                                  -->
+  <!--                                                -->
+  <!-- Application projects only. A netstandard2.0    -->
+  <!-- analyzer cannot take the switch, a test host   -->
+  <!-- has no need for it, and a net10.0 leg has no   -->
+  <!-- runtime support for it. This group sits in     -->
+  <!-- .targets so IsTestProject and IsRoslynComponent -->
+  <!-- are already known: a .props group evaluates    -->
+  <!-- before the project body sets them.             -->
+  <!-- ============================================== -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net11.0' and '$(IsRoslynComponent)' != 'true' and '$(IsTestProject)' != 'true' and '$(IsBenchmarkProject)' != 'true'">
+    <Features>$(Features);runtime-async=on</Features>
+  </PropertyGroup>
+
+  <!-- ============================================== -->
   <!-- Test Projects: Microsoft Testing Platform       -->
   <!--                                                -->
   <!-- MTP is .NET 10's recommended test runner.       -->

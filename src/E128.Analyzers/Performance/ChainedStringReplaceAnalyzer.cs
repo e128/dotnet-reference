@@ -156,6 +156,6 @@ public sealed class ChainedStringReplaceAnalyzer : DiagnosticAnalyzer
 
     private static SyntaxList<StatementSyntax> EnumerateBodyStatements(StatementSyntax body)
     {
-        return body is BlockSyntax block ? block.Statements : new SyntaxList<StatementSyntax>(body);
+        return body is BlockSyntax block ? block.Statements : SyntaxFactory.SingletonList(body);
     }
 }
