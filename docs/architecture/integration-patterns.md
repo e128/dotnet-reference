@@ -1,8 +1,8 @@
-# Integration Patterns — The E128.Analyzers Suite
+# Integration Patterns: The E128.Analyzers Suite
 
-> **One sentence:** The repository's flagship integration is the build-time one: `E128.Analyzers` injects itself into every project's Roslyn compilation as a ProjectReference and emits ~90 categorized diagnostics, most carrying a one-click code fix.
+> **One sentence:** The flagship integration is the build-time one: `E128.Analyzers` joins every project's Roslyn compilation as a project reference and reports 214 diagnostics in eight categories, most with a one-click code fix.
 
-*Updated: 2026-05-29T19:02:39Z*
+*Updated: 2026-11-11T03:24:51Z*
 
 ---
 
@@ -10,155 +10,119 @@
 
 ```mermaid
 graph TB
-  targets["Directory.Build.targets"] -->|"ProjectReference<br/>OutputItemType=Analyzer<br/>ReferenceOutputAssembly=false<br/>(IsRoslynComponent != true)"| projs["every other project"]
+  targets["Directory.Build.targets"] -->|"ProjectReference, OutputItemType=Analyzer<br/>ReferenceOutputAssembly=false<br/>when IsRoslynComponent != true"| projs["every other project"]
   projs --> roslyn["Roslyn compilation"]
   roslyn --> e128["E128.Analyzers (netstandard2.0)"]
   roslyn --> third["AsyncFixer, IDisposableAnalyzers, Meziantou,<br/>Roslynator, SonarAnalyzer, SharpSource, VSTHRD"]
-  e128 --> diags["Diagnostics"]
+  e128 --> diags["diagnostics"]
   third --> diags
-  diags -->|".globalconfig: error"| build["build pass/fail"]
-  e128 -. "code fix providers" .-> ide["IDE / dotnet format"]
+  diags -->|".globalconfig sets error"| build["build pass or fail"]
+  e128 -. "code fix providers" .-> ide["IDE and dotnet format"]
 ```
 
-The analyzer targets `netstandard2.0` for maximum Roslyn host compatibility. As of 2026-05-29 it contains **90 diagnostic IDs, 85 analyzer classes, and 78 code-fix providers** (see `scripts/analyzer-stats.sh`). Severity defaults differ by surface: the README documents per-rule defaults for external consumers, while inside this repo `.globalconfig` promotes everything to `error`.
+Both analyzer assemblies target `netstandard2.0`, so one build loads in the current Roslyn host and in any newer host. The support window is `net11.0`, and the repository tests that host only. As of 2026-11-11 the suite holds 214 diagnostic IDs across 207 analyzer classes in about 63k lines of source. Run `scripts/analyzer-stats.sh` for the current numbers.
 
-> **Severity note.** A handful of rules ship with a non-Warning default for consumers: `E128021`, `E128050`, `E128059`, `E128063`, `E128080` default to **Error**; `E128030`, `E128052`, `E128072`, `E128081` default to **Info**. Inside this repo the blanket `error` severity overrides these.
+Severity defaults differ by surface. `src/E128.Analyzers/README.md` documents the per-rule default for an external consumer. Inside this repository, `.globalconfig` promotes every diagnostic to `error`.
+
+> **Severity note.** Several rules ship below Warning for a consumer: `E128021`, `E128050`, `E128059`, `E128063`, and `E128080` default to Error, and `E128030`, `E128052`, `E128072`, and `E128081` default to Info. The repository blanket overrides all of them.
 
 ## Rule Catalog by Category
 
-> Authoritative source: `src/E128.Analyzers/README.md` (the NuGet package page). The tables below mirror it. "Fix" = automatic code fix available.
+The tables below name representative rules. `src/E128.Analyzers/README.md` is authoritative for the full set, and `scripts/readme-table-diff.sh --analyzer` proves that file against the source. "Fix" means a code fix provider exists.
 
-### Design
+### Design, 34 rules
 
-| Rule    | Title                                                                 | Fix |
-| ------- | --------------------------------------------------------------------- | --- |
-| E128001 | Use `FileInfo`/`DirectoryInfo` instead of `string` paths              | Yes |
-| E128003 | Use `TimeProvider` instead of `DateTime.Now`/`DateTimeOffset.Now`     | Yes |
-| E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`                | Yes |
-| E128005 | Seal classes that have no subclasses                                  | Yes |
-| E128007 | Avoid `async void` methods (non-event-handler)                        | Yes |
-| E128008 | Avoid sync-over-async (`.Result`/`.GetAwaiter().GetResult()`)         | Yes |
-| E128017 | Use primary constructor parameter directly                            | Yes |
-| E128019 | Do not pass `CancellationToken` by `in` reference                     | Yes |
-| E128021 | Do not use `in` with ref struct parameters (Error)                    | Yes |
-| E128030 | Do not compare `FileSystemInfo` by reference (Info)                   | Yes |
-| E128032 | Concrete-only DI registration with available interface                | Yes |
-| E128036 | `Task.Run` wrapping async lambda — unnecessary hop                    | Yes |
-| E128042 | `Convert.ToInt32/64` wrapping `ExecuteScalar` without null guard      | Yes |
-| E128044 | Implements `IAsyncDisposable` but not `IDisposable`                   | Yes |
-| E128045 | Avoid direct `System.Console` usage                                   | No  |
-| E128046 | Excessive user-defined inheritance depth                              | No  |
-| E128048 | Use `switch` instead of if/else-if chain on enum values               | Yes |
-| E128049 | Avoid `[DynamicallyAccessedMembers]` — justify if required            | Yes |
-| E128050 | Use `TimeSpan` for time-duration values (Error)                       | Yes |
-| E128052 | Use immutable collection interface over mutable concrete (Info)       | Yes |
-| E128053 | Use `FileInfo`/`DirectoryInfo` collections over `string` collections  | Yes |
-| E128058 | Return `List<T>` via `.AsReadOnly()` for `IReadOnlyList<T>`           | Yes |
-| E128059 | Interface method parameter unused in implementation (Error)           | Yes |
-| E128060 | Return `Dictionary<K,V>` via `.AsReadOnly()` for `IReadOnlyDictionary`| Yes |
-| E128061 | Use `ImmutableArray<T>` for static readonly arrays                    | Yes |
-| E128074 | Readonly struct property should use `init` accessor                   | Yes |
-| E128080 | Use `ByteSize` for data-size values (Error)                           | Yes |
-| E128082 | Do not unwrap `ByteSize` via cast                                     | Yes |
-| E128087 | Static numeric field should not be incremented with `++`/`--`         | Yes |
+| Rule    | Title                                                              | Fix |
+| ------- | ------------------------------------------------------------------ | --- |
+| E128001 | Use `FileInfo` or `DirectoryInfo` instead of `string` paths        | Yes |
+| E128003 | Use `TimeProvider` instead of `DateTime.Now`                       | Yes |
+| E128004 | Use `IHttpClientFactory` instead of `new HttpClient()`             | Yes |
+| E128005 | Seal a class that has no subclass                                  | Yes |
+| E128032 | Concrete-only DI registration with an available interface          | Yes |
+| E128050 | Use `TimeSpan` for a time-duration value                           | Yes |
+| E128061 | Use `ImmutableArray<T>` for a static readonly array                | Yes |
+| E128080 | Use `ByteSize` for a data-size value                               | Yes |
 
-### Reliability
+### Reliability, 66 rules
 
-| Rule    | Title                                                                 | Fix |
-| ------- | --------------------------------------------------------------------- | --- |
-| E128011 | `[GeneratedRegex]` missing `matchTimeoutMilliseconds`                 | Yes |
-| E128012 | `RegexOptions.Compiled` redundant in `[GeneratedRegex]`               | Yes |
-| E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers                | Yes |
-| E128014 | `[GeneratedRegex]` pattern has nested quantifiers                     | Yes |
-| E128016 | `DateTime.Parse/ParseExact` missing `DateTimeStyles`                  | Yes |
-| E128020 | Do not use `in` with mutable structs                                  | Yes |
-| E128023 | Avoid hardcoded `/tmp` path                                           | Yes |
-| E128028 | `Task.FromResult` wraps sync I/O with async alternative              | Yes |
-| E128031 | `AddSingleton` factory returns `IDisposable`                          | Yes |
-| E128033 | Options class bound via `.Bind()` has init-only property              | Yes |
-| E128034 | Constructor `new`s a DI-registered type                               | Yes |
-| E128035 | Concrete-type DI dependency without direct registration               | Yes |
-| E128037 | Unbounded `Task.WhenAll` over async `Select`                          | Yes |
-| E128038 | `Task.WhenAll` async lambda missing `CancellationToken`               | Yes |
-| E128039 | Catch filter must exclude `OperationCanceledException`                | Yes |
-| E128040 | Concurrency limit must be positive                                    | Yes |
-| E128041 | `JsonDocument.RootElement` must not escape `using` scope              | Yes |
-| E128051 | Broad catch in async `HttpClient` method missing OCE handler          | Yes |
-| E128056 | `FileInfo.Exists` TOCTOU race condition                               | Yes |
-| E128057 | Unprotected cleanup in `finally` block                                | Yes |
-| E128064 | Disk write-then-read round-trip — use in-memory value                 | Yes |
-| E128070 | Pool `Rent()` capacity must be bounded                                | No  |
-| E128076 | Materialize `QuerySelectorAll` result before iterating                | Yes |
-| E128077 | `TextContent` string match requires preceding length guard            | No  |
-| E128078 | `GetAttribute("href")` on element that lacks href                     | No  |
-| E128079 | `CompositeDetection` single generic ID selector lacks specificity     | No  |
-| E128086 | `ArrayPool` buffer as `SqliteParameter` value without `Size`          | Yes |
-| E128109 | `stackalloc` must be bounded and outside loops                         | No  |
-| E128110 | Zero a pooled buffer in `finally` before `Return`                     | No  |
-| E128111 | Pooled buffer used after `Return`                                     | No  |
+| Rule    | Title                                                              | Fix |
+| ------- | ------------------------------------------------------------------ | --- |
+| E128011 | `[GeneratedRegex]` missing a match timeout                         | Yes |
+| E128023 | Avoid a hardcoded `/tmp` path                                      | Yes |
+| E128039 | A catch filter must exclude `OperationCanceledException`           | Yes |
+| E128041 | `JsonDocument.RootElement` must not escape its `using` scope       | Yes |
+| E128056 | `FileInfo.Exists` then read, a time-of-check to time-of-use race   | Yes |
+| E128064 | Disk write then read round trip, which needs an in-memory value    | Yes |
+| E128109 | `stackalloc` must be bounded and outside a loop                    | No  |
+| E128110 | Zero a pooled buffer in `finally` before `Return`                  | No  |
 
-### Performance
+### Performance, 54 rules
 
-| Rule    | Title                                                                 | Fix |
-| ------- | --------------------------------------------------------------------- | --- |
-| E128009 | Use `MinBy`/`MaxBy` instead of `OrderBy().First()`                    | Yes |
-| E128010 | Pass `HttpCompletionOption.ResponseHeadersRead`                       | Yes |
-| E128015 | Use string interpolation instead of `string.Format`                   | Yes |
-| E128018 | Use `ToArray()` over `ToList()` for read-only `foreach`              | Yes |
-| E128026 | Redundant `HashSet` allocation in `FrozenSet` creation                | Yes |
-| E128027 | Use `FrozenSet`/`FrozenDictionary` for static readonly collections    | Yes |
-| E128029 | Replace multi-string OR-chain with `HashSet.Contains`                 | Yes |
-| E128066 | Linear lookup inside loop → O(n²)                                     | Yes |
-| E128067 | String concatenation in loop → O(n²) allocations                      | No  |
-| E128068 | Sort inside loop → O(n² log n)                                        | No  |
-| E128069 | `List.Insert(0, ...)` in loop → O(n²)                                 | No  |
-| E128072 | Prefer `SHA256.HashData()` over `SHA256.Create()` (Info)             | Yes |
-| E128081 | Use `StringBuilderPool` over `new StringBuilder()` (Info)            | Yes |
-| E128083 | Use `ImmutableCollectionsMarshal.AsImmutableArray` (no copy)         | Yes |
-| E128084 | Use `CollectionsMarshal.AsSpan().Slice` over `List.GetRange`         | Yes |
-| E128085 | Use `foreach` + `AddRange` over `SelectMany.ToList`                   | Yes |
+| Rule    | Title                                                              | Fix |
+| ------- | ------------------------------------------------------------------ | --- |
+| E128009 | Use `MinBy` or `MaxBy` instead of `OrderBy().First()`              | Yes |
+| E128010 | Pass `HttpCompletionOption.ResponseHeadersRead`                    | Yes |
+| E128026 | Redundant `HashSet` allocation in a `FrozenSet` creation           | Yes |
+| E128027 | Use a frozen collection for a static readonly collection           | Yes |
+| E128066 | Linear lookup inside a loop, which is O(n²)                       | Yes |
+| E128083 | Use `ImmutableCollectionsMarshal.AsImmutableArray` to avoid a copy | Yes |
+| E128152 | Complexity past the `e128_max_complexity` ceiling                  | Yes |
+| E128215 | `StringBuilder` created without capacity for a known append count  | Yes |
 
-### Security
+### Security, 21 rules
 
-| Rule    | Title                                                                 | Fix |
-| ------- | --------------------------------------------------------------------- | --- |
-| E128071 | Use a FIPS-approved hash algorithm                                    | Yes |
-| E128075 | Use `RandomNumberGenerator` instead of `Random` in crypto context     | Yes |
+| Rule    | Title                                                               | Fix |
+| ------- | ------------------------------------------------------------------- | --- |
+| E128071 | Use a FIPS-approved hash algorithm                                  | Yes |
+| E128075 | Use `RandomNumberGenerator` instead of `Random` in a crypto context | Yes |
+| E128202 | Unvalidated JWT claims used as an identity                          | No  |
 
-### Style
+### Unsafe, 17 rules
 
-| Rule    | Title                                                                 | Fix |
-| ------- | --------------------------------------------------------------------- | --- |
-| E128002 | Use `string.Empty` instead of `""`                                    | Yes |
-| E128006 | Use `Encoding.UTF8` instead of `Encoding.Default`                     | Yes |
-| E128024 | Non-XML-doc comment above method declaration                          | Yes |
-| E128025 | Use `Path.GetRandomFileName()` over `Guid.NewGuid()` in temp paths    | Yes |
-| E128043 | Do not use the null-forgiving operator                                | Yes |
-| E128047 | `#pragma warning disable` without justification comment               | Yes |
-| E128055 | Unbalanced `#pragma warning disable` without matching restore         | Yes |
-| E128063 | Mid-name underscore in private static member (Error)                  | Yes |
-| E128065 | `#pragma warning disable` with multiple IDs — one per ID              | Yes |
+| Rule    | Title                                                              | Fix |
+| ------- | ------------------------------------------------------------------ | --- |
+| E128112 | Use `Unsafe.BitCast` instead of `Unsafe.As`                        | Yes |
+| E128120 | Do not skip local initialization without a measured reason         | Yes |
 
-### Testing
+### Style, 13 rules
 
-| Rule    | Title                                                                 | Fix |
-| ------- | --------------------------------------------------------------------- | --- |
-| E128054 | Class creates temp directory without cleanup interface                | Yes |
-| E128062 | Test uses outdated `ReferenceAssemblies` vs project TFM               | Yes |
-| E128073 | Test method missing `[Trait("Category", ...)]`                        | Yes |
+| Rule    | Title                                                              | Fix |
+| ------- | ------------------------------------------------------------------ | --- |
+| E128002 | Use `string.Empty` instead of `""`                                 | Yes |
+| E128006 | Use `Encoding.UTF8` instead of `Encoding.Default`                  | Yes |
+| E128024 | Non-XML-doc comment above a method declaration                     | Yes |
+| E128043 | Do not use the null-forgiving operator                             | Yes |
+| E128047 | `#pragma warning disable` without a justification comment          | Yes |
+| E128063 | Mid-name underscore in a private static member                     | Yes |
 
-## Third-Party Analyzers (Run Alongside)
+### Testing, 11 rules
+
+| Rule    | Title                                                              | Fix |
+| ------- | ------------------------------------------------------------------ | --- |
+| E128054 | Class creates a temp directory without a cleanup interface         | Yes |
+| E128062 | Test uses an outdated `ReferenceAssemblies` for the project TFM    | Yes |
+| E128073 | Test method missing `[Trait("Category", ...)]`                     | Yes |
+| E128171 | Committed `Assert.Fail` red-phase stub                             | No  |
+
+### Maintainability, 4 rules
+
+| Rule    | Title                                                              | Fix |
+| ------- | ------------------------------------------------------------------ | --- |
+| E128203 | HTTP request inside a loop, which creates N+1 round trips          | Yes |
+| E128218 | Boolean flags encode one state                                     | No  |
+
+## Third-Party Analyzers Run Alongside
 
 | Package                                          | Prefix | Focus                          |
 | ------------------------------------------------ | ------ | ------------------------------ |
-| AsyncFixer                                       | AF     | Async/await anti-patterns      |
-| IDisposableAnalyzers                             | IDISP  | Resource ownership             |
-| Meziantou.Analyzer                               | MA     | Quality, performance, security |
-| Microsoft.VisualStudio.Threading.Analyzers       | VSTHRD | Threading correctness          |
-| Roslynator.* (Analyzers/CodeAnalysis/Formatting) | RCS    | Style + quality + formatting   |
-| SharpSource                                      | SS     | Common pitfalls                |
-| SonarAnalyzer.CSharp                             | S      | Security + reliability         |
+| AsyncFixer                                       | AF     | async and await anti-patterns  |
+| IDisposableAnalyzers                             | IDISP  | resource ownership             |
+| Meziantou.Analyzer                               | MA     | quality, performance, security |
+| Microsoft.VisualStudio.Threading.Analyzers       | VSTHRD | threading correctness          |
+| Roslynator.Analyzers and companions              | RCS    | style, quality, formatting     |
+| SharpSource                                      | SS     | common pitfalls                |
+| SonarAnalyzer.CSharp                             | S      | security and reliability       |
 
 ## Code-Fix Patterns
 
-Most fixes are local expression/declaration rewrites applied by Roslyn's `BatchFixer`. Renames (`E128063` mid-name underscore, IDE1006 naming) use the shared `SequentialRenameFixAllProvider` instead — `BatchFixer` cannot merge multiple renames touching the same document. Cross-kind disk round-trip fixes (`E128064`) wrap in `Encoding.UTF8.GetBytes`/`GetString` and auto-add the `using`. See `lode/dotnet/analyzers/code-fix-patterns.md` for the maintainer-level detail.
+Most fixes are local expression or declaration rewrites that Roslyn's `BatchFixer` applies. A rename, such as the E128063 mid-name underscore or an IDE1006 naming fix, uses the shared `SequentialRenameFixAllProvider` instead, because `BatchFixer` cannot merge two renames that touch one document. A cross-kind fix, such as the E128064 disk round trip, wraps the value in `Encoding.UTF8.GetBytes` or `GetString` and adds the `using`. [code-fix-patterns.md](../../lode/dotnet/analyzers/code-fix-patterns.md) has the maintainer detail.

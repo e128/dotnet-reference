@@ -10,51 +10,65 @@ tools: Read, Edit, Bash, Glob, Grep
 maxTurns: 15
 ---
 
-Audit all README.md files for staleness and auto-fix drift.
+Audit every README.md for drift with one script call, fix the findings, and
+report. The script does every comparison. Your job is to apply its findings.
 
 ## Workflow
 
-### 1. Discover READMEs and projects
+### 1. Run the audit
 
 ```bash
-scripts/solution-inventory.sh --json
+scripts/internal/readme-audit.sh --json
 ```
 
-Gives the README inventory (`readmes`), the solution file, and every project with its
-`path` and `packable` flag in one call.
+The output is `{"status","count","findings"}`. Each finding carries `file`,
+`line`, `check`, `expected`, and `actual`.
 
-### 2. Audit each README
+- `status` is `clean` when nothing drifted. Report `README Audit: PASS` and
+  stop. Do not read any README to confirm a clean result.
+- `status` is `drift` when the script found a mismatch. Continue to step 2.
 
-**src/\*/README.md (packable projects, `projects[].packable == true`):**
-- Verify `<Version>` in the `.csproj` matches any install snippet in the README
-- Run `scripts/readme-table-diff.sh --analyzer --json`: deterministic set-diff of the rule table against analyzer source. Act only on a non-empty `missing_from_readme` / `extra_in_readme` / `code_fix_mismatches`; `drift: false` means every diagnostic ID is present and the "Code Fix" column matches actual `CodeFixProvider` coverage
+### 2. Fix each finding
 
-**scripts/README.md:**
-- Run `scripts/readme-table-diff.sh --json`: deterministic set-diff of documented vs. on-disk scripts (public + `internal/`). Act only on a non-empty `missing_from_readme` / `extra_in_readme`
-- Read the README and verify documented flags match actual script `--help` / argument parsing
+For each finding, reach only the reported line:
 
-**Root README.md:**
-- Cross-reference project table against `solution` + `projects[].path` from step 1
-- Cross-reference script table against `scripts/help.sh`
-- Check .NET version against the global.json SDK pin (`scripts/sdk-version.sh`) or `Directory.Build.props`
+```bash
+rg -n '<the old text from expected or actual>' <file>
+```
 
-### 3. Apply fixes
+Then fix that line with Edit. Never read a whole README. The analyzer README is
+over 3000 lines, and one Read of it costs more than the rest of this task.
 
-Apply corrections directly with Edit. Never add or remove an entire section.
-List each structural change in your final report for the caller to decide.
+Match the file's existing format. Repad a table so every column shares one
+width. Never add or remove a whole section: report a structural change instead
+of making one.
+
+### 3. Confirm
+
+Run the script again:
+
+```bash
+scripts/internal/readme-audit.sh --json
+```
+
+Repeat step 2 only for the findings that remain. A structural finding that the
+script cannot fix from a line edit belongs in the report, not in a rewrite.
 
 ### 4. Report
 
-```
+```text
 README Audit: N files checked, M fixes applied
-  - src/E128.Analyzers/README.md — updated rule table (2 new rules)
-  - scripts/README.md — PASS
-  - README.md — updated project table
+  - src/E128.Analyzers/README.md: install version 2.7.0 to 2.7.1
+  - README.md: SDK requirement 10.0+ to 11.0+
+  - scripts/README.md: PASS
 ```
 
 ## Rules
 
-- **Use `rg` for content searches, `fd` for file discovery**: never use `grep` or `find`
-- **Auto-fix drift**: apply corrections directly for data-driven tables
-- **Do not restructure**: match each README's existing style
-- **Analyzer README is NuGet-facing**: accuracy is critical
+- The script is the audit. Never re-derive its checks by hand, and never audit
+  a file it did not flag.
+- Use `rg` for content search and `fd` for file discovery. Never use `grep` or
+  `find`.
+- The analyzer README publishes to nuget.org, so its accuracy comes first.
+- With 2 turns left, stop editing and write the report. The report is the
+  deliverable. An audit that ends without its report has failed.

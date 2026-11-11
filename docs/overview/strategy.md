@@ -1,8 +1,8 @@
-# Strategy & Positioning — E128.Reference
+# Strategy and Positioning: E128.Reference
 
-> **One sentence:** The repository's strategic bet is that conventions enforced by tooling beat conventions written in documents — so it invests disproportionately in a shippable analyzer suite and keeps the application code deliberately thin.
+> **One sentence:** The repository's strategic bet is that a convention enforced by tooling beats a convention written in a document, so it invests in a shippable analyzer suite and keeps the application code deliberately thin.
 
-*Updated: 2026-05-29T19:02:39Z*
+*Updated: 2026-11-11T03:24:51Z*
 
 ---
 
@@ -17,33 +17,34 @@ graph LR
   A --- C
 ```
 
-- As a **reference implementation**, it shows idiomatic .NET 10 (minimal API, System.CommandLine, DI, immutability).
-- As a **convention enforcement engine**, its `.globalconfig`, `Directory.Build.props`, and custom analyzers define and enforce "the standard."
+- As a **reference implementation**, it shows idiomatic .NET 11: minimal API, System.CommandLine, dependency injection, and immutability.
+- As a **convention enforcement engine**, its `.globalconfig`, `Directory.Build.props`, and custom analyzers define and enforce the standard.
 - As a **shippable product**, `E128.Analyzers` carries that standard outward to any consuming codebase.
 
-The investment is lopsided on purpose: ~24k LOC of analyzer source vs. ~200 LOC of application source. The application exists to be analyzed; the analyzer is the deliverable.
+The investment is lopsided on purpose. The analyzer source is about 63k lines, and the application source is a few hundred. The application exists to be analyzed, and the analyzer is the deliverable.
 
 ## Key Trade-offs
 
-| Choice                                          | Rationale                                                                 | Alternative considered                                  |
-| ----------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Custom analyzers over docs-only conventions     | Compile-time enforcement is unignorable and zero-friction at review time  | Wiki guidelines + manual review (drifts, ignored)       |
-| Deny-by-default (`error`) severity              | Forces conventions to be met, not aspired to                              | Warning-default (gradually ignored as noise)            |
-| `netstandard2.0` for the analyzer               | Maximum Roslyn host compatibility (VS, Rider, CLI, older SDKs)            | `net10.0` (smaller reach, simpler polyfills)            |
-| Single repo, shared build props                 | One source of truth for TFM, analysis, and packages                       | Multiple repos (duplication, drift)                     |
-| xUnit v3 + MTP                                  | The supported test path on .NET 10; VSTest is retired                     | Stay on xUnit v2 + VSTest (dead end)                    |
-| Central Package Management + transitive pinning | Eliminates version drift and surprise transitive upgrades                 | Per-project `Version=` attributes                       |
-| OIDC trusted publishing                         | Removes long-lived secrets from the release path                          | Stored NuGet API key in repo secrets                    |
-| Minimal API over MVC controllers                | Less ceremony; matches modern .NET guidance for small services            | MVC controllers (heavier, more abstraction)             |
-| Implicit usings **disabled**                    | Forces explicit, auditable dependency surface per file                    | Implicit usings (terser, less explicit)                 |
+| Choice                                             | Rationale                                                                     | Alternative considered                               |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Custom analyzers over doc-only conventions         | Compile-time enforcement is unignorable and costs the reviewer nothing        | Wiki guidelines plus manual review (drifts, ignored) |
+| Deny-by-default error severity                     | Forces each convention to be met, not aspired to                              | Warning default, which fades into noise              |
+| `netstandard2.0` for the analyzer assemblies       | Roslyn loads the one build in the current host and in any newer host          | A `net11.0` build, which closes the older hosts      |
+| Single repo with shared build props                | One source of truth for TFM, analysis, and packages                           | Multiple repos, which duplicate and drift            |
+| xUnit v3 on MTP                                    | The supported test path on the current SDK                                    | xUnit v2 on VSTest, which is a dead end              |
+| Central Package Management with transitive pinning | Removes version drift and surprise transitive upgrades                        | Per-project `Version` attributes                     |
+| OIDC trusted publishing                            | Removes a long-lived secret from the release path                             | A stored NuGet API key                               |
+| Minimal API over MVC controllers                   | Less ceremony, and it matches current guidance for a small service            | MVC controllers, which add abstraction               |
+| Implicit usings disabled                           | Forces an explicit, auditable dependency surface per file                     | Implicit usings, which are terser but implicit       |
+| `LangVersion` 14.0 in the analyzer projects        | Keeps the formatter from rewriting source into a C# 15 collection form        | `latest`, which triggers a 26 file rewrite           |
 
 ## Competitive Landscape
 
-This is an internal asset, not a market product — but `E128.Analyzers` competes for mindshare against established third-party analyzer packages (Meziantou.Analyzer, Roslynator, SonarAnalyzer, SharpSource). Its differentiation is **complementarity, not replacement**: the repo runs all of those analyzers alongside its own, and `E128.Analyzers` fills gaps they leave (e.g., disk write-then-read round-trips, mid-name underscore rename artifacts, O(n²) loop patterns, `ByteSize`/`TimeSpan` unit-safety) rather than re-implementing existing rules.
+This is an internal asset, not a market product. `E128.Analyzers` competes for mindshare against established third-party analyzer packages: Meziantou.Analyzer, Roslynator, SonarAnalyzer, and SharpSource. Its differentiation is complementarity, not replacement. The repo runs all of those analyzers alongside its own, and `E128.Analyzers` fills gaps they leave, such as a disk write-then-read round trip, a mid-name underscore rename artifact, an O(n²) loop, and unit safety for `ByteSize` and `TimeSpan`.
 
 ## Growth Vectors
 
-- **More analyzer rules** — the rule IDs grow monotonically (`E128001…E128090`); each new convention becomes a new rule with a test and a README entry.
-- **Adoption breadth** — every team that adds the NuGet package inherits the standard, multiplying leverage.
-- **Application surface** — the thin Web/Cli/Core projects can grow to demonstrate additional patterns (messaging, persistence, auth) as reference needs expand.
-- **Harness maturity** — the Claude Code skills/agents/scripts layer compounds: each new deterministic script reduces future friction.
+- **More analyzer rules**: rule IDs grow monotonically from `E128001` to `E128218` as of 2026-11-11. Each new convention becomes a rule with a test and a README row.
+- **Adoption breadth**: every team that adds the package inherits the standard, which multiplies the leverage.
+- **Application surface**: the thin Web, Cli, and Core projects can grow to show more patterns as the reference needs expand.
+- **Harness maturity**: each new deterministic script reduces friction for the next change.
