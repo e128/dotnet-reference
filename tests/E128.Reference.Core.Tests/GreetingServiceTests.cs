@@ -75,24 +75,29 @@ public sealed class GreetingServiceTests
     {
         var result = await _service.GreetAsync(new GreetingRequest(" "), TestContext.Current.CancellationToken);
 
-        var error = result.Match(static value => value switch
+        var error = result switch
         {
             GreetingError failure => failure,
-            _ => null
-        });
+            Greeting => null,
+            null => null,
+        };
 
         _ = Assert.IsType<GreetingError>(error);
     }
 
     /// <summary>
-    ///     Projects the success case through the union helper. A failure case fails the test with
-    ///     its own reason.
+    ///     Projects the success case out of the result union. A failure case fails the test.
     /// </summary>
     /// <param name="result">The result union.</param>
     /// <returns>The greeting.</returns>
     private static Greeting GreetingOf(GreetingResult result)
     {
-        var greeting = result.Match(static value => value is Greeting ok ? ok : null);
+        var greeting = result switch
+        {
+            Greeting ok => ok,
+            GreetingError => null,
+            null => null,
+        };
 
         return Assert.IsType<Greeting>(greeting);
     }

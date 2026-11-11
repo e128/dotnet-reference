@@ -330,3 +330,13 @@ dotnet_diagnostic.CA1815.severity = none
 dotnet_diagnostic.CA2231.severity = none
 dotnet_diagnostic.SS017.severity = none
 dotnet_diagnostic.MA0186.severity = none
+
+# SS019 asks for a `default` label. On a union `switch` the correct last arm is
+# `null`, which names the empty case, and a `default` or `_` arm would accept a
+# case type added later, so the compiler could no longer report it. Off for the
+# two files that switch over a union.
+[src/E128.Reference.Web/Program.cs]
+dotnet_diagnostic.SS019.severity = none
+
+[tests/E128.Reference.Core.Tests/GreetingServiceTests.cs]
+dotnet_diagnostic.SS019.severity = none

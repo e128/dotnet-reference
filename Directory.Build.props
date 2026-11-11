@@ -31,7 +31,6 @@
         <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     </PropertyGroup>
 
-
     <!-- ============================================== -->
     <!-- Code Analysis                                  -->
     <!--                                                -->

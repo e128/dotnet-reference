@@ -31,12 +31,12 @@ app.MapPost("/greetings", static async (GreetingRequest request, IGreetingServic
 {
     var result = await service.GreetAsync(request, cancellationToken);
 
-    return result.Match(static value => value switch
+    return result switch
     {
         Greeting greeting => Results.Created(new Uri("/greetings", UriKind.Relative), greeting),
         GreetingError error => Results.BadRequest(error.Message),
-        _ => Results.Problem("Unknown greeting result.")
-    });
+        null => Results.Problem("Unknown greeting result.")
+    };
 });
 
 app.MapGet("/greetings", static async (IGreetingRepository repository, int? count, CancellationToken cancellationToken) =>

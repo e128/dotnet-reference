@@ -1,8 +1,8 @@
 # .NET 11 Upgrade Practices
-*Updated: 2026-11-11T02:54:13Z*
+*Updated: 2026-11-11T03:01:25Z*
 
-Rules this repository follows while it moves from `net10.0` to `net11.0`. Each
-rule came from a probe on the GA SDK. See [project-structure.md](project-structure.md)
+Rules this repository follows on the `net11.0` band. Each rule came from a probe
+on the GA SDK. See [project-structure.md](project-structure.md)
 for the solution shape and [analyzers/package-layout.md](analyzers/package-layout.md)
 for the published package layout.
 
@@ -100,11 +100,22 @@ public static TOut Match<TUnion, TOut>(this TUnion value, Func<TUnion, TOut> mat
 `IUnion` exposes one member, `Value`. A hand-written type can satisfy it, so a
 helper that reads the case list must prove the list stays closed.
 
+End a union `switch` with a `null` arm. A `_` or `var` arm accepts any case type
+added later, so the compiler can no longer warn about it. A switch statement
+that omits a case reports nothing at all, so the missing-case check needs a
+switch expression.
+
+`SS019` demands a `default` label on every switch, which a union switch must
+not have. The files that switch over a union take a scoped `SS019` row in
+`.editorconfig`, in the same block that relaxes the four declaration rules.
+
 ## Closed Hierarchies
 
-A `closed` type makes a switch exhaustive. A missing case reports `CS8509`,
-which `TreatWarningsAsErrors` turns into a build failure. Do not mark a closed
-type `abstract`, because the compiler rejects it with `CS9384`.
+A `closed` type makes a switch exhaustive. A missing case reports `CS8509` in a
+switch expression, which `TreatWarningsAsErrors` turns into a build failure. Do
+not mark a closed type `abstract`, because the compiler rejects it with
+`CS9384`. A leaf under a closed base needs no modifier to build, so `sealed` on
+each leaf is a convention the review enforces rather than the compiler.
 
 ## Runtime Async
 
