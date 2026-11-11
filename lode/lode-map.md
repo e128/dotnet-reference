@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-11T03:39:00Z*
+*Updated: 2026-11-11T16:29:38Z*
 
 ## Generated Docs
 
@@ -39,7 +39,7 @@
 - [implicit-state-machine-rule-examples.md](dotnet/implicit-state-machine-rule-examples.md): Positive and negative snippets with the expected report
 - [analyzer-candidates-external-sweep.md](dotnet/analyzer-candidates-external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 - [analyzer-candidates-performance.md](dotnet/analyzer-candidates-performance.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
-- [analyzer-candidates-async.md](dotnet/analyzer-candidates-async.md): Open async fire-and-forget candidates taken from AsyncAwaitBestPractices, probe pending
+- [analyzer-candidates-async.md](dotnet/analyzer-candidates-async.md): Closed async fire-and-forget sweep, every shape already owned
 
 ### dotnet/analyzers/
 

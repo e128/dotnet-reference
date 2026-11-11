@@ -1,5 +1,5 @@
 # Analyzer Candidates
-*Updated: 2026-11-11T15:39:59Z*
+*Updated: 2026-11-11T16:29:38Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three
@@ -11,7 +11,7 @@ The 2026-11-05 external sweep is complete. See
 [analyzer-candidates-external-sweep.md](analyzer-candidates-external-sweep.md).
 The twenty-practice performance sweep shipped fifteen rules and leaves one
 extension. See [analyzer-candidates-performance.md](analyzer-candidates-performance.md).
-The async sweep is open. See [analyzer-candidates-async.md](analyzer-candidates-async.md).
+The async sweep closed with no rule. See [analyzer-candidates-async.md](analyzer-candidates-async.md).
 
 The implicit state machine rule ships as E128218. See
 [implicit-state-machine-rule.md](implicit-state-machine-rule.md).

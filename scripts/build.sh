@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build the solution or a specific project.
-# Usage: build.sh [--project NAME] [--warnings] [--fix] [--errors] [--verbose] [--fast]
+# Build the solution, a named project, or a .csproj path.
+# Usage: build.sh [--project NAME|PATH.csproj] [--warnings] [--fix] [--errors] [--verbose] [--fast]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 VERBOSE=false; WARNINGS=false; FIX=false; ERRORS=false; PROJECT=""; FAST=false
@@ -60,6 +60,10 @@ if ! output=$("${ARGS[@]}" 2>&1); then
             errors="$(echo "$output" | grep -c ' error ' || true)"
     fi
     exit 1
+fi
+
+if [[ "$WARNINGS" == true ]]; then
+    echo "$output" | grep ': warning ' | sort -u | head -60 || true
 fi
 
 if [[ "$VERBOSE" == true ]]; then
