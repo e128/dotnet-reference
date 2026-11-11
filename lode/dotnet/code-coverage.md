@@ -1,5 +1,5 @@
 # Code Coverage
-*Updated: 2026-11-10T14:10:59Z*
+*Updated: 2026-11-11T14:00:54Z*
 
 Coverage collects in process through the Microsoft.Testing.Platform extension.
 The CI gate requires 80 percent line coverage in total and in every measured
@@ -70,6 +70,10 @@ Measured assemblies:
 
 `scripts/coverage-areas.sh` treats a measured assembly that is absent from the
 reports as a gate failure.
+
+The script parses Cobertura with `tr` and `awk`. It splits each report on the
+`<` character so one element sits on each line, then reads the attributes it
+needs. The gate needs `jq` and nothing else, so CI installs no XML tool.
 
 ## Gate
 
