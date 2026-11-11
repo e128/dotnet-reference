@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.8.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.9.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -216,6 +216,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128184 | Recursive delete outside a proven safe root (default: Info)                    | No       |
 | E128191 | PFX import without EphemeralKeySet                                             | No       |
 | E128202 | Unvalidated JWT claims used as an identity                                     | No       |
+| E128222 | `Path.Combine` of a root `.FullName` and an uncontained leaf                   | Yes      |
 
 ### Style
 
@@ -3084,6 +3085,24 @@ public void Stop() => _state = State.Stopped;
 ```
 
 No code fix. The state names and the legal transitions are domain decisions.
+
+### E128222: Path.Combine of a root and a run-time leaf
+
+Flags `Path.Combine(root.FullName, leaf)` when the leaf arrives at run time and no containment check consumes the join. A leaf from a caller can hold a separator, a parent reference, or a rooted prefix. The join then returns a path outside the root directory.
+
+A constant leaf stays silent. An interpolated string whose holes are all numeric stays silent. A leaf from the namer family stays silent: `GetFileName`, `GetFileNameWithoutExtension`, `GetRandomFileName`, `GetTempFileName`, `ChangeExtension`, `SanitizeFileName`, and `ToKebabCase`.
+
+A guard call silences the report only when it receives the join itself, or a local or field that the join reaches through an assignment. The guard family is `IsInside`, `ValidateDomainPath`, and `ResolveInside`. An unrelated guard call in the same method does not silence the report. E128161 covers a constant segment that is rooted or climbs. This rule covers the run-time leaf.
+
+The code fix rewrites the one shape `new FileInfo(Path.Combine(root.FullName, leaf))` to `FilePathContainment.ResolveInside(root, leaf)` and adds `using Pug.Core;`. It never calls `Path.GetFileName` on the leaf, because flattening a multi-segment leaf retargets the read or the delete. The fix stays absent when the target cannot resolve `Pug.Core.FilePathContainment` or when the join does not feed a `FileInfo` construction.
+
+```csharp
+// Before (warns)
+var file = new FileInfo(Path.Combine(root.FullName, callerName));
+
+// After
+var file = FilePathContainment.ResolveInside(root, callerName);
+```
 
 ## Requirements
 

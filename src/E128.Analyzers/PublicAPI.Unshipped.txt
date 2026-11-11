@@ -237,3 +237,7 @@ E128.Analyzers.Performance.EncodeInLoopCodeFixProvider
 E128.Analyzers.Performance.EncodeInLoopCodeFixProvider.EncodeInLoopCodeFixProvider() -> void
 E128.Analyzers.Design.ImplicitStateMachineAnalyzer
 E128.Analyzers.Design.ImplicitStateMachineAnalyzer.ImplicitStateMachineAnalyzer() -> void
+E128.Analyzers.Security.UncontainedRootJoinAnalyzer
+E128.Analyzers.Security.UncontainedRootJoinAnalyzer.UncontainedRootJoinAnalyzer() -> void
+E128.Analyzers.Security.UncontainedRootJoinCodeFixProvider
+E128.Analyzers.Security.UncontainedRootJoinCodeFixProvider.UncontainedRootJoinCodeFixProvider() -> void
