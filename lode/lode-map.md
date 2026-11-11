@@ -39,6 +39,7 @@
 - [implicit-state-machine-rule-examples.md](dotnet/implicit-state-machine-rule-examples.md): Positive and negative snippets with the expected report
 - [analyzer-candidates-external-sweep.md](dotnet/analyzer-candidates-external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 - [analyzer-candidates-performance.md](dotnet/analyzer-candidates-performance.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
+- [analyzer-candidates-async.md](dotnet/analyzer-candidates-async.md): Open async fire-and-forget candidates taken from AsyncAwaitBestPractices, probe pending
 
 ### dotnet/analyzers/
 
