@@ -70,6 +70,7 @@
 ## infrastructure/
 
 - [claude-code-maintenance.md](infrastructure/claude-code-maintenance.md): Harness maintenance: Claude Code and opencode v2 capability map, discovery rules, rule ownership
+- [instruction-file-maintenance.md](infrastructure/instruction-file-maintenance.md): AGENTS.md and CLAUDE.md as a memory of failures: the six maintenance passes and the stop condition
 - [opencode-guardrails.md](infrastructure/opencode-guardrails.md): opencode v2 plugin hook mapping for Claude Code guardrails, permission and shell hook contracts
 - [roslyn-navigator-mcp.md](infrastructure/roslyn-navigator-mcp.md): Local Roslyn Navigator MCP server: tool manifest, harness config, verification
 - [claude-code-upstream.md](infrastructure/claude-code-upstream.md): Claude Code upstream reference: versions, agent/skill frontmatter fields
