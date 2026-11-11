@@ -59,11 +59,13 @@ Return a structured summary in this exact format:
 - `File.cs(line,col): warning CODE: message`
 ```
 
-## Critical Rules
+## Rules
 
-- **ONE command maximum** — never run check + build + test in the same invocation. Pick one and report.
-- **Never retry on failure** — if the command fails, report the failure. Do not re-run with different flags or pipe through `tail`.
-- **Never return raw MSBuild output** — always parse and summarize
+- Run one command per invocation, and pick the one the caller asked for. Two
+  commands in one call double the build cost the caller pays.
+- On failure, report it. Do not retry with different flags, and do not pipe
+  the output through `tail`.
+- Parse and summarize the output. Never return raw MSBuild text.
 - **Errors and warnings only** — suppress informational messages
 - **No stack traces** — for test failures, include only the assertion message
 - **Include file paths** — so the caller can navigate directly to issues
