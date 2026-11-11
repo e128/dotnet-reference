@@ -113,7 +113,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | ------------------------------------ | ------------------------------------------------------------------------------------------ |
 | `internal/analyzer-release-check.sh` | Validate analyzer release files (Unshipped/Shipped) against source DiagnosticId constants |
 | `internal/analyzer-promote.sh`       | Move Unshipped rule rows into a new Shipped release section                                |
-| `internal/commit.sh`                 | Commit helper: blocks emails in the message, appends a name-only co-author trailer         |
+| `internal/commit.sh`                 | Commit helper: blocks emails, adds a name-only co-author trailer unless one is present     |
 | `internal/cr-diff-deliver.sh`        | Decide code-review diff delivery mode by size: inline (≤30KB), write (30-40KB), or split (>40KB) |
 | `internal/cr-target.sh`              | Resolve a code-review target to base, changed files, and the reviewers to run              |
 | `internal/mechanical-diff.sh`        | Classify each changed file in the working diff as MECHANICAL (namespace rename) or SUBSTANTIVE |
