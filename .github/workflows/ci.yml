@@ -167,21 +167,25 @@ jobs:
       - name: Pack the analyzer
         run: dotnet pack src/E128.Analyzers/E128.Analyzers.csproj -c Release -o ./artifacts/nupkgs
 
+      # The fixture source stays clean, so a diagnostic cannot prove the analyzer ran. The
+      # analyzer report does prove it: it lists every rule that executed, with its timing.
+      # Detailed verbosity is required, because the report logs at that level.
       - name: Build the net10.0 consumer fixture
         run: |
           set -euo pipefail
           cd tests/Net10Consumer
-          dotnet build 2>&1 | tee net10-consumer.log
+          dotnet build -p:ReportAnalyzer=true -v:d 2>&1 | tee ../../net10-consumer.log
 
-      - name: "Gate: the analyzer loaded and reported"
+      - name: "Gate: the analyzer loaded and ran"
         run: |
           set -euo pipefail
-          if grep -Eq "CS8032|AD0001|Failed to load analyzer" net10-consumer.log; then
+          log=net10-consumer.log
+          if grep -Eq "CS8032|AD0001|Failed to load analyzer" "$log"; then
             echo "The analyzer did not load cleanly in the net10.0 host."
-            grep -E "CS8032|AD0001|Failed to load analyzer" net10-consumer.log
+            grep -E "CS8032|AD0001|Failed to load analyzer" "$log"
             exit 1
           fi
-          if ! grep -q "E128024" net10-consumer.log; then
-            echo "E128024 did not report, so the packaged analyzer did not run."
+          if ! grep -q "NonXmlDocCommentE128Analyzer (E128024)" "$log"; then
+            echo "The analyzer report does not list E128024, so the packaged analyzer did not run."
             exit 1
           fi

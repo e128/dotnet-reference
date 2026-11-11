@@ -1,5 +1,5 @@
 # .NET 11 Upgrade Practices
-*Updated: 2026-11-11T02:44:26Z*
+*Updated: 2026-11-11T02:54:13Z*
 
 Rules this repository follows while it moves from `net10.0` to `net11.0`. Each
 rule came from a probe on the GA SDK. See [project-structure.md](project-structure.md)
@@ -64,13 +64,17 @@ assembly builds, not that a host loads it.
 
 `tests/Net10Consumer` is that consumer. It carries its own `global.json` pinned
 to SDK 10, its own `Directory.Build.props` and `.targets` so no repository
-analyzer reaches it, a `nuget.config` that serves `E128.*` from
-`artifacts/nupkgs`, and a `.globalconfig` that sets the analyzer default
-severity to warning. The root `.globalconfig` escalates every analyzer
-diagnostic to error, which would turn the probe into a build failure.
-Its source holds one deliberate `E128024` violation, so the CI job can assert
-that the packaged analyzer loaded and reported. A run that produces no
-diagnostic, or a load warning, fails the job.
+analyzer reaches it, and a `nuget.config` that serves `E128.*` from
+`artifacts/nupkgs`.
+
+The fixture source stays clean, so no diagnostic can prove the analyzer ran.
+The analyzer report does. The CI build passes `ReportAnalyzer=true` with
+detailed verbosity, and the report lists every rule that executed. The job
+fails when the report omits `E128024` or when the log carries a load warning.
+
+Do not add a deliberate violation to the fixture. The root `.globalconfig`
+escalates every analyzer diagnostic to error, so a violation fails the build
+before the report is read.
 
 ## Union Results
 

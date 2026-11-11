@@ -1,9 +1,0 @@
-is_global = true
-
-# Fixture-only. The repository escalates every analyzer diagnostic to error, which would turn
-# the deliberate probe into a build failure. A warning keeps the probe visible in the build log
-# and lets the build succeed, so any real compile error or analyzer load failure still fails
-# the net10-consumer CI job.
-global_level = 102
-
-dotnet_analyzer_diagnostic.severity = warning

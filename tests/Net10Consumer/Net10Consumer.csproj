@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Proves the published package reaches a net10.0 consumer. The source carries a
-       deliberate E128024 violation, so the build must report E128024. Any other diagnostic,
-       or none, means the analyzer did not load. -->
+  <!-- Proves the published package reaches a net10.0 consumer. The CI build runs with
+       ReportAnalyzer, so the analyzer report names every rule that executed. A report that
+       omits E128024, or a load warning, means the packaged analyzer did not run. The source
+       stays clean, so the fixture compiles under the repository's analyzer severity rules. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
