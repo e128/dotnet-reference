@@ -1,62 +1,40 @@
 # Async Fire-And-Forget Context
-*Updated: 2026-11-11T15:41:28Z*
+*Updated: 2026-11-11T16:24:00Z*
 
 ## Problem
 
-A task that nothing observes loses its exception. The runtime stores the
-exception on the task, and the garbage collector reclaims it without a trace.
-The application then continues with partial state and no log line.
-
-Four shapes reach that state:
-
-1. A statement drops the returned task.
-2. An `async` lambda converts to a `void`-returning delegate.
-3. A suppressed-throw await drops the exception by design, with no fault check.
-4. A subscriber to an injected dependency event can outlive its own usefulness
-   and leaks.
-
-## Evidence
-
-- Source library: `TheCodeTraveler/AsyncAwaitBestPractices`. It ships
-  `SafeFireAndForget`, `AsyncCommand`, and `WeakEventManager`. It ships no
-  analyzers, so each rule below is an inference from its documented guidance.
-- In-repo gap 1: `AsyncVoidAnalyzer` registers `MethodDeclaration` only. An
-  `async` lambda never reports.
-- In-repo gap 2: `EventSubscriptionLeakAnalyzer` collects a static event and an
-  own-instance event. A dependency event on a constructor-assigned field stays
-  open.
-- In-repo gap 3: no rule or package option in the repository names
-  `ConfigureAwaitOptions.SuppressThrowing`.
-- Compiler coverage: CS4014 reports a dropped awaitable inside an `async`
-  method only. A dropped task in a constructor, a synchronous method, or a
-  top-level statement compiles clean.
+A task that nothing observes loses its exception. Four shapes reach that state,
+and each was proposed as an E128 rule.
 
 ## Decisions
 
 | Decision | Reason |
 | -------- | ------ |
-| Probe before code | The installed rule sets overlap in the async area, and the overlap is unverified |
-| Extend E128176 instead of a new ID | The defect family is the same, and one owner avoids a double report |
-| No code fix on any step | Every repair depends on handler policy, dispose ownership, or a fault branch |
-| Report a `ValueTask` drop in the same rule as a `Task` drop | The defect is identical, and a second rule would split the reader's attention |
-| Keep the event rule at medium noise and off by default in the root config | A dependency event subscription is often correct |
+| Probe before code | Descriptor text cannot prove which syntax a rule visits |
+| Drop the discarded-awaitable rule | MA0134 and VSTHRD110 fire on the same statement |
+| Drop the `async`-lambda rule | AsyncFixer03, MA0147, and VSTHRD101 fire on the same lambda |
+| Drop the suppressed-throw rule | No owner, and no use of the API in `src/` |
+| Drop the dependency-event extension | The open case is a long-lived type that needs no unsubscribe |
+| Keep the event rule at E128176 | The disposable case is already reported there |
+| Extend `build.sh` for probes | The guardrail blocks raw `dotnet build`, and no script reached `.claude/tmp/` |
+
+## Evidence
+
+- Probe project: `.claude/tmp/async-probe/`. One snippet per shape, one build.
+- Probe result table:
+  [redundant-rules.md](../../lode/dotnet/analyzers/redundant-rules.md#async-drop-family).
+- `EventSubscriptionLeakAnalyzer.OnSymbolStart` returns unless the subscriber is
+  `IDisposable`, and it already collects dependency events.
+- `AsyncVoidAnalyzer` registers `MethodDeclaration` only, but `VSTHRD101`,
+  `MA0147`, and `AsyncFixer03` cover the lambda shape.
+
+## Environment Note
+
+The repository pins SDK 11.0.100, and `dotnet` on `PATH` resolves the Homebrew
+10.0.403 install. Put `/usr/local/share/dotnet` first on `PATH` before a build
+or a probe.
 
 ## Runners-Up
 
-- A rule for `shouldAlwaysRethrowException`. Rejected: library API specific.
-- A rule for `onException` that itself drops a task. Rejected: the general
-  dropped-awaitable rule covers it as a positive snippet.
-- A rule that requires `ConfigureAwait(false)` in library code. Rejected:
-  CA2007 already owns it.
-
-## Open Questions
-
-- Does `VSTHRD100` or `S3168` report the lambda shape, not only the method
-  shape? Phase 0 decides.
-- Does the .NET 11 runtime async work change the analyzer view of a method
-  body? Check `lode/dotnet/net11-upgrade.md` before Phase 1.
-
-## Related
-
-- [async-analyzers-plan.md](async-analyzers-plan.md)
-- [async-analyzers-tasks.md](async-analyzers-tasks.md)
+- Rethrow policy rules for the library API. Rejected: library specific.
+- A `ConfigureAwait(false)` rule. Rejected: CA2007 owns it.

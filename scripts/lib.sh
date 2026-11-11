@@ -132,8 +132,14 @@ get_option() {
 
 # ── Project resolution ───────────────────────────
 # Fuzzy-match a project name against src/, tests/ and benchmarks/ directories.
+# A path to a .csproj file passes through unchanged, so a scratch probe under
+# .claude/tmp/ builds through this script too.
 resolve_project() {
     local name="$1"
+    if [[ "$name" == *.csproj && -f "$name" ]]; then
+        printf '%s\n' "$name"
+        return
+    fi
     local root
     root="$(find_repo_root)"
     local match

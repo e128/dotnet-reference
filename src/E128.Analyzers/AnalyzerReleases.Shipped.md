@@ -1,3 +1,11 @@
+## Release 2.9.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128222 | E128-Security | Warning | Path.Combine of a root FullName and a run-time leaf with no containment check
+
 ## Release 2.8.0
 
 ### Changed Rules
