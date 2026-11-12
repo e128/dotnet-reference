@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Set the <Version> in a project's .csproj to the next semantic version.
-# Usage: version-bump.sh <ProjectName> [auto|patch|minor|major] [--dry-run]
+# Usage: version-bump.sh <ProjectName> [auto|patch|minor|major] [--message MSG] [--dry-run]
 # Example: version-bump.sh E128.Analyzers
 # Example: version-bump.sh E128.Analyzers major --dry-run
+# Example: version-bump.sh E128.Analyzers --message "feat: add a rule"
 #
 # The target is computed from the version on the merge base with main, never from
 # the working copy. Running the script twice therefore gives the same result,
 # and a branch that bumps once ships one version step, however many commits it has.
 #
-# Level `auto` (default) takes the strongest signal found since the merge base:
+# Level `auto` (default) takes the strongest signal found since the merge base.
+# A commit message passed with --message counts as one more commit:
 #   major  a commit subject `type!:` or a `BREAKING CHANGE:` footer,
 #          or a rule added to `### Removed Rules` in AnalyzerReleases.Unshipped.md
 #   minor  a `feat:` commit, or a rule added to `### New Rules` or `### Changed Rules`
@@ -20,18 +22,21 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
 set -euo pipefail
 
-usage() { err "Usage: version-bump.sh <ProjectName> [auto|patch|minor|major] [--dry-run]"; }
+usage() { err "Usage: version-bump.sh <ProjectName> [auto|patch|minor|major] [--message MSG] [--dry-run]"; }
 
 PROJECT=""
 LEVEL="auto"
 DRY_RUN=false
-for arg in "$@"; do
-    case "$arg" in
+MESSAGE=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --dry-run) DRY_RUN=true ;;
-        auto | patch | minor | major) LEVEL="$arg" ;;
+        --message | -m) shift; MESSAGE="${1:?--message requires a value}" ;;
+        auto | patch | minor | major) LEVEL="$1" ;;
         -*) usage; exit 1 ;;
-        *) [[ -z "$PROJECT" ]] && PROJECT="$arg" || { usage; exit 1; } ;;
+        *) [[ -z "$PROJECT" ]] && PROJECT="$1" || { usage; exit 1; } ;;
     esac
+    shift
 done
 [[ -z "$PROJECT" ]] && { usage; exit 1; }
 
@@ -83,7 +88,7 @@ if [[ "$LEVEL" == "auto" ]]; then
     LEVEL="patch"
     REASON="a .cs change"
 
-    # Commit signals since the merge base.
+    # Commit signals since the merge base, then the pending commit message.
     while IFS= read -r -d $'\x1e' record; do
         record=${record#$'\n'}
         subject=${record%%$'\n'*}
@@ -92,7 +97,10 @@ if [[ "$LEVEL" == "auto" ]]; then
         elif [[ "$subject" =~ ^feat(\([^\)]*\))?: && "$LEVEL" == "patch" ]]; then
             LEVEL="minor"; REASON="feat commit: $subject"
         fi
-    done < <(git log --format='%s%n%b%x1e' "$BASE..HEAD" -- "$PROJECT_DIR/")
+    done < <(
+        git log --format='%s%n%b%x1e' "$BASE..HEAD" -- "$PROJECT_DIR/"
+        [[ -z "$MESSAGE" ]] || printf '%s\x1e' "$MESSAGE"
+    )
 
     # Release-notes signals: rows added to the unshipped file since the merge base.
     UNSHIPPED="$PROJECT_DIR/AnalyzerReleases.Unshipped.md"

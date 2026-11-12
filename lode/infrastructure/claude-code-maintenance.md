@@ -1,250 +1,124 @@
 # Harness Maintenance
-*Updated: 2026-11-10T16:58:28Z*
+*Updated: 2026-11-12T00:54:46Z*
 
-## Harness Portability Capability Map
+## Instruction Loads
 
-`AGENTS.md` is the portable source of truth. Any coding agent (Claude Code,
-Codex CLI, Cursor, Aider, or another tool) can read `AGENTS.md`, `scripts/`,
-and `lode/` and get the full working toolkit. `CLAUDE.md` imports
-`AGENTS.md` with `@AGENTS.md` and adds only the layer below it, which has no
-equivalent on another harness.
+`AGENTS.md` owns portable session policy and task-reference pointers.
+`CLAUDE.md` imports it with `@AGENTS.md` and adds only Claude Code mechanics.
+Claude Code loads the unscoped markdown files under `.claude/rules/` at startup.
+opencode loads that directory through the `instructions` glob in `opencode.json`.
 
-Claude Code 2.1.277 added native `AGENTS.md` support. When a folder has no
-`CLAUDE.md`, Claude Code reads `AGENTS.md` directly with no import needed.
-When `CLAUDE.md` is present, as in this repo, Claude Code still prioritizes
-it. This repo keeps `CLAUDE.md` for its Claude-only overlay (the Mermaid
-diagram rule, the `AskUserQuestion` mandate, the `.claude/` config location
-rule, and the hooks pointer), not to trigger a fallback load. Those four
-rules have no home in `AGENTS.md`, since another harness does not carry
-those tools.
+The core rule directory contains policy needed before an action: routing, approval, verification, privacy, and writing constraints.
+Task-specific reference lives outside that directory. Read it when the condition in `AGENTS.md` applies.
+Both harnesses follow the same pointers. Adding an import or splitting an unscoped file does not reduce loaded text.
 
-Two supported harnesses load instructions in this repo:
+Claude Code supports `paths` frontmatter for path-scoped rules.
+Do not assume opencode applies that frontmatter when loading its instruction glob.
+This repository uses explicit reference pointers instead of harness-specific scoping.
 
-- Claude Code loads `CLAUDE.md` plus every file in `.claude/rules/*.md`.
-- opencode v2 loads `AGENTS.md` plus every path in the `instructions` field
-  of `opencode.json`. That field names `prompts/SystemPrompt.txt` and the
-  `.claude/rules/*.md` glob, so both harnesses load the same rules. It reads
-  project-level `.claude/skills/*/SKILL.md` through a compatibility path.
-- Subagent definitions live once in `.claude/agents/*.md`. A generated mirror
-  in `.opencode/agents/` serves opencode. `/yeet` keeps the mirror current.
+Claude Code can read `AGENTS.md` directly when no applicable Claude instruction file exists.
+The explicit import remains the entry point because `CLAUDE.md` also carries Claude-only mechanics.
+See [Claude Code Memory](https://code.claude.com/docs/en/memory) for import and loading behavior.
 
-| Layer                          | Portable across harnesses | Notes                                                              |
-| ------------------------------- | -------------------------- | ------------------------------------------------------------------- |
-| `AGENTS.md`                     | Yes                         | Cross-harness rules: communication, workflow, .NET, git, gotchas   |
-| `scripts/*.sh`                  | Yes                         | Plain bash. Any agent with shell access can call them              |
-| `lode/`                         | Yes                         | Plain markdown project memory. No harness-specific format          |
-| `.claude/rules/*.md`            | Yes                         | Shared domain rules. Both harnesses auto-load the directory through their own config |
-| `.claude/skills/`               | Yes                         | Skills (`SKILL.md`). Claude Code loads them through the skill tool. opencode reads project-level `.claude/skills/` through a compatibility path |
-| `prompts/SystemPrompt.txt`      | Yes                         | The Lode Coding methodology. Claude CLI injects it with `--append-system-prompt`. opencode loads it through `instructions` in `opencode.json` |
-| `scripts/dotnet-reference*.sh`  | No                          | Session launchers. See the paragraph below the table              |
-| `CLAUDE.md`                     | No                          | Claude Code entry point. Imports `AGENTS.md` and `.claude/setup-guidance.md`, adds a thin Claude-only overlay |
-| `.claude/hooks/`                | No (file format)            | Claude Code guardrail hooks. opencode v2 has no hook file. Its plugin API provides the same interception. See [opencode-guardrails.md](opencode-guardrails.md) |
-| `.claude/settings.json`         | No                          | Claude Code permissions and hook configuration |
-| `.claude/agents/*.md`           | Yes (via mirror)            | Source of truth for subagents. Claude Code reads it directly. `opencode-agents.sh sync` generates the `.opencode/agents/` mirror with translated frontmatter |
-| `.opencode/agents/`             | No                          | Generated mirror for opencode. Never hand-edit. Regenerate with `scripts/internal/opencode-agents.sh sync` |
-| `.opencode/agent-assets/`       | No                          | Generated copies of agent asset directories. They sit outside `agents/`, because opencode v2 walks that tree recursively |
-| `.opencode/plugins/`            | No                          | Hand-written opencode plugins. See [opencode-guardrails.md](opencode-guardrails.md) |
-| `opencode.json`                 | No                          | opencode v2 config. `instructions` loads `prompts/SystemPrompt.txt` and `.claude/rules/*.md`. The `permissions` array and `policies` mirror the approval policy. It sets the project default model |
+## Rule Ownership
 
-The session launchers start an agent against this repository.
-`dotnet-reference.sh` and `dotnet-reference-go.sh` run the Claude CLI. The
-first uses the local Ollama server and the second the opencode Go endpoint.
-`dotnet-reference-oc.sh` runs the opencode CLI and passes `--model` to `run`
-and `mini`. The full TUI reads the model from `opencode.json`.
+Each requirement has one owner. Entry points link to the owner instead of copying its detailed contract.
 
-When onboarding another harness onto this repo, point it at `AGENTS.md`,
-`scripts/help.sh`, and the files under `.claude/rules/`. It loses subagent
-orchestration and hook automation unless it ships equivalents. Skills load on
-both supported harnesses without duplication. Both harnesses auto-load the
-rule directory.
+- `AGENTS.md`: session startup, task pointers, test execution order, supported targets, design questions, and git workflow.
+- `CLAUDE.md`: `AskUserQuestion`, project configuration placement, and Claude hook locations.
+- `deterministic-scripts.md`: command-to-script routing and flags.
+- `keyword-shortcuts.md`: phrase triggers.
+- `auto-approvals.md`: action approval and harness permission precedence.
+- `quality-gates.md`: format, build, tests, shell checks, suppression approval, and nullable diagnostics.
+- `read-before-edit.md`: file-read requirements and invalidation triggers.
+- `token-efficiency.md`: result reuse and context economy.
+- `writing-style.md`: artifact prose and self-lint.
+- `security.md`: configuration boundaries, pooled-buffer handling, and repository privacy.
+- `common-gotchas.md`: file tools, path casing, Bash selection, local data, and scratch files.
+- `agent-vs-skill-routing.md`: invocation, agent definitions, and generated mirrors.
 
-## Rule Load Cost
+`prompts/SystemPrompt.txt` owns the shared Lode method and its bootstrap conventions.
+Its Lode-writing subset deliberately repeats the prose and privacy floor needed before repository instructions exist.
+Keep that subset consistent with the core rules. Do not remove it merely as duplication.
 
-Both harnesses load every file in `.claude/rules/` into every context
-window. The directory is always-loaded budget on both. Split a rule file when
-it grows past the point where both harnesses can hold it cheaply.
+## Task Reference Ownership
 
-## Harness Structure
+The `AGENTS.md` task pointers select these references:
 
-The Claude Code harness for this repo consists of:
+- `lode/practices.md`: design principles, module ownership, interface depth, and chat style.
+- `lode/dotnet/csharp-conventions.md`: C# idioms, time and HTTP contracts, async rules, and reuse searches.
+- `lode/dotnet/testing.md`: test authoring, runner configuration, SDK checks, and test investigations.
+- `lode/dotnet/analyzers/authoring.md`: registration, analysis APIs, generated code, code fixes, and test snippets.
+- `lode/infrastructure/shell-authoring.md`: tool prerequisites and shell-authoring verification.
+- `lode/infrastructure/shipping.md`: shipping-script branch guards, verification order, and unpushed-commit handling.
 
-- `CLAUDE.md`. Always-loaded instructions. It imports `AGENTS.md` and adds a
-  Claude-only layer. Keep the added layer under 200 lines.
-- `.claude/rules/*.md`. Domain rules shared with opencode. Both harnesses
-  load every rule file into every context window, not only the
-  filename-matched ones. Treat the whole directory as always-loaded budget.
-- `opencode.json`. The opencode v2 config. `instructions` loads
-  `prompts/SystemPrompt.txt` and `.claude/rules/*.md`. The `permissions`
-  array and `policies` mirror the approval policy.
-- `.claude/hooks/`. Core guardrail hooks.
-- `.claude/settings.json`. Permissions and hook configuration.
-- `.opencode/plugins/`. Hand-written opencode plugins. A plugin exports an
-  object with `id` and `setup`. It needs no import and no package manifest.
-- `.claude/skills/`. Skill directories. See `ls .claude/skills/`.
-- `.claude/agents/*.md`. Agent definitions. See `ls .claude/agents/`.
-- `.opencode/agents/`, `.opencode/agent-assets/`. Generated opencode mirror.
-  Regenerate with `scripts/internal/opencode-agents.sh sync`.
-- `scripts/*.sh`. Bash scripts. `scripts/internal/*.sh` holds skill-only and
-  agent-only scripts.
+The setup guidance has no separate file or import.
+Its design questions and implicit-state-machine rule live in `AGENTS.md`.
+Its module rules live in `lode/practices.md`. The Dangerous Operations section in setup guidance is excluded.
 
-## opencode v2 Discovery
+## Harness-Specific Assets
 
-- opencode v2 loads `AGENTS.md` from the workspace toward the home directory.
-  The `instructions` field accepts a path, a glob, or a URL, and opencode
-  merges each file with `AGENTS.md` as ambient instructions. The repo lists
-  the prompt file and the rule glob.
-- opencode v2 discovers agent definitions under `.opencode/agents/`
-  recursively. A markdown file without frontmatter becomes an agent, so
-  never place an asset there. `.claude/agents/` has no compatibility path, so
-  the generated mirror is required.
-- opencode v2 reads skills from `.opencode/skills/`, `.agents/skills/`, and
-  `.claude/skills/`. A skill ID comes from the file path, not from the
-  `name` field in frontmatter.
-- opencode v2 replaces the v1 `permission` map with an ordered `permissions`
-  array. Two action names change: `bash` becomes `shell`, and `task` becomes
-  `subagent`.
-- Every agent starts with the base policy `{ "*", "*", allow }`. Only a deny
-  rule changes behavior, so the mirror emits a deny rule for a read-only
-  agent.
-- opencode v2 has no hook file. A plugin under `.opencode/plugins/` registers
-  the equivalent interception. See [opencode-guardrails.md](opencode-guardrails.md).
-- opencode v2 discovers a plugin directory with no config entry. A plugin file
-  exports a plain object with `id` and `setup`.
+Portable assets are `AGENTS.md`, core rules, scripts, Lode references, and the shared prompt.
+These assets use ordinary markdown or Bash contracts.
 
-## opencode v2 Verified Facts
+Claude Code assets are `CLAUDE.md`, `.claude/hooks/`, and `.claude/settings.json`.
+opencode assets are `opencode.json`, `.opencode/plugins/`, and the generated agent trees.
+Do not move a portable rule into a Claude-only asset.
 
-These claims were checked against the published V2 documentation or a local
-probe.
+Claude Code reads project skills from `.claude/skills/`.
+opencode reads that compatibility path as well as its native skill paths.
+opencode does not use `.claude/agents/` as its agent discovery path.
 
-| Claim                                                         | Result                                                                                        |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `instructions` loads files                                    | Yes. opencode merges each listed file with `AGENTS.md` as ambient instructions. Verified on v2.2.6 with a file probe and a glob probe |
-| `.claude/skills/` resolves                                    | Yes. It is a documented project compatibility path, alongside `.agents/skills/`               |
-| `.claude/agents/` resolves                                    | No. Only `.opencode/agents/` and the `agents` config field define agents                       |
-| Plugins intercept tools and permissions                       | Yes. `ctx.tool.hook` and `ctx.permission.hook` replace the Claude Code hook layer             |
-| `.claude/rules/` auto-loads                                   | Yes. `opencode.json` lists the directory glob in `instructions`. Verified on v2.2.6 |
+## Agent Mirrors
 
-Regenerate any of these claims only after a documentation check. A future
-release may change the answer.
+`.claude/agents/` is the source of truth.
+`scripts/internal/opencode-agents.sh sync` generates `.opencode/agents/` and `.opencode/agent-assets/`.
+`/yeet` runs the sync when agent sources change.
+Never hand-edit the generated trees.
 
-## Build Infrastructure
+opencode discovers its agent directory recursively. Keep non-agent assets in the generated asset tree, not inside `agents/`.
+Its agent frontmatter uses an ordered `permissions` array. The mirror translates the source permissions into that format.
+Definitions inherit the session model rather than pinning a model or version.
 
-- `Directory.Build.props` — shared MSBuild properties (TFM, analyzers, code analysis)
-- `Directory.Build.targets` — conditional targets (test projects get `OutputType=Exe` + MTP runner)
-- `Directory.Packages.props` — Central Package Management version pins
-- `global.json` — SDK version pin + MTP test runner configuration
-- `nuget.config` — single source with trusted signers and package source mapping
+## Enforcement
 
-## Adding Rules
+Instruction text supplies context. Hooks and script guards enforce operations.
+`.claude/hooks/block-raw-git` and `block-raw-commands` enforce the routing contract.
+The opencode guardrail plugin invokes the same hook scripts.
+A wrapper path does not authorize a push, history rewrite, or protected deletion.
 
-- Cross-harness core rules → `AGENTS.md`
-- Domain rules → `.claude/rules/{domain}.md` (both harnesses auto-load it, so
-  keep it under 50 lines)
-- Claude-only rules → `CLAUDE.md` (keep the added layer under 200 lines)
-- New or changed agent → edit `.claude/agents/*.md`, then run
-  `scripts/internal/opencode-agents.sh sync`. `/yeet` runs it automatically.
-- Knowledge → `lode/` (not AGENTS.md, CLAUDE.md, or rules)
-- `AGENTS.md` and `CLAUDE.md` follow the failure-memory method in `AGENTS.md` ("Instruction Files as a Memory of Failures")
+Claude Code evaluates deny, ask, then allow.
+opencode evaluates permissions in order and uses the last match. Its policies can tighten that result.
+The approval owner is `.claude/rules/auto-approvals.md`.
+See [opencode Guardrails](opencode-guardrails.md) for tool interception and permission mapping.
 
-### The Which-Home Test
+## Shared Prompt and Launchers
 
-Ask: would this rule hold for any coding agent, or only for Claude Code
-mechanics?
+`prompts/SystemPrompt.txt` carries the Lode method into launcher sessions.
+opencode also lists it in `instructions`.
+A harness that receives neither must read the file as directed by `AGENTS.md`.
 
-- Portable answer → `AGENTS.md` or `.claude/rules/`.
-- Claude-mechanics answer → `CLAUDE.md`.
+The `dotnet-reference.sh` and `dotnet-reference-go.sh` launchers use the Claude CLI with their configured endpoints.
+`dotnet-reference-oc.sh` uses the opencode CLI.
+The launcher contracts live in the script catalog, not in session policy.
 
-## Configuration Tiers
+## Maintenance Checks
 
-Three loaded layers plus a shared prompt:
+1. Assign each changed requirement to its owner.
+2. Replace references to retired files throughout skills, scripts, and Lode documents.
+3. Update `lode-map.md` when adding, moving, or removing a Lode reference.
+4. Run prose and size checks on changed Lode files.
+5. Inspect `/memory` and `/context all` in a fresh Claude Code session when validating actual loads.
+6. Inspect opencode loads before claiming identical runtime behavior.
+7. Verify script behavior with isolated fixtures before running a real external action.
 
-1. `AGENTS.md`, the portable core. Both harnesses load it.
-2. `.claude/rules/*.md`, shared domain rules. Both harnesses auto-load them.
-3. `CLAUDE.md` plus `lode/`. Claude-only overlay, and knowledge.
-4. `prompts/SystemPrompt.txt` wraps all three on both harnesses. Claude
-   wrappers inject it, and opencode loads it through `instructions`.
+Use [Instruction File Maintenance](instruction-file-maintenance.md) for evidence collection and rule retirement.
 
-## Rule File Ownership
+## Related
 
-Each instruction has exactly one owning file. Never restate it elsewhere.
-Link instead.
-
-| Content                                      | Owner                                |
-| -------------------------------------------- | ------------------------------------- |
-| `command → script` routing and script flags  | `deterministic-scripts.md`            |
-| User-phrase triggers                         | `keyword-shortcuts.md`                |
-| Context-economy behavior                     | `token-efficiency.md`                 |
-| Re-read triggers                             | `read-before-edit.md`                 |
-| Approval policy and its harness mapping      | `auto-approvals.md`                   |
-| Prose and doc style (STE)                    | `writing-style.md`                    |
-| Lode-write style (cross-harness copy)        | `prompts/SystemPrompt.txt`            |
-| Lode file conventions and privacy floor      | `prompts/SystemPrompt.txt`            |
-
-The last row is a deliberate exception to the one-owner rule.
-`writing-style.md` owns the full STE definition. Both harnesses auto-load it.
-`prompts/SystemPrompt.txt` carries the lode-write subset (STE and the dash
-ban). It reaches launcher sessions and every opencode session through
-`instructions`. Do not delete that copy as duplication. Keep the two in
-agreement when either one changes.
-
-`prompts/SystemPrompt.txt` does not hold the style checklist. It points at
-`scripts/lode-check.sh`, which runs the mechanical checks through
-`.claude/skills/tech-writing/scripts/tech-writing-lint.sh` and enforces the
-250-line limit. It also points at `.claude/skills/tech-writing/SKILL.md`, which
-lists the four judgment checks. All three paths work on any harness, so the
-prompt keeps no copy of the rules.
-
-`prompts/SystemPrompt.txt` owns the lode file conventions: the H1 title on line
-1, the italic `Updated` header line in ISO 8601 UTC on line 2, the `lode-map.md` entry
-form, and the privacy floor (no absolute home path, no email address, no
-secret, no real full name). These rules must reach every harness, so they live
-in the shared prompt file, not in a per-harness rule file.
-
-`deterministic-scripts.md` exceeds the 50-line guideline by design. It holds
-one routing table for every script. Splitting it would recreate the
-triple-duplication it replaced.
-
-All rule files are written in Simplified Technical English. See
-`.claude/rules/writing-style.md`.
-
-## Script Conventions
-
-All scripts require bash 4.0 or later and live in `scripts/`. They source
-`scripts/lib.sh` for shared functions. `lib.sh` re-execs under Homebrew Bash
-when the interpreter is older than 4.0, so macOS `/bin/bash` 3.2 does not
-matter to the caller's PATH order. The lode wrapper libraries use the same
-floor. Minimum and current versions:
-[scripts/README.md](../../scripts/README.md).
-
-`scripts/internal/precommit.sh` scans staged files for PII and secrets (see
-[secret-scanning.md](secret-scanning.md)). It also runs the shell linter over
-the staged shell files.
-
-`scripts/lint-shell.sh` is the one shell linter. It runs `shellcheck` at
-warning severity over every tracked `.sh` file. `scripts/check.sh`,
-`scripts/ci.sh`, `scripts/internal/precommit.sh`, and the CI job named
-`lint` all call it. Never add a second raw `shellcheck` call to a gate.
-The tool is required, and CI pins the version by SHA256. See
-[shellcheck-validation.md](../../.claude/rules/shellcheck-validation.md).
-
-Scripts that support `--json` must produce valid JSON output.
-`scripts/help.sh` auto-discovers all scripts by reading the second line of
-each `.sh` file. For the performance rules that every script follows, see
-[script-performance.md](script-performance.md).
-
-## Podman
-
-- Resolute-based images (`sdk:10.0-resolute`, `aspnet:10.0-resolute`), runtime installs only `curl` (healthcheck) and cleans apt caches — no FIPS provider (not available via apt on stock Ubuntu Resolute; see [podman.md](podman.md))
-- `compose.yaml` with security hardening (`read_only`, `no-new-privileges`, `cap_drop: ALL`)
-- `scripts/podman.sh` — build, run, test, stop, clean commands
-- `podman machine` as the container VM runtime on macOS (rootless, no daemon)
-- `PodmanSmokeTests` detects Podman availability via `podman info` and skips gracefully when unavailable (no test failures)
-
-## Prerequisites
-
-- `rg` (ripgrep) — used by agents, skills, and scripts for fast search
-- `fd` — used by scripts for file discovery
-- `jq` — used for JSON parsing in scripts
-- `bash` 4.0+ (Homebrew Bash on macOS) — `mapfile` and associative arrays set the floor
-- `podman` — container runtime; on macOS run `podman machine init && podman machine start` once after install
-- `jb` (JetBrains ReSharper CLI) — used by `scripts/format.sh` for semantic cleanup before `dotnet format`; gracefully skipped if absent; install with `dotnet tool install -g JetBrains.ReSharper.GlobalTools`
+- [Shell Authoring](shell-authoring.md): prerequisites, shell lint, and script discovery.
+- [Script Performance](script-performance.md): Bash contracts and verification techniques.
+- [Shipping](shipping.md): branch and history safety in the shipping script.
+- [Roslyn Navigator MCP](roslyn-navigator-mcp.md): repository-local tool configuration.
+- [Podman](podman.md): container runners and smoke checks.
+- [Project Structure](../dotnet/project-structure.md): SDK, package, and build configuration.

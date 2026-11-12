@@ -111,6 +111,12 @@ jobs:
       - name: Lint shell scripts
         run: bash scripts/lint-shell.sh
 
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ripgrep
+
+      - name: Test shipping script
+        run: bash scripts/verify-and-ship-test.sh
+
       - name: Check opencode agent mirror
         run: bash scripts/internal/opencode-agents.sh check
 

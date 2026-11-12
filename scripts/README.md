@@ -21,19 +21,20 @@ over every `.sh` file. `scripts/check.sh`, `scripts/ci.sh`,
 `scripts/internal/precommit.sh`, and the CI `lint` job all call that
 script. Never call raw `shellcheck` in a gate.
 
-Other required tools: see [tooling.md](../.claude/rules/tooling.md).
+Other required tools: see [Shell Authoring](../lode/infrastructure/shell-authoring.md).
 
 ## Core Workflow
 
-| Script               | Purpose                                                                                      | Key flags                                                                           |
-| -------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `build.sh`           | Build the solution or a specific project                                                     | `--verbose`, `--project`, `--errors`, `--warnings`, `--fix`, `--fast`               |
-| `test.sh`            | Run tests (defaults to CI category)                                                          | `--all`, `--verbose`, `--dry-run`, `--trait`, `--framework`                         |
-| `format.sh`          | Run jb cleanupcode then dotnet format                                                        | `--check`, `--changed`, `--no-jb`                                                   |
-| `check.sh`           | Composed: shell lint + format + build + test                                                 | `--all`, `--no-format`, `--json`                                                    |
-| `ci.sh`              | Full CI pipeline                                                                             | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`                 |
-| `podman.sh`          | Podman build/run/test/stop/clean                                                             | `--no-cache`                                                                        |
-| `verify-and-ship.sh` | Verify, commit, and push (format → check → version-bump → stage → precommit → commit → push) | `--message`/`-m` (required), `--json`, `--squash`, `--no-version-bump`              |
+| Script                    | Purpose                                                                                              | Key flags                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `build.sh`                | Build the solution or a specific project                                                             | `--verbose`, `--project`, `--errors`, `--warnings`, `--fix`, `--fast` |
+| `test.sh`                 | Run tests (defaults to CI category)                                                                  | `--all`, `--verbose`, `--dry-run`, `--trait`, `--framework`           |
+| `format.sh`               | Run jb cleanupcode then dotnet format                                                                | `--check`, `--changed`, `--no-jb`                                     |
+| `check.sh`                | Composed: shell lint, shipping tests (--all, if changed), format, build, test                        | `--all`, `--no-format`, `--json`                                      |
+| `ci.sh`                   | Full CI pipeline: shell lint, shipping tests, format, build, test                                    | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`   |
+| `podman.sh`               | Podman build/run/test/stop/clean                                                                     | `--no-cache`                                                          |
+| `verify-and-ship.sh`      | Ship the branch as one squashed commit (format, bump, check, squash, scan, commit, push)             | `--message`/`-m` (required), `--no-version-bump`, `--json`            |
+| `verify-and-ship-test.sh` | Test the ship script in temporary fixture repos with fake gates and a local bare remote              | none                                                                  |
 
 ## Git & Status
 

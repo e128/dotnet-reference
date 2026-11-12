@@ -1,37 +1,41 @@
-# Common Gotchas
+# Repository Gotchas
 
-Small repository-specific gotchas. Each one is a real defect class, not a
-style preference.
+## File Tools
+
+Use `rg` for content search, `fd` for file discovery, and `sd` for replacements.
+Before a bulk replacement, preview it with `sd -p`.
+When a path might be a directory, verify it is a file before reading it.
+Apply the same check to a dynamically constructed path.
+
+## Case-Sensitive Paths
+
+macOS can be case-insensitive. Linux CI uses a case-sensitive filesystem.
+Use exact filesystem casing in paths, namespaces, solution folders, and project references.
+Use `git mv` for a rename. After a rename, search for stale references in code and documentation.
+
+## Bash Interpreter
+
+Run repository scripts by their own path.
+`scripts/lib.sh` re-executes under Homebrew Bash when macOS Bash lacks the required features.
+Do not force `/bin/bash` or a login shell that selects the system Bash first.
+Shell requirements live in `lode/infrastructure/shell-authoring.md`.
+
+## Local Data
+
+Do not run inline Python.
+Fetch URLs with a fetch tool, parse JSON with `jq`, and process local data through a repository script.
 
 ## Markdown Tables
 
-Align every markdown table column. Pad each cell with trailing spaces so all
-columns share one width. Match each separator row's dashes to its column width.
-
-## Glob Before Read on an Uncertain Path
-
-When a path might be a directory, verify it is a file first. Use Glob or `ls`.
-The Read tool fails with `EISDIR` on a directory.
-
-Apply the same check to any dynamically-constructed path.
-
-## No Inline Python
-
-Never invoke `python3` from Bash.
-
-- To fetch a URL, use the fetch tool.
-- To parse JSON, use `jq` or read the output directly.
-- To process local data, use a bash script or a `scripts/*.sh` entry.
+Align every column. Pad cells to a shared width and match each separator to its column width.
 
 ## Terminal Output
 
-Emit UTF-8 with Unicode 15.0 and color font support. The .NET default is
-UTF-8. Never downgrade to ASCII. Emoji and multi-byte characters are valid in
-CLI output. Do not assume the terminal lacks color emoji support.
+Keep UTF-8 and Unicode 15.0 support. Do not downgrade output to ASCII.
+Emoji and multibyte characters are valid CLI output.
 
 ## Working Files
 
-Write scratch files to `.claude/tmp/`. Never write to `/tmp`. Lode scraps go
-in `lode/tmp/`.
-
-Never write an absolute user profile path. Use `~` or a repo-relative path.
+Use the harness scratchpad for session-only files when one is available.
+Use `.claude/tmp/` for repository-local probes and `lode/tmp/` for Lode scraps. Do not use `/tmp`.
+In repository prose, use `~` or a repository-relative path instead of an absolute user profile path.

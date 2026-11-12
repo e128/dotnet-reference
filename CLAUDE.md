@@ -1,20 +1,13 @@
-# Project Instructions for Claude
-
-*Last updated: 2026-08-27T14:50:41Z*
+# Claude Code Instructions
 
 @AGENTS.md
 
-This file adds only Claude Code mechanics. Portable content lives in
-`AGENTS.md` and `.claude/rules/*.md`. Tier structure and the which-home test:
-[lode/infrastructure/claude-code-maintenance.md](lode/infrastructure/claude-code-maintenance.md).
+## Claude Code Mechanics
 
-## Claude Code-Only Rules
-
-- Explain with a diagram when prose is harder to follow. Use Mermaid diagrams.
 - Use `AskUserQuestion` for structured questions, never inline.
-- Put config in `.claude/` at project level, not `~/.claude/` at global level.
-- Guardrail hooks live in `.claude/hooks/`. opencode enforcement lives in
-  `opencode.json` permissions.
+- Put project configuration in `.claude/`, not user-level configuration.
+- Guardrail hooks live in `.claude/hooks/`. opencode uses `.opencode/plugins/` and `opencode.json` permissions.
 
-<!-- repository-setup:import -->
-@.claude/setup-guidance.md
+Portable policy lives in `AGENTS.md` and `.claude/rules/`.
+Task-specific reference pointers live in `AGENTS.md`. Use them before editing their subject.
+The harness layout lives in [Harness Maintenance](lode/infrastructure/claude-code-maintenance.md).

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Combined CI pipeline: shell lint + format + build + test.
+# Combined CI pipeline: shell lint + shipping tests + format + build + test.
 # Usage: ci.sh [--skip-format] [--skip-build] [--skip-test] [--json]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -26,6 +26,14 @@ if "$SCRIPTS/lint-shell.sh" > /dev/null 2>&1; then
     RESULTS[shell]="ok"
 else
     RESULTS[shell]="fail"
+    EXIT=1
+fi
+
+# Step 1b: Shipping tests
+if "$SCRIPTS/verify-and-ship-test.sh" > /dev/null 2>&1; then
+    RESULTS[shell_tests]="ok"
+else
+    RESULTS[shell_tests]="fail"
     EXIT=1
 fi
 
@@ -62,14 +70,14 @@ fi
 
 if [[ "$JSON" == true ]]; then
     printf '{"status":"%s"' "$([ $EXIT -eq 0 ] && echo ok || echo fail)"
-    for step in shell format build test; do
+    for step in shell shell_tests format build test; do
         if [[ -n "${RESULTS[$step]+x}" ]]; then
             printf ',"%s":"%s"' "$step" "${RESULTS[$step]}"
         fi
     done
     printf '}\n'
 else
-    for step in shell format build test; do
+    for step in shell shell_tests format build test; do
         if [[ -n "${RESULTS[$step]+x}" ]]; then
             if [[ "${RESULTS[$step]}" == "ok" ]]; then
                 ok "$step"

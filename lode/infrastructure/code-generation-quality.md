@@ -1,5 +1,5 @@
 # Code Generation Quality with Claude Code
-*Updated: 2026-11-08T13:10:01Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
@@ -7,23 +7,24 @@ Mechanisms in this repo that drive better AI code generation, ranked by impact.
 
 Deny-by-default `.globalconfig` with multiple analyzer packages means Claude writes "close enough" code and `dotnet build` immediately reports what is wrong. `TreatWarningsAsErrors=true` means nothing slips through as a warning. The AI iterates against compiler output, not instructions it might forget.
 
-## 2. CLAUDE.md and AGENTS.md: Always-Loaded Rules
+## Startup Instructions
 
-CLAUDE.md is short and imports AGENTS.md, the portable cross-harness
-rule file. Both load every turn. AGENTS.md holds the high-frequency rules
-that prevent the most common AI mistakes.
-- "Never run raw `dotnet test`": prevents broken commands.
-- "Implicit usings disabled": forces explicit `using` directives.
-- "Assert.Fail for stubs": consistent TDD pattern.
-- "Never use `!` to silence nullability": prevents the most common bad fix.
+`CLAUDE.md` imports the portable `AGENTS.md` session policy.
+The core files under `.claude/rules/` load on both supported harnesses.
+Task-specific reference loads through the conditional pointers in `AGENTS.md`, not through the core glob.
 
-## 3. Contextual Rules (`.claude/rules/`)
+## Core Contracts
 
-Always loaded on both harnesses. Most impactful:
-- `dotnet-anti-patterns.md`: 4 rules preventing top .NET mistakes (`DateTime.Now`, `new HttpClient()`, `async void`, sync-over-async)
-- `quality-gates.md`: format before check, no analyzer suppressions
-- `read-before-edit.md`: prevents editing stale file contents after format. It defines the re-read triggers.
-- `token-efficiency.md`: "use scripts, not raw commands" reduces wasted turns
+- `quality-gates.md`: canonical verification, test completion, and diagnostic safety.
+- `security.md`: privacy, configuration boundaries, and pooled-buffer zeroing.
+- `read-before-edit.md`: file-read requirements and invalidation triggers.
+- `deterministic-scripts.md`: command routing and backend script contracts.
+- `auto-approvals.md`: approval based on actions rather than wrapper paths.
+- `token-efficiency.md`: result reuse and context economy.
+
+C# idioms and time, HTTP, and async contracts live in `lode/dotnet/csharp-conventions.md`.
+Test authoring and investigation live in `lode/dotnet/testing.md`.
+The test execution order lives in `AGENTS.md` Workflow.
 
 ## 4. Scripts as Correct Commands
 
@@ -47,7 +48,8 @@ The `dotnet-overhaul` skill breaks complex tasks into discrete steps with explic
 
 ## 9. Lode as Domain Knowledge
 
-`lode/dotnet/testing.md` has the exact `dotnet test` syntax. `lode/dotnet/analyzers.md` explains CA2007 scoping. Claude reads these before writing code in those areas. Pre-researched answers prevent guessing.
+`lode/dotnet/testing.md` describes the test-script contract. `lode/dotnet/analyzers.md` explains analyzer scoping.
+Read the relevant reference before editing its subject.
 
 ## 10. Test-Specific Analyzer Overrides
 
@@ -61,7 +63,7 @@ Make the right thing automatic and the wrong thing fail loudly:
 2. Right commands are one script call away (scripts)
 3. Style is normalized automatically (format)
 4. Defaults are correct centrally (props/targets)
-5. Domain knowledge is pre-loaded (lode + rules)
+5. Domain knowledge has task-specific pointers in `AGENTS.md`
 
 The repo is a **compiler-enforced style guide**: Claude iterates against errors, not instructions.
 

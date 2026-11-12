@@ -1,6 +1,6 @@
 # Analyzer Testing
 
-*Updated: 2026-11-11T13:23:09Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 How a test drives an analyzer and a code fix. The harness types live in
 `Microsoft.CodeAnalysis.CSharp.Testing`. The repo wrapper lives in
@@ -142,7 +142,7 @@ confirm the test count in the run output.
 
 ## Related
 
-- [New Analyzer Checklist](new-analyzer-checklist.md): registration and gates
+- [New Analyzer Checklist](new-analyzer-checklist.md): pitfalls and gates
 - [Analyzer Configuration](configuration.md): the option the test supplies
 - [Code Fix Patterns](code-fix-patterns.md): the fix a test drives
 - [.NET Testing](../testing.md): runner, categories, conventions

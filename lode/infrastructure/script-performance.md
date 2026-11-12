@@ -1,5 +1,5 @@
 # Script Performance
-*Updated: 2026-11-01T20:54:56Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 Rules for the bash scripts in `scripts/`. The scripts run on macOS and on Linux
 CI. Both hosts pay a high price for a new process. The rules below remove that
@@ -243,5 +243,4 @@ when it stops holding.
   catalog
 - [deterministic-scripts.md](../../.claude/rules/deterministic-scripts.md): the
   command routing table
-- [shellcheck-validation.md](../../.claude/rules/shellcheck-validation.md): the
-  shell linter and where the gate runs
+- [Shell Authoring](shell-authoring.md): the shell linter and gate locations.

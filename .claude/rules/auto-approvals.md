@@ -1,91 +1,52 @@
-# Auto-Approvals
+# Action Approval
 
-This file states the approval policy. Each harness enforces the same policy in
-its own config. Keep both configs in agreement when this policy changes:
+Apply approval to the action, not its filename, script wrapper, skill, or agent.
+A script inherits the approval tier of every action it performs.
+Routing and read-before-edit requirements still apply to approved actions.
 
-- Claude Code: `permissions.allow`, `permissions.ask`, and `permissions.deny`
-  in `.claude/settings.json`
-- opencode: the `permissions` array and `policies` in `opencode.json`
+## Denied Actions
 
-Every action falls into one of three tiers.
-
-| Tier  | Meaning                 | Claude Code   | opencode                       |
-| ----- | ----------------------- | ------------- | ------------------------------ |
-| auto  | Runs without a prompt   | `allow`       | base policy of allow           |
-| ask   | Prompts first           | `ask`         | `effect` of `ask`              |
-| deny  | Always refused          | `deny`        | `policies` with `tool.use`     |
-
-## Precedence
-
-Claude Code evaluates `deny`, then `ask`, then `allow`. Rule specificity never
-changes that order, so a broad deny blocks a narrower allow.
-
-opencode evaluates the `permissions` array in order, and the last matching rule
-wins. A statement in `policies` outranks the array and can only tighten a
-decision. Use a `tool.use` policy for the deny tier.
-
-The base posture still differs between the harnesses. Claude Code denies an
-unlisted Bash command by default. opencode allows every action by default. That
-difference is a harness mechanic, not a policy choice. The tiers below are the
-part both harnesses share.
-
-## Deny Tier
-
-These actions destroy shared history or uncommitted work.
-
-- `git push --force`
-- `git push -f`
+- `git push --force` and `git push -f`
 - `git reset --hard`
 
-## Ask Tier
+These actions can destroy shared history or uncommitted work. Do not invoke them through another script or session.
 
-These actions reach outside the working copy or rewrite local history.
+## Confirmation Requirements
 
-- `git push`
-- `gh pr create`
-- `gh release create`
-- `git clean -fd`
-- `git rebase`
+Get approval before these actions:
+
+- `git push`, `gh pr create`, or `gh release create`
+- `git clean -fd`, `git rebase`, or other history rewrites
 - Editing `.claude/settings.json`
+- An analyzer suppression, including `#pragma`, `[SuppressMessage]`, or a severity downgrade
+- Deleting a file outside `lode/`, deleting a significant code block, or changing a public API signature
 
-`git push --force` also matches the `git push` ask rule. The deny rule wins on
-both harnesses, so a force push never reaches a prompt.
+An explicit `/yeet` invocation authorizes one push and one PR creation for the current branch.
+It does not authorize force pushes or other restricted actions.
+Preserve already pushed commits. Approval to ship does not authorize rewriting shared history.
 
-**Exception.** The user who invokes `/yeet` authorizes one `git push` and one
-`gh pr create` for the current branch. The skill runs both without a prompt.
-This exception never covers a force push or any other ask-tier action.
+## Preapproved Actions
 
-## Auto Tier
+These actions need no additional confirmation:
 
-Apply these changes silently. They never require user confirmation:
+- Read-only file, search, and shell calls that follow the routing table
+- Formatting fixes, unused `using` removal, namespace declarations, and `using` sorting
+- Adding a missing test category trait
+- Read-only subagent work
+- Scratch writes in the harness scratchpad or `.claude/tmp/`
+- Lode writes and timestamp updates after verification
 
-- Removing an unused `using` statement (IDE0005)
-- `dotnet format` whitespace and formatting fixes
-- Lode timestamp updates
-- Adding a missing file-scoped namespace declaration
-- Sorting `using` directives
-- Adding `[Trait("Category", "CI")]` to a test method that lacks it
-- Running a read-only shell command: `git diff`, `git log`, `git status`,
-  `ls`, `wc`
-- Running any `scripts/*.sh` or `scripts/internal/*.sh`
-- Spawning a read-only agent
-- Writing to `.claude/tmp/`
-- Creating, updating, or deleting a file inside `lode/`. Deletion requires the
-  file to be git-committed with no uncommitted changes.
+Delete a Lode file only when it is committed and has no uncommitted changes.
+Inside a skill or agent, do not request approval for preapproved calls.
+A script that pushes, creates a PR, deletes protected content, or rewrites history still requires the relevant approval.
 
-## Withheld Approval
+## Harness Enforcement
 
-These actions require explicit approval and belong to neither tier above:
+Claude Code permissions live in `.claude/settings.json`. opencode permissions and policies live in `opencode.json`.
+Keep their action tiers in agreement when changing enforcement.
+Claude Code evaluates deny, ask, then allow. opencode evaluates permissions in order, with the last match winning.
+opencode policies can tighten the permission decision.
 
-- Any analyzer suppression (`#pragma`, `[SuppressMessage]`)
-- Deleting a file outside `lode/`, or deleting a significant code block
-- Changing a public API signature
-
-## Guardrails
-
-`.claude/hooks/block-raw-git` and `.claude/hooks/block-raw-commands` enforce the
-deterministic script routing at execution time. The plugin
-`.opencode/plugins/e128-guardrails/index.ts` runs the same scripts on
-opencode, so both harnesses share one decision. The CI job named `lint`
-fails when the plugin names a hook script that does not exist. See
-[lode/infrastructure/opencode-guardrails.md](../../lode/infrastructure/opencode-guardrails.md).
+The raw-command hooks enforce routing, not every action inside a script.
+Script guards must enforce their own branch and failure boundaries.
+See [opencode Guardrails](../../lode/infrastructure/opencode-guardrails.md) for the mapping and configuration contract.

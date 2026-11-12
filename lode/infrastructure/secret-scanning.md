@@ -1,5 +1,5 @@
 # Secret Scanning
-*Updated: 2026-11-10T14:10:59Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 The repository scans for secrets with gitleaks in two places: locally before each commit, and in CI over the full git history. Both use the default gitleaks ruleset plus the allowlist in `.gitleaks.toml`.
 
@@ -9,7 +9,7 @@ The repository scans for secrets with gitleaks in two places: locally before eac
 
 - Output is redacted, so a secret never reaches the log.
 - When `gitleaks` is not installed, the script prints a warning and skips the secret scan. The home path and email checks still run.
-- `gitleaks` is an optional tool. See `.claude/rules/tooling.md` for the install command.
+- `gitleaks` is an optional tool. See [Shell Authoring](shell-authoring.md) for the installation command.
 
 ## CI Scan
 
