@@ -40,6 +40,36 @@ public sealed class GeneratedRegexE128AnalyzerTests
                              """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_WithOptionsOnly_NoTimeout_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>("""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [{|E128011:GeneratedRegex(@"\d+", RegexOptions.ExplicitCapture)|}]
+                                 private static partial Regex DigitsOnly { get; }
+
+                                 private static partial Regex DigitsOnly { get => new(@"\d+", RegexOptions.ExplicitCapture); }
+                             }
+                             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_PartialPropertyWithoutImplementation_StillFires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>("""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [{|E128011:GeneratedRegex(@"\d+", RegexOptions.ExplicitCapture)|}]
+                                 private static partial Regex {|CS9248:DigitsOnly|} { get; }
+                             }
+                             """);
+    }
+
     #endregion E128011 — Fires
 
     #region E128011 — Does not fire

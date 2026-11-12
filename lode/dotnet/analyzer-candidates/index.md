@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-12T01:47:00Z*
+*Updated: 2026-11-12T02:18:06Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -215,3 +215,9 @@ Nushell or Markdown capture stays in the pugworks ledger.
 > **Why**: ExistsInside and ResolveInside both resolve links, so a collision loop sees a name taken by an escaping symlink as free and the later ResolveInside throws instead of advancing the suffix. FilePathContainment.IsOccupied answers the name-picker question.
 > **Source**: `correction 2026-11-11T16:38:12Z`, occurrence 1 of 3
 
+### Captured: Never write a probe or scratch class into real library code; analyzer probes belong in dotnet-reference tests (1/3): score pending
+> **Key**: `never-write-a-probe-or-scratch-class-into-real-library-code-a`
+> **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: Never write a probe or scratch class into real library code; analyzer probes belong in dotnet-reference tests
+> **Why**: pugworks is only a client of the E128 analyzers. A scratch class in src/ ships in the library if forgotten, and it puts analyzer research in the wrong repo. Put the probe in dotnet-reference as a unit test instead.
+> **Source**: `correction 2026-11-12T02:18:06Z`, occurrence 1 of 3
