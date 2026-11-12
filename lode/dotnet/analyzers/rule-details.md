@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-09T23:44:15Z*
+*Updated: 2026-11-12T01:47:01Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -55,7 +55,7 @@ Flags `Rent(arg)` calls on pool types (`ArrayPool<T>`, `StringBuilderPool`, or a
 
 `PoolRentCapacityGuardCodeFixProvider` wraps the argument in `Math.Min`. The cap comes from the `e128_pool_rent_max_capacity` option, which defaults to 1,048,576.
 
-Rules E128109, E128110, and E128111 cover `stackalloc` limits, pooled buffer zeroing, and use after Return. See [pooled-buffer-rules.md](pooled-buffer-rules.md). Rules E128112 to E128129 come from two published guidance documents. See [analyzer-candidates.md](../analyzer-candidates.md) for the ID map and the excluded rows.
+Rules E128109, E128110, and E128111 cover `stackalloc` limits, pooled buffer zeroing, and use after Return. See [pooled-buffer-rules.md](pooled-buffer-rules.md). Rules E128112 to E128129 come from two published guidance documents. See [catalog.md](../analyzer-candidates/catalog.md) for the ID map and the excluded rows.
 
 ### E128152: Complexity ceiling
 

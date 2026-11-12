@@ -1,5 +1,5 @@
 # Implicit State Machine Rule Design
-*Updated: 2026-11-11T03:39:00Z*
+*Updated: 2026-11-12T01:47:01Z*
 
 This file details the E128218 rule in
 [implicit-state-machine-rule.md](implicit-state-machine-rule.md).
@@ -191,7 +191,7 @@ fixed text equals the input text.
   detector families, contract, and false positive budget
 - [implicit-state-machine-rule-examples.md](implicit-state-machine-rule-examples.md):
   positive and negative snippets
-- [analyzer-candidates.md](analyzer-candidates.md): candidate ledger and ID
+- [analyzer-candidates/catalog.md](analyzer-candidates/catalog.md): candidate ledger and ID
   allocation
 - [analyzers/rule-details.md](analyzers/rule-details.md): detection shape for a
   shipped rule

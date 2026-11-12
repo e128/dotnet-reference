@@ -1,5 +1,5 @@
 # Async Fire-And-Forget Sweep
-*Updated: 2026-11-11T16:29:38Z*
+*Updated: 2026-11-12T01:47:00Z*
 
 Closed 2026-11-11. No E128 rule ships from this sweep. A probe of every
 installed rule set found an owner for each async shape, and the two shapes with
@@ -48,7 +48,7 @@ diagnostic to `error`, so a fire shows as a build error.
 
 ## Related
 
-- [analyzer-candidates.md](analyzer-candidates.md): the open candidate catalog
+- [index.md](index.md): the open candidate register
 - [redundant-rules.md](analyzers/redundant-rules.md): the probe evidence
 - [rule-details-reliability-concurrency.md](analyzers/rule-details-reliability-concurrency.md):
   the shipped async rules

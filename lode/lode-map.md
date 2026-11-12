@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-12T01:47:01Z*
 
 ## Generated Docs
 
@@ -34,13 +34,17 @@
 - [aspnet-core-performance.md](dotnet/aspnet-core-performance.md): Web request path, Zstandard compression decision, request logging
 - [benchmarks.md](dotnet/benchmarks.md): BenchmarkDotNet starter project: classes, invariants, the sealing-gate gap, and the deferred comparison
 - [unsafe-code.md](dotnet/unsafe-code.md): No-unsafe-code policy, E128 rule coverage map, known gaps
-- [analyzer-candidates.md](dotnet/analyzer-candidates.md): Candidate analyzer ideas and investigation notes
 - [implicit-state-machine-rule.md](dotnet/implicit-state-machine-rule.md): E128218 contract, detector families, scope, and noise budget
 - [implicit-state-machine-rule-design.md](dotnet/implicit-state-machine-rule-design.md): Field rules, evidence, registration sketch, and test coverage
 - [implicit-state-machine-rule-examples.md](dotnet/implicit-state-machine-rule-examples.md): Positive and negative snippets with the expected report
-- [analyzer-candidates-external-sweep.md](dotnet/analyzer-candidates-external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
-- [analyzer-candidates-performance.md](dotnet/analyzer-candidates-performance.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
-- [analyzer-candidates-async.md](dotnet/analyzer-candidates-async.md): Closed async fire-and-forget sweep, every shape already owned
+
+### dotnet/analyzer-candidates/
+
+- [index.md](dotnet/analyzer-candidates/index.md): Open register for every analyzer candidate, with schema, scores, and skipped decisions
+- [catalog.md](dotnet/analyzer-candidates/catalog.md): Settled rules, rejected ideas, guidance-document rule maps, and the ID map
+- [external-sweep.md](dotnet/analyzer-candidates/external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
+- [performance-sweep.md](dotnet/analyzer-candidates/performance-sweep.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
+- [async-sweep.md](dotnet/analyzer-candidates/async-sweep.md): Closed async fire-and-forget sweep, every shape already owned
 
 ### dotnet/analyzers/
 

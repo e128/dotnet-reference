@@ -34,7 +34,7 @@
 - [x] Print warning lines when `--warnings` is set
 - [x] `scripts/lint-shell.sh` passes on both edited scripts
 - [x] Run `scripts/lode-check.sh` on every edited lode file
-- [x] Close the candidate entries in `lode/dotnet/analyzer-candidates-async.md`
+- [x] Close the candidate entries in `lode/dotnet/analyzer-candidates/async-sweep.md`
 - [x] Update the `lode-map.md` hook
 
 ## Phase 6: Gate

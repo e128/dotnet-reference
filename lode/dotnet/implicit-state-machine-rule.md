@@ -1,5 +1,5 @@
 # Implicit State Machine Rule
-*Updated: 2026-11-11T03:39:00Z*
+*Updated: 2026-11-12T01:47:01Z*
 
 E128218 flags a class or a mutable struct that uses several mutable `bool`
 members as one state. The members change together, so their valid combinations
@@ -166,7 +166,7 @@ default `Info`.
   field rules, evidence, registration, and test coverage
 - [implicit-state-machine-rule-examples.md](implicit-state-machine-rule-examples.md):
   positive and negative snippets
-- [analyzer-candidates.md](analyzer-candidates.md): candidate ledger and ID
+- [analyzer-candidates/catalog.md](analyzer-candidates/catalog.md): candidate ledger and ID
   allocation
 - [analyzers/new-analyzer-checklist.md](analyzers/new-analyzer-checklist.md):
   registration, symbol matching, and netstandard2.0 constraints

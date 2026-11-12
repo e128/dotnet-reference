@@ -1,5 +1,5 @@
 # External Analyzer Candidate Sweep
-*Updated: 2026-11-07T16:49:50Z*
+*Updated: 2026-11-12T01:47:00Z*
 
 Source: a research scroll on e128.info, snapshotted 2026-11-05. The scroll lists
 thirty defect shapes. Each was checked against the E128 set and six third-party
@@ -12,7 +12,7 @@ analyzers, the EF Core analyzers, and the ASP.NET Core diagnostics. A rule
 counts as an owner only when its description covers the shape.
 
 This file holds the recorded candidates from that sweep. The mining pass in
-[analyzer-candidates.md](analyzer-candidates.md) owns the review-driven
+[catalog.md](catalog.md) owns the review-driven
 candidates. The rule table in `src/E128.Analyzers/README.md` owns the shipped
 rule text.
 

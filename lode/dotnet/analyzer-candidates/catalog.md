@@ -1,20 +1,25 @@
-# Analyzer Candidates
-*Updated: 2026-11-11T16:29:38Z*
+# Analyzer Candidates: Settled Catalog
+*Updated: 2026-11-12T01:47:00Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
+
+This file holds the settled side of the register: which rule shipped, which idea
+was checked and rejected, and which sweep closed. Every rule ships from
+`src/E128.Analyzers`. The open side, including every candidate that waits for a
+decision, lives in [index.md](index.md).
 
 No open candidate remains from the 2026-04-15 mining pass. Each of the three
 candidates from that pass ships as a real analyzer. See the catalog table for the
 rule ID, and see `src/E128.Analyzers/README.md` for the current rule
-description. The Tier 2 table lists the candidates that wait for a real defect.
+description.
 
 The 2026-11-05 external sweep is complete. See
-[analyzer-candidates-external-sweep.md](analyzer-candidates-external-sweep.md).
+[external-sweep.md](external-sweep.md).
 The twenty-practice performance sweep shipped fifteen rules and leaves one
-extension. See [analyzer-candidates-performance.md](analyzer-candidates-performance.md).
-The async sweep closed with no rule. See [analyzer-candidates-async.md](analyzer-candidates-async.md).
+extension. See [performance-sweep.md](performance-sweep.md).
+The async sweep closed with no rule. See [async-sweep.md](async-sweep.md).
 
 The implicit state machine rule ships as E128218. See
-[implicit-state-machine-rule.md](implicit-state-machine-rule.md).
+[implicit-state-machine-rule.md](../implicit-state-machine-rule.md).
 
 - `mutable-static-readonly-array` shipped as E128061.
 - `test-reference-assemblies-tfm-mismatch` shipped as E128062.
@@ -56,8 +61,9 @@ rule description and the fix shape live in `src/E128.Analyzers/README.md`.
 | E128139         | Unsafe code | `bool` read     | `Unsafe/`          |
 | E128140-E128141 | Performance | every rule      | `Performance/`     |
 
-The unused IDs are E128095, E128130, and E128158. E128022 is retired. The next
-new rule takes E128218, after the last assigned ID.
+The unused and retired IDs follow `AnalyzerReleases.Shipped.md` and
+`AnalyzerReleases.Unshipped.md` in `src/E128.Analyzers`. Take the next free ID
+from those manifests, never from a row in this file.
 
 ## FIPS Cryptography Rules
 
@@ -168,28 +174,8 @@ rule would repeat a build failure.
 CA5359 reads the `ServicePointManager` callback only. The `HttpClientHandler`
 path stays open, so E128156 covers it.
 
-### Tier 2 Candidates
-
-These clear the same bar and wait for a real defect in review.
-
-| Rule                                                               | Check                                                          | Noise  |
-| ------------------------------------------------------------------ | -------------------------------------------------------------- | ------ |
-| Array compared by reference                                        | `==` or `object.Equals` on two arrays, except byte arrays      | Low    |
-| Discarded `Stream.Read` count                                      | read used as a statement, buffer read later                    | Low    |
-| Blocking call inside `lock`                                        | sync `Thread.Sleep`, `File`, `Stream`, or `DbCommand` call     | Low    |
-| `CollectionsMarshal.AsSpan` invalidated by a list mutation         | span read after a mutating call on the list                    | Low    |
-| `AsReadOnly()` in a property getter                                | wrapper allocated on every access                              | Low    |
-| `Array.Resize` or `Concat` in a loop                               | call reassigned to the same receiver inside the loop           | Low    |
-| CORS wildcard with credentials                                     | one chain holds `AllowAnyOrigin` and `AllowCredentials`        | Low    |
-| Antiforgery missing on a state-changing action                     | verb attribute with no antiforgery attribute in scope          | Medium |
-| Token validation flag set to constant `false`                      | six `TokenValidationParameters` flags                          | Low    |
-| `readonly` field of a mutable struct                               | defensive copy on every member call                            | Low    |
-| Floating-point loop counter                                        | `for` loop steps a `float` or `double` local                   | Low    |
-| Enum cast outside the member set                                   | constant integral to enum conversion                           | Low    |
-| Guard after the division                                           | divisor compared with zero after the division                  | Low    |
-| `[Flags]` member value that is not a power of two                  | constant collides with a lower bit                             | Low    |
-| Dead store to a private field                                      | assignment killed on every path before a read                  | Medium |
-| Loop with no exit path                                             | `while (true)` with no exit call                               | Medium |
+The sixteen Tier 2 shapes that wait for a real defect in review move with the
+open register. See [index.md](index.md).
 
 ## Checked And Rejected
 
