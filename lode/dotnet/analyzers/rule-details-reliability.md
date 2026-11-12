@@ -1,51 +1,13 @@
 # Reliability Rule Details
-*Updated: 2026-11-12T13:47:41Z*
+*Updated: 2026-11-12T14:16:45Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
 async and concurrent rules live in
 [rule-details-reliability-concurrency.md](rule-details-reliability-concurrency.md).
+The resource and lifetime rules live in
+[rule-details-reliability-resources.md](rule-details-reliability-resources.md).
 The remaining rules live in [rule-details.md](rule-details.md).
-
-### E128103: Named `HttpClient` resolve with no registration
-
-One rule reports two shapes. The first is a DI resolve with no `Add*` or
-`TryAdd*` registration in the compilation. The second is
-`IHttpClientFactory.CreateClient(name)` with no `AddHttpClient(name, ...)` in the
-compilation.
-
-The named-client shape is silent for an empty name, for the unnamed overload,
-and for a non-constant name. It reports once per name, at the first use.
-
-Two descriptors share the `E128103` id. A test harness then needs
-`MarkupOptions = MarkupOptions.UseFirstDescriptor`, or every markup test throws
-`Multiple diagnostic descriptors with ID E128103 were found`.
-
-### E128176: Event subscription that keeps the subscriber alive
-
-Severity: **Warning**. Flags an event subscription inside a disposable type
-where the handler reads the subscriber instance and no `Dispose`,
-`DisposeAsync`, or `DisposeAsyncCore` method removes the same event. The publisher holds the delegate and the delegate holds the
-subscriber, so the subscriber stays reachable after its owner drops it.
-
-**Exclusions**:
-
-- A type that implements neither `IDisposable` nor `IAsyncDisposable`. The type
-  has no cleanup site to compare against, so the remedy is a new lifetime.
-- A static handler, which holds no subscriber instance.
-- A subscription to an event on this instance, which dies with the subscriber.
-- A subscription to an event on an instance field that a dispose method disposes.
-- A handler that reads only a parameter or a local.
-- A member read on another receiver, such as `other.Field`, which does not
-  reach this instance.
-
-The rule reads the type once through `RegisterSymbolStartAction`. A partial
-type that removes the subscription in another file is therefore covered. Any
-`-=` on the same event inside a method named `Dispose` or `DisposeAsync`
-clears the report, because handler identity is not part of the check.
-
-No code fix. The removal needs a stored delegate field, and the field shape
-depends on the class.
 
 ### E128177: Record member with a mutable collection type
 
@@ -85,27 +47,6 @@ action, so a partial type is read once.
 
 No code fix. The rename choice belongs to the caller.
 
-### E128181: `HttpClient.Timeout` set to an infinite value
-
-Severity: **Warning**. Flags an assignment of `Timeout.InfiniteTimeSpan` or
-`TimeSpan.FromMilliseconds(-1)` to `HttpClient.Timeout`. A stalled server then
-holds the caller and its thread pool slot. `TimeSpan.MaxValue` is not reported,
-because the setter throws `ArgumentOutOfRangeException` for any value above
-`int.MaxValue` milliseconds.
-
-The rule reads the left side as the `Timeout` property declared on exactly
-`System.Net.Http.HttpClient`, so a user type with its own `Timeout` is silent.
-The right side must be one of the named forms. A `FromMilliseconds` argument is
-read with `GetConstantValue`, and only a constant `-1` reports. A `HasValue`
-pattern guards the constant read, so a non-constant argument cannot throw an
-analyzer exception. A computed value is skipped, because the rule cannot prove
-it is infinite.
-
-One assignment action covers an object initializer, a plain property assignment,
-and a lambda body.
-
-No code fix. A safe timeout value is a policy choice.
-
 ### E128188: Exception filter reads the message text
 
 Severity: **Warning**. Flags a `when` filter that reads `Message`,
@@ -126,31 +67,6 @@ silent.
 
 No code fix. Filter on a typed exception or a property, and read the message in
 the `catch` body.
-
-### E128189: `GCHandle` with no `Free` call
-
-Severity: **Warning**. Flags a local that stores a `GCHandle.Alloc` result in
-the same body and never calls `Free` on it. The handle pins the target object,
-so a missing `Free` keeps the object reachable and pinned. The rule also reads a
-later assignment to the same local.
-
-**Exclusions**:
-
-- A local that a method call receives, because the callee may free it.
-- A local that the body returns.
-- A local stored in a field, a property, another local, or a collection.
-- An allocation assigned directly to a field, a property, a parameter, or an
-  element.
-- A discarded allocation.
-- A compilation without `System.Runtime.InteropServices.GCHandle`, or one where
-  a user type shadows the name.
-
-The body is the nearest method, constructor, local function, accessor, or
-lambda body. A `Free` call anywhere in that body clears the report, including a
-call in a `finally` block.
-
-No code fix. The release site needs a `try`/`finally`, and the shape depends on
-the method.
 
 ### E128195: Configuration key absent from the appsettings files
 
