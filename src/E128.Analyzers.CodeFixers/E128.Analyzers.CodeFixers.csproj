@@ -19,6 +19,9 @@
     <Nullable>enable</Nullable>
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <!-- RSEXPERIMENTAL006: the union rule family writes the experimental closed keyword.
+         The maintainer approved that suppression for the union rule family. -->
+    <NoWarn>$(NoWarn);RSEXPERIMENTAL006</NoWarn>
     <IsPackable>false</IsPackable>
     <!-- PolySharp: netstandard2.0 polyfill for nullable analysis attributes only -->
     <PolySharpIncludeGeneratedTypes>

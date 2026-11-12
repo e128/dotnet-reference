@@ -12,7 +12,9 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!-- RS2007: the Roslyn 4.14.0 meta-analyzer rejects valid unshipped.md content -->
     <!-- NU5128: the package declares no dependencies, so NuGet warns that lib/netstandard2.0 has no match -->
-    <NoWarn>$(NoWarn);RS2007;NU5128</NoWarn>
+    <!-- RSEXPERIMENTAL006: the union rule family reads the typed UnionDeclarationSyntax node.
+         The maintainer approved that suppression for the union rule family. -->
+    <NoWarn>$(NoWarn);RS2007;NU5128;RSEXPERIMENTAL006</NoWarn>
     <!-- PolySharp: netstandard2.0 polyfill for nullable analysis attributes only -->
     <PolySharpIncludeGeneratedTypes>
       System.Diagnostics.CodeAnalysis.NotNullWhenAttribute;System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute
@@ -21,7 +23,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>2.9.8</Version>
+    <Version>2.10.0</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
