@@ -449,5 +449,69 @@ public sealed class GeneratedRegexE128AnalyzerTests
                              """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_ClassWithStarInsideQuantifiedGroup_NoE128014()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [GeneratedRegex(@"([-*_a])+", RegexOptions.None, 1000)]
+                                 private static partial Regex DigitsOnly();
+                                 {{PartialImpl}}
+                             }
+                             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_ClassWithPlusInsideQuantifiedGroup_NoE128014()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [GeneratedRegex(@"([a+b])+", RegexOptions.None, 1000)]
+                                 private static partial Regex DigitsOnly();
+                                 {{PartialImpl}}
+                             }
+                             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_ClassWithParenInsideQuantifiedGroup_NoE128014()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [GeneratedRegex(@"(a[(b])+", RegexOptions.None, 1000)]
+                                 private static partial Regex DigitsOnly();
+                                 {{PartialImpl}}
+                             }
+                             """);
+    }
+
     #endregion E128014 — Does not fire
+
+    #region E128013 — Does not fire (character classes)
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_ClassWithDotAndStarInsideGroup_NoE128013()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [GeneratedRegex(@"([.*])\s*", RegexOptions.None, 1000)]
+                                 private static partial Regex DigitsOnly();
+                                 {{PartialImpl}}
+                             }
+                             """);
+    }
+
+    #endregion E128013 — Does not fire (character classes)
 }

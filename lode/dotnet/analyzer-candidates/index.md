@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-12T02:18:06Z*
+*Updated: 2026-11-12T13:50:47Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -221,3 +221,10 @@ Nushell or Markdown capture stays in the pugworks ledger.
 > **Pattern**: Never write a probe or scratch class into real library code; analyzer probes belong in dotnet-reference tests
 > **Why**: pugworks is only a client of the E128 analyzers. A scratch class in src/ ships in the library if forgotten, and it puts analyzer research in the wrong repo. Put the probe in dotnet-reference as a unit test instead.
 > **Source**: `correction 2026-11-12T02:18:06Z`, occurrence 1 of 3
+
+### Captured: A member summary or code comment must state only behavior the body shows; never assert a thread-safety or pass-ordering guarantee that no code or citation backs (1/3): score pending
+> **Key**: `a-member-summary-or-code-comment-must-state-only-behavior-the`
+> **Class**: `style`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: A member summary or code comment must state only behavior the body shows; never assert a thread-safety or pass-ordering guarantee that no code or citation backs
+> **Why**: An uncited comment claim hid a divergence for a whole plan: HotelResultsParser's summary promised a per-call parser while the field was static, and an HtmlExtractor comment said every later pass read the flattened tree while the next statement read the raw HTML. A reader trusts the claim and misses the real behavior.
+> **Source**: `correction 2026-11-12T13:50:47Z`, occurrence 1 of 3
