@@ -14,6 +14,46 @@ namespace E128.Analyzers.Reliability;
 internal static class RegexLiteralFix
 {
     /// <summary>
+    ///     Reads the pattern from the first positional string argument. Returns false when the
+    ///     attribute has no such argument.
+    /// </summary>
+    internal static bool TryGetPattern(AttributeSyntax attribute, out string pattern)
+    {
+        return TryGetPatternArgument(attribute, out _, out _, out pattern);
+    }
+
+    private static bool TryGetPatternArgument(
+        AttributeSyntax attribute,
+        out AttributeArgumentSyntax firstArg,
+        out LiteralExpressionSyntax literal,
+        out string pattern)
+    {
+        literal = SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(string.Empty));
+        firstArg = attribute.ArgumentList?.Arguments.FirstOrDefault() ?? SyntaxFactory.AttributeArgument(literal);
+        pattern = string.Empty;
+        if (attribute.ArgumentList is null || !attribute.ArgumentList.Arguments.Any())
+        {
+            return false;
+        }
+
+        firstArg = attribute.ArgumentList.Arguments[0];
+        if (firstArg.NameColon is not null || firstArg.NameEquals is not null)
+        {
+            return false;
+        }
+
+        if (firstArg.Expression is not LiteralExpressionSyntax expression
+            || !expression.IsKind(SyntaxKind.StringLiteralExpression))
+        {
+            return false;
+        }
+
+        literal = expression;
+        pattern = expression.Token.ValueText;
+        return true;
+    }
+
+    /// <summary>
     ///     Applies <paramref name="rewrite" /> to the first positional string argument and returns
     ///     the document unchanged when the pattern does not change.
     /// </summary>
@@ -30,24 +70,11 @@ internal static class RegexLiteralFix
         }
 
         var attribute = (AttributeSyntax)attributeNode;
-        if (attribute.ArgumentList is null || !attribute.ArgumentList.Arguments.Any())
+        if (!TryGetPatternArgument(attribute, out var firstArg, out var literal, out var pattern))
         {
             return document;
         }
 
-        var firstArg = attribute.ArgumentList.Arguments[0];
-        if (firstArg.NameColon is not null || firstArg.NameEquals is not null)
-        {
-            return document;
-        }
-
-        if (firstArg.Expression is not LiteralExpressionSyntax literal
-            || !literal.IsKind(SyntaxKind.StringLiteralExpression))
-        {
-            return document;
-        }
-
-        var pattern = literal.Token.ValueText;
         var fixedPattern = rewrite(pattern);
         if (string.Equals(fixedPattern, pattern, StringComparison.Ordinal))
         {

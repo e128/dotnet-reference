@@ -1,5 +1,5 @@
 # Reliability Rule Details
-*Updated: 2026-11-12T14:16:45Z*
+*Updated: 2026-11-12T21:11:18Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -152,9 +152,16 @@ No code fix. The guard belongs to the caller.
 ### E128013 and E128014: `[GeneratedRegex]` quantifier heuristics
 
 Severity: **Warning**. `GeneratedRegexHelpers` scans the pattern literal of a
-`[GeneratedRegex]` attribute. `HasOverlappingQuantifiers` detects E128013, and
-`HasNestedQuantifier` detects E128014. A quantified group whose inner scan finds
-a `*` or `+` at group depth 1 reports E128014.
+`[GeneratedRegex]` attribute. `HasOverlappingQuantifiers` detects E128013,
+which risks quadratic backtracking. `HasNestedQuantifier` detects E128014
+through `FindNestedQuantifierSpan`.
+
+E128014 flags an unbounded outer quantifier (`*`, `+`, or `{n,}`) over a group
+whose inner scan finds `*` or `+` at group depth 1. A bounded `{n}` or `{n,m}`
+outer repeat is linear and stays silent. An atomic `(?>...)` group stays
+silent. A group that leads with a distinct separator atom, such as
+`(?:/[^\s:"']+)+`, also stays silent: `FirstAtomCanAlsoBeLast` exempts it when
+the first and last consuming atoms cannot match the same text.
 
 Both scans treat character class contents as literals. `BuildCharacterClassMask`
 marks every index inside a `[...]` class in one pass, and each scan skips masked
@@ -165,10 +172,14 @@ quantifier inside a class, such as the `*` in `([-*_a])+`, never reports.
 
 - A positive class that holds whitespace, such as `[ ]`, counts as disjoint
   from `\s`, so the overlap check can miss a true positive.
+- `FirstAtomCanAlsoBeLast` compares atom tokens without expanding class
+  contents. A class that can match the other atom can exempt a group.
 - The heuristics are string scans, not a pattern parse. No public
   `RegexParser` API exists, so a full parse is not available.
 
-No code fix.
+Both rules have code fixes. The fix helpers reuse the analyzer detection so the
+rewrite targets the reported element. See
+[code-fix-output.md](code-fix-output.md) for the literal rewrite rules.
 
 ## Related
 

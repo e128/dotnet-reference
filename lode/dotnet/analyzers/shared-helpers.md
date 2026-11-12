@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-12T15:07:30Z*
+*Updated: 2026-11-12T21:11:18Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -79,6 +79,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `FixSyntax.LineBreak` | Returns the end-of-line trivia of the member, or `\n`. |
 | `ReadOnlyCollectionFix.AppendAsReadOnlyAsync` | Appends `.AsReadOnly()` to a returned collection and keeps its trivia. |
 | `DiRegistrationFix.RewriteToGenericAsync` | Rewrites a DI registration to the two-type-argument overload. A null method name keeps the existing name. |
+| `RegexLiteralFix.TryGetPattern` | Reads the pattern value from the first positional string argument of a `GeneratedRegex` attribute. |
 | `RegexLiteralFix.ApplyRewriteAsync` | Applies a pattern rewrite to a `GeneratedRegex` literal and re-emits it with quotes and escapes. |
 
 ## Invariants

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
@@ -11,9 +12,6 @@ namespace E128.Analyzers.Reliability;
 [Shared]
 public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProviderBase
 {
-    // The length of the escaped whitespace class: a backslash and the letter s.
-    private const int EscapedClassLength = 2;
-
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [GeneratedRegexAnalyzer.OverlappingQuantifierDiagnosticId];
 
@@ -22,7 +20,9 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not AttributeSyntax)
+        if (node is not AttributeSyntax attribute
+            || !RegexLiteralFix.TryGetPattern(attribute, out var pattern)
+            || string.Equals(RemoveOverlappingWhitespaceQuantifier(pattern), pattern, StringComparison.Ordinal))
         {
             return Task.CompletedTask;
         }
@@ -32,188 +32,40 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
         return Task.CompletedTask;
     }
 
+    // Detection mirrors the analyzer scan, so the rewrite targets the element the
+    // diagnostic reports. A required '\s+' collapses to a bare '\s', which keeps the
+    // separator. An optional '\s*' goes away with its whole token.
     internal static string RemoveOverlappingWhitespaceQuantifier(string pattern)
     {
-        for (var i = 0; i < pattern.Length - EscapedClassLength; i++)
+        var inClass = GeneratedRegexHelpers.BuildCharacterClassMask(pattern);
+        for (var i = 0; i < pattern.Length - GeneratedRegexHelpers.WhitespaceEscapeLength; i++)
         {
-            var qEnd = FindWhitespaceQuantifierEnd(pattern, i);
-            if (qEnd < 0)
+            if (inClass[i])
             {
                 continue;
             }
 
-            if (HasOverlappingElementForward(pattern, qEnd) || HasOverlappingElementBackward(pattern, i))
+            var quantifierEnd = GeneratedRegexHelpers.WhitespaceQuantifierEnd(pattern, i);
+            if (quantifierEnd < 0)
             {
-                return pattern.Substring(0, i) + pattern.Substring(qEnd);
+                continue;
+            }
+
+            if (GeneratedRegexHelpers.HasOverlappingElementAfter(pattern, quantifierEnd)
+                || GeneratedRegexHelpers.HasOverlappingElementBefore(pattern, i))
+            {
+                return RewriteWhitespaceQuantifier(pattern, i, quantifierEnd);
             }
         }
 
         return pattern;
     }
 
-    // Returns the index after a `\s*` or `\s+` quantifier (with an optional lazy `?`) that starts at
-    // the index, or -1 when no such quantifier starts there.
-    private static int FindWhitespaceQuantifierEnd(string pattern, int index)
+    private static string RewriteWhitespaceQuantifier(string pattern, int backslashIndex, int quantifierEnd)
     {
-        if (pattern[index] is not '\\' || pattern[index + 1] is not 's')
-        {
-            return -1;
-        }
-
-        var qEnd = index + EscapedClassLength;
-        if (qEnd >= pattern.Length || pattern[qEnd] is not ('*' or '+'))
-        {
-            return -1;
-        }
-
-        qEnd++;
-        if (qEnd < pattern.Length && pattern[qEnd] is '?')
-        {
-            qEnd++;
-        }
-
-        return qEnd;
-    }
-
-    private static bool HasOverlappingElementForward(string pattern, int index)
-    {
-        if (index >= pattern.Length)
-        {
-            return false;
-        }
-
-        var ch = pattern[index];
-
-        return (ch is '.' && index + 1 < pattern.Length && pattern[index + 1] is '*' or '+')
-               || (ch is '(' && ContainsDotQuantifierInGroup(pattern, index));
-    }
-
-    private static bool HasOverlappingElementBackward(string pattern, int backslashIndex)
-    {
-        if (backslashIndex is 0)
-        {
-            return false;
-        }
-
-        var prevIdx = backslashIndex - 1;
-        if (pattern[prevIdx] is '?')
-        {
-            if (prevIdx is 0)
-            {
-                return false;
-            }
-
-            prevIdx--;
-        }
-
-        var prev = pattern[prevIdx];
-
-        if (IsQuantifierPrecededBy(pattern, prev, prevIdx, '.'))
-        {
-            return true;
-        }
-
-        if (prev is ')')
-        {
-            return IsDotQuantifierGroupClosedAt(pattern, prevIdx);
-        }
-
-        return IsQuantifierPrecededBy(pattern, prev, prevIdx, ')')
-            && IsDotQuantifierGroupClosedAt(pattern, prevIdx - 1);
-    }
-
-    private static bool IsQuantifierPrecededBy(string pattern, char prev, int prevIdx, char expected)
-    {
-        return prev is '*' or '+' && prevIdx > 0 && pattern[prevIdx - 1] == expected;
-    }
-
-    private static bool IsDotQuantifierGroupClosedAt(string pattern, int closeIndex)
-    {
-        var openParen = FindMatchingOpenParen(pattern, closeIndex);
-        return openParen >= 0 && ContainsDotQuantifierInGroup(pattern, openParen);
-    }
-
-    private static bool ContainsDotQuantifierInGroup(string pattern, int openParenIndex)
-    {
-        if (openParenIndex < 0)
-        {
-            return false;
-        }
-
-        var skipNext = false;
-        var depth = 0;
-        for (var j = openParenIndex; j < pattern.Length; j++)
-        {
-            if (skipNext)
-            {
-                skipNext = false;
-                continue;
-            }
-
-            var ch = pattern[j];
-            if (ch is '\\')
-            {
-                skipNext = true;
-                continue;
-            }
-
-            depth += GroupDepthDelta(ch);
-            if (ch is ')' && depth is 0)
-            {
-                return false;
-            }
-
-            if (IsDotQuantifierAt(pattern, j, depth))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static int GroupDepthDelta(char ch)
-    {
-        return ch switch
-        {
-            '(' => 1,
-            ')' => -1,
-            _ => 0
-        };
-    }
-
-    private static bool IsDotQuantifierAt(string pattern, int index, int depth)
-    {
-        return pattern[index] is '.'
-               && depth is 1
-               && index + 1 < pattern.Length
-               && pattern[index + 1] is '*' or '+' or '?';
-    }
-
-    private static int FindMatchingOpenParen(string pattern, int closeIndex)
-    {
-        var depth = 0;
-        for (var j = closeIndex; j >= 0; j--)
-        {
-            if (j > 0 && pattern[j - 1] is '\\')
-            {
-                continue;
-            }
-
-            if (pattern[j] is ')')
-            {
-                depth++;
-            }
-            else if (pattern[j] is '(')
-            {
-                depth--;
-                if (depth is 0)
-                {
-                    return j;
-                }
-            }
-        }
-
-        return -1;
+        var quantifierIndex = backslashIndex + GeneratedRegexHelpers.WhitespaceEscapeLength;
+        return pattern[quantifierIndex] is '+'
+            ? pattern.Substring(0, quantifierIndex) + pattern.Substring(quantifierEnd)
+            : pattern.Substring(0, backslashIndex) + pattern.Substring(quantifierEnd);
     }
 }

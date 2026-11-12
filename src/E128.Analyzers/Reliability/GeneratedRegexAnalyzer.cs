@@ -36,8 +36,8 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor OverlappingQuantifierRule = new(
         OverlappingQuantifierDiagnosticId,
-        "[GeneratedRegex] pattern has overlapping quantifiers that risk catastrophic backtracking",
-        "[GeneratedRegex] pattern contains '\\s*' or '\\s+' adjacent to a quantifier with overlapping character set (e.g., '.*', '.+') — this causes exponential backtracking",
+        "[GeneratedRegex] pattern has overlapping quantifiers that risk quadratic backtracking",
+        "[GeneratedRegex] pattern contains '\\s*' or '\\s+' adjacent to a quantifier with overlapping character set (e.g., '.*', '.+') — this causes quadratic backtracking",
         "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);

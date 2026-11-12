@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Threading.Tasks;
@@ -19,8 +20,11 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not AttributeSyntax)
+        if (node is not AttributeSyntax attribute
+            || !RegexLiteralFix.TryGetPattern(attribute, out var pattern)
+            || string.Equals(RemoveOuterQuantifier(pattern), pattern, StringComparison.Ordinal))
         {
+            // This shape has no language-preserving one-token rewrite, so no action is offered.
             return Task.CompletedTask;
         }
 
@@ -29,117 +33,30 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
         return Task.CompletedTask;
     }
 
+    // A single-atom body makes the outer quantifier redundant, so the rewrite removes it
+    // and the diagnostic clears. Any other body keeps the language with an equivalent
+    // unbounded brace repeat. An unbounded brace outer quantifier has no
+    // language-preserving one-token rewrite and stays flagged.
     internal static string RemoveOuterQuantifier(string pattern)
     {
-        var skipNext = false;
-        for (var i = 0; i < pattern.Length; i++)
+        if (GeneratedRegexHelpers.FindNestedQuantifierSpan(pattern) is not { } span)
         {
-            if (skipNext)
-            {
-                skipNext = false;
-                continue;
-            }
-
-            if (pattern[i] == '\\')
-            {
-                skipNext = true;
-                continue;
-            }
-
-            if (pattern[i] != '(')
-            {
-                continue;
-            }
-
-            var closeIndex = FindMatchingCloseParen(pattern, i);
-            if (closeIndex < 0)
-            {
-                continue;
-            }
-
-            var afterClose = closeIndex + 1;
-            if (afterClose >= pattern.Length || pattern[afterClose] is not ('*' or '+'))
-            {
-                continue;
-            }
-
-            if (GroupContainsInnerQuantifier(pattern, i, closeIndex))
-            {
-                return pattern.Substring(0, afterClose) + pattern.Substring(afterClose + 1);
-            }
+            return pattern;
         }
 
-        return pattern;
-    }
-
-    private static bool GroupContainsInnerQuantifier(string pattern, int openIndex, int closeIndex)
-    {
-        var skipNext = false;
-        var depth = 0;
-        for (var j = openIndex; j <= closeIndex; j++)
+        var quantifierIndex = span.QuantifierIndex;
+        if (pattern[quantifierIndex] is '{')
         {
-            if (skipNext)
-            {
-                skipNext = false;
-                continue;
-            }
-
-            var ch = pattern[j];
-            if (ch == '\\')
-            {
-                skipNext = true;
-                continue;
-            }
-
-            if (ch == '(')
-            {
-                depth++;
-            }
-            else if (ch == ')')
-            {
-                depth--;
-            }
-            else if (ch is '*' or '+' && depth is 1)
-            {
-                return true;
-            }
+            return pattern;
         }
 
-        return false;
-    }
-
-    private static int FindMatchingCloseParen(string pattern, int openIndex)
-    {
-        var depth = 0;
-        var skipNext = false;
-        for (var j = openIndex; j < pattern.Length; j++)
+        if (span.SingleAtomBody)
         {
-            if (skipNext)
-            {
-                skipNext = false;
-                continue;
-            }
-
-            if (pattern[j] == '\\')
-            {
-                skipNext = true;
-                continue;
-            }
-
-            if (pattern[j] == '(')
-            {
-                depth++;
-            }
-            else if (pattern[j] == ')')
-            {
-                depth--;
-                if (depth is 0)
-                {
-                    return j;
-                }
-            }
+            return pattern.Remove(quantifierIndex, span.QuantifierLength);
         }
 
-        return -1;
+        var lazy = span.QuantifierLength > 1 && pattern[quantifierIndex + 1] is '?';
+        var replacement = string.Concat(pattern[quantifierIndex] is '*' ? "{0,}" : "{1,}", lazy ? "?" : string.Empty);
+        return pattern.Substring(0, quantifierIndex) + replacement + pattern.Substring(quantifierIndex + span.QuantifierLength);
     }
 }
