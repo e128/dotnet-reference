@@ -1,5 +1,5 @@
 # .NET 11 Testing
-*Updated: 2026-11-10T22:47:34Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -39,7 +39,7 @@ Test `.csproj` files only need `<IsTestProject>true</IsTestProject>`, everything
 
 ## Running Tests
 
-### Via scripts (preferred)
+### Test Scripts
 
 ```bash
 # CI tests (default, filters to Category=CI)
@@ -64,13 +64,12 @@ scripts/test.sh --json
 scripts/test.sh --all --framework net11.0
 ```
 
-### Via dotnet test (raw)
+### MTP Arguments
 
-```bash
-dotnet test --solution E128.Reference.slnx -- --filter-trait "Category=CI"
-```
-
-The `--` separator passes arguments to MTP. `--filter` (VSTest syntax) does not work, use `-- --filter-trait` instead.
+The scripts pass arguments to MTP through the `--` separator.
+Use `scripts/test.sh --trait` for a trait filter. VSTest `--filter` syntax does not work.
+Use `scripts/coverage.sh` for coverage collection. Agent commands do not invoke the raw runner.
+The execution gate lives in [Quality Gates](../../.claude/rules/quality-gates.md).
 
 `--filter-class` matches the fully qualified class name. A short name matches
 nothing. `scripts/test.sh` expands a name without a dot to a suffix wildcard,
@@ -123,13 +122,23 @@ Minimal `.csproj` template (all versions from CPM):
 
 `Microsoft.Testing.Extensions.HangDump` and `Microsoft.Testing.Extensions.TrxReport` are added to projects that need hang diagnostics and TRX CI reporting. Every test project receives `Microsoft.Testing.Extensions.CodeCoverage` from `tests/Directory.Build.targets`. See [Code Coverage](code-coverage.md).
 
-## Conventions
+## Test Authoring
 
-- Test naming: `MethodName_ExpectedBehavior_WhenCondition` (e.g., `GreetAsync_ReturnsGreeting_WithDefaultName`)
-- No reflection in tests, use `internal` + `InternalsVisibleTo`
-- RED phase stubs use `Assert.Fail("message")`
-- No net48 rule: code and tests target .NET 11 and `netstandard2.0` only (AGENTS.md)
-- Every test method has `[Trait("Category", "CI")]` (or appropriate category)
+- Name tests `MethodName_ExpectedBehavior_WhenCondition`, for example `GreetAsync_ReturnsGreeting_WithDefaultName`.
+- Add a test to the class that already covers the behavior. Create a file only for a new unit under test.
+- Expose test-only members with `internal` and `[InternalsVisibleTo]`. Reflection bypasses access checks and breaks under renaming.
+- If reflection is genuinely required, explain why in a comment.
+- Give every test method an appropriate category trait, normally `[Trait("Category", "CI")]`.
+
+The authoring and execution order lives in [AGENTS.md](../../AGENTS.md) Workflow.
+The placeholder assertion rules, nonzero test-count check, and disabled-test policy live in
+[Quality Gates](../../.claude/rules/quality-gates.md).
+
+## Target Changes
+
+Before changing `<TargetFramework>`, run `dotnet --list-sdks` and confirm the target SDK is installed.
+A missing target SDK fails the local build. CI uses its pinned SDK and a case-sensitive Linux filesystem.
+The supported targets live in [AGENTS.md](../../AGENTS.md) .NET Constraints.
 
 ## Related
 

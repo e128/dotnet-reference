@@ -1,7 +1,9 @@
 # New Analyzer Checklist
-*Updated: 2026-11-03T03:14:55Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
+Registration steps, analysis API choice, code fixes, the package README, and
+test layout live in [authoring.md](authoring.md).
 
 ## Decide Before You Write It
 
@@ -19,19 +21,6 @@ changes the registration, not the message text.
    forbids it, such as a generic constraint, an override, or a partial type.
 5. Does the fix read a table that this analyzer owns? Declare the table here
    as `internal static readonly`. Never copy it into the fix provider.
-
-## Rule Registration
-
-- `DiagnosticId` is an `internal const string` on the analyzer class. The value
-  is unique and continues the last assigned number.
-- Add the rule to `src/E128.Analyzers/AnalyzerReleases.Unshipped.md`. See
-  [Release Tracking](../release-tracking.md).
-- Add the rule row to the rule table in `src/E128.Analyzers/README.md`. Confirm
-  the table with `scripts/readme-table-diff.sh --analyzer`.
-- Put the analyzer in `src/E128.Analyzers/<Category>/` and the code fix in
-  `src/E128.Analyzers.CodeFixers/<Category>/`. Put the tests in
-  `tests/E128.Analyzers.Tests/`.
-- Add `[Trait("Category", "CI")]` to every new test method.
 
 ## Netstandard2.0 Constraints
 
@@ -187,14 +176,6 @@ comparison loses that order.
 - E128088 treats an unguarded `var` or discard pattern as a catch-all. A `when`
   clause filters the match, so a guarded pattern is not exhaustive.
 
-## Choose the Analysis API
-
-- Analyze with `IOperation` or `ISymbol`. Fall back to `SyntaxNode` only when
-  neither expresses the check.
-- Expect `null` from `GetTypeByMetadataName` when two references declare the
-  same type. `MetadataTypes` wraps the `GetTypesByMetadataName` lookup for that
-  case.
-
 ## Expect Incomplete Code
 
 An analyzer sees an editor buffer that can fail to compile. Guard every
@@ -217,30 +198,9 @@ semantic read.
   that a source generator emits still runs in production, so generated crypto
   code must meet the same policy. See [fips-rules.md](fips-rules.md).
 
-## Keep the Package README Current
-
-`src/E128.Analyzers/README.md` ships as the NuGet package page
-(`PackageReadmeFile`) and appears on nuget.org. Update its rule tables, its
-"What each rule catches" sections, and its code examples in the same change as
-any rule edit. Cover a new rule, a rename, a category change, a severity change,
-and a new or removed code fix. A stale rule table makes the package look
-unmaintained.
-
-## Test Infrastructure
-
-The harness types, markup forms, and option injection live in
-[testing.md](testing.md). Read that file before you write the test file.
-
-Two rules belong here, because they change the source layout:
-
-- A new code fix provider inherits `E128CodeFixProviderBase` in
-  `src/E128.Analyzers.CodeFixers`. Override the protected
-  `RegisterFixesAsync(context, root)` hook.
-- Code fix tests route through `CodeFixTestRunner` in
-  `tests/E128.Analyzers.Tests/CodeFixTestRunner.cs`.
-
 ## Related
 
+- [Authoring](authoring.md): registration, analysis API, code fixes, README, and tests
 - [Analyzers](../analyzers.md): main analyzer documentation
 - [Code Fix Patterns](code-fix-patterns.md): code fix implementation patterns
 - [Release Tracking](../release-tracking.md): Shipped/Unshipped workflow

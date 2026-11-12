@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-11T16:29:38Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 ## Generated Docs
 
@@ -23,7 +23,8 @@
 - [build-performance.md](dotnet/build-performance.md): Build timing, analyzer cost, and the --fast path
 - [project-structure.md](dotnet/project-structure.md): .NET 11 solution format, CPM, build props/targets, global.json
 - [net11-upgrade.md](dotnet/net11-upgrade.md): .NET 11 rules for two SDK bands, conditional TFM list, analyzer reach, unions, closed hierarchies, runtime async
-- [testing.md](dotnet/testing.md): MTP, xUnit v3, test configuration, categories, conventions
+- [testing.md](dotnet/testing.md): MTP, xUnit v3, test authoring, and test-script contracts
+- [csharp-conventions.md](dotnet/csharp-conventions.md): C# idioms, async contracts, and reuse searches
 - [code-coverage.md](dotnet/code-coverage.md): In-process MTP coverage, Cobertura reports, area mapping, and the CI floors
 - [test-patterns.md](dotnet/test-patterns.md): Test family patterns (A-D), fake conventions, naming rules
 - [architecture-testing.md](dotnet/architecture-testing.md): ArchUnitNET structural invariant tests (layers, naming, sealed)
@@ -46,6 +47,7 @@
 - [summary.md](dotnet/analyzers/summary.md): Domain snapshot, reading order, shared invariants
 - [shared-helpers.md](dotnet/analyzers/shared-helpers.md): Shared analyzer and code fix helper inventory and contracts
 - [new-analyzer-checklist.md](dotnet/analyzers/new-analyzer-checklist.md): Pre-flight checks, netstandard2.0 pitfalls, nullable Roslyn API surprises
+- [authoring.md](dotnet/analyzers/authoring.md): Analyzer registration, analysis APIs, code fixes, and test snippets
 - [configuration.md](dotnet/analyzers/configuration.md): Option surfaces, key naming, severity keys, MSBuild properties, additional files
 - [symbol-lookups.md](dotnet/analyzers/symbol-lookups.md): Documentation comment IDs, accessibility, interface implementation, data and control flow, scoped registration
 - [testing.md](dotnet/analyzers/testing.md): Markup forms, code fix assertions, option injection, Roslyn version alignment
@@ -84,3 +86,5 @@
 - [scoring-rubric.md](infrastructure/scoring-rubric.md): Shared four-dimension scoring rubric for strategic analysis agents
 - [secret-scanning.md](infrastructure/secret-scanning.md): gitleaks scan in precommit.sh and the CI lint job
 - [script-performance.md](infrastructure/script-performance.md): Bash performance rules: fork avoidance, the subshell trap, the version floor, byte-diff and shellcheck verification
+- [shell-authoring.md](infrastructure/shell-authoring.md): Tool prerequisites and shell-authoring checks
+- [shipping.md](infrastructure/shipping.md): Shipping-script branch guards, verification order, and unpushed commits

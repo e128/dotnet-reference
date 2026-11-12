@@ -58,7 +58,9 @@ Add the test quality rubric when the diff touches `tests/**`. Add the performanc
 
 ## 4. Add Repo Rules
 
-When the diff adds a `.sh` file, check it against `.claude/rules/shellcheck-validation.md`. When the diff adds a `.cs` file, check it against `.claude/rules/quality-gates.md` and `.claude/rules/dotnet-anti-patterns.md`. Report a breach as a finding. Do not fix it.
+For an added shell file, read `lode/infrastructure/shell-authoring.md` and check its contract.
+For an added C# file, read `lode/dotnet/csharp-conventions.md` and `.claude/rules/quality-gates.md`.
+Report a breach as a finding. Do not fix it.
 
 [references/dotnet-lens.md](references/dotnet-lens.md) holds the lens detail and the source of each rule.
 

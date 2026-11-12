@@ -1,6 +1,6 @@
 # Analyzer Configuration
 
-*Updated: 2026-11-11T13:26:18Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 How a rule reads a configuration value. The project-level file split lives in
 [Analyzers](../analyzers.md) § Configuration Split. This file covers the
@@ -170,6 +170,6 @@ Do not add a suppressor to answer a false positive. Fix the rule instead.
 ## Related
 
 - [Analyzers](../analyzers.md): severity strategy and the file split
-- [New Analyzer Checklist](new-analyzer-checklist.md): registration and gates
+- [New Analyzer Checklist](new-analyzer-checklist.md): pitfalls and gates
 - [Package Layout](package-layout.md): shipping a props file
 - [Analyzer Testing](testing.md): supplying an option in a test

@@ -1,234 +1,93 @@
 # AGENTS.md
 
-Cross-harness instructions for any AI coding agent (Claude Code, Codex CLI,
-Cursor, Aider, or another tool). This file is the portable source of truth.
-Claude Code loads it through an import in `CLAUDE.md` and layers Claude-only
-extensions on top. See `CLAUDE.md` for that extra layer, and
-`lode/infrastructure/claude-code-maintenance.md` for the full capability map
-of what is portable versus Claude-only.
+E128.Reference ships Roslyn analyzers and a .NET 11 reference solution.
+This file owns portable session policy. `.claude/rules/` owns core contracts.
+Task-specific reference lives in `lode/`. Claude-only mechanics live in `CLAUDE.md`.
+
+## Session Start
+
+1. Run `scripts/context.sh` for status, changes, and active work.
+2. Read `lode/lode-map.md`, `lode/terminology.md`, and `lode/summary.md`.
+3. If your harness does not load `.claude/rules/*.md`, read those core rule files.
+4. If your launcher does not inject `prompts/SystemPrompt.txt`, read it directly.
+5. Read the task references below before editing their subject.
+
+Claude Code and opencode load the core rule directory. Neither loader automatically loads the task references below.
+Skills in `.claude/skills/` work on both harnesses. Agent definitions live in `.claude/agents/`.
+The generated `.opencode/agents/` and `.opencode/agent-assets/` trees serve opencode. Never edit those generated trees.
+After an agent definition changes, run `scripts/internal/opencode-agents.sh sync`. `/yeet` also runs that sync.
 
 ## Communication
 
-- Write terse responses. Give code, not explanation, unless asked.
-- Write chat prose like a senior engineer talking to a peer in a work chat:
-  plain sentences, contractions, first person, conclusion first, one
-  recommendation, no hedging. Full rules: `lode/practices.md` (Chat Style).
-  This applies to chat only. Written artifacts stay STE per the next rule.
+- Write terse chat prose as a senior engineer speaking to a peer. Use the Chat Style section of `lode/practices.md`.
+- Explain with a Mermaid diagram when prose is harder to follow.
 - Never give a time estimate.
-- Ask a question only when a decision is materially ambiguous, risky, or
-  needs approval. Otherwise pick the sensible default and state the choice.
-- Write every timestamp in ISO 8601 UTC (`2026-04-09T12:00:00Z`).
-- Write every artifact (docs, READMEs, PR bodies, commit bodies, code
-  comments, `lode/` files) in Simplified Technical English: active voice,
-  one name per thing, no semicolons, no contractions, sentences under
-  20-25 words. See `lode/practices.md`.
+- Ask only when a decision is materially ambiguous, risky, or requires approval. Otherwise use the sensible default.
+- Write timestamps in ISO 8601 UTC.
+- Follow `.claude/rules/writing-style.md` for written artifacts.
 
 ## Workflow
 
-- **Tests** — never run raw `dotnet test`. Run `scripts/test.sh ClassName`
-  or `scripts/test.sh --all`. The stack is xUnit v3 on Microsoft Testing
-  Platform (MTP).
-- **TDD** — follow Red-Green-Refactor. A RED-phase stub calls
-  `Assert.Fail(message)`. Never use `Assert.True(false)` or
-  `NotImplementedException`. Analyzer E128171 reports a test whose whole body
-  is `Assert.Fail`, so a RED stub exists only in the working tree. Write the
-  real assertion before you run `scripts/check.sh` or commit.
-- **Build** — `scripts/check.sh` is the single shell lint, format, build, and
-  test gate. It runs `scripts/lint-shell.sh` first. Never call raw
-  `shellcheck` in a gate.
-- **Subagents** — fan out to five subagents by default when five genuinely
-  independent workstreams exist and parallel work is safe. Use fewer when work
-  overlaps, the task does not justify five, coordination costs outweigh the
-  gain, or a tool or permission blocks independent execution. Never create work
-  to hit the count. Avoid overlapping edits and synthesize the findings.
-- **Verify before you claim done.** Re-run the build and the affected tests
-  after the last edit. Never assume a fix works. When a build or a run fails,
-  report it. Never claim success unless the build and the tests pass.
-- **Route every repeated operation through a script in `scripts/`.** Never
-  run the raw command when a script exists. Run `scripts/help.sh` for the
-  full list. The full routing table lives in
-  `.claude/rules/deterministic-scripts.md`. Claude Code and opencode both
-  auto-load `.claude/rules/*.md`. On any other harness, open the matching
-  rule file directly. The table still applies since it only names bash
-  scripts.
-- **Lode** — `lode/` is the authoritative project memory, not this file or
-  any harness config. Read `lode/lode-map.md`, `lode/terminology.md`, and
-  `lode/summary.md` at the start of a session. On a harness that does not
-  auto-load the rules, read each `.claude/rules/*.md` file that matches the
-  work at hand. Update the matching lode file the same turn code, config, or
-  structure changes. Never defer.
-  Remove lode content the same turn the feature it describes disappears.
-  The full Lode Coding methodology lives in `prompts/SystemPrompt.txt`. On
-  Claude Code, `scripts/dotnet-reference.sh` launches a session through the
-  local Ollama server. `scripts/dotnet-reference-go.sh` uses the opencode Go
-  endpoint instead. Both inject that file as the system prompt. opencode
-  loads it through the `instructions` field in `opencode.json`. On any other
-  harness, read `prompts/SystemPrompt.txt` directly at session start. Its
-  rules apply regardless of launch method.
+- Route repeated operations through `.claude/rules/deterministic-scripts.md`. Use `scripts/help.sh` to discover scripts.
+- Write tests before implementation. Finish implementation before running tests. A failing RED run is not required.
+- Follow `.claude/rules/quality-gates.md` for verification after the final edit.
+- Test observable behavior. Validate user-facing changes in the real interface when applicable.
+- Keep changes focused. Fix the root cause when a friction point repeats.
+- Search for existing code before writing a helper. Share internal code instead of copying it or widening a public API.
+- Use five subagents when five independent workstreams justify them. Use fewer when work overlaps or coordination costs outweigh the gain.
+- Keep subagent edits disjoint and synthesize their results. Never create work to meet an agent count.
+- Update matching Lode files when code, configuration, scripts, or structure changes. Remove content when its subject disappears.
+- Follow `prompts/SystemPrompt.txt` for the Lode method. `lode/` is the authoritative project memory.
+
+## .NET Constraints
+
+- Target .NET 11 and later. Analyzer assemblies also support `netstandard2.0`. The analyzer support window is `net11.0`.
+- Do not add .NET Framework targets, APIs, references, conditional branches, compatibility tests, or polyfills.
+- Seal every non-abstract class. E128005 and ArchUnitNET enforce this constraint.
+- Prefer immutability, then memory, then CPU, then parallelism.
+- Follow `.claude/rules/security.md` for configurable security values and pooled buffers.
+- Follow `.claude/rules/quality-gates.md` for suppressions, nullable diagnostics, and format requirements.
+
+## Git and Scope
+
+- Use a `feature/`, `fix/`, or `refactor/` branch.
+- Commit or ship only when requested. Use the `smart-commit` agent for commits and `/yeet` for shipping.
+- On a harness without agents or skills, use the scripts named in the routing table with the same approval policy.
+- Write concise imperative commit summaries.
+- Never add a `Co-Authored-By` trailer yourself. `scripts/internal/commit.sh` appends the name-only trailer.
+- Squash only unpushed commits. Preserve pushed history and ship one clean commit per PR.
+- Run `scripts/status.sh` before staging. Treat concurrent staged, added, or removed files as existing work.
+- Preserve unrelated work. Take no destructive, production, or external action beyond the authorization given.
+- Follow `.claude/rules/auto-approvals.md` for action approval and `.claude/rules/security.md` for privacy.
+- Ground research in authoritative sources and link important evidence.
+
+## Task References
+
+Read a reference when its condition applies. These files sit outside the always-loaded rule directory.
+
+- Design or architecture review: `lode/practices.md` (Design Principles).
+- C# edits or reviews: `lode/dotnet/csharp-conventions.md`.
+- Test authoring or investigation: `lode/dotnet/testing.md`.
+- Analyzer, code fix, or analyzer test work: `lode/dotnet/analyzers/authoring.md`.
+- Analyzer architecture: `lode/dotnet/analyzers/summary.md`.
+- Shell edits or tool prerequisites: `lode/infrastructure/shell-authoring.md`.
+- Shipping-script changes: `lode/infrastructure/shipping.md`.
+- Instruction or harness changes: `lode/infrastructure/claude-code-maintenance.md`.
 
 ## Design Thinking
 
-Apply these questions before you settle a design, and again in review.
+Apply these questions before settling a design and during review:
 
-- Reduce this problem to its irreducible constraints and rebuild it from zero.
-- What would a principal architect immediately rewrite before even starting this?
-- Design the single test that breaks this design on day one.
-- What higher-level abstraction would make this entire problem disappear?
+- Reduce the problem to its irreducible constraints and rebuild it from zero.
+- What would a principal architect rewrite before starting?
+- Which test breaks the design on day one?
+- Which higher-level abstraction removes the problem?
 
-## .NET Development
+Write no implicit state machine. Flag an existing implicit state machine for refactoring.
+Module depth, ownership, and interface rules live in `lode/practices.md` (Design Principles).
 
-- C# idioms live in `.claude/rules/csharp-conventions.md`. Analyzer authoring
-  rules live in `.claude/rules/analyzer-authoring.md`.
-- Implicit usings are disabled (`<ImplicitUsings>disable</ImplicitUsings>`).
-  Give every `.cs` file explicit `using` directives.
-- Target .NET 11 and later, plus `netstandard2.0` for analyzer assemblies.
-  Those are the only supported targets. The analyzer support window is
-  `net11.0`.
-- Ban everything specific to .NET Framework (net48 and any `net4x`). Never
-  write a `net4x` target framework, a `ReferenceAssemblies.NetFramework`
-  test, a `#if NET48` branch, a Framework-only API, or a polyfill for one.
-  Never write code or tests that exist only to support .NET Framework. Reject
-  such code in review.
-- Seal by default. Every non-abstract class is sealed. E128005 and
-  ArchUnitNET enforce this.
-- Design order: Immutability > Memory > CPU > Parallelism. See
-  `lode/practices.md` and `lode/coding-standards/solid.md`.
-- **Module depth.** Give each module a small interface that hides substantial
-  behavior. A module earns its place when deleting it would push its
-  complexity back onto callers. Merge a module away when deletion loses
-  nothing.
-- Put each concept in the one module that owns it. Keep special cases,
-  ordering rules, validation, and derived values inside. Callers must not know
-  them.
-- Shrink the interface to one obvious way to call it. Drop a parameter, flag,
-  or option when the module can derive it, every caller passes the same
-  value, or no caller reads it. Move every caller to the new shape and delete
-  the old path.
-- Never write these. Each compiles cleanly and produces incorrect or
-  fragile code:
-  - `DateTime.Now` or `DateTime.UtcNow` directly. Inject `TimeProvider`
-    through DI instead.
-  - `new HttpClient()`. Use `IHttpClientFactory` instead.
-  - `async void` outside an event handler. Use `async Task` instead.
-  - `.Result` or `.GetAwaiter().GetResult()`. Await throughout instead.
-- Never hardcode a URL, secret, cryptographic key, connection string, or
-  CORS allowlist in source. Expose the value through a strongly-typed
-  options class bound to configuration.
-- In tests, expose test-only surface with `internal` plus
-  `[InternalsVisibleTo]`. Use reflection only when genuinely required, and
-  explain why in a comment.
-- The format gate: `dotnet format` must pass before a commit. Run
-  `scripts/format.sh` to apply fixes, `scripts/format.sh --check` to
-  verify.
-- Never use `#pragma warning disable`, `[SuppressMessage]`, or an
-  editorconfig severity downgrade without explicit user approval first.
-- Never use the null-forgiving operator (`!`) to silence CS8600 through
-  CS8604.
+## Instruction Maintenance
 
-## Pooled Buffers (Required)
-
-- Clear every `ArrayPool<T>` or `MemoryPool<T>` buffer with
-  `CryptographicOperations.ZeroMemory` before you return it to the pool.
-- Zero the whole rented array, not only the bytes you used.
-- Zero it in a `finally` block so every exit path (exceptions and early
-  returns) clears it.
-- Never rely on `Return(buffer, clearArray: true)`. It is not the
-  cryptographic guarantee this repo requires.
-- Pass the exact-length slice to an API that needs one. A rented array is
-  oversized.
-- Analyzer `E128110` enforces this for `ArrayPool<T>.Return`. `MemoryPool<T>`
-  is not yet enforced by code. Follow the rule by hand.
-- Reference pattern: the E128110 section of `src/E128.Analyzers/README.md`.
-  The compliant test case is `Silent_WhenFinallyZeroesWholeArrayBeforeReturn`
-  in `tests/E128.Analyzers.Tests/PooledBufferZeroingAnalyzerTests.cs`. No
-  production code in this repo rents a pooled buffer yet.
-
-## Git Conventions
-
-- Write commit messages in the imperative mood with a concise summary.
-- Never put an email address in a commit message. No `noreply@` address.
-  No email in any trailer. A `user@example.com` placeholder is allowed.
-- Never write a `Co-Authored-By` trailer in a commit message.
-  `scripts/internal/commit.sh` appends `Co-Authored-By: Claude` itself, so a
-  hand-written trailer ships as a duplicate line. [duplicate trailer,
-  PR #150]
-- Name branches `feature/`, `fix/`, or `refactor/`.
-- Squash all local commits before push. Ship one clean commit per PR.
-- Run `scripts/status.sh` before staging. A file staged, added, or removed
-  by a concurrent session is normal working state, not a stray file.
-
-## General Behavior
-
-- Make one focused change, verify it, then make the next.
-- Fix the root cause the second time a friction point repeats.
-- Keep a change focused and simple. Avoid an unrelated edit, an
-  unnecessary abstraction, and a low-signal test.
-- Reuse before you write. Before you add new code, search for code that
-  already does the job. Call it. When existing code almost fits, refactor it
-  so both callers share it. Never copy a helper into a second file. Search
-  steps: `.claude/rules/reuse-before-write.md`.
-- Refactor internal code freely. Moving shared logic into an `internal` class
-  or function is a good change. Do it when two callers need the same logic.
-  Keep the new member `internal` and add `[InternalsVisibleTo]` for tests. Do
-  not widen a public API to share code.
-- Test observable behavior. Validate user-facing work in the real
-  interface when applicable.
-- Keep unrelated work intact. Never take a destructive, production, or
-  external action beyond what was authorized.
-- Ground research in authoritative, current sources. Link important
-  evidence.
-
-## Instruction Files as a Memory of Failures
-
-`AGENTS.md` and `CLAUDE.md` are a memory of failures, not documentation. A
-line earns a place only when a model did the wrong thing once and the line
-stops the repeat. Apply the Claude.md Method (after Boris Cherny).
-
-- Read the file at the start of every session. Keep it as short as the rules
-  allow.
-- One line, one failure. Put the failure in brackets, for example
-  `[ran tests from the wrong dir, PR #212]`.
-- Edit it from evidence, never from memory. When a model fails, fix the file
-  before you fix the code.
-
-The six maintenance passes, the tier structure, and the stop condition live in
-`lode/infrastructure/instruction-file-maintenance.md`.
-
-## Repo-Specific Gotchas
-
-- macOS is case-insensitive. Linux CI (`ubuntu-26.04`, ext4) is
-  case-sensitive. Use the exact filesystem casing in every path, `using`
-  directive, and solution folder name. After a rename, search for the
-  stale name.
-- Write no inline Python. Fetch a URL with a proper fetch capability,
-  parse JSON with `jq`, and process local data with a `scripts/*.sh`
-  entry.
-- macOS ships Bash 3.2 at `/bin/bash`, and the `scripts/*.sh` tools use
-  Bash 4+ features such as `mapfile`. `scripts/lib.sh` re-execs under
-  Homebrew Bash when the interpreter is older. Run the scripts by their
-  own path, and do not force `/bin/bash` or a login shell that resolves
-  the system Bash first.
-
-## What This File Does Not Cover
-
-The domain rules in `.claude/rules/*.md` are cross-harness. Claude Code and
-opencode both auto-load that directory. Skills in `.claude/skills/` are
-cross-harness too: opencode reads project-level `.claude/skills/*/SKILL.md`
-through a compatibility path.
-
-Two layers stay single-harness:
-
-- Claude-only: `.claude/hooks/` (guardrail automation),
-  `.claude/settings.json` (permissions), `CLAUDE.md`, and plugins
-- opencode-only: `opencode.json` (loads `prompts/SystemPrompt.txt` through
-  `instructions`, and mirrors the approval policy in `permissions` and
-  `policies`) and `.opencode/plugins/` (guardrail parity for
-  the `.claude/hooks/` scripts)
-
-Agent definitions are shared too. `.claude/agents/*.md` is the source of
-truth. A generated mirror in `.opencode/agents/` adapts it for opencode
-(frontmatter fields differ per harness), and agent asset directories are
-copied to `.opencode/agent-assets/`. Regenerate with
-`scripts/internal/opencode-agents.sh sync`. `/yeet` runs this whenever agent
-files change. Never edit either generated tree by hand. See
-`lode/infrastructure/claude-code-maintenance.md` for the capability map.
+Change instructions from verified evidence. Give each requirement one owner and link to it elsewhere.
+Record the failure behind a changed instruction in its owning file. Keep project knowledge in `lode/`.
+The maintenance method lives in `lode/infrastructure/instruction-file-maintenance.md`.

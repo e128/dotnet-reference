@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-08T13:09:47Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 ## Design Principles
 
@@ -27,7 +27,7 @@
 - Implicit usings disabled: every `.cs` file has explicit `using` directives
 - Primary constructors disabled (`csharp_style_prefer_primary_constructors = false`)
 - Collection expressions preferred (`dotnet_style_prefer_collection_expression = true`), aligned with the E128061 code fix output
-- Collection counts come from `.Count`, `.Length`, or a lookup property. Never a loop or a summation. See `.claude/rules/csharp-conventions.md`.
+- Collection count rules live in [C# Conventions](dotnet/csharp-conventions.md).
 
 ## AI Assistant Preferences
 
@@ -40,8 +40,7 @@ See [AGENTS.md](../AGENTS.md) for the always-loaded subset.
 - No time estimates
 - Ask a question only when a decision is materially ambiguous, risky, or needs
   approval. Otherwise pick the sensible default and state the choice.
-- Design questions: apply the five prompts in the AGENTS.md Design Thinking
-  section before settling a design, and again in review.
+- Design questions live in the `AGENTS.md` Design Thinking section.
 - Every question uses the `AskUserQuestion` tool, never inline text. Give
   discrete options, never an open-ended question.
 - Written artifacts follow Simplified Technical English (STE). Scope, word
@@ -94,15 +93,14 @@ artifacts stay STE per `.claude/rules/writing-style.md`.
 
 ## Development Methodology
 
-- **TDD (Red-Green-Refactor)** for new features and significant changes. RED phase stubs use `Assert.Fail(message)`. Analyzer E128171 reports a test whose whole body is `Assert.Fail`. A RED stub lives only in the working tree. It never reaches the gate or a commit.
+- Test-first authoring follows the execution order in `AGENTS.md` Workflow.
+- Placeholder assertions and completed-test requirements live in `.claude/rules/quality-gates.md`.
 - **Architecture testing** with ArchUnitNET enforces layer dependencies, naming conventions, sealed-by-default, and service patterns. See [Architecture Testing](dotnet/architecture-testing.md).
 
 ## Verification Workflow
 
-After any code change:
-1. `scripts/format.sh --changed`: runs `jb cleanupcode` (semantic cleanup) then `dotnet format`
-2. `scripts/check.sh`: shell lint, format check, build, and test. Never pass `--no-format` (`.claude/rules/quality-gates.md`).
-3. If renaming: `rg "OldName" lode/` to find stale lode references
+The verification sequence lives in `.claude/rules/quality-gates.md`.
+After a rename, search Lode files for the old name and update stale references.
 
 `--check` mode skips `jb` (no verify-only equivalent). Pass `--no-jb` to run dotnet format only.
 Requires `jb` from `JetBrains.ReSharper.GlobalTools` (`dotnet tool install -g JetBrains.ReSharper.GlobalTools`); gracefully skipped if not installed.

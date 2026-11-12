@@ -30,9 +30,12 @@ prose. Session style modes govern chat. The chat style rules live in
 - Do not use contractions.
 - Keep the articles: a, an, the, this, these.
 
-## Punctuation and structure
+## Punctuation and Structure
 
 - Never use a semicolon. Use a period.
+- Do not use a dash as a pause. Use a colon, comma, parentheses, or period.
+- Keep hyphens in compounds, ranges, and command syntax.
+- Write headings as title-case noun phrases without an ending period.
 - Cover one topic per paragraph. Cap a paragraph at 6 sentences.
 - Write steps as a numbered vertical list. State the condition before the command.
 

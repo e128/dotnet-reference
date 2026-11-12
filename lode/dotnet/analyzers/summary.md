@@ -1,5 +1,5 @@
 # Analyzers Summary
-*Updated: 2026-11-09T23:44:15Z*
+*Updated: 2026-11-12T00:54:46Z*
 
 `src/E128.Analyzers` holds every E128 Roslyn rule. `src/E128.Analyzers.CodeFixers`
 holds the fix providers. The analyzer assembly targets `netstandard2.0` and
@@ -11,7 +11,8 @@ can repair.
 
 | Question                                         | File                                              |
 | ------------------------------------------------ | ------------------------------------------------- |
-| How do I add a rule?                             | [new-analyzer-checklist.md](new-analyzer-checklist.md) |
+| How do I add a rule?                             | [authoring.md](authoring.md)                      |
+| Which pitfalls apply before I write a rule?      | [new-analyzer-checklist.md](new-analyzer-checklist.md) |
 | How does the rule read a user option?            | [configuration.md](configuration.md)              |
 | Which Roslyn API answers this question?          | [symbol-lookups.md](symbol-lookups.md)            |
 | How do I test the rule?                          | [testing.md](testing.md)                          |
