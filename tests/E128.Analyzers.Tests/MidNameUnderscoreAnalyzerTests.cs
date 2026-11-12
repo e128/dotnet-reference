@@ -209,4 +209,20 @@ public sealed class MidNameUnderscoreAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PartialProperty_ReportsOnce()
+    {
+        // A partial member arrives as two symbol events. The rule reports at the
+        // defining part and skips the implementing part.
+        return AnalyzerTestRunner.VerifyAsync<MidNameUnderscoreAnalyzer>("""
+                           partial class C
+                           {
+                               private static partial int {|E128063:Some_name|} { get; }
+
+                               private static partial int Some_name { get => 1; }
+                           }
+                           """);
+    }
 }

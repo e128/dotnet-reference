@@ -115,4 +115,18 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20
         }.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SuppressMessageOnPartialPropertyWithoutImplementation_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<UnjustifiedSuppressionAttributeAnalyzer>("""
+                           using System.Diagnostics.CodeAnalysis;
+                           partial class C
+                           {
+                               [{|E128173:SuppressMessage("Design", "CA1000")|}]
+                               private static partial int {|CS9248:P|} { get; }
+                           }
+                           """);
+    }
 }

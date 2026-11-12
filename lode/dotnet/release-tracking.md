@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-11T16:29:38Z*
+*Updated: 2026-11-12T15:17:07Z*
 
 ## Overview
 
@@ -163,6 +163,7 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.8.0   | (none)        | Shared-helper refactor. E128218 also recognizes a forwarding accessor pair, a mutable struct, and a cross-type write, and it reads the `e128_state_min_transition_bodies` option. |
 | 2.8.1   | (none)        | Version-only release. Repacks the 2.8.0 content with no rule set change. |
 | 2.9.0   | E128222       | Root-join containment. The package reached nuget.org before the `Unshipped.md` rows were promoted, so the release files recorded it afterwards. |
+| 2.9.8   | (none)        | The member-level symbol rules report a partial member once at its defining part through `PartialMembers.IsImplementationPart`, and the attribute rules gain partial-shape fixtures. No rule set change. |
 
 ## Sources
 

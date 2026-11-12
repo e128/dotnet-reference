@@ -1,5 +1,5 @@
 # Analyzer Authoring
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-12T15:07:30Z*
 
 Rules for a new or changed rule in `src/E128.Analyzers`. Read
 [new-analyzer-checklist.md](new-analyzer-checklist.md) before you write the
@@ -47,6 +47,26 @@ unmaintained.
 Most rules pass `GeneratedCodeAnalysisFlags.None`. The policy and the opt-in
 cases live in the
 [checklist](new-analyzer-checklist.md#generated-code).
+
+## Partial Declarations
+
+Probed behavior at the Roslyn version this repository pins (2026-11-12):
+
+- A `SyntaxKind.Attribute` node action fires for an attribute on a partial
+  property or partial method declaration, with and without an implementation
+  part, in one file or across files, even when the implementation part sits in
+  a generated file.
+- A symbol action delivers a partial class symbol once, at the first part.
+  It delivers a partial property or partial method symbol once per part. A
+  rule that reports one diagnostic per member calls
+  `PartialMembers.IsImplementationPart` first and skips the implementing
+  event, so one logical member reports once. See the helper table in
+  [shared-helpers.md](shared-helpers.md).
+- A rule that reports on a shape a partial declaration can carry needs one
+  partial-shape fixture. The attribute-on-partial-property-without-
+  implementation form marks the compiler error CS9248 on the identifier. See
+  `GeneratedRegex_PartialPropertyWithoutImplementation_StillFires` in
+  `tests/E128.Analyzers.Tests/GeneratedRegexE128AnalyzerTests.cs`.
 
 ## Code Fixes
 

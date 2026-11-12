@@ -21,7 +21,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>2.9.7</Version>
+    <Version>2.9.8</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>

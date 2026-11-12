@@ -131,4 +131,38 @@ public sealed class MutableCollectionExposureE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PartialProperty_ReportsOnce()
+    {
+        // A partial member arrives as two symbol events. The rule reports at the
+        // defining part and skips the implementing part.
+        return AnalyzerTestRunner.VerifyAsync<MutableCollectionExposureAnalyzer>("""
+                           using System.Collections.Generic;
+
+                           public partial class Service
+                           {
+                               public partial List<int> {|E128052:Items|} { get; }
+
+                               public partial List<int> Items { get => []; }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PartialMethod_ReportsOnce()
+    {
+        return AnalyzerTestRunner.VerifyAsync<MutableCollectionExposureAnalyzer>("""
+                           using System.Collections.Generic;
+
+                           public partial class Service
+                           {
+                               public partial List<string> {|E128052:GetNames|}();
+
+                               public partial List<string> GetNames() => [];
+                           }
+                           """);
+    }
 }

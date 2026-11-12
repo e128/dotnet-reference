@@ -114,6 +114,45 @@ public sealed class LowValueTestCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task CodeFix_RemovesMethod_WhenMultipleConditionsReportE128108()
+    {
+        return VerifyAsync(
+            """
+            using Xunit;
+
+            public static class Calculator
+            {
+                public static int Echo(int value) => value;
+            }
+
+            public sealed class Subject
+            {
+                public static int Zero() => 0;
+
+                [Fact]
+                public void {|E128108:Should_Echo|}()
+                {
+                    Assert.Equal(1, Calculator.Echo(1));
+                }
+            }
+            """,
+            """
+            using Xunit;
+
+            public static class Calculator
+            {
+                public static int Echo(int value) => value;
+            }
+
+            public sealed class Subject
+            {
+                public static int Zero() => 0;
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task CodeFix_KeepsClosingBraceIndentation_WhenTypeIsNested()
     {
         return VerifyAsync(

@@ -55,6 +55,12 @@ public sealed class MidNameUnderscoreAnalyzer : DiagnosticAnalyzer
     {
         var symbol = context.Symbol;
 
+        // A partial member arrives as two symbol events. Report only the defining part.
+        if (PartialMembers.IsImplementationPart(symbol))
+        {
+            return;
+        }
+
         // Skip compiler-generated symbols (property getter/setter methods like get_Config_timeout)
         if (symbol.IsImplicitlyDeclared)
         {
