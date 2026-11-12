@@ -1,5 +1,5 @@
 # Reliability Rule Details
-*Updated: 2026-11-09T23:44:15Z*
+*Updated: 2026-11-12T13:47:41Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -232,6 +232,27 @@ comparison decides the branch: `Length > k` guards the then branch, and
 - A one-argument `Substring` call and a constant count.
 
 No code fix. The guard belongs to the caller.
+
+### E128013 and E128014: `[GeneratedRegex]` quantifier heuristics
+
+Severity: **Warning**. `GeneratedRegexHelpers` scans the pattern literal of a
+`[GeneratedRegex]` attribute. `HasOverlappingQuantifiers` detects E128013, and
+`HasNestedQuantifier` detects E128014. A quantified group whose inner scan finds
+a `*` or `+` at group depth 1 reports E128014.
+
+Both scans treat character class contents as literals. `BuildCharacterClassMask`
+marks every index inside a `[...]` class in one pass, and each scan skips masked
+indices. The mask handles a leading `^`, a leading literal `]`, and escapes. A
+quantifier inside a class, such as the `*` in `([-*_a])+`, never reports.
+
+**Known limits**:
+
+- A positive class that holds whitespace, such as `[ ]`, counts as disjoint
+  from `\s`, so the overlap check can miss a true positive.
+- The heuristics are string scans, not a pattern parse. No public
+  `RegexParser` API exists, so a full parse is not available.
+
+No code fix.
 
 ## Related
 

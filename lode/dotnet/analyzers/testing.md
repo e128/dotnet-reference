@@ -1,6 +1,6 @@
 # Analyzer Testing
 
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-12T13:55:10Z*
 
 How a test drives an analyzer and a code fix. The harness types live in
 `Microsoft.CodeAnalysis.CSharp.Testing`. The repo wrapper lives in
@@ -137,6 +137,10 @@ confirm the test count in the run output.
 - The shared stub types live in `tests/E128.Analyzers.Tests/TestStubs.cs`.
 - `ReferenceAssemblies` default to the version in `tests/.globalconfig` through
   `e128_minimum_framework_version`.
+- `SupportedDiagnosticsCoverageTests` sweeps every analyzer type by reflection
+  and asserts that each static `DiagnosticDescriptor` field reaches
+  `SupportedDiagnostics`, and that no analyzer ships with an empty set. The
+  reflection sits in helper methods because E128090 bans it in test methods.
 - xUnit v3 runs on the Microsoft Testing Platform. Only `scripts/test.sh`
   works.
 

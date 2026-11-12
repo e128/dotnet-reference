@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -61,13 +62,19 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeNode, SyntaxKind.Attribute);
+        context.RegisterSyntaxNodeAction(AnalyzeCompilationUnit, SyntaxKind.CompilationUnit);
     }
 
-    private static void AnalyzeNode(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeCompilationUnit(SyntaxNodeAnalysisContext context)
     {
-        var attribute = (AttributeSyntax)context.Node;
+        foreach (var attribute in context.Node.DescendantNodes().OfType<AttributeSyntax>())
+        {
+            AnalyzeAttribute(context, attribute);
+        }
+    }
 
+    private static void AnalyzeAttribute(SyntaxNodeAnalysisContext context, AttributeSyntax attribute)
+    {
         var name = GetAttributeName(attribute);
 
         if (!string.Equals(name, "GeneratedRegex", StringComparison.Ordinal)
@@ -76,8 +83,8 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken);
-        if (symbolInfo.Symbol is not IMethodSymbol constructor)
+        var symbol = context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol;
+        if (symbol is not IMethodSymbol constructor)
         {
             return;
         }
