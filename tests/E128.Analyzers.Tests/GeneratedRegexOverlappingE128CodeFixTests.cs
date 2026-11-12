@@ -65,6 +65,81 @@ public sealed class GeneratedRegexOverlappingE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task OverlappingQuantifier_RequiredWhitespacePlus_CollapsesToBareWhitespace()
+    {
+        return VerifyFixAsync(
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128013:GeneratedRegex(@"iframe\s+[^\n]*", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [GeneratedRegex(@"iframe\s[^\n]*", RegexOptions.None, 1000)]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task OverlappingQuantifier_NegatedClassAfterWhitespacePlus_CollapsesToBareWhitespace()
+    {
+        return VerifyFixAsync(
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128013:GeneratedRegex(@"\s+[^\n]+", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [GeneratedRegex(@"\s[^\n]+", RegexOptions.None, 1000)]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task OverlappingQuantifier_ParenInsideClass_WhitespaceTokenRemoved()
+    {
+        return VerifyFixAsync(
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128013:GeneratedRegex(@"(?:[()]+\w+)\s*.*", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [GeneratedRegex(@"(?:[()]+\w+).*", RegexOptions.None, 1000)]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task OverlappingQuantifier_NonVerbatimLiteral_StaysQuoted()
     {
         return VerifyFixAsync(

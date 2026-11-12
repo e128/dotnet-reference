@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.10.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.10.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -694,11 +694,11 @@ Flags `RegexOptions.Compiled` in `[GeneratedRegex]`. The source generator ignore
 
 ### E128013 &mdash; Overlapping quantifiers
 
-Flags `[GeneratedRegex]` patterns where `\s*` or `\s+` is adjacent to a quantifier whose character set overlaps (e.g., `.*`, `.+`). This creates exponential backtracking risk.
+Flags `[GeneratedRegex]` patterns where `\s*` or `\s+` is adjacent to a quantifier whose character set overlaps (e.g., `.*`, `.+`). This creates quadratic backtracking risk.
 
 ### E128014 &mdash; Nested quantifiers
 
-Flags `[GeneratedRegex]` patterns with nested quantifiers (e.g., `(.+)+`, `(\w+)+`, `(a*)*`). These cause exponential backtracking on non-matching input.
+Flags `[GeneratedRegex]` patterns with nested quantifiers (e.g., `(.+)+`, `(\w+)+`, `(a*)*`) whose first and last consuming atom can match the same text. These cause exponential backtracking on non-matching input. A repeated group that leads with a distinct separator atom, such as `(?:/[^\s:"']+)+`, cannot backtrack this way and stays silent, as does a bounded `{n,m}` outer repeat and an atomic `(?>...)` group.
 
 ### E128002 &mdash; string.Empty
 

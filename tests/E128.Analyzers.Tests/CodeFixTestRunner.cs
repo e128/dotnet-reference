@@ -52,6 +52,27 @@ internal static class CodeFixTestRunner
     }
 
     /// <summary>
+    ///     Runs a rewrite that keeps the diagnostic. Markup in the fixed code supplies the
+    ///     diagnostics that survive the rewrite.
+    /// </summary>
+    /// <typeparam name="TAnalyzer">The analyzer under test.</typeparam>
+    /// <typeparam name="TFixer">The fixer under test.</typeparam>
+    internal static Task RunKeepDiagnosticAsync<TAnalyzer, TFixer>(string source, string fixedCode)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TFixer : CodeFixProvider, new()
+    {
+        var test = new CSharpCodeFixTest<TAnalyzer, TFixer, DefaultVerifier>
+        {
+            TestCode = source,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+        };
+
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        return test.RunAsync(Xunit.TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     ///     Asserts that the fixer leaves the code unchanged. Any diagnostic in
     ///     <paramref name="expected"/> decides whether the analyzer itself still fires.
     /// </summary>

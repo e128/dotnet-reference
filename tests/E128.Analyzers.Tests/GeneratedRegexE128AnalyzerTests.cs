@@ -415,9 +415,70 @@ public sealed class GeneratedRegexE128AnalyzerTests
                              """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_UnboundedBraceOuterQuantifier_FiresE128014()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [{|E128014:GeneratedRegex(@"(?:x+){3,}", RegexOptions.None, 1000)|}]
+                                 private static partial Regex DigitsOnly();
+                                 {{PartialImpl}}
+                             }
+                             """);
+    }
+
     #endregion E128014 — Fires
 
     #region E128014 — Does not fire
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_BoundedBraceOuterQuantifier_NoE128014()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [GeneratedRegex(@"(?:x+){3}", RegexOptions.None, 1000)]
+                                 private static partial Regex DigitsOnly();
+                                 {{PartialImpl}}
+                             }
+                             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_SeparatorDisjointSlashSegmentGroup_NoE128014()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [GeneratedRegex(@"(?:/[^\s:""']+)+", RegexOptions.None, 1000)]
+                                 private static partial Regex DigitsOnly();
+                                 {{PartialImpl}}
+                             }
+                             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GeneratedRegex_WindowsPathGroupWithInnerRepetition_NoE128014()
+    {
+        return AnalyzerTestRunner.VerifyAsync<GeneratedRegexAnalyzer>($$"""
+                             using System.Text.RegularExpressions;
+                             partial class C
+                             {
+                                 [GeneratedRegex(@"(?:[A-Za-z]:\\(?:[^\s:""'\\]+\\)*[^\s:""'\\]+)", RegexOptions.None, 1000)]
+                                 private static partial Regex DigitsOnly();
+                                 {{PartialImpl}}
+                             }
+                             """);
+    }
+
 
     [Fact]
     [Trait("Category", "CI")]
