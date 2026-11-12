@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-12T01:47:01Z*
+*Updated: 2026-11-12T16:46:34Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -10,7 +10,8 @@ configuration split.
 Rules from the performance categories live in
 [rule-details-performance.md](rule-details-performance.md). Rules from the
 reliability category live in
-[rule-details-reliability.md](rule-details-reliability.md).
+[rule-details-reliability.md](rule-details-reliability.md). Union rules live in
+[rule-details-union.md](rule-details-union.md).
 
 ### E128061: Static readonly array → immutable type
 
@@ -242,9 +243,4 @@ local function that no call or method group reaches. Helper-method flows stay ou
 Sonar S5659 covers JWT.Net only. No code fix applies because validation needs
 application policy.
 
-## Related
-
-- [analyzers.md](../analyzers.md): strategy, configuration split, suppression policy
-- [rule-details-performance.md](rule-details-performance.md): performance rule details
-- [rule-details-reliability.md](rule-details-reliability.md): reliability rule details
-- [redundant-rules.md](redundant-rules.md): rules that another analyzer also covers
+Related files: [analyzers.md](../analyzers.md), [rule-details-performance.md](rule-details-performance.md), [rule-details-reliability.md](rule-details-reliability.md), [rule-details-union.md](rule-details-union.md), and [redundant-rules.md](redundant-rules.md).

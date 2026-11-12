@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.9.8" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.10.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -56,6 +56,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128082 | Do not unwrap `ByteSize` via cast                                                                    | Yes      |
 | E128087 | Static numeric field should not be incremented with ++/--                                            | Yes      |
 | E128218 | Boolean flags encode one state (default: Info)                                                       | No       |
+| E128219 | Memberless abstract base with all derivation in one assembly should be closed                        | Yes      |
+| E128220 | Union switch ends in a discard or var arm instead of a null arm                                      | Yes      |
+| E128221 | Union Value read or case cast outside a pattern match                                                | No       |
 
 ### Reliability
 
@@ -3085,6 +3088,86 @@ public void Stop() => _state = State.Stopped;
 ```
 
 No code fix. The state names and the legal transitions are domain decisions.
+
+### E128219: Memberless abstract base is a closed hierarchy
+
+Flags an internal `abstract` class or record base that declares no members
+while every type that derives from it lives in the same assembly. The `closed`
+modifier names that shape, and a switch over the closed hierarchy then fails
+the build on a missing case through `CS8509`.
+
+A base that carries members, a positional record whose parameter list carries
+state, or a base without a derived type stays silent. A public base stays
+silent too, because an assembly outside the compilation may derive from it and
+a `closed` modifier would break that derivation.
+
+The code fix replaces the `abstract` modifier with `closed`.
+
+```csharp
+// Before (warns)
+internal abstract class GreetingState { }
+internal sealed class Greeted : GreetingState { }
+
+// After
+internal closed class GreetingState { }
+internal sealed class Greeted : GreetingState { }
+```
+
+### E128220: Union switch ends in a discard arm
+
+Flags a switch over a union whose last arm is a discard or `var` arm and which
+carries no `null` arm. The `null` arm names the empty case, so the compiler
+keeps warning when a case type is added later. A discard or `var` arm accepts
+any case type the union grows, and the missing-case warning disappears.
+
+A switch that already ends in a `null` arm stays silent. A switch over an enum
+or a plain type stays silent.
+
+The code fix replaces a discard arm with a `null` constant pattern. A `var` arm
+binds the case value, so the fix stays absent for it and the arm needs a
+manual edit.
+
+```csharp
+// Before (warns)
+var text = result switch
+{
+    Greeting greeting => greeting.Message,
+    GreetingError error => error.Message,
+    _ => "Unknown result."
+};
+
+// After
+var text = result switch
+{
+    Greeting greeting => greeting.Message,
+    GreetingError error => error.Message,
+    null => "Unknown result."
+};
+```
+
+### E128221: Union case read outside a pattern match
+
+Flags a `Value` read on a union expression and a cast of a union expression to
+a case type. A `Value` read boxes the case and skips the case set, and a cast
+trusts the runtime state instead of the type system. A case pattern, or
+`TryGetValue`, reads the value without boxing and stays checked against the
+case list.
+
+A member access whose receiver is not a union stays silent, so a
+`Dictionary<K,V>.Values` read or a `Task` result never reports.
+
+No code fix. The rewrite changes control flow, so the developer writes the
+pattern or the `TryGetValue` call.
+
+```csharp
+// Before (warns)
+if (result.Value is Greeting greeting) { }
+var cast = (GreetingError)result;
+
+// After
+if (result is Greeting greeting) { }
+if (result.TryGetValue(out var value) && value is GreetingError error) { }
+```
 
 ### E128222: Path.Combine of a root and a run-time leaf
 

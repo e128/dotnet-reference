@@ -1,3 +1,13 @@
+## Release 2.10.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128219 | E128-Design | Warning | Memberless abstract base with all derivation in one assembly should be closed
+E128220 | E128-Design | Warning | Union switch ends in a discard or var arm instead of a null arm
+E128221 | E128-Design | Warning | Union Value read or case cast outside a pattern match
+
 ## Release 2.9.0
 
 ### New Rules

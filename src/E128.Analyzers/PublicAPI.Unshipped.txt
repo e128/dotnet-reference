@@ -241,3 +241,13 @@ E128.Analyzers.Security.UncontainedRootJoinAnalyzer
 E128.Analyzers.Security.UncontainedRootJoinAnalyzer.UncontainedRootJoinAnalyzer() -> void
 E128.Analyzers.Security.UncontainedRootJoinCodeFixProvider
 E128.Analyzers.Security.UncontainedRootJoinCodeFixProvider.UncontainedRootJoinCodeFixProvider() -> void
+E128.Analyzers.Design.MemberlessAbstractBaseAnalyzer
+E128.Analyzers.Design.MemberlessAbstractBaseAnalyzer.MemberlessAbstractBaseAnalyzer() -> void
+E128.Analyzers.Design.MemberlessAbstractBaseCodeFixProvider
+E128.Analyzers.Design.MemberlessAbstractBaseCodeFixProvider.MemberlessAbstractBaseCodeFixProvider() -> void
+E128.Analyzers.Design.UnionSwitchDiscardArmAnalyzer
+E128.Analyzers.Design.UnionSwitchDiscardArmAnalyzer.UnionSwitchDiscardArmAnalyzer() -> void
+E128.Analyzers.Design.UnionSwitchDiscardArmCodeFixProvider
+E128.Analyzers.Design.UnionSwitchDiscardArmCodeFixProvider.UnionSwitchDiscardArmCodeFixProvider() -> void
+E128.Analyzers.Design.UnionValueReadAnalyzer
+E128.Analyzers.Design.UnionValueReadAnalyzer.UnionValueReadAnalyzer() -> void

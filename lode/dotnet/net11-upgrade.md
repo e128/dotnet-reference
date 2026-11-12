@@ -1,5 +1,5 @@
 # .NET 11 Upgrade Practices
-*Updated: 2026-11-11T03:20:00Z*
+*Updated: 2026-11-12T16:46:34Z*
 
 Rules this repository follows on the `net11.0` band. Each rule came from a probe
 on the GA SDK. See [project-structure.md](project-structure.md)
@@ -85,7 +85,9 @@ helper that reads the case list must prove the list stays closed.
 End a union `switch` with a `null` arm. A `_` or `var` arm accepts any case type
 added later, so the compiler can no longer warn about it. A switch statement
 that omits a case reports nothing at all, so the missing-case check needs a
-switch expression.
+switch expression. Two parse facts hold in a statement over a union governing
+type: `case _` parses `_` as a case-type identifier and fails with `CS0103`,
+and `case var _:` is the catch-all that compiles.
 
 `SS019` demands a `default` label on every switch, which a union switch must
 not have. The files that switch over a union take a scoped `SS019` row in
@@ -96,7 +98,9 @@ not have. The files that switch over a union take a scoped `SS019` row in
 A `closed` type makes a switch exhaustive. A missing case reports `CS8509` in a
 switch expression, which `TreatWarningsAsErrors` turns into a build failure. Do
 not mark a closed type `abstract`, because the compiler rejects it with
-`CS9384`. A leaf under a closed base needs no modifier to build, so `sealed` on
+`CS9384`. The `closed` modifier alone implies abstract: the compiler rejects
+`new` on a closed class with `CS0144`. A leaf under a closed base needs no
+modifier to build, so `sealed` on
 each leaf is a convention the review enforces rather than the compiler.
 
 ## Runtime Async
