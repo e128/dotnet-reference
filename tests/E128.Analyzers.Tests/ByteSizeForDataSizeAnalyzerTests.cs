@@ -104,4 +104,20 @@ public sealed class ByteSizeForDataSizeAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PartialProperty_ReportsOnce()
+    {
+        // A partial member arrives as two symbol events. The rule reports at the
+        // defining part and skips the implementing part.
+        return AnalyzerTestRunner.VerifyAsync<ByteSizeForDataSizeAnalyzer>("""
+                           partial class C
+                           {
+                               public partial int {|E128080:MaxSizeBytes|} { get; }
+
+                               public partial int MaxSizeBytes { get => 1; }
+                           }
+                           """);
+    }
 }

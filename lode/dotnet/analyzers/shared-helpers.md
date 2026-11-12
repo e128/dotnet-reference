@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-11T03:58:51Z*
+*Updated: 2026-11-12T15:07:30Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -34,6 +34,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `Blittability.IsBlittable` | True when a type copies as a raw bit pattern. A struct that holds a bool or decimal returns false. |
 | `TrackerReference` | Reads `e128_tracked_ref_pattern` and matches a work-item reference. A regex timeout counts as no match, so the rule still reports. |
 | `InvocationNames.GetSimpleName` | Returns the called name for `Type.Method(...)` and for a bare `Method(...)`. |
+| `PartialMembers.IsImplementationPart` | True when a symbol is the implementing source symbol of a partial method, partial property, or a parameter of one. A member-level symbol rule calls it first and skips the event, so one logical member reports once. |
 | `IndexedForLoop.TryMatch` | Matches `for (var i = 0; i < source.Length; i++)` and returns the variable, bound owner, and body. |
 | `XunitTestHelper.IsAssertType` | True for `Xunit.Assert`. The test-quality rules share it. |
 | `Unsafe.OwnerInvocation.TryMatch` | Binds a named call and confirms its containing type is one of the owner types. |

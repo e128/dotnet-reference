@@ -37,4 +37,18 @@ public sealed class DllImportToLibraryImportAnalyzerTests
                            }
                            """, options: Options);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenDllImportIsOnPartialMethodWithoutImplementation()
+    {
+        return AnalyzerTestRunner.VerifyAsync<DllImportToLibraryImportAnalyzer>("""
+                           using System.Runtime.InteropServices;
+                           partial class Native
+                           {
+                               [{|E128117:DllImport("libc")|}]
+                               private static partial int Query(int value);
+                           }
+                           """, options: Options);
+    }
 }

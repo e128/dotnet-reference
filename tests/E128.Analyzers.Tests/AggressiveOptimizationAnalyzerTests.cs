@@ -61,6 +61,24 @@ public sealed class AggressiveOptimizationAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_OnPartialMethodDeclaration()
+    {
+        return AnalyzerTestRunner.VerifyAsync<AggressiveOptimizationAnalyzer>("""
+                           using System.Runtime.CompilerServices;
+                           partial class C
+                           {
+                               [{|E128116:MethodImpl(MethodImplOptions.AggressiveOptimization)|}]
+                               static partial void M();
+
+                               static partial void M()
+                               {
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenOnlyInliningIsRequested()
     {
         return AnalyzerTestRunner.VerifyAsync<AggressiveOptimizationAnalyzer>("""

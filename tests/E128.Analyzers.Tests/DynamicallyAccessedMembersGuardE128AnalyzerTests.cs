@@ -60,4 +60,19 @@ public sealed class DynamicallyAccessedMembersGuardE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DynamicallyAccessedMembersAttribute_PartialPropertyWithoutImplementation_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<DynamicallyAccessedMembersGuardAnalyzer>("""
+                           using System.Diagnostics.CodeAnalysis;
+
+                           partial class C
+                           {
+                               [{|E128049:DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)|}]
+                               private static partial System.Type {|CS9248:P|} { get; }
+                           }
+                           """);
+    }
 }

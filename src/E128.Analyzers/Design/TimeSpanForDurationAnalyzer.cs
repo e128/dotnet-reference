@@ -49,14 +49,15 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeSymbol(SymbolAnalysisContext context)
     {
-        var (type, name, location) = context.Symbol switch
+        // A partial member arrives as two symbol events. Report only the defining part.
+        if (PartialMembers.IsImplementationPart(context.Symbol))
         {
-            IPropertySymbol p => (p.Type, p.Name, p.Locations.IsEmpty ? null : p.Locations[0]),
-            IParameterSymbol p => (p.Type, p.Name, p.Locations.IsEmpty ? null : p.Locations[0]),
-            _ => default
-        };
+            return;
+        }
 
-        if (type is null || location is null)
+        var (type, name, location) = GetDetails(context.Symbol);
+
+        if (type is null || name is null || location is null)
         {
             return;
         }
@@ -74,6 +75,16 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, location, name));
+    }
+
+    private static (ITypeSymbol? Type, string? Name, Location? Location) GetDetails(ISymbol symbol)
+    {
+        return symbol switch
+        {
+            IPropertySymbol p => (p.Type, p.Name, p.Locations.IsEmpty ? null : p.Locations[0]),
+            IParameterSymbol p => (p.Type, p.Name, p.Locations.IsEmpty ? null : p.Locations[0]),
+            _ => default
+        };
     }
 
     private static bool IsNumericDurationType(ITypeSymbol type)

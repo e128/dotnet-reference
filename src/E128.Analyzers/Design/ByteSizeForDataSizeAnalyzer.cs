@@ -46,6 +46,12 @@ public sealed class ByteSizeForDataSizeAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeSymbol(SymbolAnalysisContext context)
     {
+        // A partial member arrives as two symbol events. Report only the defining part.
+        if (PartialMembers.IsImplementationPart(context.Symbol))
+        {
+            return;
+        }
+
         var (type, name, location) = context.Symbol switch
         {
             IPropertySymbol p => (p.Type, p.Name, FirstLocation(p)),

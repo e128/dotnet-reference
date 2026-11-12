@@ -121,4 +121,18 @@ public sealed class ObsoleteWithoutMessageAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PartialPropertyWithoutImplementation_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ObsoleteWithoutMessageAnalyzer>("""
+                           using System;
+                           partial class C
+                           {
+                               [{|E128169:Obsolete|}]
+                               private static partial int {|CS9248:P|} { get; }
+                           }
+                           """);
+    }
 }

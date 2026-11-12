@@ -79,4 +79,34 @@ public sealed class TimeSpanForDurationE128AnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PartialMethodParameter_ReportsOnce()
+    {
+        return AnalyzerTestRunner.VerifyAsync<TimeSpanForDurationAnalyzer>("""
+                           public partial class Service
+                           {
+                               public partial void Execute(int {|E128050:DelayMs|});
+
+                               public partial void Execute(int DelayMs) { }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task PartialProperty_ReportsOnce()
+    {
+        // A partial member arrives as two symbol events. The rule reports at the
+        // defining part and skips the implementing part.
+        return AnalyzerTestRunner.VerifyAsync<TimeSpanForDurationAnalyzer>("""
+                           public partial class Config
+                           {
+                               public partial int {|E128050:TimeoutSeconds|} { get; }
+
+                               public partial int TimeoutSeconds { get => 1; }
+                           }
+                           """);
+    }
 }

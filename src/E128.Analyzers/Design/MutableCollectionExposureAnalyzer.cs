@@ -103,6 +103,12 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
     {
         var method = (IMethodSymbol)context.Symbol;
 
+        // A partial member arrives as two symbol events. Report only the defining part.
+        if (PartialMembers.IsImplementationPart(method))
+        {
+            return;
+        }
+
         if (!IsCandidateMethod(method))
         {
             return;
@@ -146,6 +152,12 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         ImmutableDictionary<INamedTypeSymbol, string> typeMap)
     {
         var property = (IPropertySymbol)context.Symbol;
+
+        // A partial member arrives as two symbol events. Report only the defining part.
+        if (PartialMembers.IsImplementationPart(property))
+        {
+            return;
+        }
 
         if (!IsCandidateProperty(property))
         {
