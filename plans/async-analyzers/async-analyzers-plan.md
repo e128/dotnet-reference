@@ -4,7 +4,7 @@
 Status: **closed, no rule ships.** The probe phase answered every question, and
 each candidate either has an owner in the installed rule sets or fails the value
 test. The permanent record is
-[lode/dotnet/analyzer-candidates-async.md](../../lode/dotnet/analyzer-candidates-async.md).
+[lode/dotnet/analyzer-candidates/async-sweep.md](../../lode/dotnet/analyzer-candidates/async-sweep.md).
 
 ## Result
 

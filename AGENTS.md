@@ -69,6 +69,7 @@ Read a reference when its condition applies. These files sit outside the always-
 - C# edits or reviews: `lode/dotnet/csharp-conventions.md`.
 - Test authoring or investigation: `lode/dotnet/testing.md`.
 - Analyzer, code fix, or analyzer test work: `lode/dotnet/analyzers/authoring.md`.
+- Candidate scoring, discovery, or a rule idea: `lode/dotnet/analyzer-candidates/index.md` (open) and `catalog.md` (settled). Every candidate is recorded there, whichever repository noticed it. A consumer repository keeps no candidate register of its own.
 - Analyzer architecture: `lode/dotnet/analyzers/summary.md`.
 - Shell edits or tool prerequisites: `lode/infrastructure/shell-authoring.md`.
 - Shipping-script changes: `lode/infrastructure/shipping.md`.

@@ -1,5 +1,5 @@
 # Performance Candidate Sweep
-*Updated: 2026-11-07T17:31:32Z*
+*Updated: 2026-11-12T01:47:00Z*
 
 Source: twenty software performance practices supplied on 2026-11-07. The probe
 compiled one snippet per candidate shape against the installed analyzer set:
@@ -126,7 +126,7 @@ registration is a composition-root choice.
 
 ## Related
 
-- [analyzer-candidates.md](analyzer-candidates.md): the review-driven catalog
+- [catalog.md](catalog.md): the settled rule catalog
 - [rule-details-performance.md](analyzers/rule-details-performance.md): detection shape for E128203 to E128210
 - [rule-details-performance-tier2.md](analyzers/rule-details-performance-tier2.md): detection shape for E128211 to E128217
 - [analyzers.md](analyzers.md): the deny-by-default strategy

@@ -1,5 +1,5 @@
 # FIPS Cryptography Rules
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-12T01:47:00Z*
 
 The Security analyzer set enforces organization cryptography policy. All rules
 report an error, so a policy break fails the build by default. E128071 and
@@ -122,12 +122,12 @@ private static readonly HashAlgorithmName Ok = HashAlgorithmName.SHA256; // not 
 
 Follow [authoring.md](authoring.md) and
 [new-analyzer-checklist.md](new-analyzer-checklist.md). Assign the next
-free id from [analyzer-candidates.md](../analyzer-candidates.md). Add a row to
+free id from [catalog.md](../analyzer-candidates/catalog.md). Add a row to
 `AnalyzerReleases.Unshipped.md` and the README table in the same change. Run
 `scripts/readme-table-diff.sh --analyzer`.
 
 ## Related
 
 - [analyzers.md](../analyzers.md): analyzer strategy and the category map
-- [analyzer-candidates.md](../analyzer-candidates.md): the ID map and free IDs
+- [catalog.md](../analyzer-candidates/catalog.md): the ID map and free IDs
 - [../../terminology.md](../../terminology.md): the FIPS term

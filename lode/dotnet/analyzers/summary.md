@@ -1,5 +1,5 @@
 # Analyzers Summary
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-12T01:47:01Z*
 
 `src/E128.Analyzers` holds every E128 Roslyn rule. `src/E128.Analyzers.CodeFixers`
 holds the fix providers. The analyzer assembly targets `netstandard2.0` and
@@ -41,5 +41,5 @@ can repair.
 ## Related
 
 - [../analyzers.md](../analyzers.md): analyzer strategy and the category map
-- [../analyzer-candidates.md](../analyzer-candidates.md): the ID map and free IDs
+- [../analyzer-candidates/catalog.md](../analyzer-candidates/catalog.md): the ID map and free IDs
 - [../release-tracking.md](../release-tracking.md): Shipped and Unshipped files
