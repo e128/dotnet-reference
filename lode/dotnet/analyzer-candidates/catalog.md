@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-12T01:47:00Z*
+*Updated: 2026-11-13T12:08:30Z*
 *Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
 
 This file holds the settled side of the register: which rule shipped, which idea
@@ -20,6 +20,9 @@ The async sweep closed with no rule. See [async-sweep.md](async-sweep.md).
 
 The implicit state machine rule ships as E128218. See
 [implicit-state-machine-rule.md](../implicit-state-machine-rule.md).
+The union and closed-hierarchy family ships as E128219 to E128221, from the
+net11-upgrade plan. Detection shape: [rule-details-union.md](../analyzers/rule-details-union.md).
+Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net11-conversion-sweep.md).
 
 - `mutable-static-readonly-array` shipped as E128061.
 - `test-reference-assemblies-tfm-mismatch` shipped as E128062.
@@ -36,6 +39,9 @@ The implicit state machine rule ships as E128218. See
 | E128071 | fips-unapproved-hash                   | implemented | n/a   | 2026-05-10 |
 | E128072 | sha256-create-obsolete                 | implemented | n/a   | 2026-05-10 |
 | E128218 | implicit-state-machine                 | implemented | n/a   | 2026-11-07 |
+| E128219 | memberless-abstract-base-is-closed     | implemented | 4/5   | 2026-11-12 |
+| E128220 | union-switch-discard-arm               | implemented | 4/5   | 2026-11-12 |
+| E128221 | union-value-read                       | implemented | 4/5   | 2026-11-12 |
 
 ## Rules From Guidance Documents
 

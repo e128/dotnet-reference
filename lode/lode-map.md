@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-12T16:46:34Z*
+*Updated: 2026-11-13T12:08:30Z*
 
 ## Generated Docs
 
@@ -40,8 +40,10 @@
 
 ### dotnet/analyzer-candidates/
 
-- [index.md](dotnet/analyzer-candidates/index.md): Open register for every analyzer candidate, with schema, scores, and skipped decisions
+- [index.md](dotnet/analyzer-candidates/index.md): Open register for every analyzer candidate, with schema, scores, and the capture ledger
 - [catalog.md](dotnet/analyzer-candidates/catalog.md): Settled rules, rejected ideas, guidance-document rule maps, and the ID map
+- [skipped-decisions.md](dotnet/analyzer-candidates/skipped-decisions.md): Every declined shape with its reason and site count
+- [net11-conversion-sweep.md](dotnet/analyzer-candidates/net11-conversion-sweep.md): Open .NET 11 conversion shapes with call-site evidence
 - [external-sweep.md](dotnet/analyzer-candidates/external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 - [performance-sweep.md](dotnet/analyzer-candidates/performance-sweep.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
 - [async-sweep.md](dotnet/analyzer-candidates/async-sweep.md): Closed async fire-and-forget sweep, every shape already owned
