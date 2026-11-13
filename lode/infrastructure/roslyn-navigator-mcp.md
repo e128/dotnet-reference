@@ -1,5 +1,5 @@
 # Roslyn Navigator MCP
-*Updated: 2026-11-13T12:52:46Z*
+*Updated: 2026-11-13T12:54:09Z*
 
 The `cwm-roslyn-navigator` .NET tool serves a Model Context Protocol server.
 It loads the solution with Roslyn and answers structural questions about the
@@ -15,7 +15,8 @@ dotnet tool restore
 ```
 
 To install the tool after a clone, run `dotnet tool restore`. That command
-reads the manifest and installs the pinned version.
+reads the manifest and installs the pinned version. `dotnet tool run` also
+restores a missing tool before it starts the process.
 
 To change the pinned version, run:
 
@@ -77,9 +78,10 @@ The working directory defaults to the workspace root. Keep it unset. A fixed
 working directory breaks solution discovery for a worktree.
 
 Claude Code asks for approval before it starts a server from `.mcp.json`.
-The approval is stored per machine, so the prompt appears once. Add a server
-name to `enabledMcpjsonServers` in `.claude/settings.json` to start it without
-a prompt.
+The approval is stored per machine, so the prompt appears once. Approve every
+project server with `enableAllProjectMcpServers` in
+`.claude/settings.local.json`. That file is not tracked. Set
+`enabledMcpjsonServers` instead to approve named servers only.
 
 ## Tools
 
@@ -108,8 +110,8 @@ project list matches `E128.Reference.slnx`.
 - A missing solution file fails workspace load. Pass the solution path instead
   of `.`.
 - A stale manifest loads an old tool. Reinstall the tool in the repository.
-- The client reports `CONNECTION_CLOSED` when no .NET 10 runtime is installed.
-  Set `"rollForward": true` on the manifest entry, restore the tool, then
+- The client reports `CONNECTION_CLOSED` when the host cannot roll the .NET 10
+  target forward. Set `"rollForward": true` on the manifest entry, then
   reconnect.
 - The tool writes log messages to standard error. The MCP client keeps them out
   of the model context.
