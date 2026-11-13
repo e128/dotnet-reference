@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-12T21:17:10Z*
+*Updated: 2026-11-13T14:40:22Z*
 
 ## Overview
 
@@ -166,6 +166,8 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.9.8   | (none)        | The member-level symbol rules report a partial member once at its defining part through `PartialMembers.IsImplementationPart`, and the attribute rules gain partial-shape fixtures. No rule set change. |
 | 2.10.0  | E128219-221   | Union rule family: closed abstract base, union switch null arm, and union pattern-match containment. |
 | 2.10.1  | (none)        | E128014 exempts a separator-disjoint repeated group and fires on an unbounded `{n,}` outer quantifier. The GeneratedRegex fixes keep the pattern language. No rule set change. |
+| 2.11.0  | E128223-226   | Hand-rolled process capture, read-only `MemoryStream`, closed base with members, and comparer set construction. E128220 also reports a closed-hierarchy switch that ends in a discard arm. |
+| 3.0.0   | (none)        | E128160 removed. E128223 reports the read-then-wait shape that replaced the hand-rolled process capture. |
 
 ## Sources
 
