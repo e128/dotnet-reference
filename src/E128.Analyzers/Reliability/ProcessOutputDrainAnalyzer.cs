@@ -92,12 +92,12 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
                 method.ContainingType?.ToDisplayString(),
                 ProcessTypeName,
                 StringComparison.Ordinal)
-            || GetRootSymbol(memberAccess.Expression, model, cancellationToken) is not { } processSymbol)
+            || ProcessLaunchScope.GetRootSymbol(memberAccess.Expression, model, cancellationToken) is not { } processSymbol)
         {
             return;
         }
 
-        if (GetScope(invocation) is not { } scope)
+        if (ProcessLaunchScope.GetScope(invocation) is not { } scope)
         {
             return;
         }
@@ -109,45 +109,6 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
-    }
-
-    /// <summary>
-    ///     Resolves the leftmost receiver of a member chain, so <c lang="csharp">process</c>,
-    ///     <c lang="csharp">process.StartInfo</c>, and <c lang="csharp">process.StandardOutput</c>
-    ///     all resolve to the same process symbol.
-    /// </summary>
-    private static ISymbol? GetRootSymbol(
-        ExpressionSyntax expression,
-        SemanticModel model,
-        CancellationToken cancellationToken)
-    {
-        var current = expression;
-
-        while (current is MemberAccessExpressionSyntax memberAccess)
-        {
-            current = memberAccess.Expression;
-        }
-
-        return model.GetSymbolInfo(current, cancellationToken).Symbol;
-    }
-
-    private static SyntaxNode? GetScope(InvocationExpressionSyntax invocation)
-    {
-        // The configuration and the wait usually sit in one method. A lambda body is the scope for a
-        // wait inside a callback, because the enclosing method holds no relation to the process.
-        if (invocation.FirstAncestorOrSelf<AnonymousFunctionExpressionSyntax>() is { } lambda)
-        {
-            // The configuration and the wait usually sit in one method. A lambda body is the scope for a
-            // wait inside a callback, because the enclosing method holds no relation to the process.
-            return lambda.Body;
-        }
-
-        if (invocation.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>() is { } method)
-        {
-            return (SyntaxNode?)method.Body ?? method.ExpressionBody;
-        }
-
-        return invocation.FirstAncestorOrSelf<BlockSyntax>();
     }
 
     private static bool HasRedirectedStream(
@@ -235,7 +196,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        var current = Unwrap(expression);
+        var current = ProcessLaunchScope.Unwrap(expression);
 
         if (current is BaseObjectCreationExpressionSyntax creation)
         {
@@ -243,7 +204,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
                 scope, creation, parent, processSymbol, model, cancellationToken);
         }
 
-        var root = GetRootSymbol(current, model, cancellationToken);
+        var root = ProcessLaunchScope.GetRootSymbol(current, model, cancellationToken);
 
         return SymbolEqualityComparer.Default.Equals(root, processSymbol)
                || (current is IdentifierNameSyntax or MemberAccessExpressionSyntax
@@ -267,7 +228,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
             case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }:
                 return model.GetDeclaredSymbol(declarator, cancellationToken) is { } local
                        && IsLinked(scope, local, processSymbol, model, cancellationToken);
-            case AssignmentExpressionSyntax assignment when Unwrap(assignment.Right) == creation:
+            case AssignmentExpressionSyntax assignment when ProcessLaunchScope.Unwrap(assignment.Right) == creation:
                 return AssignmentBinds(scope, assignment, processSymbol, model, cancellationToken);
             case ParenthesizedExpressionSyntax or PostfixUnaryExpressionSyntax:
                 return parent.Parent is { } outer && StartInfoCreationBinds(
@@ -301,7 +262,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         if (assignment.Left is MemberAccessExpressionSyntax access && IsStartInfoName(access.Name))
         {
             return SymbolEqualityComparer.Default.Equals(
-                GetRootSymbol(access.Expression, model, cancellationToken),
+                ProcessLaunchScope.GetRootSymbol(access.Expression, model, cancellationToken),
                 processSymbol);
         }
 
@@ -352,7 +313,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
     {
         return assignment.Left is MemberAccessExpressionSyntax access && IsStartInfoName(access.Name)
             ? SymbolEqualityComparer.Default.Equals(
-                GetRootSymbol(access.Expression, model, cancellationToken),
+                ProcessLaunchScope.GetRootSymbol(access.Expression, model, cancellationToken),
                 processSymbol)
             : assignment is { Left: IdentifierNameSyntax startInfoName, Parent: InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax owner } }
               && IsStartInfoName(startInfoName)
@@ -371,7 +332,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken)
     {
         return SymbolEqualityComparer.Default.Equals(
-            model.GetSymbolInfo(Unwrap(expression), cancellationToken).Symbol,
+            model.GetSymbolInfo(ProcessLaunchScope.Unwrap(expression), cancellationToken).Symbol,
             symbol);
     }
 
@@ -408,34 +369,12 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
                 SymbolEqualityComparer.Default.Equals(
                     model.GetDeclaredSymbol(declarator, cancellationToken),
                     processSymbol),
-            AssignmentExpressionSyntax assignment when Unwrap(assignment.Right) == current =>
+            AssignmentExpressionSyntax assignment when ProcessLaunchScope.Unwrap(assignment.Right) == current =>
                 SymbolEqualityComparer.Default.Equals(
                     model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol,
                     processSymbol),
             _ => false
         };
-    }
-
-    private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
-    {
-        var current = expression;
-
-        while (true)
-        {
-            switch (current)
-            {
-                case ParenthesizedExpressionSyntax parenthesized:
-                    current = parenthesized.Expression;
-                    break;
-
-                case PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression):
-                    current = postfix.Operand;
-                    break;
-
-                default:
-                    return current;
-            }
-        }
     }
 
     /// <summary>
@@ -485,14 +424,14 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
         return (invocation.Expression is MemberAccessExpressionSyntax access
                 && DrainMethodNames.Contains(access.Name.Identifier.ValueText)
                 && SymbolEqualityComparer.Default.Equals(
-                    GetRootSymbol(access.Expression, model, cancellationToken),
+                    ProcessLaunchScope.GetRootSymbol(access.Expression, model, cancellationToken),
                     processSymbol))
                || invocation.ArgumentList.Arguments.Any(argument => argument.Expression
             .DescendantNodesAndSelf()
             .OfType<MemberAccessExpressionSyntax>()
             .Any(member => IsStandardStreamName(member.Name.Identifier.ValueText)
                            && SymbolEqualityComparer.Default.Equals(
-                               GetRootSymbol(member.Expression, model, cancellationToken),
+                               ProcessLaunchScope.GetRootSymbol(member.Expression, model, cancellationToken),
                                processSymbol)));
     }
 
@@ -523,7 +462,7 @@ public sealed class ProcessOutputDrainAnalyzer : DiagnosticAnalyzer
                     && subscription.Left is MemberAccessExpressionSyntax left
                     && DrainEventNames.Contains(left.Name.Identifier.ValueText)
                     && SymbolEqualityComparer.Default.Equals(
-                        GetRootSymbol(left.Expression, model, cancellationToken),
+                        ProcessLaunchScope.GetRootSymbol(left.Expression, model, cancellationToken),
                         processSymbol),
                 _ => false
             };

@@ -1,3 +1,20 @@
+## Release 2.11.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128223 | E128-Reliability | Warning | Hand-rolled process capture instead of Process.RunAndCaptureText
+E128224 | E128-Performance | Warning | Read-only MemoryStream over a string or byte array
+E128225 | E128-Design | Warning | Abstract base with members should be closed
+E128226 | E128-Performance | Warning | Comparer set built by a constructor and an Add loop
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------
+E128220 | E128-Design | Warning | E128-Design | Warning | Also reports a switch over a closed class hierarchy that ends in a discard arm
+
 ## Release 2.10.0
 
 ### New Rules

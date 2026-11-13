@@ -163,4 +163,63 @@ public sealed class UnionSwitchDiscardArmAnalyzerTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenASwitchOverAClosedHierarchyEndsInADiscardArm()
+    {
+        return VerifyAsync(
+            ClosedShapeSource + """
+
+            internal static class Switcher
+            {
+                internal static int Switch(Shape shape)
+                {
+                    return shape switch
+                    {
+                        Circle => 1,
+                        Square => 2,
+                        {|E128220:_|} => 0
+                    };
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenAClosedHierarchySwitchEndsInANullArm()
+    {
+        return VerifyAsync(
+            ClosedShapeSource + """
+
+            internal static class Switcher
+            {
+                internal static int Switch(Shape shape)
+                {
+                    return shape switch
+                    {
+                        Circle => 1,
+                        Square => 2,
+                        null => 0
+                    };
+                }
+            }
+            """);
+    }
+
+    private const string ClosedShapeSource =
+        """
+        internal closed class Shape
+        {
+        }
+
+        internal sealed class Circle : Shape
+        {
+        }
+
+        internal sealed class Square : Shape
+        {
+        }
+        """;
 }

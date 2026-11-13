@@ -11,11 +11,11 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace E128.Analyzers.Design;
 
 /// <summary>
-///     E128220: Reports a switch over a union that ends in a discard or
+///     E128220: Reports a switch over a union or a closed hierarchy that ends in a discard or
 ///     <see langword="var" /> arm instead of a <see langword="null" /> arm. The
 ///     <see langword="null" /> arm names the empty case, so the compiler keeps warning when a
-///     case type is added later. A discard or <see langword="var" /> arm accepts any case type
-///     the union grows, and the missing-case warning disappears.
+///     case type or a leaf is added later. A discard or <see langword="var" /> arm accepts any
+///     case type the union grows, and the missing-case warning disappears.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
@@ -24,8 +24,8 @@ public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "Union switch ends in a discard arm",
-        "Switch over union type '{0}' ends in a '{1}' arm — end the switch in a null arm so the compiler keeps warning about a missing case",
+        "Union or closed-hierarchy switch ends in a discard arm",
+        "Switch over '{0}' ends in a '{1}' arm. End the switch with a null arm so the compiler keeps warning about a missing case.",
         "E128-Design",
         DiagnosticSeverity.Warning,
         true);
@@ -111,7 +111,14 @@ public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
         }
 
         var unwrapped = TypeSymbols.UnwrapNullable(type);
-        return UnionTypes.IsUnion(unwrapped) ? unwrapped as INamedTypeSymbol : null;
+        if (unwrapped is not INamedTypeSymbol named)
+        {
+            return null;
+        }
+
+        // A closed class hierarchy carries the compiler closed attribute, so the same catch-all
+        // rule applies: a named or null arm keeps CS8509 alive for a missing leaf.
+        return UnionTypes.IsUnion(unwrapped) || ClosedHierarchy.IsClosed(named) ? named : null;
     }
 
     private static PatternSyntax? TryFindCatchAll(IEnumerable<PatternSyntax?> patterns)

@@ -1,6 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-13T12:08:30Z*
-*Source: analyzer-review-miner 2026-04-15, evidence window 2026-04-12..2026-04-15*
+*Updated: 2026-11-13T12:38:31Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -22,7 +21,8 @@ The implicit state machine rule ships as E128218. See
 [implicit-state-machine-rule.md](../implicit-state-machine-rule.md).
 The union and closed-hierarchy family ships as E128219 to E128221, from the
 net11-upgrade plan. Detection shape: [rule-details-union.md](../analyzers/rule-details-union.md).
-Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net11-conversion-sweep.md).
+The hand-rolled process capture shape ships as E128223, the first rule from the
+conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net11-conversion-sweep.md).
 
 - `mutable-static-readonly-array` shipped as E128061.
 - `test-reference-assemblies-tfm-mismatch` shipped as E128062.
@@ -42,6 +42,11 @@ Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net11-conversion-swe
 | E128219 | memberless-abstract-base-is-closed     | implemented | 4/5   | 2026-11-12 |
 | E128220 | union-switch-discard-arm               | implemented | 4/5   | 2026-11-12 |
 | E128221 | union-value-read                       | implemented | 4/5   | 2026-11-12 |
+| E128222 | uncontained-root-join                  | implemented | 5/5   | 2026-11-10 |
+| E128223 | hand-rolled-process-capture            | implemented | 5/5   | 2026-11-13 |
+| E128224 | read-only-memory-stream                | implemented | 4/5   | 2026-11-13 |
+| E128225 | abstract-base-with-members-is-closed   | implemented | 4/5   | 2026-11-13 |
+| E128226 | comparer-set-by-loop                   | implemented | 3.5/5 | 2026-11-13 |
 
 ## Rules From Guidance Documents
 
@@ -180,8 +185,8 @@ rule would repeat a build failure.
 CA5359 reads the `ServicePointManager` callback only. The `HttpClientHandler`
 path stays open, so E128156 covers it.
 
-The sixteen Tier 2 shapes that wait for a real defect in review move with the
-open register. See [index.md](index.md).
+The Tier 2 shapes that wait for a real defect in review move with the open
+register. See [index.md](index.md).
 
 ## Checked And Rejected
 
