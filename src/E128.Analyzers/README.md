@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.11.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.0.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -17,6 +17,11 @@ dependency of its own. It loads in a .NET 11 host compiler from that one build.
 
 The rules read syntax and symbols, so they work on any C# project. A rule stays
 silent where the target framework cannot express what it looks for.
+
+## Rule Retirement
+
+Version 3.0.0 removes E128160, which reported redirected process streams that were not read before a wait.
+E128223 reports the separate read-then-wait pattern.
 
 ## Rules
 
@@ -106,7 +111,6 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128154 | Singleton service depends on a scoped service or DbContext                            | No       |
 | E128155 | Mutating the loop source inside its own foreach                                       | Yes      |
 | E128159 | TaskCompletionSource without RunContinuationsAsynchronously                           | Yes      |
-| E128160 | Redirected process output never read before WaitForExit                               | No       |
 | E128161 | Path.Combine with a rooted or parent segment                                          | Yes      |
 | E128162 | Local used after an explicit Dispose                                                  | No       |
 | E128163 | ImmutableArray field left at its default                                              | Yes      |
@@ -2635,23 +2639,6 @@ void Complete() => source.SetResult(1);
 void Complete() => source.TrySetResult(1);
 ```
 
-### E128160: Redirected process output never read before WaitForExit
-
-Flags a `Process.WaitForExit` call in a method that redirects `RedirectStandardOutput` or `RedirectStandardError` and never reads the stream. The child blocks once the pipe buffer fills, so the wait never returns. A read method such as `ReadToEnd`, `ReadLineAsync`, or `BeginOutputReadLine` clears the report. A subscription to `OutputDataReceived` or `ErrorDataReceived` clears it too. The read or the subscription clears the report only when it runs before the wait and on the same process. The rule reads one method body or one lambda body.
-
-```csharp
-// Before (warns)
-process.StartInfo.RedirectStandardOutput = true;
-process.Start();
-process.WaitForExit();
-
-// After
-process.StartInfo.RedirectStandardOutput = true;
-process.Start();
-var output = process.StandardOutput.ReadToEnd();
-process.WaitForExit();
-```
-
 ### E128161: Path.Combine with a rooted or parent segment
 
 Flags a `System.IO.Path.Combine` call with a constant segment that starts from a root or climbs to a parent directory. A rooted segment drops every earlier segment, so the result escapes the base directory. The message for a rooted segment advises `Path.Join`. The message for a parent segment advises `Path.GetFullPath` on the result, then a check that it starts with the base directory, because `Path.Join` keeps `..` and does not stop traversal. The rule reads both separators and the drive-letter form. A multi-part segment is reported when its `..` parts climb above its start, so `"a/../../b"` is reported and `"a/../b"` is not. A segment that is exactly `".."` is not reported, because a caller uses it on purpose. The code fix replaces the call with `Path.Join` for a rooted segment only. A parent segment still escapes under `Path.Join`, so a report on that shape offers no fix.
@@ -3195,7 +3182,7 @@ var file = FilePathContainment.ResolveInside(root, callerName);
 
 Flags a process launch that redirects a standard stream, reads the stream with `ReadToEnd` or `ReadToEndAsync`, and then waits for exit. `Process.RunAndCaptureText` and `Process.RunAndCaptureTextAsync` return the standard output, the standard error, and the exit status in one call.
 
-The rule binds the redirect flag to the process through the start info member, a start info local passed to `Process.Start`, a start info assigned to the process, or a process object initializer. A redirect on another process, a read on another process, or a read after the wait stays silent. E128160 owns the read-after-wait shape.
+The rule binds the redirect flag to the process through the start info member, a start info local passed to `Process.Start`, a start info assigned to the process, or a process object initializer. A redirect on another process, a read on another process, or a read after the wait stays silent.
 
 A launch that redirects standard input stays silent, because the caller interacts with the child. A line read stays silent, because the caller stops early. The rule carries no code fix, because the replacement changes the error handling around the launch.
 
