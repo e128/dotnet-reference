@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="2.10.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="2.11.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -59,6 +59,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128219 | Memberless abstract base with all derivation in one assembly should be closed                        | Yes      |
 | E128220 | Union switch ends in a discard or var arm instead of a null arm                                      | Yes      |
 | E128221 | Union Value read or case cast outside a pattern match                                                | No       |
+| E128225 | Abstract base with members is a closed hierarchy                                                     | Yes      |
 
 ### Reliability
 
@@ -190,6 +191,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128215 | `StringBuilder` created without capacity for a known append count                                               | No       |
 | E128216 | Unbounded channel can grow without limit                                                                        | No       |
 | E128217 | Large struct passed by value                                                                                    | No       |
+| E128223 | Hand-rolled child-process capture (use `Process.RunAndCaptureText`)                                             | No       |
+| E128224 | Read-only `MemoryStream` over a string or byte array                                                            | No       |
+| E128226 | Comparer set built by constructor and `Add` loop                                                                | No       |
 
 ### Security
 
@@ -3185,6 +3189,94 @@ var file = new FileInfo(Path.Combine(root.FullName, callerName));
 
 // After
 var file = FilePathContainment.ResolveInside(root, callerName);
+```
+
+### E128223: Hand-rolled child-process capture
+
+Flags a process launch that redirects a standard stream, reads the stream with `ReadToEnd` or `ReadToEndAsync`, and then waits for exit. `Process.RunAndCaptureText` and `Process.RunAndCaptureTextAsync` return the standard output, the standard error, and the exit status in one call.
+
+The rule binds the redirect flag to the process through the start info member, a start info local passed to `Process.Start`, a start info assigned to the process, or a process object initializer. A redirect on another process, a read on another process, or a read after the wait stays silent. E128160 owns the read-after-wait shape.
+
+A launch that redirects standard input stays silent, because the caller interacts with the child. A line read stays silent, because the caller stops early. The rule carries no code fix, because the replacement changes the error handling around the launch.
+
+```csharp
+// Before (warns)
+using var process = Process.Start(new ProcessStartInfo(file)
+{
+    RedirectStandardOutput = true,
+    RedirectStandardError = true,
+    UseShellExecute = false
+});
+string output = process.StandardOutput.ReadToEnd();
+string error = process.StandardError.ReadToEnd();
+process.WaitForExit();
+
+// After
+var result = Process.RunAndCaptureText(new ProcessStartInfo(file)
+{
+    RedirectStandardOutput = true,
+    RedirectStandardError = true,
+    UseShellExecute = false
+});
+string output = result.StandardOutput;
+string error = result.StandardError;
+int exitCode = result.ExitStatus.ExitCode;
+```
+
+### E128224: MemoryStream wraps a read-only source
+
+Flags a `MemoryStream` that wraps a string or a byte array and is read only. `StringStream` wraps the string without a copy, and `ReadOnlyMemoryStream` wraps the bytes without a copy.
+
+The rule reads one method body. A write call, a buffer read through `ToArray`, an unknown consumer, a return, or a store into another member keeps the report silent, because the target types reject a write. The rule carries no code fix for the same reason.
+
+```csharp
+// Before (warns)
+using var stream = new MemoryStream(Encoding.UTF8.GetBytes(text));
+using var reader = new StreamReader(stream);
+
+// After
+using var stream = new StringStream(text, Encoding.UTF8);
+using var reader = new StreamReader(stream);
+```
+
+### E128225: Abstract base with members is a closed hierarchy
+
+Flags an internal `abstract` class that declares members while every type that derives from it lives in the same assembly. The `closed` modifier implies abstract, so a base that declares abstract members keeps them, and the compiler reports `CS8509` on a switch that misses a leaf.
+
+The memberless base belongs to E128219. A public base stays silent, because an assembly outside the compilation may derive from it. A record declaration stays silent, because the compiler synthesizes members from the parameter list and the equality contract.
+
+The code fix replaces the `abstract` modifier with `closed`.
+
+```csharp
+// Before (warns)
+internal abstract class Shape
+{
+    internal abstract int Area();
+}
+
+// After
+internal closed class Shape
+{
+    internal abstract int Area();
+}
+```
+
+### E128226: Comparer set built by a loop
+
+Flags a `HashSet<T>` that a comparer constructor creates and a later loop fills. The collection expression `[with(StringComparer.X), .. items]` passes the comparer as an argument and fills the set in one statement.
+
+A collection initializer, a field declaration, a set that escapes to another method, and an `Add` call outside the loop keep the report silent. The rule carries no code fix, because the rewrite moves the loop into the initializer.
+
+```csharp
+// Before (warns)
+var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+foreach (var item in items)
+{
+    set.Add(item);
+}
+
+// After
+HashSet<string> set = [with(StringComparer.OrdinalIgnoreCase), .. items];
 ```
 
 ## Requirements

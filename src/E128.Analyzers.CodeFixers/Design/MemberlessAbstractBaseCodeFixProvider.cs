@@ -14,7 +14,7 @@ namespace E128.Analyzers.Design;
 public sealed class MemberlessAbstractBaseCodeFixProvider : E128CodeFixProviderBase
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
-        [MemberlessAbstractBaseAnalyzer.DiagnosticId];
+        [MemberlessAbstractBaseAnalyzer.DiagnosticId, AbstractBaseWithMembersAnalyzer.DiagnosticId];
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {

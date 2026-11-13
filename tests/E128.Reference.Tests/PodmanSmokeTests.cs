@@ -123,8 +123,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
     {
         try
         {
-            using var process = new Process();
-            process.StartInfo = new()
+            var startInfo = new ProcessStartInfo
             {
                 FileName = "podman",
                 ArgumentList = { "info" },
@@ -133,19 +132,13 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
                 RedirectStandardError = true,
                 UseShellExecute = false
             };
-            _ = process.Start();
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            try
-            {
-                await process.WaitForExitAsync(timeoutCts.Token);
-            }
-            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
-            {
-                process.Kill(true);
-                return false;
-            }
-
-            return process.ExitCode is 0;
+            var result = await Process.RunAndCaptureTextAsync(startInfo, timeoutCts.Token);
+            return result.ExitStatus.ExitCode is 0;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
         }
         catch (Win32Exception)
         {
@@ -163,8 +156,7 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
     /// <exception cref="InvalidOperationException"></exception>
     private static async Task RunPodmanAsync(string arguments, bool throwOnError = true)
     {
-        using var process = new Process();
-        process.StartInfo = new()
+        var startInfo = new ProcessStartInfo
         {
             FileName = "podman",
             WorkingDirectory = RepoRoot,
@@ -174,29 +166,30 @@ public sealed class PodmanSmokeTests : IAsyncLifetime, IDisposable
         };
         foreach (var token in arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries))
         {
-            process.StartInfo.ArgumentList.Add(token);
+            startInfo.ArgumentList.Add(token);
         }
 
-        _ = process.Start();
-        var stderr = await process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+            timeoutCts.Token,
+            TestContext.Current.CancellationToken);
+        ProcessTextOutput result;
         try
         {
-            await process.WaitForExitAsync(timeoutCts.Token);
+            result = await Process.RunAndCaptureTextAsync(startInfo, linkedCts.Token);
         }
         catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
         {
-            process.Kill(true);
             throw new InvalidOperationException($"'podman {arguments}' timed out after 2 minutes", ex);
         }
 
-        if (!throwOnError || process.ExitCode is 0)
+        if (!throwOnError || result.ExitStatus.ExitCode is 0)
         {
             return;
         }
 
         throw new InvalidOperationException(
-            $"'podman {arguments}' failed (exit {process.ExitCode.ToString(CultureInfo.InvariantCulture)}): {stderr}");
+            $"'podman {arguments}' failed (exit {result.ExitStatus.ExitCode.ToString(CultureInfo.InvariantCulture)}): {result.StandardError}");
     }
 
     /// <summary>

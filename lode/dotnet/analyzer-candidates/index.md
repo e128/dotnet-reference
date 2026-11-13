@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-13T12:12:44Z*
+*Updated: 2026-11-13T12:38:31Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -7,7 +7,7 @@ only when a rule ships or a session closes the decision as `skipped`. The
 shipped rules live in [catalog.md](catalog.md), and every declined shape lives
 in [skipped-decisions.md](skipped-decisions.md).
 
-Writers: `/analyzer` scout and discover, `scripts/pug-heuristic.nu` in the
+Writers: the `analyzer-review-miner` agent, `scripts/pug-heuristic.nu` in the
 pugworks sibling checkout, and any session in this repository.
 
 ## Schema
@@ -18,7 +18,7 @@ Each row: `Pattern | Source | Score | Status | Notes`.
 | --------- | ------------------------------------------------------------ |
 | new       | discovered and scored, not yet planned                       |
 | planned   | owned by an active plan                                      |
-| skipped   | evaluated and declined, with the reason in a section below   |
+| skipped   | evaluated and declined, with the reason in the skipped file  |
 | candidate | Tier 2 shape that clears the bar and waits for a real defect |
 
 The four dimensions are frequency (0-2), coverage gap (0-1), expressibility
@@ -29,40 +29,8 @@ The four dimensions are frequency (0-2), coverage gap (0-1), expressibility
 
 | Pattern | Source | Score | Status | Notes |
 | ------- | ------ | ----- | ------ | ----- |
-| Unguarded `Path.Combine(root.FullName, name)` where `name` is not a literal | analyzer discover --from-commits 2026-11-10 (fix 1ece23206) | 5/5 | new | No rule covers path containment. Detail below. |
 | Body read into memory (`ReadAsStringAsync`, `ReadToEndAsync`) with no size bound | analyzer discover --from-commits 2026-11-10 (fix 1ece23206) | 3.5/5 | new | 16 read sites in pugworks `src/`, 1 bound (as of 2026-11-10). Detail below. |
 | `foreach` over `JsonElement.EnumerateArray()` or `EnumerateObject()` without disposing the enumerator | analyzer discover --from-commits 2026-11-10 (fix 2381b8535) | 3.5/5 | new | 3 unguarded sites remain in one pugworks test file (as of 2026-11-10). Detail below. |
-| Hand-rolled child-process capture, `RedirectStandardOutput` plus `ReadToEnd` plus `WaitForExit`, instead of `Process.RunAndCaptureText` | net11-upgrade close 2026-11-13 | 5/5 | new | 4 blocks in 3 pugworks files. [Detail](net11-conversion-sweep.md#hand-rolled-child-process-capture). |
-| Read-only `MemoryStream` over a `string` or `byte[]` instead of `StringStream` or `ReadOnlyMemoryStream` | net11-upgrade close 2026-11-13 | 4/5 | new | 9 `MemoryStream` sites, 1 direct string wrap. [Detail](net11-conversion-sweep.md#read-only-memorystream-over-a-string-or-byte-array). |
-| `abstract` base with members, every derivation in-assembly, instead of the `closed` modifier | net11-upgrade close 2026-11-13 | 4/5 | new | E128219 stops at a memberless base. [Detail](net11-conversion-sweep.md#closed-hierarchy-with-abstract-members). |
-| Comparer set built by constructor plus an `Add` loop instead of a `[with(comparer), .. items]` collection expression | net11-upgrade close 2026-11-13 | 3.5/5 | new | E128027 owns the field form. [Detail](net11-conversion-sweep.md#comparer-set-built-by-constructor-and-add-loop). |
-| Switch over a `closed` hierarchy ending in a discard arm, the E128220 shape applied beyond unions | net11-upgrade close 2026-11-13 | 3/5 | new | Extension, no new ID. No site today. [Detail](net11-conversion-sweep.md#closed-hierarchy-switch-with-a-discard-arm). |
-
-## Unguarded Path Join Under a Directory Root
-
-**Pattern**: `Path.Combine(<dir>.FullName, <leaf>)`, or a `FileInfo` built from
-it, where the leaf is not a compile-time literal and no guard in the same method
-confines the result to `<dir>`.
-
-**Before**: `var file = new FileInfo(Path.Combine(imagesDir.FullName, fileName));`
-then read, judge, or delete it.
-
-**After**: resolve the joined path and check containment, throwing on a miss.
-`Path.GetFileName` is not the fix, because it flattens a multi-segment leaf and
-retargets the read.
-
-**Why not covered**: no E128 rule. CA3003 and CA3006 are taint rules and neither
-is enabled. E128001 covers typed path parameters, not containment.
-
-**Scope**: skip a literal leaf, and skip a call already followed by a
-`FilePathContainment.IsInside` check or a domain validator such as
-`CorpusScanner.ValidateDomainPath`.
-
-**Evidence**: commit 1ece23206 confines the caller's image name in
-`DashboardImagesService` after a security review. 4 of the 59 root-joined sites
-in pugworks `src/` carry a guard (as of 2026-11-10).
-
-**Source**: `analyzer discover --from-commits 2026-11-10`
 
 ## Body Read Without a Size Bound
 
@@ -130,8 +98,8 @@ These clear the same bar and wait for a real defect in review.
 
 A skipped row keeps `/analyzer` from reporting the same idea twice. The reason
 and the evidence for every skipped row live in
-[skipped-decisions.md](skipped-decisions.md). That file holds the seven net11
-shapes declined on 2026-11-13 alongside the earlier decisions.
+[skipped-decisions.md](skipped-decisions.md). That file holds the net11 shapes
+declined on 2026-11-13 alongside the earlier decisions.
 
 ## Working The Register
 
