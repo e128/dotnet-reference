@@ -1,11 +1,11 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-12T13:50:47Z*
+*Updated: 2026-11-13T12:12:44Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
 only when a rule ships or a session closes the decision as `skipped`. The
-settled side, including every shipped rule and every rejected idea, lives in
-[catalog.md](catalog.md).
+shipped rules live in [catalog.md](catalog.md), and every declined shape lives
+in [skipped-decisions.md](skipped-decisions.md).
 
 Writers: `/analyzer` scout and discover, `scripts/pug-heuristic.nu` in the
 pugworks sibling checkout, and any session in this repository.
@@ -32,6 +32,11 @@ The four dimensions are frequency (0-2), coverage gap (0-1), expressibility
 | Unguarded `Path.Combine(root.FullName, name)` where `name` is not a literal | analyzer discover --from-commits 2026-11-10 (fix 1ece23206) | 5/5 | new | No rule covers path containment. Detail below. |
 | Body read into memory (`ReadAsStringAsync`, `ReadToEndAsync`) with no size bound | analyzer discover --from-commits 2026-11-10 (fix 1ece23206) | 3.5/5 | new | 16 read sites in pugworks `src/`, 1 bound (as of 2026-11-10). Detail below. |
 | `foreach` over `JsonElement.EnumerateArray()` or `EnumerateObject()` without disposing the enumerator | analyzer discover --from-commits 2026-11-10 (fix 2381b8535) | 3.5/5 | new | 3 unguarded sites remain in one pugworks test file (as of 2026-11-10). Detail below. |
+| Hand-rolled child-process capture, `RedirectStandardOutput` plus `ReadToEnd` plus `WaitForExit`, instead of `Process.RunAndCaptureText` | net11-upgrade close 2026-11-13 | 5/5 | new | 4 blocks in 3 pugworks files. [Detail](net11-conversion-sweep.md#hand-rolled-child-process-capture). |
+| Read-only `MemoryStream` over a `string` or `byte[]` instead of `StringStream` or `ReadOnlyMemoryStream` | net11-upgrade close 2026-11-13 | 4/5 | new | 9 `MemoryStream` sites, 1 direct string wrap. [Detail](net11-conversion-sweep.md#read-only-memorystream-over-a-string-or-byte-array). |
+| `abstract` base with members, every derivation in-assembly, instead of the `closed` modifier | net11-upgrade close 2026-11-13 | 4/5 | new | E128219 stops at a memberless base. [Detail](net11-conversion-sweep.md#closed-hierarchy-with-abstract-members). |
+| Comparer set built by constructor plus an `Add` loop instead of a `[with(comparer), .. items]` collection expression | net11-upgrade close 2026-11-13 | 3.5/5 | new | E128027 owns the field form. [Detail](net11-conversion-sweep.md#comparer-set-built-by-constructor-and-add-loop). |
+| Switch over a `closed` hierarchy ending in a discard arm, the E128220 shape applied beyond unions | net11-upgrade close 2026-11-13 | 3/5 | new | Extension, no new ID. No site today. [Detail](net11-conversion-sweep.md#closed-hierarchy-switch-with-a-discard-arm). |
 
 ## Unguarded Path Join Under a Directory Root
 
@@ -119,70 +124,25 @@ These clear the same bar and wait for a real defect in review.
 | `[Flags]` member value that is not a power of two                  | constant collides with a lower bit                             | Low    |
 | Dead store to a private field                                      | assignment killed on every path before a read                  | Medium |
 | Loop with no exit path                                             | `while (true)` with no exit call                               | Medium |
+| `Base64.*` over `Convert.ToBase64String` or `Convert.FromBase64String` | call to the `Convert` base64 member, waiting on a real defect | Low |
 
 ## Skipped Decisions
 
-A skipped row keeps `/analyzer` from reporting the same idea twice.
-
-## Inline `new Option<T>(...)` Inside `Command.Create()`
-
-**Pattern**: `System.CommandLine` `Option<T>` instances created inline inside
-the `Create()` method body. A static readonly field at the type level is
-reusable across unit tests and follows the PascalCase convention for static
-members.
-
-**Why skipped**: style only, score 2/5. A Roslyn fix is possible, but the
-analyzer would report a convention that most projects follow.
-
-**Evidence**: 1 site in pugworks `src/TravelSearch/Commands/HotelCommand.cs`
-refactored in commit 792196a68 (2026-05-26).
-
-**Source**: `analyzer-scout 2026-07-16` (code-review-2026-05-26)
-
-## HttpClient Per-Request Instantiation
-
-**Pattern**: `new HttpClient()` inside a method that runs many times, instead of
-`IHttpClientFactory`, a singleton `HttpClient`, or an `AddHttpClient`
-registration.
-
-**Why skipped**: E128004 already flags the zero-arg form. No real handler-arg
-evidence exists in the pugworks repo. The one candidate site,
-`PugFetcher.ExecuteSessionFetchAsync`, is a sanctioned custom-handler exception.
-
-**Evidence**: zero occurrences in pugworks. Score 4 (frequency 2, coverage gap
-1, expressibility 1, value 1).
-
-**Source**: `analyzer discover 2026-08-11`
-
-## Two Boolean Fields Encoding One State
-
-**Pattern**: two `bool` members the caller must keep in sync, such as
-`IsComplete` with `IsSuccess`, or a flag beside a nullable snapshot.
-
-**Why skipped**: E128218 already reports the implicit state machine shape at
-`error`. Commit 3dd5c99fd and commit 7d7de220d are findings from that rule, so a
-second rule would double-report.
-
-**Source**: `analyzer-scout 2026-11-10` (session repeat)
-
-## Disposable Local From a Factory Call
-
-**Pattern**: `var x = await factory.GetConnectionAsync(ct)` with no `using` or
-`await using`.
-
-**Why skipped**: IDISP001 owns the shape. Commit 2381b8535 fixed 6 sites from a
-review, and 11 suppression sites declare ownership transfer. The remaining work
-is the ownership declaration, not a rule.
-
-**Source**: `analyzer-scout 2026-11-10` (fix 2381b8535)
+A skipped row keeps `/analyzer` from reporting the same idea twice. The reason
+and the evidence for every skipped row live in
+[skipped-decisions.md](skipped-decisions.md). That file holds the seven net11
+shapes declined on 2026-11-13 alongside the earlier decisions.
 
 ## Working The Register
 
-1. Read this file and [catalog.md](catalog.md) before you scout, so a settled
+1. Read this file, [catalog.md](catalog.md), and
+   [skipped-decisions.md](skipped-decisions.md) before you scout, so a settled
    decision is not suggested again.
 2. Check the installed rule sets and the C# compiler before you score a
    candidate. A shape that already reports as a build error is not a candidate.
-3. Append the row, then add a detail section when the score is 3 or more.
+3. Append the row, then add a detail section when the score is 3 or more. A
+   sweep with more than three open shapes gets its own file, like
+   [net11-conversion-sweep.md](net11-conversion-sweep.md).
 4. Take the next free rule ID from `AnalyzerReleases.Shipped.md` and
    `AnalyzerReleases.Unshipped.md` in `src/E128.Analyzers`.
 5. Move the row to [catalog.md](catalog.md) when the rule ships, and delete the
@@ -191,6 +151,8 @@ is the ownership declaration, not a rule.
 ## Related
 
 - [catalog.md](catalog.md): settled rules, rejected ideas, and the ID map
+- [skipped-decisions.md](skipped-decisions.md): every declined shape and its reason
+- [net11-conversion-sweep.md](net11-conversion-sweep.md): open .NET 11 conversion shapes
 - [async-sweep.md](async-sweep.md): closed async fire-and-forget sweep
 - [external-sweep.md](external-sweep.md): closed 2026-11-05 external rule-set sweep
 - [performance-sweep.md](performance-sweep.md): closed twenty-practice performance sweep
@@ -228,3 +190,24 @@ Nushell or Markdown capture stays in the pugworks ledger.
 > **Pattern**: A member summary or code comment must state only behavior the body shows; never assert a thread-safety or pass-ordering guarantee that no code or citation backs
 > **Why**: An uncited comment claim hid a divergence for a whole plan: HotelResultsParser's summary promised a per-call parser while the field was static, and an HtmlExtractor comment said every later pass read the flattened tree while the next statement read the raw HTML. A reader trusts the claim and misses the real behavior.
 > **Source**: `correction 2026-11-12T13:50:47Z`, occurrence 1 of 3
+
+### Captured: Return an explicit Result for an expected failure instead of throwing (1/3): score pending
+> **Key**: `return-an-explicit-result-for-an-expected-failure-instead-of-`
+> **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: Return an explicit Result for an expected failure instead of throwing
+> **Why**: Railway-oriented programming keeps the happy and unhappy paths linear and composable, and a thrown exception hides the failure from the signature
+> **Source**: `correction 2026-11-13T03:36:51Z`, occurrence 1 of 3
+
+### Captured: Replace a repo-wide analyzer relaxation with a scoped suppression on the one declaration that needs it (1/3): score pending
+> **Key**: `replace-a-repo-wide-analyzer-relaxation-with-a-scoped-suppres`
+> **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: Replace a repo-wide analyzer relaxation with a scoped suppression on the one declaration that needs it
+> **Why**: Turning ca1815, ca2231, and ss017 to none in .globalconfig lets one union declaration compile but drops the struct equality guards for every value type in the repo. A pragma around the union declaration restores the guard everywhere at the cost of three lines.
+> **Source**: `correction 2026-11-13T11:54:14Z`, occurrence 1 of 3
+
+### Captured: When a language or runtime band lands, audit the installed E128 rule set for rules the new mechanism makes redundant and record each for removal (1/3): score pending
+> **Key**: `when-a-language-or-runtime-band-lands-audit-the-installed-e12`
+> **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: When a language or runtime band lands, audit the installed E128 rule set for rules the new mechanism makes redundant and record each for removal
+> **Why**: A rule that guards a shape the new API removes becomes permanent noise. The net11 band replaces the hand-rolled process capture, so E128160 guards a shape that cannot be written once Process.RunAndCaptureText is adopted. The audit keeps the rule set shrinking as the platform grows.
+> **Source**: `correction 2026-11-13T12:09:27Z`, occurrence 1 of 3
