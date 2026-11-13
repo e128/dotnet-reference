@@ -2,10 +2,7 @@
   "mcpServers": {
     "cwm-roslyn-navigator": {
       "command": "dotnet",
-      "args": ["cwm-roslyn-navigator", "--solution", "."],
-      "env": {
-        "DOTNET_ROLL_FORWARD": "Major"
-      }
+      "args": ["tool", "run", "cwm-roslyn-navigator", "--", "--solution", "."]
     }
   }
 }

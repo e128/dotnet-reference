@@ -1,5 +1,5 @@
 # Roslyn Navigator MCP
-*Updated: 2026-11-13T12:48:43Z*
+*Updated: 2026-11-13T12:52:46Z*
 
 The `cwm-roslyn-navigator` .NET tool serves a Model Context Protocol server.
 It loads the solution with Roslyn and answers structural questions about the
@@ -25,11 +25,21 @@ dotnet tool update cwm.roslynnavigator
 
 `dotnet tool install` fails once the manifest already names the tool.
 
-The package targets `net10.0` and sets no `rollForward` policy. The repository
-pins a .NET 11 SDK in `global.json`, so the tool starts only when
-`DOTNET_ROLL_FORWARD=Major` reaches the process. Both harness configs set that
-variable. Without it the process exits before the stdio handshake, and the
-client reports `CONNECTION_CLOSED`.
+The package targets `net10.0` and its runtime config sets no `rollForward`
+policy. The repository pins a .NET 11 SDK in `global.json`, so the tool needs
+major-version roll forward to start. The manifest entry sets
+`"rollForward": true`, and `dotnet tool run` turns that into
+`--roll-forward Major` for the host. Without the setting the process exits
+before the stdio handshake, and the client reports `CONNECTION_CLOSED`.
+
+Prove the setting reaches the host with a host trace:
+
+```sh
+COREHOST_TRACE=1 COREHOST_TRACEFILE=trace.txt dotnet tool run cwm-roslyn-navigator -- --help
+```
+
+The trace reports `version_compatibility_range=major`. A `minor` value means
+the manifest setting is missing.
 
 ## Configuration
 
@@ -37,7 +47,7 @@ Both configuration files name the same command. The command starts the server
 on standard input and output.
 
 ```text
-dotnet cwm-roslyn-navigator --solution .
+dotnet tool run cwm-roslyn-navigator -- --solution .
 ```
 
 The `--solution .` argument makes the server discover the solution file in the
@@ -56,7 +66,7 @@ opencode v2 entry:
     "servers": {
       "cwm-roslyn-navigator": {
         "type": "local",
-        "command": ["dotnet", "cwm-roslyn-navigator", "--solution", "."]
+        "command": ["dotnet", "tool", "run", "cwm-roslyn-navigator", "--", "--solution", "."]
       }
     }
   }
@@ -99,7 +109,8 @@ project list matches `E128.Reference.slnx`.
   of `.`.
 - A stale manifest loads an old tool. Reinstall the tool in the repository.
 - The client reports `CONNECTION_CLOSED` when no .NET 10 runtime is installed.
-  Set `DOTNET_ROLL_FORWARD=Major` in the harness entry, then reconnect.
+  Set `"rollForward": true` on the manifest entry, restore the tool, then
+  reconnect.
 - The tool writes log messages to standard error. The MCP client keeps them out
   of the model context.
 

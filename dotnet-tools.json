@@ -7,7 +7,7 @@
       "commands": [
         "cwm-roslyn-navigator"
       ],
-      "rollForward": false
+      "rollForward": true
     }
   }
 }

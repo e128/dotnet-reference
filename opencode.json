@@ -6,8 +6,7 @@
     "servers": {
       "cwm-roslyn-navigator": {
         "type": "local",
-        "command": ["dotnet", "cwm-roslyn-navigator", "--solution", "."],
-        "environment": { "DOTNET_ROLL_FORWARD": "Major" }
+        "command": ["dotnet", "tool", "run", "cwm-roslyn-navigator", "--", "--solution", "."]
       }
     }
   },
