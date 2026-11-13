@@ -43,7 +43,7 @@ If the root `.editorconfig` does not exist, create it with `root = true`. Preser
 
 Do not fix source findings, suppress or downgrade E128 rules, or change other analyzer severities.
 
-Run the Release build of the solution at the repository root. Report the package version, the project count, and the build status. Report the warning and error totals, and the error count per E128 rule ID. Count each diagnostic once when the output repeats it. Leave every finding unfixed unless I approve a fix.
+Run the Release build of the solution at the repository root. Report the package version, the project count, the build status, and warning and error totals. In the terminal summary, list each E128 rule with errors as `E128xxx: <count> errors, <brief description of required behavior>`. Count each diagnostic once when output repeats it. Leave every finding unfixed unless I approve a fix.
 ```
 
 `e128_max_complexity` sets the algorithm level. `linear` is the strictest tier and reports linearithmic or worse code. Other tiers: linearithmic, quadratic, cubic, exponential.

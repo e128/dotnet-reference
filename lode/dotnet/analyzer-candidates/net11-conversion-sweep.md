@@ -1,6 +1,6 @@
 # .NET 11 Conversion Sweep
 confidence: high
-*Updated: 2026-11-13T12:32:31Z*
+*Updated: 2026-11-13T13:54:59Z*
 
 Five rule shapes convert code that already works to a mechanism the .NET 11 band carries. The net11-upgrade close on 2026-11-13 supplied the call-site evidence for each shape. All five ship. Scores follow [scoring-rubric.md](../../infrastructure/scoring-rubric.md). The rules live in [catalog.md](catalog.md), and the plan is [net11-conversion-rules](../../../plans/net11-conversion-rules/net11-conversion-rules-plan.md).
 
@@ -14,7 +14,7 @@ A shape scored under 3 sits in [skipped-decisions.md](skipped-decisions.md) with
 
 **Target**: `Process.RunAndCaptureText(ProcessStartInfo, TimeSpan?)` and `RunAndCaptureTextAsync(ProcessStartInfo, CancellationToken)` return `ProcessTextOutput`, which carries `StandardOutput`, `StandardError`, `ExitStatus`, and `ProcessId`. `ProcessExitStatus` exposes `ExitCode`, `Canceled`, and `Signal`.
 
-**Why not covered**: E128160 guards the read-then-wait ordering when both streams are redirected. It does not remove the hand-rolled capture, and it offers no exit-status value.
+**Why not covered**: no rule removes the hand-rolled capture, and none offers an exit-status value.
 
 **Scope**: skip a launch that writes to a redirected standard input. Skip a launch that reads one line and stops early.
 
@@ -84,7 +84,7 @@ A rule that guards a shape the band removes becomes noise once the migration lan
 
 | Rule | Decision | Reason |
 | ---- | -------- | ------ |
-| E128160 | keep until the consumer migration lands | `Process.RunAndCaptureText` removes the hand-rolled capture. The site in this repository is converted. No site in this repository can write the deadlock the rule guards. |
+| E128160 | retired | `Process.RunAndCaptureText` removes the hand-rolled capture, and E128223 reports the read-then-wait shape that replaced it. No caller can write the deadlock the rule guarded. |
 | E128192 | keep, re-read after the stream migration | The read-only stream types remove the `new MemoryStream(byte[])` wrap that hides a buffer. The rule still covers `GetBuffer` on a writable stream. |
 | E128005 | keep, no change | The `closed` base carries derivations, so the seal rule does not report it. The rule still owns the leaf class. |
 | E128049 | keep, no change | The JSON discriminated-union note is guidance text. Re-read it when a union serializer lands. |
