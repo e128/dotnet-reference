@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-12T15:17:07Z*
+*Updated: 2026-11-12T21:17:10Z*
 
 ## Overview
 
@@ -164,6 +164,8 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.8.1   | (none)        | Version-only release. Repacks the 2.8.0 content with no rule set change. |
 | 2.9.0   | E128222       | Root-join containment. The package reached nuget.org before the `Unshipped.md` rows were promoted, so the release files recorded it afterwards. |
 | 2.9.8   | (none)        | The member-level symbol rules report a partial member once at its defining part through `PartialMembers.IsImplementationPart`, and the attribute rules gain partial-shape fixtures. No rule set change. |
+| 2.10.0  | E128219-221   | Union rule family: closed abstract base, union switch null arm, and union pattern-match containment. |
+| 2.10.1  | (none)        | E128014 exempts a separator-disjoint repeated group and fires on an unbounded `{n,}` outer quantifier. The GeneratedRegex fixes keep the pattern language. No rule set change. |
 
 ## Sources
 
