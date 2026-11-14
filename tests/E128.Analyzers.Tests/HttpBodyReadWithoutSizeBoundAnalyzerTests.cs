@@ -44,7 +44,7 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenContentLengthIsCheckedFirst()
+    public Task Reports_WhenTheContentLengthGuardPassesThroughOnNull()
     {
         return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
                            using System;
@@ -60,7 +60,143 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzerTests
                                        throw new InvalidOperationException();
                                    }
 
+                                   _ = await {|E128227:response.Content.ReadAsStringAsync()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenLoadIntoBufferAsyncHasNoCap()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(HttpResponseMessage response)
+                               {
+                                   await response.Content.LoadIntoBufferAsync();
+                                   _ = await {|E128227:response.Content.ReadAsStringAsync()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheContentLengthCheckComesAfterTheRead()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(HttpResponseMessage response)
+                               {
+                                   _ = await {|E128227:response.Content.ReadAsStringAsync()|};
+                                   if (response.Content.Headers.ContentLength is not > 4096)
+                                   {
+                                       throw new InvalidOperationException();
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheContentLengthCheckIsOnAnotherChain()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(HttpResponseMessage response, HttpResponseMessage other)
+                               {
+                                   if (other.Content.Headers.ContentLength is not > 4096)
+                                   {
+                                       throw new InvalidOperationException();
+                                   }
+
+                                   _ = await {|E128227:response.Content.ReadAsStringAsync()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenContentLengthIsCheckedFirst()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(HttpResponseMessage response)
+                               {
+                                   if (response.Content.Headers.ContentLength is not > 4096)
+                                   {
+                                       throw new InvalidOperationException();
+                                   }
+
                                    _ = await response.Content.ReadAsStringAsync();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenALengthLocalIsCheckedWithANullSafePattern()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
+                           using System;
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(HttpResponseMessage response)
+                               {
+                                   long? length = response.Content.Headers.ContentLength;
+                                   if (length is not > 4096)
+                                   {
+                                       throw new InvalidOperationException();
+                                   }
+
+                                   _ = await response.Content.ReadAsStringAsync();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenTheReadIsGuardedByTheLengthComparison()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
+                           using System.Net.Http;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(HttpResponseMessage response)
+                               {
+                                   if (response.Content.Headers.ContentLength <= 4096)
+                                   {
+                                       _ = await response.Content.ReadAsStringAsync();
+                                   }
                                }
                            }
                            """);

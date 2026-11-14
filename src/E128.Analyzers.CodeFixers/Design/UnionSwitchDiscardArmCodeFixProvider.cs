@@ -19,10 +19,13 @@ public sealed class UnionSwitchDiscardArmCodeFixProvider : E128CodeFixProviderBa
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
-        if (root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true) is not DiscardPatternSyntax pattern)
+        if (root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true) is not DiscardPatternSyntax pattern
+            || pattern.Parent is SwitchExpressionArmSyntax { WhenClause: not null }
+                or CasePatternSwitchLabelSyntax { WhenClause: not null })
         {
-            // A var arm binds a case value, so replacing it with null would break the arm's
-            // expression. The rewrite needs the developer.
+            // A var arm binds a case value, and a when guard would survive on the null arm,
+            // so replacing it with null would break the arm's expression. The rewrite needs
+            // the developer.
             return Task.CompletedTask;
         }
 

@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-13T14:40:22Z*
+*Updated: 2026-11-14T00:47:21Z*
 
 ## Overview
 
@@ -168,6 +168,7 @@ missing from either file blocks the ship, even on a docs-only change set.
 | 2.10.1  | (none)        | E128014 exempts a separator-disjoint repeated group and fires on an unbounded `{n,}` outer quantifier. The GeneratedRegex fixes keep the pattern language. No rule set change. |
 | 2.11.0  | E128223-226   | Hand-rolled process capture, read-only `MemoryStream`, closed base with members, and comparer set construction. E128220 also reports a closed-hierarchy switch that ends in a discard arm. |
 | 3.0.0   | (none)        | E128160 removed. E128223 reports the read-then-wait shape that replaced the hand-rolled process capture. |
+| 3.1.0   | E128227       | HTTP body read without a size bound. Security, Warning. |
 
 ## Sources
 

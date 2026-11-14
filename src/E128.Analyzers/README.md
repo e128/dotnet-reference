@@ -707,7 +707,7 @@ Flags `[GeneratedRegex]` patterns where `\s*` or `\s+` is adjacent to a quantifi
 
 ### E128014 &mdash; Nested quantifiers
 
-Flags `[GeneratedRegex]` patterns with nested quantifiers (e.g., `(.+)+`, `(\w+)+`, `(a*)*`) whose first and last consuming atom can match the same text. These cause exponential backtracking on non-matching input. A repeated group that leads with a distinct separator atom, such as `(?:/[^\s:"']+)+`, cannot backtrack this way and stays silent, as does a bounded `{n,m}` outer repeat and an atomic `(?>...)` group.
+Flags `[GeneratedRegex]` patterns with nested quantifiers (e.g., `(.+)+`, `(\w+)+`, `(a*)*`) whose first and last consuming atom can match the same text. These cause exponential backtracking on non-matching input. A repeated group whose leading separator atom is a character the trailing atom cannot match stays silent, such as `(?:/[^/]+)+`. A trailing character class is checked by membership, so `(?:/[^\s:"']+)+` still fires: the class matches the `/`. A bounded `{n,m}` outer repeat and an atomic `(?>...)` group also stay silent.
 
 ### E128002 &mdash; string.Empty
 
@@ -3115,9 +3115,13 @@ any case type the union grows, and the missing-case warning disappears.
 A switch that already ends in a `null` arm stays silent. A switch over an enum
 or a plain type stays silent.
 
+A `when` guard never closes a discard or `var` arm, so a guarded arm such as
+`_ when condition` reports too.
+
 The code fix replaces a discard arm with a `null` constant pattern. A `var` arm
 binds the case value, so the fix stays absent for it and the arm needs a
-manual edit.
+manual edit. A guarded discard arm keeps the guard on the arm, so the fix stays
+absent for it too.
 
 ```csharp
 // Before (warns)
@@ -3215,7 +3219,7 @@ int exitCode = result.ExitStatus.ExitCode;
 
 Flags a `MemoryStream` that wraps a string or a byte array and is read only. `StringStream` wraps the string without a copy, and `ReadOnlyMemoryStream` wraps the bytes without a copy.
 
-The rule reads one method body. A write call, a buffer read through `ToArray`, an unknown consumer, a return, or a store into another member keeps the report silent, because the target types reject a write. The rule carries no code fix for the same reason.
+The rule reads one method body. A write call, a buffer read through `ToArray`, an unknown consumer, a return, or a store into another member keeps the report silent, because the target types reject a write. A compression wrapper (`GZipStream`, `DeflateStream`, or `BrotliStream`) counts as a consumer only when it is constructed with `CompressionMode.Decompress`, because a compress mode or a missing mode writes to the inner stream. The rule carries no code fix for the same reason.
 
 ```csharp
 // Before (warns)
@@ -3271,14 +3275,18 @@ HashSet<string> set = [with(StringComparer.OrdinalIgnoreCase), .. items];
 
 Flags an `HttpContent.ReadAsStringAsync` or `HttpContent.ReadAsByteArrayAsync` call that buffers the whole body with no cap. An untrusted server can answer with a body large enough to exhaust the heap.
 
-A `ContentLength` check or a `LoadIntoBufferAsync` call in the enclosing method bounds the read. A `MaxResponseContentBufferSize` setting anywhere in the enclosing type bounds it too. An in-memory content type (`StringContent`, `ByteArrayContent`, `ReadOnlyMemoryContent`, `JsonContent`) needs no bound, because its size is already known. The rule carries no code fix, because the cap value is a caller decision.
+The rule resolves the read and the bound by symbol, not by name. A bound must precede the read. A bound is a resolved `HttpContent.LoadIntoBufferAsync` call with the `long` cap overload, or a null-safe `ContentLength` comparison on the same content chain. A plain greater-than guard does not bound the read, because `ContentLength` is `null` for a chunked response and the guard passes through. A `MaxResponseContentBufferSize` setting anywhere in the enclosing type bounds it too. An in-memory content type (`StringContent`, `ByteArrayContent`, `ReadOnlyMemoryContent`, `JsonContent`) needs no bound, because its size is already known. The rule carries no code fix, because the cap value is a caller decision.
 
 ```csharp
 // Before (warns)
 var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
-// After
-if (response.Content.Headers.ContentLength > MaxBodyBytes)
+// After option 1: cap the buffer load.
+await response.Content.LoadIntoBufferAsync(MaxBodyBytes);
+var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+// After option 2: fail closed when ContentLength is unknown.
+if (response.Content.Headers.ContentLength is not > MaxBodyBytes)
 {
     throw new InvalidOperationException("Response body is too large.");
 }

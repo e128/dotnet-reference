@@ -1,5 +1,5 @@
 # Conversion Rules E128223 to E128226
-*Updated: 2026-11-13T12:24:18Z*
+*Updated: 2026-11-14T01:26:59Z*
 
 Detection shape for the .NET 11 conversion family. The rules move working code onto a
 mechanism the band carries. Sources: [net11-conversion-sweep.md](../analyzer-candidates/net11-conversion-sweep.md).
@@ -27,7 +27,9 @@ Reports `WaitForExit` or `WaitForExitAsync` on a process when all of these hold:
    same process starts before the wait.
 
 The start info binds through the `StartInfo` member, a start info local passed to
-`Process.Start`, a start info assigned to the process, or a process object initializer.
+`Process.Start`, a start info assigned to the process, a process object initializer,
+or a statement-form flag set on a start-info local that later reaches a process
+(`FlagBinds` routes such a receiver through `LocalLinksToProcess`).
 
 ## E128224: Read-Only MemoryStream
 
@@ -40,6 +42,11 @@ Reports `new MemoryStream(x)` in a local when `x` is an `Encoding.GetBytes` resu
 - An argument to a read consumer (`StreamReader`, `BinaryReader`, `GZipStream`,
   `XPathDocument`, `XmlReader.Create`, `JsonDocument.Parse`, `XDocument.Load`,
   `HashAlgorithm.ComputeHash`).
+
+A compression wrapper (`GZipStream`, `DeflateStream`, `BrotliStream`) counts as a
+read consumer only when the creation passes `CompressionMode.Decompress`
+(`IsDecompressMode` resolves the field symbol). A compress-mode or mode-less
+wrapper writes to the inner stream, so it keeps the report silent.
 
 A write call, `ToArray`, an unknown consumer, a return, or a store into a member keeps
 the report silent. The target types reject a write, so a wrong report would break code.

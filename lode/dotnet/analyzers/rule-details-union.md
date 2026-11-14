@@ -1,5 +1,5 @@
 # Rule Detail Notes: Union and Hierarchy Rules
-*Updated: 2026-11-12T16:46:34Z*
+*Updated: 2026-11-14T01:26:59Z*
 
 Detection shape for the union rule family E128219 to E128221. The complete
 rule table lives in `src/E128.Analyzers/README.md`. The union language surface
@@ -47,7 +47,9 @@ sealed-by-default rule E128005.
 Registers on `SwitchExpression` and `SwitchStatement`. The governing type is
 the unwrapped receiver type, confirmed by `UnionTypes.IsUnion`.
 
-- Catch-all shapes: `DiscardPatternSyntax` and `VarPatternSyntax`. The rule
+- Catch-all shapes: `DiscardPatternSyntax` and `VarPatternSyntax`. Only an
+  unguarded arm closes the switch: a `when`-guarded discard or `var` arm
+  proves nothing, so the rule reports it and the switch stays open. The rule
   reports the last catch-all arm, unless a `null` constant pattern arm exists
   anywhere in the switch. A `null` arm names the empty case, so the switch
   keeps the missing-case warning.
@@ -55,7 +57,8 @@ the unwrapped receiver type, confirmed by `UnionTypes.IsUnion`.
   a case-type identifier, not a discard. The statement catch-all that
   compiles is `case var _:`. The expression arm `_` is a discard.
 - Code fix: replaces a discard pattern with a `null` constant pattern. A
-  `var` arm binds a value, so the fixer skips it. The fixed state still
+  `var` arm binds a value, so the fixer skips it. A guarded arm also gets no
+  fix, because `null when cond =>` is not exhaustive. The fixed state still
   carries the diagnostic, and the fix test passes it through
   `FixedState.ExpectedDiagnostics`.
 

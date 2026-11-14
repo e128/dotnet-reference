@@ -208,6 +208,32 @@ public sealed class UnionSwitchDiscardArmAnalyzerTests
             """);
     }
 
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenASwitchStatementEndsInAGuardedVarArm()
+    {
+        return VerifyAsync(
+            UnionSource + """
+
+            internal static class Switcher
+            {
+                internal static bool Allow() => true;
+
+                internal static int Switch(GreetingResult result)
+                {
+                    switch (result)
+                    {
+                        case Greeting: return 1;
+                        case GreetingError: return 2;
+                        case {|E128220:var _|} when Allow(): return 3;
+                    }
+
+                    return 0;
+                }
+            }
+            """);
+    }
+
     private const string ClosedShapeSource =
         """
         internal closed class Shape

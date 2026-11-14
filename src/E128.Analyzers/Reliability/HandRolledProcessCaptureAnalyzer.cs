@@ -163,11 +163,28 @@ public sealed class HandRolledProcessCaptureAnalyzer : DiagnosticAnalyzer
         if (TryGetTarget(assignment.Left, out _, out var receiver) && receiver is not null)
         {
             return SymbolEqualityComparer.Default.Equals(
-                ProcessLaunchScope.GetRootSymbol(receiver, model, cancellationToken),
-                processSymbol);
+                       ProcessLaunchScope.GetRootSymbol(receiver, model, cancellationToken),
+                       processSymbol)
+                   || StartInfoReceiverBinds(scope, receiver, processSymbol, model, cancellationToken);
         }
 
         return InitializerBindsToProcess(scope, assignment, processSymbol, model, cancellationToken);
+    }
+
+    /// <summary>
+    ///     True when the receiver is a start info local that reaches the process, by a
+    ///     <c lang="csharp">Process.Start</c> call or by an assignment to the process start info
+    ///     member. The flag is set after creation, so the local itself carries the binding.
+    /// </summary>
+    private static bool StartInfoReceiverBinds(
+        SyntaxNode scope,
+        ExpressionSyntax receiver,
+        ISymbol processSymbol,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return ProcessLaunchScope.GetRootSymbol(receiver, model, cancellationToken) is { } local
+               && LocalLinksToProcess(scope, local, processSymbol, model, cancellationToken);
     }
 
     private static bool InitializerBindsToProcess(

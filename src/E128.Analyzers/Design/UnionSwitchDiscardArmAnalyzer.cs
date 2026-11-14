@@ -15,7 +15,9 @@ namespace E128.Analyzers.Design;
 ///     <see langword="var" /> arm instead of a <see langword="null" /> arm. The
 ///     <see langword="null" /> arm names the empty case, so the compiler keeps warning when a
 ///     case type or a leaf is added later. A discard or <see langword="var" /> arm accepts any
-///     case type the union grows, and the missing-case warning disappears.
+///     case type the union grows, and the missing-case warning disappears. A
+///     <see langword="when" /> guard does not close a discard or <see langword="var" /> arm
+///     either, so the rule reports a guarded arm the same way.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
@@ -58,7 +60,7 @@ public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
         }
 
         var expressionCatchAll = TryFindCatchAll(
-            switchExpression.Arms.Select(static arm => (PatternSyntax?)arm.Pattern));
+            switchExpression.Arms.Select(static arm => (arm.Pattern, arm.WhenClause is not null)));
         if (expressionCatchAll is null)
         {
             return;
@@ -88,7 +90,7 @@ public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
         var labels = switchStatement.Sections
             .SelectMany(static section => section.Labels)
             .OfType<CasePatternSwitchLabelSyntax>()
-            .Select(static label => (PatternSyntax?)label.Pattern);
+            .Select(static label => (label.Pattern, label.WhenClause is not null));
         var statementCatchAll = TryFindCatchAll(labels);
         if (statementCatchAll is null)
         {
@@ -121,29 +123,34 @@ public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
         return UnionTypes.IsUnion(unwrapped) || ClosedHierarchy.IsClosed(named) ? named : null;
     }
 
-    private static PatternSyntax? TryFindCatchAll(IEnumerable<PatternSyntax?> patterns)
+    private static PatternSyntax? TryFindCatchAll(IEnumerable<(PatternSyntax Pattern, bool IsGuarded)> patterns)
     {
         PatternSyntax? lastCatchAll = null;
+        PatternSyntax? lastGuardedCatchAll = null;
         var hasNullArm = false;
 
-        foreach (var pattern in patterns)
+        foreach (var (pattern, isGuarded) in patterns)
         {
-            if (pattern is null)
-            {
-                continue;
-            }
-
             if (IsNullPattern(pattern))
             {
                 hasNullArm = true;
             }
             else if (IsCatchAllPattern(pattern))
             {
-                lastCatchAll = pattern;
+                if (isGuarded)
+                {
+                    lastGuardedCatchAll = pattern;
+                }
+                else
+                {
+                    lastCatchAll = pattern;
+                }
             }
         }
 
-        return hasNullArm ? null : lastCatchAll;
+        // A when-guarded discard or var arm never closes the switch, so it stays a report
+        // target instead of a closing catch-all. Only an unguarded arm closes the switch.
+        return hasNullArm ? null : lastCatchAll ?? lastGuardedCatchAll;
     }
 
     private static bool IsNullPattern(PatternSyntax pattern)
