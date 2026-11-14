@@ -154,6 +154,69 @@ public sealed class HandRolledProcessCaptureAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenTheRedirectIsSetOnAStartInfoLocalAfterCreation()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HandRolledProcessCaptureAnalyzer>("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(string file)
+                               {
+                                   var info = new ProcessStartInfo(file);
+                                   info.RedirectStandardOutput = true;
+                                   using var process = new Process();
+                                   process.StartInfo = info;
+                                   process.Start();
+                                   string output = process.StandardOutput.ReadToEnd();
+                                   {|E128223:process.WaitForExit()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenAnInitializedStartInfoIsAssignedToTheProcess()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HandRolledProcessCaptureAnalyzer>("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(string file)
+                               {
+                                   var info = new ProcessStartInfo(file) { RedirectStandardOutput = true };
+                                   using var process = new Process();
+                                   process.StartInfo = info;
+                                   process.Start();
+                                   string output = process.StandardOutput.ReadToEnd();
+                                   {|E128223:process.WaitForExit()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenTheRedirectIsSetOnAnUnlinkedStartInfoLocal()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HandRolledProcessCaptureAnalyzer>("""
+                           using System.Diagnostics;
+                           class C
+                           {
+                               void M(string file)
+                               {
+                                   var info = new ProcessStartInfo(file);
+                                   info.RedirectStandardOutput = true;
+                                   using var process = Process.Start(file);
+                                   string output = process.StandardOutput.ReadToEnd();
+                                   process.WaitForExit();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenTheStreamOfAnotherProcessIsRead()
     {
         return AnalyzerTestRunner.VerifyAsync<HandRolledProcessCaptureAnalyzer>("""

@@ -105,6 +105,56 @@ public sealed class UnionSwitchDiscardArmCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NoFix_WhenTheCatchAllArmIsGuarded()
+    {
+        return RunAsync(
+            UnionSource + """
+
+            internal static class Switcher
+            {
+                internal static bool Allow() => true;
+
+                internal static int Switch(GreetingResult result)
+                {
+                    switch (result)
+                    {
+                        case Greeting: return 1;
+                        case GreetingError: return 2;
+                        case {|E128220:var _|} when Allow(): return 3;
+                    }
+
+                    return 0;
+                }
+            }
+            """,
+            UnionSource + """
+
+            internal static class Switcher
+            {
+                internal static bool Allow() => true;
+
+                internal static int Switch(GreetingResult result)
+                {
+                    switch (result)
+                    {
+                        case Greeting: return 1;
+                        case GreetingError: return 2;
+                        case var _ when Allow(): return 3;
+                    }
+
+                    return 0;
+                }
+            }
+            """,
+            fixedExpected: [new DiagnosticResult(
+                UnionSwitchDiscardArmAnalyzer.DiagnosticId,
+                DiagnosticSeverity.Warning)
+            .WithSpan(16, 18, 16, 23)
+            .WithArguments("GreetingResult", "var")]);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NoFix_WhenTheCatchAllArmBindsAValue()
     {
         return RunAsync(

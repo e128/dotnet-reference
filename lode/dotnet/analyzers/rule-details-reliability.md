@@ -1,5 +1,5 @@
 # Reliability Rule Details
-*Updated: 2026-11-12T21:11:18Z*
+*Updated: 2026-11-14T01:26:59Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -160,7 +160,7 @@ E128014 flags an unbounded outer quantifier (`*`, `+`, or `{n,}`) over a group
 whose inner scan finds `*` or `+` at group depth 1. A bounded `{n}` or `{n,m}`
 outer repeat is linear and stays silent. An atomic `(?>...)` group stays
 silent. A group that leads with a distinct separator atom, such as
-`(?:/[^\s:"']+)+`, also stays silent: `FirstAtomCanAlsoBeLast` exempts it when
+`(?:/[^/]+)+`, also stays silent: `FirstAtomCanAlsoBeLast` exempts it when
 the first and last consuming atoms cannot match the same text.
 
 Both scans treat character class contents as literals. `BuildCharacterClassMask`
@@ -168,12 +168,21 @@ marks every index inside a `[...]` class in one pass, and each scan skips masked
 indices. The mask handles a leading `^`, a leading literal `]`, and escapes. A
 quantifier inside a class, such as the `*` in `([-*_a])+`, never reports.
 
+The atom comparison expands class contents. `ClassAtomOverlaps` in
+`GeneratedRegexHelpers` tests membership of a literal separator char (plain or
+escaped) against one `[...]` atom: negation, ranges, `\s`-style shorthands,
+and control escapes. So `(?:/[^\s:"']+)+` fires: the negated class matches
+the `/`. The Windows-path silent case `(?:[A-Za-z]:\\(?:[^\s:"'\\]+\\)*...)`
+stays silent, because the class excludes the `\\` separator.
+
 **Known limits**:
 
 - A positive class that holds whitespace, such as `[ ]`, counts as disjoint
   from `\s`, so the overlap check can miss a true positive.
-- `FirstAtomCanAlsoBeLast` compares atom tokens without expanding class
-  contents. A class that can match the other atom can exempt a group.
+- The class parser bails to "matches" on anything it cannot model: `\u`, `\x`,
+  `\p`, octal digits, malformed ranges, and `[\d-x]`-style tails. Class versus
+  dot, shorthand, or another class is conservatively flagged, so a few
+  genuinely safe groups with a class tail report as false positives.
 - The heuristics are string scans, not a pattern parse. No public
   `RegexParser` API exists, so a full parse is not available.
 

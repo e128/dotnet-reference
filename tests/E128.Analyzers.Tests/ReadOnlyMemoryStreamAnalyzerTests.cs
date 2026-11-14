@@ -174,4 +174,61 @@ public sealed class ReadOnlyMemoryStreamAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheStreamIsReadByADecompressingWrapper()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ReadOnlyMemoryStreamAnalyzer>("""
+                           using System.IO;
+                           using System.IO.Compression;
+
+                           class C
+                           {
+                               void M(byte[] data)
+                               {
+                                   using var stream = {|E128224:new MemoryStream(data)|};
+                                   using var wrapper = new GZipStream(stream, CompressionMode.Decompress);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenTheStreamIsWrittenByACompressingWrapper()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ReadOnlyMemoryStreamAnalyzer>("""
+                           using System.IO;
+                           using System.IO.Compression;
+
+                           class C
+                           {
+                               void M(byte[] data)
+                               {
+                                   using var stream = new MemoryStream(data);
+                                   using var wrapper = new GZipStream(stream, CompressionMode.Compress);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenTheCompressionWrapperTakesNoMode()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ReadOnlyMemoryStreamAnalyzer>("""
+                           using System.IO;
+                           using System.IO.Compression;
+
+                           class C
+                           {
+                               void M(byte[] data)
+                               {
+                                   using var stream = new MemoryStream(data);
+                                   using var wrapper = new GZipStream(stream, CompressionLevel.Fastest);
+                               }
+                           }
+                           """);
+    }
 }

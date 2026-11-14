@@ -17,7 +17,9 @@ namespace E128.Analyzers.Performance;
 /// <remarks>
 ///     The rule reads one method body and accepts only read-shaped uses. A write call, an unknown
 ///     consumer, a return, or a store into a field keeps the report silent, because the target
-///     types reject a write. The rule carries no fix for the same reason.
+///     types reject a write. A compression wrapper counts as a consumer only when it is constructed
+///     with <c lang="csharp">CompressionMode.Decompress</c>, because a compress mode writes to the
+///     inner stream. The rule carries no fix for the same reason.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
@@ -25,6 +27,8 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128224";
 
     private const string MemoryStreamTypeName = "System.IO.MemoryStream";
+
+    private const string CompressionModeMetadataName = "System.IO.Compression.CompressionMode";
 
     private const string EncodingTypeName = "System.Text.Encoding";
 
@@ -63,6 +67,12 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
         "StreamContent",
         "StreamReader",
         "XPathDocument");
+
+    private static readonly ImmutableHashSet<string> CompressionWrapperTypeNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "BrotliStream",
+        "DeflateStream",
+        "GZipStream");
 
     private static readonly ImmutableHashSet<string> ReadOnlyConsumerMethodNames = ImmutableHashSet.Create(
         StringComparer.Ordinal,
@@ -231,7 +241,9 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
         {
             case BaseObjectCreationExpressionSyntax creation:
                 return model.GetTypeInfo(creation, cancellationToken).Type is { } createdType
-                       && ReadOnlyConsumerCreationTypeNames.Contains(createdType.Name);
+                       && ReadOnlyConsumerCreationTypeNames.Contains(createdType.Name)
+                       && (!CompressionWrapperTypeNames.Contains(createdType.Name)
+                           || IsDecompressMode(creation, model, cancellationToken));
 
             case InvocationExpressionSyntax invocation:
                 return model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol method
@@ -241,5 +253,33 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
             default:
                 return false;
         }
+    }
+
+    /// <summary>
+    ///     True when the creation passes <c lang="csharp">CompressionMode.Decompress</c>. A compress
+    ///     mode or a missing mode writes to the inner stream, so the stream is not read only.
+    /// </summary>
+    private static bool IsDecompressMode(
+        BaseObjectCreationExpressionSyntax creation,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        if (model.Compilation.GetTypeByMetadataName(CompressionModeMetadataName) is not { } modeType
+            || creation.ArgumentList is not { } argumentList)
+        {
+            return false;
+        }
+
+        foreach (var argument in argumentList.Arguments)
+        {
+            if (model.GetTypeInfo(argument.Expression, cancellationToken).Type is { } type
+                && SymbolEqualityComparer.Default.Equals(type, modeType))
+            {
+                return model.GetSymbolInfo(argument.Expression, cancellationToken).Symbol is IFieldSymbol field
+                       && string.Equals(field.Name, "Decompress", StringComparison.Ordinal);
+            }
+        }
+
+        return false;
     }
 }

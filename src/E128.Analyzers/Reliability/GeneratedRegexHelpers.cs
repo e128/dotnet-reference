@@ -8,6 +8,7 @@ internal static class GeneratedRegexHelpers
 {
     private const int EscapeSequenceLength = 2;
     private const int NonCapturingPrefixLength = 3;
+    private const int RangeEntryLength = 2;
     internal const int WhitespaceEscapeLength = 2;
 
     /// <summary>
@@ -282,9 +283,11 @@ internal static class GeneratedRegexHelpers
 
     // A repeated group can only backtrack exponentially when its first consuming atom
     // can also match its last consuming atom. The comparison reads the two atoms by
-    // pattern text, so a distinct leading separator, like the '/' in
-    // '(?:/[^\s:"']+)+', exempts the group. The comparison does not expand class
-    // contents: a class that can match the other atom still exempts it, and a
+    // pattern text, so a distinct leading separator, like the '/' in '(?:/[^/]+)+',
+    // exempts the group. A character class atom is parsed: against one literal
+    // character the membership is exact, so '(?:/[^\s:"']+)+', whose trailing class
+    // matches the '/', keeps the flag. A class against a dot, a shorthand, or another
+    // class cannot be proven disjoint by the text comparison and keeps the flag. A
     // top-level alternation always keeps the flag.
     private static bool FirstAtomCanAlsoBeLast(string pattern, int openIndex, int closeIndex, bool[] inClass)
     {
@@ -488,6 +491,16 @@ internal static class GeneratedRegexHelpers
             return true;
         }
 
+        if (pattern[firstStart] is '[')
+        {
+            return ClassAtomOverlaps(pattern, firstStart, firstEnd, lastStart, lastEnd);
+        }
+
+        if (pattern[lastStart] is '[')
+        {
+            return ClassAtomOverlaps(pattern, lastStart, lastEnd, firstStart, firstEnd);
+        }
+
         if (SpansEqual(pattern, firstStart, firstEnd, lastStart, lastEnd))
         {
             return true;
@@ -502,6 +515,185 @@ internal static class GeneratedRegexHelpers
 
         return IsShorthandSpan(pattern, lastStart, lastEnd)
                && OverlapsShorthand(pattern[lastStart + 1], pattern, firstStart, firstEnd);
+    }
+
+    // Returns true when a character class atom and another atom can match the same
+    // text. Against one literal character the class membership is exact. A class
+    // against a dot, a shorthand, or another class cannot be proven disjoint by the
+    // text comparison, so the group stays flagged.
+    private static bool ClassAtomOverlaps(string pattern, int classStart, int classEnd, int otherStart, int otherEnd)
+    {
+        if (!TryReadLiteralChar(pattern, otherStart, otherEnd, out var c))
+        {
+            return true;
+        }
+
+        return ClassMatchesChar(pattern, classStart, classEnd - 1, c);
+    }
+
+    // Returns the literal character of the other atom span, or false when the span is a
+    // shorthand escape, an unmodeled escape, a group, or another class.
+    private static bool TryReadLiteralChar(string pattern, int start, int end, out char value)
+    {
+        if (end - start is 1)
+        {
+            value = pattern[start];
+            return true;
+        }
+
+        if (end - start is EscapeSequenceLength && pattern[start] is '\\' && !IsClassShorthand(pattern[start + 1]))
+        {
+            return TryEscapedChar(pattern[start + 1], out value);
+        }
+
+        value = '\0';
+        return false;
+    }
+
+    private static bool IsClassShorthand(char c)
+    {
+        return c is 's' or 'S' or 'd' or 'D' or 'w' or 'W';
+    }
+
+    // Returns true when the class spanning from the '[' at start to the ']' at close can
+    // match the character c. Negation, ranges, and escapes are parsed. A class the parser
+    // cannot model reports a match, so the caller keeps the group flagged.
+    private static bool ClassMatchesChar(string pattern, int start, int close, char c)
+    {
+        var index = start + 1;
+        var negated = false;
+        if (pattern[index] is '^')
+        {
+            negated = true;
+            index++;
+        }
+
+        if (pattern[index] is ']')
+        {
+            // A ']' first in the class is a literal.
+            index++;
+        }
+
+        var anyMatch = false;
+        while (index < close && !anyMatch)
+        {
+            var end = ReadClassEntry(pattern, index, close, c, ref anyMatch);
+            if (end < 0)
+            {
+                return true;
+            }
+
+            index = end;
+        }
+
+        return negated ? !anyMatch : anyMatch;
+    }
+
+    // Reads one class entry at index, sets anyMatch when the entry matches c, and
+    // returns the index after the entry. Returns -1 when the entry is unparseable.
+    private static int ReadClassEntry(string pattern, int index, int close, char c, ref bool anyMatch)
+    {
+        var next = index + 1;
+        if (pattern[index] is '\\')
+        {
+            return ReadEscapedClassEntry(pattern, next, close, c, ref anyMatch);
+        }
+
+        return ReadLiteralClassEntry(pattern, pattern[index], next, close, c, ref anyMatch);
+    }
+
+    // Reads one escaped entry whose escape character sits at next, sets anyMatch, and
+    // returns the index after the entry. Returns -1 when the entry is unparseable.
+    private static int ReadEscapedClassEntry(string pattern, int next, int close, char c, ref bool anyMatch)
+    {
+        if (next >= close)
+        {
+            return -1;
+        }
+
+        var escaped = pattern[next];
+        if (IsClassShorthand(escaped))
+        {
+            anyMatch = ShorthandIncludesChar(escaped, c);
+            return next + 1;
+        }
+
+        if (!TryEscapedChar(escaped, out var lo))
+        {
+            return -1;
+        }
+
+        return ReadLiteralClassEntry(pattern, lo, next + 1, close, c, ref anyMatch);
+    }
+
+    // Reads one literal or range entry with the lo character lo whose next character
+    // sits at next, sets anyMatch, and returns the index after the entry.
+    private static int ReadLiteralClassEntry(string pattern, char lo, int next, int close, char c, ref bool anyMatch)
+    {
+        if (IsRangeStart(pattern, next, close))
+        {
+            var hi = pattern[next + 1];
+            if (lo > hi)
+            {
+                return -1;
+            }
+
+            anyMatch = c >= lo && c <= hi;
+            return next + RangeEntryLength;
+        }
+
+        anyMatch = c == lo;
+        return next;
+    }
+
+    // A range starts at index when it holds a '-' and a literal hi character before the
+    // close. A '-' before the close stays a literal dash entry.
+    private static bool IsRangeStart(string pattern, int index, int close)
+    {
+        return index + 1 < close
+               && pattern[index] is '-'
+               && pattern[index + 1] is not ']' and not '\\';
+    }
+
+    // Returns the literal character of one class escape, or false for an escape the
+    // parser cannot model, like '\u', '\1', or '\p'.
+    private static bool TryEscapedChar(char escaped, out char value)
+    {
+        if (IsSimpleCharEscape(escaped))
+        {
+            value = ControlEscapeChar(escaped);
+            return true;
+        }
+
+        if (IsAsciiLetter(escaped) || IsAsciiDigit(escaped))
+        {
+            // Unmodeled escapes, like '\u', '\p', and the octal digits, keep the flag.
+            value = '\0';
+            return false;
+        }
+
+        value = escaped;
+        return true;
+    }
+
+    private static char ControlEscapeChar(char escaped)
+    {
+        return escaped switch
+        {
+            'n' => '\n',
+            'r' => '\r',
+            't' => '\t',
+            'f' => '\f',
+            'v' => '\v',
+            'b' => '\b',
+            '0' => '\0',
+            _ => escaped
+        };
+    }
+
+    private static bool IsSimpleCharEscape(char escaped)
+    {
+        return escaped is 'n' or 'r' or 't' or 'f' or 'v' or 'b' or '0';
     }
 
     private static bool IsShorthandSpan(string pattern, int start, int end)

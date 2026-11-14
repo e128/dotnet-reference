@@ -67,6 +67,32 @@ public sealed class GeneratedRegexNestedE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NestedQuantifier_PlusInsideStarGroup_KeepsQuantifierAsNonCapturingGroup()
+    {
+        return VerifyFixAsync(
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128014:GeneratedRegex(@"(a+)*", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
+            $$"""
+              using System.Text.RegularExpressions;
+              partial class C
+              {
+                  [{|E128014:GeneratedRegex(@"(?:a+)*", RegexOptions.None, 1000)|}]
+                  private static partial Regex DigitsOnly();
+                  {{PartialImpl}}
+              }
+              """,
+            keepDiagnostic: true);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task NestedQuantifier_QuotedLiteral_KeepsQuotes()
     {
         return VerifyFixAsync(

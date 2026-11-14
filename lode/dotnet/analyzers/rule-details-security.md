@@ -1,5 +1,5 @@
 # Security Rule Detail Notes
-*Updated: 2026-11-13T22:43:20Z*
+*Updated: 2026-11-14T01:26:59Z*
 
 Detection shape and exclusions for the E128 security rules that the main rule
 table cannot show. The severity and the code-fix status live in
@@ -15,10 +15,19 @@ with a body that exhausts the heap.
 
 The rule matches the method symbol, so a user type with the same method name
 stays silent. A body bound counts when it sits in the enclosing method body or
-the enclosing lambda body:
+the enclosing lambda body, and the rule resolves the bound by symbol, not by
+name text:
 
-- A `ContentLength` read.
-- A `LoadIntoBufferAsync` call.
+- A resolved `HttpContent.LoadIntoBufferAsync(long)` call. The parameterless
+  overload does not bound anything.
+- A null-safe `ContentLength` comparison on the same receiver chain. The check
+  must precede and dominate the read. A read inside the `then` branch needs a
+  condition that is false when `ContentLength` is `null`. A read outside it
+  needs a condition that is true when `null` and a `then` branch that throws
+  or exits, so a chunked response fails closed. A plain `>` guard is false
+  when `null`, so it never bounds the read.
+- A local whose initializer is a `ContentLength` access on the same chain
+  counts as the bound variable.
 
 A `MaxResponseContentBufferSize` reference anywhere in the enclosing type also
 bounds every read in that type. This covers a typed client that configures its
