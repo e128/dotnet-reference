@@ -1,3 +1,11 @@
+## Release 3.1.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128227 | E128-Security | Warning | HTTP body read without a size bound
+
 ## Release 3.0.0
 
 ### Removed Rules

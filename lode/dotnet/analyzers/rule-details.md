@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-12T16:46:34Z*
+*Updated: 2026-11-13T22:43:20Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -11,7 +11,8 @@ Rules from the performance categories live in
 [rule-details-performance.md](rule-details-performance.md). Rules from the
 reliability category live in
 [rule-details-reliability.md](rule-details-reliability.md). Union rules live in
-[rule-details-union.md](rule-details-union.md).
+[rule-details-union.md](rule-details-union.md). Security rules live in
+[rule-details-security.md](rule-details-security.md).
 
 ### E128061: Static readonly array → immutable type
 
@@ -242,5 +243,7 @@ after the sink voids a validation that sits outside the loop. The rule skips a
 local function that no call or method group reaches. Helper-method flows stay out of scope. A probe found no installed analyzer with this shape.
 Sonar S5659 covers JWT.Net only. No code fix applies because validation needs
 application policy.
+
+Security rule details live in [rule-details-security.md](rule-details-security.md).
 
 Related files: [analyzers.md](../analyzers.md), [rule-details-performance.md](rule-details-performance.md), [rule-details-reliability.md](rule-details-reliability.md), [rule-details-union.md](rule-details-union.md), and [redundant-rules.md](redundant-rules.md).

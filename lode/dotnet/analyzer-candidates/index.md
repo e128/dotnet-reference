@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-13T12:38:31Z*
+*Updated: 2026-11-14T00:08:28Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -27,52 +27,17 @@ The four dimensions are frequency (0-2), coverage gap (0-1), expressibility
 
 ## Open Candidates
 
-| Pattern | Source | Score | Status | Notes |
-| ------- | ------ | ----- | ------ | ----- |
-| Body read into memory (`ReadAsStringAsync`, `ReadToEndAsync`) with no size bound | analyzer discover --from-commits 2026-11-10 (fix 1ece23206) | 3.5/5 | new | 16 read sites in pugworks `src/`, 1 bound (as of 2026-11-10). Detail below. |
-| `foreach` over `JsonElement.EnumerateArray()` or `EnumerateObject()` without disposing the enumerator | analyzer discover --from-commits 2026-11-10 (fix 2381b8535) | 3.5/5 | new | 3 unguarded sites remain in one pugworks test file (as of 2026-11-10). Detail below. |
+No open candidate remains.
 
-## Body Read Without a Size Bound
-
-**Pattern**: `ReadAsStringAsync`, `ReadAsByteArrayAsync`, or `ReadToEndAsync`
-over a remote or persisted body with no `ContentLength` check, streamed cap, or
-`MaxResponseContentBufferSize` ahead of it.
-
-**Why not covered**: no rule. The FIPS set covers crypto, not allocation.
-
-**Scope**: the bound is a runtime judgment, so flag only a read whose source is
-a response or a file opened from a caller path.
-
-**Evidence**: commit 1ece23206 restores the lost persisted-response bound in
-`OllamaVisionClassifier`. 16 read sites in pugworks `src/`, 1 with a bound (as
-of 2026-11-10).
-
-**Source**: `analyzer discover --from-commits 2026-11-10`
-
-## JSON Enumerator Not Disposed
-
-**Pattern**: `foreach (var x in element.EnumerateArray())` or
-`EnumerateObject()` with no `using` declaration over the enumerator.
-
-**Before**: `foreach (var cell in cells.EnumerateArray())`
-
-**After**: `using var cellEnumerator = cells.EnumerateArray();` then
-`foreach (var cell in cellEnumerator)`
-
-**Why not covered**: CA2000 does not fire on a disposable struct. E128041 owns
-the enclosing `JsonDocument` lifetime, not the enumerator.
-
-**Scope**: the enumerator rents pooled metadata from the owning document. No
-defect is observed, so the value is potential only.
-
-**Evidence**: commit 2381b8535 converted 3 sites. 3 unguarded sites remain in
-pugworks `tests/Pug.Core.Tests/ThemeJsonAuditTests.cs` (as of 2026-11-10).
-
-**Source**: `analyzer discover --from-commits 2026-11-10`
+The body-read shape shipped as E128227. See [catalog.md](catalog.md).
+The JSON enumerator shape closed as skipped, because the enumerator releases no
+resource. See [skipped-decisions.md](skipped-decisions.md).
 
 ## Tier 2 Candidates
 
 These clear the same bar and wait for a real defect in review.
+The `AsReadOnly()` getter shape left this table on 2026-11-14, because E128058
+and E128060 require that shape. See [skipped-decisions.md](skipped-decisions.md).
 
 | Rule                                                               | Check                                                          | Noise  |
 | ------------------------------------------------------------------ | -------------------------------------------------------------- | ------ |
@@ -80,7 +45,6 @@ These clear the same bar and wait for a real defect in review.
 | Discarded `Stream.Read` count                                      | read used as a statement, buffer read later                    | Low    |
 | Blocking call inside `lock`                                        | sync `Thread.Sleep`, `File`, `Stream`, or `DbCommand` call     | Low    |
 | `CollectionsMarshal.AsSpan` invalidated by a list mutation         | span read after a mutating call on the list                    | Low    |
-| `AsReadOnly()` in a property getter                                | wrapper allocated on every access                              | Low    |
 | `Array.Resize` or `Concat` in a loop                               | call reassigned to the same receiver inside the loop           | Low    |
 | CORS wildcard with credentials                                     | one chain holds `AllowAnyOrigin` and `AllowCredentials`        | Low    |
 | Antiforgery missing on a state-changing action                     | verb attribute with no antiforgery attribute in scope          | Medium |

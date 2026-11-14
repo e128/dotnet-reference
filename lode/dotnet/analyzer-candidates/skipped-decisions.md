@@ -1,6 +1,6 @@
 # Analyzer Candidates: Skipped Decisions
 confidence: high
-*Updated: 2026-11-13T12:12:44Z*
+*Updated: 2026-11-14T00:08:28Z*
 
 The settled side of the open register. A skipped row keeps `/analyzer` from reporting the same idea twice. Each decision names the reason and the installed rule or the site count that settled it. The open side lives in [index.md](index.md), and the shipped rules live in [catalog.md](catalog.md).
 
@@ -47,6 +47,40 @@ The settled side of the open register. A skipped row keeps `/analyzer` from repo
 **Why skipped**: score 2.5/5, below the bar. Frequency is 0, because pugworks holds one plain `struct` (`ListRenderItem` in `src/Harvest/DocumentModel/MarkdownRenderer.cs`), and it implements `IEquatable` on purpose. Every other value type is a `record struct`, which generates the members the three rules ask for. The cheaper fix is two scoped suppressions: one around the union declaration in `src/Pug.Core/Results/Result.cs`, and one on `ListRenderItem`, which overloads no `operator ==` on purpose. That restores the guard repo-wide at the cost of a few lines. Re-score when a second hand-written struct lands without equality members, or when a second union declaration appears.
 
 **Source**: `session 2026-11-13` (net11-upgrade close)
+
+## JSON Enumerator Without a `using` Declaration
+
+**Pattern**: `foreach (var x in element.EnumerateArray())` or
+`element.EnumerateObject()` with no `using` declaration over the enumerator.
+
+**Why skipped**: the enumerator releases nothing, and `foreach` already disposes
+it. `JsonElement.ArrayEnumerator.Dispose()` and
+`JsonElement.ObjectEnumerator.Dispose()` both set `_curIdx = _endIdxOrVersion`,
+which only marks the cursor finished. Both types implement
+`System.IDisposable`, so the compiler disposes the hidden enumerator local. The
+`using` declaration is correct but redundant, and a rule would report correct
+code.
+
+**Evidence**: commit 2381b8535 moved 7 pugworks sites to a `using` declaration.
+Four direct `foreach` calls over an enumerator remain today, 3 of them in
+`tests/Pug.Core.Tests/ThemeJsonAuditTests.cs` (as of 2026-11-13). Both `Dispose`
+bodies were checked against the runtime source on 2026-11-13.
+
+**Source**: `analyzer discover --from-commits 2026-11-10`
+
+## `AsReadOnly()` In A Property Getter
+
+**Pattern**: a property getter returns `_items.AsReadOnly()` and allocates a new
+`ReadOnlyCollection<T>` on every access.
+
+**Why skipped**: E128058 and E128060 require `.AsReadOnly()` in exactly this
+getter shape. A second rule would report the code the shipped rules demand. The
+allocation is the price of the guard those rules buy.
+
+**Evidence**: 10 getter sites in pugworks (as of 2026-11-14), including
+`Names.SelectedNames` and `SynthesisOptions.Priors`.
+
+**Source**: Tier 2 register triage, 2026-11-14
 
 ## Declined from the .NET 11 Band
 

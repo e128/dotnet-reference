@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.0.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.1.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -228,6 +228,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128191 | PFX import without EphemeralKeySet                                             | No       |
 | E128202 | Unvalidated JWT claims used as an identity                                     | No       |
 | E128222 | `Path.Combine` of a root `.FullName` and an uncontained leaf                   | Yes      |
+| E128227 | HTTP body read without a size bound                                            | No       |
 
 ### Style
 
@@ -3264,6 +3265,25 @@ foreach (var item in items)
 
 // After
 HashSet<string> set = [with(StringComparer.OrdinalIgnoreCase), .. items];
+```
+
+### E128227: HTTP body read without a size bound
+
+Flags an `HttpContent.ReadAsStringAsync` or `HttpContent.ReadAsByteArrayAsync` call that buffers the whole body with no cap. An untrusted server can answer with a body large enough to exhaust the heap.
+
+A `ContentLength` check or a `LoadIntoBufferAsync` call in the enclosing method bounds the read. A `MaxResponseContentBufferSize` setting anywhere in the enclosing type bounds it too. An in-memory content type (`StringContent`, `ByteArrayContent`, `ReadOnlyMemoryContent`, `JsonContent`) needs no bound, because its size is already known. The rule carries no code fix, because the cap value is a caller decision.
+
+```csharp
+// Before (warns)
+var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+// After
+if (response.Content.Headers.ContentLength > MaxBodyBytes)
+{
+    throw new InvalidOperationException("Response body is too large.");
+}
+
+var json = await response.Content.ReadAsStringAsync(cancellationToken);
 ```
 
 ## Requirements

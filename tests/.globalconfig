@@ -36,3 +36,8 @@ e128_minimum_framework_version = 100
 # comments by convention; the rule encodes a consuming repo's zero-comment policy,
 # not a universal one: consuming repos configure their own severity)
 dotnet_diagnostic.E128097.severity = none
+
+# E128227: HTTP body read with no size bound. A test reads the response of its own
+# in-process app or of a loopback container. The body size is a fixed fixture value,
+# so no cap protects anything and a cap would only obscure the assertion.
+dotnet_diagnostic.E128227.severity = none

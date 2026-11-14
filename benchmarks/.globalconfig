@@ -7,3 +7,7 @@ global_level = 101
 
 # CA1515: Make types public (BenchmarkDotNet requires public benchmark classes)
 dotnet_diagnostic.CA1515.severity = none
+
+# E128227: HTTP body read with no size bound. The benchmark reads a fixed response
+# from its own in-process app, and a cap would add work to the measured path.
+dotnet_diagnostic.E128227.severity = none
