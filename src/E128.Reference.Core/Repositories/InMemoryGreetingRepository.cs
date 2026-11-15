@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using E128.Reference.Core.Models;
@@ -16,7 +15,7 @@ public sealed class InMemoryGreetingRepository : IGreetingRepository
     private readonly Lock _gate = new();
     private readonly List<Greeting> _greetings = [];
 
-    public Task SaveAsync(Greeting greeting, CancellationToken cancellationToken)
+    public ValueTask SaveAsync(Greeting greeting, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(greeting);
 
@@ -25,23 +24,30 @@ public sealed class InMemoryGreetingRepository : IGreetingRepository
             _greetings.Add(greeting);
         }
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public Task<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken)
+    public ValueTask<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken)
     {
         Greeting[] recent;
 
         lock (_gate)
         {
-            recent =
-            [
-                .. _greetings
-                    .OrderByDescending(static greeting => greeting.CreatedAt)
-                    .Take(count)
-            ];
+            // Recency follows save order. GreetingService stamps CreatedAt at save time,
+            // so save order and timestamp order agree.
+            // The JIT cannot hoist a field read across the indexer call, so bind the
+            // list and its last index once.
+            var greetings = _greetings;
+            var last = greetings.Count - 1;
+            var take = Math.Clamp(count, 0, last + 1);
+            recent = new Greeting[take];
+
+            for (var i = 0; i < take; i++)
+            {
+                recent[i] = greetings[last - i];
+            }
         }
 
-        return Task.FromResult<IReadOnlyList<Greeting>>(recent);
+        return ValueTask.FromResult<IReadOnlyList<Greeting>>(recent);
     }
 }

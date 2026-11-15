@@ -143,3 +143,24 @@ Nushell or Markdown capture stays in the pugworks ledger.
 > **Pattern**: When a language or runtime band lands, audit the installed E128 rule set for rules the new mechanism makes redundant and record each for removal
 > **Why**: A rule that guards a shape the new API removes becomes permanent noise. The net11 band replaces the hand-rolled process capture, so E128160 guards a shape that cannot be written once Process.RunAndCaptureText is adopted. The audit keeps the rule set shrinking as the platform grows.
 > **Source**: `correction 2026-11-13T12:09:27Z`, occurrence 1 of 3
+
+### Captured: A disposal analyzer must not flag a process-global instance that the owning library disposes at exit (1/3): score pending
+> **Key**: `a-disposal-analyzer-must-not-flag-a-process-global-instance`
+> **Class**: `design`, **Lang**: `cs`, **File**: `src/Pug.Rendering.XenoAtom/XenoAtomTerminal.cs`
+> **Pattern**: IDISP004 must not fire on a deliberately discarded long-lived singleton handed back by a library factory
+> **Why**: `XenoAtom.Terminal.Terminal.Initialize` returns the process-global `TerminalInstance`, and the library disposes it at process exit. The caller has no lifetime to own, and disposing it would tear down the terminal it just configured. The pragma is the correct answer today, so the rule adds a false positive on every global-instance factory.
+> **Source**: `session friction 2026-11-14T17:51:00Z`, occurrence 1 of 3
+
+### Captured: S109 and S2339 leave a small public constant table unbuildable (1/3): score pending
+> **Key**: `s109-and-s2339-leave-a-small-public-constant-table-unbuildable`
+> **Class**: `design`, **Lang**: `cs`, **File**: `src/Pug.Core/Results/ExitCodes.cs`
+> **Pattern**: A value with an inherent number, such as a process exit code, must be expressible once in a public table
+> **Why**: S109 wants each literal behind a named constant, S2339 forbids a public `const` member, and neither accepts the other's answer. The workaround is a private const per value behind a public static property, which doubles the type for no behavior. Either S109 should skip a member whose declaration is the name, or S2339 should allow a const on a table type.
+> **Source**: `session friction 2026-11-14T18:20:00Z`, occurrence 1 of 3
+
+### Captured: E128184 must follow a temp directory into the method that deletes it (1/3): score pending
+> **Key**: `e128184-must-follow-a-temp-directory-into-the-method-that-delet`
+> **Class**: `design`, **Lang**: `cs`, **File**: `src/Harvest/Commands/ReadCommand.cs`
+> **Pattern**: A recursive delete of a directory built from `Path.GetTempPath()` stays sound when the deletion moves into a helper
+> **Why**: E128184 matches the delete call against a path created in the same method body, so extracting the cleanup into `DeleteTempDirectory(writer, tempDir)` reports a false positive on the package-private producer of that path. The rule should accept a `DirectoryInfo` that carries the temp-root provenance, or at least a helper in the same type.
+> **Source**: `session friction 2026-11-14T18:22:00Z`, occurrence 1 of 3

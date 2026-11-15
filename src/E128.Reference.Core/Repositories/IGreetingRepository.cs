@@ -10,7 +10,7 @@ namespace E128.Reference.Core.Repositories;
 /// </summary>
 public interface IGreetingRepository
 {
-    Task SaveAsync(Greeting greeting, CancellationToken cancellationToken);
+    ValueTask SaveAsync(Greeting greeting, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken);
+    ValueTask<IReadOnlyList<Greeting>> GetRecentAsync(int count, CancellationToken cancellationToken);
 }

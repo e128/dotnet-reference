@@ -14,6 +14,8 @@ user-invocable: true
 
 # Mr. Sparkle
 
+**Precondition.** This skill runs against the sibling `dotnet-reference` checkout, which owns `scripts/internal/cr-target.sh`. When that file is absent, stop and report the skill as unavailable in this project.
+
 Run every available reviewer on one target, then merge the findings into one report. A defender pass drops the claims that the code does not support.
 
 **Review only.** This skill never edits code, runs no fix, and posts no PR comment. It writes two kinds of artifact: the report, and a plan directory for findings at High or above. To apply findings, use `/review-apply`.

@@ -18,9 +18,10 @@ public sealed class InMemoryGreetingRepositoryTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task SaveAsync_Throws_WhenGreetingIsNull()
+    public async Task SaveAsync_Throws_WhenGreetingIsNull()
     {
-        return Assert.ThrowsAsync<ArgumentNullException>(() => _repository.SaveAsync(null!, TestContext.Current.CancellationToken));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(
+            async () => await _repository.SaveAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -110,7 +111,7 @@ public sealed class InMemoryGreetingRepositoryTests
                 for (var i = 0; i < perWriter; i++)
                 {
                     var save = _repository.SaveAsync(new Greeting("msg", "X", BaseTime), TestContext.Current.CancellationToken);
-                    Assert.True(save.IsCompletedSuccessfully);
+                    Assert.True(save.AsTask().IsCompletedSuccessfully);
                 }
             }))
             .ToArray();
@@ -120,7 +121,7 @@ public sealed class InMemoryGreetingRepositoryTests
             for (var i = 0; i < 200; i++)
             {
                 var read = _repository.GetRecentAsync(10, TestContext.Current.CancellationToken);
-                Assert.True(read.IsCompletedSuccessfully);
+                Assert.True(read.AsTask().IsCompletedSuccessfully);
             }
         });
 

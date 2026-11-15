@@ -60,7 +60,7 @@ public class CoreBenchmarks
     }
 
     [Benchmark]
-    public Task<IReadOnlyList<Greeting>> GetRecentTenAsync()
+    public ValueTask<IReadOnlyList<Greeting>> GetRecentTenAsync()
     {
         return _repository.GetRecentAsync(RecentCount, CancellationToken.None);
     }

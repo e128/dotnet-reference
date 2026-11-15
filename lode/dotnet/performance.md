@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-11-11T03:20:00Z*
+*Updated: 2026-11-15T17:35:31Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -27,8 +27,8 @@ it into a project file. It sets these:
   a test project, and not a benchmark project. One conditional group in
   `Directory.Build.targets` covers the three application projects. That file
   loads after the project body, so the role markers are set when the condition
-  runs. The analyzer assemblies and the `net10.0` leg stay off the switch. A
-  method that keeps `[AsyncStateMachine]` is not using runtime async.
+  runs. The analyzer assemblies stay off the switch. A method that keeps
+  `[AsyncStateMachine]` is not using runtime async.
 
 The three runtime projects set `IsAotCompatible` true. The property turns on
 the trim and AOT analyzers and marks the assembly trimmable. The web project
@@ -170,6 +170,10 @@ singleton, so one lock guards both the write and the read. A read walks back
 from the end of the list, so the cost follows the requested count and not the
 stored count. Remove the guard only after a different structure replaces the
 shared list. See [test-patterns.md](test-patterns.md).
+
+`IGreetingRepository` returns `ValueTask`, because every in-memory operation
+completes synchronously. A read then allocates only the result array, and a
+save allocates nothing. A caller awaits the result once, or passes it on.
 
 An earlier read sorted a full copy of the list on every call. At 50,000 stored
 greetings that read allocated 1.9 GB per second and reached 1,655 requests per
