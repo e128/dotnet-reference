@@ -12,6 +12,8 @@ user-invocable: true
 
 # Mr. Sparkle: .NET Overlay
 
+**Precondition.** This skill runs against the sibling `dotnet-reference` checkout, which owns `scripts/internal/cr-target.sh`. When that file is absent, stop and report the skill as unavailable in this project.
+
 Adds the .NET-specific work to a `mr-sparkle` run. This skill reviews only. It never edits code.
 
 It supplies four things that the core `mr-sparkle` skill cannot assume: repo diff scoping, a tool-driven analyzer lens, the repo review rubrics, and the removable-package check.
