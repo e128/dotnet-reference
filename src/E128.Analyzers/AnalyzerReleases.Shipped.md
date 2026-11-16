@@ -1,3 +1,12 @@
+## Release 3.1.1
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------
+E128220 | E128-Design | Warning | E128-Design | Warning | Also reports a when-guarded discard or var arm because a guard never closes the arm
+E128221 | E128-Design | Warning | E128-Design | Warning | Message names a case pattern only, because a compiler-declared union exposes no TryGetValue member
+
 ## Release 3.1.0
 
 ### New Rules

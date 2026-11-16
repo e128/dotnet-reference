@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.1.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.1.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -3145,15 +3145,16 @@ var text = result switch
 
 Flags a `Value` read on a union expression and a cast of a union expression to
 a case type. A `Value` read boxes the case and skips the case set, and a cast
-trusts the runtime state instead of the type system. A case pattern, or
-`TryGetValue`, reads the value without boxing and stays checked against the
-case list.
+trusts the runtime state instead of the type system. A case pattern reads the
+value without boxing and stays checked against the case list. A
+compiler-declared union exposes no `TryGetValue` member, so the pattern is the
+only checked read.
 
 A member access whose receiver is not a union stays silent, so a
 `Dictionary<K,V>.Values` read or a `Task` result never reports.
 
 No code fix. The rewrite changes control flow, so the developer writes the
-pattern or the `TryGetValue` call.
+pattern.
 
 ```csharp
 // Before (warns)
@@ -3162,7 +3163,7 @@ var cast = (GreetingError)result;
 
 // After
 if (result is Greeting greeting) { }
-if (result.TryGetValue(out var value) && value is GreetingError error) { }
+if (result is GreetingError error) { }
 ```
 
 ### E128222: Path.Combine of a root and a run-time leaf
