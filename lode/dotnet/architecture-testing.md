@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-11-08T17:33:22Z*
+*Updated: 2026-11-16T16:20:12Z*
 
 ## Overview
 
@@ -9,7 +9,12 @@
 
 - `TngTech.ArchUnitNET.xUnitV3`: xUnit v3 integration (includes core and assertions). Version pinned in `Directory.Packages.props`.
 
-The test project references only `E128.Reference.Core`. The architecture model loads the Core assembly (`typeof(Greeter).Assembly`). To analyze additional layers (Web, Cli), add both a `ProjectReference` to those projects and their assemblies to `ArchitectureBaseline`. A project carrying a `ProjectReference` without a loaded assembly is dead weight (`/prune-deps` flags it).
+The test project references every production project under `src/`. Two models exist:
+
+- `ArchitectureBaseline` loads only the Core assembly (`typeof(Greeter).Assembly`). The layer, naming, sealed, and service rules use it.
+- `ProjectReferenceBaseline` loads every production assembly by name. `ProjectBoundaryTests` uses it.
+
+A `ProjectReference` without a loaded assembly is dead weight (`/prune-deps` flags it).
 
 ## How It Works
 
@@ -66,10 +71,25 @@ Enforces dependency direction: Models depend on nothing, Services depend on Mode
 - Service classes must have "Service" suffix
 - Repository classes (in `Repositories` namespace) must implement `IGreetingRepository`
 
+### Project Boundaries (`ProjectBoundaryTests`)
+
+Each production assembly has one rule. The rule forbids a dependency on a production assembly outside the transitive `ProjectReference` closure of the project. An analyzer reference with `ReferenceOutputAssembly="false"` is not a compile reference, so it is not in the closure.
+
+```mermaid
+graph LR
+    CodeFixers[E128.Analyzers.CodeFixers] --> Analyzers[E128.Analyzers]
+    Cli[E128.Reference.Cli] --> Core[E128.Reference.Core]
+    Web[E128.Reference.Web] --> Core
+```
+
+The allowed graph is a literal baseline. The tests never compute it from the current graph. A new `ProjectReference` therefore fails a rule until a reviewer updates the baseline.
+
+Coverage instrumentation injects a tracker type with one full name into each instrumented assembly. ArchUnitNET merges that type across assemblies, so the rules exclude the `Microsoft.CodeCoverage.Instrumentation.Static.Tracker` namespace. Without the exclusion, `scripts/coverage.sh` fails the boundary rules.
+
 ## Adding New Rules
 
 1. Create a new test class in `tests/Architecture.Tests/`
-2. Reference `ArchitectureBaseline.Instance`
+2. Reference `ArchitectureBaseline.Instance`, or `ProjectReferenceBaseline.Instance` for a rule across assemblies
 3. Define rules using `ArchRuleDefinition` fluent API
 4. Tag with `[Trait("Category", "CI")]`
 5. If analyzing additional assemblies, add a `ProjectReference` to the target project **and** load its assembly in `ArchitectureBaseline`

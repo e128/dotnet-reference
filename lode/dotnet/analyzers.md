@@ -1,5 +1,5 @@
 # .NET 10 Roslyn Analyzers
-*Updated: 2026-11-13T13:54:59Z*
+*Updated: 2026-11-16T16:20:12Z*
 
 ## Strategy: Deny by Default
 
@@ -33,13 +33,16 @@ In `Directory.Build.props`:
 ```xml
 <AnalysisLevel>latest-all</AnalysisLevel>
 <AnalysisMode>All</AnalysisMode>
+<AnalysisModeSecurity>All</AnalysisModeSecurity>
+<AnalysisModeReliability>All</AnalysisModeReliability>
+<AnalysisModePerformance>All</AnalysisModePerformance>
 <EnableNETAnalyzers>true</EnableNETAnalyzers>
 <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 ```
 
 Key interactions:
-- `AnalysisLevel=latest-all` and `AnalysisMode=All` both select mode `All` in every category. A compound `AnalysisLevel` wins over `AnalysisMode<Category>`, so the repo sets no category line. Do not set `AnalysisMode` below `All`, because the CA rules that are off in `Recommended` would stop running.
+- `AnalysisLevel=latest-all` and `AnalysisMode=All` both select mode `All` in every category. The security, reliability, and performance category lines repeat that mode. They state the AI SDLC Readier policy explicitly. Do not set `AnalysisMode` below `All`, because the CA rules that are off in `Recommended` would stop running.
 - `EnforceCodeStyleInBuild` makes IDE rules (IDE*) fire during `dotnet build`
 - `TreatWarningsAsErrors` promotes all enabled warnings to errors
 
