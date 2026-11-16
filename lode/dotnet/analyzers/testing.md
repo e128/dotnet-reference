@@ -1,6 +1,6 @@
 # Analyzer Testing
 
-*Updated: 2026-11-12T13:55:10Z*
+*Updated: 2026-11-16T20:16:49Z*
 
 How a test drives an analyzer and a code fix. The harness types live in
 `Microsoft.CodeAnalysis.CSharp.Testing`. The repo wrapper lives in
@@ -143,6 +143,22 @@ confirm the test count in the run output.
   reflection sits in helper methods because E128090 bans it in test methods.
 - xUnit v3 runs on the Microsoft Testing Platform. Only `scripts/test.sh`
   works.
+
+## Branch Coverage Tests
+
+A file named `<Subject>BranchCoverageTests.cs` closes the branches that the rule
+tests leave open. One file targets one analyzer, code fix provider, or helper
+class. Each test asserts a reported diagnostic or a fix result.
+
+A branch that no valid input reaches gets no test. Two examples are the
+`context is null` guard in `Initialize` and a null syntax root in a fix
+provider. Do not pin a production defect as expected behavior. Report it
+instead.
+
+The NuGet package `E128.Analyzers` carries two assemblies: `E128.Analyzers` and
+`E128.Analyzers.CodeFixers`. Add their branch totals to get the package surface.
+As of 2026-11-16, that surface covers about 87 percent of its branches. See
+[Code Coverage](../code-coverage.md) for collection and the CI floors.
 
 ## Related
 

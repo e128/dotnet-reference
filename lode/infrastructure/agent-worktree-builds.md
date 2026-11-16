@@ -1,5 +1,5 @@
 # Agent Worktree Builds
-*Updated: 2026-11-05T04:06:10Z*
+*Updated: 2026-11-16T20:16:49Z*
 
 A subagent spawned with worktree isolation lands under
 `.claude/worktrees/agent-<id>/`. That worktree holds a full copy of the
@@ -7,26 +7,38 @@ repository and a branch of its own.
 
 ## Verified Behavior
 
-These runs build clean at the same commit:
-
-- `scripts/build.sh --project E128.Analyzers` in a nested worktree.
-- `scripts/build.sh --project E128.Analyzers.Tests` in a nested worktree.
-- The same two builds, run side by side in two worktrees at once.
-
 `ArtifactsPath` resolves through `$(MSBuildThisFileDirectory)`, so each worktree
 writes its own `artifacts/` directory. Concurrent builds do not share output.
 
-## The Unreproduced Failure
+A build that finds current output in `artifacts/` skips compilation and
+reports success. That result does not show that the worktree compiles.
 
-One batch of five delegated agents each reported about 500 errors in files they
-did not touch: CS1591, S3267, and S3358. A direct probe did not reproduce it, so
-the cause stays unknown. Do not record a cause for it without a reproduction.
+## The Nested Globalconfig Collision
+
+A forced rebuild in a nested worktree fails with phantom errors in files nobody
+touched. A rebuild of `E128.Analyzers` with `-t:Rebuild` reports RS0016, CS1591,
+RS0017, S3267, IDE0046, and S3358.
+
+The SDK targets (`Microsoft.Managed.Core.targets`) add the `.globalconfig` of
+every ancestor directory to `GlobalAnalyzerConfigFiles`. A nested worktree
+therefore loads two files: its own and the primary checkout root file. Both set
+`global_level = 100`. Roslyn drops the keys that two global configs set at the
+same level. The rules that the file sets to `none` then fall back to the
+blanket error severity.
+
+Check the evaluation with
+`dotnet msbuild <project> -getItem:EditorConfigFiles` and look for both root
+`.globalconfig` paths.
 
 ## Dispatch Rule
 
-Treat a phantom error report from a delegated agent as suspect. Discard its
-build log and build in the primary checkout instead. The parent holds the
-merged tree, and one build there costs less than five worktree builds.
+Do not build or test inside a nested worktree. Treat an error report from a
+worktree agent as this collision until the evaluation shows one root file.
+
+Run delegated test writers in the primary checkout, one agent at a time,
+because builds share `artifacts/`. A worktree outside the repository tree has
+no ancestor root `.globalconfig`, so the collision cannot occur there. Do not
+edit `global_level` or add a targets file to bypass the collision.
 
 Give each agent write access to its own new files only. The parent edits the
 shared surfaces: `src/E128.Analyzers/README.md`,
