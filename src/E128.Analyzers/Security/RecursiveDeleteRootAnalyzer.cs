@@ -16,10 +16,11 @@ namespace E128.Analyzers.Security;
 ///     root.
 /// </summary>
 /// <remarks>
-///     The rule reports a path it cannot trace to a recognized safe root, and it never follows a
-///     path across a method boundary. A path rooted at a temp directory, a relative literal, a
-///     <c lang="csharp">Path.GetFullPath</c> result of either, or a value guarded by a
-///     <c lang="csharp">StartsWith</c> check against a directory-bounded root stays silent.
+///     The rule reports a path it cannot trace to a recognized safe root. A path rooted at a temp
+///     directory, a relative literal, a <c lang="csharp">Path.GetFullPath</c> result of either, a
+///     <c lang="csharp">DirectoryInfo</c> created over either, or a value guarded by a
+///     <c lang="csharp">StartsWith</c> check against a directory-bounded root stays silent. A
+///     parameter of a private method takes the safety of its call sites in the same type part.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
@@ -107,7 +108,9 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (ClassifyPath(path, model, pathTypes, cancellationToken) is not PathSafety.Unsafe)
+        var tracedMethods = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (ClassifyPath(path, model, pathTypes, directoryInfoTypes, tracedMethods, cancellationToken)
+            is not PathSafety.Unsafe)
         {
             return;
         }
@@ -248,6 +251,8 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
         ExpressionSyntax expression,
         SemanticModel model,
         ImmutableArray<INamedTypeSymbol> pathTypes,
+        ImmutableArray<INamedTypeSymbol> directoryInfoTypes,
+        HashSet<ISymbol> tracedMethods,
         CancellationToken cancellationToken)
     {
         var visited = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
@@ -271,13 +276,15 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             current = initializer;
         }
 
-        return ClassifyPathCore(current, model, pathTypes, cancellationToken);
+        return ClassifyPathCore(current, model, pathTypes, directoryInfoTypes, tracedMethods, cancellationToken);
     }
 
     private static PathSafety ClassifyPathCore(
         ExpressionSyntax expression,
         SemanticModel model,
         ImmutableArray<INamedTypeSymbol> pathTypes,
+        ImmutableArray<INamedTypeSymbol> directoryInfoTypes,
+        HashSet<ISymbol> tracedMethods,
         CancellationToken cancellationToken)
     {
         var unwrapped = ExpressionUnwrapper.ParenthesesAndCasts(expression);
@@ -301,12 +308,18 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             return PathSafety.Safe;
         }
 
+        if (ClassifyDirectoryInfoCreation(unwrapped, model, pathTypes, directoryInfoTypes, tracedMethods, cancellationToken)
+            is { } wrapperSafety)
+        {
+            return wrapperSafety;
+        }
+
         if (FindPathInvocation(unwrapped, GetFullPathMethodName, pathTypes, model, cancellationToken)
             is { } getFullPath)
         {
             var arguments = getFullPath.ArgumentList.Arguments;
             return arguments.Count > 0
-                ? ClassifyPath(arguments[0].Expression, model, pathTypes, cancellationToken)
+                ? ClassifyPath(arguments[0].Expression, model, pathTypes, directoryInfoTypes, tracedMethods, cancellationToken)
                 : PathSafety.Unknown;
         }
 
@@ -316,9 +329,170 @@ public sealed class RecursiveDeleteRootAnalyzer : DiagnosticAnalyzer
             return ClassifyCombine(combine, model, pathTypes, cancellationToken);
         }
 
-        return IsParameterOrMemberRead(unwrapped, model, cancellationToken)
-            ? PathSafety.Unsafe
-            : PathSafety.Unknown;
+        return ClassifyParameterOrMember(
+            unwrapped,
+            model,
+            pathTypes,
+            directoryInfoTypes,
+            tracedMethods,
+            cancellationToken);
+    }
+
+    /// <summary>
+    ///     A <c lang="csharp">new DirectoryInfo(path)</c> carries the safety of its argument, so a
+    ///     temp directory keeps its provenance through the wrapper type. Any other shape returns
+    ///     null.
+    /// </summary>
+    private static PathSafety? ClassifyDirectoryInfoCreation(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        ImmutableArray<INamedTypeSymbol> pathTypes,
+        ImmutableArray<INamedTypeSymbol> directoryInfoTypes,
+        HashSet<ISymbol> tracedMethods,
+        CancellationToken cancellationToken)
+    {
+        if (expression is not ObjectCreationExpressionSyntax creation
+            || creation.ArgumentList is not { Arguments.Count: > 0 } creationArguments
+            || !MetadataTypes.Contains(directoryInfoTypes, model.GetTypeInfo(creation, cancellationToken).Type))
+        {
+            return null;
+        }
+
+        return ClassifyPath(
+            creationArguments.Arguments[0].Expression,
+            model,
+            pathTypes,
+            directoryInfoTypes,
+            tracedMethods,
+            cancellationToken);
+    }
+
+    /// <summary>
+    ///     Classifies a parameter by its call sites and a field or property read as unsafe. Any
+    ///     other symbol stays unknown.
+    /// </summary>
+    private static PathSafety ClassifyParameterOrMember(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        ImmutableArray<INamedTypeSymbol> pathTypes,
+        ImmutableArray<INamedTypeSymbol> directoryInfoTypes,
+        HashSet<ISymbol> tracedMethods,
+        CancellationToken cancellationToken)
+    {
+        return model.GetSymbolInfo(expression, cancellationToken).Symbol switch
+        {
+            IParameterSymbol parameter => ClassifyParameter(
+                parameter,
+                model,
+                pathTypes,
+                directoryInfoTypes,
+                tracedMethods,
+                cancellationToken),
+            IFieldSymbol or IPropertySymbol => PathSafety.Unsafe,
+            _ => PathSafety.Unknown
+        };
+    }
+
+    /// <summary>
+    ///     A private helper takes its safety from every argument its call sites pass. The rule
+    ///     trusts the parameter only when a call site exists and every argument is safe. A method
+    ///     that is not private, a type split across files, or a method with no visible call site
+    ///     stays unsafe, because the rule cannot prove what the parameter holds.
+    /// </summary>
+    private static PathSafety ClassifyParameter(
+        IParameterSymbol parameter,
+        SemanticModel model,
+        ImmutableArray<INamedTypeSymbol> pathTypes,
+        ImmutableArray<INamedTypeSymbol> directoryInfoTypes,
+        HashSet<ISymbol> tracedMethods,
+        CancellationToken cancellationToken)
+    {
+        if (parameter.ContainingSymbol is not IMethodSymbol method
+            || method.DeclaredAccessibility is not Accessibility.Private
+            || !tracedMethods.Add(method)
+            || !IsSinglePartDeclaration(method.ContainingType, model.SyntaxTree))
+        {
+            return PathSafety.Unsafe;
+        }
+
+        return ClassifyCallSites(method, parameter, model, pathTypes, directoryInfoTypes, tracedMethods, cancellationToken);
+    }
+
+    private static PathSafety ClassifyCallSites(
+        IMethodSymbol method,
+        IParameterSymbol parameter,
+        SemanticModel model,
+        ImmutableArray<INamedTypeSymbol> pathTypes,
+        ImmutableArray<INamedTypeSymbol> directoryInfoTypes,
+        HashSet<ISymbol> tracedMethods,
+        CancellationToken cancellationToken)
+    {
+        var foundCall = false;
+        var result = PathSafety.Safe;
+
+        foreach (var declaration in method.ContainingType.DeclaringSyntaxReferences)
+        {
+            if (declaration.GetSyntax(cancellationToken) is not TypeDeclarationSyntax typeDeclaration)
+            {
+                continue;
+            }
+
+            foreach (var invocation in typeDeclaration.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            {
+                if (FindCallArgument(invocation, method, parameter, model, cancellationToken) is not { } argument)
+                {
+                    continue;
+                }
+
+                foundCall = true;
+                var argumentSafety = ClassifyPath(
+                    argument,
+                    model,
+                    pathTypes,
+                    directoryInfoTypes,
+                    tracedMethods,
+                    cancellationToken);
+
+                if (argumentSafety is PathSafety.Unsafe)
+                {
+                    return PathSafety.Unsafe;
+                }
+
+                if (argumentSafety is not PathSafety.Safe)
+                {
+                    result = PathSafety.Unknown;
+                }
+            }
+        }
+
+        return foundCall ? result : PathSafety.Unsafe;
+    }
+
+    private static ExpressionSyntax? FindCallArgument(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        IParameterSymbol parameter,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        return SymbolEqualityComparer.Default.Equals(
+            model.GetSymbolInfo(invocation, cancellationToken).Symbol,
+            method)
+            ? FindArgument(invocation, method, parameter.Ordinal)
+            : null;
+    }
+
+    private static bool IsSinglePartDeclaration(INamedTypeSymbol type, SyntaxTree tree)
+    {
+        foreach (var reference in type.DeclaringSyntaxReferences)
+        {
+            if (reference.SyntaxTree != tree)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // Path.Combine(first, ...) takes its safety from the first argument.

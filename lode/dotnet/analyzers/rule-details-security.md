@@ -1,5 +1,5 @@
 # Security Rule Detail Notes
-*Updated: 2026-11-14T01:26:59Z*
+*Updated: 2026-11-16T15:18:25Z*
 
 Detection shape and exclusions for the E128 security rules that the main rule
 table cannot show. The severity and the code-fix status live in
@@ -18,8 +18,9 @@ stays silent. A body bound counts when it sits in the enclosing method body or
 the enclosing lambda body, and the rule resolves the bound by symbol, not by
 name text:
 
-- A resolved `HttpContent.LoadIntoBufferAsync(long)` call. The parameterless
-  overload does not bound anything.
+- A resolved `HttpContent.LoadIntoBufferAsync` call whose first parameter is
+  `long`, with or without a trailing `CancellationToken`. The parameterless
+  overload and the `CancellationToken`-only overload do not bound anything.
 - A null-safe `ContentLength` comparison on the same receiver chain. The check
   must precede and dominate the read. A read inside the `then` branch needs a
   condition that is false when `ContentLength` is `null`. A read outside it

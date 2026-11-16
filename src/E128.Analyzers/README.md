@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.1.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.1.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -1973,9 +1973,9 @@ await winner;
 
 ### E128184: Recursive delete outside a recognized safe root
 
-Flags a recursive `Directory.Delete` or `DirectoryInfo.Delete` when the path is a parameter, a field read, a property read, or a `Path.Combine` whose first argument is one of those. The severity is Info, because a false positive on a build gate blocks work for no gain.
+Flags a recursive `Directory.Delete` or `DirectoryInfo.Delete` when the path is a parameter that no safe call site bounds, a field read, a property read, or a `Path.Combine` whose first argument is one of those. The severity is Info, because a false positive on a build gate blocks work for no gain.
 
-A path under `Path.GetTempPath()`, a relative string literal, a const field, and a `Path.GetFullPath` over a safe value are recognized as safe. A local that holds one of those is also safe, and a local alias counts as the value it holds. A rooted literal reports, for example `"/etc/nginx"` or `"C:\Data"`, because the rule cannot prove the directory is disposable. A readonly field, a get-only property, and a mutable field report, because the value is computed at run time.
+A path under `Path.GetTempPath()`, a relative string literal, a const field, and a `Path.GetFullPath` over a safe value are recognized as safe. A local that holds one of those is also safe, and a local alias counts as the value it holds. A `DirectoryInfo` created over a safe path is safe too. A parameter of a private method is safe when every call site in the same type part passes a safe path, so a cleanup helper keeps the provenance of its caller. A rooted literal reports, for example `"/etc/nginx"` or `"C:\Data"`, because the rule cannot prove the directory is disposable. A readonly field, a get-only property, and a mutable field report, because the value is computed at run time.
 
 A guard counts only when it proves the test passed. The comparison must use `StringComparison.Ordinal` or `OrdinalIgnoreCase`, and the root must end at a separator boundary, so a prefix test cannot pass for a sibling directory. An enclosing `if` that holds the call alone or joined by `&&` counts, and so does a preceding `if` with no `else` that exits when the call is false. The guard must be the statement before the delete. A write to the guarded symbol between the guard and the delete voids the guard. A negated test around the delete and an `||` condition do not count.
 
@@ -3276,14 +3276,14 @@ HashSet<string> set = [with(StringComparer.OrdinalIgnoreCase), .. items];
 
 Flags an `HttpContent.ReadAsStringAsync` or `HttpContent.ReadAsByteArrayAsync` call that buffers the whole body with no cap. An untrusted server can answer with a body large enough to exhaust the heap.
 
-The rule resolves the read and the bound by symbol, not by name. A bound must precede the read. A bound is a resolved `HttpContent.LoadIntoBufferAsync` call with the `long` cap overload, or a null-safe `ContentLength` comparison on the same content chain. A plain greater-than guard does not bound the read, because `ContentLength` is `null` for a chunked response and the guard passes through. A `MaxResponseContentBufferSize` setting anywhere in the enclosing type bounds it too. An in-memory content type (`StringContent`, `ByteArrayContent`, `ReadOnlyMemoryContent`, `JsonContent`) needs no bound, because its size is already known. The rule carries no code fix, because the cap value is a caller decision.
+The rule resolves the read and the bound by symbol, not by name. A bound must precede the read. A bound is a resolved `HttpContent.LoadIntoBufferAsync` call with the `long` cap overload, with or without a trailing `CancellationToken`, or a null-safe `ContentLength` comparison on the same content chain. A plain greater-than guard does not bound the read, because `ContentLength` is `null` for a chunked response and the guard passes through. A `MaxResponseContentBufferSize` setting anywhere in the enclosing type bounds it too. An in-memory content type (`StringContent`, `ByteArrayContent`, `ReadOnlyMemoryContent`, `JsonContent`) needs no bound, because its size is already known. The rule carries no code fix, because the cap value is a caller decision.
 
 ```csharp
 // Before (warns)
 var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
 // After option 1: cap the buffer load.
-await response.Content.LoadIntoBufferAsync(MaxBodyBytes);
+await response.Content.LoadIntoBufferAsync(MaxBodyBytes, cancellationToken);
 var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
 // After option 2: fail closed when ContentLength is unknown.

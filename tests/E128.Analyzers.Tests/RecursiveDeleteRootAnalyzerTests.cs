@@ -566,4 +566,81 @@ public sealed class RecursiveDeleteRootAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HelperOverTempDirectory_DoesNotFire()
+    {
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var tempDir = new DirectoryInfo(Path.Combine(Path.GetTempPath(), "harvest"));
+                                   DeleteTempDirectory(tempDir);
+                               }
+
+                               private static void DeleteTempDirectory(DirectoryInfo directory)
+                               {
+                                   directory.Delete(true);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task HelperPassedAParameter_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
+                           using System.IO;
+                           class C
+                           {
+                               void M(string path)
+                               {
+                                   DeleteTempDirectory(path);
+                               }
+
+                               private static void DeleteTempDirectory(string directory)
+                               {
+                                   {|E128184:Directory.Delete(directory, true)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DirectoryInfoOverRootedLiteral_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var directory = new DirectoryInfo("/etc/nginx");
+                                   {|E128184:directory.Delete(true)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task DirectoryInfoOverTempPath_DoesNotFire()
+    {
+        return AnalyzerTestRunner.VerifyAsync<RecursiveDeleteRootAnalyzer>("""
+                           using System.IO;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var directory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), "harvest"));
+                                   directory.Delete(true);
+                               }
+                           }
+                           """);
+    }
 }

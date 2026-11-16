@@ -18,7 +18,7 @@ namespace E128.Analyzers.Security;
 /// <remarks>
 ///     The rule resolves symbols instead of matching names. A bound must precede the read and
 ///     dominate it. A bound is a resolved <c lang="csharp">HttpContent.LoadIntoBufferAsync</c>
-///     call with the <c lang="csharp">long</c> cap overload, or a null-safe
+///     cap overload, with or without a trailing <c lang="csharp">CancellationToken</c>, or a null-safe
 ///     <c lang="csharp">ContentLength</c> comparison on the same content chain. A plain
 ///     greater-than guard does not bound the read, because <c lang="csharp">ContentLength</c> is
 ///     <c lang="csharp">null</c> for a chunked response and the guard passes through. A
@@ -43,7 +43,12 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
 
     private const string CappedBufferLoadName = "LoadIntoBufferAsync";
 
+    private const string CancellationTokenTypeName = "System.Threading.CancellationToken";
+
     private const string ContentLengthName = "ContentLength";
+
+    // A cap overload takes the long cap, optionally followed by a CancellationToken.
+    private const int MaxCapOverloadParameterCount = 2;
 
     private static readonly ImmutableHashSet<string> ReadMethodNames = ImmutableHashSet.Create(
         StringComparer.Ordinal,
@@ -92,9 +97,10 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
             ];
 
             var httpContentHeaders = startContext.Compilation.GetTypeByMetadataName(HttpContentHeadersTypeName);
+            var cancellationToken = startContext.Compilation.GetTypeByMetadataName(CancellationTokenTypeName);
 
             startContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeRead(nodeContext, httpContent, httpContentHeaders, inMemoryContents),
+                nodeContext => AnalyzeRead(nodeContext, httpContent, httpContentHeaders, cancellationToken, inMemoryContents),
                 SyntaxKind.InvocationExpression);
         });
     }
@@ -103,6 +109,7 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         INamedTypeSymbol httpContent,
         INamedTypeSymbol? httpContentHeaders,
+        INamedTypeSymbol? cancellationTokenType,
         INamedTypeSymbol?[] inMemoryContents)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
@@ -123,7 +130,7 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
 
         var receiverType = model.GetTypeInfo(access.Expression, cancellationToken).Type;
         if (IsInMemoryContent(receiverType, inMemoryContents)
-            || HasSizeBound(invocation, model, httpContent, httpContentHeaders, cancellationToken))
+            || HasSizeBound(invocation, model, httpContent, httpContentHeaders, cancellationTokenType, cancellationToken))
         {
             return;
         }
@@ -154,6 +161,7 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         INamedTypeSymbol httpContent,
         INamedTypeSymbol? httpContentHeaders,
+        INamedTypeSymbol? cancellationTokenType,
         CancellationToken cancellationToken)
     {
         var scope = BlockScope.GetScope(read);
@@ -164,7 +172,7 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
             {
                 var contentLength = GetContentLengthProperty(httpContentHeaders);
                 var boundVariables = CollectBoundVariables(scope, model, contentLength, readRoot, cancellationToken);
-                if (HasCappedBufferLoad(scope, read, readRoot, model, httpContent, cancellationToken)
+                if (HasCappedBufferLoad(scope, read, readRoot, model, httpContent, cancellationTokenType, cancellationToken)
                     || HasContentLengthBound(scope, read, readRoot, model, contentLength, boundVariables, cancellationToken))
                 {
                     return true;
@@ -178,7 +186,8 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
 
     /// <summary>
     ///     True when a resolved <c lang="csharp">LoadIntoBufferAsync</c> call on the same content
-    ///     chain uses the cap overload with a <c lang="csharp">long</c> argument. The
+    ///     chain uses the cap overload with a <c lang="csharp">long</c> argument. The overload may
+    ///     also take a <c lang="csharp">CancellationToken</c>, so the token-aware form counts. The
     ///     parameterless overload reads the whole body and does not bound anything.
     /// </summary>
     private static bool HasCappedBufferLoad(
@@ -187,13 +196,14 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
         string readRoot,
         SemanticModel model,
         INamedTypeSymbol httpContent,
+        INamedTypeSymbol? cancellationTokenType,
         CancellationToken cancellationToken)
     {
         foreach (var candidate in scope.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
             if (candidate != read
                 && SameRoot(candidate.Expression, readRoot)
-                && IsCappedBufferLoad(candidate, model, httpContent, cancellationToken)
+                && IsCappedBufferLoad(candidate, model, httpContent, cancellationTokenType, cancellationToken)
                 && Dominates(candidate, read, scope))
             {
                 return true;
@@ -207,13 +217,16 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         SemanticModel model,
         INamedTypeSymbol httpContent,
+        INamedTypeSymbol? cancellationTokenType,
         CancellationToken cancellationToken)
     {
         return model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol method
                && string.Equals(method.Name, CappedBufferLoadName, StringComparison.Ordinal)
                && TypeSymbols.DerivesFrom(method.ContainingType, httpContent)
-               && method.Parameters.Length is 1
-               && method.Parameters[0].Type.SpecialType is SpecialType.System_Int64;
+               && method.Parameters.Length is >= 1 and <= MaxCapOverloadParameterCount
+               && method.Parameters[0].Type.SpecialType is SpecialType.System_Int64
+               && (method.Parameters.Length is 1
+                   || TypeSymbols.Matches(method.Parameters[1].Type, cancellationTokenType));
     }
 
     /// <summary>

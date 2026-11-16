@@ -223,6 +223,46 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Silent_WhenTheBodyIsBufferedWithACapAndToken()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
+                           using System.Net.Http;
+                           using System.Threading;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(HttpResponseMessage response, CancellationToken token)
+                               {
+                                   await response.Content.LoadIntoBufferAsync(4096, token);
+                                   _ = await response.Content.ReadAsStringAsync(token);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenLoadIntoBufferAsyncCarriesOnlyAToken()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
+                           using System.Net.Http;
+                           using System.Threading;
+                           using System.Threading.Tasks;
+
+                           class C
+                           {
+                               async Task M(HttpResponseMessage response, CancellationToken token)
+                               {
+                                   await response.Content.LoadIntoBufferAsync(token);
+                                   _ = await {|E128227:response.Content.ReadAsStringAsync()|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenTheTypeSetsMaxResponseContentBufferSize()
     {
         return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""

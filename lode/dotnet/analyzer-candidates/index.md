@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-14T00:08:28Z*
+*Updated: 2026-11-16T15:18:25Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -158,9 +158,3 @@ Nushell or Markdown capture stays in the pugworks ledger.
 > **Why**: S109 wants each literal behind a named constant, S2339 forbids a public `const` member, and neither accepts the other's answer. The workaround is a private const per value behind a public static property, which doubles the type for no behavior. Either S109 should skip a member whose declaration is the name, or S2339 should allow a const on a table type.
 > **Source**: `session friction 2026-11-14T18:20:00Z`, occurrence 1 of 3
 
-### Captured: E128184 must follow a temp directory into the method that deletes it (1/3): score pending
-> **Key**: `e128184-must-follow-a-temp-directory-into-the-method-that-delet`
-> **Class**: `design`, **Lang**: `cs`, **File**: `src/Harvest/Commands/ReadCommand.cs`
-> **Pattern**: A recursive delete of a directory built from `Path.GetTempPath()` stays sound when the deletion moves into a helper
-> **Why**: E128184 matches the delete call against a path created in the same method body, so extracting the cleanup into `DeleteTempDirectory(writer, tempDir)` reports a false positive on the package-private producer of that path. The rule should accept a `DirectoryInfo` that carries the temp-root provenance, or at least a helper in the same type.
-> **Source**: `session friction 2026-11-14T18:22:00Z`, occurrence 1 of 3
