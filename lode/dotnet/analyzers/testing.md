@@ -1,6 +1,6 @@
 # Analyzer Testing
 
-*Updated: 2026-11-16T20:16:49Z*
+*Updated: 2026-11-16T22:58:37Z*
 
 How a test drives an analyzer and a code fix. The harness types live in
 `Microsoft.CodeAnalysis.CSharp.Testing`. The repo wrapper lives in
@@ -157,7 +157,7 @@ instead.
 
 The NuGet package `E128.Analyzers` carries two assemblies: `E128.Analyzers` and
 `E128.Analyzers.CodeFixers`. Add their branch totals to get the package surface.
-As of 2026-11-16, that surface covers about 87 percent of its branches. See
+As of 2026-11-16T22:58:32Z, that surface covers about 91 percent of its branches. See
 [Code Coverage](../code-coverage.md) for collection and the CI floors.
 
 ## Related
