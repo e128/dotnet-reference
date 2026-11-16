@@ -1,5 +1,5 @@
 # Security Rule Detail Notes
-*Updated: 2026-11-16T15:18:25Z*
+*Updated: 2026-11-16T15:41:36Z*
 
 Detection shape and exclusions for the E128 security rules that the main rule
 table cannot show. The severity and the code-fix status live in
@@ -30,10 +30,11 @@ name text:
 - A local whose initializer is a `ContentLength` access on the same chain
   counts as the bound variable.
 
-A `MaxResponseContentBufferSize` reference anywhere in the enclosing type also
-bounds every read in that type. This covers a typed client that configures its
-own handler. A bound in a different type is invisible, so a client configured in
-a composition root needs an analyzer suppression at the read site.
+A `MaxResponseContentBufferSize` setting does not bound a direct content read.
+The setting caps the client buffer only, so a read through
+`HttpContent.ReadAsStringAsync` stays unbounded. A bound in a different method or
+type is invisible, so a client configured in a composition root needs a bound in
+the read scope or an analyzer suppression at the read site.
 
 An in-memory content type needs no bound: `ByteArrayContent`, its derived
 `StringContent` and `FormUrlEncodedContent`, `ReadOnlyMemoryContent`, and

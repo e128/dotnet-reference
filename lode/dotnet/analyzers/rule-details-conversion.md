@@ -1,5 +1,5 @@
 # Conversion Rules E128223 to E128226
-*Updated: 2026-11-14T01:26:59Z*
+*Updated: 2026-11-16T15:41:36Z*
 
 Detection shape for the .NET 11 conversion family. The rules move working code onto a
 mechanism the band carries. Sources: [net11-conversion-sweep.md](../analyzer-candidates/net11-conversion-sweep.md).
@@ -34,7 +34,8 @@ or a statement-form flag set on a start-info local that later reaches a process
 ## E128224: Read-Only MemoryStream
 
 Reports `new MemoryStream(x)` in a local when `x` is an `Encoding.GetBytes` result or a
-`byte[]`, and every use of the local is read shaped. Read shaped means one of:
+`byte[]`, and every use of the local is read shaped. The target-typed `new(x)` form
+counts too. Read shaped means one of:
 
 - A member call in the read set (`Read`, `ReadAsync`, `CopyTo`, `Seek`, `Dispose`, and
   similar).
@@ -42,6 +43,9 @@ Reports `new MemoryStream(x)` in a local when `x` is an `Encoding.GetBytes` resu
 - An argument to a read consumer (`StreamReader`, `BinaryReader`, `GZipStream`,
   `XPathDocument`, `XmlReader.Create`, `JsonDocument.Parse`, `XDocument.Load`,
   `HashAlgorithm.ComputeHash`).
+
+A settable member read is a read only when the syntax reads it. An assignment, an
+increment, or a `ref` argument to a member such as `Position` is a write.
 
 A compression wrapper (`GZipStream`, `DeflateStream`, `BrotliStream`) counts as a
 read consumer only when the creation passes `CompressionMode.Decompress`
@@ -65,7 +69,8 @@ compiler rejects only the `closed abstract` modifier pair on the type.
 
 ## E128226: Comparer Set Built By A Loop
 
-Reports `new HashSet<T>(comparer)` in a local when:
+Reports `new HashSet<T>(comparer)` in a local when the creation is target typed
+(`HashSet<T> set = new(comparer)`) or explicit, and:
 
 1. The creation has no collection initializer.
 2. The argument implements `IEqualityComparer<T>`.

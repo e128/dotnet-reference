@@ -59,12 +59,15 @@ public sealed class ComparerSetConstructionAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeCreation, SyntaxKind.ObjectCreationExpression);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeCreation,
+            SyntaxKind.ObjectCreationExpression,
+            SyntaxKind.ImplicitObjectCreationExpression);
     }
 
     private static void AnalyzeCreation(SyntaxNodeAnalysisContext context)
     {
-        var creation = (ObjectCreationExpressionSyntax)context.Node;
+        var creation = (BaseObjectCreationExpressionSyntax)context.Node;
         var model = context.SemanticModel;
         var cancellationToken = context.CancellationToken;
 
@@ -88,7 +91,7 @@ public sealed class ComparerSetConstructionAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsComparerHashSet(
-        ObjectCreationExpressionSyntax creation,
+        BaseObjectCreationExpressionSyntax creation,
         SemanticModel model,
         CancellationToken cancellationToken)
     {
@@ -110,7 +113,7 @@ public sealed class ComparerSetConstructionAnalyzer : DiagnosticAnalyzer
     }
 
     private static ILocalSymbol? GetTargetLocal(
-        ObjectCreationExpressionSyntax creation,
+        BaseObjectCreationExpressionSyntax creation,
         SemanticModel model,
         CancellationToken cancellationToken)
     {

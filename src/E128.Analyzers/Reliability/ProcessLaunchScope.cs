@@ -22,13 +22,30 @@ internal static class ProcessLaunchScope
         CancellationToken cancellationToken)
     {
         var current = expression;
+        MemberAccessExpressionSyntax? last = null;
 
         while (current is MemberAccessExpressionSyntax memberAccess)
         {
+            if (memberAccess.Expression is ThisExpressionSyntax or BaseExpressionSyntax)
+            {
+                // 'this.field' must resolve to the field. The 'this' symbol is the containing
+                // type, so every field of the type would otherwise share one root.
+                return model.GetSymbolInfo(memberAccess, cancellationToken).Symbol;
+            }
+
+            last = memberAccess;
             current = memberAccess.Expression;
         }
 
-        return model.GetSymbolInfo(current, cancellationToken).Symbol;
+        var symbol = model.GetSymbolInfo(current, cancellationToken).Symbol;
+        if (symbol is INamedTypeSymbol or INamespaceSymbol && last is not null)
+        {
+            // A type-qualified chain resolves every static member to the type. The member is
+            // the root, so two static fields of one type stay distinct.
+            return model.GetSymbolInfo(last, cancellationToken).Symbol;
+        }
+
+        return symbol;
     }
 
     /// <summary>

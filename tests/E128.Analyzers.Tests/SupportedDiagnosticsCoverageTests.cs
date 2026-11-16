@@ -13,8 +13,7 @@ public sealed class SupportedDiagnosticsCoverageTests
     /// <summary>
     /// Reflection is required: this sweep enumerates every analyzer type and its
     /// DiagnosticDescriptor fields, so a descriptor that never reaches
-    /// SupportedDiagnostics fails a test instead of shipping silent. See the
-    /// GeneratedRegexAnalyzer 2.9.7 audit in plans/roadmap.md. The reflection
+    /// SupportedDiagnostics fails a test instead of shipping silent. The reflection
     /// lives in helper methods, not in the test body, because E128090 bans
     /// reflection inside test methods.
     /// </summary>

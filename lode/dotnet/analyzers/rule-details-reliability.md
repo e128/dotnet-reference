@@ -1,5 +1,5 @@
 # Reliability Rule Details
-*Updated: 2026-11-14T01:26:59Z*
+*Updated: 2026-11-16T15:41:36Z*
 
 Behavior notes for the reliability rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -162,6 +162,11 @@ outer repeat is linear and stays silent. An atomic `(?>...)` group stays
 silent. A group that leads with a distinct separator atom, such as
 `(?:/[^/]+)+`, also stays silent: `FirstAtomCanAlsoBeLast` exempts it when
 the first and last consuming atoms cannot match the same text.
+
+The code fix rewrites a single-atom body only. It removes the outer quantifier,
+or makes the group non-capturing when removal would lose the empty match. A
+multi-atom body has no language-preserving rewrite that clears the report, so
+the fixer offers no action for that shape.
 
 Both scans treat character class contents as literals. `BuildCharacterClassMask`
 marks every index inside a `[...]` class in one pass, and each scan skips masked

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 
 namespace E128.Analyzers.Tests;
@@ -22,5 +24,11 @@ internal sealed record AnalyzerTestOptions
 
     internal IEnumerable<(string Name, string Content)>? AdditionalFiles { get; init; }
 
+    internal IEnumerable<MetadataReference>? AdditionalReferences { get; init; }
+
     internal IEnumerable<string>? Sources { get; init; }
+
+    internal LanguageVersion? LanguageVersion { get; init; }
+
+    internal IEnumerable<string>? SuppressedDiagnosticIds { get; init; }
 }

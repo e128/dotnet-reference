@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -18,13 +19,14 @@ internal static class CodeFixTestRunner
         string source,
         string fixedCode,
         ReferenceAssemblies? references = null,
-        int? fixAllIterations = null,
         DiagnosticResult[]? expected = null,
         MarkupOptions markupOptions = MarkupOptions.None,
-        CodeFixTestBehaviors behaviors = CodeFixTestBehaviors.None)
+        CodeFixTestBehaviors behaviors = CodeFixTestBehaviors.None,
+        CodeFixTestOptions? options = null)
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TFixer : CodeFixProvider, new()
     {
+        options ??= new CodeFixTestOptions();
         var test = new CSharpCodeFixTest<TAnalyzer, TFixer, DefaultVerifier>
         {
             TestCode = source,
@@ -38,17 +40,71 @@ internal static class CodeFixTestRunner
             test.CodeFixTestBehaviors = behaviors;
         }
 
-        if (fixAllIterations is not null)
-        {
-            test.NumberOfFixAllIterations = fixAllIterations.Value;
-        }
-
         if (expected is not null)
         {
             test.ExpectedDiagnostics.AddRange(expected);
         }
 
+        ApplyOptions(test, options);
+
         return test.RunAsync(Xunit.TestContext.Current.CancellationToken);
+    }
+
+    private static void ApplyOptions<TAnalyzer, TFixer>(
+        CSharpCodeFixTest<TAnalyzer, TFixer, DefaultVerifier> test,
+        CodeFixTestOptions options)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TFixer : CodeFixProvider, new()
+    {
+        if (options.FixAllIterations is { } iterations)
+        {
+            test.NumberOfFixAllIterations = iterations;
+        }
+
+        if (options.FixedExpected is not null)
+        {
+            test.FixedState.ExpectedDiagnostics.AddRange(options.FixedExpected);
+        }
+
+        AddSources(test, options.Sources);
+        AddCompilationSettings(test, options);
+    }
+
+    private static void AddSources<TAnalyzer, TFixer>(
+        CSharpCodeFixTest<TAnalyzer, TFixer, DefaultVerifier> test,
+        IEnumerable<string>? sources)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TFixer : CodeFixProvider, new()
+    {
+        if (sources is null)
+        {
+            return;
+        }
+
+        foreach (var extraSource in sources)
+        {
+            test.TestState.Sources.Add(extraSource);
+            test.FixedState.Sources.Add(extraSource);
+        }
+    }
+
+    private static void AddCompilationSettings<TAnalyzer, TFixer>(
+        CSharpCodeFixTest<TAnalyzer, TFixer, DefaultVerifier> test,
+        CodeFixTestOptions options)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TFixer : CodeFixProvider, new()
+    {
+        if (options.LanguageVersion is null && options.SuppressedDiagnosticIds is null)
+        {
+            return;
+        }
+
+        test.SolutionTransforms.Add((solution, projectId) =>
+            CompilationSettings.Apply(
+                solution,
+                projectId,
+                options.LanguageVersion,
+                options.SuppressedDiagnosticIds));
     }
 
     /// <summary>

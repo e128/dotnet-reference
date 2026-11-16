@@ -12,8 +12,8 @@ public sealed class ImmutableArrayDefaultCodeFixTests
         return CodeFixTestRunner.RunAsync<ImmutableArrayDefaultAnalyzer, ImmutableArrayDefaultCodeFixProvider>(
             source,
             fixedCode,
-            fixAllIterations: 1,
-            behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck);
+            behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     [Fact]

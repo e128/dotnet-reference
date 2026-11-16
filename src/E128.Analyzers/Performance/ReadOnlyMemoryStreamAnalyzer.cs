@@ -109,12 +109,15 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeCreation, SyntaxKind.ObjectCreationExpression);
+        context.RegisterSyntaxNodeAction(
+            AnalyzeCreation,
+            SyntaxKind.ObjectCreationExpression,
+            SyntaxKind.ImplicitObjectCreationExpression);
     }
 
     private static void AnalyzeCreation(SyntaxNodeAnalysisContext context)
     {
-        var creation = (ObjectCreationExpressionSyntax)context.Node;
+        var creation = (BaseObjectCreationExpressionSyntax)context.Node;
         var model = context.SemanticModel;
         var cancellationToken = context.CancellationToken;
 
@@ -135,7 +138,7 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsMemoryStreamCreation(
-        ObjectCreationExpressionSyntax creation,
+        BaseObjectCreationExpressionSyntax creation,
         SemanticModel model,
         CancellationToken cancellationToken)
     {
@@ -148,7 +151,7 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
     ///     capacity, a slice, or an explicit writable flag stays silent.
     /// </summary>
     private static bool WrapsReadOnlySource(
-        ObjectCreationExpressionSyntax creation,
+        BaseObjectCreationExpressionSyntax creation,
         SemanticModel model,
         CancellationToken cancellationToken)
     {
@@ -175,7 +178,7 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
     }
 
     private static ILocalSymbol? GetTargetLocal(
-        ObjectCreationExpressionSyntax creation,
+        BaseObjectCreationExpressionSyntax creation,
         SemanticModel model,
         CancellationToken cancellationToken)
     {
@@ -222,6 +225,11 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
     {
         if (reference.Parent is MemberAccessExpressionSyntax access && access.Expression == reference)
         {
+            if (IsWriteTarget(access))
+            {
+                return false;
+            }
+
             var name = access.Name.Identifier.ValueText;
             return access.Parent is InvocationExpressionSyntax
                 ? ReadMemberNames.Contains(name)
@@ -230,6 +238,20 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
 
         return reference.Parent is ArgumentSyntax argument
                && IsReadOnlyConsumer(argument, model, cancellationToken);
+    }
+
+    // A settable property such as Position is read only when it is read. An assignment or an
+    // increment is a write, and the replacement types reject a write.
+    private static bool IsWriteTarget(ExpressionSyntax expression)
+    {
+        return expression.Parent switch
+        {
+            AssignmentExpressionSyntax assignment => assignment.Left == expression,
+            PrefixUnaryExpressionSyntax prefix => prefix.Operand == expression,
+            PostfixUnaryExpressionSyntax postfix => postfix.Operand == expression,
+            ArgumentSyntax argument => !argument.RefKindKeyword.IsKind(SyntaxKind.None),
+            _ => false
+        };
     }
 
     private static bool IsReadOnlyConsumer(

@@ -36,9 +36,9 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
     // A single-atom body makes the outer quantifier redundant, so the rewrite removes it
     // and the diagnostic clears. When removing the outer quantifier would lose the empty
     // match, like '(a+)*', the rewrite keeps it and makes the group non-capturing, so the
-    // language stays. The diagnostic stays in that case. Any other body keeps the
-    // language with an equivalent unbounded brace repeat. An unbounded brace outer
-    // quantifier has no language-preserving one-token rewrite and stays flagged.
+    // language stays. The diagnostic stays in that case. A multi-atom body has no
+    // language-preserving rewrite that clears the diagnostic: '(x){1,}' still carries the
+    // nested quantifier, so no fix is offered.
     internal static string RewriteOuterQuantifier(string pattern)
     {
         if (GeneratedRegexHelpers.FindNestedQuantifierSpan(pattern) is not { } span)
@@ -52,19 +52,17 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
             return pattern;
         }
 
-        if (span.SingleAtomBody)
+        if (!span.SingleAtomBody)
         {
-            if (RemovalKeepsLanguage(pattern, span))
-            {
-                return pattern.Remove(quantifierIndex, span.QuantifierLength);
-            }
-
-            return MakeGroupNonCapturing(pattern, span);
+            return pattern;
         }
 
-        var lazy = span.QuantifierLength > 1 && pattern[quantifierIndex + 1] is '?';
-        var replacement = string.Concat(pattern[quantifierIndex] is '*' ? "{0,}" : "{1,}", lazy ? "?" : string.Empty);
-        return pattern.Substring(0, quantifierIndex) + replacement + pattern.Substring(quantifierIndex + span.QuantifierLength);
+        if (RemovalKeepsLanguage(pattern, span))
+        {
+            return pattern.Remove(quantifierIndex, span.QuantifierLength);
+        }
+
+        return MakeGroupNonCapturing(pattern, span);
     }
 
     // Removing the outer quantifier keeps the language unless the outer quantifier is a

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using E128.Analyzers.Security;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -357,30 +356,31 @@ public sealed class HardcodedSecretAnalyzerTests
     public async Task TestCompilationWithTwoXunitReferences_Silent()
     {
         var references = await ReferenceAssemblies.Net.Net100.ResolveAsync(LanguageNames.CSharp, CancellationToken.None);
-        var test = new CSharpAnalyzerTest<HardcodedSecretAnalyzer, DefaultVerifier>
-        {
-            TestCode = """
-                       class FactAttribute : System.Attribute { }
-                       class C
-                       {
-                           const string AdminPassword = "hunter2hunter2";
+        await AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>(
+            """
+            class FactAttribute : System.Attribute { }
+            class C
+            {
+                const string AdminPassword = "hunter2hunter2";
 
-                           [Fact]
-                           void T() { }
-                       }
-                       """,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.AdditionalReferences.Add(EmitStub(
-            "XunitStubOne",
-            "namespace Xunit { public sealed class FactAttribute { } }",
-            references));
-        test.TestState.AdditionalReferences.Add(EmitStub(
-            "XunitStubTwo",
-            "namespace Xunit { public sealed class FactAttribute { } }",
-            references));
-
-        await test.RunAsync(TestContext.Current.CancellationToken);
+                [Fact]
+                void T() { }
+            }
+            """,
+            options: new AnalyzerTestOptions
+            {
+                AdditionalReferences =
+                [
+                    EmitStub(
+                        "XunitStubOne",
+                        "namespace Xunit { public sealed class FactAttribute { } }",
+                        references),
+                    EmitStub(
+                        "XunitStubTwo",
+                        "namespace Xunit { public sealed class FactAttribute { } }",
+                        references),
+                ],
+            });
     }
 
     /// <summary>
@@ -391,25 +391,26 @@ public sealed class HardcodedSecretAnalyzerTests
     public async Task TestCompilationWithNUnitReference_Silent()
     {
         var references = await ReferenceAssemblies.Net.Net100.ResolveAsync(LanguageNames.CSharp, CancellationToken.None);
-        var test = new CSharpAnalyzerTest<HardcodedSecretAnalyzer, DefaultVerifier>
-        {
-            TestCode = """
-                       class C
-                       {
-                           const string AdminPassword = "hunter2hunter2";
+        await AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>(
+            """
+            class C
+            {
+                const string AdminPassword = "hunter2hunter2";
 
-                           [NUnit.Framework.Test]
-                           void T() { }
-                       }
-                       """,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.AdditionalReferences.Add(EmitStub(
-            "NUnitStub",
-            "namespace NUnit.Framework { public sealed class TestAttribute : System.Attribute { } }",
-            references));
-
-        await test.RunAsync(TestContext.Current.CancellationToken);
+                [NUnit.Framework.Test]
+                void T() { }
+            }
+            """,
+            options: new AnalyzerTestOptions
+            {
+                AdditionalReferences =
+                [
+                    EmitStub(
+                        "NUnitStub",
+                        "namespace NUnit.Framework { public sealed class TestAttribute : System.Attribute { } }",
+                        references),
+                ],
+            });
     }
 
     [Fact]
@@ -417,25 +418,26 @@ public sealed class HardcodedSecretAnalyzerTests
     public async Task TestCompilationWithMsTestReference_Silent()
     {
         var references = await ReferenceAssemblies.Net.Net100.ResolveAsync(LanguageNames.CSharp, CancellationToken.None);
-        var test = new CSharpAnalyzerTest<HardcodedSecretAnalyzer, DefaultVerifier>
-        {
-            TestCode = """
-                       class C
-                       {
-                           const string AdminPassword = "hunter2hunter2";
+        await AnalyzerTestRunner.VerifyAsync<HardcodedSecretAnalyzer>(
+            """
+            class C
+            {
+                const string AdminPassword = "hunter2hunter2";
 
-                           [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]
-                           void T() { }
-                       }
-                       """,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.AdditionalReferences.Add(EmitStub(
-            "MsTestStub",
-            "namespace Microsoft.VisualStudio.TestTools.UnitTesting { public sealed class TestMethodAttribute : System.Attribute { } }",
-            references));
-
-        await test.RunAsync(TestContext.Current.CancellationToken);
+                [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]
+                void T() { }
+            }
+            """,
+            options: new AnalyzerTestOptions
+            {
+                AdditionalReferences =
+                [
+                    EmitStub(
+                        "MsTestStub",
+                        "namespace Microsoft.VisualStudio.TestTools.UnitTesting { public sealed class TestMethodAttribute : System.Attribute { } }",
+                        references),
+                ],
+            });
     }
 
     private static PortableExecutableReference EmitStub(
