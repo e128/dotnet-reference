@@ -263,7 +263,7 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTheTypeSetsMaxResponseContentBufferSize()
+    public Task Reports_WhenTheClientCapIsSetOnAnUnrelatedClient()
     {
         return AnalyzerTestRunner.VerifyAsync<HttpBodyReadWithoutSizeBoundAnalyzer>("""
                            using System.Net.Http;
@@ -276,7 +276,7 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzerTests
                                async Task M(HttpResponseMessage response)
                                {
                                    _ = await _client.SendAsync(new HttpRequestMessage());
-                                   _ = await response.Content.ReadAsStringAsync();
+                                   _ = await {|E128227:response.Content.ReadAsStringAsync()|};
                                }
                            }
                            """);

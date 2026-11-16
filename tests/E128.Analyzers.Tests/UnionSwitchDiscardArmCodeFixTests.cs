@@ -2,7 +2,6 @@ using System.Threading.Tasks;
 using E128.Analyzers.Design;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -16,45 +15,17 @@ public sealed class UnionSwitchDiscardArmCodeFixTests
         DiagnosticResult[]? expected = null,
         DiagnosticResult[]? fixedExpected = null)
     {
-        var test = new CSharpCodeFixTest<UnionSwitchDiscardArmAnalyzer, UnionSwitchDiscardArmCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = code,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-
-        test.TestState.Sources.Add(UnionTestRuntime.StubSource);
-        test.FixedState.Sources.Add(UnionTestRuntime.StubSource);
-
-        test.SolutionTransforms.Add(static (solution, projectId) =>
-        {
-            var project = solution.GetProject(projectId);
-            if (project?.ParseOptions is not CSharpParseOptions parseOptions
-                || project.CompilationOptions is not CSharpCompilationOptions compilationOptions)
+        return CodeFixTestRunner.RunAsync<UnionSwitchDiscardArmAnalyzer, UnionSwitchDiscardArmCodeFixProvider>(
+            code,
+            fixedCode,
+            expected: expected,
+            options: new CodeFixTestOptions
             {
-                return solution;
-            }
-
-            var suppressions = compilationOptions.SpecificDiagnosticOptions
-                .Add("RSEXPERIMENTAL006", ReportDiagnostic.Suppress);
-            return solution
-                .WithProjectParseOptions(projectId, parseOptions.WithLanguageVersion(LanguageVersion.Preview))
-                .WithProjectCompilationOptions(
-                    projectId,
-                    compilationOptions.WithSpecificDiagnosticOptions(suppressions));
-        });
-
-        if (expected is not null)
-        {
-            test.ExpectedDiagnostics.AddRange(expected);
-        }
-
-        if (fixedExpected is not null)
-        {
-            test.FixedState.ExpectedDiagnostics.AddRange(fixedExpected);
-        }
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+                FixedExpected = fixedExpected,
+                Sources = [UnionTestRuntime.StubSource],
+                LanguageVersion = LanguageVersion.Preview,
+                SuppressedDiagnosticIds = ["RSEXPERIMENTAL006"],
+            });
     }
 
     private const string UnionSource =

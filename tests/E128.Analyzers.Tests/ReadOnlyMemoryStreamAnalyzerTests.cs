@@ -231,4 +231,41 @@ public sealed class ReadOnlyMemoryStreamAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenPositionIsAssigned()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ReadOnlyMemoryStreamAnalyzer>("""
+                           using System.IO;
+
+                           class C
+                           {
+                               void M(byte[] data)
+                               {
+                                   using var stream = new MemoryStream(data);
+                                   stream.Position = 0;
+                                   using var reader = new StreamReader(stream);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheCreationIsTargetTyped()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ReadOnlyMemoryStreamAnalyzer>("""
+                           using System.IO;
+
+                           class C
+                           {
+                               void M(byte[] data)
+                               {
+                                   MemoryStream stream = {|E128224:new(data)|};
+                                   using var reader = new StreamReader(stream);
+                               }
+                           }
+                           """);
+    }
 }

@@ -188,4 +188,26 @@ public sealed class ComparerSetConstructionAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheCreationIsTargetTyped()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ComparerSetConstructionAnalyzer>("""
+                           using System;
+                           using System.Collections.Generic;
+
+                           class C
+                           {
+                               void M(string[] items)
+                               {
+                                   HashSet<string> set = {|E128226:new(StringComparer.OrdinalIgnoreCase)|};
+                                   foreach (var item in items)
+                                   {
+                                       set.Add(item);
+                                   }
+                               }
+                           }
+                           """);
+    }
 }

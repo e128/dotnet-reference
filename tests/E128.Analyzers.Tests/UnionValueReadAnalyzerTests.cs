@@ -1,8 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -12,38 +10,15 @@ public sealed class UnionValueReadAnalyzerTests
 {
     private static Task VerifyAsync(string code, DiagnosticResult[]? expected = null)
     {
-        var test = new CSharpAnalyzerTest<UnionValueReadAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-
-        test.SolutionTransforms.Add(static (solution, projectId) =>
-        {
-            var project = solution.GetProject(projectId);
-            if (project?.ParseOptions is not CSharpParseOptions parseOptions
-                || project.CompilationOptions is not CSharpCompilationOptions compilationOptions)
+        return AnalyzerTestRunner.VerifyAsync<UnionValueReadAnalyzer>(
+            code,
+            expected,
+            new AnalyzerTestOptions
             {
-                return solution;
-            }
-
-            var suppressions = compilationOptions.SpecificDiagnosticOptions
-                .Add("RSEXPERIMENTAL006", ReportDiagnostic.Suppress);
-            return solution
-                .WithProjectParseOptions(projectId, parseOptions.WithLanguageVersion(LanguageVersion.Preview))
-                .WithProjectCompilationOptions(
-                    projectId,
-                    compilationOptions.WithSpecificDiagnosticOptions(suppressions));
-        });
-
-        test.TestState.Sources.Add(UnionTestRuntime.StubSource);
-
-        if (expected is not null)
-        {
-            test.ExpectedDiagnostics.AddRange(expected);
-        }
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+                LanguageVersion = LanguageVersion.Preview,
+                Sources = [UnionTestRuntime.StubSource],
+                SuppressedDiagnosticIds = ["RSEXPERIMENTAL006"],
+            });
     }
 
     private const string UnionSource =

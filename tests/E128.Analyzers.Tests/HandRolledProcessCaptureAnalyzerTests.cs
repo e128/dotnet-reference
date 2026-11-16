@@ -217,19 +217,21 @@ public sealed class HandRolledProcessCaptureAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTheStreamOfAnotherProcessIsRead()
+    public Task Silent_WhenTheConfiguredProcessIsAFieldAndAnotherFieldWaits()
     {
         return AnalyzerTestRunner.VerifyAsync<HandRolledProcessCaptureAnalyzer>("""
                            using System.Diagnostics;
                            class C
                            {
-                               void M(string file)
+                               private readonly Process _configured = new();
+                               private readonly Process _waited = new();
+
+                               void M()
                                {
-                                   var info = new ProcessStartInfo(file) { RedirectStandardOutput = true };
-                                   using var process = Process.Start(info);
-                                   using var other = Process.Start(info);
-                                   string output = other.StandardOutput.ReadToEnd();
-                                   process.WaitForExit();
+                                   this._configured.StartInfo.RedirectStandardOutput = true;
+                                   this._configured.Start();
+                                   string output = this._waited.StandardOutput.ReadToEnd();
+                                   this._waited.WaitForExit();
                                }
                            }
                            """);

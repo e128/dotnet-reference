@@ -131,8 +131,8 @@ public sealed class ComplexityCeilingE128CodeFixTests
         return CodeFixTestRunner.RunAsync<ComplexityCeilingAnalyzer, ComplexityCeilingMembershipScanCodeFixProvider>(
             source,
             fixedCode,
-            fixAllIterations: 1,
-            expected: expected);
+            expected: expected,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     private static Task VerifyNoMembershipAsync(string source, params DiagnosticResult[] expected)

@@ -118,9 +118,9 @@ public sealed class GeneratedRegexNestedE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task NestedQuantifier_MultiAtomBody_ReplacesOuterQuantifierWithUnboundedBrace()
+    public Task NestedQuantifier_MultiAtomBody_NoFixOffered()
     {
-        return VerifyFixAsync(
+        return CodeFixTestRunner.NoFixAsync<GeneratedRegexAnalyzer, GeneratedRegexNestedCodeFixProvider>(
             $$"""
               using System.Text.RegularExpressions;
               partial class C
@@ -129,17 +129,7 @@ public sealed class GeneratedRegexNestedE128CodeFixTests
                   private static partial Regex DigitsOnly();
                   {{PartialImpl}}
               }
-              """,
-            $$"""
-              using System.Text.RegularExpressions;
-              partial class C
-              {
-                  [{|E128014:GeneratedRegex(@"(?:\w\w+){1,}", RegexOptions.None, 1000)|}]
-                  private static partial Regex DigitsOnly();
-                  {{PartialImpl}}
-              }
-              """,
-            keepDiagnostic: true);
+              """);
     }
 
     [Fact]

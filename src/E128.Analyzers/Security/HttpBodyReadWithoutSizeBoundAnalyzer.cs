@@ -22,9 +22,10 @@ namespace E128.Analyzers.Security;
 ///     <c lang="csharp">ContentLength</c> comparison on the same content chain. A plain
 ///     greater-than guard does not bound the read, because <c lang="csharp">ContentLength</c> is
 ///     <c lang="csharp">null</c> for a chunked response and the guard passes through. A
-///     <c lang="csharp">MaxResponseContentBufferSize</c> setting anywhere in the type bounds it
-///     too. An in-memory content type needs no bound, because its size is already known. The
-///     rule carries no code fix, because the cap value is a caller decision.
+///     <c lang="csharp">MaxResponseContentBufferSize</c> setting does not bound a direct content
+///     read, because it caps client buffering only. An in-memory content type needs no bound,
+///     because its size is already known. The rule carries no code fix, because the cap value is
+///     a caller decision.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
@@ -55,14 +56,10 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
         "ReadAsStringAsync",
         "ReadAsByteArrayAsync");
 
-    private static readonly ImmutableHashSet<string> TypeBoundNames = ImmutableHashSet.Create(
-        StringComparer.Ordinal,
-        "MaxResponseContentBufferSize");
-
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "HTTP body read without a size bound",
-        "'{0}' buffers the whole body with no size bound. Call LoadIntoBufferAsync with a cap, add a null-safe ContentLength check before the read, or set MaxResponseContentBufferSize.",
+        "'{0}' buffers the whole body with no size bound. Call LoadIntoBufferAsync with a cap or add a null-safe ContentLength check before the read.",
         "E128-Security",
         DiagnosticSeverity.Warning,
         true);
@@ -152,9 +149,9 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    ///     True when a bound precedes the read and dominates it, or when the enclosing type
-    ///     configures the client cap. A bound is resolved by symbol. A bound in another method
-    ///     cannot be proven to apply to this read, so only the client cap is trusted at type scope.
+    ///     True when a bound precedes the read and dominates it. A bound is resolved by symbol.
+    ///     A bound in another method or in another type cannot be proven to apply to this read,
+    ///     so the rule accepts only a bound in the read's own scope.
     /// </summary>
     private static bool HasSizeBound(
         InvocationExpressionSyntax read,
@@ -165,23 +162,21 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken)
     {
         var scope = BlockScope.GetScope(read);
-        if (scope is not null)
+        if (scope is null)
         {
-            var readRoot = RootName(read.Expression);
-            if (readRoot.Length > 0)
-            {
-                var contentLength = GetContentLengthProperty(httpContentHeaders);
-                var boundVariables = CollectBoundVariables(scope, model, contentLength, readRoot, cancellationToken);
-                if (HasCappedBufferLoad(scope, read, readRoot, model, httpContent, cancellationTokenType, cancellationToken)
-                    || HasContentLengthBound(scope, read, readRoot, model, contentLength, boundVariables, cancellationToken))
-                {
-                    return true;
-                }
-            }
+            return false;
         }
 
-        return read.FirstAncestorOrSelf<TypeDeclarationSyntax>() is { } type
-               && Mentions(type, TypeBoundNames);
+        var readRoot = RootName(read.Expression);
+        if (readRoot.Length is 0)
+        {
+            return false;
+        }
+
+        var contentLength = GetContentLengthProperty(httpContentHeaders);
+        var boundVariables = CollectBoundVariables(scope, model, contentLength, readRoot, cancellationToken);
+        return HasCappedBufferLoad(scope, read, readRoot, model, httpContent, cancellationTokenType, cancellationToken)
+               || HasContentLengthBound(scope, read, readRoot, model, contentLength, boundVariables, cancellationToken);
     }
 
     /// <summary>
@@ -652,12 +647,5 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
         }
 
         return expression;
-    }
-
-    private static bool Mentions(SyntaxNode scope, ImmutableHashSet<string> names)
-    {
-        return scope.DescendantNodes()
-            .OfType<IdentifierNameSyntax>()
-            .Any(name => names.Contains(name.Identifier.ValueText));
     }
 }
