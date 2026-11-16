@@ -1,5 +1,5 @@
 # Terminology
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-16T16:20:12Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **MTP**: Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.
@@ -12,7 +12,7 @@
 - **Roslyn Analyzer**: A .NET compiler extension that provides real-time code analysis and diagnostics. This project ships `E128.Analyzers`, a custom analyzer package with design, style, and file-system rules.
 - **MCP**: Model Context Protocol. An open protocol that exposes tools, prompts, and resources to an AI client. This repository connects the Roslyn Navigator server over stdio. See `lode/infrastructure/roslyn-navigator-mcp.md`.
 - **Roslyn Navigator**: The `cwm-roslyn-navigator` .NET tool. It loads the solution with Roslyn and answers structural code questions over MCP. See `lode/infrastructure/roslyn-navigator-mcp.md`.
-- **ArchUnitNET**: Architecture testing library for .NET. Used in `tests/Architecture.Tests/` to enforce layer dependencies, naming conventions, and sealed-class policies.
+- **ArchUnitNET**: Architecture testing library for .NET. Used in `tests/Architecture.Tests/` to enforce project boundaries, layer dependencies, naming conventions, and sealed-class policies.
 - **Trusted Publishing**: OIDC-based NuGet publishing. The `publish.yml` workflow authenticates to NuGet via OIDC rather than long-lived API keys.
 - **OIDC**: OpenID Connect. The token protocol behind Trusted Publishing. It exchanges a short-lived token for a publish credential instead of a stored API key.
 - **Renovate**: Dependency management bot. Configured in `renovate.json` to group updates, auto-merge patch/minor, and flag majors for review.
