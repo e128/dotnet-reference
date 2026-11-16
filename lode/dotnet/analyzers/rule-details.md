@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-13T22:43:20Z*
+*Updated: 2026-11-16T15:19:01Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -97,18 +97,19 @@ Severity: **Info**. Flags a recursive `Directory.Delete` or
 a build gate blocks work for no gain, so the severity stays low and the reported
 set stays narrow.
 
-**Reported**: a parameter, a field read, a property read, and a `Path.Combine`
-whose first argument is one of those.
+**Reported**: a parameter that no safe call site bounds, a field read, a property
+read, a `Path.Combine` over one of those, and a rooted literal such as
+`"/etc/nginx"`. A readonly field, a get-only property, and a mutable field
+report, because the value is computed at run time.
 
 **Silent**: a path under `Path.GetTempPath()`, a relative string literal, a const
-field, a `Path.GetFullPath` over a safe value, a local that holds one of those, an
-unknown shape, a non-recursive call, and a delete guarded by a proving
-`StartsWith` test on the same path in the same block.
+field, a `Path.GetFullPath` result, a `DirectoryInfo` over either, a local that
+holds one of those, an unknown shape, a non-recursive call, and a delete guarded
+by a proving `StartsWith` test.
 
-**Reported literals**: a rooted literal, such as `"/etc/nginx"` or `"C:\Data"`.
-The rule cannot prove such a directory is disposable. A readonly field, a
-get-only property, and a mutable field report, because the value is computed at
-run time.
+**Parameter provenance**: the parameter of a private method takes the safety of
+its call sites in the same type part. A call cycle, a non-private method, a
+split type, or no visible call stays unsafe.
 
 A guard proves the test passed in two shapes, and the comparison must use
 `StringComparison.Ordinal` or `OrdinalIgnoreCase` with a root that ends at a
@@ -120,9 +121,8 @@ around the delete and an `||` condition do not count.
 
 A local alias counts as the value it holds. A `Path.Combine` under a temp path
 stays silent when a later segment comes from a variable, because the rule cannot
-see a `..` or a rooted value in it.
-
-No code fix. The safe root belongs to the caller.
+see a `..` or a rooted value in it. No code fix: the safe root belongs to the
+caller.
 
 ### E128191: PFX import without `EphemeralKeySet`
 
