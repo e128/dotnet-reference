@@ -1,5 +1,5 @@
 # Analyzer Authoring
-*Updated: 2026-11-12T15:07:30Z*
+*Updated: 2026-11-16T14:10:41Z*
 
 Rules for a new or changed rule in `src/E128.Analyzers`. Read
 [new-analyzer-checklist.md](new-analyzer-checklist.md) before you write the

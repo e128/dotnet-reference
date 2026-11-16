@@ -11,13 +11,12 @@ namespace E128.Analyzers.Design;
 ///     E128221: Reports a <c lang="csharp">Value</c> read or a case-type cast on a union
 ///     outside a pattern match. A <c lang="csharp">Value</c> read boxes the case and skips
 ///     the case set, and a cast trusts the runtime state instead of the type system. A case
-///     pattern, or <c lang="csharp">TryGetValue</c>, reads the value without boxing and stays
-///     checked against the case list.
+///     pattern reads the value without boxing and stays checked against the case list. A
+///     compiler-declared union exposes no <c lang="csharp">TryGetValue</c> member.
 /// </summary>
 /// <remarks>
-///     No code fix is provided — converting a read or a cast into a pattern or a
-///     <c lang="csharp">TryGetValue</c> call changes control flow, which cannot be automated
-///     safely.
+///     No code fix is provided — converting a read or a cast into a pattern changes control
+///     flow, which cannot be automated safely.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnionValueReadAnalyzer : DiagnosticAnalyzer
@@ -27,7 +26,7 @@ public sealed class UnionValueReadAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Union case read outside a pattern match",
-        "Read the union case through a pattern or TryGetValue instead of a Value read or cast — the read skips the case set and boxes the value",
+        "Read the union case through a pattern instead of a Value read or cast. The read skips the case set and boxes the value.",
         "E128-Design",
         DiagnosticSeverity.Warning,
         true);

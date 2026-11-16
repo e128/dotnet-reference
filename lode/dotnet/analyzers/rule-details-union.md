@@ -1,5 +1,5 @@
 # Rule Detail Notes: Union and Hierarchy Rules
-*Updated: 2026-11-14T01:26:59Z*
+*Updated: 2026-11-16T14:14:54Z*
 
 Detection shape for the union rule family E128219 to E128221. The complete
 rule table lives in `src/E128.Analyzers/README.md`. The union language surface
@@ -71,8 +71,11 @@ Registers on `SimpleMemberAccessExpression` and `CastExpression`.
   union, because a dictionary or a task carries a `Value`-shaped member too.
 - A cast whose operand is a union and whose target type differs from the
   operand type.
-- No code fix. Converting a read or a cast into a pattern or a `TryGetValue`
-  call changes control flow.
+- No code fix. Converting a read or a cast into a pattern changes control flow.
+- A compiler-declared union exposes no `TryGetValue` member and no `HasValue`
+  property. Probed on net11.0 at `LangVersion` `latest` and `preview`, with
+  Roslyn 5.12.0. `Value` and a case pattern are the whole member surface, so
+  the rule text names the pattern only.
 
 ### Test fixtures
 
