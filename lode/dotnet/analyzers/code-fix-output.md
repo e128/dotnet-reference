@@ -1,5 +1,5 @@
 # Code Fix Output
-*Updated: 2026-11-03T03:14:50Z*
+*Updated: 2026-11-17T03:01:43Z*
 
 Rules for the text a fix writes and the text around it. A fix that emits a
 broken member costs more than a missing fix: the apply path writes it into the
@@ -36,10 +36,10 @@ registers, so every offered fix changes code.
 
 ## Text in an Interpolated String
 
-An `InterpolatedStringTextToken` carries two texts. `Text` is source text, so
-escape it. `ValueText` is the runtime value, so keep it raw. Set both to the
-escaped text and a tree comparison against parsed source fails. Set both raw
-and a quote or a line break breaks the emitted literal.
+An `InterpolatedStringTextToken` carries source text and value text. Escape
+backslashes, quotes, and line breaks in `Text`. Keep the original literal run in
+`ValueText`. Roslyn keeps doubled braces in both fields and combines each
+literal run into one token. The binder resolves escaped braces later.
 
 ## Place a New Node with the Formatter
 

@@ -108,60 +108,76 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
         ExpressionSyntax[] arguments)
     {
         var contents = new List<InterpolatedStringContentSyntax>();
+        var literalStart = 0;
         var i = 0;
 
         while (i < formatString.Length)
         {
             if (formatString[i] == '{')
             {
-                i = ProcessOpenBrace(formatString, i, arguments, contents);
+                if (i + 1 < formatString.Length && formatString[i + 1] == '{')
+                {
+                    i += DoubledBraceLength;
+                    continue;
+                }
+
+                AddLiteralText(formatString, literalStart, i, contents);
+                i = ProcessPlaceholder(formatString, i, arguments, contents);
                 if (i < 0)
                 {
                     return null;
                 }
-            }
-            else if (formatString[i] == '}')
-            {
-                // A brace is either doubled (a literal brace) or unmatched. An unmatched brace
-                // cannot be reproduced in an interpolated string, so the fix declines.
-                if (i + 1 >= formatString.Length || formatString[i + 1] != '}')
-                {
-                    return null;
-                }
 
-                contents.Add(CreateTextContent("}"));
+                literalStart = i;
+            }
+            else if (formatString[i] != '}')
+            {
+                i++;
+            }
+            else if (i + 1 < formatString.Length && formatString[i + 1] == '}')
+            {
                 i += DoubledBraceLength;
             }
             else
             {
-                i = ProcessLiteralText(formatString, i, contents);
+                return null;
             }
         }
+
+        AddLiteralText(formatString, literalStart, formatString.Length, contents);
 
         return SyntaxFactory.InterpolatedStringExpression(
             SyntaxFactory.Token(SyntaxKind.InterpolatedStringStartToken),
             SyntaxFactory.List(contents));
     }
 
-    private static int ProcessOpenBrace(
+    private static void AddLiteralText(
         string formatString,
-        int i,
+        int start,
+        int end,
+        List<InterpolatedStringContentSyntax> contents)
+    {
+        if (start >= end)
+        {
+            return;
+        }
+
+        contents.Add(CreateTextContent(formatString.Substring(start, end - start)));
+    }
+
+    private static int ProcessPlaceholder(
+        string formatString,
+        int start,
         ExpressionSyntax[] arguments,
         List<InterpolatedStringContentSyntax> contents)
     {
-        if (i + 1 < formatString.Length && formatString[i + 1] == '{')
-        {
-            contents.Add(CreateTextContent("{"));
-            return i + DoubledBraceLength;
-        }
-
-        var closeIndex = formatString.IndexOf('}', i);
+        var closeIndex = formatString.IndexOf('}', start);
         if (closeIndex < 0)
         {
             return -1;
         }
 
-        var placeholder = formatString.Substring(i + 1, closeIndex - i - 1);
+        var placeholder = formatString.Substring(start + 1, closeIndex - start - 1);
         var interpolation = BuildInterpolation(placeholder, arguments);
         if (interpolation is null)
         {
@@ -203,23 +219,7 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
         return SyntaxFactory.Interpolation(arguments[argIndex]);
     }
 
-    private static int ProcessLiteralText(
-        string formatString,
-        int start,
-        List<InterpolatedStringContentSyntax> contents)
-    {
-        var i = start;
-        while (i < formatString.Length && formatString[i] != '{' && formatString[i] != '}')
-        {
-            i++;
-        }
-
-        contents.Add(CreateTextContent(formatString.Substring(start, i - start)));
-        return i;
-    }
-
-    // The token carries source text, so a backslash, a quote, or a line break must be escaped.
-    // The format string holds the runtime value, and a raw value breaks the emitted literal.
+    // Escape source syntax in Text. Keep format-string content, including doubled braces, in ValueText.
     private static InterpolatedStringTextSyntax CreateTextContent(string text)
     {
         var escaped = EscapeText(text);
