@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-17T16:36:03Z*
+*Updated: 2026-11-17T22:44:32Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -31,6 +31,7 @@ No open candidate. `ByteSizeType.Is` matches the type by simple name, so a
 namespace move does not break the E128080 exemption.
 
 The body-read shape shipped as E128227. See [catalog.md](catalog.md).
+The token-validation flag shape shipped as E128228. See [catalog.md](catalog.md).
 The JSON enumerator shape closed as skipped, because the enumerator releases no
 resource. See [skipped-decisions.md](skipped-decisions.md).
 
@@ -39,6 +40,8 @@ resource. See [skipped-decisions.md](skipped-decisions.md).
 These clear the same bar and wait for a real defect in review.
 The `AsReadOnly()` getter shape left this table on 2026-11-14, because E128058
 and E128060 require that shape. See [skipped-decisions.md](skipped-decisions.md).
+The token-validation flag shape left this table on 2026-11-17, because the
+maintainer chose prevention over the real-defect bar.
 
 | Rule                                                               | Check                                                          | Noise  |
 | ------------------------------------------------------------------ | -------------------------------------------------------------- | ------ |
@@ -49,7 +52,6 @@ and E128060 require that shape. See [skipped-decisions.md](skipped-decisions.md)
 | `Array.Resize` or `Concat` in a loop                               | call reassigned to the same receiver inside the loop           | Low    |
 | CORS wildcard with credentials                                     | one chain holds `AllowAnyOrigin` and `AllowCredentials`        | Low    |
 | Antiforgery missing on a state-changing action                     | verb attribute with no antiforgery attribute in scope          | Medium |
-| Token validation flag set to constant `false`                      | six `TokenValidationParameters` flags                          | Low    |
 | `readonly` field of a mutable struct                               | defensive copy on every member call                            | Low    |
 | Floating-point loop counter                                        | `for` loop steps a `float` or `double` local                   | Low    |
 | Enum cast outside the member set                                   | constant integral to enum conversion                           | Low    |

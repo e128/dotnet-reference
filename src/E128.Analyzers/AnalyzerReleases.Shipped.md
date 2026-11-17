@@ -1,3 +1,11 @@
+## Release 3.2.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128228 | E128-Security | Warning | Token validation flag set to constant false
+
 ## Release 3.1.1
 
 ### Changed Rules

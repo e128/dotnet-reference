@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.1.5" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.2.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -229,6 +229,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128202 | Unvalidated JWT claims used as an identity                                     | No       |
 | E128222 | `Path.Combine` of a root `.FullName` and an uncontained leaf                   | Yes      |
 | E128227 | HTTP body read without a size bound                                            | No       |
+| E128228 | Token validation flag set to constant false                                    | No       |
 
 ### Style
 
@@ -3295,6 +3296,30 @@ if (response.Content.Headers.ContentLength is not > MaxBodyBytes)
 }
 
 var json = await response.Content.ReadAsStringAsync(cancellationToken);
+```
+
+### E128228: Token validation flag set to constant false
+
+Flags a `TokenValidationParameters` flag assigned a literal `false`. Five flags default to `true`, so a literal `false` disables the check with no build warning and no runtime warning. The token handler then accepts a token that the caller believes it rejects.
+
+`ValidateIssuerSigningKey` defaults to `false`. The rule reports that flag with a distinct message, because the assignment matches the default value.
+
+The rule resolves the property symbol against `TokenValidationParameters` and reports only a literal `false`. A value read from configuration or a variable stays silent. The rule carries no code fix, because the safe value depends on the deployment.
+
+```csharp
+// Before (warns)
+var parameters = new TokenValidationParameters
+{
+    ValidateIssuer = false,
+    ValidateAudience = false,
+};
+
+// After
+var parameters = new TokenValidationParameters
+{
+    ValidateIssuer = true,
+    ValidateAudience = true,
+};
 ```
 
 ## Requirements

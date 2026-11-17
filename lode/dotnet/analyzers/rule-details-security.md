@@ -1,5 +1,5 @@
 # Security Rule Detail Notes
-*Updated: 2026-11-16T15:41:36Z*
+*Updated: 2026-11-17T22:44:32Z*
 
 Detection shape and exclusions for the E128 security rules that the main rule
 table cannot show. The severity and the code-fix status live in
@@ -51,3 +51,31 @@ check to the measured path.
 
 The rule needs `System.Net.Http.HttpContent`. Without that type it registers no
 action, so a consumer with no HTTP reference gets no report.
+
+### E128228: Token validation flag set to constant false
+
+Flags an assignment of a literal `false` to a validation flag on
+`Microsoft.IdentityModel.Tokens.TokenValidationParameters`. The analyzer resolves
+the property symbol and the containing type, so an unrelated type with the same
+property name stays silent. One `SimpleAssignmentExpression` action covers an
+object initializer assignment and an assignment after construction.
+
+Five flags default to `true`: `ValidateIssuer`, `ValidateAudience`,
+`ValidateLifetime`, `RequireExpirationTime`, and `RequireSignedTokens`.
+
+`ValidateIssuerSigningKey` defaults to `false`. The rule reports that flag with
+its own message, because the assignment matches the default and changes no
+runtime behavior.
+
+The rule reports only a literal `false`, including a parenthesized literal. A
+value read from configuration, a local, or a `const` stays silent, because the
+rule cannot judge it. The safe value depends on the deployment, so the rule
+carries no code fix.
+
+The rule needs `Microsoft.IdentityModel.Tokens.TokenValidationParameters`.
+Without that type it registers no action, so a consumer with no JWT reference
+gets no report.
+
+The analyzer declares two descriptors with one ID. The test harness cannot infer
+a named markup diagnostic when descriptors share an ID, so the tests supply an
+explicit `DiagnosticResult` with a keyed location.
