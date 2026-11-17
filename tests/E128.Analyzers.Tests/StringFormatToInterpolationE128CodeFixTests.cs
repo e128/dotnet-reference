@@ -108,6 +108,56 @@ public sealed class StringFormatToInterpolationE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task StringFormat_EscapedBraces_StayLiteral()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                void M(int n)
+                {
+                    var s = {|E128015:string.Format("{{x}} {0}", n)|};
+                }
+            }
+            """,
+            """
+            class C
+            {
+                void M(int n)
+                {
+                    var s = $"{{x}} {n}";
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task StringFormat_EscapedBracesBesidePlaceholder_StayLiteral()
+    {
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                void M(int n)
+                {
+                    var s = {|E128015:string.Format("{{{0}}} {{ {0} }}", n)|};
+                }
+            }
+            """,
+            """
+            class C
+            {
+                void M(int n)
+                {
+                    var s = $"{{{n}}} {{ {n} }}";
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task StringFormat_UnmatchedBrace_NoFixOffered()
     {
         // An unmatched brace cannot be reproduced in an interpolated string, so the fix declines
