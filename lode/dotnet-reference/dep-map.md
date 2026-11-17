@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-10T23:33:05Z*
+*Updated: 2026-11-17T13:33:06Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -11,8 +11,8 @@
 | `E128.Reference.Core`     | `Microsoft.NET.Sdk`     | `net11.0`  | Shared library for Web + Cli    | None                         |
 | `E128.Reference.Web`      | `Microsoft.NET.Sdk.Web` | `net11.0`  | ASP.NET Core web service        | None (project ref only)        |
 | `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net11.0`  | Console executable              | `System.CommandLine` |
-| `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
-| `E128.Analyzers.CodeFixers` | `Microsoft.NET.Sdk`   | `netstandard2.0` | Code fix DLL packed into `E128.Analyzers` | `Microsoft.CodeAnalysis.CSharp.Workspaces` + project ref to `E128.Analyzers` |
+| `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.PublicApiAnalyzers`, `PolySharp` |
+| `E128.Analyzers.CodeFixers` | `Microsoft.NET.Sdk`   | `netstandard2.0` | Code fix DLL packed into `E128.Analyzers` | `Microsoft.CodeAnalysis.CSharp.Workspaces`, `PolySharp`, and a project ref to `E128.Analyzers` |
 
 All production projects also receive the following **analyzer packages** via `Directory.Build.props`
 (`PrivateAssets="all"`, compile-time only, not shipped to consumers). Versions are pinned
@@ -65,8 +65,8 @@ images and gains a CPU floor. On Linux, .NET 11 compiles ReadyToRun against the
 | SDK/build image       | `mcr.microsoft.com/dotnet/sdk:11.0-resolute`     | `Dockerfile` (`restore`/`build` stages) |
 | .NET SDK pin          | see `global.json`                          | `global.json`                         |
 | SDK rollForward       | `latestPatch`                             | `global.json` (pins the SDK to the `11.0.1xx` line) |
-| Target framework      | `net11.0` (all except `E128.Analyzers`)    | `Directory.Build.props`               |
-| Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj`               |
+| Target framework      | `net11.0` (all except the two analyzer projects) | `Directory.Build.props`          |
+| Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj` and `E128.Analyzers.CodeFixers.csproj` |
 | CI SDK version        | `11.0.x`                                   | `.github/workflows/ci.yml` `setup-dotnet` |
 | CI platform           | `ubuntu-26.04`                             | `.github/workflows/ci.yml`            |
 | Secret scanner        | gitleaks, version and SHA-256 pinned in job `env` | `.github/workflows/ci.yml` (`lint` job) |
@@ -151,7 +151,7 @@ reference stays `Microsoft.CodeAnalysis.CSharp.Workspaces`.
 
 - Packaged via `dotnet pack`, pushed via `dotnet nuget push`
 - OIDC-based API key exchange (no stored secrets)
-- Triggered by pushes to `src/E128.Analyzers/**` on `main`
+- Triggered by pushes to `src/E128.Analyzers/**` or `src/E128.Analyzers.CodeFixers/**` on `main`
 - Version check gates the push (skips if version already on nuget.org)
 
 ---

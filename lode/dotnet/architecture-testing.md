@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-11-16T16:20:12Z*
+*Updated: 2026-11-17T13:33:06Z*
 
 ## Overview
 
@@ -63,7 +63,7 @@ Enforces dependency direction: Models depend on nothing, Services depend on Mode
 
 ### Sealed Classes (`SealedClassTests`)
 
-- All non-abstract classes must be sealed (project convention for to favor immutability)
+- All non-abstract classes must be sealed (project convention to favor immutability)
 
 ### Service Patterns (`ServicePatternTests`)
 

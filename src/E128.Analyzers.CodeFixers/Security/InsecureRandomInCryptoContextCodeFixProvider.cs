@@ -162,10 +162,13 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         InvocationExpressionSyntax replacement,
         INamedTypeSymbol expected)
     {
-        var boundPlain = model.GetSpeculativeSymbolInfo(
-            invocation.SpanStart,
-            replacement,
-            SpeculativeBindingOption.BindAsExpression).Symbol;
+        // Bind the type name alone. Binding the whole invocation yields the method symbol, never the type.
+        var boundPlain = replacement.Expression is MemberAccessExpressionSyntax { Expression: { } typeName }
+            ? model.GetSpeculativeSymbolInfo(
+                invocation.SpanStart,
+                typeName,
+                SpeculativeBindingOption.BindAsExpression).Symbol
+            : null;
 
         return boundPlain is ITypeSymbol plainType &&
                string.Equals(plainType.Name, RandomNumberGeneratorName, StringComparison.Ordinal) &&

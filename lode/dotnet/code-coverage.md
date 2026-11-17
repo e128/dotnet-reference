@@ -1,5 +1,5 @@
 # Code Coverage
-*Updated: 2026-11-11T14:00:54Z*
+*Updated: 2026-11-17T13:33:06Z*
 
 Coverage collects in process through the Microsoft.Testing.Platform extension.
 The CI gate requires 80 percent line coverage in total and in every measured
@@ -26,6 +26,7 @@ so it needs no profiler attach step.
 
 ```bash
 dotnet test --solution E128.Reference.slnx \
+  --configuration Debug \
   --no-build \
   --filter-trait "Category=CI" \
   --coverage \
@@ -112,19 +113,19 @@ Classes that match no key land in the Unmapped bucket.
 
 ## Baseline
 
-Measured 2026-11-07 over five module reports. Classes merge across reports, and
-each line keeps its highest hit count. Total: 29276 of 34036 lines, 86.01
+Measured 2026-11-17 over five module reports. Classes merge across reports, and
+each line keeps its highest hit count. Total: 36204 of 38213 lines, 94.74
 percent.
 
 | Assembly | Lines | Line |
 |----------|-------|------|
-| E128.Analyzers | 22021/25188 | 87.43% |
-| E128.Analyzers.CodeFixers | 7166/8758 | 81.82% |
-| E128.Reference.Cli | 22/23 | 95.65% |
-| E128.Reference.Core | 43/43 | 100.0% |
-| E128.Reference.Web | 24/24 | 100.0% |
+| E128.Analyzers | 28748/29925 | 96.07% |
+| E128.Analyzers.CodeFixers | 7344/8166 | 89.93% |
+| E128.Reference.Cli | 22/24 | 91.67% |
+| E128.Reference.Core | 57/57 | 100.0% |
+| E128.Reference.Web | 33/41 | 80.49% |
 
-The Code Fixers assembly sits closest to the floor.
+The Reference Web assembly sits closest to the floor.
 
 ## Local Setup
 
