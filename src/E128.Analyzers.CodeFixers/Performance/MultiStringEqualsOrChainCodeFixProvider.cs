@@ -17,6 +17,23 @@ namespace E128.Analyzers.Performance;
 [Shared]
 public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProviderBase
 {
+    // Longest spelling first, so the global-qualified form is not read as a plain member name.
+    private static readonly ImmutableArray<string> ComparisonPrefixes =
+    [
+        "global::System.StringComparison.",
+        "System.StringComparison.",
+        "StringComparison."
+    ];
+
+    private static readonly ImmutableHashSet<string> ComparisonMembers = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "Ordinal",
+        "OrdinalIgnoreCase",
+        "CurrentCulture",
+        "CurrentCultureIgnoreCase",
+        "InvariantCulture",
+        "InvariantCultureIgnoreCase");
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [MultiStringEqualsOrChainAnalyzer.DiagnosticId];
 
@@ -66,7 +83,13 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
 
         // The only no-op path is a failed field parse. Validate that too, so a registered fix
         // always changes code.
-        var fieldDecl = ParseFieldDeclaration(fieldName, GetComparerExpression(pivot.ComparisonKey), literals);
+        var comparerExpr = GetComparerExpression(pivot.ComparisonKey);
+        if (comparerExpr is null)
+        {
+            return;
+        }
+
+        var fieldDecl = ParseFieldDeclaration(fieldName, comparerExpr, literals);
         if (fieldDecl is null)
         {
             return;
@@ -164,6 +187,11 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
         string fieldName)
     {
         var comparerExpr = GetComparerExpression(pivot.ComparisonKey);
+        if (comparerExpr is null)
+        {
+            return null;
+        }
+
         var fieldDecl = ParseFieldDeclaration(fieldName, comparerExpr, literals);
         if (fieldDecl is null)
         {
@@ -212,18 +240,30 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
         return SyntaxFactory.ParseMemberDeclaration(sb.ToString());
     }
 
-    private static string GetComparerExpression(string comparisonKey)
+    /// <summary>
+    ///     Maps the comparison argument to the matching <c lang="csharp">StringComparer</c> member, for example
+    ///     <c lang="csharp">System.StringComparison.OrdinalIgnoreCase</c> to
+    ///     <c lang="csharp">StringComparer.OrdinalIgnoreCase</c>. Returns null for any other text, such as a variable,
+    ///     which a static field cannot capture and which must not silently become an ordinal comparison.
+    /// </summary>
+    private static string? GetComparerExpression(string comparisonKey)
     {
         if (string.Equals(comparisonKey, "==", StringComparison.Ordinal))
         {
             return "StringComparer.Ordinal";
         }
 
-        // StringComparison.OrdinalIgnoreCase -> StringComparer.OrdinalIgnoreCase
-        const string comparisonPrefix = "StringComparison.";
-        const string comparerPrefix = "StringComparer.";
-        return comparisonKey.StartsWith(comparisonPrefix, StringComparison.Ordinal)
-            ? comparerPrefix + comparisonKey.Substring(comparisonPrefix.Length)
-            : "StringComparer.Ordinal";
+        foreach (var prefix in ComparisonPrefixes)
+        {
+            if (!comparisonKey.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var member = comparisonKey.Substring(prefix.Length);
+            return ComparisonMembers.Contains(member) ? "StringComparer." + member : null;
+        }
+
+        return null;
     }
 }

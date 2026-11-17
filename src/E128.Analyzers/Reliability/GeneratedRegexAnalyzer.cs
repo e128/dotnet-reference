@@ -239,6 +239,11 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
+        if (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            return ExpressionContainsCompiled(parenthesized.Expression, semanticModel, cancellationToken);
+        }
+
         if (expression is BinaryExpressionSyntax binary
             && binary.IsKind(SyntaxKind.BitwiseOrExpression))
         {

@@ -107,6 +107,11 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : E128CodeFixProviderB
             return CreateRegexOptionsNone(expression);
         }
 
+        if (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            return RemoveCompiledFromParenthesized(parenthesized, semanticModel, cancellationToken);
+        }
+
         if (expression is BinaryExpressionSyntax binary
             && binary.IsKind(SyntaxKind.BitwiseOrExpression))
         {
@@ -114,6 +119,23 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : E128CodeFixProviderB
         }
 
         return expression;
+    }
+
+    private static ExpressionSyntax RemoveCompiledFromParenthesized(
+        ParenthesizedExpressionSyntax parenthesized,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var inner = RemoveCompiled(parenthesized.Expression, semanticModel, cancellationToken);
+        if (inner is null || inner == parenthesized.Expression)
+        {
+            return parenthesized;
+        }
+
+        // A lone option needs no parentheses. A remaining OR-chain keeps them.
+        return inner is MemberAccessExpressionSyntax
+            ? inner.WithTriviaFrom(parenthesized)
+            : parenthesized.WithExpression(inner);
     }
 
     private static ExpressionSyntax? RemoveCompiledFromBinary(
