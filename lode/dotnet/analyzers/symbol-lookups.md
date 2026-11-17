@@ -1,11 +1,19 @@
 # Symbol and Semantic Lookups
 
-*Updated: 2026-11-03T03:14:50Z*
+*Updated: 2026-11-17T16:37:41Z*
 
 Recipes for the question the rule asks once the syntax shape passed. The
 binding rules live in [new-analyzer-checklist.md](new-analyzer-checklist.md)
 § Match Symbols, Not Names. The cost rules live in
 [performance.md](performance.md).
+
+## A Project Type With No Fixed Namespace
+
+Match a project type by simple name when the type can move between namespaces.
+A full metadata name pins the type to one namespace and breaks on a move.
+`ByteSizeType.Is` is the example. The E128080 exemption and the E128082 cast
+rule both accept a type named `ByteSize` in any namespace. The matching code fix
+then resolves the type in the compilation, so the emitted call follows the move.
 
 ## Reach a Member by Documentation Comment ID
 

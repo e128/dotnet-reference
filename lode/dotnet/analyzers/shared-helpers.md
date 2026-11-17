@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-12T21:11:18Z*
+*Updated: 2026-11-17T16:36:03Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -23,7 +23,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `InterfaceMembers.Implements` | True when a method implements an interface member, including an explicit implementation. An interface or delegate method returns false. |
 | `InterfaceMembers.ImplementsMember` | True when the containing type maps some interface member to the method. |
 | `NameSuffixes.Matches` | True when a name ends with a suffix at an uppercase-letter position. |
-| `ByteSizeType.Is` | True for `Pug.Core.Classes.ByteSize`. |
+| `ByteSizeType.Is` | True for a type named `ByteSize`, whatever its namespace. A namespace move must not break the exemption or the cast rule. |
 | `ReturnTypes.Get` | Returns the return type of a method or the type of a property. |
 | `ReadOnlyCollectionExposure.Find` | Takes an operation and its containing symbol, not a diagnostic context. Returns the location of a mutable `List` or `Dictionary` field or property that a member exposes as a read-only interface. Unwraps `Task<T>` and `ValueTask<T>`. `MutableCollectionKind` selects the collection. |
 | `MutableCollectionCatalog` | One list of mutable collection types, their kind, the read-only interface name that replaces each, and the display template. The exposure rule and the read-only return rules both read it. |

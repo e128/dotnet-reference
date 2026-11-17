@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.1.4" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.1.5" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -2309,7 +2309,7 @@ No code fix.
 
 ### E128080 &mdash; Use ByteSize for data-size values
 
-Flags a numeric property, parameter, field, or local variable whose name ends with a data-size suffix. The suffix list covers `Bytes`, `Kb`, `Kilobytes`, `Mb`, `Megabytes`, `Gb`, `Gigabytes`, `Tb`, `Terabytes`, `FileSize`, `MaxSize`, `CacheSize`, `BufferSize`, and `ChunkSize`. A nullable numeric reports too. Members declared inside the `ByteSize` type are exempt. `ByteSize` comes from `Pug.Core.Classes`. The rule reports at error.
+Flags a numeric property, parameter, field, or local variable whose name ends with a data-size suffix. The suffix list covers `Bytes`, `Kb`, `Kilobytes`, `Mb`, `Megabytes`, `Gb`, `Gigabytes`, `Tb`, `Terabytes`, `FileSize`, `MaxSize`, `CacheSize`, `BufferSize`, and `ChunkSize`. A nullable numeric reports too. Members declared inside a type named `ByteSize` are exempt. The rule matches that type by simple name, whatever its namespace. The rule reports at error. The code fix resolves the `ByteSize` type in the compilation, so a namespace move does not break the rewritten call.
 
 ```csharp
 // Before (error)
@@ -2333,7 +2333,7 @@ var builder = StringBuilderPool.Shared.Rent();
 
 ### E128082 &mdash; Do not unwrap ByteSize via cast
 
-Flags a cast to a numeric type of a `Bytes`, `Bits`, `Kilobytes`, `Megabytes`, `Gigabytes`, or `Terabytes` property on a `ByteSize` value. The cast removes the unit from the type system. Compare `ByteSize` values directly, or format the value.
+Flags a cast to a numeric type of a `Bytes`, `Bits`, `Kilobytes`, `Megabytes`, `Gigabytes`, or `Terabytes` property on a `ByteSize` value. The rule matches that type by simple name, whatever its namespace. The cast removes the unit from the type system. Compare `ByteSize` values directly, or format the value.
 
 ```csharp
 // Before (warns)

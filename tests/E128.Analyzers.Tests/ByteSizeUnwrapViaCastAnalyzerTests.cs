@@ -67,6 +67,33 @@ public sealed class ByteSizeUnwrapViaCastAnalyzerTests
                                           """);
     }
 
+    private const string MovedByteSizeStub = """
+                                             namespace Pug.Classes
+                                             {
+                                                 public struct ByteSize
+                                                 {
+                                                     public double Bytes { get; set; }
+                                                 }
+                                             }
+                                             """;
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Fires_OnCastOfMovedByteSizeType()
+    {
+        // The type probe matches by simple name, so a namespace move does not
+        // stop the rule.
+        return AnalyzerTestRunner.VerifyAsync<ByteSizeUnwrapViaCastAnalyzer>(MovedByteSizeStub + """
+                                          class C
+                                          {
+                                              void M(Pug.Classes.ByteSize size)
+                                              {
+                                                  var x = {|E128082:(long)size.Bytes|};
+                                              }
+                                          }
+                                          """);
+    }
+
     [Fact]
     [Trait("Category", "CI")]
     public Task NoDiagnostic_ForPlainBytesAccess()

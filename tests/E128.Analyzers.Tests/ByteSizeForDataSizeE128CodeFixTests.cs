@@ -20,16 +20,17 @@ public sealed class ByteSizeForDataSizeE128CodeFixTests
                                         }
                                         """;
 
-    private static Task VerifyFixAsync(string source, string fixedCode)
+    private static Task VerifyFixAsync(string source, string fixedCode, string? byteSizeStub = null)
     {
+        var stub = byteSizeStub ?? ByteSizeStub;
         var test = new CSharpCodeFixTest<ByteSizeForDataSizeAnalyzer, ByteSizeForDataSizeCodeFixProvider, DefaultVerifier>
         {
             TestCode = source,
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100
         };
-        test.TestState.Sources.Add(ByteSizeStub);
-        test.FixedState.Sources.Add(ByteSizeStub);
+        test.TestState.Sources.Add(stub);
+        test.FixedState.Sources.Add(stub);
         return test.RunAsync(TestContext.Current.CancellationToken);
     }
 
@@ -80,6 +81,46 @@ public sealed class ByteSizeForDataSizeE128CodeFixTests
                 }
             }
             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MovedByteSizeNamespace_ResolvesTheReferencedType()
+    {
+        // The type moved from Pug.Core.Classes. The fix must use the type that
+        // the compilation resolves, not the retired namespace.
+        const string MovedStub = """
+                                 namespace Pug.Classes
+                                 {
+                                     public readonly struct ByteSize
+                                     {
+                                         public static ByteSize FromBytes(long bytes) => default;
+                                     }
+                                 }
+                                 """;
+
+        return VerifyFixAsync(
+            """
+            class C
+            {
+                void M()
+                {
+                    long {|E128080:maxBufferSize|} = 1;
+                }
+            }
+            """,
+            """
+            using Pug.Classes;
+
+            class C
+            {
+                void M()
+                {
+                    ByteSize maxBufferSize = Pug.Classes.ByteSize.FromBytes(1);
+                }
+            }
+            """,
+            MovedStub);
     }
 
     [Fact]

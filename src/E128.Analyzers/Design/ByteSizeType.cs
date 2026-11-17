@@ -9,12 +9,12 @@ namespace E128.Analyzers.Design;
 internal static class ByteSizeType
 {
     /// <summary>
-    ///     True when the type is <c lang="csharp">Pug.Core.Classes.ByteSize</c>.
+    ///     True when the type is named <c lang="csharp">ByteSize</c>, whatever its namespace.
+    ///     A namespace move must not break the exemption or the cast rule.
     /// </summary>
     internal static bool Is(ITypeSymbol? type)
     {
         return type is not null
-               && string.Equals(type.Name, "ByteSize", StringComparison.Ordinal)
-               && string.Equals(type.ContainingNamespace?.ToString(), "Pug.Core.Classes", StringComparison.Ordinal);
+               && string.Equals(type.Name, "ByteSize", StringComparison.Ordinal);
     }
 }
