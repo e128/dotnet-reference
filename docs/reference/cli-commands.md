@@ -25,7 +25,7 @@ flowchart LR
 | Test, full suite      | `scripts/test.sh --all`                                     | includes the Podman and Manual categories |
 | Format, apply         | `scripts/format.sh --changed`                               | jb cleanup then `dotnet format`           |
 | Format, check         | `scripts/format.sh --check`                                 | verify only                               |
-| Composed gate         | `scripts/check.sh`                                          | shell lint, format, build, test           |
+| Composed gate         | `scripts/check.sh`                                          | steps in `scripts/README.md`              |
 | Full CI               | `scripts/ci.sh`                                             | mirrors the `ci` job                      |
 | Session context       | `scripts/context.sh`                                        | status, diff, and plans                   |
 | Git status            | `scripts/status.sh --json`                                  | structured                                |

@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-14T00:47:21Z*
+*Updated: 2026-11-17T13:14:44Z*
 
 ## Overview
 
@@ -92,11 +92,12 @@ nuget.org already carries, because the publish job skips an existing version.
 
 **Pre-first-release:** keep all rules in `Unshipped.md`; `Shipped.md` starts with `; No shipped releases yet.`
 
-The `/yeet` skill enforces the whole workflow on every run. It calls
-`scripts/internal/analyzer-release-check.sh` for the release files,
-`scripts/readme-table-diff.sh --analyzer` for the analyzer README, and
-`scripts/internal/analyzer-promote.sh` after the version bump. A rule that is
-missing from either file blocks the ship, even on a docs-only change set.
+The `/yeet` skill enforces the whole workflow on every run. `scripts/check.sh`
+runs `scripts/internal/analyzer-release-check.sh` when the diff touches
+`src/E128.Analyzers/`. The skill also calls that script directly for the release
+files. It calls `scripts/readme-table-diff.sh --analyzer` for the analyzer
+README and `scripts/internal/analyzer-promote.sh` after the version bump. A rule
+that is missing from either file blocks the ship, even on a docs-only change set.
 
 ## Consumers
 

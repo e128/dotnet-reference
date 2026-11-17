@@ -41,7 +41,7 @@ scripts/build.sh --project Web    # build one project
 scripts/test.sh                   # CI-trait tests, the fast path
 scripts/test.sh GreeterTests      # one test class
 scripts/test.sh --all             # the full suite
-scripts/check.sh                  # shell lint, format, build, and test
+scripts/check.sh                  # composed gate, steps in scripts/README.md
 scripts/ci.sh                     # the full CI pipeline locally
 scripts/help.sh                   # every script and its purpose
 ```

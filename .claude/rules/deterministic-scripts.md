@@ -48,6 +48,7 @@ print terse JSON by default. Use the script help for supported flags.
 | `dotnet list ... --outdated\|--vulnerable`                       | `scripts/dep-check.sh [--outdated] [--json]`                                    |
 | parsing raw MSBuild `File.cs(l,c): error CODE` lines             | `scripts/diagnostics.sh [--group\|--code ID\|--diff a b]`                       |
 | ad-hoc `PackageReference` classify or cross-project heat map     | `scripts/nuget-heat-map.sh [--json]`                                            |
+| ad-hoc `~/.nuget/packages` probes for package paths              | `scripts/pkg-path.sh PACKAGE [--version V] [--ref\|--lib]`                      |
 | ad-hoc SDK, `TargetFramework`, or Docker `FROM` pin scans        | `scripts/runtime-matrix.sh [--json]`                                            |
 | ad-hoc `#pragma warning disable` or `[SuppressMessage]` greps    | `scripts/suppression-scan.sh [--json]`                                          |
 | ad-hoc `PackageVersion` orphan or `ProjectReference` set-diff    | `scripts/deps-graph.sh [--orphans] [--json]`                                    |

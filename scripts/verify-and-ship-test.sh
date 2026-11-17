@@ -378,7 +378,7 @@ case_ships_one_commit_over_existing_upstream() {
     expect "second unpushed file is kept" g cat-file -e HEAD:u2.txt
     expect "new file is kept" g cat-file -e HEAD:new.txt
     expect "commit subject is the message" test "$(g log -1 --format=%s)" = "feat: ship it"
-    expect "one name-only trailer" test "$(g log -1 --format=%B | rg -c '^Co-Authored-By: Claude$')" = 1
+    expect "no co-author trailer" test -z "$(g log -1 --format=%B | rg '^Co-Authored-By:' || true)"
     expect "working tree is clean" test -z "$(g status --porcelain)"
 }
 

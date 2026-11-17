@@ -30,7 +30,7 @@ Other required tools: see [Shell Authoring](../lode/infrastructure/shell-authori
 | `build.sh`                | Build the solution or a specific project                                                             | `--verbose`, `--project`, `--errors`, `--warnings`, `--fix`, `--fast` |
 | `test.sh`                 | Run tests (defaults to CI category)                                                                  | `--all`, `--verbose`, `--dry-run`, `--trait`, `--framework`           |
 | `format.sh`               | Run jb cleanupcode then dotnet format                                                                | `--check`, `--changed`, `--no-jb`                                     |
-| `check.sh`                | Composed: shell lint, shipping tests (--all, if changed), format, build, test                        | `--all`, `--no-format`, `--json`                                      |
+| `check.sh`                | Composed: shell lint, shipping tests, analyzer release, format, build, test                          | `--all`, `--no-format`, `--json`                                      |
 | `ci.sh`                   | Full CI pipeline: shell lint, shipping tests, format, build, test                                    | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`   |
 | `podman.sh`               | Podman build/run/test/stop/clean                                                                     | `--no-cache`                                                          |
 | `verify-and-ship.sh`      | Ship the branch as one squashed commit (format, bump, check, squash, scan, commit, push)             | `--message`/`-m` (required), `--no-version-bump`, `--json`            |
@@ -82,8 +82,9 @@ Other required tools: see [Shell Authoring](../lode/infrastructure/shell-authori
 | -------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `find.sh`            | Deterministic symbol lookup (class/method/callers/refs/file)   | `--class`, `--method`, `--callers`, `--refs`, `--file`, `--json` |
 | `file-outline.sh`    | File structure outline with line ranges for targeted reading   | `--json`, `--method`, `--section`                                |
-| `code-read.sh`       | Extract method/class/section source by name                    | `--method`, `--class`, `--section`, `--line`, `--json`           |
+| `code-read.sh`       | Extract method/class/section or line ranges by name            | `--method`, `--class`, `--section`, `--line`/`--range`, `--json` |
 | `deps.sh`            | Type dependency graph (callers, callees, interfaces)           | `--callers`, `--callees`, `--interfaces`, `--json`               |
+| `pkg-path.sh`        | Resolve a NuGet package's ref and lib dirs                     | `--version`, `--ref`, `--lib`, `--json`                          |
 
 ## Coverage & Analysis
 
@@ -114,7 +115,7 @@ These are invoked by skills and agents only — not intended for direct use:
 | ------------------------------------ | ------------------------------------------------------------------------------------------ |
 | `internal/analyzer-release-check.sh` | Validate analyzer release files (Unshipped/Shipped) against source DiagnosticId constants |
 | `internal/analyzer-promote.sh`       | Move Unshipped rule rows into a new Shipped release section                                |
-| `internal/commit.sh`                 | Commit helper: blocks emails, adds a name-only co-author trailer unless one is present     |
+| `internal/commit.sh`                 | Commit helper: blocks email addresses and Claude Code attribution in the message           |
 | `internal/cr-diff-deliver.sh`        | Decide code-review diff delivery mode by size: inline (≤30KB), write (30-40KB), or split (>40KB) |
 | `internal/cr-target.sh`              | Resolve a code-review target to base, changed files, and the reviewers to run              |
 | `internal/mechanical-diff.sh`        | Classify each changed file in the working diff as MECHANICAL (namespace rename) or SUBSTANTIVE |

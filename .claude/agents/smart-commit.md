@@ -54,8 +54,9 @@ One-shot autonomous commit. No per-step gates, no "does this look right?", no pe
 ## Rules
 
 - **Never put an email address in the commit message**: no `noreply@` line, no email in any
-  trailer. `commit.sh` and `precommit.sh` enforce this and will reject the commit. `commit.sh`
-  appends a name-only `Co-Authored-By: Claude` trailer automatically.
+  trailer. `commit.sh` and `precommit.sh` enforce this and will reject the commit.
+- **Never name Claude Code or Anthropic**: no attribution trailer, no footer. `commit.sh`
+  rejects the phrase.
 - **Do not push**: leave push to `/yeet` or explicit user instruction
 - **One commit only**: if changes span clearly unrelated concerns, note it in the output
   but still commit everything together (user can split manually if they want)
