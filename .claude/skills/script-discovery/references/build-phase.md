@@ -18,7 +18,6 @@ For each of the top N candidates:
 ## 5b. Wire up keyword shortcut
 
 Add an entry to `.claude/rules/keyword-shortcuts.md` in the appropriate row.
-Update the timestamp via `scripts/ts.sh`.
 
 ## 5c. Register the hook (only when the script enforces a guardrail)
 

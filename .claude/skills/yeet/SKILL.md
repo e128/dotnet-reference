@@ -4,7 +4,9 @@ description: >
   Ship it, formats, builds, tests, commits, and pushes.
   Accepts --skip-tests flag to skip build+test when caller already verified them.
   Triggers on: ship it, yeet, push it, commit and push, deploy this, we're done,
-  preflight, preflight check, quality check, pre-commit check, ready to commit.
+  verify and ship, ship this branch.
+  For preflight, preflight check, quality check, pre-commit check, or ready to commit,
+  run with --dry-run: the quality gate only, no commit or push.
 argument-hint: "[--skip-tests] [--dry-run]"
 ---
 
@@ -206,7 +208,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
 ## Rules
 
 - **All pending changes ship together**: never unstage, cherry-pick, or exclude files from the commit. Everything in the working tree goes into one commit. Do not ask whether to include specific files.
-- **Fully autonomous**: no user prompts during execution. Invoking `/yeet` is the user's approval for the push and the PR (`.claude/rules/auto-approvals.md`).
+- **Fully autonomous**: no user prompts during execution, except the staleness guard in step 0 (`behind` above zero). Invoking `/yeet` is the user's approval for the push and the PR (`.claude/rules/auto-approvals.md`).
 - **Stop on failure**: PII fail, build fail, or test fail halts the pipeline
 - **No email addresses**: never in a commit message, trailer, or PR body. The PII scan blocks real emails in the staged diff and `commit.sh` rejects an email in the message, `user@example.com` placeholders are allowed
 - **No Claude Code attribution**: never name Claude Code or Anthropic in a commit message, trailer, or PR body. `commit.sh` rejects the phrase and the PR step scans the body

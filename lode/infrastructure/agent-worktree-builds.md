@@ -1,5 +1,5 @@
 # Agent Worktree Builds
-*Updated: 2026-11-16T20:16:49Z*
+*Updated: 2026-11-17T16:18:15Z*
 
 A subagent spawned with worktree isolation lands under
 `.claude/worktrees/agent-<id>/`. That worktree holds a full copy of the
@@ -39,6 +39,12 @@ Run delegated test writers in the primary checkout, one agent at a time,
 because builds share `artifacts/`. A worktree outside the repository tree has
 no ancestor root `.globalconfig`, so the collision cannot occur there. Do not
 edit `global_level` or add a targets file to bypass the collision.
+
+`naming-migrate` and `refactoring-specialist` keep worktree isolation.
+When the worktree is nested, the parent supplies baseline diagnostics and test results.
+The agent returns its edits with verification pending. It does not run build, test, diagnostics, format, or check scripts there.
+The parent integrates the edits and runs `scripts/check.sh --json` in the primary checkout.
+A failed gate returns diagnostics to the agent for the next pass.
 
 Give each agent write access to its own new files only. The parent edits the
 shared surfaces: `src/E128.Analyzers/README.md`,

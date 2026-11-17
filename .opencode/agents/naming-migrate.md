@@ -30,6 +30,19 @@ open is invalidated. Re-Read each file you intend to Edit before the next Edit â
 read seconds earlier. A format/check run without a follow-up Re-Read is the single largest
 source of `file_not_read` errors.
 
+## Worktree Verification Boundary
+
+Keep worktree isolation. Read `lode/infrastructure/agent-worktree-builds.md` before any command that builds or tests.
+A nested worktree loads ancestor `.globalconfig` files and can report phantom diagnostics.
+
+In a nested worktree, use the parent's diagnostic records instead of running Phase 1.
+If the records are missing, ask the parent to collect them in the primary checkout.
+Apply the approved renames, then return the changed files and mark Phase 3 as pending parent verification.
+Do not run diagnostics, build, test, format, or check scripts in that worktree.
+The parent integrates the changes, then runs `scripts/check.sh --json` in the primary checkout.
+If verification fails, the parent returns the diagnostics for the next rename pass.
+A worktree outside the repository tree can run the phases below without the ancestor collision.
+
 ## Phase 1: Collect Violations
 
 ```bash
@@ -94,10 +107,12 @@ rg --word-regexp "OldName" src/ tests/ benchmarks/ -g "*.cs"
 ## Phase 3: Verify Build
 
 ```bash
-scripts/check.sh --no-format --json
+scripts/check.sh --json
 ```
 
 - **Clean:** go to Report.
+- **Format step fails:** run `scripts/format.sh --changed`, then `scripts/format-invalidate.sh`,
+  re-Read each file it lists, and re-run Phase 3.
 - **Remaining IDE1006** and iteration < 3: loop to Phase 1.
 - **Compilation errors (CS0246, etc.):** a reference site was missed â€” find it, apply the
   rename, re-run Phase 3. These do NOT count as loop iterations.

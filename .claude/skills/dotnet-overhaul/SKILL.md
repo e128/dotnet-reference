@@ -100,7 +100,7 @@ zero external dependencies. Use these when present, else fall back:
 | `sme-researcher` agent                | uncertainty research        | `Explore` agent                                        |
 | `tdd-loop-optimizer` agent            | batch fix cycles            | sequential fixes                                       |
 | `mcp__ide__getDiagnostics`            | deeper post-build diagnostics | build output only                                     |
-| `/dev-planning` skill (≥8 findings)   | create a plan               | execute directly from `approved-step{N}.md`            |
+| plan directory (≥8 findings)          | create a plan               | execute directly from `approved-step{N}.md`            |
 
 Project-specific (optional): read `${CLAUDE_SKILL_DIR}/conventions.md` for coding standards,
 analyzer inventory, severity overrides, and auto-approved fixes (absent → sensible .NET
@@ -203,7 +203,7 @@ suppressions, verify build. Executes immediately: no approval gate.
 
 ## Fix Cycle (Steps 3-8) -> read steps/fix-cycle.md
 
-After user approves findings: create a plan (if dev-planning available and >=8 findings), execute approved fixes, build+test, report results.
+After user approves findings: create a plan (if >=8 findings), execute approved fixes, build+test, report results.
 
 ## Self-Improvement
 

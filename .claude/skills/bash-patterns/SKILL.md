@@ -41,7 +41,7 @@ set -euo pipefail
 ## Formatting Rules
 
 - No trailing whitespace.
-- Indent with 2 spaces (not tabs).
+- Indent with 4 spaces (not tabs), as the existing `scripts/*.sh` files do.
 - Lines <= 100 chars preferred; wrap long lines with `\`.
 - Quote all variable expansions: `"$var"` not `$var`.
 - Use `[[ ]]` for conditionals (not `[ ]`).
@@ -91,8 +91,8 @@ trap cleanup EXIT
 command -v dotnet &>/dev/null || { echo "dotnet not found" >&2; exit 1; }
 
 # Capture exit code without exiting
-output=$(some_command 2>&1) || true
-exit_code=$?
+exit_code=0
+output=$(some_command 2>&1) || exit_code=$?
 ```
 
 ### Temporary Files

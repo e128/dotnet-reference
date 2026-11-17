@@ -143,7 +143,7 @@ For each threat with Likelihood >= Medium OR Impact >= High, using the bridge ta
    - Existing mitigations already in codebase (grep for security patterns)
 
 3. **Leave the register unstaged**: do not `git add`. The user controls commits (see
-   `.claude/rules/auto-approvals.md`). Just report the file path.
+   Git and Scope in `AGENTS.md`). Just report the file path.
 
 4. **Delta tracking**: if prior register exists, compute:
    - NEW: threats not in previous register

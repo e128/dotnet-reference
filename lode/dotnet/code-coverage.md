@@ -1,5 +1,5 @@
 # Code Coverage
-*Updated: 2026-11-17T13:33:06Z*
+*Updated: 2026-11-17T16:18:15Z*
 
 Coverage collects in process through the Microsoft.Testing.Platform extension.
 The CI gate requires 80 percent line coverage in total and in every measured
@@ -95,6 +95,18 @@ The gate fails in four cases:
 checks one namespace for any line or branch gap. `--source-file` checks one
 source file and exits 1 when no class matches or the file is below the floor.
 `--self-test` proves the gate against its fixtures.
+
+## CRAP Estimates
+
+CRAP combines cyclomatic complexity with uncovered-path risk.
+The measured Cobertura files contain method-level `complexity`, `line-rate`, and `branch-rate` attributes.
+The technical-debt audit uses source-level complexity and branch coverage for manual CRAP estimates.
+ReportGenerator displays supplied metrics rather than calculating complexity from source.
+
+CI enforces line floors, not CRAP thresholds.
+An absent Risk Hotspots list does not prove a low score for every method.
+Verify threshold enforcement with known hotspot input before adding a CRAP gate.
+See the [CRAP Reference](../../.claude/skills/tech-debt-audit/references/crap-formula.md) for the formula and report limits.
 
 ## Feature Areas
 

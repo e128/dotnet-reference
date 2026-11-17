@@ -71,9 +71,26 @@
       "Edit(.claude/settings.json)"
     ],
     "deny": [
+      "Bash(gh api --method DELETE*)",
+      "Bash(gh api -X DELETE*)",
+      "Bash(gh release delete*)",
+      "Bash(gh repo delete*)",
+      "Bash(git branch -D *)",
+      "Bash(git checkout -- *)",
+      "Bash(git push * --delete*)",
       "Bash(git push --force*)",
       "Bash(git push -f*)",
-      "Bash(git reset --hard*)"
+      "Bash(git push origin :*)",
+      "Bash(git reset --hard*)",
+      "Bash(git restore *)",
+      "Bash(git stash clear*)",
+      "Bash(git stash drop*)",
+      "Bash(rm -fr *)",
+      "Bash(rm -rf *)",
+      "Bash(security find-*password*)",
+      "Read(./.env*)",
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)"
     ]
   },
   "hooks": {
@@ -116,8 +133,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "result=$(scripts/violation-scan.sh --json 2>/dev/null); violations=$(echo \"$result\" | jq \".violations // 0\"); if [ \"$violations\" -gt 0 ]; then msg=\"$violations anti-pattern violation(s) this session. Run: scripts/violation-scan.sh\"; echo \"{\\\"systemMessage\\\":\\\"$msg\\\"}\"; fi",
-            "statusMessage": "Scanning for anti-pattern violations..."
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-violations\""
           }
         ]
       }
@@ -143,15 +159,6 @@
       }
     ],
     "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-tool-use-guard\""
-          }
-        ]
-      },
       {
         "matcher": "Bash",
         "hooks": [

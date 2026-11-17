@@ -72,14 +72,21 @@ Run these simultaneously:
 ### Step 3: Propose fix
 
 Present the diagnosis with category, root cause, proposed code change, and
-affected sibling tests. **Wait for user confirmation before applying.**
+affected sibling tests.
+
+Apply the fix when the root cause is clear and the change stays inside the failing test or its
+source under test. Ask with `AskUserQuestion` before you apply the fix when any of these hold:
+
+- The failure could be a wrong test or a wrong implementation, and the evidence does not decide.
+- The fix changes a public API, weakens or deletes an assertion, or skips a test.
+- The fix needs an analyzer suppression (`.claude/rules/auto-approvals.md` requires approval).
 
 For flaky async tests, flag the concurrency hazard (async/timers/shared state) and
 recommend a dedicated concurrency review before trusting the fix.
 
 ### Step 4: Validate
 
-After user-approved fix: `scripts/test.sh {TestClass}`
+After the fix: `scripts/test.sh {TestClass}`
 
 ## Common Pitfalls
 

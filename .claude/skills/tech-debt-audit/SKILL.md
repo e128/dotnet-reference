@@ -11,7 +11,7 @@ argument-hint: "[scope path] [crap | dead-code | duplicates | suppressions | sol
 
 # Tech Debt Audit
 
-Everything from here through the `---` divider is the protocol Claude executes; the section after it is human documentation.
+Everything above the last `---` divider is the protocol Claude executes. The section after it is human documentation.
 
 ## Arguments
 
@@ -175,13 +175,9 @@ If `plans/TECH_DEBT_AUDIT.md` already exists:
 
 This turns the audit into a living document tracked over time.
 
----
-
-**Human guide:** [references/human-guide.md](references/human-guide.md) — installation, usage, philosophy, adaptation notes, limitations.
-
 ## Self-Improvement
 
-At the end of every run, build a feedback payload and spawn `skill-self-updater` only if the payload is non-empty.
+At the end of every run, build a feedback payload and spawn `skill-self-updater` only if the payload is non-empty. Include an entry only when it would help most future runs, and state it as a rule, not as an incident.
 
 ### Payload structure
 
@@ -201,3 +197,7 @@ At the end of every run, build a feedback payload and spawn `skill-self-updater`
 
 **Spawn condition**: ≥1 entry in any section → spawn `skill-self-updater` with this block as the prompt argument.
 **Skip condition**: All sections empty (clean run) → do not spawn.
+
+---
+
+**Human guide:** [references/human-guide.md](references/human-guide.md) — installation, usage, philosophy, adaptation notes, limitations.

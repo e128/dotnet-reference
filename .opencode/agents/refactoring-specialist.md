@@ -28,7 +28,6 @@ Prefer these single-call scripts over multi-step `rg` chains:
 | Read one method body | `scripts/code-read.sh --method X path.cs` | Full-file Read + manual scan |
 | File structure outline | `scripts/file-outline.sh path.cs --json` | Glob + Read to understand structure |
 | Dependency graph | `scripts/deps.sh TypeName --json` | Phase 0 manual dependency chain mapping |
-| DI registrations | dump DI registrations (e.g. `rg "services.Add" src/`) | `rg "services.Add" src/` |
 | Files needing re-read after format | `scripts/format-invalidate.sh --json` | Guessing which files format touched |
 
 Use MCP tools first for semantic analysis. Fall back to these scripts. Fall back to raw `rg` last.
@@ -63,6 +62,19 @@ Concerns:   [what's unclear — empty for LOW]
 ## Context Seed (before any source reads)
 
 Run `scripts/lode-summary.sh dotnet` to load SOLID principles, coding standards, performance patterns, and anti-patterns from the lode before analyzing source. Use the returned file list to read the relevant standards files as needed, they calibrate the analysis lens in Analysis (step 1) without loading the full lode-map.
+
+## Worktree Verification Boundary
+
+Keep worktree isolation. Read `lode/infrastructure/agent-worktree-builds.md` before any command that builds or tests.
+A nested worktree loads ancestor `.globalconfig` files and can report phantom diagnostics.
+
+In a nested worktree, use the parent's baseline diagnostics and test results.
+Write tests before implementation, but do not run diagnostics, build, test, format, or check scripts there.
+Return the changed files, required test classes, and unresolved questions to the parent.
+Mark verification as pending, not passed.
+The parent integrates the changes, then runs `scripts/check.sh --json` in the primary checkout.
+If verification fails, the parent returns the diagnostics for the next refactoring pass.
+A worktree outside the repository tree can run the verification steps below without the ancestor collision.
 
 ## Workflow
 
@@ -117,7 +129,8 @@ Before declaring done:
 ## .NET Style Compliance
 
 All generated or modified C# code must comply with `.editorconfig` and `.globalconfig`. Key constraints:
-- **Block bodies only** for methods, constructors, operators, and local functions, never use `=> expr` (IDE0021/IDE0022/IDE0061)
+- **Block bodies only** for methods, constructors, and operators, never use `=> expr` (IDE0021/IDE0022)
+- A local function takes `=> expr` only when its body fits on one line (IDE0061, `when_on_single_line`)
 - Expression bodies are allowed for properties and accessors
 - Using directives must be **outside** the namespace block
 - Read target files before editing to match their existing code style

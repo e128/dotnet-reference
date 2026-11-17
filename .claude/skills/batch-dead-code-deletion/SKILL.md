@@ -10,7 +10,7 @@ argument-hint: >
   Space-separated symbol names, optionally prefixed with --dry-run.
   Example: /batch-dead-code-deletion FooService BarHelper IWidgetFactory
   Example: /batch-dead-code-deletion --dry-run FooService BarHelper
-allowed-tools: Bash, Read, Glob, Grep, Write, Edit
+allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion
 ---
 
 # Batch Dead-Code Deletion
@@ -43,6 +43,10 @@ For each symbol, confirm it is dead before touching it. Classify into one of:
    mark it `multi_type` (edit, do not delete).
 
 ## Step 3: Execute Deletions (skip in DRY_RUN)
+
+Deleting a file outside `lode/` needs approval (`.claude/rules/auto-approvals.md`).
+List the files to delete and the multi-type edits, then ask once with `AskUserQuestion`.
+Stop when the answer is no.
 
 For each DEAD symbol in a single-type file:
 
@@ -102,4 +106,4 @@ Dead-Code Deletion Report
 - **Multi-type files: edit, do not delete.**
 - **One build run.** After all deletions, not per symbol.
 - **Stage only: do not commit.** The caller handles commits.
-- **`--dry-run` is the only mode that writes nothing.** Without the flag, the skill deletes files.
+- **`--dry-run` is the only mode that writes nothing.** Without the flag, the skill deletes files after approval.

@@ -72,4 +72,4 @@ Return a structured summary in this exact format:
 - **Include file paths** — so the caller can navigate directly to issues
 - **TreatWarningsAsErrors is enabled** — any warning IS an error in this project
 - **Never edit source files** — you are read-only. Report issues for the caller to fix.
-- If everything passes, keep the response to 3-4 lines
+- If everything passes, return only the three status lines and omit the Errors, Failed Tests, and Warnings sections

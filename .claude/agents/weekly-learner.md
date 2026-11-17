@@ -176,6 +176,6 @@ Write findings to `.claude/tmp/weekly-learner/memory.md` with sections: Active P
 - **Actionable recommendations only**: "code could be better" is not actionable; "create /quick-fix skill to chain format+build+commit" is
 - **Respect dismissed patterns**: if a recommendation was previously dismissed, do not re-suggest unless the evidence has significantly changed (2x+ frequency increase)
 - **Repo-agnostic**: never assume specific directory structures (lode/, etc.) exist. Always detect and adapt
-- **Plans over reports for non-trivial work**: any recommendation with effort above trivial must produce a plan, not just a text suggestion
+- **Plans over reports for non-trivial work**: a recommendation that meets the Phase 4.5 criteria must produce a plan, not just a text suggestion
 - **No duplicate plans**: check `plans/` before creating. If a plan already covers the pattern, add a note in the report and skip
 - **Trivial and dead-weight items: apply inline**: do not create a plan for a one-line config change. Do it during this run. Report a file deletion for user approval instead of deleting it

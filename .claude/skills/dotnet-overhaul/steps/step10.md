@@ -61,7 +61,7 @@ and apply the change to the Renovate config file.
 1. Read `.claude/tmp/overhauler/progress.md` for per-step summaries and DONE/SKIPPED status
 2. Read `.claude/tmp/overhauler/baseline.md` for test baseline values
 3. Read `.claude/tmp/overhauler/findings-stepN.md` for each step's findings counts
-4. Read each `plans/overhaul-step{N}-*/tasks.md` for fixed/deferred/skipped counts
+4. Read each `.claude/tmp/overhauler/approved-step{N}.md` for approved counts. When a plan exists for the step, also read its `plans/overhaul-step{N}-*/overhaul-step{N}-*-tasks.md` for fixed/deferred/skipped counts
 
 ```markdown
 ## Overhaul Summary
@@ -94,8 +94,8 @@ and apply the change to the Renovate config file.
 
 ### Next Steps
 All changes are uncommitted. Ready for your review:
-- `git diff` to review all changes
-- `git add [specific files]` + `git commit` when satisfied
+- `scripts/diff.sh` to review all changes
+- Ask for the `smart-commit` agent to commit, or `/yeet` to ship, when satisfied
 - Or revert specific files before committing
 ```
 

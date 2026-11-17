@@ -120,7 +120,7 @@ If you hit the upper bound without a confident answer, report what you found and
 
 ## BASH USAGE
 
-Bash is for **read-only inspection only**: tool versions (`dotnet --version`), package metadata (`dotnet list package --outdated`), environment state, and git history (see Phase 2).
+Bash is for **read-only inspection only**: tool versions (`dotnet --version`), package metadata (`scripts/dep-check.sh --outdated --json`), environment state, and git history (see Phase 2).
 
 Never use Bash to modify files, install packages, run builds, or change state.
 

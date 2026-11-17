@@ -1,9 +1,9 @@
 ---
 mode: subagent
 description: >
-  Zero-friction commit: stages all tracked modified files (excluding secrets), drafts a
-  conventional commit message from the diff, and commits with a name-only co-author trailer
-  (never an email), no intermediate confirmation gates. The canonical commit path for this
+  Zero-friction commit: stages all modified tracked files and new files (excluding secrets),
+  drafts a conventional commit message from the diff, and commits with no attribution trailer
+  and no intermediate confirmation gates. The canonical commit path for this
   repo. Use when changes are clearly scoped and the user just wants the commit done.
   Triggers on: commit, just commit, fast commit, commit everything, commit without asking,
   auto-commit.
