@@ -33,7 +33,7 @@ For each suppression identified for remediation, propose a fix based on the
 
 ## Planning Output Template
 
-Format findings for the dev-planning skill:
+Format findings as an implementation plan:
 
 ```markdown
 # Code Suppression Remediation Plan

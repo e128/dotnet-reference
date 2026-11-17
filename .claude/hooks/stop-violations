@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Stop hook: warn when violation-scan.sh finds anti-patterns. Never blocks.
+# The scan matches text, so it reports analyzer diagnostic strings and a
+# property named Result. Blocking with exit 2 waits for a gate that has no
+# false positives.
+
+violations=$(scripts/violation-scan.sh --json 2>/dev/null | jq '.violations // 0')
+if [ "${violations:-0}" -gt 0 ]; then
+    echo "{\"systemMessage\":\"$violations anti-pattern hit(s). Run: scripts/violation-scan.sh\"}"
+fi
+exit 0

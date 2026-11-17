@@ -66,7 +66,7 @@ Run `.claude/skills/tech-writing/scripts/tech-writing-lint.sh <file>`, or pipe t
 
 ### Lode Files
 
-Every lode file gets the lint run, then this extra pass. Run `scripts/lode-guard.sh <file>` for the 250-line limit.
+Every lode file gets `scripts/lode-check.sh <file>`, which runs the lint and the 250-line guard, then this extra pass.
 
 1. Does any instruction exceed 20 words? The linter caps only the 25-word descriptive sentence.
 2. Does one thing carry two names?

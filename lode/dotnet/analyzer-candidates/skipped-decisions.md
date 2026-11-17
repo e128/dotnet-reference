@@ -1,6 +1,6 @@
 # Analyzer Candidates: Skipped Decisions
 confidence: high
-*Updated: 2026-11-14T00:08:28Z*
+*Updated: 2026-11-17T16:21:02Z*
 
 The settled side of the open register. A skipped row keeps `/analyzer` from reporting the same idea twice. Each decision names the reason and the installed rule or the site count that settled it. The open side lives in [index.md](index.md), and the shipped rules live in [catalog.md](catalog.md).
 
@@ -10,7 +10,7 @@ The settled side of the open register. A skipped row keeps `/analyzer` from repo
 
 **Why skipped**: style only, score 2/5. A Roslyn fix is possible, but the analyzer would report a convention that most projects follow.
 
-**Evidence**: 1 site in pugworks `src/TravelSearch/Commands/HotelCommand.cs` refactored in commit 792196a68 (2026-05-26).
+**Evidence**: 1 site in a consumer repository, refactored on 2026-05-26.
 
 **Source**: `analyzer-scout 2026-07-16` (code-review-2026-05-26)
 
@@ -18,9 +18,9 @@ The settled side of the open register. A skipped row keeps `/analyzer` from repo
 
 **Pattern**: `new HttpClient()` inside a method that runs many times, instead of `IHttpClientFactory`, a singleton `HttpClient`, or an `AddHttpClient` registration.
 
-**Why skipped**: E128004 already flags the zero-arg form. No real handler-arg evidence exists in the pugworks repo. The one candidate site, `PugFetcher.ExecuteSessionFetchAsync`, is a sanctioned custom-handler exception.
+**Why skipped**: E128004 already flags the zero-arg form. No real handler-arg evidence exists in the consumer repository. The one candidate site is a sanctioned custom-handler exception.
 
-**Evidence**: zero occurrences in pugworks. Score 4 (frequency 2, coverage gap 1, expressibility 1, value 1).
+**Evidence**: zero occurrences in the consumer repository. Score 4 (frequency 2, coverage gap 1, expressibility 1, value 1).
 
 **Source**: `analyzer discover 2026-08-11`
 
@@ -44,7 +44,7 @@ The settled side of the open register. A skipped row keeps `/analyzer` from repo
 
 **Pattern**: `.globalconfig` sets `ca1815`, `ca2231`, and `ss017` to `none` so one union declaration compiles, which drops the struct equality guards for every value type in the repo. A rule would restore them by firing only on a hand-written `struct` or `record struct` that neither declares a union nor generates equality members.
 
-**Why skipped**: score 2.5/5, below the bar. Frequency is 0, because pugworks holds one plain `struct` (`ListRenderItem` in `src/Harvest/DocumentModel/MarkdownRenderer.cs`), and it implements `IEquatable` on purpose. Every other value type is a `record struct`, which generates the members the three rules ask for. The cheaper fix is two scoped suppressions: one around the union declaration in `src/Pug.Core/Results/Result.cs`, and one on `ListRenderItem`, which overloads no `operator ==` on purpose. That restores the guard repo-wide at the cost of a few lines. Re-score when a second hand-written struct lands without equality members, or when a second union declaration appears.
+**Why skipped**: score 2.5/5, below the bar. Frequency is 0, because the consumer repository holds one plain `struct`, and it implements `IEquatable` on purpose. Every other value type is a `record struct`, which generates the members the three rules ask for. The cheaper fix is two scoped suppressions: one around the union declaration, and one on that struct, which overloads no `operator ==` on purpose. That restores the guard repo-wide at the cost of a few lines. Re-score when a second hand-written struct lands without equality members, or when a second union declaration appears.
 
 **Source**: `session 2026-11-13` (net11-upgrade close)
 
@@ -61,9 +61,9 @@ which only marks the cursor finished. Both types implement
 `using` declaration is correct but redundant, and a rule would report correct
 code.
 
-**Evidence**: commit 2381b8535 moved 7 pugworks sites to a `using` declaration.
+**Evidence**: a consumer repository moved 7 sites to a `using` declaration.
 Four direct `foreach` calls over an enumerator remain today, 3 of them in
-`tests/Pug.Core.Tests/ThemeJsonAuditTests.cs` (as of 2026-11-13). Both `Dispose`
+one test file (as of 2026-11-13). Both `Dispose`
 bodies were checked against the runtime source on 2026-11-13.
 
 **Source**: `analyzer discover --from-commits 2026-11-10`
@@ -77,7 +77,7 @@ bodies were checked against the runtime source on 2026-11-13.
 getter shape. A second rule would report the code the shipped rules demand. The
 allocation is the price of the guard those rules buy.
 
-**Evidence**: 10 getter sites in pugworks (as of 2026-11-14), including
+**Evidence**: 10 getter sites in a consumer repository (as of 2026-11-14), including
 `Names.SelectedNames` and `SynthesisOptions.Priors`.
 
 **Source**: Tier 2 register triage, 2026-11-14
@@ -88,8 +88,8 @@ The net11-upgrade close on 2026-11-13 checked each shape below and declined it. 
 
 | Shape | Reason |
 | ----- | ------ |
-| `EqualityComparer<T>.Create` over a hand-rolled `IEqualityComparer<T>` | One implementation in pugworks, `NaturalSortingComparer`, and it compares natural-sort keys rather than selecting one. `Create` takes a key selector only. Score 2. |
-| `Type.GetNullableUnderlyingType()` over `Nullable.GetUnderlyingType` or `typeof(Nullable<>)` reflection | Zero sites in pugworks. The .NET 11 behavior change touches a custom `Type` subclass only, and no such type exists here. Score 2.5. Re-score when a reflection helper lands. |
+| `EqualityComparer<T>.Create` over a hand-rolled `IEqualityComparer<T>` | One implementation in a consumer repository, and it compares natural-sort keys rather than selecting one. `Create` takes a key selector only. Score 2. |
+| `Type.GetNullableUnderlyingType()` over `Nullable.GetUnderlyingType` or `typeof(Nullable<>)` reflection | Zero sites in a consumer repository. The .NET 11 behavior change touches a custom `Type` subclass only, and no such type exists here. Score 2.5. Re-score when a reflection helper lands. |
 | `Process.TryGetProcessById` over a `try`/`catch` around `Process.GetProcessById` | Zero sites. Score 2. |
 | `Enumerable.LeftJoin` over `GroupJoin` plus `DefaultIfEmpty` | Zero sites. Score 2. |
 | A direct open-generic `JsonConverter` over a `JsonConverterFactory` | Zero `JsonConverterFactory` implementations. Score 2. |

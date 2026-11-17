@@ -1,1 +1,1 @@
-- [session-2026-04-11.md](session-2026-04-11.md) — First run: 5 plans created, violation-scan.sh built end-to-end; session-health stats gap is highest-leverage omission
+- [session-2026-04-11.md](session-2026-04-11.md) (First run: 5 plans created, violation-scan.sh built end-to-end; the session-health stats gap it found is closed)

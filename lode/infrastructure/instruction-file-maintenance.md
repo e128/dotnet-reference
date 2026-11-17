@@ -1,5 +1,5 @@
 # Instruction File Maintenance
-*Updated: 2026-11-11T14:38:11Z*
+*Updated: 2026-11-17T16:03:25Z*
 
 `AGENTS.md` and `CLAUDE.md` are a memory of failures. A line earns a place only
 when a model failed once and the line stops the repeat. This file owns the
@@ -37,8 +37,9 @@ live in [claude-code-maintenance.md](claude-code-maintenance.md).
 5. **Test.** Open a fresh session with the file and nothing else. Run the
    task. Strengthen a line behind every repeated failure. Mark a never-needed
    line as a deletion candidate.
-6. **Handoff.** Commit the file with a message that lists the failures it
-   covers. Remove a line after 30 days without use.
+6. **Handoff.** Report changes and verification. Commit only when requested.
+   Retire a requirement only after verification shows that it is obsolete.
+   Keep safety and product constraints until their owners authorize a change.
 
 ## Stop Condition
 

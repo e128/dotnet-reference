@@ -97,18 +97,16 @@ The widespread simplified variant `CC × (1−coverage)²` is **incorrect** — 
 | Pattern `when` guards | Each guard adds a point |
 | `switch` expression arms | Each arm; `when` guards add more |
 
-### async/await — IL Complexity Inflation (Critical for .NET)
+### Async State-Machine Complexity
 
-The compiler transforms async methods into a state machine with a `MoveNext()` switch. Each
-`await` adds a state. **IL-level tools (OpenCover, ReportGenerator) measure the compiled state
-machine** — not the source code — producing CC values 3–5× higher than source-level analysis.
+The compiler transforms an async method into a state machine with a `MoveNext()` switch.
+Compiled state-machine complexity can exceed source-level complexity.
+ReportGenerator displays the metrics in the coverage file. It does not recalculate them.
 
-**Same method, two tools:**
-
-| Tool | What it measures | CC for a 3-await method |
-|---|---|---|
-| NDepend / Roslyn CA1502 | Source AST | ~4 |
-| OpenCover / ReportGenerator | Compiled state machine | ~12–18 |
+| Source                   | Complexity Basis       |
+| ------------------------ | ---------------------- |
+| Source analysis          | Source control flow    |
+| IL-level coverage report | Compiled state machine |
 
 **Practical rule:** When ReportGenerator shows a suspiciously high CRAP score for an async
 method, cross-check with the IDE's Roslyn CA1502 warning before acting. The IL inflation is
@@ -124,67 +122,36 @@ level than an equivalent `foreach` loop, even though the source logic is simpler
 
 ### Coverage Type: Branch, Not Line
 
-The CRAP formula specifies path coverage; OpenCover approximates this with **branch coverage**.
-Using line coverage (Cobertura's native output) understates risk — a method with 100% line
-coverage but 40% branch coverage will show a falsely clean CRAP score. Always use OpenCover
-format for accurate CRAP scores.
+Branch coverage approximates path coverage for this audit.
+A method with 100% line coverage and 40% branch coverage can look falsely clean on line coverage alone.
+The measured Cobertura files contain method-level `complexity`, `line-rate`, and `branch-rate` attributes.
+Use `branch-rate` for a manual CRAP estimate. Source-level complexity remains the audit's basis.
 
 ---
 
-## Coverage Collection Setup
-
-### coverage.runsettings
-
-Create `coverage.runsettings` in the repository root. **OpenCover format is required** for CRAP scores.
-
-```xml
-<?xml version="1.0" encoding="utf-8" ?>
-<RunSettings>
-  <DataCollectionRunSettings>
-    <DataCollectors>
-      <DataCollector friendlyName="XPlat code coverage">
-        <Configuration>
-          <Format>cobertura,opencover</Format>
-          <Exclude>[MyProject.Tests]*,[MyProject.Analyzers.Tests]*</Exclude>
-          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
-          <ExcludeByFile>**/obj/**/*,**/*.g.cs,**/*.designer.cs</ExcludeByFile>
-          <IncludeTestAssembly>false</IncludeTestAssembly>
-          <SingleHit>false</SingleHit>
-          <UseSourceLink>true</UseSourceLink>
-          <SkipAutoProps>true</SkipAutoProps>
-        </Configuration>
-      </DataCollector>
-    </DataCollectors>
-  </DataCollectionRunSettings>
-</RunSettings>
-```
-
----
-
-## Collecting Coverage
+## Coverage Collection
 
 ```bash
-rm -rf coverage/ TestResults/
-
-scripts/test.sh --all --json
-
-dotnet reportgenerator \
-  -reports:"TestResults/**/coverage.opencover.xml" \
-  -targetdir:"coverage" \
-  -reporttypes:"Html;TextSummary;MarkdownSummaryGithub"
+scripts/coverage.sh --no-open
 ```
+
+The script runs `Category=CI` tests through the in-process Microsoft Testing Platform coverage extension.
+`coverage.config.xml` defines the module filters.
+The script saves Cobertura reports in `test-results/` and HTML in `test-results/coverage-report/index.html`.
+Use this script instead of a separate coverage collector.
 
 ---
 
 ## Reading the Report
 
-The HTML report's **Risk Hotspots** section shows three metrics:
+The HTML report can show risk hotspot metrics when the input reports supply them.
+An absent hotspot list does not prove that every method has a low CRAP score.
 
-| Metric | Meaning | CRAP uses it? |
-|---|---|---|
-| **Cyclomatic Complexity** | Independent paths (measured at IL level) | Yes — inflated for async/LINQ |
-| **NPath Complexity** | Acyclic paths (grows combinatorially with nesting) | No — separate signal |
-| **CRAP Score** | `CC² × (1−cov/100)³ + CC` | Yes |
+| Metric                | Meaning                    | CRAP Input      |
+| --------------------- | -------------------------- | --------------- |
+| Cyclomatic Complexity | Independent paths          | Yes             |
+| NPath Complexity      | Acyclic paths              | Separate signal |
+| CRAP Score            | `CC² × (1−cov/100)³ + CC`   | Result          |
 
 **NPath vs. CC:** A method with 3 nested `if`s has CC=4 but NPath=8. NPath blows up much
 faster than CC. ReportGenerator's default NPath threshold is 200. It is NOT part of CRAP.
@@ -193,13 +160,14 @@ faster than CC. ReportGenerator's default NPath threshold is 200. It is NOT part
 
 Default thresholds (configurable in `riskHotspotsAnalysisThresholds` settings):
 
-| Metric | Default | CI fail gate |
-|---|---|---|
-| CRAP | 30 | `maximumThresholdForCrapScore` |
-| Cyclomatic complexity | 15 | `maximumThresholdForCyclomaticComplexity` |
-| NPath complexity | 200 | `maximumThresholdForNPathComplexity` |
+| Metric                | Default | Maximum Threshold                       |
+| --------------------- | ------- | --------------------------------------- |
+| CRAP                  | 30      | `maximumThresholdForCrapScore`           |
+| Cyclomatic Complexity | 15      | `maximumThresholdForCyclomaticComplexity` |
+| NPath Complexity      | 200     | `maximumThresholdForNPathComplexity`     |
 
-To enforce CRAP as a CI quality gate, pass `-riskHotspotsAnalysisThresholds:maximumThresholdForCrapScore=30` to ReportGenerator.
+ReportGenerator documents `-riskHotspotsAnalysisThresholds:maximumThresholdForCrapScore=30` as a gate for scores above 30.
+Verify that the input reports produce risk hotspots before you use this setting as a gate.
 
 ---
 
@@ -222,71 +190,30 @@ To enforce CRAP as a CI quality gate, pass `-riskHotspotsAnalysisThresholds:maxi
 
 - Keep async methods thin (`await` calls only, no logic)
 - Extract synchronous helpers — they have accurate CC and are easy to test
-- Avoids IL complexity inflation in OpenCover CRAP scores
+- Avoids IL complexity inflation in CRAP scores
 
 ---
 
-## CI/CD Integration (GitHub Actions)
+## CI Gate
 
-```yaml
-- name: Run tests with coverage
-  run: |
-    dotnet test \
-      --settings coverage.runsettings \
-      --filter-trait "Category=CI" \
-      --collect:"XPlat Code Coverage" \
-      --results-directory ./TestResults
-
-- name: Generate report
-  run: |
-    dotnet reportgenerator \
-      -reports:"TestResults/**/coverage.opencover.xml" \
-      -targetdir:"coverage" \
-      -reporttypes:"Html;MarkdownSummaryGithub;Cobertura" \
-      "-riskHotspotsAnalysisThresholds:maximumThresholdForCrapScore=30"
-
-- name: Upload coverage report
-  uses: actions/upload-artifact@v4
-  with:
-    name: coverage-report
-    path: coverage/
-
-- name: Add coverage to PR
-  uses: marocchino/sticky-pull-request-comment@v2
-  with:
-    path: coverage/SummaryGithub.md
-```
+CI enforces line floors through `scripts/coverage-areas.sh --min-line 80 --min-assembly 80`.
+No CRAP gate runs in CI. ReportGenerator documents the `maximumThreshold*` settings as failing
+the run when a risk hotspot exceeds them. A probe against this repository's reports exited 0
+with a maximum of 1, so verify the gate against known hotspots before you wire it into CI.
 
 ---
 
-## Quick Reference
+## Coverage Exclusions
 
-```bash
-rm -rf coverage/ TestResults/ && \
-dotnet test --settings coverage.runsettings \
-  --filter-trait "Category=CI" \
-  --collect:"XPlat Code Coverage" \
-  --results-directory ./TestResults && \
-dotnet reportgenerator \
-  -reports:"TestResults/**/coverage.opencover.xml" \
-  -targetdir:"coverage" \
-  -reporttypes:"Html;TextSummary"
+`coverage.config.xml` owns the exclusions:
 
-cat coverage/Summary.txt
-open coverage/index.html
-```
+| Exclusion                              | Reason                                  |
+| -------------------------------------- | --------------------------------------- |
+| Module paths that match `.*Tests\.dll$` | Test assemblies                         |
+| `GeneratedCodeAttribute`               | Untestable builder and host boilerplate |
+| `ExcludeFromCodeCoverageAttribute`      | Explicit developer opt-out              |
 
----
-
-## What Gets Excluded
-
-| Pattern | Reason |
-|---|---|
-| `[MyProject.Tests]*`, `[MyProject.Analyzers.Tests]*` | Test assemblies |
-| `GeneratedCodeAttribute`, `CompilerGeneratedAttribute` | Source/compiler generators |
-| `ExcludeFromCodeCoverageAttribute` | Explicit developer opt-out |
-| `*.g.cs`, `*.designer.cs` | Generated files |
-| `SkipAutoProps` | Auto-properties have no branches |
+`CompilerGeneratedAttribute` stays measured, because excluding it removes the whole Web assembly.
 
 ---
 

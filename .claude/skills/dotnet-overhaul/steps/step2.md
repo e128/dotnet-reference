@@ -12,7 +12,7 @@ and tests pass, and proceed to Step 3.
 Glob for `.sln` files. If found:
 1. Convert: `dotnet sln migrate`
 2. Verify `.slnx` was created and contains all projects
-3. Delete the old `.sln` file
+3. Ask for approval, then delete the old `.sln` file (deleting a file outside `lode/` needs approval, `.claude/rules/auto-approvals.md`)
 4. `scripts/build.sh`: confirm solution loads and compiles
 5. `scripts/test.sh --all`: confirm no regressions
 

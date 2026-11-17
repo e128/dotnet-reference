@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-16T15:18:25Z*
+*Updated: 2026-11-17T16:25:35Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -7,8 +7,8 @@ only when a rule ships or a session closes the decision as `skipped`. The
 shipped rules live in [catalog.md](catalog.md), and every declined shape lives
 in [skipped-decisions.md](skipped-decisions.md).
 
-Writers: the `analyzer-review-miner` agent, `scripts/pug-heuristic.nu` in the
-pugworks sibling checkout, and any session in this repository.
+Writers: the `analyzer-review-miner` agent, a session in a consumer repository,
+and any session in this repository.
 
 ## Schema
 
@@ -27,7 +27,9 @@ The four dimensions are frequency (0-2), coverage gap (0-1), expressibility
 
 ## Open Candidates
 
-No open candidate remains.
+| Pattern | Source | Score | Status | Notes |
+| ------- | ------ | ----- | ------ | ----- |
+| E128080 self-exemption hardcodes the retired `Pug.Classes.ByteSize` name | session friction | 4/5 | new | The rule fires on unit properties of the type after a namespace move. Repro: the type file after it moved from `Pug.Core.Classes`. Match the containing type by simple name. A namespace suffix also works. A temporary pragma sits in the consuming repo.
 
 The body-read shape shipped as E128227. See [catalog.md](catalog.md).
 The JSON enumerator shape closed as skipped, because the enumerator releases no
@@ -93,34 +95,34 @@ declined on 2026-11-13 alongside the earlier decisions.
 
 A capture records a correction before anyone scores it. The same shape counts
 up, and the third capture opens a roadmap item. A C# capture lands here. A
-Nushell or Markdown capture stays in the pugworks ledger.
+Nushell or Markdown capture stays in the consumer repository ledger.
 
-### Captured: Confine a joined path by checking the resolved result, never by flattening the leaf with Path.GetFileName, which silently retargets a multi-segment leaf (1/3): score pending
+### Captured: Confine a joined path by checking the resolved result (1/3): score pending
 > **Key**: `confine-a-joined-path-by-checking-the-resolved-result-never-b`
 > **Class**: `correctness`, **Lang**: `cs`, **File**: `(none)`
-> **Pattern**: Confine a joined path by checking the resolved result, never by flattening the leaf with Path.GetFileName, which silently retargets a multi-segment leaf
+> **Pattern**: Confine a joined path by checking the resolved result. Never flatten the leaf with Path.GetFileName, which silently retargets a multi-segment leaf.
 > **Why**: A caller that passes a relative subpath such as images/a.png needs that subpath preserved. GetFileName turns it into a.png and the read or delete lands on a different file while the guard reports clean.
 > **Source**: `correction 2026-11-11T14:26:32Z`, occurrence 1 of 3
 
-### Captured: A link-aware containment check reports a symlinked occupant as absent, so a name picker needs a separate is-occupied test that treats an escaping path as taken (1/3): score pending
+### Captured: A link-aware containment check misses a symlinked occupant (1/3): score pending
 > **Key**: `a-link-aware-containment-check-reports-a-symlinked-occupant-a`
 > **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
-> **Pattern**: A link-aware containment check reports a symlinked occupant as absent, so a name picker needs a separate is-occupied test that treats an escaping path as taken
-> **Why**: ExistsInside and ResolveInside both resolve links, so a collision loop sees a name taken by an escaping symlink as free and the later ResolveInside throws instead of advancing the suffix. FilePathContainment.IsOccupied answers the name-picker question.
+> **Pattern**: A link-aware containment check reports a symlinked occupant as absent. A name picker needs a separate is-occupied test that treats an escaping path as taken.
+> **Why**: ExistsInside and ResolveInside both resolve links. A collision loop therefore sees a name taken by an escaping symlink as free. The later ResolveInside throws instead of advancing the suffix. FilePathContainment.IsOccupied answers the name-picker question.
 > **Source**: `correction 2026-11-11T16:38:12Z`, occurrence 1 of 3
 
-### Captured: Never write a probe or scratch class into real library code; analyzer probes belong in dotnet-reference tests (1/3): score pending
+### Captured: Keep probe classes out of library code (1/3): score pending
 > **Key**: `never-write-a-probe-or-scratch-class-into-real-library-code-a`
 > **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
-> **Pattern**: Never write a probe or scratch class into real library code; analyzer probes belong in dotnet-reference tests
-> **Why**: pugworks is only a client of the E128 analyzers. A scratch class in src/ ships in the library if forgotten, and it puts analyzer research in the wrong repo. Put the probe in dotnet-reference as a unit test instead.
+> **Pattern**: Never write a probe or scratch class into real library code. Analyzer probes belong in dotnet-reference tests.
+> **Why**: A consumer repository is only a client of the E128 analyzers. A scratch class in src/ ships in the library if forgotten, and it puts analyzer research in the wrong repo. Put the probe in dotnet-reference as a unit test instead.
 > **Source**: `correction 2026-11-12T02:18:06Z`, occurrence 1 of 3
 
-### Captured: A member summary or code comment must state only behavior the body shows; never assert a thread-safety or pass-ordering guarantee that no code or citation backs (1/3): score pending
+### Captured: A comment must state only behavior the body shows (1/3): score pending
 > **Key**: `a-member-summary-or-code-comment-must-state-only-behavior-the`
 > **Class**: `style`, **Lang**: `cs`, **File**: `(none)`
-> **Pattern**: A member summary or code comment must state only behavior the body shows; never assert a thread-safety or pass-ordering guarantee that no code or citation backs
-> **Why**: An uncited comment claim hid a divergence for a whole plan: HotelResultsParser's summary promised a per-call parser while the field was static, and an HtmlExtractor comment said every later pass read the flattened tree while the next statement read the raw HTML. A reader trusts the claim and misses the real behavior.
+> **Pattern**: A member summary or code comment must state only behavior the body shows. Never assert a thread-safety or pass-ordering guarantee that no code or citation backs.
+> **Why**: An uncited comment claim hid a divergence for a whole plan. A parser summary promised a per-call parser while the field was static. An extractor comment said every later pass read the flattened tree while the next statement read the raw HTML. A reader trusts the claim and misses the real behavior.
 > **Source**: `correction 2026-11-12T13:50:47Z`, occurrence 1 of 3
 
 ### Captured: Return an explicit Result for an expected failure instead of throwing (1/3): score pending
@@ -134,27 +136,27 @@ Nushell or Markdown capture stays in the pugworks ledger.
 > **Key**: `replace-a-repo-wide-analyzer-relaxation-with-a-scoped-suppres`
 > **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
 > **Pattern**: Replace a repo-wide analyzer relaxation with a scoped suppression on the one declaration that needs it
-> **Why**: Turning ca1815, ca2231, and ss017 to none in .globalconfig lets one union declaration compile but drops the struct equality guards for every value type in the repo. A pragma around the union declaration restores the guard everywhere at the cost of three lines.
+> **Why**: Turning ca1815, ca2231, and ss017 to none in .globalconfig lets one union declaration compile. It also drops the struct equality guards for every value type in the repo. A pragma around the union declaration restores the guard everywhere at the cost of three lines.
 > **Source**: `correction 2026-11-13T11:54:14Z`, occurrence 1 of 3
 
-### Captured: When a language or runtime band lands, audit the installed E128 rule set for rules the new mechanism makes redundant and record each for removal (1/3): score pending
+### Captured: Audit rules that a new runtime band makes redundant (1/3): score pending
 > **Key**: `when-a-language-or-runtime-band-lands-audit-the-installed-e12`
 > **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
-> **Pattern**: When a language or runtime band lands, audit the installed E128 rule set for rules the new mechanism makes redundant and record each for removal
+> **Pattern**: When a language or runtime band lands, audit the installed E128 rule set. Record each rule that the new mechanism makes redundant for removal.
 > **Why**: A rule that guards a shape the new API removes becomes permanent noise. The net11 band replaces the hand-rolled process capture, so E128160 guards a shape that cannot be written once Process.RunAndCaptureText is adopted. The audit keeps the rule set shrinking as the platform grows.
 > **Source**: `correction 2026-11-13T12:09:27Z`, occurrence 1 of 3
 
 ### Captured: A disposal analyzer must not flag a process-global instance that the owning library disposes at exit (1/3): score pending
 > **Key**: `a-disposal-analyzer-must-not-flag-a-process-global-instance`
-> **Class**: `design`, **Lang**: `cs`, **File**: `src/Pug.Rendering.XenoAtom/XenoAtomTerminal.cs`
+> **Class**: `design`, **Lang**: `cs`, **File**: `(consumer repository)`
 > **Pattern**: IDISP004 must not fire on a deliberately discarded long-lived singleton handed back by a library factory
 > **Why**: `XenoAtom.Terminal.Terminal.Initialize` returns the process-global `TerminalInstance`, and the library disposes it at process exit. The caller has no lifetime to own, and disposing it would tear down the terminal it just configured. The pragma is the correct answer today, so the rule adds a false positive on every global-instance factory.
 > **Source**: `session friction 2026-11-14T17:51:00Z`, occurrence 1 of 3
 
 ### Captured: S109 and S2339 leave a small public constant table unbuildable (1/3): score pending
 > **Key**: `s109-and-s2339-leave-a-small-public-constant-table-unbuildable`
-> **Class**: `design`, **Lang**: `cs`, **File**: `src/Pug.Core/Results/ExitCodes.cs`
+> **Class**: `design`, **Lang**: `cs`, **File**: `(consumer repository)`
 > **Pattern**: A value with an inherent number, such as a process exit code, must be expressible once in a public table
-> **Why**: S109 wants each literal behind a named constant, S2339 forbids a public `const` member, and neither accepts the other's answer. The workaround is a private const per value behind a public static property, which doubles the type for no behavior. Either S109 should skip a member whose declaration is the name, or S2339 should allow a const on a table type.
+> **Why**: S109 wants each literal behind a named constant, S2339 forbids a public `const` member, and neither accepts the answer of the other. The workaround is a private const per value behind a public static property, which doubles the type for no behavior. Either S109 should skip a member whose declaration is the name, or S2339 should allow a const on a table type.
 > **Source**: `session friction 2026-11-14T18:20:00Z`, occurrence 1 of 3
 

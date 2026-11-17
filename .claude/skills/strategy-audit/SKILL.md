@@ -4,7 +4,7 @@ description: >
   Strategic alignment audit for codebases. Applies Roger Martin's strategy framework directly
   to code, analyzing what the code reveals about its strategic choices, investment levels, and
   capability reinforcement. Produces a prioritized findings report and feeds actionable
-  refactorings into dev-planning. Use for code review through a strategy lens, feature gap
+  refactorings into an implementation plan. Use for code review through a strategy lens, feature gap
   analysis, investment mismatch detection, or surfacing undocumented strategic choices.
 argument-hint: "<repo-path> [--resume]"
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent
@@ -35,7 +35,7 @@ One optional argument: the code path to audit. Defaults to current working direc
 
 ## Prerequisites
 
-- **dev-planning** skill: structures the output into actionable implementation plans
+- Plan convention: a plan directory `plans/{name}/` holds `{name}-plan.md`, `{name}-context.md`, and `{name}-tasks.md` (see Plan in `lode/terminology.md`)
 - Strategy framework reference bundled at [references/five-elements-of-strategy.md](references/five-elements-of-strategy.md)
 
 ## Workflow
@@ -135,10 +135,10 @@ Write the full report to `$REPORT_PATH`.
 
 ### Phase 5: Generate Implementation Plan
 
-Invoke the **dev-planning** skill (do not produce ad-hoc task lists). Feature name derived from
+Write an implementation plan in `plans/{name}/` (do not produce ad-hoc task lists). Plan name derived from
 the primary finding category (e.g., `strategy-audit-investment-alignment`,
-`strategy-audit-chain-repair`). Feature description = concise summary of the strategic profile and
-ranked Phase 4 findings, so dev-planning has full context.
+`strategy-audit-chain-repair`). Plan summary = concise summary of the strategic profile and
+ranked Phase 4 findings, so the plan has full context.
 
 Plan phases mirror the Phase 4 report structure:
 1. Investment Mismatches

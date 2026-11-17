@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-17T16:18:15Z*
 
 ## Instruction Loads
 
@@ -91,6 +91,33 @@ Claude Code evaluates deny, ask, then allow.
 opencode evaluates permissions in order and uses the last match. Its policies can tighten that result.
 The approval owner is `.claude/rules/auto-approvals.md`.
 See [opencode Guardrails](opencode-guardrails.md) for tool interception and permission mapping.
+
+## Claude Code Permission Gates
+
+Claude Code uses native permission rules to request approval for edits to `.claude/settings.json`.
+`Edit(path)` rules cover Edit and Write tools. Shell commands need separate permission checks.
+The `pre-tool-use-guard` script remains an opencode blocker, not a Claude Code hook.
+Its former Bash matcher never reached the Edit and Write branches, so it provided no Claude Code protection.
+
+The Stop hook runs `.claude/hooks/stop-violations` and reports scan hits through `systemMessage` with exit status 0.
+It does not block completion or run tests.
+`scripts/violation-scan.sh` matches text, including diagnostic strings and properties named `Result`.
+Treat its hits as review candidates, not proven violations.
+
+`autoMode` customization belongs in user or managed settings, not project or project-local settings.
+See the [Settings Reference](https://code.claude.com/docs/en/settings-reference#automode) for accepted scopes.
+
+## Skill Workflow Contracts
+
+Plan creation uses the plan, context, and tasks files of this repository. It names no planning-skill dependency.
+See Plan in [Terminology](../terminology.md) for the file convention.
+
+`mr-sparkle` reports reference defects but does not edit reference files during a review.
+Its report carries proposed corrections for a separate approved change.
+
+Preflight phrases select `/yeet --dry-run`. Shipping retains its staleness guard and action-approval requirements.
+Dead-code deletion and solution-file removal request approval before deleting files outside `lode/`.
+The C# verification gate still runs after namespace and naming changes.
 
 ## Shared Prompt and Launchers
 

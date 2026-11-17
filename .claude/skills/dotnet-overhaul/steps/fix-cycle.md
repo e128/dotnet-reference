@@ -16,15 +16,13 @@ Count the approved findings. This file is the single source of truth for resumpt
 
 Fewer than 8 findings: skip plan creation and execute directly from `approved-step{N}.md`.
 
-8 or more findings: **if dev-planning is available**, create a structured plan:
+8 or more findings: create a structured plan:
 ```
 plans/overhaul-step{N}-{name}/
 ├── overhaul-step{N}-{name}-plan.md     ← approved findings as tasks (file:line + fix)
 ├── overhaul-step{N}-{name}-context.md  ← scope, baseline count, approved vs deferred
 └── overhaul-step{N}-{name}-tasks.md    ← one task per finding + build/test tasks at end
 ```
-
-**If dev-planning is not available**, organize findings in `approved-step{N}.md` with checkboxes and execute directly. The plan structure is an enhancement, not a requirement.
 
 **2. Execute all phases immediately:**
 1. For each approved finding: Read → apply minimal fix → Edit

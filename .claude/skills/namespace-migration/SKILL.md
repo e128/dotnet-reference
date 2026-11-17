@@ -64,9 +64,9 @@ scripts/build.sh
 
 If build errors remain, they are almost always residual using directives or fully-qualified type references. Read the error, find the file, apply the fix. Re-run until clean.
 
-Output the test command — do not run it:
-```
-scripts/test.sh --all
+Then run the gate once (`.claude/rules/quality-gates.md`):
+```bash
+scripts/check.sh
 ```
 
 Report completion:
@@ -76,7 +76,7 @@ Report completion:
 - Files moved: {N}
 - using directives updated: {M}
 - Build status: CLEAN
-- Test command: {command}
+- Gate status: PASS / FAIL
 ```
 
 ## Notes

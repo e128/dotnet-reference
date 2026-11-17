@@ -24,7 +24,7 @@ Read `Directory.Packages.props` and reorganize:
    </ItemGroup>
    ```
 3. **Remove duplicate entries**: if the same package appears twice, keep the higher version
-4. **Remove orphaned entries**: packages not referenced by any `.csproj` in the solution
+4. **Report orphaned entries**: run `scripts/deps-graph.sh --orphans --json`. Keep an entry with `transitive_pin: true`, and keep one that `dotnet list <solution-file> package --include-transitive` shows as transitive. Remove an entry only when neither applies. See [false-positives.md](../../prune-deps/references/false-positives.md)
 5. **Consistent formatting**: align `Version` attributes, consistent quote style, no trailing whitespace
 
 ---

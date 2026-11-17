@@ -180,9 +180,10 @@ Return these exit codes:
 - When a reviewer slice exceeds its context, split the diff by file and merge the sub-slice findings under the one reviewer name.
 - No git, a shallow clone, an empty range, or no matching files: state the condition, then exit with the matching code. See [references/error-handling.md](references/error-handling.md).
 
-## Reference Fixes
+## Reference Defects
 
-Fix a defect in a reference file when a run exposes one.
+Report defects in reference files with their evidence. Do not edit reference files during a review.
+Include each proposed correction in Reviewer Notes for a separate, approved maintenance change.
 
 ## References
 

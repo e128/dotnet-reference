@@ -1,5 +1,5 @@
 # opencode v2 Guardrail Parity
-*Updated: 2026-11-10T16:58:28Z*
+*Updated: 2026-11-17T15:48:21Z*
 
 Claude Code enforces guardrails through hook scripts under `.claude/hooks/`.
 opencode v2 has no hook file. Its plugin API carries the same interception.
@@ -133,6 +133,10 @@ wins. A one-off `opencode run --model provider/model` overrides both.
   input. An injected uppercase letter can pass a lowercase pattern.
 - Read a guardrail script in full before documenting it. A partial read hid
   the `python3` rule until the plugin blocked a command during verification.
-- `pre-tool-use-guard` blocks every `Edit` and `Write` to
+- In opencode, `pre-tool-use-guard` blocks every `Edit` and `Write` to
   `.claude/settings.json` and carries no approval path. Change that file by
   hand.
+- Claude Code does not wire `pre-tool-use-guard`. Its `ask` rule for
+  `Edit(.claude/settings.json)` in `.claude/settings.json` gates the file. A
+  Bash command such as `jq` bypasses that rule, so review any shell edit of
+  the file.

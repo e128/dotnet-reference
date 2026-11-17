@@ -24,7 +24,6 @@ for every candidate that scores 3 or higher and list them in your final report.
 Gather 3-day git history and saved review findings. Use `scripts/diff.sh --json`,
 `scripts/session-health.sh`, and git log for the analysis window. Read the latest
 `plans/review-*` directory through `scripts/internal/review-findings.sh --json`.
-Also check for saved review artifacts in `.claude/tmp/cr-*.diff`.
 
 If the unified diff exceeds 2000 lines, scope to the 10 most-changed files from
 `scripts/diff.sh` output and diff those individually.
@@ -40,8 +39,9 @@ For each changed file, identify:
 - Corresponding added lines (`+`) that represent the fix
 - Whether the same transformation appears in multiple files (frequency signal)
 
-Cross-reference each discovered pattern against the existing catalog in
-`lode/dotnet/analyzer-candidates.md` (create if missing) to check for overlap with existing
+Cross-reference each discovered pattern against the open register
+`lode/dotnet/analyzer-candidates/index.md`, the settled `catalog.md`, and
+`skipped-decisions.md` in the same directory to check for overlap with existing
 or planned analyzers. Focus on patterns not already covered, immutability violations,
 missing format providers, test correctness gaps, and similar structural fixes.
 
@@ -53,14 +53,15 @@ missing format providers, test correctness gaps, and similar structural fixes.
 
 ## Phase 3: Cross-Reference with Analyzer Catalog
 
-Read `lode/dotnet/analyzer-candidates.md` (create with a header row if it does not exist).
+Read `lode/dotnet/analyzer-candidates/index.md` (open candidates), `catalog.md` (shipped rules),
+and `skipped-decisions.md` (declined shapes) in that directory.
 
 For each extracted pattern from Phase 2:
-1. Search the catalog for the same pattern (case-insensitive, fuzzy match on description)
-2. **If already `implemented`**: skip entirely: an analyzer already covers it
-3. **If already `planned` or `new`**: note the existing candidate, update its frequency count if higher
-4. **If already `skipped`**: check whether the reason still holds (e.g., "0 violations", if violations were just found, the reason is now stale). If stale, flip to `new` with updated evidence.
-5. **If not in catalog**: it is a new candidate, proceed to scoring
+1. Search the three files for the same pattern (case-insensitive, fuzzy match on description)
+2. **If `catalog.md` lists it as shipped**: skip entirely: an analyzer already covers it
+3. **If `index.md` lists it as `planned` or `new`**: note the existing candidate, update its frequency count if higher
+4. **If `skipped-decisions.md` lists it**: check whether the reason still holds (e.g., "0 violations", if violations were just found, the reason is now stale). If stale, add a `new` row to `index.md` with updated evidence.
+5. **If in none of the three**: it is a new candidate, proceed to scoring
 
 ---
 
@@ -86,10 +87,10 @@ Candidates with score 1-2 are still cataloged (for future evidence accumulation)
 
 ## Phase 5: Update Analyzer Catalog
 
-For each candidate, re-read `lode/dotnet/analyzer-candidates.md` (do not use cached content),
-add new rows with `status=new`, update any `skipped` rows where evidence has changed,
-and bump the timestamp (`scripts/ts.sh lode/dotnet/analyzer-candidates.md`). For candidates
-scoring >= 3, add a detail section above the catalog table with:
+For each candidate, re-read `lode/dotnet/analyzer-candidates/index.md` (do not use cached content),
+add new rows with `status=new`, reopen a skipped shape only with fresh evidence,
+and bump the timestamp (`scripts/ts.sh lode/dotnet/analyzer-candidates/index.md`). For candidates
+scoring >= 3, add a detail section as step 3 of "Working The Register" in `index.md` describes, with:
    ```
    ## Candidate: {short name} - {score}/5
    **Pattern**: {description of what to flag}
@@ -119,7 +120,7 @@ Follow the budget exhaustion protocol in `lode/infrastructure/agent-patterns.md`
 
 ## Rules
 
-- **No re-suggesting implemented analyzers**: check `status=implemented` first
+- **No re-suggesting shipped analyzers**: check `catalog.md` first
 - **Respect skipped entries**: un-skip only if fresh evidence contradicts the skip reason
 - **Score honestly**: a pattern seen once gets frequency=2 only when a code review report explicitly flagged it as HIGH/CRITICAL
-- **Lode file size gate**: before appending to `lode/dotnet/analyzer-candidates.md`, check `wc -l`. If > 200 lines, decompose into a focused sub-file first.
+- **Lode file size gate**: before appending to `lode/dotnet/analyzer-candidates/index.md`, run `scripts/lode-guard.sh` on it. If it reports the file over the limit, decompose into a focused sub-file first.

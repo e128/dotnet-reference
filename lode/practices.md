@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-17T16:18:15Z*
 
 ## Design Principles
 
@@ -10,7 +10,8 @@
 - **Module depth.** Give each module a small interface that hides substantial behavior. A module earns its place when deleting it would push its complexity back onto callers. Merge a module away when deletion loses nothing.
 - **One owner per concept.** Put each concept in the one module that owns it. Keep special cases, ordering rules, validation, and derived values inside. Callers must not know them.
 - **One obvious call shape.** Shrink the interface until there is one obvious way to call it. Drop a parameter, flag, or option when the module can derive it, every caller passes the same value, or no caller reads it. Move every caller to the new shape and delete the old path.
-- **No backward compatibility.** Remove the obsolete path in the same change that replaces it. Never add a compatibility layer, a fallback, or a migration. This repository has no external consumers.
+- **Internal compatibility.** The web app, CLI, and tests need no compatibility layer, fallback, or migration. Remove an obsolete path when you replace it.
+- **Package compatibility.** Treat the published `E128.Analyzers` package surface as public. Assess consumer impact before changing that surface.
 - **Simplest implementation.** Build the smallest thing that fully meets the current requirement. No speculative abstraction, no interface with one implementation, no configuration for a value that never changes, no indirection.
 - **Long-term decisions.** Make an architectural decision for the long term. Never ship a stopgap for replacement later.
 - **C# defaults on first write.** Use `ImmutableArray<T>` with collection expressions, and `FrozenSet`, for fixed collections. Give every enum member an explicit value. Prefer a BCL type over a hand-rolled equivalent.
