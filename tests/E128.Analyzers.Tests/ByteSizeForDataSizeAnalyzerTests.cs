@@ -120,4 +120,38 @@ public sealed class ByteSizeForDataSizeAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NoDiagnostic_ForUnitPropertiesInsideMovedByteSizeType()
+    {
+        // The exemption matches the type by simple name. A namespace move must
+        // not make the rule fire on the unit properties of ByteSize itself.
+        return AnalyzerTestRunner.VerifyAsync<ByteSizeForDataSizeAnalyzer>("""
+                           namespace Pug.Classes
+                           {
+                               public readonly struct ByteSize
+                               {
+                                   public long Bytes { get; }
+                                   public double Kilobytes { get; }
+                                   public long BufferSize { get; }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_ForOtherTypeInAMovedByteSizeNamespace()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ByteSizeForDataSizeAnalyzer>("""
+                           namespace Pug.Classes
+                           {
+                               class C
+                               {
+                                   public int {|E128080:MaxSizeBytes|} { get; set; }
+                               }
+                           }
+                           """);
+    }
 }

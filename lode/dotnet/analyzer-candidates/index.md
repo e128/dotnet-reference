@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-17T16:25:35Z*
+*Updated: 2026-11-17T16:36:03Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -27,9 +27,8 @@ The four dimensions are frequency (0-2), coverage gap (0-1), expressibility
 
 ## Open Candidates
 
-| Pattern | Source | Score | Status | Notes |
-| ------- | ------ | ----- | ------ | ----- |
-| E128080 self-exemption hardcodes the retired `Pug.Classes.ByteSize` name | session friction | 4/5 | new | The rule fires on unit properties of the type after a namespace move. Repro: the type file after it moved from `Pug.Core.Classes`. Match the containing type by simple name. A namespace suffix also works. A temporary pragma sits in the consuming repo.
+No open candidate. `ByteSizeType.Is` matches the type by simple name, so a
+namespace move does not break the E128080 exemption.
 
 The body-read shape shipped as E128227. See [catalog.md](catalog.md).
 The JSON enumerator shape closed as skipped, because the enumerator releases no

@@ -1,5 +1,5 @@
 # Code Fix Patterns
-*Updated: 2026-11-11T13:22:57Z*
+*Updated: 2026-11-17T16:37:46Z*
 
 Implementation patterns and gotchas for Roslyn code fix providers in E128.Analyzers.
 The emitted text rules live in [code-fix-output.md](code-fix-output.md). The
@@ -45,6 +45,18 @@ return document.WithSyntaxRoot(root.ReplaceNode(objectCreation, memberAccess));
 Apply this rule this way. Gate the analyzer on the API, as
 [new-analyzer-checklist.md](new-analyzer-checklist.md) § Gate on API
 Availability requires. When no such API exists, report without a fix.
+
+## Resolve a Project Type Before You Emit It
+
+Never hardcode the namespace of a type that a consumer project owns. Resolve
+the type in the compilation and read its containing namespace.
+
+`ByteSizeForDataSizeCodeFixProvider` tries the canonical
+`Pug.Core.Classes.ByteSize` name first. When that misses, it walks
+`Compilation.GlobalNamespace` for a type named `ByteSize` with a static
+`FromBytes`. The fix adds the resolved namespace as a using and qualifies
+`FromBytes` with the resolved name. A fixed namespace string breaks the fix
+when the consumer moves the type.
 
 ## Add a Using Directive
 
