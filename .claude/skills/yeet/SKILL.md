@@ -188,6 +188,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
     - Subject line must be <=72 chars. Use a body for detail when > 1 major concern
     - Never truncate the subject: if the auto-generated one ends in `...`, it is wrong
     - **No email addresses**: never put an email in the message or any trailer, `commit.sh` rejects it
+    - **Never name Claude Code or Anthropic**: no attribution trailer, no footer. `commit.sh` rejects the phrase
 - **Commit**: `scripts/internal/commit.sh --skip-precommit "message"` (precommit already ran above)
 
 **Both paths converge here:**
@@ -197,7 +198,8 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
   gh pr create --title "<commit subject line>" --body "<body>"
   ```
     - Title: reuse the commit subject line (the `type(scope): summary` part)
-    - Body: use these sections, and omit one that does not apply: `## Executive Summary` (problem, cause, fix, and measured results with test conditions), `## Code Changes`, `## Tests and Tooling` (name what did not run), `## Review Guide`, `## Rollback`, and `## Links` for work items. Do not invent causes, measurements, or test results. End with the Claude Code footer. Never include an email address anywhere in the body
+    - Body: use these sections, and omit one that does not apply: `## Executive Summary` (problem, cause, fix, and measured results with test conditions), `## Code Changes`, `## Tests and Tooling` (name what did not run), `## Review Guide`, `## Rollback`, and `## Links` for work items. Do not invent causes, measurements, or test results. Never name Claude Code or Anthropic. End with no footer. Never include an email address anywhere in the body
+    - Before `gh pr create`, scan the title and body for `Claude Code` and `Anthropic`. Remove every hit
     - If a PR already exists for this branch, skip PR creation silently
     - Report the PR URL at the end
 
@@ -207,6 +209,7 @@ Skip with "Agent mirror skipped: no agent definition changes" when neither path 
 - **Fully autonomous**: no user prompts during execution. Invoking `/yeet` is the user's approval for the push and the PR (`.claude/rules/auto-approvals.md`).
 - **Stop on failure**: PII fail, build fail, or test fail halts the pipeline
 - **No email addresses**: never in a commit message, trailer, or PR body. The PII scan blocks real emails in the staged diff and `commit.sh` rejects an email in the message, `user@example.com` placeholders are allowed
+- **No Claude Code attribution**: never name Claude Code or Anthropic in a commit message, trailer, or PR body. `commit.sh` rejects the phrase and the PR step scans the body
 - **Single commit per push, always**: squash every unpushed local commit, with any new changes, into one commit before `git push`. Count with `unpushed`, never `ahead`. Skip the squash only when `unpushed == 1` and there are no new changes.
 - **Unpushed local commits always ship**: a clean working tree is not a reason to stop if `unpushed > 0`. Check `scripts/branch.sh --json` unconditionally. Never rely on working-tree state alone to decide whether a push is needed.
 - **Do NOT auto-commit or push again** after completing these steps, one-time action

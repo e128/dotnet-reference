@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Composed verify: shell lint → shipping tests (--all, when shipping scripts changed) → format → build → test.
+# Composed verify: shell lint → shipping tests → analyzer release → format → build → test.
 # Usage: check.sh [--all] [--no-format] [--json]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -29,16 +29,17 @@ else
     EXIT=1
 fi
 
+ROOT="$(find_repo_root)"
+base="$(git -C "$ROOT" merge-base origin/main HEAD 2> /dev/null || git -C "$ROOT" rev-parse HEAD)"
+
 # Step 1b: Shipping tests. The suite takes about a minute, so --all runs it only
 # when a script it covers differs from the merge base with main.
 if [[ "$ALL" == true ]]; then
-    ROOT="$(find_repo_root)"
     SHIP_FILES=(
         scripts/verify-and-ship.sh scripts/verify-and-ship-test.sh scripts/lib.sh
         scripts/internal/version-bump.sh scripts/internal/commit.sh
         scripts/internal/stage.sh scripts/internal/precommit.sh
     )
-    base="$(git -C "$ROOT" merge-base origin/main HEAD 2> /dev/null || git -C "$ROOT" rev-parse HEAD)"
     if [[ -n "$(git -C "$ROOT" diff --name-only "$base" -- "${SHIP_FILES[@]}")" ]]; then
         STEPS+=("shell-tests")
         if "$SCRIPTS/verify-and-ship-test.sh" > /dev/null 2>&1; then
@@ -47,6 +48,18 @@ if [[ "$ALL" == true ]]; then
             RESULTS+=("fail")
             EXIT=1
         fi
+    fi
+fi
+
+# Step 1c: Analyzer release files. Runs only when the diff touches analyzer
+# source or the release files. The check is clean today, so a hit fails the gate.
+if [[ -n "$(git -C "$ROOT" diff --name-only "$base" -- src/E128.Analyzers)" ]]; then
+    STEPS+=("analyzer-release")
+    if "$SCRIPTS/internal/analyzer-release-check.sh" > /dev/null 2>&1; then
+        RESULTS+=("ok")
+    else
+        RESULTS+=("fail")
+        EXIT=1
     fi
 fi
 

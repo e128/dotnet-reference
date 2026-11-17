@@ -178,7 +178,7 @@ scripts/podman.sh test
 ├── nuget.config              # Single source, source mapping, and 72-hour publish age
 ├── opencode.json             # opencode v2 config: model, instructions, MCP, permissions, policies
 ├── plans/                    # Structured planning documents
-├── prompts/                  # System prompt for Lode sessions
+├── prompts/                  # Lode system prompt and sample prompts
 ├── renovate.json             # Renovate dependency update config
 ├── scripts/                  # Bash development scripts ([catalog](scripts/README.md))
 ├── src/

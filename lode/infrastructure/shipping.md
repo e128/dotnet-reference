@@ -1,5 +1,5 @@
 # Shipping
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-17T13:17:39Z*
 
 `scripts/verify-and-ship.sh` ships the current feature branch as one squashed commit. It formats, bumps the version, runs the canonical check, squashes, scans, commits, and pushes. The script runs only when an operator asks for it, because it commits and pushes.
 
@@ -36,10 +36,10 @@ The diagram shows seven steps after validation. Each step runs only when the ste
 
 1. Format the changed files.
 2. Bump the version. The bump comes before the check, so the check verifies the final file contents.
-3. Run `scripts/check.sh --all`. The check includes the format check. The script never passes `--no-format`.
+3. Run `scripts/check.sh --all`. The check includes the format check. The script never passes `--no-format`. It also runs the analyzer release check when the diff touches `src/E128.Analyzers/`.
 4. Stage every change, including new files.
 5. Squash the unpushed commits with a soft reset.
-6. Run `scripts/internal/commit.sh`. It runs the precommit scan over the whole squashed index, then commits. The scan therefore sees the contents of every earlier unpushed commit.
+6. Run `scripts/internal/commit.sh`. It runs the precommit scan over the whole squashed index, then commits. The scan therefore sees the contents of every earlier unpushed commit. The script rejects an email address or a Claude Code mention in the message. It adds no attribution trailer.
 7. Push the branch.
 
 ## Version Inference

@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-# Commit helper. Appends a name-only Co-Authored-By trailer (never an email).
+# Commit helper. Rejects email addresses and Claude Code attribution in the message.
 # Usage: commit.sh [--skip-precommit] MESSAGE
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
-
-# Name-only co-author trailer — no email, per the global privacy rule.
-COAUTHOR_TRAILER="Co-Authored-By: Claude"
 
 SKIP_PRECOMMIT=false; MSG=""
 
@@ -24,11 +21,16 @@ if [[ -z "$MSG" ]]; then
 fi
 
 # Block any email address in the commit message (global privacy rule).
-# A co-author trailer, if wanted, must be name-only; email placeholders use example.com.
 if contains_real_email "$MSG"; then
     err "Commit message contains an email address — blocked by the privacy rule:"
     real_emails_in "$MSG" | while IFS= read -r e; do printf "    %s\n" "$e" >&2; done
-    err "Remove it (use a name-only trailer, or a user@example.com placeholder)."
+    err "Remove it (use a user@example.com placeholder)."
+    exit 1
+fi
+
+# Block tool attribution (AGENTS.md: never name Claude Code in a commit or PR).
+if printf '%s\n' "$MSG" | rg -qi 'claude[ -]code|generated with claude|co-authored-by: *claude'; then
+    err "Commit message names Claude Code — blocked by the attribution rule."
     exit 1
 fi
 
@@ -42,12 +44,7 @@ if [[ "$SKIP_PRECOMMIT" == false ]]; then
     fi
 fi
 
-# Commit with the message plus a name-only co-author trailer (no email — global privacy rule).
-# Skip the append when the message already carries a trailer, so it never ships twice.
-if printf '%s\n' "$MSG" | rg -qi '^Co-Authored-By:'; then
-    git commit -m "$MSG"
-else
-    git commit -m "$MSG" -m "$COAUTHOR_TRAILER"
-fi
+# Commit the message as written. No attribution trailer is appended.
+git commit -m "$MSG"
 
 ok "Committed: $MSG"

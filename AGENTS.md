@@ -54,7 +54,7 @@ After an agent definition changes, run `scripts/internal/opencode-agents.sh sync
 - Commit or ship only when requested. Use the `smart-commit` agent for commits and `/yeet` for shipping.
 - On a harness without agents or skills, use the scripts named in the routing table with the same approval policy.
 - Write concise imperative commit summaries.
-- Never add a `Co-Authored-By` trailer yourself. `scripts/internal/commit.sh` appends the name-only trailer.
+- Do not name Claude Code or Anthropic in a commit message or PR body. Add no attribution trailer. `scripts/internal/commit.sh` rejects the phrase.
 - Squash only unpushed commits. Preserve pushed history and ship one clean commit per PR.
 - Run `scripts/status.sh` before staging. Treat concurrent staged, added, or removed files as existing work.
 - Preserve unrelated work. Take no destructive, production, or external action beyond the authorization given.

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Extract source code for a method, class, or section by name.
-# Usage: code-read.sh --method|--class|--section|--line NAME PATH [--json]
+# Extract source code for a method, class, or section by name, or line ranges from several files.
+# Usage: code-read.sh --method|--class|--section|--line|--range NAME PATH... [--json]
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 MODE=""
 QUERY=""
-FILE=""
 JSON=false
+FILES=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -16,23 +16,35 @@ while [[ $# -gt 0 ]]; do
         --class)   MODE="class";   QUERY="$2"; shift 2 ;;
         --section) MODE="section"; QUERY="$2"; shift 2 ;;
         --line)    MODE="line";    QUERY="$2"; shift 2 ;;
+        --range)   MODE="line";    QUERY="$2"; shift 2 ;;
         --json)    JSON=true; shift ;;
         -h|--help)
-            echo "Usage: code-read.sh --method|--class|--section|--line NAME PATH [--json]"
+            echo "Usage: code-read.sh --method|--class|--section|--line|--range NAME PATH... [--json]"
+            echo "  --line and --range accept A-B and one or more PATH arguments."
             exit 0 ;;
         -*)  err "Unknown option: $1"; exit 1 ;;
-        *)   FILE="$1"; shift ;;
+        *)   FILES+=("$1"); shift ;;
     esac
 done
 
 if [[ -z "$MODE" || -z "$QUERY" ]]; then
-    err "Specify one of: --method, --class, --section, --line"
+    err "Specify one of: --method, --class, --section, --line, --range"
     exit 1
 fi
-if [[ -z "$FILE" || ! -f "$FILE" ]]; then
-    err "File not found: ${FILE:-<none>}"
+if [[ ${#FILES[@]} -eq 0 ]]; then
+    err "File not found: <none>"
     exit 1
 fi
+if [[ "$MODE" != "line" && ${#FILES[@]} -gt 1 ]]; then
+    err "Only --line and --range accept more than one file"
+    exit 1
+fi
+for f in "${FILES[@]}"; do
+    if [[ ! -f "$f" ]]; then
+        err "File not found: $f"
+        exit 1
+    fi
+done
 
 # Find the start line of a symbol
 find_start_line() {
@@ -107,50 +119,77 @@ find_brace_end() {
     ' "$file"
 }
 
-# Handle --line mode
-if [[ "$MODE" == "line" ]]; then
-    if [[ "$QUERY" == *-* ]]; then
-        START_LINE="${QUERY%-*}"
-        END_LINE="${QUERY#*-}"
-    else
-        START_LINE="$QUERY"
-        END_LINE="$QUERY"
-    fi
-else
-    START_LINE="$(find_start_line "$QUERY" "$MODE" "$FILE")"
+# Resolve the range for one file. Sets START_LINE and END_LINE. Returns 1 when the symbol is absent.
+extract_lines() {
+    local file="$1"
 
-    if [[ "$START_LINE" -eq 0 ]]; then
-        if $JSON; then
-            jq -n --arg query "$QUERY" --arg type "$MODE" --arg file "$FILE" \
-                '{found: false, query: $query, type: $type, file: $file}'
+    if [[ "$MODE" == "line" ]]; then
+        if [[ "$QUERY" == *-* ]]; then
+            START_LINE="${QUERY%-*}"
+            END_LINE="${QUERY#*-}"
         else
-            err "No $MODE match for '$QUERY' in $FILE"
+            START_LINE="$QUERY"
+            END_LINE="$QUERY"
         fi
-        exit 1
+        return 0
+    fi
+
+    START_LINE="$(find_start_line "$QUERY" "$MODE" "$file")"
+    if [[ "$START_LINE" -eq 0 ]]; then
+        return 1
     fi
 
     # Walk back for methods to include attributes
     if [[ "$MODE" == "method" ]]; then
-        START_LINE="$(walk_back_sig "$FILE" "$START_LINE")"
+        START_LINE="$(walk_back_sig "$file" "$START_LINE")"
     fi
 
-    END_LINE="$(find_brace_end "$FILE" "$START_LINE")"
+    END_LINE="$(find_brace_end "$file" "$START_LINE")"
+}
+
+TARGETS=("${FILES[0]}")
+if [[ "$MODE" == "line" ]]; then
+    TARGETS=("${FILES[@]}")
 fi
 
-# Extract content
-CONTENT="$(sed -n "${START_LINE},${END_LINE}p" "$FILE")"
+RECORDS=()
+RC=0
+for file in "${TARGETS[@]}"; do
+    if ! extract_lines "$file"; then
+        if $JSON; then
+            RECORDS+=("$(jq -n --arg query "$QUERY" --arg type "$MODE" --arg file "$file" \
+                '{found: false, query: $query, type: $type, file: $file}')")
+        else
+            err "No $MODE match for '$QUERY' in $file"
+        fi
+        RC=1
+        continue
+    fi
+
+    CONTENT="$(sed -n "${START_LINE},${END_LINE}p" "$file")"
+
+    if $JSON; then
+        RECORDS+=("$(jq -n \
+            --arg query "$QUERY" \
+            --arg type "$MODE" \
+            --arg file "$file" \
+            --argjson start_line "$START_LINE" \
+            --argjson end_line "$END_LINE" \
+            --arg content "$CONTENT" \
+            '{found: true, query: $query, type: $type, file: $file, start_line: $start_line, end_line: $end_line, content: $content}')")
+    else
+        echo "─── $MODE: $QUERY ─── $file:${START_LINE}-${END_LINE}"
+        echo "$CONTENT"
+        echo "───"
+    fi
+done
 
 if $JSON; then
-    jq -n \
-        --arg query "$QUERY" \
-        --arg type "$MODE" \
-        --arg file "$FILE" \
-        --argjson start_line "$START_LINE" \
-        --argjson end_line "$END_LINE" \
-        --arg content "$CONTENT" \
-        '{found: true, query: $query, type: $type, file: $file, start_line: $start_line, end_line: $end_line, content: $content}'
-else
-    echo "─── $MODE: $QUERY ─── $FILE:${START_LINE}-${END_LINE}"
-    echo "$CONTENT"
-    echo "───"
+    if [[ ${#RECORDS[@]} -eq 1 ]]; then
+        printf '%s\n' "${RECORDS[0]}" | jq .
+    else
+        printf '%s\n' "${RECORDS[@]}" | jq -s .
+    fi
 fi
+
+exit $RC
