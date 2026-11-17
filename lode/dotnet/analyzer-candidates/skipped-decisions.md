@@ -1,6 +1,6 @@
 # Analyzer Candidates: Skipped Decisions
 confidence: high
-*Updated: 2026-11-17T16:21:02Z*
+*Updated: 2026-11-17T23:06:12Z*
 
 The settled side of the open register. A skipped row keeps `/analyzer` from reporting the same idea twice. Each decision names the reason and the installed rule or the site count that settled it. The open side lives in [index.md](index.md), and the shipped rules live in [catalog.md](catalog.md).
 
@@ -81,6 +81,25 @@ allocation is the price of the guard those rules buy.
 `Names.SelectedNames` and `SynthesisOptions.Priors`.
 
 **Source**: Tier 2 register triage, 2026-11-14
+
+## Shapes With an Installed Owner
+
+The BlazingFastDotnet skill guide lists each shape below. An installed rule
+already reports it, and `AnalysisLevel=latest-all` enables that rule in build.
+
+| Shape | Owner |
+| ----- | ----- |
+| A lambda that captures an outer local where a `static` lambda takes the state | IDE0320, "Make anonymous function static" |
+| `lock` on a plain `object` field instead of `System.Threading.Lock` | IDE0330, "Use `System.Threading.Lock`" |
+| `response.Headers["Content-Type"]` instead of the typed property | The ASP.NET Core analyzer titled "Use IHeaderDictionary properties instead of indexer" |
+| A `RequestDelegate` that returns `Task<T>` | The ASP.NET Core analyzer titled "Do not return a value from RequestDelegate" |
+
+**Evidence**: the installed SDK style configuration sets both IDE rules to
+warning. Both ASP.NET Core analyzer titles come from
+`Microsoft.AspNetCore.App.Analyzers.dll` in the installed ref pack. Checked on
+2026-11-17.
+
+**Source**: BlazingFastDotnet skill guide, read 2026-11-17
 
 ## Declined from the .NET 11 Band
 

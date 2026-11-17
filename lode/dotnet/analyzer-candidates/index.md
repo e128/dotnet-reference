@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-17T22:44:32Z*
+*Updated: 2026-11-17T23:06:12Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -22,18 +22,91 @@ Each row: `Pattern | Source | Score | Status | Notes`.
 | candidate | Tier 2 shape that clears the bar and waits for a real defect |
 
 The four dimensions are frequency (0-2), coverage gap (0-1), expressibility
-(0-1), and value (0-1). A total of 3 or more is RECOMMEND. The rubric lives in
-[scoring-rubric.md](../../infrastructure/scoring-rubric.md).
+(0-1), and value (0-1). A total of 3 or more is RECOMMEND. The dimension
+definitions live in the `analyzer-review-miner` agent definition.
 
 ## Open Candidates
 
-No open candidate. `ByteSizeType.Is` matches the type by simple name, so a
-namespace move does not break the E128080 exemption.
+The guide below is the same source that seeded the shipped performance rules.
+Every shape it lists that already has an owner stays out of this table.
+The declined shapes sit in [skipped-decisions.md](skipped-decisions.md).
+
+| Pattern | Source | Score | Status | Notes |
+| ------- | ------ | ----- | ------ | ----- |
+| Inline middleware takes a `Func<Task>` next delegate | BlazingFastDotnet skill guide | 4/5 | new | The `Use` overload allocates one closure per request. Detail below. |
+| `UseStaticFiles()` in a minimal API app | BlazingFastDotnet skill guide | 4/5 | new | `MapStaticAssets` serves a build-time manifest. Detail below. |
+| `string.Split` result only enumerated | BlazingFastDotnet skill guide | 3.5/5 | new | One array and one string per part allocate. Detail below. |
+
+`ByteSizeType.Is` matches the type by simple name, so a namespace move does not
+break the E128080 exemption.
 
 The body-read shape shipped as E128227. See [catalog.md](catalog.md).
 The token-validation flag shape shipped as E128228. See [catalog.md](catalog.md).
 The JSON enumerator shape closed as skipped, because the enumerator releases no
 resource. See [skipped-decisions.md](skipped-decisions.md).
+
+### Inline Middleware Next Delegate
+
+`app.Use(async (ctx, next) => ...)` binds the `Func<HttpContext, Func<Task>, Task>`
+overload. That overload allocates a `Func<Task>` closure on every request.
+The `Func<HttpContext, RequestDelegate, Task>` overload passes `next` as a
+`RequestDelegate`, so the call allocates nothing.
+
+```csharp
+// Allocates a closure per request.
+app.Use(async (context, next) =>
+{
+    await next();
+});
+
+// Allocates nothing.
+app.Use(async (context, next) =>
+{
+    await next(context);
+});
+```
+
+Detection: a `Use` call whose lambda declares a second parameter of type
+`Func<Task>`. The rule reports that lambda. The `ctx` parameter must stay live
+up to the `next` call, and the lambda must not reassign it.
+
+Fix: yes. The rewrite changes the lambda call and leaves the body intact.
+
+### Static Files Served Through the Runtime Pipeline
+
+`app.UseStaticFiles()` sends a file through middleware at request time.
+`app.MapStaticAssets()` serves a build-time manifest that carries precompressed
+variants and ETags.
+
+Detection: a `UseStaticFiles` call in a project that targets `net9.0` or later.
+
+Fix: no automatic fix. The call moves into the endpoint mapping section, and a
+Razor app also changes how it references the assets.
+
+### `string.Split` Used Only to Enumerate
+
+`value.Split(sep)` allocates an array and one string per part.
+`MemoryExtensions.Split` yields `Range` values over the existing string.
+
+```csharp
+// Allocates the array and one string per part.
+foreach (var part in line.Split(','))
+{
+    Handle(part);
+}
+
+// Allocates nothing.
+foreach (var range in line.AsSpan().Split(','))
+{
+    Handle(line.AsSpan()[range]);
+}
+```
+
+Detection: a `Split` call whose result no code stores. The separator is a
+`char` or a constant string.
+
+Fix: no automatic fix when the body stores a part as a string. The fix applies
+when every read is a slice, a comparison, or a numeric parse.
 
 ## Tier 2 Candidates
 
@@ -59,7 +132,10 @@ maintainer chose prevention over the real-defect bar.
 | `[Flags]` member value that is not a power of two                  | constant collides with a lower bit                             | Low    |
 | Dead store to a private field                                      | assignment killed on every path before a read                  | Medium |
 | Loop with no exit path                                             | `while (true)` with no exit call                               | Medium |
-| `Base64.*` over `Convert.ToBase64String` or `Convert.FromBase64String` | call to the `Convert` base64 member, waiting on a real defect | Low |
+| `Base64.*` over `Convert.ToBase64String`/`FromBase64String`        | call to the `Convert` base64 member, waiting on a real defect  | Low    |
+| `Parallel.For` with a per-item body                                | body holds no loop over a range                                | Medium |
+| `FileStream` captured by a parallel body                           | shared stream position across reader threads                   | Medium |
+| `readonly` field re-read inside a loop                             | field read by index, no write inside the loop                  | Low    |
 
 ## Skipped Decisions
 
@@ -87,6 +163,7 @@ declined on 2026-11-13 alongside the earlier decisions.
 
 - [catalog.md](catalog.md): settled rules, rejected ideas, and the ID map
 - [skipped-decisions.md](skipped-decisions.md): every declined shape and its reason
+- [guidance-reads.md](guidance-reads.md): each read of the two guidance documents
 - [net11-conversion-sweep.md](net11-conversion-sweep.md): open .NET 11 conversion shapes
 - [async-sweep.md](async-sweep.md): closed async fire-and-forget sweep
 - [external-sweep.md](external-sweep.md): closed 2026-11-05 external rule-set sweep
