@@ -47,7 +47,7 @@ Scope notes:
 - E128211 reads a `Task.Delay` overload with no `CancellationToken` parameter. A
   loop condition that reads a `CancellationToken` stays silent.
 - E128212 reads the direct `foreach` source or element-access receiver only.
-- E128213 skips a `for` loop with a literal bound.
+- E128213 skips a `for` loop with a compile-time constant bound.
 - E128214 skips a derived handler type and a field or property initializer.
 - E128215 reads the statement that follows the declaration, shared with E128205.
   An append inside a lambda or local function stays silent, and so does a
@@ -62,7 +62,7 @@ Scope notes:
 `Task.Run` fan-out: a `Task.Run` call added to a task list inside a loop, then
 awaited with `Task.WhenAll`. E128037 reports this shape. A `SemaphoreSlim.WaitAsync`
 throttle in the lambda clears the report. A `Task.WaitAsync` timeout does not. A
-loop with a numeric literal bound clears the report.
+loop with a compile-time constant bound clears the report.
 
 ## Practice Map
 

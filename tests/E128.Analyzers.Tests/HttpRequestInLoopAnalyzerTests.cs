@@ -88,6 +88,77 @@ public sealed class HttpRequestInLoopAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task GetAsync_ConstantFieldBoundForLoop_Silent()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpRequestInLoopAnalyzer>("""
+            using System.Collections.Generic;
+            using System.Net.Http;
+            using System.Threading.Tasks;
+            class C
+            {
+                private const int MaxRedirectHops = 5;
+
+                async Task M(HttpClient client, IReadOnlyList<string> urls)
+                {
+                    for (int hop = 0; hop <= MaxRedirectHops; hop++)
+                    {
+                        await client.GetAsync(urls[hop]);
+                    }
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GetAsync_LocalConstantBoundForLoop_Silent()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpRequestInLoopAnalyzer>("""
+            using System.Collections.Generic;
+            using System.Net.Http;
+            using System.Threading.Tasks;
+            class C
+            {
+                async Task M(HttpClient client, IReadOnlyList<string> urls)
+                {
+                    const int Hops = 3;
+                    for (int hop = 0; hop <= Hops; hop++)
+                    {
+                        await client.GetAsync(urls[hop]);
+                    }
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task GetAsync_PropertyBoundForLoop_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpRequestInLoopAnalyzer>("""
+            using System.Collections.Generic;
+            using System.Net.Http;
+            using System.Threading.Tasks;
+            class Options
+            {
+                public int MaxPages { get; set; }
+            }
+
+            class C
+            {
+                async Task M(HttpClient client, Options options, IReadOnlyList<string> urls)
+                {
+                    for (int page = 0; page < options.MaxPages; page++)
+                    {
+                        await {|E128203:client.GetAsync(urls[page])|};
+                    }
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task GetAsync_InsideLambdaInLoop_Silent()
     {
         return AnalyzerTestRunner.VerifyAsync<HttpRequestInLoopAnalyzer>("""

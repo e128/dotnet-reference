@@ -64,7 +64,8 @@ public sealed class HttpRequestInLoopAnalyzer : DiagnosticAnalyzer
         }
 
         var body = LoopContext.FindEnclosingLoopBody(invocation);
-        if (body is null || LoopContext.HasConstantBound(invocation))
+        if (body is null
+            || LoopContext.HasConstantBound(invocation, context.SemanticModel, context.CancellationToken))
         {
             return;
         }

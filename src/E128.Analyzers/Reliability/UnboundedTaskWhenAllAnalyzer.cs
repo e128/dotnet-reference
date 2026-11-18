@@ -147,7 +147,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         {
             if (!IsAddOnLocal(candidate, local, context)
                 || LoopContext.FindEnclosingLoopBody(candidate) is null
-                || LoopContext.HasConstantBound(candidate)
+                || LoopContext.HasConstantBound(candidate, context.SemanticModel, context.CancellationToken)
                 || candidate.ArgumentList.Arguments.Count is not 1
                 || candidate.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax run
                 || !IsTaskRun(run, taskType, context)
