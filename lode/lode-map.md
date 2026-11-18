@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-18T12:18:45Z*
+*Updated: 2026-11-18T13:37:01Z*
 
 ## Generated Docs
 
@@ -77,6 +77,7 @@
 - [rule-details-security.md](dotnet/analyzers/rule-details-security.md): Detection shape for the security rules
 - [rule-details-union.md](dotnet/analyzers/rule-details-union.md): Detection shape for the union rule family E128219 to E128221
 - [rule-details-conversion.md](dotnet/analyzers/rule-details-conversion.md): Detection shape for the .NET 11 conversion rules E128223 to E128226
+- [rule-details-roadmap.md](dotnet/analyzers/rule-details-roadmap.md): Detection shape for the roadmap rules E128232 to E128237
 
 ## dotnet-reference/
 

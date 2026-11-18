@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-18T12:18:45Z*
+*Updated: 2026-11-18T13:37:01Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -42,12 +42,12 @@ The JSON enumerator shape closed as skipped, because the enumerator releases no
 resource. See [skipped-decisions.md](skipped-decisions.md).
 
 The slopwatch read on 2026-11-18 added one recommended shape and two Tier 2
-shapes. The rule source, the verdict for all seven rules, and the declined
-project-file shapes live in [slopwatch-sweep.md](slopwatch-sweep.md).
+shapes, and all three ship as E128232, E128236, and E128237. The rule source,
+the verdict for all seven rules, and the declined project-file shapes live in
+[slopwatch-sweep.md](slopwatch-sweep.md).
 
-| Pattern                              | Source          | Score | Status | Notes                                           |
-| ------------------------------------ | --------------- | ----- | ------ | ----------------------------------------------- |
-| `dynamic` keyword in a type position | Slopwatch SW021 | 4/5   | new    | No installed owner. No `dynamic` use in `src/`. |
+No open candidate remains. The dynamic keyword ban ships as E128232. See
+[catalog.md](catalog.md).
 
 ## Tier 2 Candidates
 
@@ -55,7 +55,8 @@ These clear the same bar and wait for a real defect in review.
 The `AsReadOnly()` getter shape left this table on 2026-11-14, because E128058
 and E128060 require that shape. See [skipped-decisions.md](skipped-decisions.md).
 The token-validation flag shape left this table on 2026-11-17, because the
-maintainer chose prevention over the real-defect bar.
+maintainer chose prevention over the real-defect bar. The five roadmap shapes
+left the same way on 2026-11-18, and ship as E128233 to E128237.
 
 | Rule                                                               | Check                                                          | Noise  |
 | ------------------------------------------------------------------ | -------------------------------------------------------------- | ------ |
@@ -74,11 +75,6 @@ maintainer chose prevention over the real-defect bar.
 | Dead store to a private field                                      | assignment killed on every path before a read                  | Medium |
 | Loop with no exit path                                             | `while (true)` with no exit call                               | Medium |
 | `Base64.*` over `Convert.ToBase64String`/`FromBase64String`        | call to the `Convert` base64 member, waiting on a real defect  | Low    |
-| `Parallel.For` with a per-item body                                | body holds no loop over a range                                | Medium |
-| `FileStream` captured by a parallel body                           | shared stream position across reader threads                   | Medium |
-| `readonly` field re-read inside a loop                             | field read by index, no write inside the loop                  | Low    |
-| Unconditional delay in a test                                      | `Thread.Sleep`, `SpinWait`, or a delay with no token           | Medium |
-| Test disabled by `[Ignore]` or `#if false`                         | an `[Ignore]` test, or a test method inside `#if false`        | Low    |
 
 ## Skipped Decisions
 
