@@ -17,6 +17,7 @@ public sealed class ProjectInventoryTests
     [
         "E128.Analyzers",
         "E128.Analyzers.CodeFixers",
+        "E128.Analyzers.Union",
         "E128.Reference.Cli",
         "E128.Reference.Core",
         "E128.Reference.Web"
@@ -26,6 +27,7 @@ public sealed class ProjectInventoryTests
     [
         "E128_Analyzers_CodeFixers_ShouldNotDependOn_UnreferencedProjects",
         "E128_Analyzers_ShouldNotDependOn_UnreferencedProjects",
+        "E128_Analyzers_Union_ShouldNotDependOn_UnreferencedProjects",
         "E128_Reference_Cli_ShouldNotDependOn_UnreferencedProjects",
         "E128_Reference_Core_ShouldNotDependOn_UnreferencedProjects",
         "E128_Reference_Web_ShouldNotDependOn_UnreferencedProjects"

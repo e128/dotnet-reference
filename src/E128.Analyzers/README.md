@@ -5,15 +5,30 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.4.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.4.2" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
 
 ### Supported hosts
 
-Both analyzer assemblies target `netstandard2.0`, and the package carries no
-dependency of its own. It loads in a .NET 11 host compiler from that one build.
+The analyzer assemblies target `netstandard2.0`, and the package carries no
+dependency of its own. The package holds one build per Roslyn band:
+
+- `analyzers/dotnet/roslyn5.9/cs` holds the base rules. Roslyn 5.9 and above
+  load it, which covers the .NET SDK 10.0 and later.
+- `analyzers/dotnet/roslyn5.12/cs` holds the base rules plus the union rules.
+  Only a Roslyn 5.12 host loads it, which means the .NET SDK 11.0 and later.
+
+The SDK selects one folder per package, so a host below Roslyn 5.9 loads
+nothing. Roslyn reports that as CS9057, one diagnostic per project, and a
+repository with `TreatWarningsAsErrors` turns it into a build failure. The
+package reports it earlier as the `E128PKG0001` error and names the host
+version.
+
+E128220 and E128221 read the C# union syntax. A Roslyn 5.9 compiler cannot
+parse that syntax, so those two rules are absent on a .NET SDK 10.0 host. Every
+other rule runs on both hosts.
 
 The rules read syntax and symbols, so they work on any C# project. A rule stays
 silent where the target framework cannot express what it looks for.
@@ -3135,6 +3150,8 @@ internal sealed class Greeted : GreetingState { }
 
 ### E128220: Union switch ends in a discard arm
 
+Ships in the Roslyn 5.12 build, so it needs the .NET SDK 11.0 or later.
+
 Flags a switch over a union whose last arm is a discard or `var` arm and which
 carries no `null` arm. The `null` arm names the empty case, so the compiler
 keeps warning when a case type is added later. A discard or `var` arm accepts
@@ -3170,6 +3187,8 @@ var text = result switch
 ```
 
 ### E128221: Union case read outside a pattern match
+
+Ships in the Roslyn 5.12 build, so it needs the .NET SDK 11.0 or later.
 
 Flags a `Value` read on a union expression and a cast of a union expression to
 a case type. A `Value` read boxes the case and skips the case set, and a cast
@@ -3509,7 +3528,7 @@ public void WritesTheRegistryValue() { }
 
 ## Requirements
 
-- .NET SDK 11.0+ (targets `netstandard2.0`, runs in any modern Roslyn host)
+- .NET SDK 10.0+ (Roslyn 5.9 host compiler required, and an older host fails with `E128PKG0001`)
 - Visual Studio 2022 17.8+, Rider 2024.1+, or `dotnet build` from CLI
 
 ## License

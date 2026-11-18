@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/E128.Analyzers/**'
       - 'src/E128.Analyzers.CodeFixers/**'
+      - 'src/E128.Analyzers.Union/**'
 
 permissions:
   contents: read

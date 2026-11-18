@@ -50,10 +50,11 @@ Run the Release build of the solution at the repository root. Report the package
 
 - Analyzers: [`src/E128.Analyzers/`](src/E128.Analyzers/). The [README](src/E128.Analyzers/README.md) lists every rule.
 - Code fixes: [`src/E128.Analyzers.CodeFixers/`](src/E128.Analyzers.CodeFixers/)
-- Packaging: the package ships `E128.Analyzers.dll` and `E128.Analyzers.CodeFixers.dll` under `analyzers/dotnet/cs`.
+- Union rules: [`src/E128.Analyzers.Union/`](src/E128.Analyzers.Union/), the E128220 and E128221 rules at Roslyn 5.12
+- Packaging: the package ships the base DLLs under `analyzers/dotnet/roslyn5.9/cs` and `analyzers/dotnet/roslyn5.12/cs`, and the union DLL under `analyzers/dotnet/roslyn5.12/cs`.
 - Tests: [`tests/E128.Analyzers.Tests/`](tests/E128.Analyzers.Tests/)
 - Release notes: [`AnalyzerReleases.Shipped.md`](src/E128.Analyzers/AnalyzerReleases.Shipped.md)
-- Publishing: `.github/workflows/publish.yml` pushes the package to nuget.org on each merge to `main` that changes `src/E128.Analyzers/` or `src/E128.Analyzers.CodeFixers/`
+- Publishing: `.github/workflows/publish.yml` pushes the package to nuget.org on each merge to `main` that changes `src/E128.Analyzers*/`
 
 Report an analyzer defect, or ask for a new rule, in the [issues](https://github.com/e128/dotnet-reference/issues) of this repository.
 
@@ -95,6 +96,7 @@ scripts/podman.sh test
 | **E128.Reference.Core**       | Shared library (Greeter service, models, repositories, services)               |
 | **E128.Analyzers**            | Roslyn analyzers (E128001 to E128231), published to nuget.org                  |
 | **E128.Analyzers.CodeFixers** | Code fix providers for the analyzer rules, shipped in the same package         |
+| **E128.Analyzers.Union**      | Union rules E128220 and E128221, Roslyn 5.12 and later                         |
 | **E128.Reference.Tests**      | xUnit v3 and MTP with the CI, Podman, and Manual test categories               |
 | **Architecture.Tests**        | ArchUnitNET structural invariant tests (layers, naming, sealed)                |
 | **E128.Analyzers.Tests**      | Analyzer and code fix unit tests                                               |
@@ -182,8 +184,9 @@ scripts/podman.sh test
 ├── renovate.json             # Renovate dependency update config
 ├── scripts/                  # Bash development scripts ([catalog](scripts/README.md))
 ├── src/
-│   ├── E128.Analyzers/       # Roslyn analyzers (published NuGet package)
-│   ├── E128.Analyzers.CodeFixers/ # Code fix providers (second DLL in the package)
+│   ├── E128.Analyzers/       # Roslyn analyzers, Roslyn 5.9 band (published NuGet package)
+│   ├── E128.Analyzers.CodeFixers/ # Code fix providers, Roslyn 5.9 band
+│   ├── E128.Analyzers.Union/ # Union rules E128220 and E128221, Roslyn 5.12 band
 │   ├── E128.Reference.Core/  # Shared library
 │   ├── E128.Reference.Web/   # ASP.NET Core minimal API
 │   └── E128.Reference.Cli/   # System.CommandLine CLI

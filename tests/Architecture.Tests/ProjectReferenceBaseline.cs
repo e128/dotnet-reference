@@ -14,6 +14,7 @@ internal static class ProjectReferenceBaseline
     [
         "E128.Analyzers",
         "E128.Analyzers.CodeFixers",
+        "E128.Analyzers.Union",
         "E128.Reference.Cli",
         "E128.Reference.Core",
         "E128.Reference.Web"

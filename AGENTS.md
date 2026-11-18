@@ -41,7 +41,7 @@ After an agent definition changes, run `scripts/internal/opencode-agents.sh sync
 
 ## .NET Constraints
 
-- Target .NET 11 and later. Analyzer assemblies also support `netstandard2.0`. The analyzer support window is `net11.0`.
+- Target .NET 11 and later. Analyzer assemblies also support `netstandard2.0`. The base analyzer build loads in a .NET 10.0 host, and the union build needs the .NET 11.0 host.
 - Do not add .NET Framework targets, APIs, references, conditional branches, compatibility tests, or polyfills.
 - Seal every non-abstract class. E128005 and ArchUnitNET enforce this constraint.
 - Prefer immutability, then memory, then CPU, then parallelism.

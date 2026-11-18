@@ -1,6 +1,6 @@
 # Analyzer Testing
 
-*Updated: 2026-11-16T22:58:37Z*
+*Updated: 2026-11-18T16:45:38Z*
 
 How a test drives an analyzer and a code fix. The harness types live in
 `Microsoft.CodeAnalysis.CSharp.Testing`. The repo wrapper lives in
@@ -155,10 +155,11 @@ A branch that no valid input reaches gets no test. Two examples are the
 provider. Do not pin a production defect as expected behavior. Report it
 instead.
 
-The NuGet package `E128.Analyzers` carries two assemblies: `E128.Analyzers` and
-`E128.Analyzers.CodeFixers`. Add their branch totals to get the package surface.
-As of 2026-11-16T22:58:32Z, that surface covers about 91 percent of its branches. See
-[Code Coverage](../code-coverage.md) for collection and the CI floors.
+The NuGet package `E128.Analyzers` carries three assemblies: `E128.Analyzers`,
+`E128.Analyzers.CodeFixers`, and `E128.Analyzers.Union`. Add their branch totals
+to get the package surface. As of 2026-11-16T22:58:32Z, the first two covered
+about 91 percent of their branches. See [Code Coverage](../code-coverage.md) for
+collection and the CI floors.
 
 ## Related
 

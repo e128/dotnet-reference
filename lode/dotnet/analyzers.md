@@ -1,5 +1,5 @@
 # .NET 11 Roslyn Analyzers
-*Updated: 2026-11-17T23:57:12Z*
+*Updated: 2026-11-18T16:45:38Z*
 
 ## Strategy: Deny by Default
 
@@ -204,10 +204,11 @@ private static partial Regex MyRegex { get; }
 
 ## Package Assembly Layout
 
-The package ships two assemblies. `E128.Analyzers` holds the analyzers and
-`E128.Analyzers.CodeFixers` holds the fix providers. See
-[Package Layout](analyzers/package-layout.md) for both projects, the
-per-Roslyn-version layout, and the build metadata.
+The package ships three assemblies. `E128.Analyzers` holds the base analyzers,
+`E128.Analyzers.CodeFixers` holds the fix providers, and
+`E128.Analyzers.Union` holds the two union rules at Roslyn 5.12. See
+[Package Layout](analyzers/package-layout.md) for the projects, the
+per-Roslyn-version folders, and the build metadata.
 
 ## Related
 

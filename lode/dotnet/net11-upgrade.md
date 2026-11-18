@@ -1,5 +1,5 @@
 # .NET 11 Upgrade Practices
-*Updated: 2026-11-12T16:46:34Z*
+*Updated: 2026-11-18T16:45:38Z*
 
 Rules this repository follows on the `net11.0` band. Each rule came from a probe
 on the GA SDK. See [project-structure.md](project-structure.md)
@@ -30,18 +30,21 @@ Two rules follow:
 
 ## Analyzer Reach
 
-The analyzer support window is `net11.0`. Both analyzer assemblies stay
-`netstandard2.0`, and the repository proves the package only in a `net11.0`
-host. Three rules hold that shape:
+The base analyzer assemblies target `netstandard2.0` and compile against
+Roslyn 5.9, so a .NET SDK 10.0 host loads them. The union assembly compiles
+against Roslyn 5.12 and ships in the 5.12 folder only. The repository tests the
+rules in a `net11.0` host and proves the 5.9 band through the package layout.
+Four rules hold that shape:
 
-1. Both analyzer assemblies target `netstandard2.0`. Roslyn loads an analyzer
-   built on an older Roslyn band forward, never backward.
-2. The shipped `Microsoft.CodeAnalysis.CSharp` pin follows the current release
-   on nuget.org. NuGet publishes that pin behind the SDK compiler and not with
-   it, so the pin can lag the SDK band until a suitable release appears. Check
-   the package index before a bump. See
-   [dependency-policy.md](../dependency-policy.md).
-3. Both analyzer projects pin `LangVersion` to `14.0`. The reason is the
+1. The base and fixer builds reference `Microsoft.CodeAnalysis` 5.9.0.0. The
+   union build references 5.12.0.0. Roslyn loads an assembly built on an older
+   band into a host on that band or above. It never loads one into an older
+   host.
+2. `Directory.Packages.props` keeps the 5.12.0 pin and gives the base and fixer
+   projects a conditional 5.9.0 pin. NuGet publishes the pin behind the SDK
+   compiler and not with it, so the pin can lag the SDK band. Check the package
+   index before a bump. See [dependency-policy.md](../dependency-policy.md).
+3. The analyzer projects pin `LangVersion` to `14.0`. The reason is the
    formatter, not an older compiler. On `latest` it rewrites a collection
    initializer with a constructor argument into the C# 15 collection
    expression argument form, and that edit touches every analyzer file.
@@ -50,13 +53,21 @@ host. Three rules hold that shape:
 
 ```mermaid
 flowchart LR
-    A[netstandard2.0 analyzer<br/>nuget pin] --> B[SDK 11 host<br/>current Roslyn]
-    A -.->|not tested| C[older host]
+    A[base analyzer<br/>Roslyn 5.9] --> B[SDK 10 host<br/>Roslyn 5.9]
+    A --> C[SDK 11 host<br/>Roslyn 5.12]
+    U[union analyzer<br/>Roslyn 5.12] --> C
+    A -.->|CS9057| D[host below Roslyn 5.9]
 ```
 
-The package still loads in an older host, because Roslyn loads it forward. The
-repository does not claim or test that reach. The build proves that the package
-assembles, and the suite proves that each rule runs in the current host.
+The SDK picks one analyzer folder per package. The base build therefore ships
+in both folders, and the union build ships in the 5.12 folder only. E128220 and
+E128221 are absent on a 5.9 host, which costs nothing because that compiler
+cannot parse union syntax.
+
+A consumer below Roslyn 5.9 sees CS9057, one diagnostic per project, and no
+rule runs. The package ships `build/E128.Analyzers.targets` to report that
+condition once as `E128PKG0001`. See
+[analyzers/package-layout.md](analyzers/package-layout.md).
 
 ## Union Results
 

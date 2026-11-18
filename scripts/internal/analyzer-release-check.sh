@@ -17,6 +17,8 @@ done
 
 ROOT="$(find_repo_root)"
 ANALYZER_DIR="$ROOT/src/E128.Analyzers"
+# Rules ship from two assemblies on different Roslyn bands. Both are analyzer source.
+ANALYZER_SOURCE_DIRS=("$ANALYZER_DIR" "$ROOT/src/E128.Analyzers.Union")
 UNSHIPPED="$ANALYZER_DIR/AnalyzerReleases.Unshipped.md"
 SHIPPED="$ANALYZER_DIR/AnalyzerReleases.Shipped.md"
 
@@ -33,7 +35,7 @@ fi
 source_ids=()
 while IFS= read -r id; do
     source_ids+=("$id")
-done < <(rg -o '"E128\d{3}"' "$ANALYZER_DIR/" --no-filename 2>/dev/null | tr -d '"' | sort -u)
+done < <(rg -o '"E128\d{3}"' "${ANALYZER_SOURCE_DIRS[@]}" --no-filename 2>/dev/null | tr -d '"' | sort -u)
 
 # 2. Extract IDs from the table rows of the New Rules section.
 # A rule under Changed Rules is already shipped, so its old Shipped entry is

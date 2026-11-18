@@ -26,6 +26,24 @@ public sealed class ProjectBoundaryTests
             .Should().NotDependOnAny(
                 Types().That().ResideInAssembly(
                     ProjectReferenceBaseline.Load("E128.Analyzers.CodeFixers"),
+                    ProjectReferenceBaseline.Load("E128.Analyzers.Union"),
+                    ProjectReferenceBaseline.Load("E128.Reference.Cli"),
+                    ProjectReferenceBaseline.Load("E128.Reference.Core"),
+                    ProjectReferenceBaseline.Load("E128.Reference.Web"))
+                    .And().DoNotResideInNamespace(CoverageTrackerNamespace));
+
+        rule.Check(Architecture);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void E128_Analyzers_Union_ShouldNotDependOn_UnreferencedProjects()
+    {
+        IArchRule rule = Types()
+            .That().ResideInAssembly(ProjectReferenceBaseline.Load("E128.Analyzers.Union"))
+            .Should().NotDependOnAny(
+                Types().That().ResideInAssembly(
+                    ProjectReferenceBaseline.Load("E128.Analyzers.CodeFixers"),
                     ProjectReferenceBaseline.Load("E128.Reference.Cli"),
                     ProjectReferenceBaseline.Load("E128.Reference.Core"),
                     ProjectReferenceBaseline.Load("E128.Reference.Web"))
@@ -42,6 +60,7 @@ public sealed class ProjectBoundaryTests
             .That().ResideInAssembly(ProjectReferenceBaseline.Load("E128.Analyzers.CodeFixers"))
             .Should().NotDependOnAny(
                 Types().That().ResideInAssembly(
+                    ProjectReferenceBaseline.Load("E128.Analyzers.Union"),
                     ProjectReferenceBaseline.Load("E128.Reference.Cli"),
                     ProjectReferenceBaseline.Load("E128.Reference.Core"),
                     ProjectReferenceBaseline.Load("E128.Reference.Web"))
@@ -60,6 +79,7 @@ public sealed class ProjectBoundaryTests
                 Types().That().ResideInAssembly(
                     ProjectReferenceBaseline.Load("E128.Analyzers"),
                     ProjectReferenceBaseline.Load("E128.Analyzers.CodeFixers"),
+                    ProjectReferenceBaseline.Load("E128.Analyzers.Union"),
                     ProjectReferenceBaseline.Load("E128.Reference.Web"))
                     .And().DoNotResideInNamespace(CoverageTrackerNamespace));
 
@@ -76,6 +96,7 @@ public sealed class ProjectBoundaryTests
                 Types().That().ResideInAssembly(
                     ProjectReferenceBaseline.Load("E128.Analyzers"),
                     ProjectReferenceBaseline.Load("E128.Analyzers.CodeFixers"),
+                    ProjectReferenceBaseline.Load("E128.Analyzers.Union"),
                     ProjectReferenceBaseline.Load("E128.Reference.Cli"),
                     ProjectReferenceBaseline.Load("E128.Reference.Web"))
                     .And().DoNotResideInNamespace(CoverageTrackerNamespace));
@@ -93,6 +114,7 @@ public sealed class ProjectBoundaryTests
                 Types().That().ResideInAssembly(
                     ProjectReferenceBaseline.Load("E128.Analyzers"),
                     ProjectReferenceBaseline.Load("E128.Analyzers.CodeFixers"),
+                    ProjectReferenceBaseline.Load("E128.Analyzers.Union"),
                     ProjectReferenceBaseline.Load("E128.Reference.Cli"))
                     .And().DoNotResideInNamespace(CoverageTrackerNamespace));
 
