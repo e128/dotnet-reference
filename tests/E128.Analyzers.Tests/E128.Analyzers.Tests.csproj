@@ -13,6 +13,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\E128.Analyzers\E128.Analyzers.csproj" />
         <ProjectReference Include="..\..\src\E128.Analyzers.CodeFixers\E128.Analyzers.CodeFixers.csproj" />
+        <ProjectReference Include="..\..\src\E128.Analyzers.Union\E128.Analyzers.Union.csproj" />
     </ItemGroup>
 
     <ItemGroup>

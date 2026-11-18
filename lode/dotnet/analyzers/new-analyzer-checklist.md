@@ -1,9 +1,18 @@
 # New Analyzer Checklist
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-18T16:45:38Z*
 
 Pre-flight checks and common pitfalls when writing new E128.Analyzers rules.
 Registration steps, analysis API choice, code fixes, the package README, and
 test layout live in [authoring.md](authoring.md).
+
+## Pick the Project by Roslyn Band
+
+Put a new rule in `src/E128.Analyzers` unless it needs a Roslyn 5.12 API. That
+project compiles against 5.9, and its build ships to .NET 10 hosts. A rule that
+reads the typed `UnionDeclarationSyntax` node or another 5.12-only API goes in
+`src/E128.Analyzers.Union`. The union assembly ships only in the 5.12 package
+folder, so its rules are absent on a .NET 10 host. See
+[package-layout.md](package-layout.md).
 
 ## Decide Before You Write It
 

@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-18T13:37:01Z*
+*Updated: 2026-11-18T16:45:38Z*
 
 ## Generated Docs
 
@@ -64,7 +64,7 @@
 - [code-fix-output.md](dotnet/analyzers/code-fix-output.md): Text the fix writes and keeps: literals, formatter, inserted members, trivia, rewrite shape guards
 - [code-fix-techniques.md](dotnet/analyzers/code-fix-techniques.md): Fix-all providers, DocumentEditor, speculative bind, error-count guard, generator, attribute update
 - [performance.md](dotnet/analyzers/performance.md): Analyzer hot-path rules: bind late, resolve types once, scan each scope once
-- [package-layout.md](dotnet/analyzers/package-layout.md): two assemblies, NuGet analyzer layout, per-Roslyn packaging, build metadata
+- [package-layout.md](dotnet/analyzers/package-layout.md): three assemblies, NuGet analyzer layout, per-Roslyn folders, build metadata
 - [pooled-buffer-rules.md](dotnet/analyzers/pooled-buffer-rules.md): E128109 stackalloc limits, E128110 pooled buffer zeroing, E128111 use after Return
 - [fips-rules.md](dotnet/analyzers/fips-rules.md): FIPS rule map, policy values, shared symbol and constant helpers
 - [rule-details.md](dotnet/analyzers/rule-details.md): Per-rule detection shape, exclusions, and code-fix behavior for the E128 rules

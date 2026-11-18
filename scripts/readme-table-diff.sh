@@ -10,6 +10,8 @@ SCRIPTS_DIR="$ROOT/scripts"
 README="$SCRIPTS_DIR/README.md"
 ANALYZER_DIR="$ROOT/src/E128.Analyzers"
 FIXER_DIR="$ROOT/src/E128.Analyzers.CodeFixers"
+# Rules ship from two assemblies on different Roslyn bands. Both are analyzer source.
+ANALYZER_SOURCE_DIRS=("$ANALYZER_DIR" "$ROOT/src/E128.Analyzers.Union")
 ANALYZER_README="$ANALYZER_DIR/README.md"
 JSON=false
 ANALYZER=false
@@ -71,7 +73,7 @@ if [[ "$ANALYZER" == true ]]; then
     rg -n --no-heading \
         -e 'class[[:space:]]+[A-Za-z0-9_]+Analyzer' \
         -e 'const string[[:space:]]+[A-Za-z0-9_]+[[:space:]]*=[[:space:]]*"E128[0-9]{3}"' \
-        "$ANALYZER_DIR" --type cs 2>/dev/null \
+        "${ANALYZER_SOURCE_DIRS[@]}" --type cs 2>/dev/null \
     | awk '
         {
             p = index($0, ":"); rest = substr($0, p + 1);
@@ -91,7 +93,7 @@ if [[ "$ANALYZER" == true ]]; then
 
     # Fixable ids: extract every FixableDiagnosticIds block, pull ClassName.ConstName
     # references and literal "E128nnn" tokens, resolve refs through the map.
-    rg -U -o --no-heading -e 'FixableDiagnosticIds[[:space:]]*=>[[:space:]]*\[[^]]*\]' "$ANALYZER_DIR" "$FIXER_DIR" --type cs 2>/dev/null \
+    rg -U -o --no-heading -e 'FixableDiagnosticIds[[:space:]]*=>[[:space:]]*\[[^]]*\]' "${ANALYZER_SOURCE_DIRS[@]}" "$FIXER_DIR" --type cs 2>/dev/null \
         | grep -oE '([A-Za-z0-9_]+\.[A-Za-z0-9_]*DiagnosticId|"E128[0-9]{3}")' \
         | sed -E 's/"//g' | sort -u > "$WORK/refs.txt" || true
     awk -F'\t' '

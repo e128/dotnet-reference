@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\E128.Analyzers\E128.Analyzers.csproj" />
     <ProjectReference Include="..\..\src\E128.Analyzers.CodeFixers\E128.Analyzers.CodeFixers.csproj" />
+    <ProjectReference Include="..\..\src\E128.Analyzers.Union\E128.Analyzers.Union.csproj" />
     <ProjectReference Include="..\..\src\E128.Reference.Cli\E128.Reference.Cli.csproj" />
     <ProjectReference Include="..\..\src\E128.Reference.Core\E128.Reference.Core.csproj" />
     <ProjectReference Include="..\..\src\E128.Reference.Web\E128.Reference.Web.csproj" />

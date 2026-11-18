@@ -1,0 +1,31 @@
+<Project>
+
+  <!-- Roslyn rejects an analyzer assembly built on a newer compiler band with
+       CS9057, and the build fails before any rule runs. Report that condition
+       once, with the host version and the fix, instead of one CS9057 per project. -->
+  <Target Name="E128CheckCompilerVersion"
+          BeforeTargets="CoreCompile"
+          Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(DesignTimeBuild)' != 'true'">
+
+    <!-- The dotnet SDK keeps the compiler in bincore. Visual Studio MSBuild keeps
+         it beside the Roslyn targets. Use whichever exists and skip when neither does. -->
+    <PropertyGroup>
+      <_E128RoslynDir Condition="Exists('$(RoslynTargetsPath)/bincore/Microsoft.CodeAnalysis.dll')">$(RoslynTargetsPath)/bincore</_E128RoslynDir>
+      <_E128RoslynDir Condition="'$(_E128RoslynDir)' == '' and Exists('$(RoslynTargetsPath)/Microsoft.CodeAnalysis.dll')">$(RoslynTargetsPath)</_E128RoslynDir>
+    </PropertyGroup>
+
+    <GetAssemblyIdentity AssemblyFiles="$(_E128RoslynDir)/Microsoft.CodeAnalysis.dll"
+                        Condition="Exists('$(_E128RoslynDir)/Microsoft.CodeAnalysis.dll')">
+      <Output TaskParameter="Assemblies" ItemName="_E128HostCompiler" />
+    </GetAssemblyIdentity>
+
+    <PropertyGroup>
+      <_E128HostVersion>@(_E128HostCompiler->'%(Version)')</_E128HostVersion>
+    </PropertyGroup>
+
+    <Error Code="E128PKG0001"
+           Condition="'$(_E128HostVersion)' != '' and $([MSBuild]::VersionLessThan('$(_E128HostVersion)', '5.9'))"
+           Text="E128.Analyzers requires a compiler that hosts Roslyn 5.9 or newer. This build host supplies $(_E128HostVersion). Use the .NET SDK 10.0 or newer, or remove the E128.Analyzers reference." />
+  </Target>
+
+</Project>

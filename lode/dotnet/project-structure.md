@@ -1,5 +1,5 @@
 # .NET 11 Project Structure
-*Updated: 2026-11-18T09:52:33Z*
+*Updated: 2026-11-18T16:45:38Z*
 
 ## Solution Format
 
@@ -18,8 +18,9 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 ├── .editorconfig              # Code style (formatting, naming, IDE rules)
 ├── .globalconfig              # Analyzer diagnostic severities
 ├── src/
-│   ├── E128.Analyzers/        # Solution-local Roslyn analyzer (own .editorconfig)
-│   ├── E128.Analyzers.CodeFixers/  # Code fix providers for the analyzer (own .editorconfig)
+│   ├── E128.Analyzers/        # Solution-local Roslyn analyzer, Roslyn 5.9 band (own .editorconfig)
+│   ├── E128.Analyzers.CodeFixers/  # Code fix providers, Roslyn 5.9 band (own .editorconfig)
+│   ├── E128.Analyzers.Union/  # Union rules E128220 and E128221, Roslyn 5.12 band
 │   ├── E128.Reference.Cli/    # CLI application
 │   ├── E128.Reference.Core/   # Core library
 │   └── E128.Reference.Web/    # Web application
@@ -51,7 +52,7 @@ Key properties:
 
 **Props** (evaluated before project files): TFM, language version, nullable, analyzers, code analysis settings, artifact paths, build performance flags, configuration-specific settings.
 
-**Targets** (evaluated after project files): Conditional logic that depends on properties set in `.csproj`. `<IsTestProject>true</IsTestProject>` detection sets `OutputType=Exe` and the MTP runner properties. The `runtime-async=on` compiler feature applies to `net11.0` projects other than Roslyn component, test, and benchmark projects. `tests/Directory.Build.targets` imports this file and adds the coverage extension to test projects. The file also contains the E128.Analyzers `ProjectReference`: all projects except the two Roslyn components (`IsRoslynComponent != true`) automatically reference it as an `OutputItemType="Analyzer"` with `ReferenceOutputAssembly="false"`. The condition also gates on the `.csproj` existing, so the solution builds cleanly if the analyzer project is removed.
+**Targets** (evaluated after project files): Conditional logic that depends on properties set in `.csproj`. `<IsTestProject>true</IsTestProject>` detection sets `OutputType=Exe` and the MTP runner properties. The `runtime-async=on` compiler feature applies to `net11.0` projects other than Roslyn component, test, and benchmark projects. `tests/Directory.Build.targets` imports this file and adds the coverage extension to test projects. The file also contains the E128.Analyzers and E128.Analyzers.Union `ProjectReference` items: all projects except the Roslyn components (`IsRoslynComponent != true`) automatically reference both as `OutputItemType="Analyzer"` with `ReferenceOutputAssembly="false"`. The condition also gates on the `.csproj` existing, so the solution builds cleanly if the analyzer project is removed.
 
 ## global.json
 

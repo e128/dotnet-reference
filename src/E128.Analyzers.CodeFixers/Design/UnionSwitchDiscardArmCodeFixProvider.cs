@@ -13,8 +13,11 @@ namespace E128.Analyzers.Design;
 [Shared]
 public sealed class UnionSwitchDiscardArmCodeFixProvider : E128CodeFixProviderBase
 {
+    // The union analyzer ships in the Roslyn 5.12 assembly, which this Roslyn 5.9
+    // build does not reference. Roslyn matches a fixer to a diagnostic by id, so
+    // the fixer needs no compile-time reference to the analyzer type.
     public override ImmutableArray<string> FixableDiagnosticIds =>
-        [UnionSwitchDiscardArmAnalyzer.DiagnosticId];
+        ["E128220"];
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {

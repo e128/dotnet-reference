@@ -6,6 +6,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 ROOT="$(find_repo_root)"
 ANALYZER_DIR="$ROOT/src/E128.Analyzers"
 FIXER_DIR="$ROOT/src/E128.Analyzers.CodeFixers"
+# Rules ship from two assemblies on different Roslyn bands. Both are analyzer source.
+UNION_DIR="$ROOT/src/E128.Analyzers.Union"
 JSON=false
 
 while [[ $# -gt 0 ]]; do
@@ -28,7 +30,7 @@ if [[ ! -d "$ANALYZER_DIR" ]]; then
     exit 1
 fi
 
-mapfile -t diagnostic_ids < <(rg 'DiagnosticId\s*=\s*"(E128[0-9]{3})"' "$ANALYZER_DIR/" -or '$1' --no-filename 2>/dev/null | sort -u)
+mapfile -t diagnostic_ids < <(rg 'DiagnosticId\s*=\s*"(E128[0-9]{3})"' "$ANALYZER_DIR/" "$UNION_DIR/" -or '$1' --no-filename 2>/dev/null | sort -u)
 id_count=${#diagnostic_ids[@]}
 
 # One walk labels each match as analyzer or fixer, then counts files per kind.
@@ -42,7 +44,7 @@ while IFS=$'\t' read -r _file _match; do
 done < <(rg --json \
     -e 'class \w+ .* DiagnosticAnalyzer' \
     -e 'class \w+ .* CodeFixProvider' \
-    "$ANALYZER_DIR/" "$FIXER_DIR/" --type cs 2>/dev/null \
+    "$ANALYZER_DIR/" "$UNION_DIR/" "$FIXER_DIR/" --type cs 2>/dev/null \
     | jq -r 'select(.type=="match") | [.data.path.text, .data.submatches[0].match.text] | @tsv')
 analyzer_count=${#ANALYZER_FILES[@]}
 fixer_count=${#FIXER_FILES[@]}
@@ -61,7 +63,7 @@ fi
 
 # One wc walk feeds the file count, the LOC total, and the top-5 slice.
 declare -a cs_loc=()
-mapfile -t cs_loc < <(fd -e cs . "$ANALYZER_DIR" "$FIXER_DIR" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | sort -rn)
+mapfile -t cs_loc < <(fd -e cs . "$ANALYZER_DIR" "$UNION_DIR" "$FIXER_DIR" --exclude obj --exclude bin -x wc -l {} \; 2>/dev/null | sort -rn)
 source_files=${#cs_loc[@]}
 total_loc=$(printf '%s\n' "${cs_loc[@]}" | awk '{s+=$1} END {print s+0}')
 

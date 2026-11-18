@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-17T13:33:06Z*
+*Updated: 2026-11-18T16:45:38Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -13,6 +13,7 @@
 | `E128.Reference.Cli`      | `Microsoft.NET.Sdk`     | `net11.0`  | Console executable              | `System.CommandLine` |
 | `E128.Analyzers`          | `Microsoft.NET.Sdk`     | `netstandard2.0` | Roslyn analyzer NuGet package | `Microsoft.CodeAnalysis.CSharp`, `Microsoft.CodeAnalysis.PublicApiAnalyzers`, `PolySharp` |
 | `E128.Analyzers.CodeFixers` | `Microsoft.NET.Sdk`   | `netstandard2.0` | Code fix DLL packed into `E128.Analyzers` | `Microsoft.CodeAnalysis.CSharp.Workspaces`, `PolySharp`, and a project ref to `E128.Analyzers` |
+| `E128.Analyzers.Union`    | `Microsoft.NET.Sdk`     | `netstandard2.0` | Union rules packed at Roslyn 5.12 | `Microsoft.CodeAnalysis.CSharp`, and a project ref to `E128.Analyzers` |
 
 All production projects also receive the following **analyzer packages** via `Directory.Build.props`
 (`PrivateAssets="all"`, compile-time only, not shipped to consumers). Versions are pinned
@@ -65,8 +66,8 @@ images and gains a CPU floor. On Linux, .NET 11 compiles ReadyToRun against the
 | SDK/build image       | `mcr.microsoft.com/dotnet/sdk:11.0-resolute`     | `Dockerfile` (`restore`/`build` stages) |
 | .NET SDK pin          | see `global.json`                          | `global.json`                         |
 | SDK rollForward       | `latestPatch`                             | `global.json` (pins the SDK to the `11.0.1xx` line) |
-| Target framework      | `net11.0` (all except the two analyzer projects) | `Directory.Build.props`          |
-| Analyzers TF          | `netstandard2.0`                           | `E128.Analyzers.csproj` and `E128.Analyzers.CodeFixers.csproj` |
+| Target framework      | `net11.0` (all except the three analyzer projects) | `Directory.Build.props`          |
+| Analyzers TF          | `netstandard2.0`                           | the `E128.Analyzers*` project files |
 | CI SDK version        | `11.0.x`                                   | `.github/workflows/ci.yml` `setup-dotnet` |
 | CI platform           | `ubuntu-26.04`                             | `.github/workflows/ci.yml`            |
 | Secret scanner        | gitleaks, version and SHA-256 pinned in job `env` | `.github/workflows/ci.yml` (`lint` job) |
@@ -142,16 +143,25 @@ Versions are pinned centrally in `Directory.Packages.props`.
 
 **Role:** Code fix providers in a separate assembly. RS1038 forbids one assembly
 from carrying both analyzers and fix providers. `dotnet pack` on `E128.Analyzers`
-builds this project first and places both DLLs under `analyzers/dotnet/cs` in the
-package. Fix providers extend the shared base class `E128CodeFixProviderBase`
+builds this project first and places the DLLs in the Roslyn 5.9 and 5.12 package
+folders. Fix providers extend the shared base class `E128CodeFixProviderBase`
 and use `UsingDirectives.AddIfMissing` for using-directive insertion. The package
 reference stays `Microsoft.CodeAnalysis.CSharp.Workspaces`.
+
+#### E128.Analyzers.Union
+
+**Role:** The union rules, E128220 and E128221. They read the typed
+`UnionDeclarationSyntax` node, so the assembly references
+`Microsoft.CodeAnalysis.CSharp` 5.12. It packs into the
+`analyzers/dotnet/roslyn5.12/cs` folder only. The project references
+`E128.Analyzers` for `TypeSymbols` and `ClosedHierarchy`. See
+[package-layout.md](../dotnet/analyzers/package-layout.md).
 
 #### Publishing
 
 - Packaged via `dotnet pack`, pushed via `dotnet nuget push`
 - OIDC-based API key exchange (no stored secrets)
-- Triggered by pushes to `src/E128.Analyzers/**` or `src/E128.Analyzers.CodeFixers/**` on `main`
+- Triggered by pushes to `src/E128.Analyzers*/**` on `main`
 - Version check gates the push (skips if version already on nuget.org)
 
 ---

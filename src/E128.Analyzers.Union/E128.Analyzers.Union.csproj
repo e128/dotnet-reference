@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- C# 14 for the same reason as the base analyzer project: it stops the
+         formatter from rewriting sources into a C# 15 form. -->
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>E128.Analyzers</RootNamespace>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <!-- RSEXPERIMENTAL006: the union rule family reads the typed UnionDeclarationSyntax
+         node. The maintainer approved that suppression for the union rule family. -->
+    <!-- RS2007: the Roslyn release-tracking analyzer rejects valid shipped.md rows,
+         the same false positive that the package project suppresses. -->
+    <NoWarn>$(NoWarn);RSEXPERIMENTAL006;RS2007</NoWarn>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+  <!-- The union rules share TypeSymbols and ClosedHierarchy with the base build.
+       Both assemblies ship in the same Roslyn 5.12 package folder. -->
+  <ItemGroup>
+    <ProjectReference Include="..\E128.Analyzers\E128.Analyzers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="E128.Analyzers.Tests" />
+  </ItemGroup>
+
+  <!-- The package owns one pair of release files. Link them here so release
+       tracking covers this assembly without a second copy. -->
+  <ItemGroup>
+    <AdditionalFiles Include="..\E128.Analyzers\AnalyzerReleases.Shipped.md" Link="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="..\E128.Analyzers\AnalyzerReleases.Unshipped.md" Link="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+</Project>
