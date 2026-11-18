@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-18T00:04:03Z*
+*Updated: 2026-11-18T12:18:45Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -16,6 +16,8 @@ The 2026-11-05 external sweep is complete. See
 The twenty-practice performance sweep shipped fifteen rules, and its E128037
 extension also ships. See [performance-sweep.md](performance-sweep.md).
 The async sweep closed with no rule. See [async-sweep.md](async-sweep.md).
+The slopwatch read on 2026-11-18 ships no rule yet. See
+[slopwatch-sweep.md](slopwatch-sweep.md).
 
 The implicit state machine rule ships as E128218. See
 [implicit-state-machine-rule.md](../implicit-state-machine-rule.md).
@@ -137,10 +139,14 @@ register. See [index.md](index.md).
 ## Checked And Rejected
 
 These shapes already have an owner. A second rule would report the same line.
+The last two rows come from the slopwatch read, which checked the pragma and
+empty-catch shapes against the installed rule sets.
 
 | Rule                                                        | Already covered by                                  |
 | ----------------------------------------------------------- | --------------------------------------------------- |
 | `[SuppressMessage]` without a justification                 | E128173                                             |
+| Empty or comment-only `catch` block                         | S2486, and E128172 for a swallowed assertion        |
+| `#pragma warning disable` with no justification or restore  | E128047, E128055, E128065, E128094                  |
 | Shift count out of range                                    | S2183                                               |
 | Method length                                               | MA0051                                              |
 | Ignored `Try*` return value                                 | MA0060, with `enable_tryparse_pattern`              |

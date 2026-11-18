@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-18T09:54:14Z*
+*Updated: 2026-11-18T12:18:45Z*
 
 ## Generated Docs
 
@@ -45,6 +45,7 @@
 - [skipped-decisions.md](dotnet/analyzer-candidates/skipped-decisions.md): Every declined shape with its reason and site count
 - [guidance-reads.md](dotnet/analyzer-candidates/guidance-reads.md): Each read of the two guidance documents, the document-only rows, and the unshipped idea
 - [net11-conversion-sweep.md](dotnet/analyzer-candidates/net11-conversion-sweep.md): Open .NET 11 conversion shapes with call-site evidence
+- [slopwatch-sweep.md](dotnet/analyzer-candidates/slopwatch-sweep.md): 2026-11-18 slopwatch read, with one open and two Tier 2 shapes
 - [external-sweep.md](dotnet/analyzer-candidates/external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 - [performance-sweep.md](dotnet/analyzer-candidates/performance-sweep.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
 - [async-sweep.md](dotnet/analyzer-candidates/async-sweep.md): Closed async fire-and-forget sweep, every shape already owned
