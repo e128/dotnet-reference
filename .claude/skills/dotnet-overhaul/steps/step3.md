@@ -1,6 +1,6 @@
 # Step 3: Modernize
 
-Two areas: **Project Infrastructure** and **Language Usage**. Launch all 6 agents in a single parallel message, infrastructure and language analysis are independent reads and have no data dependencies between them.
+Two areas: **Project Infrastructure** and **Language Usage**. Launch all 7 agents (0, 0b, and 1 to 5) in a single parallel message, infrastructure and language analysis are independent reads and have no data dependencies between them.
 
 ---
 
@@ -87,7 +87,7 @@ For each Dockerfile:
 
 ## Language Usage
 
-Launch 5 `Explore` agents in parallel:
+Agents 1 to 5 are `Explore` agents. Launch them in parallel:
 
 **Agent 1 (Immutability conversions):**
 ```

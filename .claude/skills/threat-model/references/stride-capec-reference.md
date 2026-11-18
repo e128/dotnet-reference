@@ -65,9 +65,9 @@ Source: SEI/CMU (Carnegie Mellon Software Engineering Institute).
 | STRIDE Category        | CAPEC Mechanism of Attack              | Example CAPEC Patterns                      |
 | ---------------------- | -------------------------------------- | ------------------------------------------- |
 | Spoofing               | Engage in Deceptive Interactions       | CAPEC-151 (Identity Spoofing)               |
-| Tampering              | Manipulate Data Structures             | CAPEC-66 (SQL Injection), CAPEC-86 (XSS)   |
+| Tampering              | Manipulate Data Structures             | CAPEC-66 (SQL Injection), CAPEC-63 (XSS)   |
 | Repudiation            | Inject Unexpected Items                | CAPEC-93 (Log Injection)                    |
-| Information Disclosure | Collect and Analyze Information         | CAPEC-118 (Data Leakage), CAPEC-497 (Sniffing) |
+| Information Disclosure | Collect and Analyze Information         | CAPEC-118 (Data Leakage), CAPEC-157 (Sniffing) |
 | Denial of Service      | Abuse Existing Functionality           | CAPEC-125 (Flooding), CAPEC-130 (Excess Alloc) |
 | Elevation of Privilege | Subvert Access Control                 | CAPEC-122 (Privilege Abuse), CAPEC-233 (Escalation) |
 
@@ -97,7 +97,7 @@ Common patterns for .NET web APIs, CLI tools, libraries, and build-time (analyze
 | CAPEC ID  | Name                          | Relevant To              | Prerequisites                  |
 | --------- | ----------------------------- | ------------------------ | ------------------------------ |
 | CAPEC-66  | SQL Injection                 | EF Core / ADO.NET stores | User input reaches raw SQL     |
-| CAPEC-86  | XSS (Stored/Reflected)        | Web HTML/Razor output    | User content rendered          |
+| CAPEC-63  | XSS (Stored/Reflected)        | Web HTML/Razor output    | User content rendered          |
 | CAPEC-115 | Authentication Bypass         | API/web endpoints        | Auth mechanism present         |
 | CAPEC-118 | Data Leakage                  | Error/exception messages | Stack traces surfaced          |
 | CAPEC-125 | Flooding                      | Web endpoints            | No rate limiting               |
@@ -105,12 +105,12 @@ Common patterns for .NET web APIs, CLI tools, libraries, and build-time (analyze
 | CAPEC-137 | Parameter Injection           | CLI arg / process launch | Unsanitized args to `Process`  |
 | CAPEC-141 | Cache Poisoning               | Response/output caching  | Unkeyed/un-fingerprinted cache |
 | CAPEC-151 | Identity Spoofing             | Session / token auth     | Weak or unbound tokens         |
-| CAPEC-194 | Fake/Counterfeit Service      | Outbound HTTP deps       | DNS/TLS not validated          |
-| CAPEC-219 | XML External Entity (XXE)     | XML parsing              | DTD processing enabled         |
+| CAPEC-194 | Fake the Source of Data       | Outbound HTTP deps       | DNS/TLS not validated          |
+| CAPEC-221 | XML External Entity (XXE)     | XML parsing              | DTD processing enabled         |
 | CAPEC-242 | Code Injection                | Dynamic/reflection paths | User input in code paths       |
-| CAPEC-310 | SSRF                          | Server-side URL fetches  | User-controlled URLs           |
+| CAPEC-664 | SSRF                          | Server-side URL fetches  | User-controlled URLs           |
 | CAPEC-586 | Object Injection              | Deserialization          | Untrusted data deserialized    |
-| CAPEC-664 | Supply Chain Compromise       | NuGet packages           | Dependency on untrusted pkgs   |
+| CAPEC-437 | Supply Chain Compromise       | NuGet packages           | Dependency on untrusted pkgs   |
 
 ## DREAD-Lite Scoring Guide
 

@@ -1,5 +1,5 @@
 # Agent Worktree Builds
-*Updated: 2026-11-17T16:18:15Z*
+*Updated: 2026-11-18T09:52:20Z*
 
 A subagent spawned with worktree isolation lands under
 `.claude/worktrees/agent-<id>/`. That worktree holds a full copy of the
@@ -12,6 +12,14 @@ writes its own `artifacts/` directory. Concurrent builds do not share output.
 
 A build that finds current output in `artifacts/` skips compilation and
 reports success. That result does not show that the worktree compiles.
+
+## Build Servers and Node Reuse
+
+`Directory.Build.props` sets `UseSharedCompilation=true`, so a plain `dotnet build`
+can leave an MSBuild worker node and a Roslyn compiler server running after it
+exits. The wrapper scripts stop that. Run the wrappers, not raw `dotnet` commands,
+so a worktree build leaves no server behind. The flags and the reason for each
+live in [MSBuild Safeguards](shell-authoring.md#msbuild-safeguards).
 
 ## The Nested Globalconfig Collision
 

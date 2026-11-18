@@ -75,7 +75,7 @@ Slug: `simplify-{kebab-filename}`. After writing: `scripts/internal/stage.sh --i
 
 Skip if `--apply` was not in `$ARGUMENTS`, or if no H1/H3 findings exist.
 
-For each top-10 candidate with density >= 15% and at least one H1 or H3 finding, spawn `skill-self-updater` via the Agent tool using `--from-findings` mode. Map H3 → `GATE_HEAVY`, H1 → `SERIAL_BOTTLENECK`. Combine multiple findings per file into one dispatch. Re-score modified files after all dispatches complete.
+For each top-10 candidate with density >= 15% and at least one H1 or H3 finding, spawn `skill-self-updater` via the Agent tool using `--from-findings` mode. Map H3 → `GATE_HEAVY`, H1 → `PROCEDURAL_ENUM`. Combine multiple findings per file into one dispatch. Re-score modified files after all dispatches complete.
 
 ---
 

@@ -1,12 +1,12 @@
 # Keyword Shortcuts
 
 These user phrases always invoke the matching script or skill. This file owns
-phrase triggers only. `deterministic-scripts.md` owns command routing and the
-full flag list.
+phrase triggers and the routes of scripts that replace no raw command.
+`deterministic-scripts.md` owns routing for raw commands and the full flag list.
 
 | User says                                                           | Invokes                                      |
 | ------------------------------------------------------------------- | -------------------------------------------- |
-| `run tests` / `test this` / `run targeted tests` / `build and test` | `scripts/test.sh <FullyQualifiedClassName>`  |
+| `run tests` / `test this` / `run targeted tests` / `build and test` | `scripts/test.sh <ClassName>`                |
 | `run all tests` / `full test suite` / `test --all`                  | `scripts/test.sh --all`                      |
 | `build` / `compile` / `run build` / `build project`                 | `scripts/build.sh [--project <name>]`        |
 | `am I good` / `check this` / `verify changes`                       | `scripts/check.sh`                           |

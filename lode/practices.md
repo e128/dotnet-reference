@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-17T16:18:15Z*
+*Updated: 2026-11-18T09:49:53Z*
 
 ## Design Principles
 
@@ -32,8 +32,8 @@
 
 ## AI Assistant Preferences
 
-Canonical home for these preferences. AGENTS.md keeps only the
-high-frequency reminders (TDD, concurrent sessions, no time estimates).
+This section holds preference detail and Chat Style. AGENTS.md owns session policy.
+`.claude/rules/writing-style.md` owns artifact prose.
 See [AGENTS.md](../AGENTS.md) for the always-loaded subset.
 
 - Terse responses: code over explanation unless asked
@@ -66,7 +66,7 @@ See [AGENTS.md](../AGENTS.md) for the always-loaded subset.
 - The self-lint is `scripts/lode-check.sh`, which runs
   `.claude/skills/tech-writing/scripts/tech-writing-lint.sh` and the 250-line
   guard in one call. The lint flags the dash ban and the other mechanical
-  rules. The skill file lists the four judgment checks that the script cannot
+  rules. The skill file lists the judgment checks that the script cannot
   make. The rule applies to lines you write in the current turn. Never
   bulk-rewrite an untouched file to apply it.
 
@@ -103,8 +103,8 @@ artifacts stay STE per `.claude/rules/writing-style.md`.
 The verification sequence lives in `.claude/rules/quality-gates.md`.
 After a rename, search Lode files for the old name and update stale references.
 
-`--check` mode skips `jb` (no verify-only equivalent). Pass `--no-jb` to run dotnet format only.
-Requires `jb` from `JetBrains.ReSharper.GlobalTools` (`dotnet tool install -g JetBrains.ReSharper.GlobalTools`); gracefully skipped if not installed.
+`scripts/format.sh --check` skips `jb` because `jb` has no verify-only mode. Pass `--no-jb` to skip `jb` in any mode.
+The `jb` step needs `JetBrains.ReSharper.GlobalTools` (`dotnet tool install -g JetBrains.ReSharper.GlobalTools`). The script skips `jb` when it is not installed.
 
 ## JSON Test Data and the Format Gate
 
@@ -117,4 +117,4 @@ One literal token that holds malformed JSON fails the gate on every run.
 
 ## Cross-Platform File Paths
 
-macOS is case-insensitive; Linux CI is case-sensitive. Always use exact filesystem casing. After any rename, search for stale references.
+macOS is case-insensitive. Linux CI is case-sensitive. Always use exact filesystem casing. After any rename, search for stale references.

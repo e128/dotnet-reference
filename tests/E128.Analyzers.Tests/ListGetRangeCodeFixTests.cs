@@ -82,4 +82,46 @@ public sealed class ListGetRangeCodeFixTests
             """,
             expected: [new DiagnosticResult("E128084", DiagnosticSeverity.Warning).WithLocation(0)]);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_IndexerLoop_KeepsExistingInteropUsing()
+    {
+        return CodeFixTestRunner.RunAsync<ListGetRangeAnalyzer, ListGetRangeCodeFixProvider>(
+            """
+            using System.Collections.Generic;
+            using System.Runtime.InteropServices;
+
+            class C
+            {
+                int Total(List<string> items)
+                {
+                    int total = 0;
+                    {|#0:for (int i = 0; i < items.Count; i++)
+                    {
+                        total += items[i].Length;
+                    }|}
+                    return total;
+                }
+            }
+            """,
+            """
+            using System.Collections.Generic;
+            using System.Runtime.InteropServices;
+
+            class C
+            {
+                int Total(List<string> items)
+                {
+                    int total = 0;
+                    foreach (var i in CollectionsMarshal.AsSpan(items))
+                    {
+                        total += i.Length;
+                    }
+                    return total;
+                }
+            }
+            """,
+            expected: [new DiagnosticResult("E128084", DiagnosticSeverity.Warning).WithLocation(0)]);
+    }
 }

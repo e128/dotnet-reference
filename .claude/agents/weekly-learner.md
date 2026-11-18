@@ -6,7 +6,7 @@ description: >
   inefficiencies, and learning opportunities. Reads session history and git log
   to identify what keeps happening, what takes too long, and what should be
   automated. Produces actionable recommendations for new skills, agent improvements,
-  and configuration updates. Repo-agnostic, works in any project with .claude/.
+  and configuration updates.
   For quarterly/comprehensive reviews, invoke with --days 90.
   Three modes: a 7-day pattern digest (default), a live current-session pass
   (--current), and a 48h token-waste pass that creates scored plans (--tokens).
@@ -147,7 +147,7 @@ Find scriptable ways to cut token use by creating or editing `scripts/*.sh`. Use
 
 ## Phase 5: Report
 
-Write the full report to `plans/weekly-digest-{date}.md` (if `lode/` exists) or `.claude/tmp/weekly-learner/weekly-digest.md` otherwise:
+Write the full report to `plans/weekly-digest-{date}.md`:
 
 ```markdown
 # Weekly Learning Digest
@@ -175,7 +175,7 @@ Write findings to `.claude/tmp/weekly-learner/memory.md` with sections: Active P
 - **Do not re-report known patterns**: check memory first, skip patterns already tracked unless frequency changed significantly
 - **Actionable recommendations only**: "code could be better" is not actionable; "create /quick-fix skill to chain format+build+commit" is
 - **Respect dismissed patterns**: if a recommendation was previously dismissed, do not re-suggest unless the evidence has significantly changed (2x+ frequency increase)
-- **Repo-agnostic**: never assume specific directory structures (lode/, etc.) exist. Always detect and adapt
+- **This repository only**: the session scripts under `scripts/` are required.
 - **Plans over reports for non-trivial work**: a recommendation that meets the Phase 4.5 criteria must produce a plan, not just a text suggestion
 - **No duplicate plans**: check `plans/` before creating. If a plan already covers the pattern, add a note in the report and skip
 - **Trivial and dead-weight items: apply inline**: do not create a plan for a one-line config change. Do it during this run. Report a file deletion for user approval instead of deleting it

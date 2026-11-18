@@ -56,6 +56,9 @@ After an agent definition changes, run `scripts/internal/opencode-agents.sh sync
 - Write concise imperative commit summaries.
 - Do not name Claude Code or Anthropic in a commit message or PR body. Add no attribution trailer. `scripts/internal/commit.sh` rejects the phrase.
 - Squash only unpushed commits. Preserve pushed history and ship one clean commit per PR.
+- Include these results under Tests and Tooling in each PR description. Use `scripts/test.sh` and report the revision and test scope.
+  - **Architecture tests:** Report passed and total counts. Describe changes to production projects, `ProjectReference` edges, baselines, rules, and exclusions, with the reason for each. Compare the evaluated graph with the captured baseline when project or reference files change, because frozen tests alone do not discover every graph change.
+  - When a check did not run, write "not run" and the reason. Never present stale evidence as current.
 - Run `scripts/status.sh` before staging. Treat concurrent staged, added, or removed files as existing work.
 - Preserve unrelated work. Take no destructive, production, or external action beyond the authorization given.
 - Follow `.claude/rules/auto-approvals.md` for action approval and `.claude/rules/security.md` for privacy.

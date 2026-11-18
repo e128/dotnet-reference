@@ -45,7 +45,7 @@ collect_records() {
     root="$(find_repo_root)"
     target="$(find_solution)"
     # Warnings included (no -clp:ErrorsOnly). Build failure is expected — swallow it.
-    output="$(dotnet build "$target" --nologo 2>&1 || true)"
+    output="$(dotnet build "$target" --nologo "${DOTNET_SAFEGUARDS[@]}" 2>&1 || true)"
     printf '%s\n' "$output" | while IFS= read -r line; do
         # Trim leading whitespace MSBuild adds to diagnostic lines.
         line="${line#"${line%%[![:space:]]*}"}"

@@ -58,11 +58,11 @@ mkdir -p "$RESULTS_DIR"
 if [[ "$JSON" == false ]]; then
     info "Building $SOLUTION ($CONFIGURATION)"
 fi
-if ! dotnet build "$SOLUTION" --configuration "$CONFIGURATION" --nologo -clp:ErrorsOnly; then
+if ! dotnet build "$SOLUTION" --configuration "$CONFIGURATION" --nologo -clp:ErrorsOnly "${DOTNET_SAFEGUARDS[@]}"; then
     fail_coverage "Build failed"
 fi
 
-TEST_ARGS=(--solution "$SOLUTION" --configuration "$CONFIGURATION" --no-build)
+TEST_ARGS=(--solution "$SOLUTION" --configuration "$CONFIGURATION" --no-build "${DOTNET_TEST_SAFEGUARDS[@]}")
 [[ -n "$FILTER" ]] && TEST_ARGS+=(--filter-trait "$FILTER")
 TEST_ARGS+=(--coverage --coverage-output-format cobertura --coverage-settings "$CONFIG" --results-directory "$RESULTS_DIR")
 

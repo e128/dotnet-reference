@@ -1,9 +1,9 @@
 # Instruction File Maintenance
-*Updated: 2026-11-17T16:03:25Z*
+*Updated: 2026-11-18T09:51:08Z*
 
 `AGENTS.md` and `CLAUDE.md` are a memory of failures. A line earns a place only
 when a model failed once and the line stops the repeat. This file owns the
-maintenance method. The tier structure and the portable-versus-Claude-only map
+maintenance method. The rule ownership list and the portable-versus-Claude-only map
 live in [claude-code-maintenance.md](claude-code-maintenance.md).
 
 ## Rules
@@ -47,5 +47,5 @@ Stop when a fresh session completes the task with zero repeated failures.
 
 ## Related
 
-- [claude-code-maintenance.md](claude-code-maintenance.md): tier structure,
-  rule ownership, and the which-home test.
+- [claude-code-maintenance.md](claude-code-maintenance.md): rule ownership and
+  the portable-versus-Claude-only map.

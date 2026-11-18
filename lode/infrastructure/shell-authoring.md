@@ -1,5 +1,5 @@
 # Shell Authoring
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-18T09:21:59Z*
 
 Tool prerequisites and the shell lint gate for this repository. Performance
 rules and the Bash version floor live in
@@ -67,6 +67,17 @@ output:
 ```bash
 scripts/help.sh | rg <script-name>
 ```
+
+## MSBuild Safeguards
+
+Every script that runs a build, test, or restore command must stop MSBuild worker nodes and the Roslyn compiler server from outliving the command. `scripts/lib.sh` owns the settings.
+
+- `MSBUILDDISABLENODEREUSE=1` is exported on source. It covers every MSBuild process, including nested ones.
+- `DOTNET_SAFEGUARDS` holds `-nodeReuse:false -p:UseSharedCompilation=false`. Pass it to `dotnet build` and `dotnet restore`.
+- `DOTNET_TEST_SAFEGUARDS` holds `-p:UseSharedCompilation=false`. Pass it to `dotnet test`. Under Microsoft.Testing.Platform, `dotnet test` forwards `-nodeReuse:false` to the test app, which rejects it and runs zero tests.
+- `Directory.Build.props` sets `UseSharedCompilation=true`. A command-line property overrides it, and an environment variable does not.
+
+A forced rebuild takes longer without the shared compiler server. A new script that calls `dotnet build`, `dotnet test`, or `dotnet restore` passes the matching array.
 
 ## Fixing a Finding
 

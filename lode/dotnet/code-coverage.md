@@ -1,5 +1,5 @@
 # Code Coverage
-*Updated: 2026-11-17T16:18:15Z*
+*Updated: 2026-11-18T09:50:29Z*
 
 Coverage collects in process through the Microsoft.Testing.Platform extension.
 The CI gate requires 80 percent line coverage in total and in every measured
@@ -35,6 +35,13 @@ dotnet test --solution E128.Reference.slnx \
   --results-directory ./test-results
 ```
 
+The script also passes `DOTNET_SAFEGUARDS` to the build and
+`DOTNET_TEST_SAFEGUARDS` to the test run. Both arrays come from `scripts/lib.sh`.
+`--filter TRAIT` replaces the default `Category=CI` trait.
+
+The script deletes the git-ignored `test-results` folder at the start of each
+run. A stale module report therefore cannot satisfy the gate.
+
 The extension writes one GUID-named Cobertura file per test module. Consumers
 read the whole `test-results` directory, then merge classes across reports.
 
@@ -52,6 +59,7 @@ images that stall the analyzer test host under instrumentation.
   whole `E128.Reference.Web` assembly.
 - `GeneratedCodeAttribute` stays excluded. It removes the untestable top-level
   builder and host boilerplate.
+- `ExcludeFromCodeCoverageAttribute` stays excluded.
 - The extension writes one report per module. A fixed output name makes modules
   overwrite each other, so the scripts read a glob.
 
@@ -149,6 +157,7 @@ dotnet tool install --global dotnet-reportgenerator-globaltool
 bash scripts/coverage.sh                         # Run and open the HTML report
 bash scripts/coverage.sh --no-open               # Generate without opening
 bash scripts/coverage.sh --configuration Release # Collect from a Release build
+bash scripts/coverage.sh --filter "Category=CI"  # Set the trait filter
 bash scripts/coverage.sh --json                  # Totals as JSON
 bash scripts/coverage-areas.sh --min-line 80 --min-assembly 80
 bash scripts/coverage-areas.sh --source-file Greeter.cs --min-line 80

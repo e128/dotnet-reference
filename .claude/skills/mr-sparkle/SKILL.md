@@ -187,7 +187,7 @@ Include each proposed correction in Reviewer Notes for a separate, approved main
 
 ## References
 
-- [references/review-rubrics.md](references/review-rubrics.md): seven rubric checklists and the test quality rubric
+- [references/review-rubrics.md](references/review-rubrics.md): the review rubric checklists and the test quality rubric
 - [references/cross-file-consistency.md](references/cross-file-consistency.md): multi-file consistency rubric
 - [references/perf-patterns.md](references/perf-patterns.md): the anti-pattern catalog for `--perf`
 - [references/clanker-patterns.md](references/clanker-patterns.md): the AI-slop pattern catalog

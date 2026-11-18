@@ -49,9 +49,9 @@ D reads the refs that C just refreshed, so C must complete first.
 
 **Then:**
 - If `cs_changed == 0` AND `--skip-tests` not explicit → auto-enable `--skip-tests`, log: "No .cs files changed, skipping build+test". Build+test covers .NET only, so any change set with zero `.cs` files (docs, config, scripts, lode) cannot change its outcome. Classification alone is not the trigger: a `mixed` set with no `.cs` files still skips.
-- Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B), `ahead`, `unpushed`, `upstream` (from C, `scripts/branch.sh`), `has_changes` (from A: `staged + unstaged + untracked > 0`)
+- Cache: `cs_changed`, `analyzers_or_scripts_changed` (from B), `ahead`, `unpushed`, `upstream` (from D, `scripts/branch.sh`), `has_changes` (from A: `staged + unstaged + untracked > 0`)
 
-**`unpushed` (from C) is not optional to check.** A branch can have a clean working tree and still carry local commits the remote has never seen (no upstream configured, or commits made after the last push). `unpushed > 0` always means step 2's push (and PR creation) must run, even when there is nothing new to commit.
+**`unpushed` (from D) is not optional to check.** A branch can have a clean working tree and still carry local commits the remote has never seen (no upstream configured, or commits made after the last push). `unpushed > 0` always means step 2's push (and PR creation) must run, even when there is nothing new to commit.
 
 **Staleness guard (from D).** A branch cut from a stale local `main` produces a
 pull request that conflicts on every file both sides touched. Read `behind`

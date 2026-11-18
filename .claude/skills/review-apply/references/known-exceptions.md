@@ -3,7 +3,7 @@
 Reference data for code-review agents. Patterns here are legitimate and should not be flagged as issues.
 
 **Test conventions (project-wide):**
-- Non-sealed `public class` test classes: CA1515 is relaxed for test code. Not a violation.
+- Public sealed test classes: CA1515 is relaxed for test code. Not a violation. An unsealed test class still breaches E128005.
 - Class-level `[Trait("Category", "CI")]` without per-method decoration: acceptable house style. Downgrade to LOW advisory.
 
 **Roslyn navigator:**

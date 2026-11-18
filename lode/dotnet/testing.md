@@ -1,5 +1,5 @@
 # .NET 11 Testing
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-18T09:52:20Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -57,12 +57,20 @@ scripts/test.sh --all
 # Custom trait filter
 scripts/test.sh --trait "Category=Podman"
 
+# Print the command without running it
+scripts/test.sh --dry-run GreeterTests
+
 # Terse output is the default (--json is a legacy no-op alias)
 scripts/test.sh --json
 
-# One framework leg of the multi-target analyzer test project
+# Build and test only the analyzer test project for one framework
 scripts/test.sh --all --framework net11.0
 ```
+
+### MSBuild Safeguards
+
+The test scripts stop MSBuild worker nodes and the Roslyn compiler server from outliving a command.
+The test run under MTP takes a reduced flag set. See [MSBuild Safeguards](../infrastructure/shell-authoring.md#msbuild-safeguards).
 
 ### MTP Arguments
 
@@ -101,7 +109,7 @@ Five test projects, all sharing `<IsTestProject>true</IsTestProject>` (inherits 
 | `E128.Reference.Tests`      | Web integration tests                   | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Extensions.Diagnostics.Testing`                    |
 | `E128.Reference.Core.Tests` | Core library unit tests                 | `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`                 |
 | `E128.Reference.Cli.Tests`  | CLI unit tests                          | `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`                 |
-| `Architecture.Tests`        | ArchUnitNET structural invariant tests  | `TngTech.ArchUnitNET.xUnitV3`                                                                     |
+| `Architecture.Tests`        | ArchUnitNET structure and inventory     | `TngTech.ArchUnitNET.xUnitV3`                                                                     |
 | `E128.Analyzers.Tests`      | Roslyn analyzer + code fix verification | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing` |
 
 Minimal `.csproj` template (all versions from CPM):

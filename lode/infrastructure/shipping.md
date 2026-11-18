@@ -1,7 +1,7 @@
 # Shipping
-*Updated: 2026-11-17T13:17:39Z*
+*Updated: 2026-11-18T09:50:29Z*
 
-`scripts/verify-and-ship.sh` ships the current feature branch as one squashed commit. It formats, bumps the version, runs the canonical check, squashes, scans, commits, and pushes. The script runs only when an operator asks for it, because it commits and pushes.
+`scripts/verify-and-ship.sh` ships the current feature branch as one squashed commit. It formats, bumps the version, runs the canonical check, squashes, scans, commits, and pushes. The script runs only when an operator asks for it, because it commits and pushes. The `/yeet` skill does not call it.
 
 ## Contract
 
@@ -45,6 +45,8 @@ The diagram shows seven steps after validation. Each step runs only when the ste
 ## Version Inference
 
 `scripts/internal/version-bump.sh` picks the bump level from the commit subjects that exist before the squash, the release-note rows, and the `.cs` changes since the merge base. The ship script passes the final message with `--message`. The bump script treats it as one more commit, so a `feat:` or breaking marker in the final message raises the bump level. Use `--no-version-bump` to skip the bump.
+
+The ship script bumps `E128.Analyzers` only. The bump script computes the target from the version on the merge base, so a repeat run gives the same version. A branch with no `.cs` change since the merge base skips the bump.
 
 ## Validation
 
