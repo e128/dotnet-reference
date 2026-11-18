@@ -31,8 +31,8 @@ No code fix. The span or direct-index shape is a caller choice.
 Flags `Activator.CreateInstance` inside a loop body. Reflection runs on every
 iteration.
 
-A `for` loop with a literal bound stays silent, because the total work is
-bounded.
+A `for` loop with a compile-time constant bound stays silent, because the total
+work is bounded.
 
 No code fix. The cached factory shape is a caller decision.
 

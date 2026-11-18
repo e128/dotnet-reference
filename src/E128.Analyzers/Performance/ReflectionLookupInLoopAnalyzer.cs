@@ -66,7 +66,8 @@ public sealed class ReflectionLookupInLoopAnalyzer : DiagnosticAnalyzer
         }
 
         var body = LoopContext.FindEnclosingLoopBody(invocation);
-        if (body is null || LoopContext.HasConstantBound(invocation))
+        if (body is null
+            || LoopContext.HasConstantBound(invocation, context.SemanticModel, context.CancellationToken))
         {
             return;
         }

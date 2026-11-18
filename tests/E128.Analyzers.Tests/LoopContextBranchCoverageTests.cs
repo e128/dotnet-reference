@@ -27,6 +27,7 @@ public sealed class LoopContextBranchCoverageTests
             int[] items = new int[4];
             (int, int)[] pairs = new (int, int)[4];
             string? name;
+            const int Hops = 5;
             void Use(int value) { }
 
         """;
@@ -245,6 +246,8 @@ public sealed class LoopContextBranchCoverageTests
     [InlineData("for (var i = 0; i < 10; i++) { Use(1); }", true)]
     [InlineData("for (var i = 0; i <= 10; i++) { Use(1); }", true)]
     [InlineData("for (var i = 10; 10 >= i; i--) { Use(1); }", true)]
+    [InlineData("for (var i = 0; i < Hops; i++) { Use(1); }", true)]
+    [InlineData("for (var i = 0; i < Hops * 2; i++) { Use(1); }", true)]
     [InlineData("for (var i = 0; i < items.Length; i++) { Use(1); }", false)]
     [InlineData("for (var i = 0; i != 10; i++) { Use(1); }", false)]
     [InlineData("for (var i = 0; i < 10 && i < 20; i++) { Use(1); }", false)]
@@ -254,9 +257,9 @@ public sealed class LoopContextBranchCoverageTests
     [InlineData("for (var i = 0; i < 10; i++) { Action a = () => Use(1); }", false)]
     public void HasConstantBound_ReadsTheNearestForCondition(string statement, bool expected)
     {
-        var (root, _) = Parse("void M() { " + statement + " }");
+        var (root, model) = Parse("void M() { " + statement + " }");
         var node = Find<InvocationExpressionSyntax>(root, "Use(1)");
-        Assert.Equal(expected, LoopContext.HasConstantBound(node));
+        Assert.Equal(expected, LoopContext.HasConstantBound(node, model, TestContext.Current.CancellationToken));
     }
 
     [Fact]

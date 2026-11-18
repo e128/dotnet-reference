@@ -173,6 +173,8 @@ that is missing from either file blocks the ship, even on a docs-only change set
 | 3.1.1   | (none)        | E128220 also reports a when-guarded discard or var arm. E128221 names a case pattern only. Recorded as a `Changed Rules` section in `Shipped.md`. |
 | 3.2.0   | E128228       | Token validation flag set to constant false. Security, Warning. |
 | 3.3.0   | E128229-231   | Middleware next delegate, static assets, and split enumeration. E128135 and E128084 gain a second detection shape. |
+| 3.4.0   | E128232       | The `dynamic` keyword defeats compile-time type checking. Design, Warning. |
+| 3.4.1   | (none)        | `LoopContext.HasConstantBound` accepts a compile-time constant bound, so the five loop-cost rules stay silent on a bound such as `const int MaxHops = 5`. Accuracy fix, no rule set change. |
 
 ## Sources
 

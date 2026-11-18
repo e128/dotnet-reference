@@ -619,7 +619,7 @@ Flags `Task.Run(async () => ...)`. For I/O-bound work, the thread pool hop is un
 
 Flags `Task.WhenAll(items.Select(async ...))` where the collection is unbounded. This fans out unlimited concurrent operations. Use `Parallel.ForEachAsync` or batch with a `SemaphoreSlim`.
 
-The rule also flags a `Task.Run` call added to a task list inside a loop, then awaited with `Task.WhenAll`. That is the same unbounded fan-out with a different syntax. A `SemaphoreSlim.WaitAsync` throttle in the `Task.Run` lambda clears the report. A `Task.WaitAsync` timeout does not. A loop with a numeric literal bound clears the report, because its fan-out is bounded.
+The rule also flags a `Task.Run` call added to a task list inside a loop, then awaited with `Task.WhenAll`. That is the same unbounded fan-out with a different syntax. A `SemaphoreSlim.WaitAsync` throttle in the `Task.Run` lambda clears the report. A `Task.WaitAsync` timeout does not. A loop with a compile-time constant bound clears the report, because its fan-out is bounded.
 
 ### E128038 &mdash; Task.WhenAll missing CancellationToken
 
@@ -2820,7 +2820,7 @@ The rule reads `SendAsync`, `GetAsync`, `PostAsync`, `PutAsync`, `DeleteAsync`,
 and `PatchAsync`. The receiver must derive from `HttpClient`.
 
 Exclusions:
-- A `for` loop with a numeric literal bound.
+- A `for` loop with a compile-time constant bound.
 - A request in a loop header, which runs once.
 - A loop body that calls `Task.Delay` or `Thread.Sleep`, which marks a retry or
   poll loop.
@@ -2839,7 +2839,7 @@ The rule reads `ExecuteNonQueryAsync`, `ExecuteScalarAsync`, and
 synchronous method shape, so this rule does not report it.
 
 Exclusions:
-- A `for` loop with a numeric literal bound.
+- A `for` loop with a compile-time constant bound.
 - A call in a loop header.
 - A loop body that calls `Task.Delay` or `Thread.Sleep`.
 
@@ -2899,7 +2899,7 @@ The rule reads `GetProperty`, `GetMethod`, `GetField`, `GetMember`,
 Exclusions:
 - A lookup that references a loop variable, as in `item.GetType()`. The receiver
   changes per iteration, so a hoist is wrong.
-- A `for` loop with a literal bound.
+- A `for` loop with a compile-time constant bound.
 - A lookup outside a loop. E128090 owns test methods.
 
 No code fix. The hoisted declaration needs a caller-chosen name.
@@ -2975,7 +2975,7 @@ No code fix. The span or direct-index shape is a caller choice.
 Flags `Activator.CreateInstance` inside a loop body. Reflection runs on every
 iteration.
 
-A `for` loop with a literal bound stays silent, because the total work is
+A `for` loop with a compile-time constant bound stays silent, because the total work is
 bounded.
 
 No code fix. The cached factory shape is a caller decision.

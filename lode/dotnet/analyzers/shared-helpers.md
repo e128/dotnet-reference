@@ -49,7 +49,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `LoopContext.FindEnclosingLoop` | Returns the enclosing loop statement. |
 | `LoopContext.IsInsideLoopBody` | True when the node runs once per iteration. A `for` initializer or a `foreach` source does not count. A `for` condition and incrementor do count. |
 | `LoopContext.IsWithinAnyLoop` | True for any enclosing loop, including a header. Stops at a method, constructor, accessor, operator, or local function. |
-| `LoopContext.HasConstantBound` | True when the nearest `for` loop has a numeric literal bound. |
+| `LoopContext.HasConstantBound` | True when the nearest `for` loop has a compile-time constant bound. |
 | `LoopContext.ReferencesLoopVariable` | True when the node reads a value that changes per iteration. |
 | `LoopContext.ContainsWaitCall` | True when the loop body waits between iterations. |
 | `FileReadMethods.Contains` | True when a `System.IO.File` member reads a file. The TOCTOU and process-output rules share the set. |

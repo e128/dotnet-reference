@@ -14,7 +14,7 @@ Flags linear-time methods (`.Contains`, `.Any`, `.IndexOf`, `.Remove`, `.Exists`
 - `System.String` receivers: `string.Contains(substring)` and `string.IndexOf(substring)` are O(n) substring operations, not collection lookups. `System.String` implements `IEnumerable<char>`, which would otherwise cause false positives
 - O(1) lookup types: `ISet<T>`, `IReadOnlySet<T>`, `IDictionary<K,V>`, `IReadOnlyDictionary<K,V>`, `FrozenSet<T>`, `FrozenDictionary<K,V>`, `ImmutableHashSet<T>`, `ImmutableDictionary<K,V>`, checked via `SymbolEqualityComparer` against types resolved at `CompilationStart`
 - An `IQueryable<T>` receiver, because the cost is a database round trip and not an in-memory scan. E128180 owns that shape.
-- Constant-bound `for` loops (for example `for (int i = 0; i < 10; i++)`): literal bound means total work is bounded
+- Constant-bound `for` loops (for example `for (int i = 0; i < 10; i++)`): compile-time constant bound means total work is bounded
 - Also detects `.Where(...).Count()` chains (linear scan + count = O(n) per call)
 
 **Code fix**: For `.Contains` and `.Any`, inserts `var xSet = x.ToHashSet();` before the enclosing loop and rewrites the receiver. Other methods lack automatic fixes (remediation is context-specific). Ensures `using System.Linq;` is present.
@@ -107,7 +107,7 @@ Flags an `HttpClient` request call inside a loop body. Methods: `SendAsync`,
 `GetAsync`, `PostAsync`, `PutAsync`, `DeleteAsync`, `PatchAsync`. The receiver
 must derive from `HttpClient`. The rule does not require an `await`.
 
-Exclusions: a `for` loop with a numeric literal bound, a call in a loop header, a
+Exclusions: a `for` loop with a compile-time constant bound, a call in a loop header, a
 body that calls `Task.Delay` or `Thread.Sleep` (a retry or poll loop), and a
 lambda or local function body.
 
@@ -120,7 +120,7 @@ Flags a `DbCommand` execution inside a loop body. Methods:
 must derive from `DbCommand`. The rule does not require an `await`.
 
 E128093 owns the synchronous method shape, so this rule stays silent on it.
-Exclusions: a `for` loop with a numeric literal bound, a call in a loop header,
+Exclusions: a `for` loop with a compile-time constant bound, a call in a loop header,
 and a body that calls `Task.Delay` or `Thread.Sleep`.
 
 No code fix. The batch boundary depends on the transaction scope.
@@ -165,7 +165,7 @@ call in its receiver or argument, and a lookup in a body-declared local. The
 value changes per iteration, so a hoist would be wrong. E128090 owns test
 methods.
 
-Exclusions: a `for` loop with a numeric literal bound.
+Exclusions: a `for` loop with a compile-time constant bound.
 
 No code fix. The hoisted declaration needs a caller-chosen name.
 

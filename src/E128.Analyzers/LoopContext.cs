@@ -114,13 +114,16 @@ internal static class LoopContext
 
     /// <summary>
     ///     Returns true when the nearest enclosing <see langword="for" /> loop has a
-    ///     numeric literal bound. The total work is then bounded, so the cost does not
-    ///     grow with input.
+    ///     compile-time constant bound. The total work is then bounded, so the cost does
+    ///     not grow with input.
     /// </summary>
-    internal static bool HasConstantBound(SyntaxNode node)
+    internal static bool HasConstantBound(
+        SyntaxNode node,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
         return FindLoopStatement(node, stopAtAnonymousFunctions: true) is ForStatementSyntax forStatement
-               && HasNumericBound(forStatement.Condition);
+               && HasConstantBoundCondition(forStatement.Condition, semanticModel, cancellationToken);
     }
 
     /// <summary>
@@ -245,7 +248,10 @@ internal static class LoopContext
         };
     }
 
-    private static bool HasNumericBound(ExpressionSyntax? condition)
+    private static bool HasConstantBoundCondition(
+        ExpressionSyntax? condition,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
         if (condition is not BinaryExpressionSyntax binary)
         {
@@ -258,13 +264,8 @@ internal static class LoopContext
                                 || binary.IsKind(SyntaxKind.GreaterThanExpression)
                                 || binary.IsKind(SyntaxKind.GreaterThanOrEqualExpression);
         var bound = isAscending ? binary.Right : binary.Left;
-        return isBoundComparison && IsNumericLiteral(bound);
-    }
-
-    private static bool IsNumericLiteral(ExpressionSyntax expression)
-    {
-        return expression is LiteralExpressionSyntax literal
-               && literal.IsKind(SyntaxKind.NumericLiteralExpression);
+        return isBoundComparison
+               && semanticModel.GetConstantValue(bound, cancellationToken).HasValue;
     }
 
     private static bool IsBoundary(SyntaxNode node, bool stopAtAnonymousFunctions)

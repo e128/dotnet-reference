@@ -61,7 +61,7 @@ public sealed class ActivatorInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (LoopContext.HasConstantBound(invocation))
+        if (LoopContext.HasConstantBound(invocation, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
