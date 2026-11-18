@@ -28,11 +28,11 @@ if [[ -n "$FRAMEWORK" ]]; then
     # A framework leg runs one project. A solution build with -f would push the
     # single TFM into every project, including the netstandard2.0 analyzers.
     TARGET_PROJECT="$(find_repo_root)/tests/E128.Analyzers.Tests/E128.Analyzers.Tests.csproj"
-    BUILD_CMD=(dotnet build "$TARGET_PROJECT" --nologo -clp:ErrorsOnly -f "$FRAMEWORK")
-    TEST_HEAD=(dotnet test "$TARGET_PROJECT" --no-build -f "$FRAMEWORK")
+    BUILD_CMD=(dotnet build "$TARGET_PROJECT" --nologo -clp:ErrorsOnly -f "$FRAMEWORK" "${DOTNET_SAFEGUARDS[@]}")
+    TEST_HEAD=(dotnet test "$TARGET_PROJECT" --no-build -f "$FRAMEWORK" "${DOTNET_TEST_SAFEGUARDS[@]}")
 else
-    BUILD_CMD=(dotnet build "$SOLUTION" --nologo -clp:ErrorsOnly)
-    TEST_HEAD=(dotnet test --solution "$SOLUTION" --no-build)
+    BUILD_CMD=(dotnet build "$SOLUTION" --nologo -clp:ErrorsOnly "${DOTNET_SAFEGUARDS[@]}")
+    TEST_HEAD=(dotnet test --solution "$SOLUTION" --no-build "${DOTNET_TEST_SAFEGUARDS[@]}")
 fi
 
 # Build first (debug config for fast iteration)

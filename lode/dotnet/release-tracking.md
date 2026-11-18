@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-18T00:22:59Z*
+*Updated: 2026-11-18T09:50:29Z*
 
 ## Overview
 
@@ -109,7 +109,7 @@ that is missing from either file blocks the ship, even on a docs-only change set
 
 ## E128.Analyzers Status
 
-- `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content), `RS0016`, `RS0017`, and `NU5128`
+- `src/E128.Analyzers/E128.Analyzers.csproj` suppresses `RS2007` (comment: Roslyn 4.14.0 meta-analyzer rejects valid content), `NU5128`, and `RSEXPERIMENTAL006` (the union rule family reads a typed syntax node)
 - Files registered as `<AdditionalFiles>` in csproj
 - Published to NuGet: https://www.nuget.org/packages/E128.Analyzers/
 - `Shipped.md` lists all shipped rules across release sections; run `scripts/internal/analyzer-release-check.sh` for current shipped/unshipped/source ID counts
@@ -170,6 +170,7 @@ that is missing from either file blocks the ship, even on a docs-only change set
 | 2.11.0  | E128223-226   | Hand-rolled process capture, read-only `MemoryStream`, closed base with members, and comparer set construction. E128220 also reports a closed-hierarchy switch that ends in a discard arm. |
 | 3.0.0   | (none)        | E128160 removed. E128223 reports the read-then-wait shape that replaced the hand-rolled process capture. |
 | 3.1.0   | E128227       | HTTP body read without a size bound. Security, Warning. |
+| 3.1.1   | (none)        | E128220 also reports a when-guarded discard or var arm. E128221 names a case pattern only. Recorded as a `Changed Rules` section in `Shipped.md`. |
 | 3.2.0   | E128228       | Token validation flag set to constant false. Security, Warning. |
 | 3.3.0   | E128229-231   | Middleware next delegate, static assets, and split enumeration. E128135 and E128084 gain a second detection shape. |
 

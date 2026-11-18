@@ -16,7 +16,7 @@ known threats. Always confirm against the current code, these are starting point
 | Minimal-API endpoints  | Process         | All six STRIDE categories apply                        |
 | Request body / models  | Data Flow       | Injection, parameter tampering, mass assignment        |
 | Route / query params   | Data Flow       | Tampering, IDOR, path traversal                        |
-| Outbound HTTP calls    | Data Flow       | SSRF (CAPEC-310), counterfeit service (CAPEC-194)      |
+| Outbound HTTP calls    | Data Flow       | SSRF (CAPEC-664), fake the source of data (CAPEC-194)    |
 | Error responses        | Data Flow       | Stack-trace / detail leakage (CAPEC-118)               |
 | Response/output cache  | Data Store      | Cache poisoning (CAPEC-141)                            |
 | Repository / DbContext | Data Store      | SQL injection if raw SQL, IDOR                         |
@@ -71,7 +71,7 @@ analyzer's own robustness, not a runtime service.
 
 | Surface                   | Element Type    | Key Threats                                          |
 | ------------------------- | --------------- | ---------------------------------------------------- |
-| Published NuGet package   | Data Store      | Supply-chain compromise (CAPEC-664), tampered package |
+| Published NuGet package   | Data Store      | Supply-chain compromise (CAPEC-437), tampered package |
 | Analyzer execution        | Process         | DoS: unbounded work / crash on malformed syntax tree |
 | Code-fix providers        | Process         | Tampering: a buggy fix silently corrupts source      |
 | Analyzer file I/O / network| Data Flow      | EoP: analyzers must not read files or call the network |

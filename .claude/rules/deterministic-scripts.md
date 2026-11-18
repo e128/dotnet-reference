@@ -1,8 +1,9 @@
 # Deterministic Scripts
 
 Route every repeated operation through a canonical script. Never run the raw
-command when a script exists. This table is the single owner of command
-routing. `keyword-shortcuts.md` owns user-phrase triggers only.
+command when a script exists. This table owns routing for the raw commands it
+lists. `keyword-shortcuts.md` owns user-phrase triggers and the routes of scripts
+that replace no raw command.
 
 Scripts that support `--json` print structured output. `build.sh` and `test.sh`
 print terse JSON by default. Use the script help for supported flags.

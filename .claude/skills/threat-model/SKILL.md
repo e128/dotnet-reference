@@ -176,5 +176,5 @@ See [references/report-format.md](references/report-format.md) for the full temp
   security-sensitive changes
 - **security-review skill**: code-level OWASP scanning of the current diff. Complementary to
   this skill's design-level analysis
-- **dep-check** (`scripts/dep-check.sh`): supply-chain threats (CAPEC-664) should be confirmed
+- **dep-check** (`scripts/dep-check.sh`): supply-chain threats (CAPEC-437) should be confirmed
   against vulnerable/outdated package output

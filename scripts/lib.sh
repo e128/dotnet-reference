@@ -37,6 +37,19 @@ warn()  { printf "${YELLOW}⚠${RESET} %s\n" "$*" >&2; }
 err()   { printf "${RED}✗${RESET} %s\n" "$*" >&2; }
 dim()   { printf "${DIM}%s${RESET}\n" "$*"; }
 
+# ── MSBuild safeguards ───────────────────────────
+# These settings stop MSBuild worker nodes and the Roslyn compiler server from outliving a command.
+# Directory.Build.props sets UseSharedCompilation=true. A command-line property overrides it, and an
+# environment variable does not, so every build, test, and restore call passes the property.
+# The environment variable covers node reuse for every MSBuild process, including nested ones.
+export MSBUILDDISABLENODEREUSE=1
+# shellcheck disable=SC2034 # Used by the sourcing scripts.
+DOTNET_SAFEGUARDS=(-nodeReuse:false -p:UseSharedCompilation=false)
+# Under Microsoft.Testing.Platform, dotnet test forwards -nodeReuse:false to the test app, which rejects
+# it. Tests take the property only.
+# shellcheck disable=SC2034 # Used by the sourcing scripts.
+DOTNET_TEST_SAFEGUARDS=(-p:UseSharedCompilation=false)
+
 # ── Solution discovery ───────────────────────────
 # Find the .slnx file relative to the repo root.
 find_solution() {

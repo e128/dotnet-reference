@@ -121,7 +121,7 @@ Check `lode/lode-map.md` for an existing entry for `dep-map.md` under `<scope>/`
 
 If not listed, add:
 ```
-dep-map.md — NuGet/npm/Maven/Go/Rust deps, Docker runtime images, SDK pins + service layer diagrams for all <N> repos
+- [dep-map.md](<scope>/dep-map.md): NuGet, npm, Maven, Go, and Rust dependencies, Docker runtime images, SDK pins, and service layer diagrams for the scanned repos
 ```
 
 ---

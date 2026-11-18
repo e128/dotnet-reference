@@ -42,13 +42,13 @@ Then skip to 2c.
 
 ## 2c. Verify MTP Test Infrastructure
 
-Check that the Microsoft Testing Platform is correctly configured for .NET 10:
+Check that the Microsoft Testing Platform is correctly configured for .NET 10 and later:
 
 **global.json**: must contain:
 ```json
 { "test": { "runner": "Microsoft.Testing.Platform" } }
 ```
-Without this, `dotnet test` fails on .NET 10 SDK with a VSTest compatibility error.
+Without this, `dotnet test` fails on the .NET 10 and later SDKs with a VSTest compatibility error.
 
 **Directory.Build.targets**: must contain (conditioned on `IsTestProject`):
 ```xml

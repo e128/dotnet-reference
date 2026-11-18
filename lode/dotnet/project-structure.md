@@ -1,5 +1,5 @@
 # .NET 11 Project Structure
-*Updated: 2026-11-17T13:33:06Z*
+*Updated: 2026-11-18T09:52:33Z*
 
 ## Solution Format
 
@@ -27,7 +27,7 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 │   ├── .globalconfig               # Benchmark severity override (global_level=101)
 │   └── E128.Benchmarks/            # BenchmarkDotNet starter benchmarks (see [Benchmarks](benchmarks.md))
 ├── tests/
-│   ├── Architecture.Tests/         # ArchUnitNET structural tests
+│   ├── Architecture.Tests/         # ArchUnitNET structural and project inventory tests
 │   ├── E128.Analyzers.Tests/       # Roslyn analyzer unit tests (own .globalconfig, global_level=102)
 │   ├── E128.Reference.Cli.Tests/   # CLI unit tests
 │   ├── E128.Reference.Core.Tests/  # Core library unit tests
@@ -64,13 +64,15 @@ Key properties:
 
 The exact SDK version is the source of truth in `global.json` (`scripts/sdk-version.sh`).
 
+`Directory.Build.props` sets `UseSharedCompilation=true`. The build wrappers in `scripts/` override it on the command line. See [MSBuild Safeguards](../infrastructure/shell-authoring.md#msbuild-safeguards).
+
 The `test.runner` setting is **required** for `dotnet test`. Without it, MTP projects fail with a VSTest compatibility error.
 
 ## NuGet Security
 
 `nuget.config` should include:
 - `<clear />` in packageSources (remove implicit sources)
-- Explicit `nuget.org` source with `protocolVersion="3"`
+- Explicit `nuget.org` source with `protocolVersion="3"` and a `minPublishAgeHours` delay for new package versions
 - `<trustedSigners>` with certificate fingerprints
 - `<packageSourceMapping>` to restrict which packages come from which source
 

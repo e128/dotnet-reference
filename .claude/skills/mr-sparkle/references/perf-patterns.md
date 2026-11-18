@@ -1,6 +1,6 @@
 # Performance Anti-Pattern Catalog (E128-Gap)
 
-Reference for the `--perf` flag on `/mr-sparkle`. ~15 patterns NOT enforced by E128 build-time analyzers.
+Reference for the `--perf` flag on `/mr-sparkle`. ~12 patterns NOT enforced by E128 build-time analyzers.
 
 **E128-covered patterns are excluded**: patterns already flagged by the repo's E128 build-time performance analyzers do not belong here. Skip them silently.
 
@@ -24,7 +24,6 @@ Reference for the `--perf` flag on `/mr-sparkle`. ~15 patterns NOT enforced by E
 | M4 | LINQ `.Count()` vs property      | `rg "\.Count\(\)" src/ -g "*.cs" \| rg -v "(\.GroupBy\|IGrouping\|groups?\.\w*Count\(\)\|g\.Count\(\))"`                                                                                              | Extension method enumerates entire collection, `.Count` or `.Length` property is O(1)                                                    | Use `.Count` property or `.Length`                   |
 | M5 | `Directory.GetFiles`             | `rg "Directory\.GetFiles\b" src/ -g "*.cs"`                                                                                                                                                           | Allocates full array upfront, `EnumerateFiles` streams results                                                                           | `Directory.EnumerateFiles(...)`                      |
 | M6 | `params` array allocation        | `rg "params\s+\w+\[\]" src/ -g "*.cs"`                                                                                                                                                                | Every call allocates a new array. Hot paths should use overloads                                                                         | Add overloads for 1-3 args, or use `ReadOnlySpan<T>` |
-| M7 | `Task.Delay` magic ms            | `rg "Task\.Delay\(\d+\)" src/ -g "*.cs"`                                                                                                                                                              | Magic milliseconds obscure intent, E128050 requires TimeSpan for duration params                                                         | `Task.Delay(TimeSpan.FromMilliseconds(N))`           |
 
 ### LOW Severity, Style / Opportunity
 
@@ -32,8 +31,6 @@ Reference for the `--perf` flag on `/mr-sparkle`. ~15 patterns NOT enforced by E
 | -- | ---------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | L1 | `string.Format` over interpolation | `rg "string\.Format\(" src/ -g "*.cs"`            | Interpolated strings are more readable and can use `string.Create` for perf        | `$"...{value}..."` or `string.Create(CultureInfo.InvariantCulture, ...)` |
 | L2 | `Encoding.UTF8.GetBytes`           | `rg "Encoding\.UTF8\.GetBytes\(" src/ -g "*.cs"`  | Span overload available on .NET 8+. Avoids allocation                              | `Encoding.UTF8.GetBytes(chars, destination)`                             |
-| L3 | Unsealed non-abstract class        | `rg "public class\b" src/ -g "*.cs"`              | JIT devirtualization works better with sealed classes. Hot-path types benefit most | Add `sealed` to classes not designed for inheritance                     |
-| L4 | `static readonly Dictionary`       | `rg "static readonly Dictionary<" src/ -g "*.cs"` | Reinforces E128027, FrozenDictionary has faster lookup                             | `.ToFrozenDictionary()`                                                  |
 | L5 | `Encoding.UTF8.GetString` alloc    | `rg "Encoding\.UTF8\.GetString\(" src/ -g "*.cs"` | Creates new string. Consider Span-based alternatives when downstream accepts spans | Check if consumer accepts `ReadOnlySpan<char>`                           |
 
 ## Triage Notes

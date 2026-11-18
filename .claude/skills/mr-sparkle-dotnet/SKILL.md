@@ -52,7 +52,7 @@ When `cwm-roslyn-navigator` answers, also run `detect_antipatterns` and `detect_
 
 Point the correctness reviewer at these files. Do not copy their text.
 
-- [../mr-sparkle/references/review-rubrics.md](../mr-sparkle/references/review-rubrics.md): seven rubric checklists and the test quality rubric.
+- [../mr-sparkle/references/review-rubrics.md](../mr-sparkle/references/review-rubrics.md): the review rubric checklists and the test quality rubric.
 - [../mr-sparkle/references/cross-file-consistency.md](../mr-sparkle/references/cross-file-consistency.md): the multi-file consistency rubric.
 - [../mr-sparkle/references/perf-patterns.md](../mr-sparkle/references/perf-patterns.md): the anti-pattern catalog for `--perf`.
 

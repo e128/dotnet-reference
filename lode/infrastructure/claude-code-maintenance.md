@@ -1,5 +1,5 @@
 # Harness Maintenance
-*Updated: 2026-11-17T16:18:15Z*
+*Updated: 2026-11-18T09:51:08Z*
 
 ## Instruction Loads
 
@@ -34,7 +34,7 @@ Each requirement has one owner. Entry points link to the owner instead of copyin
 - `token-efficiency.md`: result reuse and context economy.
 - `writing-style.md`: artifact prose and self-lint.
 - `security.md`: configuration boundaries, pooled-buffer handling, and repository privacy.
-- `common-gotchas.md`: file tools, path casing, Bash selection, local data, and scratch files.
+- `common-gotchas.md`: file tools, path casing, Bash selection, local data, terminal output, Markdown tables, and working files.
 - `agent-vs-skill-routing.md`: invocation, agent definitions, and generated mirrors.
 
 `prompts/SystemPrompt.txt` owns the shared Lode method and its bootstrap conventions.
@@ -49,6 +49,8 @@ The `AGENTS.md` task pointers select these references:
 - `lode/dotnet/csharp-conventions.md`: C# idioms, time and HTTP contracts, async rules, and reuse searches.
 - `lode/dotnet/testing.md`: test authoring, runner configuration, SDK checks, and test investigations.
 - `lode/dotnet/analyzers/authoring.md`: registration, analysis APIs, generated code, code fixes, and test snippets.
+- `lode/dotnet/analyzers/summary.md`: analyzer architecture.
+- `lode/dotnet/analyzer-candidates/index.md` and `catalog.md`: open and settled analyzer candidates.
 - `lode/infrastructure/shell-authoring.md`: tool prerequisites and shell-authoring verification.
 - `lode/infrastructure/shipping.md`: shipping-script branch guards, verification order, and unpushed-commit handling.
 
@@ -97,7 +99,6 @@ See [opencode Guardrails](opencode-guardrails.md) for tool interception and perm
 Claude Code uses native permission rules to request approval for edits to `.claude/settings.json`.
 `Edit(path)` rules cover Edit and Write tools. Shell commands need separate permission checks.
 The `pre-tool-use-guard` script remains an opencode blocker, not a Claude Code hook.
-Its former Bash matcher never reached the Edit and Write branches, so it provided no Claude Code protection.
 
 The Stop hook runs `.claude/hooks/stop-violations` and reports scan hits through `systemMessage` with exit status 0.
 It does not block completion or run tests.
@@ -116,7 +117,7 @@ See Plan in [Terminology](../terminology.md) for the file convention.
 Its report carries proposed corrections for a separate approved change.
 
 Preflight phrases select `/yeet --dry-run`. Shipping retains its staleness guard and action-approval requirements.
-Dead-code deletion and solution-file removal request approval before deleting files outside `lode/`.
+Dead-code deletion requests approval before it deletes files outside `lode/`.
 The C# verification gate still runs after namespace and naming changes.
 
 ## Shared Prompt and Launchers

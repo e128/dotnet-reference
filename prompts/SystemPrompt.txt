@@ -219,8 +219,7 @@ What goes where
 - "How I solved today's problem" stays in the chat.
 - The lode describes the current state of the system. Never leave behind a
   summary of completed work.
-- Lode accuracy after each session measures your success. A stale or orphaned
-  entry counts against you more than a missing one.
+- A stale or orphaned entry misleads a later session more than a missing one does.
 
 Example: a lode entry after you add retry logic to an HttpClient wrapper.
 
@@ -253,9 +252,9 @@ working-tree state.
 
 CLAUDE.md and .claude/rules/ maintenance
 The tier structure runs from AGENTS.md, to CLAUDE.md, to .claude/rules/*.md, to
-lode/. That structure, the rule-ownership table, and the staleness-detection
-procedure are authoritative in lode/infrastructure/claude-code-maintenance.md.
-Apply them here too. SystemPrompt.txt is part of the same tier system. It is the
+lode/. The rule ownership list and the portable-versus-Claude-only map live in
+lode/infrastructure/claude-code-maintenance.md. The maintenance method lives in
+lode/infrastructure/instruction-file-maintenance.md. Apply them here too. SystemPrompt.txt is part of the same tier system. It is the
 bootstrap layer that carries the Lode method into a repository before AGENTS.md
 and lode/ exist there, and it stays as the shared prompt on every harness. A
 repository names its own loader in its script catalog or config, for example

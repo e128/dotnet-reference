@@ -34,7 +34,7 @@ else
     TARGET="$(find_solution)"
 fi
 
-ARGS=(dotnet build "$TARGET" --nologo)
+ARGS=(dotnet build "$TARGET" --nologo "${DOTNET_SAFEGUARDS[@]}")
 if [[ "$FAST" == true ]]; then
     # Analyzer execution is about 78 percent of a full rebuild. The fast path skips
     # every analyzer, so scripts/check.sh remains the gate before a commit.

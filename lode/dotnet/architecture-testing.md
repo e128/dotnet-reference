@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-11-17T13:33:06Z*
+*Updated: 2026-11-18T09:06:47Z*
 
 ## Overview
 
@@ -82,7 +82,17 @@ graph LR
     Web[E128.Reference.Web] --> Core
 ```
 
-The allowed graph is a literal baseline. The tests never compute it from the current graph. A new `ProjectReference` therefore fails a rule until a reviewer updates the baseline.
+The allowed graph is a literal baseline. The tests never compute it from the current graph. A type dependency on an assembly outside the baseline closure fails a rule until a reviewer updates the baseline. A new `ProjectReference` without a type dependency does not fail a rule. Compare the evaluated graph with the baseline when a project or reference file changes.
+
+### Project Inventory (`ProjectInventoryTests`)
+
+These tests keep the boundary baseline complete. They hold two frozen literal lists: the expected production assemblies and the expected boundary rule names. The lists stay separate from `ProjectReferenceBaseline` and `ProjectBoundaryTests`, which they verify.
+
+- `ProjectReferenceBaseline` loads exactly the expected assemblies.
+- Each expected assembly loads and contains types.
+- `ProjectBoundaryTests` has one rule for each expected subject.
+
+The inventory checks snapshot consistency. It does not discover a new project. A new production project needs a reviewer to update the inventory, the baseline, and the rules together.
 
 Coverage instrumentation injects a tracker type with one full name into each instrumented assembly. ArchUnitNET merges that type across assemblies, so the rules exclude the `Microsoft.CodeCoverage.Instrumentation.Static.Tracker` namespace. Without the exclusion, `scripts/coverage.sh` fails the boundary rules.
 

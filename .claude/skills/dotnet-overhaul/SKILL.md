@@ -115,7 +115,7 @@ Detect the test framework (xUnit/NUnit/MSTest) and category convention by greppi
 **Detect test runner**: check `global.json` for `"test": { "runner": "Microsoft.Testing.Platform" }`:
 - **MTP detected:** Use `scripts/test.sh --trait "Category=CI"`. Never run the raw test command. The VSTest `--filter` syntax does NOT work on MTP.
 - **VSTest (no MTP config):** Not supported in this repo. Flag it as a finding.
-- **.NET 10 SDK without MTP config:** Flag as a Step 2 finding, MTP is required on .NET 10.
+- **.NET 10 or later SDK without MTP config:** Flag as a Step 2 finding. MTP is required.
 
 **Record the detected convention** to `.claude/tmp/overhauler/test-convention.md`, framework,
 runner, category attribute, exact filter command, and test count. Steps 1 and 9 read this file.
@@ -157,7 +157,7 @@ then run the Fix Cycle for approved items. Only domain-specific details are note
 
 ## Step 3: Modernize -> read steps/step3.md
 
-TFM & package updates (Agent 0), Dockerfile review (Agent 0b), 4 parallel language agents.
+TFM & package updates (Agent 0), Dockerfile review (Agent 0b), 5 language agents (1 to 5).
 **Findings ID prefixes:** `MI` (infrastructure), `M` (language)
 
 ## Step 4: Cross-Cutting Design Review -> read steps/step4.md

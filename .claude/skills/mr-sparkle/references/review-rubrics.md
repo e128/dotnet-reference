@@ -17,7 +17,7 @@ SECURITY RULES (include when diff touches controllers/handlers/business logic):
   [HIGH] Missing input validation
   [HIGH] Multi-step data operations without a transaction
   [HIGH] No null checks on inputs
-  [HIGH] TODO/HACK/FIXME comments in new code
+  [LOW] TODO/HACK/FIXME comment in new code with no ticket
   [MEDIUM] Exceptions without context (generic messages)
   [MEDIUM] Missing audit logging on sensitive operations
   [MEDIUM] Large commented-out blocks
@@ -330,4 +330,4 @@ Severity downgrades in config:
 
 ## Cross-File Consistency Review
 
-See [cross-file-consistency.md](cross-file-consistency.md): separate file to keep this rubric under the 250-line target. Include when diff spans 3+ agent/skill/script/config files, or after renames, multi-session plans, or merge resolutions.
+See [cross-file-consistency.md](cross-file-consistency.md). Include when the diff spans 3+ agent/skill/script/config files, or after renames, multi-session plans, or merge resolutions.

@@ -38,7 +38,7 @@ if [[ "$APPLY" == true ]]; then
         err "Package update failed. Reverted $PROPS."
         exit 1
     fi
-    if dotnet restore "$SOLUTION" >/dev/null 2>&1; then
+    if dotnet restore "$SOLUTION" "${DOTNET_SAFEGUARDS[@]}" >/dev/null 2>&1; then
         # dotnet-outdated drops the trailing newline when it rewrites the file.
         if [[ -s "$PROPS" && "$(tail -c 1 "$PROPS")" != "" ]]; then
             printf '\n' >> "$PROPS"

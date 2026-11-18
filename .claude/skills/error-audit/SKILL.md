@@ -25,7 +25,7 @@ Parse the JSON output. Key fields:
 - `prev_total`: baseline total (0 if no baseline saved)
 - `total_trend`: direction symbol
 - `has_baseline`: whether a saved baseline exists
-- `categories`: array of `{ name, count, prev, delta, trend }`
+- `categories`: array of `{ name, count }`
 
 ## Step 2: Rank categories
 
@@ -71,7 +71,7 @@ Top patterns:
   3. <category> — N errors [trend]
      ...
 
-Baseline: [saved on date / not set — run `scripts/session-health.sh --baseline` to save one]
+Baseline: [set / not set — run `scripts/session-health.sh errors --baseline` to save one]
 ```
 
 ## Step 5: Settings.json gap analysis
@@ -138,5 +138,5 @@ Review what is being blocked and ensure the correct equivalents are in place.
 
 - **Read-only by default**: only modifies `.claude/settings.json` in Step 5e, and only after user approval
 - **One pass**: run the scan once, report all top patterns together
-- **No baseline save**: do not run `--baseline` unless the user explicitly asks to reset the baseline
+- **No baseline save**: do not run `errors --baseline` unless the user explicitly asks to reset the baseline
 - **Never add destructive commands** to settings.json without explicit user approval per command

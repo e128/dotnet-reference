@@ -1,5 +1,5 @@
 # Terminology
-*Updated: 2026-11-16T16:20:12Z*
+*Updated: 2026-11-18T09:49:48Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **MTP**: Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.
@@ -9,7 +9,7 @@
 - **Plan**: A structured planning document set (`{name}-plan.md`, `{name}-context.md`, `{name}-tasks.md`) that lives in `plans/{name}/`.
 - **TDD**: Test-Driven Development. Red-Green-Refactor cycle.
 - **STE**: Simplified Technical English (after ASD-STE100). The repo's writing standard for docs, READMEs, PR bodies, error messages, comments, and lode files. Rules live in `.claude/rules/writing-style.md`.
-- **Roslyn Analyzer**: A .NET compiler extension that provides real-time code analysis and diagnostics. This project ships `E128.Analyzers`, a custom analyzer package with design, style, and file-system rules.
+- **Roslyn Analyzer**: A .NET compiler extension that provides real-time code analysis and diagnostics. This project ships `E128.Analyzers`, a custom analyzer package. Its rules span several categories, such as design, performance, reliability, security, and style.
 - **MCP**: Model Context Protocol. An open protocol that exposes tools, prompts, and resources to an AI client. This repository connects the Roslyn Navigator server over stdio. See `lode/infrastructure/roslyn-navigator-mcp.md`.
 - **Roslyn Navigator**: The `cwm-roslyn-navigator` .NET tool. It loads the solution with Roslyn and answers structural code questions over MCP. See `lode/infrastructure/roslyn-navigator-mcp.md`.
 - **ArchUnitNET**: Architecture testing library for .NET. Used in `tests/Architecture.Tests/` to enforce project boundaries, layer dependencies, naming conventions, and sealed-class policies.

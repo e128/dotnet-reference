@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-17T23:58:14Z*
+*Updated: 2026-11-18T09:54:14Z*
 
 ## Generated Docs
 
@@ -27,7 +27,7 @@
 - [csharp-conventions.md](dotnet/csharp-conventions.md): C# idioms, async contracts, and reuse searches
 - [code-coverage.md](dotnet/code-coverage.md): In-process MTP coverage, Cobertura reports, area mapping, and the CI floors
 - [test-patterns.md](dotnet/test-patterns.md): Test family patterns (A-D), fake conventions, naming rules
-- [architecture-testing.md](dotnet/architecture-testing.md): ArchUnitNET structural invariant tests (layers, naming, sealed)
+- [architecture-testing.md](dotnet/architecture-testing.md): ArchUnitNET structural invariant tests (layers, naming, sealed, project boundaries, inventory)
 - [analyzers.md](dotnet/analyzers.md): Deny-by-default strategy, analyzer packages, suppression policy
 - [release-tracking.md](dotnet/release-tracking.md): AnalyzerReleases.Shipped/Unshipped.md format, RS2000-RS2008 rules, release workflow
 - [performance.md](dotnet/performance.md): Runtime knobs, profiling ladder, safe C# hot-path tips
@@ -87,7 +87,6 @@
 - [instruction-file-maintenance.md](infrastructure/instruction-file-maintenance.md): AGENTS.md and CLAUDE.md as a memory of failures: the six maintenance passes and the stop condition
 - [opencode-guardrails.md](infrastructure/opencode-guardrails.md): opencode v2 plugin hook mapping for Claude Code guardrails, permission and shell hook contracts
 - [roslyn-navigator-mcp.md](infrastructure/roslyn-navigator-mcp.md): Local Roslyn Navigator MCP server: tool manifest, harness config, verification
-- [claude-code-upstream.md](infrastructure/claude-code-upstream.md): Claude Code upstream reference: versions, agent/skill frontmatter fields
 - [code-generation-quality.md](infrastructure/code-generation-quality.md): Mechanisms that drive better AI code generation, ranked by impact, plus the review-to-rule loop
 - [podman.md](infrastructure/podman.md): Podman build commands, Dockerfile structure, smoke test patterns
 - [nuget-trusted-publishing.md](infrastructure/nuget-trusted-publishing.md): OIDC publishing to nuget.org from GitHub Actions, Roslyn analyzer packaging

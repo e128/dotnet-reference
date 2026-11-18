@@ -74,7 +74,7 @@ scripts/check.sh --json
 One run covers all deletions. If the build fails:
 - Parse errors for CS0246 (missing type) or similar
 - Report which deletion caused the break
-- Print recovery: `git checkout -- src/{file}` for each failed file
+- Print recovery: `git restore --source=HEAD --staged --worktree -- src/{file}` for each failed file
 
 ## Step 5: Stage Results (skip in DRY_RUN)
 
@@ -94,7 +94,7 @@ Dead-Code Deletion Report
   Skipped (anchor): N (SymbolC: typeof ref in file)
   Skipped (test):   N (SymbolD: N refs in tests/ only)
   Build status:     PASS / FAIL
-  Recovery:         git checkout -- src/{file}
+  Recovery:         git restore --source=HEAD --staged --worktree -- src/{file}
 ```
 
 ## Rules

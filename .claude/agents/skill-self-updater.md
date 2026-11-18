@@ -38,7 +38,7 @@ When the input starts with `--from-findings mode`, it contains a structured find
 --from-findings mode. Fix this finding:
 Item: {name}
 Type: {skill or agent}
-Flag: {APPROVAL_CONFLICT | ABSOLUTE_PATH | SERIAL_BOTTLENECK | GATE_HEAVY}
+Flag: {APPROVAL_CONFLICT | ABSOLUTE_PATH | SERIAL_BOTTLENECK | PROCEDURAL_ENUM | GATE_HEAVY}
 Details: {description of the issue}
 File: .claude/{path}
 ```
@@ -52,7 +52,8 @@ In this mode:
 |------|---------------|
 | `APPROVAL_CONFLICT` | Find the prompt gate described in Details. Remove it or replace with a comment noting the operation is auto-approved per `.claude/rules/auto-approvals.md` |
 | `ABSOLUTE_PATH` | Find `/Users/...` or `/home/...` paths. Replace with relative paths or `~/repos/<name>/` notation |
-| `SERIAL_BOTTLENECK` | Find the sequential operations described in Details. Add "Launch these in parallel, no dependencies between them" instruction  |
+| `SERIAL_BOTTLENECK` | Merge the sequential reads or calls described in Details into one step. Do not add prescriptive parallelism text.  |
+| `PROCEDURAL_ENUM` | Replace the numbered micro-steps described in Details with one outcome statement. Keep numbering only where step N+1 needs the result of step N. |
 | `GATE_HEAVY` | Find prompt gates on always-safe operations (reads, `.claude/tmp/` writes, grep, git status/log/diff). Remove only those gates, preserve gates on destructive or ambiguous operations  |
 
 After the fix, report in the standard Step 7 format.

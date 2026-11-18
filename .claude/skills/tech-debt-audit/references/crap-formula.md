@@ -17,7 +17,7 @@ When tooling is unavailable, estimate CRAP manually:
    `while`, `catch`, `?:`, `??`, `?.`, `&&`, `||`, pattern `when` guard. Starting value is 1.
 2. **Estimate branch coverage** (not line coverage) from the test suite.
 3. Apply the correct formula: **`CRAP = CC² × (1 − cov/100)³ + CC`**
-4. **Highest ROI tests:** methods in the Moderate band (CRAP 5–30) with 0% coverage and CC 4–7.
+4. **Highest ROI tests:** methods in the Moderate band (CRAP 5–30) with 0% coverage and CC 4–5.
    Pure functions (no DI, no I/O) are easiest to add — make them `internal` and use IVT.
    Methods in the High band (CRAP > 30) with CC > 10 require refactoring, not just tests.
 
@@ -50,10 +50,10 @@ The widespread simplified variant `CC × (1−coverage)²` is **incorrect** — 
 
 | CC | Min branch coverage required | At 0% coverage |
 |---|---|---|
-| 1–4 | 0% (CRAP < 30 regardless) | 2, 10, 21 |
+| 1–4 | 0% (CRAP < 30 regardless) | 2, 6, 12, 20 |
 | **5** | **0% (CRAP = exactly 30)** | **30** |
 | 10 | **~42%** | 110 |
-| 15 | **~63%** | 240 |
+| 15 | **~60%** | 240 |
 | 25 | **~80%** | 650 |
 | **> 30** | **Impossible** | > 930 |
 
@@ -175,7 +175,7 @@ Verify that the input reports produce risk hotspots before you use this setting 
 
 ### Reduce Complexity First (Preferred)
 
-- **Extract methods** to CC ≤ 5 — each extracted method independently has CRAP < 30 even untested
+- **Extract methods** to CC ≤ 4 — each extracted method independently has CRAP ≤ 20 even untested
 - **Guard clauses** (early returns) flatten nesting without adding branches
 - **Switch expressions** replace multi-branch `if-else` chains (but count each arm)
 - **Dictionary/polymorphism dispatch** eliminates `switch` on type entirely

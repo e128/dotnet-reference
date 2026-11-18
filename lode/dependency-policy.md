@@ -1,5 +1,5 @@
 # Dependency Policy
-*Updated: 2026-11-11T03:20:00Z*
+*Updated: 2026-11-18T09:50:29Z*
 
 ## Selection Criteria
 
@@ -26,13 +26,13 @@ Before adding a new NuGet dependency, evaluate:
 
 ## Version Management
 
-All versions are managed centrally in `Directory.Packages.props` (CPM). Individual projects use `<PackageReference Include="..." />` without version attributes. `Directory.Packages.props` sets `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>` to enable CPM. A setup-owned, hash-marked block in the first `PropertyGroup` of `Directory.Packages.props` sets `<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>` to pin transitive versions. Explicit transitive pins (version-only `PackageVersion` entries with no direct reference) live under the "Transitive pins" comments in `Directory.Packages.props`. This prevents diamond-dependency drift. A pin only does its job while the package appears in the restore graph. Check with `dotnet list package --include-transitive`. Once a package no longer appears, its pin is inert. Remove it.
+All versions are managed centrally in `Directory.Packages.props` (CPM). Individual projects use `<PackageReference Include="..." />` without version attributes. `Directory.Packages.props` sets `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>` to enable CPM. A setup-owned, hash-marked block in the first `PropertyGroup` of `Directory.Packages.props` sets `<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>` to pin transitive versions. The same block sets `<CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>`, so a project cannot override a central version with `VersionOverride`. Explicit transitive pins (version-only `PackageVersion` entries with no direct reference) live under the "Transitive pins" comments in `Directory.Packages.props`. This prevents diamond-dependency drift. A pin only does its job while the package appears in the restore graph. Check with `dotnet list package --include-transitive`. Once a package no longer appears, its pin is inert. Remove it.
 
 ## Manual Updates
 
 `scripts/update.sh --apply` runs `dotnet outdated --upgrade --version-lock Major`. That command rewrites the central `PackageVersion` lines in `Directory.Packages.props`. The major lock stops a jump to a new .NET major.
 
-The script snapshots `Directory.Packages.props`, then runs `dotnet restore`. When restore fails, the script copies the snapshot back and exits with a failure. `dotnet outdated` can propose a version whose own dependency does not exist, so the restore gate decides, not the version check. `scripts/update.sh --json` reports one count per unique outdated package.
+The script snapshots `Directory.Packages.props`, then runs `dotnet restore` with `DOTNET_SAFEGUARDS` from `scripts/lib.sh`, so no build server outlives the command. When restore fails, the script copies the snapshot back and exits with a failure. `dotnet outdated` can propose a version whose own dependency does not exist, so the restore gate decides, not the version check. `scripts/update.sh --json` reports one count per unique outdated package.
 
 ## Pruning Unused Dependencies
 
@@ -42,11 +42,13 @@ The script snapshots `Directory.Packages.props`, then runs `dotnet restore`. Whe
 
 Renovate manages dependency PRs via `renovate.json`. Key rules:
 
-- Updates wait 3 days after release before Renovate proposes them (`minimumReleaseAge`).
+- Updates wait 3 days after release before Renovate proposes them (`minimumReleaseAge`). `internalChecksFilter` is `strict`, so a pending age check holds back the branch.
+- Runner image updates (`runs-on`) skip the age gate, because the images publish no release timestamp.
+- Renovate runs before 6am Central time on every day of the week.
 - Patch and minor updates group as `non-major` and auto-merge.
 - Major version bumps require manual review.
-- Security updates bypass schedule/grouping and auto-merge.
-- PRs limit to one concurrent to keep the pipeline green.
+- Security updates bypass schedule and grouping and auto-merge. They still wait for the release age.
+- Renovate limits PRs and branches to one concurrent each to keep the pipeline green.
 
 ## Supply Chain Security
 
