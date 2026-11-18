@@ -1,5 +1,5 @@
 # Guidance Document Reads
-*Updated: 2026-11-17T23:06:12Z*
+*Updated: 2026-11-18T00:04:03Z*
 
 Two published guidance documents seeded a large part of the rule set. Source A
 is the performance skill guide in `EgorBo/BlazingFastDotnet`. Source B is the
@@ -80,19 +80,20 @@ A read on 2026-11-17 checked the whole guide against the shipped rule set and
 the installed analyzers. The guide covers profiling, runtime knobs, NativeAOT,
 ASP.NET Core, strings, and vectorization.
 
-Three shapes clear the bar and sit in [index.md](index.md): the `Func<Task>`
+Three shapes from that read shipped as E128229 to E128231: the `Func<Task>`
 middleware delegate, `UseStaticFiles`, and `string.Split` used only to
-enumerate. Three more join the Tier 2 table: a per-item `Parallel.For` body, a
-`FileStream` captured by a parallel body, and a `readonly` field re-read inside
-a loop.
+enumerate. Three more joined the Tier 2 table: a per-item `Parallel.For` body,
+a `FileStream` captured by a parallel body, and a `readonly` field re-read
+inside a loop.
 
 Four shapes have an installed owner. See
 [skipped-decisions.md](skipped-decisions.md).
 
-Two extensions belong to shipped rules, not to new IDs. E128135 covers
-`TensorPrimitives.Sum` only, and a `Min`, `Max`, `Add`, or `Multiply` loop is
-the same shape. E128084 covers `List.GetRange` only, and an indexer loop over a
-list is the shape that the open `CollectionsMarshal.AsSpan` Tier 2 row guards.
+Two extensions belong to shipped rules, not to new IDs. E128135 covers a sum
+loop and a min or max loop with a neutral initial value. E128084 covers
+`List.GetRange` and an indexer loop over a list.
+The `Add` and `Multiply` loop shapes remain open. Neither maps to a one-span
+reduction, so each needs its own detection shape.
 
 ## Related
 

@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-17T23:06:12Z*
+*Updated: 2026-11-18T00:19:04Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -27,16 +27,12 @@ definitions live in the `analyzer-review-miner` agent definition.
 
 ## Open Candidates
 
-The guide below is the same source that seeded the shipped performance rules.
-Every shape it lists that already has an owner stays out of this table.
-The declined shapes sit in [skipped-decisions.md](skipped-decisions.md).
+The BlazingFastDotnet guide is the same source that seeded the shipped
+performance rules. Every shape it lists that already has an owner stays out of
+this table. The declined shapes sit in
+[skipped-decisions.md](skipped-decisions.md).
 
-| Pattern | Source | Score | Status | Notes |
-| ------- | ------ | ----- | ------ | ----- |
-| Inline middleware takes a `Func<Task>` next delegate | BlazingFastDotnet skill guide | 4/5 | new | The `Use` overload allocates one closure per request. Detail below. |
-| `UseStaticFiles()` in a minimal API app | BlazingFastDotnet skill guide | 4/5 | new | `MapStaticAssets` serves a build-time manifest. Detail below. |
-| `string.Split` result only enumerated | BlazingFastDotnet skill guide | 3.5/5 | new | One array and one string per part allocate. Detail below. |
-
+No open candidate remains from the 2026-11-17 guidance read.
 `ByteSizeType.Is` matches the type by simple name, so a namespace move does not
 break the E128080 exemption.
 
@@ -44,69 +40,6 @@ The body-read shape shipped as E128227. See [catalog.md](catalog.md).
 The token-validation flag shape shipped as E128228. See [catalog.md](catalog.md).
 The JSON enumerator shape closed as skipped, because the enumerator releases no
 resource. See [skipped-decisions.md](skipped-decisions.md).
-
-### Inline Middleware Next Delegate
-
-`app.Use(async (ctx, next) => ...)` binds the `Func<HttpContext, Func<Task>, Task>`
-overload. That overload allocates a `Func<Task>` closure on every request.
-The `Func<HttpContext, RequestDelegate, Task>` overload passes `next` as a
-`RequestDelegate`, so the call allocates nothing.
-
-```csharp
-// Allocates a closure per request.
-app.Use(async (context, next) =>
-{
-    await next();
-});
-
-// Allocates nothing.
-app.Use(async (context, next) =>
-{
-    await next(context);
-});
-```
-
-Detection: a `Use` call whose lambda declares a second parameter of type
-`Func<Task>`. The rule reports that lambda. The `ctx` parameter must stay live
-up to the `next` call, and the lambda must not reassign it.
-
-Fix: yes. The rewrite changes the lambda call and leaves the body intact.
-
-### Static Files Served Through the Runtime Pipeline
-
-`app.UseStaticFiles()` sends a file through middleware at request time.
-`app.MapStaticAssets()` serves a build-time manifest that carries precompressed
-variants and ETags.
-
-Detection: a `UseStaticFiles` call in a project that targets `net9.0` or later.
-
-Fix: no automatic fix. The call moves into the endpoint mapping section, and a
-Razor app also changes how it references the assets.
-
-### `string.Split` Used Only to Enumerate
-
-`value.Split(sep)` allocates an array and one string per part.
-`MemoryExtensions.Split` yields `Range` values over the existing string.
-
-```csharp
-// Allocates the array and one string per part.
-foreach (var part in line.Split(','))
-{
-    Handle(part);
-}
-
-// Allocates nothing.
-foreach (var range in line.AsSpan().Split(','))
-{
-    Handle(line.AsSpan()[range]);
-}
-```
-
-Detection: a `Split` call whose result no code stores. The separator is a
-`char` or a constant string.
-
-Fix: no automatic fix when the body stores a part as a string. The fix applies
-when every read is a slice, a comparison, or a numeric parse.
 
 ## Tier 2 Candidates
 

@@ -146,6 +146,31 @@ public sealed class ManualSpanSumAnalyzerBranchCoverageGapTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Silent_WhenTensorPrimitivesHasNoMax()
+    {
+        return VerifyWithStubAsync(
+            DoubleOnlyStub,
+            """
+            class C
+            {
+                double Max(double[] values)
+                {
+                    double max = double.MinValue;
+                    foreach (var value in values)
+                    {
+                        if (value > max)
+                        {
+                            max = value;
+                        }
+                    }
+                    return max;
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenTensorPrimitivesSumsNeitherFloatNorDouble()
     {
         return VerifyWithStubAsync(

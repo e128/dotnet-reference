@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-17T23:06:12Z*
+*Updated: 2026-11-18T00:04:03Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -13,8 +13,8 @@ description.
 
 The 2026-11-05 external sweep is complete. See
 [external-sweep.md](external-sweep.md).
-The twenty-practice performance sweep shipped fifteen rules and leaves one
-extension. See [performance-sweep.md](performance-sweep.md).
+The twenty-practice performance sweep shipped fifteen rules, and its E128037
+extension also ships. See [performance-sweep.md](performance-sweep.md).
 The async sweep closed with no rule. See [async-sweep.md](async-sweep.md).
 
 The implicit state machine rule ships as E128218. See
@@ -49,6 +49,9 @@ conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net
 | E128226 | comparer-set-by-loop                   | implemented | 3.5/5 | 2026-11-13 |
 | E128227 | http-body-read-without-size-bound      | implemented | 3.5/5 | 2026-11-13 |
 | E128228 | token-validation-flag-false            | implemented | n/a   | 2026-11-17 |
+| E128229 | middleware-func-task-next-delegate     | implemented | 4/5   | 2026-11-17 |
+| E128230 | static-files-runtime-pipeline          | implemented | 4/5   | 2026-11-17 |
+| E128231 | split-result-enumerated                | implemented | 3.5/5 | 2026-11-17 |
 
 ## Rules From Guidance Documents
 

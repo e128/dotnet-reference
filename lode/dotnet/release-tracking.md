@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-17T22:56:03Z*
+*Updated: 2026-11-18T00:22:59Z*
 
 ## Overview
 
@@ -171,6 +171,7 @@ that is missing from either file blocks the ship, even on a docs-only change set
 | 3.0.0   | (none)        | E128160 removed. E128223 reports the read-then-wait shape that replaced the hand-rolled process capture. |
 | 3.1.0   | E128227       | HTTP body read without a size bound. Security, Warning. |
 | 3.2.0   | E128228       | Token validation flag set to constant false. Security, Warning. |
+| 3.3.0   | E128229-231   | Middleware next delegate, static assets, and split enumeration. E128135 and E128084 gain a second detection shape. |
 
 ## Sources
 

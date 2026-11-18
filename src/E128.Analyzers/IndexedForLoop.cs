@@ -17,6 +17,20 @@ internal static class IndexedForLoop
         out ExpressionSyntax? boundOwner,
         out StatementSyntax body)
     {
+        return TryMatch(forStatement, "Length", out variable, out boundOwner, out body);
+    }
+
+    /// <summary>
+    ///     Matches the same shape with a named bound member, such as
+    ///     <c lang="csharp">for (var i = 0; i &lt; list.Count; i++)</c>.
+    /// </summary>
+    internal static bool TryMatch(
+        ForStatementSyntax forStatement,
+        string boundMember,
+        out string variable,
+        out ExpressionSyntax? boundOwner,
+        out StatementSyntax body)
+    {
         variable = string.Empty;
         boundOwner = null;
         body = forStatement.Statement;
@@ -29,7 +43,7 @@ internal static class IndexedForLoop
         var declarator = declaration.Variables[0];
 
         if (!IsZeroInitialized(declarator)
-            || !TryMatchCondition(forStatement, out var conditionName, out var owner)
+            || !TryMatchCondition(forStatement, boundMember, out var conditionName, out var owner)
             || !TryGetIncrementedName(forStatement, out var incrementName)
             || !string.Equals(declarator.Identifier.ValueText, conditionName, StringComparison.Ordinal)
             || !string.Equals(declarator.Identifier.ValueText, incrementName, StringComparison.Ordinal))
@@ -51,6 +65,7 @@ internal static class IndexedForLoop
 
     private static bool TryMatchCondition(
         ForStatementSyntax forStatement,
+        string boundMember,
         out string conditionName,
         out ExpressionSyntax? owner)
     {
@@ -59,7 +74,8 @@ internal static class IndexedForLoop
         if (forStatement.Condition is not BinaryExpressionSyntax condition
             || !condition.IsKind(SyntaxKind.LessThanExpression)
             || condition.Left is not IdentifierNameSyntax conditionVariable
-            || condition.Right is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } length)
+            || condition.Right is not MemberAccessExpressionSyntax length
+            || !string.Equals(length.Name.Identifier.ValueText, boundMember, StringComparison.Ordinal))
         {
             return false;
         }
