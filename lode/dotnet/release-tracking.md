@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-18T09:50:29Z*
+*Updated: 2026-11-18T17:11:43Z*
 
 ## Overview
 
@@ -175,6 +175,7 @@ that is missing from either file blocks the ship, even on a docs-only change set
 | 3.3.0   | E128229-231   | Middleware next delegate, static assets, and split enumeration. E128135 and E128084 gain a second detection shape. |
 | 3.4.0   | E128232       | The `dynamic` keyword defeats compile-time type checking. Design, Warning. |
 | 3.4.1   | (none)        | `LoopContext.HasConstantBound` accepts a compile-time constant bound, so the five loop-cost rules stay silent on a bound such as `const int MaxHops = 5`. Accuracy fix, no rule set change. |
+| 3.4.2   | (none)        | E128220 and E128221 move to the E128.Analyzers.Union assembly at Roslyn 5.12. The base assemblies build against Roslyn 5.9. The package ships `roslyn5.9` and `roslyn5.12` folders, and E128PKG0001 rejects a host compiler below Roslyn 5.9. No rule set change. |
 
 ## Sources
 
