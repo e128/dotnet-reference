@@ -1,5 +1,5 @@
 # Roadmap
-*Updated: 2026-11-17T23:07:20Z*
+*Updated: 2026-11-18T00:19:04Z*
 
 Unplanned work awaiting a plan.
 
@@ -10,112 +10,7 @@ the read that found these shapes lives in
 
 ## Active
 
-### Middleware Next Delegate Closure
-- **Added:** 2026-11-17T23:07:20Z
-- **Register:** 4/5, `new`. Candidate for E128229.
-- **Shape:** a `Use` lambda that takes a `Func<Task>` next delegate. That overload allocates one closure per request.
-
-```csharp
-// Report
-app.Use(async (HttpContext context, Func<Task> next) =>
-{
-    await next();
-});
-
-// Fix
-app.Use(async (HttpContext context, RequestDelegate next) =>
-{
-    await next(context);
-});
-```
-
-- **Fix scope:** rewrite the parameter type and the call. Report only where `context` stays live and is never reassigned. The `RequestDelegate` overload exists on .NET 7 and later.
-- **Trigger:** Plan this entry first. The shape is clear and the fix is a local rewrite.
-
-### Static Files Mapped at Build Time
-- **Added:** 2026-11-17T23:07:20Z
-- **Register:** 4/5, `new`. Candidate for E128230.
-- **Shape:** `UseStaticFiles` sends a file through middleware at request time. `MapStaticAssets` serves a build-time manifest with precompressed variants and ETags.
-
-```csharp
-// Report
-app.UseStaticFiles();
-
-// Fix
-app.MapStaticAssets();
-```
-
-- **Fix scope:** report a `UseStaticFiles` call in a project that targets `net9.0` or later. No automatic fix, because the call moves into the endpoint mapping section. A Razor app also changes how it references the assets.
-- **Trigger:** Plan after the middleware rule, because the same project shape and TFM check apply.
-
-### Split Result Used Only to Enumerate
-- **Added:** 2026-11-17T23:07:20Z
-- **Register:** 3.5/5, `new`. Candidate for E128231.
-- **Shape:** `string.Split` allocates one array and one string per part. `MemoryExtensions.Split` yields `Range` values over the source string.
-
-```csharp
-// Report
-foreach (string part in line.Split(','))
-{
-    total += int.Parse(part);
-}
-
-// Fix
-foreach (Range range in line.AsSpan().Split(','))
-{
-    total += int.Parse(line.AsSpan()[range]);
-}
-```
-
-- **Fix scope:** report only where no code stores the array. The separator is a `char` or a constant string. Rewrite only where every read is a slice, a comparison, or a numeric parse. Report without a fix when the body stores a part as a string.
-- **Trigger:** Plan after the two ASP.NET Core rules.
-
-### TensorPrimitives Min and Max Loops
-- **Added:** 2026-11-17T23:07:20Z
-- **Register:** extension of E128135, no new ID. See [catalog.md](../lode/dotnet/analyzer-candidates/catalog.md).
-- **Shape:** E128135 covers `TensorPrimitives.Sum` only. A loop that computes `Min`, `Max`, `Add`, or `Multiply` over one span is the same shape.
-
-```csharp
-// Report
-double max = double.MinValue;
-foreach (double value in values)
-{
-    if (value > max)
-    {
-        max = value;
-    }
-}
-
-// Fix
-double max = TensorPrimitives.Max(values);
-```
-
-- **Fix scope:** reuse the E128135 detection and code fix. Add the four members to the same member table. Report only a single-span loop with no other side effect.
-- **Trigger:** Plan with E128135. The extension touches one analyzer and one code fix.
-
-### List Indexer Loop to a Span
-- **Added:** 2026-11-17T23:07:20Z
-- **Register:** extension of E128084, no new ID. Guards the open `CollectionsMarshal.AsSpan` Tier 2 row.
-- **Shape:** E128084 covers `List.GetRange` only. A `for` loop that indexes a `List<T>` repeats a bounds check per element.
-
-```csharp
-// Report
-int total = 0;
-for (int i = 0; i < items.Count; i++)
-{
-    total += items[i].Length;
-}
-
-// Fix
-int total = 0;
-foreach (string item in CollectionsMarshal.AsSpan(items))
-{
-    total += item.Length;
-}
-```
-
-- **Fix scope:** suppress the report when the loop mutates the list. The span reads stale memory after a mutation, so the fix is wrong for that shape.
-- **Trigger:** Plan with E128084. The fix reuses the existing `List.GetRange` rewrite.
+No unplanned work waits for a plan.
 
 ## Waiting
 

@@ -1,5 +1,5 @@
 # Performance Rule Details
-*Updated: 2026-11-09T23:44:15Z*
+*Updated: 2026-11-17T23:58:14Z*
 
 Behavior notes for the performance rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -207,6 +207,20 @@ per-iteration values.
 No code fix. The hoisted field name and the `GeneratedRegex` shape are caller
 choices.
 
+### E128135 and E128084 extensions
+
+E128135 also reports a minimum or maximum loop over a `float` or `double`
+source. The reduction must start at the neutral value: `MinValue` for a maximum
+and `MaxValue` for a minimum. The fix writes the reduction into the accumulator
+declaration and removes the loop.
+
+E128084 also reports `for (int i = 0; i < list.Count; i++)` when the body only
+reads `list[i]`. The rule suppresses a loop that mutates the list, writes
+through the indexer, or uses the loop variable for another purpose. The fix
+enumerates `CollectionsMarshal.AsSpan(list)`.
+
+ASP.NET Core rules E128229 to E128231 live in
+[rule-details-performance-aspnet.md](rule-details-performance-aspnet.md).
 Tier 2 rules E128211 to E128217 live in
 [rule-details-performance-tier2.md](rule-details-performance-tier2.md).
 

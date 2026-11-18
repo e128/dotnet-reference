@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.2.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.3.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -157,7 +157,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128072 | Prefer `SHA256.HashData()` over `SHA256.Create()` (default: Info)                                                | Yes      |
 | E128081 | Use `StringBuilderPool` instead of `new StringBuilder()` (default: Info)                                         | Yes      |
 | E128083 | Use `ImmutableCollectionsMarshal.AsImmutableArray` instead of `ImmutableArray.Create/CreateRange` with `ToArray` | Yes      |
-| E128084 | Use `CollectionsMarshal.AsSpan` with `Slice` instead of `List.GetRange`                                          | Yes      |
+| E128084 | Use `CollectionsMarshal.AsSpan` instead of `List.GetRange` or a list indexer loop                                 | Yes      |
 | E128085 | Use `foreach` + `AddRange` instead of `SelectMany.ToList`                                                        | Yes      |
 | E128098 | Collapse chained or looped `string.Replace` calls into a single pass                                             | Yes      |
 | E128102 | Use `SearchValues<char>` for `IndexOfAny` scans                                                                  | Yes      |
@@ -172,7 +172,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128132 | Do not use a culture-aware comparer for a collection key                                                         | Yes      |
 | E128133 | Use an alternate lookup instead of a temporary string key                                                        | Yes      |
 | E128134 | Use `BitOperations.PopCount` instead of a shift loop                                                             | Yes      |
-| E128135 | Use `TensorPrimitives.Sum` instead of a sum loop                                                                 | Yes      |
+| E128135 | Use `TensorPrimitives` instead of a sum, min, or max loop                                                       | Yes      |
 | E128140 | Use `Span.Fill`/`Clear`/`CopyTo` instead of an element loop                                                      | Yes      |
 | E128141 | Use a `u8` literal instead of `Encoding.UTF8.GetBytes`                                                           | Yes      |
 | E128152 | Complexity past the `e128_max_complexity` ceiling (nested loops, recursion)                                      | Yes      |
@@ -198,6 +198,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128223 | Hand-rolled child-process capture (use `Process.RunAndCaptureText`)                                             | No       |
 | E128224 | Read-only `MemoryStream` over a string or byte array                                                            | No       |
 | E128226 | Comparer set built by constructor and `Add` loop                                                                | No       |
+| E128229 | Middleware binds the `Func<Task>` next delegate                                                                | Yes      |
+| E128230 | Static files served through the runtime pipeline                                                               | No       |
+| E128231 | `string.Split` result enumerated without a stored array                                                        | Yes      |
 
 ### Security
 
@@ -1092,16 +1095,30 @@ var result = ImmutableArray.Create(items.ToArray());
 var result = ImmutableCollectionsMarshal.AsImmutableArray(items.ToArray());
 ```
 
-### E128084 &mdash; List.GetRange allocates intermediate list
+### E128084 &mdash; List copies and indexer loops
+
+Flags two `List<T>` shapes.
 
 Flags `list.GetRange(start, count)`. `GetRange` allocates an intermediate `List<T>`. Use `CollectionsMarshal.AsSpan(list).Slice(start, count).ToArray()` to copy directly from the internal array without the intermediate allocation. The rule fires only when flow analysis proves the receiver non-null, because `AsSpan(null)` returns an empty span where `GetRange` throws. A bad range throws `ArgumentOutOfRangeException` from `Slice`.
+
+Flags `for (int i = 0; i < list.Count; i++)` when the body only reads `list[i]`. The indexer repeats the bounds check on every element. The rule stays silent when the loop calls any other member on the list, writes through the indexer, or uses the loop variable for another purpose. The loop-variable rewrite enumerates `CollectionsMarshal.AsSpan(list)`, so the rule suppresses a loop that mutates the list.
 
 ```csharp
 // Before (warns)
 var slice = list.GetRange(2, 5);
 
+for (int i = 0; i < list.Count; i++)
+{
+    total += list[i].Length;
+}
+
 // After
 var slice = CollectionsMarshal.AsSpan(list).Slice(2, 5).ToArray();
+
+foreach (var item in CollectionsMarshal.AsSpan(list))
+{
+    total += item.Length;
+}
 ```
 
 ### E128085 &mdash; SelectMany.ToList creates LINQ iterator allocations
@@ -1479,9 +1496,11 @@ The analyzer skips a loop whose counter is unsigned (`uint` or `ulong`) by desig
 
 ### E128135: Use `TensorPrimitives.Sum` instead of a sum loop
 
-Flags a `foreach` loop whose body is exactly `sum += value;` where both the sum and the element are `float` or `double`, and the source is an array, `Span<T>`, or `ReadOnlySpan<T>`. The loop adds one element per iteration.
+Flags a `foreach` loop whose body reduces the elements of a `float` or `double` source one at a time, where the source is an array, `Span<T>`, or `ReadOnlySpan<T>`.
 
-The fix replaces the loop with `sum += TensorPrimitives.Sum(source);`. The analyzer reports only when the referenced `System.Numerics.Tensors` assembly declares the matching `Sum` overload.
+A sum loop adds the element. A maximum loop reads `if (value > max) { max = value; }`, and a minimum loop reads `if (value < min) { min = value; }`. The min and max shapes report only when the accumulator starts at the neutral value: `MinValue` for a maximum and `MaxValue` for a minimum. Any other start value would survive the reduction.
+
+The fix replaces the loop with `sum += TensorPrimitives.Sum(source);` or with `TensorPrimitives.Max/Min(source)` in the accumulator declaration. The analyzer reports only when the referenced `System.Numerics.Tensors` assembly declares every matching member.
 
 ### E128136: Do not pair a pointer parameter with a separate length parameter
 
@@ -3320,6 +3339,60 @@ var parameters = new TokenValidationParameters
     ValidateIssuer = true,
     ValidateAudience = true,
 };
+```
+
+### E128229: Middleware binds the Func<Task> next delegate
+
+Flags an inline `Use` middleware whose second parameter is a `Func<Task>`. The `app.Use((context, next) => ...)` overload allocates a `Func<Task>` closure on every request. The `RequestDelegate` overload passes the same delegate with no allocation.
+
+The rule reports only when every use of `next` is a call with no argument, at least one such call exists, and the lambda never reassigns the context parameter. The fix changes the parameter type to `RequestDelegate` and passes the context to every call. The rule also accepts the manual `IApplicationBuilder.Use` overload, not only the extension method.
+
+```csharp
+// Before (warns)
+app.Use(async (HttpContext context, Func<Task> next) =>
+{
+    await next();
+});
+
+// After
+app.Use(async (HttpContext context, RequestDelegate next) =>
+{
+    await next(context);
+});
+```
+
+### E128230: Static files served through the runtime pipeline
+
+Flags `app.UseStaticFiles()` with no argument. The call runs a request-time middleware. `MapStaticAssets` serves a build-time manifest with precompressed variants and ETags.
+
+The rule registers only when the compilation declares `MapStaticAssets`, so a target framework without the endpoint mapping API gets no report. A call that passes `StaticFileOptions` stays silent, because the rewrite moves the call into the endpoint mapping section. The rule carries no code fix, because a Razor app also changes how it references the assets.
+
+```csharp
+// Before (warns)
+app.UseStaticFiles();
+
+// After
+app.MapStaticAssets();
+```
+
+### E128231: Split result enumerated without a stored array
+
+Flags a `foreach` that enumerates a `string.Split` result with a `char` or constant-string separator. The call allocates one array and one string per part. `MemoryExtensions.Split` yields `Range` values over the same string with no allocation.
+
+The rule reports the loop. The fix changes the source to `source.AsSpan().Split(separator)` and reads each part as a slice of the span. The fix applies only when every read of the part is a length, an element access, or a constant-string comparison, and the receiver is a name chain. A loop that passes the part to a method or parses it stays reported with no fix, because `Parse` takes a `ReadOnlySpan<char>` only with an explicit format provider.
+
+```csharp
+// Before (warns)
+foreach (string part in line.Split(','))
+{
+    total += part.Length;
+}
+
+// After
+foreach (var part in line.AsSpan().Split(','))
+{
+    total += line.AsSpan()[part].Length;
+}
 ```
 
 ## Requirements

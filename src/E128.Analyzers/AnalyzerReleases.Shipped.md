@@ -1,3 +1,20 @@
+## Release 3.3.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128229 | E128-Performance | Warning | Middleware binds the Func<Task> next delegate
+E128230 | E128-Performance | Warning | Static files served through the runtime pipeline
+E128231 | E128-Performance | Warning | Split result enumerated without a stored array
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------
+E128084 | E128-Performance | Warning | E128-Performance | Warning | Also reports a List indexer loop that reads list[i]
+E128135 | E128-Performance | Warning | E128-Performance | Warning | Also reports a min or max loop with a neutral initial value
+
 ## Release 3.2.0
 
 ### New Rules
