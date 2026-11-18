@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-18T00:19:04Z*
+*Updated: 2026-11-18T12:18:45Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -41,6 +41,14 @@ The token-validation flag shape shipped as E128228. See [catalog.md](catalog.md)
 The JSON enumerator shape closed as skipped, because the enumerator releases no
 resource. See [skipped-decisions.md](skipped-decisions.md).
 
+The slopwatch read on 2026-11-18 added one recommended shape and two Tier 2
+shapes. The rule source, the verdict for all seven rules, and the declined
+project-file shapes live in [slopwatch-sweep.md](slopwatch-sweep.md).
+
+| Pattern                              | Source          | Score | Status | Notes                                           |
+| ------------------------------------ | --------------- | ----- | ------ | ----------------------------------------------- |
+| `dynamic` keyword in a type position | Slopwatch SW021 | 4/5   | new    | No installed owner. No `dynamic` use in `src/`. |
+
 ## Tier 2 Candidates
 
 These clear the same bar and wait for a real defect in review.
@@ -69,6 +77,8 @@ maintainer chose prevention over the real-defect bar.
 | `Parallel.For` with a per-item body                                | body holds no loop over a range                                | Medium |
 | `FileStream` captured by a parallel body                           | shared stream position across reader threads                   | Medium |
 | `readonly` field re-read inside a loop                             | field read by index, no write inside the loop                  | Low    |
+| Unconditional delay in a test                                      | `Thread.Sleep`, `SpinWait`, or a delay with no token           | Medium |
+| Test disabled by `[Ignore]` or `#if false`                         | an `[Ignore]` test, or a test method inside `#if false`        | Low    |
 
 ## Skipped Decisions
 
@@ -98,6 +108,7 @@ declined on 2026-11-13 alongside the earlier decisions.
 - [skipped-decisions.md](skipped-decisions.md): every declined shape and its reason
 - [guidance-reads.md](guidance-reads.md): each read of the two guidance documents
 - [net11-conversion-sweep.md](net11-conversion-sweep.md): open .NET 11 conversion shapes
+- [slopwatch-sweep.md](slopwatch-sweep.md): 2026-11-18 slopwatch read, with one open and two Tier 2 shapes
 - [async-sweep.md](async-sweep.md): closed async fire-and-forget sweep
 - [external-sweep.md](external-sweep.md): closed 2026-11-05 external rule-set sweep
 - [performance-sweep.md](performance-sweep.md): closed twenty-practice performance sweep

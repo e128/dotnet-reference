@@ -1,6 +1,6 @@
 # Analyzer Candidates: Skipped Decisions
 confidence: high
-*Updated: 2026-11-17T23:06:12Z*
+*Updated: 2026-11-18T12:18:45Z*
 
 The settled side of the open register. A skipped row keeps `/analyzer` from reporting the same idea twice. Each decision names the reason and the installed rule or the site count that settled it. The open side lives in [index.md](index.md), and the shipped rules live in [catalog.md](catalog.md).
 
@@ -113,3 +113,35 @@ The net11-upgrade close on 2026-11-13 checked each shape below and declined it. 
 | `Enumerable.LeftJoin` over `GroupJoin` plus `DefaultIfEmpty` | Zero sites. Score 2. |
 | A direct open-generic `JsonConverter` over a `JsonConverterFactory` | Zero `JsonConverterFactory` implementations. Score 2. |
 | A source conversion for runtime async | The switch is assembly level, and the bad async shapes already report. CS1998 owns an `async` body with no `await`, E128007 owns `async void`, E128008 owns sync-over-async, and the task-run rule owns a `Task.Run` wrapper. No rule remains. |
+
+## Project File Shapes From Slopwatch
+
+**Pattern**: a project file that adds `NoWarn`, sets
+`TreatWarningsAsErrors` to `false`, sets `Nullable` to `disable`, leaves
+`WarningsAsErrors` empty, or bypasses Central Package Management with a
+`VersionOverride` attribute or an inline `Version` attribute.
+
+**Why skipped**: a Roslyn `DiagnosticAnalyzer` receives a `Compilation`. It
+reads source files and additional files, never the project file that produced
+the compilation. E128062 reads an xUnit constant named `ReferenceAssemblies`, so
+it is no precedent for project-file access. A project-file guard belongs in a
+script or an MSBuild target that fails the build.
+
+**Evidence**: slopwatch rules SW005 and SW006 implement these checks against
+`*.csproj`, `*.props`, and `*.targets` files. The repository already routes
+dependency questions through `scripts/deps-graph.sh` and
+`scripts/nuget-heat-map.sh`.
+
+**Source**: [slopwatch-sweep.md](slopwatch-sweep.md), read 2026-11-18
+
+## Slopwatch Baseline And Diff Scope
+
+**Pattern**: a JSON baseline that hashes each finding, so a scan reports only
+new slop, plus report filtering to the added and modified lines of a diff.
+
+**Why skipped**: both mechanisms hold tool state, not a code shape. A
+diff-scoped Roslyn report duplicates the IDE. A baseline lets a known defect
+stay in the tree while the build passes, which conflicts with the repository
+rule that a skip and a suppression each need a tracked reason.
+
+**Source**: [slopwatch-sweep.md](slopwatch-sweep.md), read 2026-11-18
