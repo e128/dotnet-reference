@@ -1,5 +1,5 @@
 # Slopwatch Detection Sweep
-*Updated: 2026-11-18T12:18:45Z*
+*Updated: 2026-11-18T13:37:01Z*
 
 The `Aaronontheweb/dotnet-slopwatch` repository on branch `dev` was read on
 2026-11-18. It is a command-line file scanner for "slop", which is code an
@@ -7,11 +7,12 @@ assistant produced to silence a failure instead of fixing it. It carries seven
 detection rules and no Roslyn analyzer. Its shapes still seed candidates because
 each one is decidable from a single file.
 
-The detector source lives in `src/Slopwatch/Detection/Rules`. Rule SW021 is the
-strongest shape. Two test shapes clear the bar and wait. Two project-file shapes
-do not fit a Roslyn analyzer and sit in
+The detector source lives in `src/Slopwatch/Detection/Rules`. Rule SW021 and
+the two test shapes ship as E128232, E128236, and E128237. Two project-file
+shapes do not fit a Roslyn analyzer and sit in
 [skipped-decisions.md](skipped-decisions.md). The settled owners sit in
-[catalog.md](catalog.md).
+[catalog.md](catalog.md), and the detection shapes that shipped live in
+[rule-details-roadmap.md](../analyzers/rule-details-roadmap.md).
 
 ## How Slopwatch Works
 
@@ -41,96 +42,42 @@ not a candidate.
 
 | Slopwatch rule | Shape | Verdict |
 | -------------- | ----- | ------- |
-| SW001 | Test disabled by `Skip`, `Ignore`, or `#if false` | Partly owned. E128168 owns an xUnit `Skip`. Two gaps remain. |
+| SW001 | Test disabled by `Skip`, `Ignore`, or `#if false` | Owned. E128168 owns an xUnit `Skip`, and E128237 owns the foreign forms. |
 | SW002 | Warning suppression by pragma or `[SuppressMessage]` | Owned. Four pragma rules and E128173 cover it. |
 | SW003 | Empty or comment-only `catch` block | Owned by S2486. E128172 covers a swallowed assertion. |
-| SW004 | Arbitrary delay in test code | Partly owned. E128211 owns a delayed loop with no token. |
+| SW004 | Arbitrary delay in test code | Owned. E128211 owns the loop, and E128236 owns the single delay. |
 | SW005 | Project file slop | Not a Roslyn shape. Declined. |
 | SW006 | CPM bypass by `VersionOverride` or inline `Version` | Not a Roslyn shape. Declined. |
-| SW021 | Any use of `dynamic` | Open candidate, score 4. |
+| SW021 | Any use of `dynamic` | Shipped as E128232, score 4. |
 
-## Open Shape: Dynamic Keyword Ban
+## Shipped Shape: Dynamic Keyword Ban (E128232)
 
 **Schema**: score 4 (frequency 1, coverage gap 1, expressibility 1, value 1).
-Status `new`, and this shape clears the recommendation bar.
+The maintainer chose prevention over the real-defect bar.
 
-**Pattern**: an identifier named `dynamic` that occupies a type position.
+An identifier named `dynamic` in a type position reports. The rule reads the
+type position through the language grammar, then a semantic gate keeps a user
+type named `dynamic` silent. E128138 covers a dynamic method built from raw IL,
+which is a different shape. The detection shape lives in
+[rule-details-roadmap.md](../analyzers/rule-details-roadmap.md).
 
-```csharp
-// Report
-dynamic payload = Parse(body);
-return payload.Value;
-```
-
-**Why not covered**: no installed rule set bans the keyword. E128138 covers a
-dynamic method built from raw IL, which is a different shape. The repository has
-zero uses of the keyword in `src/` (as of 2026-11-18), so the rule ships clean.
-
-**Detection shape**: `SyntaxFacts.IsInNamespaceOrTypeContext` answers the type
-position question. Exclude an attribute argument and a using directive with no
-alias. Slopwatch tried a parent-kind allow-list first and found it incomplete,
-because it missed lambda return types and LINQ clause types. The `SyntaxFacts`
-call comes from the language grammar, and it needs no list.
-
-```csharp
-private static bool IsTypePosition(IdentifierNameSyntax id) =>
-    id.Parent is not (QualifiedNameSyntax or AliasQualifiedNameSyntax)
-    && id.Parent is not UsingDirectiveSyntax { Alias: null }
-    && SyntaxFacts.IsInNamespaceOrTypeContext(id);
-```
-
-**Scope**: a semantic model lets E128 skip a user-defined type that is literally
-named `dynamic`. Slopwatch cannot do that, because it holds no compilation. E128
-also takes the compiler answer for a new syntax form.
-
-**Fix**: none. A replacement type carries application intent, so no code fix
-applies.
-
-**Noise**: low. A ban reports a whole language feature, never a near miss.
-
-## Tier 2 Shape: Unconditional Delay In A Test
+## Shipped Shape: Unconditional Delay In A Test (E128236)
 
 **Schema**: score 3.5 (frequency 1, coverage gap 1, expressibility 1, value 0.5).
 
-**Pattern**: a test method calls `Thread.Sleep`, `SpinWait`, or `Task.Delay`
-without a cancellation token, outside a loop.
+A single fixed delay in a test method reports. E128211 owns the delayed loop, so
+a delay inside any loop stays silent. The detection shape lives in
+[rule-details-roadmap.md](../analyzers/rule-details-roadmap.md).
 
-```csharp
-// Report
-await Task.Delay(500);
-Assert.Equal(3, counter.Value);
-```
-
-**Why not covered**: E128211 reports a delayed loop with no token. It excludes
-`Thread.Sleep`, and it does not read a single delay. E128168 covers a skip
-reason, not a timing wait.
-
-**Scope**: report a constant delay and no token. A delay that carries a token
-stays silent, because the caller can cancel it. A test that asserts timeout
-behavior stays silent, and the Tier 2 trigger decides when that rule lands.
-
-**Noise**: medium. A timeout test needs a delay, so the rule needs a narrow
-signal before it can ship.
-
-## Tier 2 Shape: Test Disabled by `[Ignore]` or `#if false`
+## Shipped Shape: Test Disabled by `[Ignore]` or `#if false` (E128237)
 
 **Schema**: score 3 (frequency 0, coverage gap 1, expressibility 1, value 1).
 
-**Pattern**: a method that carries a test attribute and an `[Ignore]` attribute,
-or a test method inside an `#if false` block.
-
-**Why not covered**: E128168 reads the `Skip` argument on an xUnit `[Fact]` or
-`[Theory]` only. NUnit and MSTest disable a test with `[Ignore]`, and neither
-attribute produces a report today.
-
-**Scope**: reuse the E128168 `e128_tracked_ref_pattern` option on an
-`[Ignore("reason")]` argument, so a tracked skip stays silent. A method inside
-`#if false` carries no reason, so report it at every site. Slopwatch reads
-`#else` and `#elif` before it reports, and the same care prevents a false report
-in an active branch.
-
-**Noise**: low in this repository, because xUnit is the only test framework in
-use. The shape is common in LLM-generated code, and that is the value.
+An `[Ignore]` on a test method reports unless its reason matches
+`e128_tracked_ref_pattern`. A test method inside a literal `#if false` region
+reports at every site. E128168 stays the owner of the xUnit `Skip` argument. The
+detection shape lives in
+[rule-details-roadmap.md](../analyzers/rule-details-roadmap.md).
 
 ## Declined For The Analyzer
 

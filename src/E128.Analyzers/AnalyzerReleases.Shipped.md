@@ -1,3 +1,16 @@
+## Release 3.4.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128232 | E128-Design | Warning | The dynamic keyword defeats compile-time type checking
+E128233 | E128-Performance | Warning | Parallel.For runs one delegate per item
+E128234 | E128-Reliability | Warning | A FileStream position is shared across parallel readers
+E128235 | E128-Performance | Warning | Readonly array field re-read inside a loop
+E128236 | E128-Testing | Warning | A test waits a fixed delay instead of a signal
+E128237 | E128-Testing | Warning | A test is disabled outside the xUnit Skip form
+
 ## Release 3.3.0
 
 ### New Rules

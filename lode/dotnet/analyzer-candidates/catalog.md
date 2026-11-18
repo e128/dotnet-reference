@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-18T12:18:45Z*
+*Updated: 2026-11-18T13:37:01Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -16,8 +16,10 @@ The 2026-11-05 external sweep is complete. See
 The twenty-practice performance sweep shipped fifteen rules, and its E128037
 extension also ships. See [performance-sweep.md](performance-sweep.md).
 The async sweep closed with no rule. See [async-sweep.md](async-sweep.md).
-The slopwatch read on 2026-11-18 ships no rule yet. See
+The slopwatch read on 2026-11-18 ships E128232, E128236, and E128237. See
 [slopwatch-sweep.md](slopwatch-sweep.md).
+The five roadmap shapes ship as E128233 to E128237. See
+[rule-details-roadmap.md](../analyzers/rule-details-roadmap.md).
 
 The implicit state machine rule ships as E128218. See
 [implicit-state-machine-rule.md](../implicit-state-machine-rule.md).
@@ -54,6 +56,12 @@ conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net
 | E128229 | middleware-func-task-next-delegate     | implemented | 4/5   | 2026-11-17 |
 | E128230 | static-files-runtime-pipeline          | implemented | 4/5   | 2026-11-17 |
 | E128231 | split-result-enumerated                | implemented | 3.5/5 | 2026-11-17 |
+| E128232 | dynamic-keyword-in-a-type-position     | implemented | 4/5   | 2026-11-18 |
+| E128233 | parallel-for-per-item-body             | implemented | n/a   | 2026-11-18 |
+| E128234 | filestream-captured-by-parallel-body   | implemented | n/a   | 2026-11-18 |
+| E128235 | readonly-field-loop-hoist              | implemented | n/a   | 2026-11-18 |
+| E128236 | unconditional-test-delay               | implemented | 3.5/5 | 2026-11-18 |
+| E128237 | foreign-test-disable                   | implemented | 3/5   | 2026-11-18 |
 
 ## Rules From Guidance Documents
 

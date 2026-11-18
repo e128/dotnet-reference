@@ -27,9 +27,17 @@ SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
 
 load_state() {
     if [[ -f "$BUDGET_FILE" ]]; then
-        local saved_session
+        local saved_session fresh
         saved_session="$(jq -r '.session // ""' "$BUDGET_FILE" 2>/dev/null || echo "")"
-        if [[ "$saved_session" == "$SESSION_ID" ]]; then
+        # A session id such as "unknown" never distinguishes sessions, so the
+        # count can carry across sessions. An idle counter older than one day
+        # starts fresh, whatever the saved session id says.
+        fresh="$(jq -r '
+            (.last_at // "") as $last
+            | if $last == "" then false
+              else ((now - ($last | fromdateiso8601)) < 86400)
+              end' "$BUDGET_FILE" 2>/dev/null || echo false)"
+        if [[ "$saved_session" == "$SESSION_ID" && "$fresh" == "true" ]]; then
             cat "$BUDGET_FILE"
             return
         fi

@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.3.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.4.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -65,6 +65,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128220 | Union switch ends in a discard or var arm instead of a null arm                                      | Yes      |
 | E128221 | Union Value read or case cast outside a pattern match                                                | No       |
 | E128225 | Abstract base with members is a closed hierarchy                                                     | Yes      |
+| E128232 | The `dynamic` keyword defeats compile-time type checking                                             | No       |
 
 ### Reliability
 
@@ -138,6 +139,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128196 | JsonSerializerOptions mutated after first use                                         | No       |
 | E128197 | Fixed day count used as a calendar month (default: Info)                              | No       |
 | E128198 | Substring count built from a length minus a constant                                  | No       |
+| E128234 | A FileStream position is shared across parallel readers                               | No       |
 
 ### Performance
 
@@ -201,6 +203,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128229 | Middleware binds the `Func<Task>` next delegate                                                                | Yes      |
 | E128230 | Static files served through the runtime pipeline                                                               | No       |
 | E128231 | `string.Split` result enumerated without a stored array                                                        | Yes      |
+| E128233 | Parallel.For runs one delegate per item                                                                          | Yes      |
+| E128235 | Readonly field re-read inside a loop                                                                             | Yes      |
 
 ### Security
 
@@ -261,6 +265,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128105 | Test method calls an out-of-repo resolver without a skip guard        | No       |
 | E128107 | Test matches one low-value test condition (off by default)            | Yes      |
 | E128108 | Test matches two or more low-value test conditions (off by default)   | Yes      |
+| E128236 | A test waits a fixed delay instead of a signal                        | No       |
+| E128237 | A test is disabled outside the xUnit Skip form                        | No       |
 
 ### Maintainability
 
@@ -3393,6 +3399,112 @@ foreach (var part in line.AsSpan().Split(','))
 {
     total += line.AsSpan()[part].Length;
 }
+```
+
+### E128232: The dynamic keyword defeats compile-time type checking
+
+Flags the `dynamic` keyword in a type position. Dynamic dispatch defers every member check to the runtime binder, and the shape blocks trimming and AOT. A concrete type restores compile-time checking.
+
+The rule reads the syntax position through the language grammar, so it covers locals, parameters, return types, lambda return types, generic arguments, casts, and `is` expressions. A semantic gate compares the bound type against the builtin dynamic type, so a user-defined type named `dynamic` stays silent. The rule carries no code fix, because the replacement type carries application intent.
+
+```csharp
+// Before (warns)
+dynamic payload = Parse(body);
+return payload.Value;
+
+// After
+JsonNode payload = Parse(body);
+return payload["Value"];
+```
+
+### E128233: Parallel.For runs one delegate per item
+
+Flags a three-argument `Parallel.For(from, to, body)` whose lambda body holds no loop and no await. The runtime invokes one delegate per index. A range partition invokes one delegate per chunk.
+
+The fix rewrites the call to `Parallel.ForEach(Partitioner.Create(from, to), range => ...)` with the original body inside a `for` loop over the range, and adds `using System.Collections.Concurrent;` when absent. The rule stays silent on every shape the fix cannot repair: a body that mutates its parameter, a body that already loops or awaits, the `long` and `For<TLocal>` overloads, named arguments, and a user-defined `For`.
+
+```csharp
+// Before (warns)
+Parallel.For(0, items.Count, i => Work(items[i]));
+
+// After
+Parallel.ForEach(Partitioner.Create(0, items.Count), range =>
+{
+    for (int i = range.Item1; i < range.Item2; i++)
+    {
+        Work(items[i]);
+    }
+});
+```
+
+### E128234: A FileStream position is shared across parallel readers
+
+Flags a `FileStream` that a `Parallel.For`, `Parallel.ForEach`, or `Parallel.Invoke` body captures. The stream keeps one file position, so parallel workers move that position at the same time and read the wrong bytes.
+
+The rule resolves `Parallel` and `FileStream` by symbol, so user types with the same names stay silent. A stream opened inside the body is a per-worker stream and stays silent. The rule carries no code fix, because the remedy moves the read helper to `File.OpenHandle` and `RandomAccess.Read` at an explicit offset, and that change crosses a helper boundary.
+
+```csharp
+// Before (warns)
+using FileStream stream = File.OpenRead(path);
+Parallel.ForEach(offsets, offset => ReadAt(stream, offset));
+
+// After
+using SafeFileHandle handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read);
+Parallel.ForEach(offsets, offset => RandomAccess.Read(handle, buffer, offset));
+```
+
+### E128235: Readonly field re-read inside a loop
+
+Flags a loop that reads a `readonly` array field of the enclosing type once per iteration. A local copy declared before the loop lets the JIT drop the repeated field load and the bounds check.
+
+The fix inserts one local before the loop and rewrites the field references inside that loop only. The local name derives from the field name and falls back to a suffix on a collision. The rule stays silent on a mutable field, because a concurrent writer could change it and the copy would hide the change. A nested loop stays silent, because the outermost fix rewrites the whole cluster.
+
+```csharp
+// Before (warns)
+for (int i = 0; i < _items.Length; i++)
+{
+    total += _items[i];
+}
+
+// After
+int[] items = _items;
+for (int i = 0; i < items.Length; i++)
+{
+    total += items[i];
+}
+```
+
+### E128236: A test waits a fixed delay instead of a signal
+
+Flags a test method that waits a fixed time: `Thread.Sleep`, `SpinWait.SpinUntil`, or a `Task.Delay` over a literal duration with no cancellation token. A fixed delay wastes CI time and still flakes, because the code under test does not signal completion on a fixed schedule.
+
+A delay inside a loop stays silent, because E128211 owns the loop case. A delay with a token or a computed duration stays silent. The rule reads xUnit test methods only in the first release. The rule carries no code fix, because the signal the test should await carries application intent.
+
+```csharp
+// Before (warns)
+await Task.Delay(500);
+Assert.Equal(3, counter.Value);
+
+// After
+await signal.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+Assert.Equal(3, counter.Value);
+```
+
+### E128237: A test is disabled outside the xUnit Skip form
+
+Flags a test that a mechanism other than the xUnit `Skip` argument disables. E128168 owns the `Skip` reason. This rule owns the two foreign forms: an NUnit or MSTest `[Ignore]` attribute, and a test method inside a literal `#if false` region.
+
+An `[Ignore("reason")]` whose reason matches `e128_tracked_ref_pattern` stays silent, so a tracked skip keeps its owner and its close date. An `[Ignore]` with no argument reports. A test inside `#if false` reports at every site, because that form carries no reason. A condition the analyzer cannot decide, and an `#else` or `#elif` branch, stay silent. The rule carries no code fix, because re-enabling a test needs intent the tree does not carry.
+
+```csharp
+// Before (warns)
+[Test]
+[Ignore("flaky on CI")]
+public void WritesTheRegistryValue() { }
+
+// After
+[Fact]
+public void WritesTheRegistryValue() { }
 ```
 
 ## Requirements

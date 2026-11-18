@@ -251,3 +251,19 @@ E128.Analyzers.Design.UnionSwitchDiscardArmCodeFixProvider
 E128.Analyzers.Design.UnionSwitchDiscardArmCodeFixProvider.UnionSwitchDiscardArmCodeFixProvider() -> void
 E128.Analyzers.Design.UnionValueReadAnalyzer
 E128.Analyzers.Design.UnionValueReadAnalyzer.UnionValueReadAnalyzer() -> void
+E128.Analyzers.Design.DynamicKeywordAnalyzer
+E128.Analyzers.Design.DynamicKeywordAnalyzer.DynamicKeywordAnalyzer() -> void
+E128.Analyzers.Performance.ParallelForPerItemBodyAnalyzer
+E128.Analyzers.Performance.ParallelForPerItemBodyAnalyzer.ParallelForPerItemBodyAnalyzer() -> void
+E128.Analyzers.Performance.ParallelForPerItemBodyCodeFixProvider
+E128.Analyzers.Performance.ParallelForPerItemBodyCodeFixProvider.ParallelForPerItemBodyCodeFixProvider() -> void
+E128.Analyzers.Reliability.FileStreamParallelCaptureAnalyzer
+E128.Analyzers.Reliability.FileStreamParallelCaptureAnalyzer.FileStreamParallelCaptureAnalyzer() -> void
+E128.Analyzers.Performance.ReadonlyFieldLoopHoistAnalyzer
+E128.Analyzers.Performance.ReadonlyFieldLoopHoistAnalyzer.ReadonlyFieldLoopHoistAnalyzer() -> void
+E128.Analyzers.Performance.ReadonlyFieldLoopHoistCodeFixProvider
+E128.Analyzers.Performance.ReadonlyFieldLoopHoistCodeFixProvider.ReadonlyFieldLoopHoistCodeFixProvider() -> void
+E128.Analyzers.Testing.UnconditionalTestDelayAnalyzer
+E128.Analyzers.Testing.UnconditionalTestDelayAnalyzer.UnconditionalTestDelayAnalyzer() -> void
+E128.Analyzers.Testing.ForeignTestDisableAnalyzer
+E128.Analyzers.Testing.ForeignTestDisableAnalyzer.ForeignTestDisableAnalyzer() -> void
