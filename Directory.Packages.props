@@ -20,7 +20,7 @@
     <!-- Roslyn (analyzer authoring + code style) -->
     <!-- The shipped base build stays on the lowest Roslyn band the package supports.
          The union build and the test harness take the current pin. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" Condition="'$(MSBuildProjectName)' == 'E128.Analyzers' or '$(MSBuildProjectName)' == 'E128.Analyzers.CodeFixers'" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" Condition="'$(MSBuildProjectName)' == 'E128.Analyzers' or '$(MSBuildProjectName)' == 'E128.Analyzers.CodeFixers'" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" Condition="'$(MSBuildProjectName)' != 'E128.Analyzers' and '$(MSBuildProjectName)' != 'E128.Analyzers.CodeFixers'" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeStyle" Version="5.12.0" />
@@ -42,7 +42,7 @@
     <!-- Transitive pins -->
     <!-- CSharp.Workspaces: direct dependency of E128.Analyzers.CodeFixers. The fixer
          build matches the base analyzer band; every other project takes the current pin. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" Condition="'$(MSBuildProjectName)' == 'E128.Analyzers.CodeFixers'" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.12.0" Condition="'$(MSBuildProjectName)' == 'E128.Analyzers.CodeFixers'" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.12.0" Condition="'$(MSBuildProjectName)' != 'E128.Analyzers.CodeFixers'" />
     <!-- Transitive pins: deprecated or major-version-behind packages -->
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
