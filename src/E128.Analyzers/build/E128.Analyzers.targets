@@ -28,4 +28,12 @@
            Text="E128.Analyzers requires a compiler that hosts Roslyn 5.9 or newer. This build host supplies $(_E128HostVersion). Use the .NET SDK 10.0 or newer, or remove the E128.Analyzers reference." />
   </Target>
 
+  <!-- Enabled pinning is policy guidance, not proof of a promoted dependency. -->
+  <Target Name="E128TransitivePinningGuidance"
+          BeforeTargets="Pack"
+          Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(DesignTimeBuild)' != 'true' and '$(IsPackable)' == 'true' and '$(ManagePackageVersionsCentrally)' == 'true' and '$(CentralPackageTransitivePinningEnabled)' == 'true' and '$(SuppressDependenciesWhenPacking)' != 'true'">
+    <Message Importance="high"
+             Text="E128.Analyzers: Transitive pinning can add dependencies to your published package. Review the generated .nuspec and document each pin. Guidance: https://github.com/e128/dotnet-reference/blob/main/src/E128.Analyzers/README.md#transitive-pinning-guidance" />
+  </Target>
+
 </Project>
