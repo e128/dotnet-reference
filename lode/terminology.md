@@ -1,5 +1,5 @@
 # Terminology
-*Updated: 2026-11-18T09:49:48Z*
+*Updated: 2026-11-19T20:37:01Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **MTP**: Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.
@@ -8,6 +8,11 @@
 - **instructions**: The opencode config field that lists ambient instruction files or globs. opencode merges each file with `AGENTS.md`. `opencode.json` names `prompts/SystemPrompt.txt` and `.claude/rules/*.md`.
 - **Plan**: A structured planning document set (`{name}-plan.md`, `{name}-context.md`, `{name}-tasks.md`) that lives in `plans/{name}/`.
 - **TDD**: Test-Driven Development. Red-Green-Refactor cycle.
+- **Verified Baseline**: A test case with `verified_baseline: true` in the registry. It passed at least once, so a later failure is evidence of a regression. See [TDD Regression Tracking](infrastructure/tdd-regression-tracking.md).
+- **Confirmed Regression**: A failing test with a verified baseline, a changed production file, and an assertion or behavior failure. The only classification that appends a `caught` ledger event.
+- **Unverified Red**: A failing test without a verified baseline. This is the normal Red phase of a new test, not evidence of a regression.
+- **Harness or Environment Error**: A compilation, import, assembly, mock, fixture, timeout, or test-only failure. Also a verified failure with no production change.
+- **Regression Ledger**: The append-only JSONL file `.tdd/regression-catches.jsonl`. It records `caught` and `resolved` events.
 - **STE**: Simplified Technical English (after ASD-STE100). The repo's writing standard for docs, READMEs, PR bodies, error messages, comments, and lode files. Rules live in `.claude/rules/writing-style.md`.
 - **Roslyn Analyzer**: A .NET compiler extension that provides real-time code analysis and diagnostics. This project ships `E128.Analyzers`, a custom analyzer package. Its rules span several categories, such as design, performance, reliability, security, and style.
 - **MCP**: Model Context Protocol. An open protocol that exposes tools, prompts, and resources to an AI client. This repository connects the Roslyn Navigator server over stdio. See `lode/infrastructure/roslyn-navigator-mcp.md`.

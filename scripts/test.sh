@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Run tests via dotnet test + Microsoft Testing Platform.
-# Usage: test.sh [--all] [--verbose] [--trait KEY=VALUE] [--framework TFM] [CLASS_NAME...]
+# Usage: test.sh [--all] [--verbose] [--trait KEY=VALUE] [--framework TFM] [--trx-dir DIR] [CLASS_NAME...]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 VERBOSE=false; ALL=false; DRY_RUN=false
 TRAIT="Category=CI"
 CLASSES=()
 FRAMEWORK=""
+TRX_DIR=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -16,6 +17,7 @@ while [[ $# -gt 0 ]]; do
         --dry-run) DRY_RUN=true ;;
         --trait)   TRAIT="$2"; shift ;;
         --framework) FRAMEWORK="$2"; shift ;;
+        --trx-dir) TRX_DIR="$2"; shift ;;
         -*)        err "Unknown flag: $1"; exit 1 ;;
         *)         CLASSES+=("$1") ;;
     esac
@@ -71,6 +73,17 @@ if [[ "$ALL" != true && ( ${#CLASSES[@]} -gt 0 || -n "$TRAIT" ) ]]; then
     FILTERED=true
 fi
 
+# TRX is the structured result source for scripts/tdd-track.sh. Every test
+# project references Microsoft.Testing.Extensions.TrxReport. dotnet test owns
+# --results-directory and passes one value to each test app, so the directory
+# belongs on the dotnet test command line and the extension flag after --.
+if [[ -n "$TRX_DIR" ]]; then
+    mkdir -p "$TRX_DIR"
+    TRX_DIR="$(cd "$TRX_DIR" && pwd)"
+    CMD+=(--results-directory "$TRX_DIR")
+    MTP_ARGS=(--report-trx "${MTP_ARGS[@]}")
+fi
+
 if [[ ${#MTP_ARGS[@]} -gt 0 ]]; then
     CMD+=(-- "${MTP_ARGS[@]}")
 fi
@@ -116,6 +129,7 @@ if [[ $total -eq 0 && $REAL_FAILED -eq 0 ]]; then
         else
             err "No test summary parsed. The MTP output format may have changed."
         fi
+        echo "$output" | tail -30
     else
         json_object status="$([[ "$FILTERED" == true ]] && echo no-match || echo no-summary)" total=0 passed=0 failed=0 skipped=0
     fi

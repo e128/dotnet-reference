@@ -79,6 +79,16 @@ else
   echo -e "$CI_ICON" > "$CI_CACHE"
 fi
 
+# Open TDD regressions (local state, refreshed by tdd-track analyze)
+TDD_PART=""
+TDD_STATE="$(git rev-parse --show-toplevel 2>/dev/null || echo .)/.tdd/state.json"
+if [ -f "$TDD_STATE" ]; then
+  TDD_OPEN=$(jq -r '.open_events // {} | length' "$TDD_STATE" 2>/dev/null || echo 0)
+  if [[ "$TDD_OPEN" =~ ^[0-9]+$ ]] && [ "$TDD_OPEN" -gt 0 ]; then
+    TDD_PART="\033[2m\033[38;5;242m ║ \033[0m\033[38;5;202m⚠ ${TDD_OPEN} open regression\033[0m"
+  fi
+fi
+
 # Build progress bar — electric blue → Zorg purple → Leeloo orange
 FILLED=$((PCT * 10 / 100))
 EMPTY=$((10 - FILLED))
@@ -140,4 +150,4 @@ VER_PART=""
 #   ☥ + model: Leeloo orange 208 (hero element, bold)
 #   repo dir:  bright lavender 183 (distinct from orange, readable on dark bg)
 #   version:   dim gray 242 (background metadata)
-echo -e "\033[38;5;208m☥\033[0m ${VER_PART}\033[38;5;208;1m$MODEL\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;183m📁 $DIR\033[0m\033[2m\033[38;5;242m ║ \033[0m$([ -n "$BRANCH" ] && printf '%b' "\033[38;5;45m🌿 $BRANCH\033[0m")\033[2m\033[38;5;242m ║ \033[0m$CI_ICON\033[0m$WIN_PART$TOK_PART$CACHE_PART\033[2m\033[38;5;242m ║ \033[0m$BAR\033[0m ${CTX_CLR}$PCT%\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;220m$TIME\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;45m+$ADDED\033[0m \033[38;5;202m-$REMOVED\033[0m\033[0m"
+echo -e "\033[38;5;208m☥\033[0m ${VER_PART}\033[38;5;208;1m$MODEL\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;183m📁 $DIR\033[0m\033[2m\033[38;5;242m ║ \033[0m$([ -n "$BRANCH" ] && printf '%b' "\033[38;5;45m🌿 $BRANCH\033[0m")\033[2m\033[38;5;242m ║ \033[0m$CI_ICON\033[0m$TDD_PART$WIN_PART$TOK_PART$CACHE_PART\033[2m\033[38;5;242m ║ \033[0m$BAR\033[0m ${CTX_CLR}$PCT%\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;220m$TIME\033[0m\033[2m\033[38;5;242m ║ \033[0m\033[38;5;45m+$ADDED\033[0m \033[38;5;202m-$REMOVED\033[0m\033[0m"

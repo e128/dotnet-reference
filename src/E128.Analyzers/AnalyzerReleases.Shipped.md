@@ -1,3 +1,11 @@
+## Release 3.5.1
+
+### Removed Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128252 | E128-Performance | Info | Removed. The span API never avoids the allocation, because both Convert base64 calls take or return a string.
+
 ## Release 3.5.0
 
 ### New Rules
