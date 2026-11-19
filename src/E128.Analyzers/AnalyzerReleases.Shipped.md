@@ -1,3 +1,25 @@
+## Release 3.5.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128238 | E128-Reliability | Warning | Array compared by reference
+E128239 | E128-Reliability | Warning | Stream.Read count is discarded
+E128240 | E128-Reliability | Warning | Blocking call inside a lock
+E128241 | E128-Security | Warning | CORS wildcard with credentials
+E128242 | E128-Security | Warning | Antiforgery missing on a state-changing action
+E128243 | E128-Reliability | Warning | Span over a list invalidated by a later mutation
+E128244 | E128-Reliability | Warning | Zero guard after the division
+E128245 | E128-Reliability | Warning | Enum cast outside the member set
+E128246 | E128-Reliability | Warning | Flags member value is not a power of two
+E128247 | E128-Performance | Warning | Readonly field of a mutable struct
+E128248 | E128-Reliability | Warning | Floating-point loop counter
+E128249 | E128-Performance | Warning | Array regrown inside a loop
+E128250 | E128-Reliability | Warning | Dead store to a private field
+E128251 | E128-Reliability | Warning | Loop has no exit path
+E128252 | E128-Performance | Info | Base64 conversion allocates a string
+
 ## Release 3.4.0
 
 ### New Rules

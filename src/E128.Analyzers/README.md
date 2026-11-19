@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.4.2" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.5.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -155,6 +155,16 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128197 | Fixed day count used as a calendar month (default: Info)                              | No       |
 | E128198 | Substring count built from a length minus a constant                                  | No       |
 | E128234 | A FileStream position is shared across parallel readers                               | No       |
+| E128238 | Array comparison uses reference equality, not element equality                        | Yes      |
+| E128239 | `Stream.Read` count discarded before a later buffer read                              | No       |
+| E128240 | Blocking call inside a `lock` body                                                    | No       |
+| E128243 | Span over a list invalidated by a later mutation                                      | No       |
+| E128244 | Zero guard after the division                                                         | No       |
+| E128245 | Enum cast outside the member set                                                      | No       |
+| E128246 | Flags member value is not a power of two                                              | No       |
+| E128248 | Loop counter is a `float` or `double`                                                 | No       |
+| E128250 | Private field assignment overwritten before a read                                    | No       |
+| E128251 | Loop has no exit path                                                                 | No       |
 
 ### Performance
 
@@ -220,6 +230,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128231 | `string.Split` result enumerated without a stored array                                                        | Yes      |
 | E128233 | Parallel.For runs one delegate per item                                                                          | Yes      |
 | E128235 | Readonly field re-read inside a loop                                                                             | Yes      |
+| E128247 | A readonly field copies its mutable struct on every call                                                        | No       |
+| E128249 | `Array.Resize` or `Concat` regrows an array inside a loop                                                       | No       |
+| E128252 | `Convert` Base64 call allocates a string                                                                        | No       |
 
 ### Security
 
@@ -252,6 +265,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128222 | `Path.Combine` of a root `.FullName` and an uncontained leaf                   | Yes      |
 | E128227 | HTTP body read without a size bound                                            | No       |
 | E128228 | Token validation flag set to constant false                                    | No       |
+| E128241 | CORS policy allows any origin with credentials                                 | No       |
+| E128242 | Antiforgery missing on a state-changing action                                 | Yes      |
 
 ### Style
 
@@ -3524,6 +3539,256 @@ public void WritesTheRegistryValue() { }
 // After
 [Fact]
 public void WritesTheRegistryValue() { }
+```
+
+### E128238: Array compared by reference
+
+Flags `==`, `!=`, and `Equals` on two single-rank arrays whose element type is not `byte`. The operators compare the array identity, so two arrays with equal contents never compare equal.
+
+The fix rewrites the comparison to `Enumerable.SequenceEqual` and adds `using System.Linq;` when absent. An inequality becomes a negated call. The rule stays silent on a null test, on a multi-dimensional array, and on a `byte[]` sentinel check. A multi-dimensional array implements no generic sequence, so the fix cannot repair it.
+
+```csharp
+// Before (warns)
+if (left == right) { }
+
+// After
+if (Enumerable.SequenceEqual(left, right)) { }
+```
+
+### E128239: Stream.Read count is discarded
+
+Flags a `Stream.Read` call used as a statement when a later statement in the same block reads the buffer. A stream can return fewer bytes than the buffer length, so the later read consumes stale bytes.
+
+The rule stays silent when the count is stored, when the buffer is not read later, and when the buffer is reassigned first. A lambda and a local function body stay out, because statement order does not describe when they run. The rule carries no code fix, because the correct count handling depends on the caller's intent.
+
+```csharp
+// Before (warns)
+stream.Read(buffer, 0, buffer.Length);
+Use(Encoding.UTF8.GetString(buffer));
+
+// After
+var read = stream.Read(buffer, 0, buffer.Length);
+Use(Encoding.UTF8.GetString(buffer, 0, read));
+```
+
+### E128240: Blocking call inside a lock
+
+Flags `Thread.Sleep`, a `File` call, a blocking `Stream` member, and the synchronous `DbCommand` execute family inside a `lock` body. The lock stays held for the whole call.
+
+A `MemoryStream` member stays silent because it completes without I/O. A nested lock reports its own calls, and a lambda or local function body stays out. The rule carries no code fix, because the remedy moves the work outside the lock, or switches to an asynchronous primitive.
+
+```csharp
+// Before (warns)
+lock (_gate)
+{
+    _cache = File.ReadAllText(path);
+}
+
+// After
+var text = File.ReadAllText(path);
+lock (_gate)
+{
+    _cache = text;
+}
+```
+
+### E128241: CORS wildcard with credentials
+
+Flags one `CorsPolicyBuilder` chain that calls both `AllowAnyOrigin` and `AllowCredentials`, in either order. A browser rejects a credentialed request to a wildcard origin, so the policy cannot work as written. It also states an intent to trust every origin with credentials.
+
+The rule resolves `Microsoft.AspNetCore.Cors.Infrastructure.CorsPolicyBuilder`, so it stays silent without an ASP.NET Core reference. It reports the chain once, at the `AllowAnyOrigin` call. The rule carries no code fix, because the remedy needs the allowed origin list.
+
+```csharp
+// Before (warns)
+builder.AllowAnyOrigin().AllowCredentials();
+
+// After
+builder.WithOrigins("https://example.test").AllowCredentials();
+```
+
+### E128242: Antiforgery missing on a state-changing action
+
+Flags an MVC action with `[HttpPost]`, `[HttpPut]`, `[HttpPatch]`, or `[HttpDelete]` and no antiforgery validation on the method or its containing type.
+
+`[ValidateAntiForgeryToken]` and `[AutoValidateAntiforgeryToken]` clear the report. `[IgnoreAntiforgeryToken]` is an explicit opt-out. A type marked `[ApiController]` stays silent, because a token-authenticated API is not a cookie CSRF surface. The fix adds `[ValidateAntiForgeryToken]` and the MVC using.
+
+```csharp
+// Before (warns)
+[HttpPost]
+public void Save() { }
+
+// After
+[ValidateAntiForgeryToken]
+[HttpPost]
+public void Save() { }
+```
+
+### E128243: Span over a list invalidated by a later mutation
+
+Flags a `CollectionsMarshal.AsSpan(list)` local that is read after a call which can reallocate the list. The old span points at memory the list no longer owns.
+
+The rule reports the mutating call. It covers `Add`, `AddRange`, `Clear`, `EnsureCapacity`, `Insert`, `InsertRange`, `Remove`, `RemoveAll`, `RemoveAt`, `RemoveRange`, `Reverse`, `Sort`, `TrimExcess`, and `CollectionsMarshal.SetCount`. A read before the mutation, a mutation of another list, and an index assignment stay silent. The rule carries no code fix, because the span must be reacquired at the right point.
+
+```csharp
+// Before (warns)
+var span = CollectionsMarshal.AsSpan(list);
+list.Add(value);
+Use(span);
+
+// After
+list.Add(value);
+var span = CollectionsMarshal.AsSpan(list);
+Use(span);
+```
+
+### E128244: Zero guard after the division
+
+Flags a zero comparison on a divisor that an earlier statement already divided by. An integer or decimal divide by zero throws before the guard runs.
+
+The rule covers `==`, `!=`, integer division, modulo, and compound assignment. A guard before the division, a floating-point division, and a property divisor stay silent. The rule carries no code fix, because reordering the guard changes control flow.
+
+```csharp
+// Before (warns)
+var result = value / divisor;
+if (divisor == 0) { return 0; }
+
+// After
+if (divisor == 0) { return 0; }
+var result = value / divisor;
+```
+
+### E128245: Enum cast outside the member set
+
+Flags a constant integral-to-enum cast whose value matches no declared member. A runtime operand stays silent.
+
+A `[Flags]` enum stays silent, because any bit combination is valid. An alias value stays silent. The rule carries no code fix, because the intended member depends on intent.
+
+```csharp
+enum Status { None = 0, Ready = 1, Busy = 2 }
+
+// Before (warns)
+var status = (Status)7;
+
+// After
+var status = Status.Ready;
+```
+
+### E128246: Flags member value is not a power of two
+
+Flags a `[Flags]` enum member with a multi-bit value that does not name its combination. A member should own one bit. `ReadWrite` and `All` name their combinations.
+
+The rule stays silent on a zero or negative value, on a single-bit member, and on a non-flags enum. It carries no code fix, because the intended bit depends on intent.
+
+```csharp
+[Flags]
+enum Permission
+{
+    None = 0,
+    Read = 1,
+    Write = 2,
+    Execute = 3   // warns
+}
+```
+
+### E128247: Readonly field of a mutable struct
+
+Flags a `readonly` field whose type is a mutable struct. The compiler copies the whole struct out of the field before every member call.
+
+A `readonly struct` type, a primitive, an enum, a tuple, a ref struct, and a struct with no mutable instance member stay silent. The rule carries no code fix, because the answer is to make the struct readonly or to change where the value lives.
+
+```csharp
+struct Counter { public int Value; public void Increment() => Value++; }
+
+// Before (warns)
+private readonly Counter _counter = default;
+
+// After
+private Counter _counter = default;
+```
+
+### E128248: Floating-point loop counter
+
+Flags a `for` loop whose counter is a `float` or `double`. A floating-point step accumulates representation error, so the terminal comparison can miss or overshoot.
+
+The rule reads a declared counter, a counter assigned in the initializer, and a counter that appears only in the incrementor. A `decimal` counter stays silent. The rule carries no code fix, because an integer counter or a different termination condition depends on the loop.
+
+```csharp
+// Before (warns)
+for (double d = 0; d < 1; d += 0.1) { }
+
+// After
+for (var i = 0; i < 10; i++) { }
+```
+
+### E128249: Array regrown inside a loop
+
+Flags `Array.Resize` in a loop body and `Enumerable.Concat` whose sequence is assigned back to the same variable. Every iteration reallocates and copies, so the loop costs quadratic time.
+
+A call outside a loop, a lambda body, and a `Concat` assigned to a different variable stay silent. The rule carries no code fix, because a presized array or a builder depends on the loop.
+
+```csharp
+// Before (warns)
+for (var i = 0; i < items.Length; i++)
+{
+    Array.Resize(ref buffer, buffer.Length + 1);
+}
+
+// After
+var buffer = new List<byte>(items.Length);
+for (var i = 0; i < items.Length; i++)
+{
+    buffer.Add(items[i]);
+}
+```
+
+### E128250: Dead store to a private field
+
+Flags a simple assignment to a private field that a later statement in the same block overwrites before any read. The first value is never observable.
+
+The rule clears its tracked writes at any call, object creation, or control-flow statement, because those can read the field or skip the next write. A read clears the field's tracked write. The final write of a block stays silent, because the field lives after the method returns. A compound assignment and a field another type declares stay out. The rule carries no code fix, because the first right side can carry a side effect.
+
+```csharp
+// Before (warns)
+_value = 1;
+_value = 2;
+
+// After
+_value = 2;
+```
+
+### E128251: Loop with no exit path
+
+Flags `while (true)`, `for (;;)`, and `do ... while (true)` when the body has no local exit. A `break` that targets the loop, a `return`, a `throw`, a `goto`, and a `yield break` count. A `break` in a nested loop or switch targets the inner construct and does not count.
+
+`Environment.Exit`, `Environment.FailFast`, and `ThrowIfCancellationRequested` also count. A lambda and a local function body stay out. The rule carries no code fix, because the intended exit condition or cancellation source belongs to the caller.
+
+```csharp
+// Before (warns)
+while (true)
+{
+    Work();
+}
+
+// After
+while (!cancellationToken.IsCancellationRequested)
+{
+    Work();
+}
+```
+
+### E128252: Base64 conversion allocates a string
+
+Flags `Convert.ToBase64String` and `Convert.FromBase64String`. The span API writes into a caller buffer and allocates nothing.
+
+The rule gates on `System.Buffers.Text.Base64`, so a framework without the span API stays silent. It carries no code fix, because the destination buffer and its length check belong to the caller.
+
+```csharp
+// Before (warns)
+string text = Convert.ToBase64String(bytes);
+
+// After
+Span<byte> destination = stackalloc byte[Base64.GetMaxEncodedToUtf8Length(bytes.Length)];
+Base64.EncodeToUtf8(bytes, destination, out _, out var written);
 ```
 
 ## Requirements

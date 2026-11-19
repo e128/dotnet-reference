@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-17T16:36:03Z*
+*Updated: 2026-11-19T13:56:28Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -20,6 +20,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `TypeSymbols.DerivesFrom` | Walks the base chain. A null base type matches nothing. |
 | `TypeSymbols.Matches` | True when a type equals a target. A null target matches nothing. |
 | `TypeSymbols.MatchesOriginalDefinition` | True when the original definition of a type equals a target definition. |
+| `EnumConstants` | Enum constant normalization, the power-of-two test, and the `[Flags]` test. E128245 and E128246 share it. |
 | `InterfaceMembers.Implements` | True when a method implements an interface member, including an explicit implementation. An interface or delegate method returns false. |
 | `InterfaceMembers.ImplementsMember` | True when the containing type maps some interface member to the method. |
 | `NameSuffixes.Matches` | True when a name ends with a suffix at an uppercase-letter position. |
