@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Combined CI pipeline: shell lint + shipping tests + format + build + test.
+# Combined CI pipeline: shell lint + shipping tests + package tests + format + build + test.
 # Usage: ci.sh [--skip-format] [--skip-build] [--skip-test] [--json]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -37,6 +37,14 @@ else
     EXIT=1
 fi
 
+# Step 1c: Analyzer package guidance
+if "$SCRIPTS/analyzer-package-test.sh" > /dev/null 2>&1; then
+    RESULTS[package_tests]="ok"
+else
+    RESULTS[package_tests]="fail"
+    EXIT=1
+fi
+
 # Step 2: Format
 if [[ "$SKIP_FORMAT" == false ]]; then
     if "$SCRIPTS/format.sh" --check > /dev/null 2>&1; then
@@ -70,14 +78,14 @@ fi
 
 if [[ "$JSON" == true ]]; then
     printf '{"status":"%s"' "$([ $EXIT -eq 0 ] && echo ok || echo fail)"
-    for step in shell shell_tests format build test; do
+    for step in shell shell_tests package_tests format build test; do
         if [[ -n "${RESULTS[$step]+x}" ]]; then
             printf ',"%s":"%s"' "$step" "${RESULTS[$step]}"
         fi
     done
     printf '}\n'
 else
-    for step in shell shell_tests format build test; do
+    for step in shell shell_tests package_tests format build test; do
         if [[ -n "${RESULTS[$step]+x}" ]]; then
             if [[ "${RESULTS[$step]}" == "ok" ]]; then
                 ok "$step"

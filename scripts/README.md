@@ -31,10 +31,16 @@ Other required tools: see [Shell Authoring](../lode/infrastructure/shell-authori
 | `test.sh`                 | Run tests (defaults to CI category)                                                                  | `--all`, `--verbose`, `--dry-run`, `--trait`, `--framework`           |
 | `format.sh`               | Run jb cleanupcode then dotnet format                                                                | `--check`, `--changed`, `--no-jb`                                     |
 | `check.sh`                | Composed: shell lint, shipping tests, analyzer release, format, build, test                          | `--all`, `--no-format`, `--json`                                      |
-| `ci.sh`                   | Full CI pipeline: shell lint, shipping tests, format, build, test                                    | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`   |
+| `ci.sh`                   | Full CI pipeline: shell lint, shipping tests, package tests, format, build, test                     | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`   |
 | `podman.sh`               | Podman build/run/test/stop/clean                                                                     | `--no-cache`                                                          |
 | `verify-and-ship.sh`      | Ship the branch as one squashed commit (format, bump, check, squash, scan, commit, push)             | `--message`/`-m` (required), `--no-version-bump`, `--json`            |
 | `verify-and-ship-test.sh` | Test the ship script in temporary fixture repos with fake gates and a local bare remote              | none                                                                  |
+
+## Package Verification
+
+| Script                     | Purpose                                                                   |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `analyzer-package-test.sh` | Test pack-time guidance with MSBuild fixtures and local package consumers |
 
 ## Git & Status
 

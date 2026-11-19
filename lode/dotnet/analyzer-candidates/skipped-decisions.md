@@ -1,6 +1,6 @@
 # Analyzer Candidates: Skipped Decisions
 confidence: high
-*Updated: 2026-11-18T12:18:45Z*
+*Updated: 2026-11-19T15:20:26Z*
 
 The settled side of the open register. A skipped row keeps `/analyzer` from reporting the same idea twice. Each decision names the reason and the installed rule or the site count that settled it. The open side lives in [index.md](index.md), and the shipped rules live in [catalog.md](catalog.md).
 
@@ -122,8 +122,9 @@ The net11-upgrade close on 2026-11-13 checked each shape below and declined it. 
 `VersionOverride` attribute or an inline `Version` attribute.
 
 **Why skipped**: a Roslyn `DiagnosticAnalyzer` receives a `Compilation`. It
-reads source files and additional files, never the project file that produced
-the compilation. E128062 reads an xUnit constant named `ReferenceAssemblies`, so
+reads source files and additional files. The producing project file is not an
+automatic input. Explicit MSBuild properties or additional files can bridge
+that boundary. E128062 reads an xUnit constant named `ReferenceAssemblies`, so
 it is no precedent for project-file access. A project-file guard belongs in a
 script or an MSBuild target that fails the build.
 
@@ -145,3 +146,45 @@ stay in the tree while the build passes, which conflicts with the repository
 rule that a skip and a suppression each need a tracked reason.
 
 **Source**: [slopwatch-sweep.md](slopwatch-sweep.md), read 2026-11-18
+
+## NuGet Transitive Pinning
+
+**Pattern**: transitive pinning can promote packages to explicit dependencies
+in the generated `.nuspec` when a library is packed.
+
+**Why skipped as a C# syntax rule**: score 2/5 (frequency 0, coverage gap 1,
+expressibility 0, value 1). This idea has no verified defect site. Detection
+needs evaluated MSBuild settings or the restored package graph, not C# syntax
+or symbols. A Roslyn rule could read explicitly exposed inputs, but an MSBuild
+target has direct access to the relevant settings.
+
+**Consumer guidance**: the package README explains transitive pinning.
+`E128TransitivePinningGuidance` prints a high-importance message before `Pack`
+when central transitive pinning is enabled and the C# project emits package
+dependencies. It skips design-time builds and non-packable projects. It also
+skips `SuppressDependenciesWhenPacking=true`. This is not a warning or an error.
+Enabled pinning alone does not prove that a transitive package was promoted.
+A precise diagnostic needs the actual resolved pins and their pack behavior.
+See [Package Layout](../analyzers/package-layout.md#transitive-pinning-guidance).
+
+**Fix boundary**: never automatically add `PrivateAssets="all"`, disable
+pinning, or remove a pin. Hiding a runtime dependency can leave consumers with
+an older vulnerable version or a missing dependency.
+
+**Other practices**:
+
+- NuGet already reports a transitive downgrade as `NU1109`.
+- NuGet Audit owns vulnerability detection. Auditing defaults to all dependencies
+  when a project targets .NET 10 or later.
+- A pin reason and removal condition belong in dependency review. A comment
+  cannot prove that an upstream update makes a pin unnecessary.
+- Global or per-project pinning is a scope decision, not an unconditional defect.
+
+**Evidence**: `E128.Analyzers.targets` supplies the existing package-guard
+mechanism. `E128.Analyzers.csproj` suppresses package dependencies when packing.
+This exception rules out a blanket error for every packable project with pinning.
+
+**Source**: maintainer proposal, evaluated 2026-11-19.
+[NuGet CPM](https://learn.microsoft.com/nuget/consume-packages/central-package-management#transitive-pinning-and-pack),
+[NuGet Audit](https://learn.microsoft.com/nuget/concepts/auditing-packages#configuring-nuget-audit),
+and [NuGet Pack](https://learn.microsoft.com/nuget/reference/msbuild-targets#pack-scenarios).

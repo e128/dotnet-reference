@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-18T16:45:38Z*
+*Updated: 2026-11-19T15:27:35Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
@@ -118,6 +118,33 @@ blocks a host it cannot read.
 The version in the targets file must equal the base
 `Microsoft.CodeAnalysis.CSharp` pin in `Directory.Packages.props`. A Roslyn
 bump changes both.
+
+## Transitive Pinning Guidance
+
+The package README contains transitive pinning guidance for library authors.
+`E128TransitivePinningGuidance` prints its link through an MSBuild `Message`
+before `Pack`. The message uses high importance. It is not a warning, an error,
+or a Roslyn diagnostic.
+
+The package places the targets file in both `build` and `buildMultiTargeting`.
+The second folder lets a multi-target project run the target in its outer
+build, where `Pack` runs. The target runs for a packable C# project when Central
+Package Management and transitive pinning are enabled. It skips design-time builds and projects that
+suppress package dependencies. Ordinary builds stay silent. The target also
+runs during `Pack` with `NoBuild=true`. Enabled pinning alone does not prove
+that a package was promoted to an explicit dependency.
+
+`scripts/analyzer-package-test.sh` checks the activation conditions with
+MSBuild fixtures, then packs the targets file and restores it into single-target
+and multi-target consumers from a local feed. The cases treat warnings as
+errors, and the multi-target cases fail when the `buildMultiTargeting` asset is
+missing. The CI workflow runs the script after SDK setup. The script changes no
+production project, downloads no package, and removes its temporary fixtures.
+
+The target does not change dependencies or apply `PrivateAssets="all"`.
+The README distinguishes runtime dependencies from the development-only
+E128.Analyzers reference. See [the candidate decision](../analyzer-candidates/skipped-decisions.md#nuget-transitive-pinning)
+for the Roslyn boundary and the checks that NuGet already owns.
 
 ## Package Metadata
 

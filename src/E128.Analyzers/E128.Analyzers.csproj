@@ -112,11 +112,13 @@
     <None Include="README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
-  <!-- Compiler-host guard: fails a consumer build when the host Roslyn is older
-       than the 5.9 reference the base build carries. Keep that version equal to the
-       base pin in Directory.Packages.props. -->
+  <!-- Package build asset. It holds the compiler-host guard, which fails a consumer
+       build when the host Roslyn is older than the 5.9 reference the base build
+       carries (keep that version equal to the base pin in Directory.Packages.props),
+       and the pack-time transitive pinning guidance. buildMultiTargeting carries the
+       guidance into the outer build of a multi-target project, where Pack runs. -->
   <ItemGroup>
-    <None Include="build/E128.Analyzers.targets" Pack="true" PackagePath="build" />
+    <None Include="build/E128.Analyzers.targets" Pack="true" PackagePath="build;buildMultiTargeting" />
   </ItemGroup>
 
   <!-- An empty lib folder gives NuGet a framework to list on the Supported Frameworks tab.

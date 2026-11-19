@@ -33,6 +33,37 @@ other rule runs on both hosts.
 The rules read syntax and symbols, so they work on any C# project. A rule stays
 silent where the target framework cannot express what it looks for.
 
+## Transitive Pinning Guidance
+
+If your library uses Central Package Management with transitive pinning, review
+its package dependencies before publishing. NuGet can promote pinned transitive
+packages to explicit dependencies in the generated `.nuspec`.
+
+E128.Analyzers prints guidance during `Pack` when the C# project enables central
+transitive pinning and emits package dependencies. The message uses high
+importance, so normal pack output shows it. It is not a warning or an error.
+Enabled pinning alone does not prove that NuGet promoted a dependency.
+
+The message stays silent during ordinary builds and design-time builds. It also
+stays silent for non-packable projects and `SuppressDependenciesWhenPacking=true`.
+It also runs for a multi-target project. Quiet verbosity can hide the message.
+
+1. Prefer an upstream package update that removes the need for a pin.
+2. Pin a version at least as high as the requested dependency version. NuGet rejects downgrades with `NU1109`.
+3. Document each pin with its reason, advisory or issue reference, and removal condition.
+4. Review the generated `.nuspec` for dependencies that the pin adds.
+5. Run NuGet Audit for direct and transitive dependencies. Use `NuGetAuditMode=all` when you need explicit configuration.
+6. When the upstream dependency meets the removal condition, remove the temporary pin.
+7. Choose global or per-project pinning according to the projects that need it.
+
+Do not hide a runtime dependency with `PrivateAssets="all"` just to remove it
+from your package metadata. Consumers can then resolve an older vulnerable
+version or miss a required dependency. The installation example uses
+`PrivateAssets="all"` because E128.Analyzers is a development-only dependency.
+
+See [NuGet Transitive Pinning](https://learn.microsoft.com/nuget/consume-packages/central-package-management#transitive-pinning-and-pack)
+and [NuGet Audit](https://learn.microsoft.com/nuget/concepts/auditing-packages).
+
 ## Rule Retirement
 
 Version 3.0.0 removes E128160, which reported redirected process streams that were not read before a wait.
