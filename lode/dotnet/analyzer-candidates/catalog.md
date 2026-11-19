@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-19T14:31:53Z*
+*Updated: 2026-11-19T15:34:46Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -76,7 +76,6 @@ conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net
 | E128249 | array-growth-in-loop                   | implemented | n/a   | 2026-11-19 |
 | E128250 | dead-private-field-store               | implemented | n/a   | 2026-11-19 |
 | E128251 | loop-with-no-exit-path                 | implemented | n/a   | 2026-11-19 |
-| E128252 | base64-span-api                        | implemented | n/a   | 2026-11-19 |
 
 ## Rules From Guidance Documents
 

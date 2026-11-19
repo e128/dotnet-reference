@@ -222,4 +222,37 @@ public sealed class DivisionGuardOrderAnalyzerTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_ForAStringEqualityComparison()
+    {
+        return AnalyzerTestRunner.VerifyAsync<DivisionGuardOrderAnalyzer>("""
+            class C
+            {
+                bool M(string host) => host == "example.com";
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_ForADecimalDivisor()
+    {
+        return AnalyzerTestRunner.VerifyAsync<DivisionGuardOrderAnalyzer>("""
+            class C
+            {
+                decimal M(decimal value, decimal divisor)
+                {
+                    var result = value / divisor;
+                    if ({|E128244:divisor == 0|})
+                    {
+                        return 0m;
+                    }
+
+                    return result;
+                }
+            }
+            """);
+    }
 }

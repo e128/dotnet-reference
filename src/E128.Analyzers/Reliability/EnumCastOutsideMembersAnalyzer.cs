@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using E128.Analyzers.Testing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -16,7 +17,9 @@ namespace E128.Analyzers.Reliability;
 ///     The rule reports only a constant operand, because a runtime value cannot be checked. A
 ///     <c lang="csharp">[Flags]</c> enum accepts any bit combination, so it stays silent and
 ///     E128246 owns that shape. A value equal to a declared member, including an alias, stays
-///     silent. The rule carries no code fix, because the intended member depends on intent.
+///     silent. A test compilation stays silent, because a validator test builds an undefined
+///     value on purpose. The rule carries no code fix, because the intended member depends on
+///     intent.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EnumCastOutsideMembersAnalyzer : DiagnosticAnalyzer
@@ -48,6 +51,11 @@ public sealed class EnumCastOutsideMembersAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static start =>
         {
+            if (XunitTestHelper.IsTestCompilation(start.Compilation, start.CancellationToken))
+            {
+                return;
+            }
+
             var flagsAttribute = start.Compilation.GetTypeByMetadataName("System.FlagsAttribute");
             start.RegisterSyntaxNodeAction(nodeContext => Analyze(nodeContext, flagsAttribute), SyntaxKind.CastExpression);
         });
@@ -93,7 +101,7 @@ public sealed class EnumCastOutsideMembersAnalyzer : DiagnosticAnalyzer
     private static bool TryNormalize(object? constant, INamedTypeSymbol enumType, out ulong value)
     {
         value = 0;
-        if (constant is null)
+        if (constant is not (IConvertible and not (string or char or bool)))
         {
             return false;
         }

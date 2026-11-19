@@ -1,6 +1,6 @@
 # Analyzer Candidates: Skipped Decisions
 confidence: high
-*Updated: 2026-11-19T15:20:26Z*
+*Updated: 2026-11-19T15:34:48Z*
 
 The settled side of the open register. A skipped row keeps `/analyzer` from reporting the same idea twice. Each decision names the reason and the installed rule or the site count that settled it. The open side lives in [index.md](index.md), and the shipped rules live in [catalog.md](catalog.md).
 
@@ -188,3 +188,23 @@ This exception rules out a blanket error for every packable project with pinning
 [NuGet CPM](https://learn.microsoft.com/nuget/consume-packages/central-package-management#transitive-pinning-and-pack),
 [NuGet Audit](https://learn.microsoft.com/nuget/concepts/auditing-packages#configuring-nuget-audit),
 and [NuGet Pack](https://learn.microsoft.com/nuget/reference/msbuild-targets#pack-scenarios).
+
+## Base64 Span Conversion (E128252)
+
+**Pattern**: `Convert.ToBase64String` or `Convert.FromBase64String` where
+`Base64.EncodeToUtf8` or `Base64.DecodeFromUtf8` could take over.
+
+**Why removed**: the rule shipped in 3.5.0 and left in 3.5.1. A base64 payload
+is text by definition, so the caller needs the string that `Convert.ToBase64String`
+returns: a `System.Uri` data URI, an `AuthenticationHeaderValue` credential, a
+JSON field. `Base64.EncodeToUtf8` writes bytes, so a string consumer pays a
+buffer rent plus an UTF-8 decode for the same string. `Convert.FromBase64String`
+takes a `string`, so `Base64.DecodeFromUtf8` first needs an
+`Encoding.UTF8.GetBytes` pass that costs more than the decode saves. The rule
+flags sound code in both directions.
+
+**Evidence**: five consumer sites on 2026-11-19. A Basic auth header, a `data:`
+URI builder, a `ReadOnlySpan<char>` data-URI payload, and two data-URI round-trip
+tests. The sound shape is the one the rule flagged.
+
+**Source**: `session friction 2026-11-19`, consumer build against 3.5.0.

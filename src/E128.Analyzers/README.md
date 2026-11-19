@@ -263,7 +263,6 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128235 | Readonly field re-read inside a loop                                                                             | Yes      |
 | E128247 | A readonly field copies its mutable struct on every call                                                        | No       |
 | E128249 | `Array.Resize` or `Concat` regrows an array inside a loop                                                       | No       |
-| E128252 | `Convert` Base64 call allocates a string                                                                        | No       |
 
 ### Security
 
@@ -3692,7 +3691,7 @@ var result = value / divisor;
 
 Flags a constant integral-to-enum cast whose value matches no declared member. A runtime operand stays silent.
 
-A `[Flags]` enum stays silent, because any bit combination is valid. An alias value stays silent. The rule carries no code fix, because the intended member depends on intent.
+A `[Flags]` enum stays silent, because any bit combination is valid. An alias value stays silent. A test compilation stays silent, because a validator test builds an undefined value on purpose. The rule carries no code fix, because the intended member depends on intent.
 
 ```csharp
 enum Status { None = 0, Ready = 1, Busy = 2 }
@@ -3805,21 +3804,6 @@ while (!cancellationToken.IsCancellationRequested)
 {
     Work();
 }
-```
-
-### E128252: Base64 conversion allocates a string
-
-Flags `Convert.ToBase64String` and `Convert.FromBase64String`. The span API writes into a caller buffer and allocates nothing.
-
-The rule gates on `System.Buffers.Text.Base64`, so a framework without the span API stays silent. It carries no code fix, because the destination buffer and its length check belong to the caller.
-
-```csharp
-// Before (warns)
-string text = Convert.ToBase64String(bytes);
-
-// After
-Span<byte> destination = stackalloc byte[Base64.GetMaxEncodedToUtf8Length(bytes.Length)];
-Base64.EncodeToUtf8(bytes, destination, out _, out var written);
 ```
 
 ## Requirements

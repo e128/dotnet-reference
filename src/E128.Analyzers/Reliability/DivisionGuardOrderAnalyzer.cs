@@ -117,19 +117,19 @@ public sealed class DivisionGuardOrderAnalyzer : DiagnosticAnalyzer
     private static bool IsZeroConstant(ExpressionSyntax expression, SyntaxNodeAnalysisContext context)
     {
         var constant = context.SemanticModel.GetConstantValue(expression, context.CancellationToken);
-        if (!constant.HasValue || constant.Value is null)
-        {
-            return false;
-        }
+        return constant.HasValue && IsNumericZero(constant.Value);
+    }
 
-        try
-        {
-            return Convert.ToDecimal(constant.Value, CultureInfo.InvariantCulture) is 0m;
-        }
-        catch (InvalidCastException)
-        {
-            return false;
-        }
+    /// <summary>
+    ///     True only for a numeric zero. A string, char, or bool constant is not a divisor check,
+    ///     and <c lang="csharp">Convert.ToDecimal</c> throws
+    ///     <c lang="csharp">FormatException</c> on a string constant, so the gate runs before the
+    ///     conversion. An enum member arrives as its underlying integral value.
+    /// </summary>
+    private static bool IsNumericZero(object? value)
+    {
+        return value is IConvertible and not (string or char or bool)
+            && Convert.ToDecimal(value, CultureInfo.InvariantCulture) is 0m;
     }
 
     private static bool TryGetStorageSymbol(

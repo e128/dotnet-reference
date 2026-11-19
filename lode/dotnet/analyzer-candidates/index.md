@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-19T14:31:53Z*
+*Updated: 2026-11-19T15:34:47Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -62,7 +62,9 @@ shapes left on 2026-11-19, because the maintainer chose prevention again. They
 ship as E128238 to E128241. Five more Tier 2 shapes left the same day, and ship
 as E128242 to E128246. Four more Tier 2 shapes left the same day, and ship as
 E128247 to E128250. The last two Tier 2 shapes left the same day, and ship as
-E128251 and E128252. See [catalog.md](catalog.md).
+E128251 and E128252. E128252 left the set on the same day, because the span API
+never avoids a base64 allocation. See [skipped-decisions.md](skipped-decisions.md)
+for that removal and [catalog.md](catalog.md) for the shipped rules.
 
 ## Skipped Decisions
 

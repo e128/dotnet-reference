@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
+using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -153,4 +154,34 @@ public sealed class EnumCastOutsideMembersAnalyzerTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_InATestCompilation()
+    {
+        return AnalyzerTestRunner.VerifyAsync<EnumCastOutsideMembersAnalyzer>(
+            """
+            using Xunit;
+
+            enum Status
+            {
+                None = 0,
+                Ready = 1,
+                Busy = 2
+            }
+
+            class T
+            {
+                [Fact]
+                public void A() => _ = (Status)7;
+            }
+            """,
+            options: new AnalyzerTestOptions { References = TestCompilation });
+    }
+
+    private static readonly ReferenceAssemblies TestCompilation = ReferenceAssemblies.Net.Net100
+        .AddPackages([
+            new PackageIdentity("xunit.v3.core", "3.2.2"),
+            new PackageIdentity("xunit.v3.assert", "3.2.2")
+        ]);
 }
