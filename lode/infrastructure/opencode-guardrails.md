@@ -1,5 +1,5 @@
 # opencode v2 Guardrail Parity
-*Updated: 2026-11-17T15:48:21Z*
+*Updated: 2026-11-19T14:56:50Z*
 
 Claude Code enforces guardrails through hook scripts under `.claude/hooks/`.
 opencode v2 has no hook file. Its plugin API carries the same interception.
@@ -98,8 +98,8 @@ same three tiers in their own syntax:
 | deny | `permissions.deny` | `policies` with `tool.use`         |
 
 Claude Code evaluates deny, then ask, then allow. opencode evaluates the array
-in order and the last match wins. A `git push --force` command matches the ask
-rule and the deny rule on both harnesses. The deny rule wins on both.
+in order and the last match wins. A `git push --force` command matches the deny
+rule on both harnesses. The deny rule wins on both.
 
 The base posture differs by design. Claude Code denies an unlisted Bash command
 by default. opencode allows every action by default. Closing that gap on

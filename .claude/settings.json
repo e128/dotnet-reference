@@ -3,6 +3,10 @@
     "allow": [
       "Bash(git *)",
       "Bash(git -C *)",
+      "Bash(git switch -c *)",
+      "Bash(git push)",
+      "Bash(git push -u origin *)",
+      "Bash(git push origin *)",
       "Bash(rg *)",
       "Bash(fd *)",
       "Bash(jq *)",
@@ -28,6 +32,7 @@
       "Bash(rm -rf .claude/tmp*)",
       "Bash(curl *)",
       "Bash(gh *)",
+      "Bash(gh pr create *)",
       "Bash(dotnet build *)",
       "Bash(dotnet format *)",
       "Bash(dotnet restore *)",
@@ -63,8 +68,6 @@
       "mcp__ide__getDiagnostics"
     ],
     "ask": [
-      "Bash(git push *)",
-      "Bash(gh pr create *)",
       "Bash(gh release create *)",
       "Bash(git clean -fd *)",
       "Bash(git rebase *)",

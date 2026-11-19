@@ -14,8 +14,6 @@
     { "action": "edit", "resource": "*", "effect": "allow" },
     { "action": "edit", "resource": ".claude/settings.json", "effect": "ask" },
     { "action": "shell", "resource": "*", "effect": "allow" },
-    { "action": "shell", "resource": "git push *", "effect": "ask" },
-    { "action": "shell", "resource": "gh pr create *", "effect": "ask" },
     { "action": "shell", "resource": "gh release create *", "effect": "ask" },
     { "action": "shell", "resource": "git clean -fd *", "effect": "ask" },
     { "action": "shell", "resource": "git rebase *", "effect": "ask" }
