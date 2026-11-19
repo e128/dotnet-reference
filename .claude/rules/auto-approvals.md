@@ -15,20 +15,20 @@ These actions can destroy shared history or uncommitted work. Do not invoke them
 
 Get approval before these actions:
 
-- `git push`, `gh pr create`, or `gh release create`
+- `gh release create`
 - `git clean -fd`, `git rebase`, or other history rewrites
 - Editing `.claude/settings.json`
 - An analyzer suppression, including `#pragma`, `[SuppressMessage]`, or a severity downgrade
 - Deleting a file outside `lode/`, deleting a significant code block, or changing a public API signature
 
-An explicit `/yeet` invocation authorizes one push and one PR creation for the current branch.
-It does not authorize force pushes or other restricted actions.
-Preserve already pushed commits. Approval to ship does not authorize rewriting shared history.
+An explicit `/yeet` invocation runs one push and one PR creation for the current branch.
+A force push and a branch delete stay denied, and approval to ship never authorizes rewriting shared history.
 
 ## Preapproved Actions
 
 These actions need no additional confirmation:
 
+- `git push` and `gh pr create` for the current branch
 - Read-only file, search, and shell calls that follow the routing table
 - Formatting fixes, unused `using` removal, namespace declarations, and `using` sorting
 - Adding a missing test category trait
@@ -38,7 +38,7 @@ These actions need no additional confirmation:
 
 Delete a Lode file only when it is committed and has no uncommitted changes.
 Inside a skill or agent, do not request approval for preapproved calls.
-A script that pushes, creates a PR, deletes protected content, or rewrites history still requires the relevant approval.
+A script that deletes protected content or rewrites history still requires the relevant approval.
 
 ## Harness Enforcement
 

@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-18T13:37:01Z*
+*Updated: 2026-11-19T14:31:53Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -62,6 +62,21 @@ conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net
 | E128235 | readonly-field-loop-hoist              | implemented | n/a   | 2026-11-18 |
 | E128236 | unconditional-test-delay               | implemented | 3.5/5 | 2026-11-18 |
 | E128237 | foreign-test-disable                   | implemented | 3/5   | 2026-11-18 |
+| E128238 | array-compared-by-reference            | implemented | n/a   | 2026-11-19 |
+| E128239 | discarded-stream-read-count            | implemented | n/a   | 2026-11-19 |
+| E128240 | blocking-call-in-lock                  | implemented | n/a   | 2026-11-19 |
+| E128241 | cors-wildcard-with-credentials         | implemented | n/a   | 2026-11-19 |
+| E128242 | antiforgery-missing-on-action          | implemented | n/a   | 2026-11-19 |
+| E128243 | list-span-invalidated-by-mutation      | implemented | n/a   | 2026-11-19 |
+| E128244 | division-guard-order                   | implemented | n/a   | 2026-11-19 |
+| E128245 | enum-cast-outside-member-set           | implemented | n/a   | 2026-11-19 |
+| E128246 | flags-member-not-power-of-two          | implemented | n/a   | 2026-11-19 |
+| E128247 | readonly-mutable-struct-field          | implemented | n/a   | 2026-11-19 |
+| E128248 | floating-point-loop-counter            | implemented | n/a   | 2026-11-19 |
+| E128249 | array-growth-in-loop                   | implemented | n/a   | 2026-11-19 |
+| E128250 | dead-private-field-store               | implemented | n/a   | 2026-11-19 |
+| E128251 | loop-with-no-exit-path                 | implemented | n/a   | 2026-11-19 |
+| E128252 | base64-span-api                        | implemented | n/a   | 2026-11-19 |
 
 ## Rules From Guidance Documents
 

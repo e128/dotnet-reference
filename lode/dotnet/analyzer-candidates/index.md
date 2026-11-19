@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-18T13:37:01Z*
+*Updated: 2026-11-19T14:31:53Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -51,30 +51,18 @@ No open candidate remains. The dynamic keyword ban ships as E128232. See
 
 ## Tier 2 Candidates
 
-These clear the same bar and wait for a real defect in review.
+This section tracked the shapes that cleared the score bar and waited for a real
+defect in review. No Tier 2 candidate remains.
 The `AsReadOnly()` getter shape left this table on 2026-11-14, because E128058
 and E128060 require that shape. See [skipped-decisions.md](skipped-decisions.md).
 The token-validation flag shape left this table on 2026-11-17, because the
 maintainer chose prevention over the real-defect bar. The five roadmap shapes
-left the same way on 2026-11-18, and ship as E128233 to E128237.
-
-| Rule                                                               | Check                                                          | Noise  |
-| ------------------------------------------------------------------ | -------------------------------------------------------------- | ------ |
-| Array compared by reference                                        | `==` or `object.Equals` on two arrays, except byte arrays      | Low    |
-| Discarded `Stream.Read` count                                      | read used as a statement, buffer read later                    | Low    |
-| Blocking call inside `lock`                                        | sync `Thread.Sleep`, `File`, `Stream`, or `DbCommand` call     | Low    |
-| `CollectionsMarshal.AsSpan` invalidated by a list mutation         | span read after a mutating call on the list                    | Low    |
-| `Array.Resize` or `Concat` in a loop                               | call reassigned to the same receiver inside the loop           | Low    |
-| CORS wildcard with credentials                                     | one chain holds `AllowAnyOrigin` and `AllowCredentials`        | Low    |
-| Antiforgery missing on a state-changing action                     | verb attribute with no antiforgery attribute in scope          | Medium |
-| `readonly` field of a mutable struct                               | defensive copy on every member call                            | Low    |
-| Floating-point loop counter                                        | `for` loop steps a `float` or `double` local                   | Low    |
-| Enum cast outside the member set                                   | constant integral to enum conversion                           | Low    |
-| Guard after the division                                           | divisor compared with zero after the division                  | Low    |
-| `[Flags]` member value that is not a power of two                  | constant collides with a lower bit                             | Low    |
-| Dead store to a private field                                      | assignment killed on every path before a read                  | Medium |
-| Loop with no exit path                                             | `while (true)` with no exit call                               | Medium |
-| `Base64.*` over `Convert.ToBase64String`/`FromBase64String`        | call to the `Convert` base64 member, waiting on a real defect  | Low    |
+left the same way on 2026-11-18, and ship as E128233 to E128237. Four Tier 2
+shapes left on 2026-11-19, because the maintainer chose prevention again. They
+ship as E128238 to E128241. Five more Tier 2 shapes left the same day, and ship
+as E128242 to E128246. Four more Tier 2 shapes left the same day, and ship as
+E128247 to E128250. The last two Tier 2 shapes left the same day, and ship as
+E128251 and E128252. See [catalog.md](catalog.md).
 
 ## Skipped Decisions
 

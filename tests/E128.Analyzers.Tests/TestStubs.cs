@@ -127,4 +127,76 @@ internal static class TestStubs
             }
         }
         """;
+
+    /// <summary>
+    ///     Synthetic ASP.NET Core CORS builder used by the wildcard-with-credentials tests.
+    /// </summary>
+    public const string AspNetCoreCors =
+        """
+        namespace Microsoft.AspNetCore.Cors.Infrastructure
+        {
+            public sealed class CorsPolicyBuilder
+            {
+                public CorsPolicyBuilder AllowAnyOrigin()
+                {
+                    return this;
+                }
+
+                public CorsPolicyBuilder AllowCredentials()
+                {
+                    return this;
+                }
+
+                public CorsPolicyBuilder WithOrigins(params string[] origins)
+                {
+                    return this;
+                }
+            }
+        }
+        """;
+
+    /// <summary>
+    ///     Synthetic ASP.NET Core MVC attributes used by the antiforgery tests.
+    /// </summary>
+    public const string AspNetCoreMvc =
+        """
+        namespace Microsoft.AspNetCore.Mvc
+        {
+            public sealed class HttpGetAttribute : System.Attribute
+            {
+            }
+
+            public sealed class HttpPostAttribute : System.Attribute
+            {
+            }
+
+            public sealed class HttpPutAttribute : System.Attribute
+            {
+            }
+
+            public sealed class HttpPatchAttribute : System.Attribute
+            {
+            }
+
+            public sealed class HttpDeleteAttribute : System.Attribute
+            {
+            }
+
+            public sealed class ValidateAntiForgeryTokenAttribute : System.Attribute
+            {
+            }
+
+            public sealed class AutoValidateAntiforgeryTokenAttribute : System.Attribute
+            {
+            }
+
+            public sealed class IgnoreAntiforgeryTokenAttribute : System.Attribute
+            {
+            }
+
+            public sealed class ApiControllerAttribute : System.Attribute
+            {
+            }
+        }
+        """;
 }
