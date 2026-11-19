@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-18T16:45:38Z*
+*Updated: 2026-11-19T20:37:01Z*
 
 ## Generated Docs
 
@@ -100,3 +100,4 @@
 - [script-performance.md](infrastructure/script-performance.md): Bash performance rules: fork avoidance, the subshell trap, the version floor, byte-diff and shellcheck verification
 - [shell-authoring.md](infrastructure/shell-authoring.md): Tool prerequisites and shell-authoring checks
 - [shipping.md](infrastructure/shipping.md): Shipping-script branch guards, verification order, and unpushed commits
+- [tdd-regression-tracking.md](infrastructure/tdd-regression-tracking.md): Test provenance registry, TRX failure attribution, and the regression ledger

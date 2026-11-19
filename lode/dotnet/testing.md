@@ -1,5 +1,5 @@
 # .NET 11 Testing
-*Updated: 2026-11-18T09:52:20Z*
+*Updated: 2026-11-19T20:37:01Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -59,6 +59,9 @@ scripts/test.sh --trait "Category=Podman"
 
 # Print the command without running it
 scripts/test.sh --dry-run GreeterTests
+
+# Write one TRX report per test project to a directory
+scripts/test.sh --trx-dir .tdd/tmp/trx-probe GreeterTests
 
 # Terse output is the default (--json is a legacy no-op alias)
 scripts/test.sh --json
@@ -148,9 +151,19 @@ Before changing `<TargetFramework>`, run `dotnet --list-sdks` and confirm the ta
 A missing target SDK fails the local build. CI uses its pinned SDK and a case-sensitive Linux filesystem.
 The supported targets live in [AGENTS.md](../../AGENTS.md) .NET Constraints.
 
+## TDD Regression Tracking
+
+`scripts/tdd-track.sh` consumes TRX to separate real regressions from Red-phase
+failures. `scripts/test.sh --trx-dir DIR` places one report per test project.
+The `merged/` tree that `dotnet test` writes is skipped to avoid double counts.
+Every test project references `Microsoft.Testing.Extensions.TrxReport`.
+The registry, classifier, ledger, and LLM workflow live in
+[TDD Regression Tracking](../infrastructure/tdd-regression-tracking.md).
+
 ## Related
 
 - [Project Structure](project-structure.md)
 - [Architecture Testing](architecture-testing.md)
 - [Analyzers](analyzers.md)
 - [Code Coverage](code-coverage.md)
+- [TDD Regression Tracking](../infrastructure/tdd-regression-tracking.md)

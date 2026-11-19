@@ -8,6 +8,8 @@ phrase triggers and the routes of scripts that replace no raw command.
 | ------------------------------------------------------------------- | -------------------------------------------- |
 | `run tests` / `test this` / `run targeted tests` / `build and test` | `scripts/test.sh <ClassName>`                |
 | `run all tests` / `full test suite` / `test --all`                  | `scripts/test.sh --all`                      |
+| `tdd analyze` / `attribute test failures` / `regression check`      | `scripts/tdd-track.sh analyze`               |
+| `regression report` / `past regressions`                            | `scripts/tdd-track.sh report --markdown`     |
 | `build` / `compile` / `run build` / `build project`                 | `scripts/build.sh [--project <name>]`        |
 | `am I good` / `check this` / `verify changes`                       | `scripts/check.sh`                           |
 | `what changed` / `show status`                                      | `scripts/status.sh`                          |

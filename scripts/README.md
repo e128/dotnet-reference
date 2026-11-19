@@ -28,7 +28,9 @@ Other required tools: see [Shell Authoring](../lode/infrastructure/shell-authori
 | Script                    | Purpose                                                                                              | Key flags                                                             |
 | ------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | `build.sh`                | Build the solution or a specific project                                                             | `--verbose`, `--project`, `--errors`, `--warnings`, `--fix`, `--fast` |
-| `test.sh`                 | Run tests (defaults to CI category)                                                                  | `--all`, `--verbose`, `--dry-run`, `--trait`, `--framework`           |
+| `test.sh`                 | Run tests (defaults to CI category)                                                                  | `--all`, `--verbose`, `--dry-run`, `--trait`, `--framework`, `--trx-dir` |
+| `tdd-track.sh`            | Classify test failures and keep the regression ledger                                                | `register`, `analyze`, `report`, `--trx`, `--dry-run`, `--markdown`   |
+| `tdd-track-test.sh`       | Test the TDD tracker in fixture repos with synthetic TRX                                             | none                                                                  |
 | `format.sh`               | Run jb cleanupcode then dotnet format                                                                | `--check`, `--changed`, `--no-jb`                                     |
 | `check.sh`                | Composed: shell lint, shipping tests, analyzer release, format, build, test                          | `--all`, `--no-format`, `--json`                                      |
 | `ci.sh`                   | Full CI pipeline: shell lint, shipping tests, package tests, format, build, test                     | `--human`, `--json`, `--skip-format`, `--skip-build`, `--skip-test`   |

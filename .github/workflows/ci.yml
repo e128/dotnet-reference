@@ -29,10 +29,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # TDD attribution compares HEAD~1 with HEAD. One extra commit is
+          # enough for a PR merge ref and for a main-branch run.
+          fetch-depth: 2
 
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: '11.0.x'
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ripgrep
 
       - name: Test analyzer package guidance
         run: scripts/analyzer-package-test.sh
@@ -70,7 +77,28 @@ jobs:
             --coverage \
             --coverage-output-format cobertura \
             --coverage-settings coverage.config.xml \
-            --results-directory ./test-results
+            --results-directory ./test-results \
+            -- \
+            --report-trx
+
+      - name: "Report: TDD regressions"
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -d ./test-results ] \
+            && find ./test-results -name '*.trx' -print -quit | grep -q .; then
+            bash scripts/tdd-track.sh analyze --no-run --trx ./test-results \
+              --dry-run --markdown >> "$GITHUB_STEP_SUMMARY" || true
+            bash scripts/tdd-track.sh analyze --no-run --trx ./test-results \
+              --dry-run --json > ./test-results/tdd-analysis.json || true
+            bash scripts/tdd-track.sh report --markdown >> "$GITHUB_STEP_SUMMARY" || true
+            jq -r '.details[]
+              | select(.classification == "confirmed_regression")
+              | "::warning title=Confirmed TDD regression::\(.test_name) failed after a production change."' \
+              ./test-results/tdd-analysis.json || true
+          else
+            echo "_TDD attribution unavailable: no TRX was produced._" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: "Gate: Coverage"
         run: bash scripts/coverage-areas.sh --min-line 80 --min-assembly 80
@@ -119,6 +147,9 @@ jobs:
 
       - name: Test shipping script
         run: bash scripts/verify-and-ship-test.sh
+
+      - name: Test TDD tracking script
+        run: bash scripts/tdd-track-test.sh
 
       - name: Check opencode agent mirror
         run: bash scripts/internal/opencode-agents.sh check

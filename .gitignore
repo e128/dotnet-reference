@@ -163,6 +163,10 @@ mono_crash.*
 # =============================================================================
 [Tt]est[Rr]esult*/
 test-results/
+
+# TDD tracking runtime state. The registry and ledger stay tracked.
+.tdd/tmp/
+.tdd/state.json
 [Bb]uild[Ll]og.*
 *.VisualState.xml
 TestResult.xml

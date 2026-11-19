@@ -14,6 +14,9 @@ print terse JSON by default. Use the script help for supported flags.
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `dotnet build`                                                   | `scripts/build.sh [--project NAME] [--verbose]`                                 |
 | `dotnet test`                                                    | `scripts/test.sh ClassName` or `--all`                                          |
+| a test run with failure attribution and a regression ledger      | `scripts/tdd-track.sh analyze -- <tests>`                                       |
+| manual test provenance or baseline approval                      | `scripts/tdd-track.sh register --changed --origin llm-generated`                |
+| ad-hoc regression statistics or prompt history                   | `scripts/tdd-track.sh report --markdown`                                        |
 | `dotnet format`                                                  | `scripts/format.sh --changed` or `--check`                                      |
 | `shellcheck` on a shell script                                   | `scripts/lint-shell.sh [FILE...]`                                               |
 | format, build, and test run separately                           | `scripts/check.sh`                                                              |
