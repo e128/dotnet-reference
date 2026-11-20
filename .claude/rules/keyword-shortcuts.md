@@ -26,6 +26,8 @@ phrase triggers and the routes of scripts that replace no raw command.
 | `check actions` / `outdated actions`                                | `scripts/gh-actions-update.sh`               |
 | `lint yaml` / `check yaml`                                          | `scripts/lint-yaml.sh`                       |
 | `lint shell` / `check shell` / `shellcheck`                         | `scripts/lint-shell.sh`                      |
+| `comment scan` / `check comments` / `ban comments`                  | `scripts/comment-scan.sh`                    |
+| `delete comments` / `remove comments` / `comment cleanup`           | `/delete-comment`                            |
 | `lode summary` / `lode section`                                     | `scripts/lode-summary.sh`                    |
 | `apply updates` / `update packages` / `bump deps`                   | `scripts/update.sh [--apply]`                |
 | `poll until` / `wait for build` / `loop until`                      | `scripts/loop.sh`                            |

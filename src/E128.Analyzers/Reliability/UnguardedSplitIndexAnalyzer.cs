@@ -99,10 +99,6 @@ public sealed class UnguardedSplitIndexAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // A length check on the local before the index access, inside the enclosing member, counts as a
-    // guard. The check can be a Length read, a null-conditional Length read, a property pattern on
-    // Length, or a list pattern. A check after the access cannot guard it. The rule does not model
-    // control flow, so it prefers silence over a false report.
     private static bool LengthIsRead(ILocalSymbol local, SyntaxNode access, OperationAnalysisContext context)
     {
         var member = access.FirstAncestorOrSelf<MemberDeclarationSyntax>();

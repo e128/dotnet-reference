@@ -46,8 +46,6 @@ public sealed class PragmaFileScopedNamespaceAnalyzer : DiagnosticAnalyzer
         var namespaceDeclaration = (FileScopedNamespaceDeclarationSyntax)context.Node;
         var namespaceToken = namespaceDeclaration.GetFirstToken();
 
-        // Walk backwards from the namespace and stop at the first match. The old code walked
-        // every token in the file, including the whole body below the namespace.
         var found = FindDisablePragma(namespaceToken.LeadingTrivia);
         for (var token = namespaceToken.GetPreviousToken(includeZeroWidth: true);
              found is null && token.RawKind is not 0;

@@ -124,8 +124,6 @@ internal static class GeneratedRegexHelpers
     {
         if (IsAtomicGroup(pattern, openIndex))
         {
-            // An atomic group never gives back its text, so the inner quantifier cannot
-            // re-enter it and the pair cannot backtrack.
             return null;
         }
 
@@ -144,15 +142,12 @@ internal static class GeneratedRegexHelpers
 
         if (!FirstAtomCanAlsoBeLast(pattern, openIndex, closeIndex, inClass))
         {
-            // The body leads with a separator atom that differs from the trailing atom, so
-            // every repetition consumes text the inner quantifier cannot revisit.
             return null;
         }
 
         return new NestedQuantifierSpan(openIndex, closeIndex, afterClose, quantifierLength, HasSingleAtomBody(pattern, openIndex, closeIndex));
     }
 
-    // Returns true when a group opens as an atomic group: '(?>'.
     private static bool IsAtomicGroup(string pattern, int openIndex)
     {
         return openIndex + EscapeSequenceLength < pattern.Length
@@ -160,9 +155,6 @@ internal static class GeneratedRegexHelpers
                && pattern[openIndex + EscapeSequenceLength] is '>';
     }
 
-    // Returns the length of an unbounded quantifier at index: a '*' or a '+', or an
-    // unbounded '{n,}' repeat. Each may carry a lazy '?'. Returns 0 when none. A
-    // bounded '{n}' or '{n,m}' repeat is linear and stays out of the rule.
     private static int UnboundedQuantifierLength(string pattern, int index)
     {
         if (index >= pattern.Length)
@@ -209,9 +201,6 @@ internal static class GeneratedRegexHelpers
         return i - index + 1;
     }
 
-    // Returns true when the group body is exactly one atom with one quantifier, so the
-    // outer quantifier is redundant and removing it keeps the language. '(\w+)+',
-    // '(a*)*', and '(?:\d+)+' qualify.
     private static bool HasSingleAtomBody(string pattern, int openIndex, int closeIndex)
     {
         var bodyStart = GroupBodyStart(pattern, openIndex);
@@ -235,8 +224,6 @@ internal static class GeneratedRegexHelpers
         return atomEnd == closeIndex;
     }
 
-    // Returns the index of the first body character, or -1 for a group shape the body
-    // checks do not model: named groups, lookarounds, and bare conditions.
     private static int GroupBodyStart(string pattern, int openIndex)
     {
         var bodyIndex = openIndex + 1;
@@ -258,8 +245,6 @@ internal static class GeneratedRegexHelpers
         return pattern[bodyIndex + 1] is ':' ? openIndex + NonCapturingPrefixLength : -1;
     }
 
-    // Returns the index just past one atom at start, or -1 when the atom is a group or
-    // an unterminated class.
     private static int AtomEnd(string pattern, int start, int limit)
     {
         if (start >= limit)
@@ -281,14 +266,6 @@ internal static class GeneratedRegexHelpers
         return start + 1;
     }
 
-    // A repeated group can only backtrack exponentially when its first consuming atom
-    // can also match its last consuming atom. The comparison reads the two atoms by
-    // pattern text, so a distinct leading separator, like the '/' in '(?:/[^/]+)+',
-    // exempts the group. A character class atom is parsed: against one literal
-    // character the membership is exact, so '(?:/[^\s:"']+)+', whose trailing class
-    // matches the '/', keeps the flag. A class against a dot, a shorthand, or another
-    // class cannot be proven disjoint by the text comparison and keeps the flag. A
-    // top-level alternation always keeps the flag.
     private static bool FirstAtomCanAlsoBeLast(string pattern, int openIndex, int closeIndex, bool[] inClass)
     {
         var bodyStart = GroupBodyStart(pattern, openIndex);
@@ -393,9 +370,6 @@ internal static class GeneratedRegexHelpers
         return true;
     }
 
-    // Returns the span of the last consuming atom in the body after stripping its
-    // quantifier. A nested group tail, a malformed tail, or an unterminated class
-    // returns false and keeps the group flagged.
     private static bool TryReadLastAtomSpan(
         string pattern,
         int bodyStart,
@@ -429,8 +403,6 @@ internal static class GeneratedRegexHelpers
         return true;
     }
 
-    // Walks back over the quantifier and lazy marker that follow the last atom, then
-    // over a bounded repeat prefix. Returns -1 when no readable atom tail exists.
     private static int LastAtomEndIndex(string pattern, int bodyStart, int closeIndex, bool[] inClass)
     {
         var j = closeIndex - 1;
@@ -451,8 +423,6 @@ internal static class GeneratedRegexHelpers
         return ch is '?' or '*' or '+' or '}';
     }
 
-    // Walks back over a repeat prefix that ends with the '}' at from. Returns the index
-    // before its '{', or -1 when no '{' sits inside the body.
     private static int SkipBoundedRepeatPrefix(string pattern, int bodyStart, int from)
     {
         var j = from;
@@ -506,8 +476,6 @@ internal static class GeneratedRegexHelpers
             return true;
         }
 
-        // A shorthand escape and a plain character overlap whenever the shorthand
-        // contains the character.
         if (IsShorthandSpan(pattern, firstStart, firstEnd))
         {
             return OverlapsShorthand(pattern[firstStart + 1], pattern, lastStart, lastEnd);
@@ -517,10 +485,6 @@ internal static class GeneratedRegexHelpers
                && OverlapsShorthand(pattern[lastStart + 1], pattern, firstStart, firstEnd);
     }
 
-    // Returns true when a character class atom and another atom can match the same
-    // text. Against one literal character the class membership is exact. A class
-    // against a dot, a shorthand, or another class cannot be proven disjoint by the
-    // text comparison, so the group stays flagged.
     private static bool ClassAtomOverlaps(string pattern, int classStart, int classEnd, int otherStart, int otherEnd)
     {
         if (!TryReadLiteralChar(pattern, otherStart, otherEnd, out var c))
@@ -531,8 +495,6 @@ internal static class GeneratedRegexHelpers
         return ClassMatchesChar(pattern, classStart, classEnd - 1, c);
     }
 
-    // Returns the literal character of the other atom span, or false when the span is a
-    // shorthand escape, an unmodeled escape, a group, or another class.
     private static bool TryReadLiteralChar(string pattern, int start, int end, out char value)
     {
         if (end - start is 1)
@@ -555,9 +517,6 @@ internal static class GeneratedRegexHelpers
         return c is 's' or 'S' or 'd' or 'D' or 'w' or 'W';
     }
 
-    // Returns true when the class spanning from the '[' at start to the ']' at close can
-    // match the character c. Negation, ranges, and escapes are parsed. A class the parser
-    // cannot model reports a match, so the caller keeps the group flagged.
     private static bool ClassMatchesChar(string pattern, int start, int close, char c)
     {
         var index = start + 1;
@@ -570,7 +529,6 @@ internal static class GeneratedRegexHelpers
 
         if (pattern[index] is ']')
         {
-            // A ']' first in the class is a literal.
             index++;
         }
 
@@ -589,8 +547,6 @@ internal static class GeneratedRegexHelpers
         return negated ? !anyMatch : anyMatch;
     }
 
-    // Reads one class entry at index, sets anyMatch when the entry matches c, and
-    // returns the index after the entry. Returns -1 when the entry is unparseable.
     private static int ReadClassEntry(string pattern, int index, int close, char c, ref bool anyMatch)
     {
         var next = index + 1;
@@ -602,8 +558,6 @@ internal static class GeneratedRegexHelpers
         return ReadLiteralClassEntry(pattern, pattern[index], next, close, c, ref anyMatch);
     }
 
-    // Reads one escaped entry whose escape character sits at next, sets anyMatch, and
-    // returns the index after the entry. Returns -1 when the entry is unparseable.
     private static int ReadEscapedClassEntry(string pattern, int next, int close, char c, ref bool anyMatch)
     {
         if (next >= close)
@@ -626,8 +580,6 @@ internal static class GeneratedRegexHelpers
         return ReadLiteralClassEntry(pattern, lo, next + 1, close, c, ref anyMatch);
     }
 
-    // Reads one literal or range entry with the lo character lo whose next character
-    // sits at next, sets anyMatch, and returns the index after the entry.
     private static int ReadLiteralClassEntry(string pattern, char lo, int next, int close, char c, ref bool anyMatch)
     {
         if (IsRangeStart(pattern, next, close))
@@ -646,8 +598,6 @@ internal static class GeneratedRegexHelpers
         return next;
     }
 
-    // A range starts at index when it holds a '-' and a literal hi character before the
-    // close. A '-' before the close stays a literal dash entry.
     private static bool IsRangeStart(string pattern, int index, int close)
     {
         return index + 1 < close
@@ -655,8 +605,6 @@ internal static class GeneratedRegexHelpers
                && pattern[index + 1] is not ']' and not '\\';
     }
 
-    // Returns the literal character of one class escape, or false for an escape the
-    // parser cannot model, like '\u', '\1', or '\p'.
     private static bool TryEscapedChar(char escaped, out char value)
     {
         if (IsSimpleCharEscape(escaped))
@@ -667,7 +615,6 @@ internal static class GeneratedRegexHelpers
 
         if (IsAsciiLetter(escaped) || IsAsciiDigit(escaped))
         {
-            // Unmodeled escapes, like '\u', '\p', and the octal digits, keep the flag.
             value = '\0';
             return false;
         }
@@ -701,9 +648,6 @@ internal static class GeneratedRegexHelpers
         return end - start == EscapeSequenceLength && pattern[start] is '\\' && IsAsciiLetter(pattern[start + 1]);
     }
 
-    // Returns true when the shorthand escape of kind overlaps the other atom. A
-    // shorthand against another shorthand assumes overlap. A shorthand against a class
-    // relies on the text comparison.
     private static bool OverlapsShorthand(char kind, string pattern, int otherStart, int otherEnd)
     {
         if (otherEnd - otherStart is not 1)
@@ -878,8 +822,6 @@ internal static class GeneratedRegexHelpers
         return false;
     }
 
-    // Marks every index that lies inside a character class, so scanners treat
-    // class contents as literals. Returns a mask the length of the pattern.
     internal static bool[] BuildCharacterClassMask(string pattern)
     {
         var inClass = new bool[pattern.Length];
@@ -901,7 +843,6 @@ internal static class GeneratedRegexHelpers
             var closeIndex = FindClassCloseIndex(pattern, index);
             if (closeIndex < 0)
             {
-                // An unterminated class runs to the end of the pattern.
                 for (var k = index; k < pattern.Length; k++)
                 {
                     inClass[k] = true;
@@ -921,7 +862,6 @@ internal static class GeneratedRegexHelpers
         return inClass;
     }
 
-    // Returns the index of the ']' that closes a character class, or -1 when unterminated.
     internal static int FindClassCloseIndex(string pattern, int bracketIndex)
     {
         var i = bracketIndex + 1;
@@ -932,7 +872,6 @@ internal static class GeneratedRegexHelpers
 
         if (i < pattern.Length && pattern[i] is ']')
         {
-            // A ']' first in the class is a literal.
             i++;
         }
 
@@ -955,7 +894,6 @@ internal static class GeneratedRegexHelpers
         return -1;
     }
 
-    // Returns the index after a whitespace escape and its quantifier, or -1 when none starts at index.
     internal static int WhitespaceQuantifierEnd(string pattern, int index)
     {
         if (pattern[index] != '\\' || pattern[index + 1] != 's')
@@ -1086,7 +1024,6 @@ internal static class GeneratedRegexHelpers
         return false;
     }
 
-    // Returns a final answer when the scan can stop, or null to keep scanning.
     private static bool? ClassifyGroupChar(string pattern, int index, ref int depth)
     {
         var ch = pattern[index];

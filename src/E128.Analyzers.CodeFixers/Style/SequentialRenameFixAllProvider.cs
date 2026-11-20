@@ -94,8 +94,6 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
             }
         }
 
-        // Process back-to-front within each document so renames at higher positions
-        // don't shift the spans of symbols that appear earlier in the same file.
         return [.. result.OrderBy(static r => r.DocumentId.Id).ThenByDescending(static r => r.Span.Start)];
     }
 
@@ -158,7 +156,6 @@ internal sealed class SequentialRenameFixAllProvider : FixAllProvider
             var symbol = semanticModel.GetDeclaredSymbol(node, ct)
                          ?? semanticModel.GetSymbolInfo(node, ct).Symbol;
 
-            // Skip if the symbol was already renamed by a previous fix (name no longer matches).
             if (symbol is null || !string.Equals(symbol.Name, rename.OldName, StringComparison.Ordinal))
             {
                 continue;

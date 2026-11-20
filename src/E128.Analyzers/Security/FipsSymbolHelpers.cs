@@ -32,14 +32,12 @@ internal static partial class FipsSymbolHelpers
         SymbolDisplayFormat.FullyQualifiedFormat
             .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted);
 
-    // Collection and dictionary probes read a hash name to guard against it, not to select it.
     private static readonly ImmutableHashSet<string> HashNameProbeMembers = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "Equals", "Contains", "ContainsKey", "IndexOf", "Remove", "TryGetValue");
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IFieldSymbol, bool>> AssignedInConstructorCache = new();
 
-    // The cache key is the root operation of a body. The entry dies with the operation tree.
     private static readonly ConditionalWeakTable<IOperation, HashSet<ILocalSymbol>> WrittenLocalsCache = new();
 
     /// <summary>
@@ -438,8 +436,6 @@ internal static partial class FipsSymbolHelpers
 
     private static IBlockOperation? FindEnclosingBlock(IOperation creation)
     {
-        // The block that holds the statement, or the body of a 'using (var x = ...)' statement whose resource
-        // is the creation, so the first statement of that body counts as the first use.
         for (var statement = creation; statement.Parent is not null; statement = statement.Parent)
         {
             if (statement.Parent is IUsingOperation { Body: IBlockOperation body } usingStatement && usingStatement.Resources == statement)
@@ -559,8 +555,6 @@ internal static partial class FipsSymbolHelpers
             return;
         }
 
-        // A compound assignment such as += computes a new value from the old one. The result is not a
-        // known constant, and the right operand alone is not the assigned value, so skip it.
         if (operation is ICompoundAssignmentOperation)
         {
             return;
@@ -588,7 +582,6 @@ internal static partial class FipsSymbolHelpers
             parent = parent.Parent;
         }
 
-        // The receiver of an Equals or HasFlag call reads the value; only the argument position could mislead a name check.
         var receiverComparison = parent is IInvocationOperation comparisonCall &&
             IsEqualsOrHasFlag(comparisonCall.TargetMethod) &&
             comparisonCall.Instance == operation;

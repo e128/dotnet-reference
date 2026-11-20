@@ -50,8 +50,6 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
             context.Compilation.GetTypeByMetadataName("System.Exception"),
             context.Compilation.GetSpecialType(SpecialType.System_Collections_IEnumerable));
 
-        // Each tree carries its own analyzer config. Read every ceiling once here instead of on
-        // every constructor declaration.
         var ceilingsBuilder = ImmutableArray.CreateBuilder<(SyntaxTree Tree, int Ceiling)>();
         foreach (var tree in context.Compilation.SyntaxTrees)
         {
@@ -60,7 +58,6 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
 
         var ceilings = ceilingsBuilder.ToImmutable();
 
-        // A record primary constructor is not registered. Its parameters declare data members, not services.
         context.RegisterSyntaxNodeAction(ctx => AnalyzeConstructor(ctx, known, ceilings), SyntaxKind.ConstructorDeclaration);
         context.RegisterSyntaxNodeAction(ctx => AnalyzePrimaryConstructor(ctx, known, ceilings), SyntaxKind.ClassDeclaration, SyntaxKind.StructDeclaration);
     }
@@ -127,8 +124,6 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
 
     private static bool IsDependency(ITypeSymbol type, KnownTypes known)
     {
-        // Special types cover object, string, primitives, and the generic collection interfaces.
-        // Arrays, structs, enums, and delegates fail the type kind check, so a params array never counts.
         if (type.SpecialType is not SpecialType.None
             || type.TypeKind is not (TypeKind.Class or TypeKind.Interface)
             || type.IsRecord
@@ -137,7 +132,6 @@ public sealed class ConstructorDependencyCeilingAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // An exception or a collection carries data. It does not provide a service.
         return !TypeSymbols.DerivesFrom(type, known.Exception) && !IsEnumerable(type, known.Enumerable);
     }
 

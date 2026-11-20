@@ -137,10 +137,6 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // Extracts string equality info from one leaf expression, or returns null if it doesn't qualify.
-    // Handles two forms:
-    //   Form 1: string.Equals(operand, "literal", StringComparison.X)
-    //   Form 2: operand == "literal"  (identifier on left, string literal on right)
     internal static StringEqualityInfo? TryExtractStringEquality(
         SemanticModel semanticModel,
         ExpressionSyntax expr,
@@ -150,7 +146,6 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
             ?? TryExtractEqualsOperator(expr);
     }
 
-    // Form 1: string.Equals(operand, "literal", StringComparison.X)
     private static StringEqualityInfo? TryExtractEqualsCall(
         SemanticModel semanticModel,
         ExpressionSyntax expr,
@@ -173,7 +168,6 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        // Semantic verification: confirm the call resolves to System.String.Equals.
         var symbolInfo = semanticModel.GetSymbolInfo(invocation, cancellationToken);
         return symbolInfo.Symbol is not IMethodSymbol method
                || method.ContainingType?.SpecialType is not SpecialType.System_String
@@ -184,7 +178,6 @@ public sealed class MultiStringEqualsOrChainAnalyzer : DiagnosticAnalyzer
                 args[ComparisonArgumentIndex].Expression.ToString());
     }
 
-    // Form 2: operand == "literal"
     private static StringEqualityInfo? TryExtractEqualsOperator(ExpressionSyntax expr)
     {
         return expr is BinaryExpressionSyntax

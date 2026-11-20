@@ -9,8 +9,6 @@ namespace E128.Analyzers.Security;
 
 internal static partial class FipsSymbolHelpers
 {
-    // Cap how much source-derived text the helpers decode or scan. A hostile literal must not
-    // inflate analyzer memory and time. An over-cap value falls through to the fail-closed report.
     private const int MaxEncodedConstantLength = 1 << 20;
     private const int HexCharsPerByte = 2;
 
@@ -55,7 +53,6 @@ internal static partial class FipsSymbolHelpers
                     TryGetConstantByteLength(resolved, out length, depth + 1);
 
             default:
-                // Roslyn does not expose a public operation interface for stackalloc, so read the syntax.
                 return TryGetStackAllocLength(operation, out length);
         }
     }
@@ -69,7 +66,6 @@ internal static partial class FipsSymbolHelpers
             return true;
         }
 
-        // 'new byte[] { ... }' carries no dimension size, so the element count is the length.
         if (array.Initializer is null)
         {
             return false;
@@ -128,7 +124,6 @@ IInvocationOperation invocation, out int length, int depth)
         return true;
     }
 
-    // Returns the static Encoding property that a GetBytes call reads from, or null.
     private static IPropertyReferenceOperation? GetEncodingProperty(IInvocationOperation invocation)
     {
         if (!string.Equals(invocation.TargetMethod.Name, "GetBytes", StringComparison.Ordinal) ||
@@ -177,7 +172,6 @@ IInvocationOperation invocation, out int length, int depth)
             return false;
         }
 
-        // An extension method receives the source as its first argument, so the extra arguments follow it.
         var source = invocation.Instance ?? ArgumentAt(invocation.Arguments, 0)?.Value;
         var extraArguments = invocation.Instance is null ? invocation.Arguments.Length - 1 : invocation.Arguments.Length;
 

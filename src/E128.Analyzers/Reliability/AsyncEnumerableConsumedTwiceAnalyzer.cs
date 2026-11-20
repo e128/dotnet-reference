@@ -55,7 +55,6 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
             var asyncEnumerableType = compilationContext.Compilation.GetTypeByMetadataName(
                 "System.Collections.Generic.IAsyncEnumerable`1");
 
-            // A target framework without IAsyncEnumerable cannot hold the value this rule reads.
             compilationContext.RegisterSyntaxNodeAction(
                 nodeContext => AnalyzeBody(nodeContext, asyncEnumerableType),
                 SyntaxKind.MethodDeclaration,
@@ -102,7 +101,6 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // An iterator hands items onward one at a time, so it reads the source once per call.
         if (body.DescendantNodesAndSelf(IsFunctionBoundary).Any(static node => node is YieldStatementSyntax))
         {
             return;
@@ -114,7 +112,6 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
 
         foreach (var node in body.DescendantNodesAndSelf(IsFunctionBoundary))
         {
-            // An assignment gives the symbol a new sequence, so earlier enumerations no longer count.
             if (node is AssignmentExpressionSyntax assignment
                 && model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol is { } assigned)
             {
@@ -132,7 +129,6 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Two enumerations in the two branches of one if never run in the same pass.
             if (ExclusiveBranches.Are(first, expression))
             {
                 continue;
@@ -242,7 +238,6 @@ public sealed class AsyncEnumerableConsumedTwiceAnalyzer : DiagnosticAnalyzer
 
         if (expression is MemberAccessExpressionSyntax access)
         {
-            // A field on another instance is a different sequence, so only this and base qualify.
             if (access.Expression is not (ThisExpressionSyntax or BaseExpressionSyntax))
             {
                 return false;

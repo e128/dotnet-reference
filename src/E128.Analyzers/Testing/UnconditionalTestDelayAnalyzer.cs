@@ -76,8 +76,6 @@ public sealed class UnconditionalTestDelayAnalyzer : DiagnosticAnalyzer
     {
         var method = (MethodDeclarationSyntax)context.Node;
 
-        // An editor buffer can hold a partial method with no body, so the guard reads the method
-        // shape before the rule reads the symbol.
         var scope = (SyntaxNode?)method.Body ?? method.ExpressionBody?.Expression;
 
         if (scope is null)
@@ -105,7 +103,6 @@ public sealed class UnconditionalTestDelayAnalyzer : DiagnosticAnalyzer
         DelayTypes types,
         SyntaxNodeAnalysisContext context)
     {
-        // Bind late. The name gate rejects only calls that the symbol check also rejects.
         var calledName = InvocationNames.GetSimpleName(invocation)?.Identifier.ValueText;
 
         if (calledName is null || !IsDelayName(calledName))
@@ -113,7 +110,6 @@ public sealed class UnconditionalTestDelayAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // A delay inside a loop stays silent, because E128211 owns the loop case.
         if (LoopContext.IsWithinAnyLoop(invocation))
         {
             return false;
@@ -154,8 +150,6 @@ public sealed class UnconditionalTestDelayAnalyzer : DiagnosticAnalyzer
                && SymbolEqualityComparer.Default.Equals(called.ContainingType, spinWait);
     }
 
-    // A missing CancellationToken symbol cannot prove the token absence, so the Task branch needs
-    // the type before it can report.
     private static bool IsUnconditionalTaskDelay(
         InvocationExpressionSyntax invocation,
         IMethodSymbol called,
@@ -175,8 +169,6 @@ public sealed class UnconditionalTestDelayAnalyzer : DiagnosticAnalyzer
             parameter => SymbolEqualityComparer.Default.Equals(parameter.Type, types.CancellationToken));
     }
 
-    // A variable or computed duration can encode a real timeout the test chose, so the rule reads only
-    // a literal integer and a TimeSpan factory call that one literal argument builds.
     private static bool IsConstantDuration(
         InvocationExpressionSyntax invocation,
         DelayTypes types,

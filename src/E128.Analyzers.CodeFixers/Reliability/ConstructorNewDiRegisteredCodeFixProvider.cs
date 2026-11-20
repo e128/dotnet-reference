@@ -27,9 +27,6 @@ public sealed class ConstructorNewDiRegisteredCodeFixProvider : E128CodeFixProvi
 
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        // Intentionally no-op: the fix requires adding a constructor parameter,
-        // removing the 'new', and propagating to all call sites — too complex
-        // for a safe automatic code action.
         return Task.CompletedTask;
     }
 }

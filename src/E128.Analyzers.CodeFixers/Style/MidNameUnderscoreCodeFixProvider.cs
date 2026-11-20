@@ -71,22 +71,18 @@ public sealed class MidNameUnderscoreCodeFixProvider : E128CodeFixProviderBase
             return name;
         }
 
-        // Determine the prefix boundary (0 for no prefix, 2 for s_/m_/t_ prefixes, 1 for _ prefix)
         var prefixLength = GetPrefixLength(name);
         var result = new StringBuilder(name.Length);
         result.Append(name, 0, prefixLength);
 
         var body = name.Substring(prefixLength);
 
-        // Split the body on underscores and PascalCase each segment
         var segments = body.Split(['_'], StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length <= 1)
         {
-            // No mid-name underscores in the body — nothing to fix
             return name;
         }
 
-        // Preserve first segment's casing, PascalCase subsequent segments
         for (var i = 0; i < segments.Length; i++)
         {
             if (i is 0)
@@ -105,7 +101,6 @@ public sealed class MidNameUnderscoreCodeFixProvider : E128CodeFixProviderBase
 
     private static int GetPrefixLength(string name)
     {
-        // s_foo, m_foo, t_foo — 2-char prefix
         if (name.Length >= 2
             && name[1] is '_'
             && IsHungarianPrefixChar(name[0]))
@@ -113,7 +108,6 @@ public sealed class MidNameUnderscoreCodeFixProvider : E128CodeFixProviderBase
             return HungarianPrefixLength;
         }
 
-        // _foo — 1-char prefix
         return name.Length > 0 && name[0] is '_' ? 1 : 0;
     }
 

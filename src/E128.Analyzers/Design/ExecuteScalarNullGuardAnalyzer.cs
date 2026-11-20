@@ -82,7 +82,6 @@ public sealed class ExecuteScalarNullGuardAnalyzer : DiagnosticAnalyzer
 
     private static bool TryGetExecuteScalarMethodName(ExpressionSyntax expression, out string scalarMethodName)
     {
-        // Handle: Convert.ToInt32(cmd.ExecuteScalar())
         if (expression is InvocationExpressionSyntax directCall &&
             directCall.Expression is MemberAccessExpressionSyntax directAccess)
         {
@@ -94,7 +93,6 @@ public sealed class ExecuteScalarNullGuardAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        // Handle: Convert.ToInt32(await cmd.ExecuteScalarAsync())
         if (expression is AwaitExpressionSyntax awaitExpr &&
             awaitExpr.Expression is InvocationExpressionSyntax awaitedCall &&
             awaitedCall.Expression is MemberAccessExpressionSyntax awaitedAccess)

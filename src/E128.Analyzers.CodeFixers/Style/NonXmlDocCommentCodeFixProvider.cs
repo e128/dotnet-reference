@@ -48,13 +48,11 @@ public sealed class NonXmlDocCommentCodeFixProvider : E128CodeFixProviderBase
 
         var newTrivia = leadingTrivia.RemoveAt(index);
 
-        // Remove the EndOfLine after the comment
         if (index < newTrivia.Count && newTrivia[index].IsKind(SyntaxKind.EndOfLineTrivia))
         {
             newTrivia = newTrivia.RemoveAt(index);
         }
 
-        // Remove the leading whitespace before the comment (same line indent)
         if (index > 0 && newTrivia[index - 1].IsKind(SyntaxKind.WhitespaceTrivia))
         {
             newTrivia = newTrivia.RemoveAt(index - 1);

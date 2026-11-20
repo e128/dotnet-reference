@@ -66,7 +66,6 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
         var configurationExtensions = context.Compilation.GetTypeByMetadataName(
             "Microsoft.Extensions.Configuration.ConfigurationExtensions");
 
-        // A section read uses keys relative to the section, so the rule leaves those reads alone.
         var sectionType = context.Compilation.GetTypeByMetadataName(
             "Microsoft.Extensions.Configuration.IConfigurationSection");
 
@@ -106,8 +105,6 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A simple write such as config["Key"] = value defines the key, so it is not a read.
-        // A compound assignment reads the key before it writes it.
         if (elementAccess.Parent is AssignmentExpressionSyntax assignment
             && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
             && ReferenceEquals(assignment.Left, elementAccess))
@@ -147,7 +144,6 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A cheap name check runs before the semantic lookup, which costs more on every call.
         if (invocation.Expression is not MemberAccessExpressionSyntax access
             || !IsConfigurationMethodName(access.Name.Identifier.ValueText))
         {
@@ -176,7 +172,6 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A call on a section reads a key that is relative to that section.
         if (IsOrImplements(
             context.SemanticModel.GetTypeInfo(access.Expression, context.CancellationToken).Type,
             sectionType))
@@ -199,7 +194,6 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
                && SymbolEqualityComparer.Default.Equals(method.ContainingType, configurationExtensions);
     }
 
-    // GetSection is an interface member. GetRequiredSection is an extension method.
     private static bool IsSectionCall(
         IMethodSymbol method,
         INamedTypeSymbol configurationType,
@@ -270,8 +264,6 @@ public sealed class ConfigurationKeyMissingAnalyzer : DiagnosticAnalyzer
                 StringComparer.OrdinalIgnoreCase);
             var parsedAny = ReadAppSettingsFiles(files, builder, cancellationToken);
 
-            // The option adds keys on top of a parsed file. It never activates the rule on its own,
-            // because without a file the rule cannot tell a missing key from an invisible source.
             if (!parsedAny)
             {
                 return null;

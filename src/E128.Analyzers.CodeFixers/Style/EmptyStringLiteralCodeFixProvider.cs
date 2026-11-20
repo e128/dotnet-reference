@@ -42,7 +42,6 @@ public sealed class EmptyStringLiteralCodeFixProvider : E128CodeFixProviderBase
             return document;
         }
 
-        // Build: string.Empty — preserving the original literal's trivia.
         var stringEmpty = SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),

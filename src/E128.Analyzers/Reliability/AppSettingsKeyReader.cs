@@ -33,8 +33,6 @@ internal sealed class AppSettingsKeyReader
     /// </summary>
     internal static bool TryRead(string json, ImmutableHashSet<string>.Builder keys)
     {
-        // Parse into a local set so a document that fails partway leaves the caller's set untouched.
-        // Configuration keys are case-insensitive, and the only caller builds its set that way.
         var parsed = ImmutableHashSet.CreateBuilder(StringComparer.OrdinalIgnoreCase);
         var reader = new AppSettingsKeyReader(json, parsed);
 
@@ -43,8 +41,6 @@ internal sealed class AppSettingsKeyReader
             reader.position = 1;
         }
 
-        // A settings document has an object or array root. A lone literal would parse as a
-        // well-formed document with zero keys and arm the rule for every read.
         reader.SkipTrivia();
         if (reader.position >= reader.json.Length || reader.json[reader.position] is not ('{' or '['))
         {
@@ -276,7 +272,6 @@ internal sealed class AppSettingsKeyReader
         return true;
     }
 
-    // A number, true, false, or null. The reader never needs the value, only the end of the token.
     private bool SkipLiteral()
     {
         var start = position;
@@ -293,15 +288,12 @@ internal sealed class AppSettingsKeyReader
 
         var token = json.Substring(start, position - start);
 
-        // The token must be a JSON literal. double.TryParse would also accept NaN, Infinity, a
-        // leading plus sign, a leading zero, and a trailing dot.
         return string.Equals(token, "true", StringComparison.Ordinal)
                || string.Equals(token, "false", StringComparison.Ordinal)
                || string.Equals(token, "null", StringComparison.Ordinal)
                || IsJsonNumber(token);
     }
 
-    // Matches -?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?
     private static bool IsJsonNumber(string token)
     {
         var index = SkipInteger(token, 0);
@@ -418,8 +410,6 @@ internal sealed class AppSettingsKeyReader
         return character is ',' or '}' or ']' or '/' || char.IsWhiteSpace(character);
     }
 
-    // Skips whitespace, line comments, and block comments. An unterminated block comment runs to
-    // the end of the text, so the caller then fails on the missing value.
     private void SkipTrivia()
     {
         while (position < json.Length)

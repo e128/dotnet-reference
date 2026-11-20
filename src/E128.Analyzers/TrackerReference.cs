@@ -19,8 +19,6 @@ internal static class TrackerReference
 
     private static readonly Regex DefaultRegex = new(DefaultPattern, RegexOptions.CultureInvariant, MatchTimeout);
 
-    // One compiled Regex per configured pattern string. The cache is thread safe because the rules
-    // run concurrently, and it holds one entry per distinct option value.
     private static readonly ConcurrentDictionary<string, Regex> Cache = new(StringComparer.Ordinal);
 
     internal static Regex GetPattern(AnalyzerConfigOptions options)
@@ -38,7 +36,6 @@ internal static class TrackerReference
         }
         catch (ArgumentException)
         {
-            // An invalid pattern falls back to the default instead of failing the build.
             return DefaultRegex;
         }
     }
@@ -51,7 +48,6 @@ internal static class TrackerReference
         }
         catch (RegexMatchTimeoutException)
         {
-            // An unmatched reference must still report, so a slow pattern cannot disable the rule.
             return false;
         }
     }

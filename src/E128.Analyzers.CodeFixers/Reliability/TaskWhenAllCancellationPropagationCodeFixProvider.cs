@@ -160,8 +160,6 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : E128Code
         return TargetMethodNames.Contains(name.Identifier.Text);
     }
 
-    // Appending the token positionally needs an overload that takes one more argument and ends with
-    // the token. The Playwright calls accept only an options object, so they get no fix.
     private static bool AcceptsTrailingCancellationToken(
         SemanticModel semanticModel,
         InvocationExpressionSyntax invocation,

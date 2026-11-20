@@ -43,7 +43,6 @@ public sealed class DateTimeDirectUseCodeFixProvider : E128CodeFixProviderBase
         var typeName = memberAccess.Expression.ToString();
         var memberName = memberAccess.Name.Identifier.ValueText;
 
-        // TimeProvider.System base expression
         var timeProviderSystem = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
             SyntaxFactory.IdentifierName("TimeProvider"),

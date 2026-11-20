@@ -139,7 +139,6 @@ public sealed class LazyFieldThreadSafetyAnalyzer : DiagnosticAnalyzer
             && MetadataTypes.Contains(lazyTypes, named.OriginalDefinition);
     }
 
-    // LazyThreadSafetyMode.None, and the isThreadSafe: false overload that means the same thing.
     private static bool IsUnsynchronized(
         IMethodSymbol constructor,
         ArgumentListSyntax? argumentList,

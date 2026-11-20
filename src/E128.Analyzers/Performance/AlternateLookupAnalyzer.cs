@@ -110,9 +110,6 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        // Only a method whose first argument is a key reports. A member such as
-        // ContainsValue takes the value position, so its argument never proves
-        // that the dictionary keys come from this span.
         if (invocation.Expression is not MemberAccessExpressionSyntax
             {
                 Expression: IdentifierNameSyntax receiver,
@@ -131,8 +128,6 @@ public sealed class AlternateLookupAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, key.GetLocation()));
     }
 
-    // Members whose first argument is a key on the tracked collection types. ContainsValue,
-    // which takes a value, is never a lookup key.
     private static bool IsKeyLookupMethod(string methodName)
     {
         return KeyLookupMethodNames.Contains(methodName);

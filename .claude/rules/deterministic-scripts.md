@@ -19,6 +19,7 @@ print terse JSON by default. Use the script help for supported flags.
 | ad-hoc regression statistics or prompt history                   | `scripts/tdd-track.sh report --markdown`                                        |
 | `dotnet format`                                                  | `scripts/format.sh --changed` or `--check`                                      |
 | `shellcheck` on a shell script                                   | `scripts/lint-shell.sh [FILE...]`                                               |
+| a manual `rg` count of source comments                           | `scripts/comment-scan.sh [--init] [--json]`                                     |
 | format, build, and test run separately                           | `scripts/check.sh`                                                              |
 | a full CI run                                                    | `scripts/ci.sh`                                                                 |
 | session-start orientation                                        | `scripts/context.sh`                                                            |

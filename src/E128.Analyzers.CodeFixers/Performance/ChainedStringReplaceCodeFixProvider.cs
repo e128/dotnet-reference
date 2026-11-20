@@ -36,9 +36,6 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
         return Task.CompletedTask;
     }
 
-    // Only the doubled-character collapse shape is provably rewritable from syntax alone.
-    // Any other search/replacement literal pair needs runtime knowledge this analysis cannot
-    // see, so it stays diagnostic-only.
     private static bool TryGetCollapseShape(WhileStatementSyntax whileStatement, out string receiverName, out char collapseChar)
     {
         receiverName = string.Empty;
@@ -180,8 +177,6 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
             return document;
         }
 
-        // The collapse character is a runtime value. FormatLiteral puts the quotes and the escapes
-        // back, so a newline or a quote stays a valid character literal.
         var charLiteral = SymbolDisplay.FormatLiteral(collapseChar, true);
         var replacement = SyntaxFactory.ParseStatement(BuildCollapseBlock(receiverName, charLiteral))
             .WithLeadingTrivia(whileStatement.GetLeadingTrivia())

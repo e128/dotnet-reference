@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-19T20:37:01Z*
+*Updated: 2026-11-20T17:15:09Z*
 
 ## Generated Docs
 
@@ -17,6 +17,24 @@
 
 - [solid.md](coding-standards/solid.md): SOLID principles applied to C#
 - [smalltalk-patterns.md](coding-standards/smalltalk-patterns.md): Smalltalk Best Practice Patterns for C#
+
+## decisions/
+
+- [summary.md](decisions/summary.md): Rationale moved out of source comments, page index, and how to add an entry
+- [analyzer-reliability.md](decisions/analyzer-reliability.md): Reliability rule detection limits and Roslyn behavior
+- [analyzer-security.md](decisions/analyzer-security.md): Security, unsafe, and file-system rule decisions
+- [analyzer-performance.md](decisions/analyzer-performance.md): Performance rule gates and rewrite safety
+- [analyzer-testing.md](decisions/analyzer-testing.md): Test-code rule heuristics
+- [analyzer-design.md](decisions/analyzer-design.md): Design and maintainability rule shapes
+- [analyzer-style.md](decisions/analyzer-style.md): Style rule decisions
+- [analyzer-helpers.md](decisions/analyzer-helpers.md): Shared analyzer helpers and union types
+- [code-fixers-design.md](decisions/code-fixers-design.md): Design code fix providers
+- [code-fixers-reliability.md](decisions/code-fixers-reliability.md): Reliability code fix providers
+- [code-fixers-performance.md](decisions/code-fixers-performance.md): Performance code fix providers
+- [code-fixers-style.md](decisions/code-fixers-style.md): Style code fix providers
+- [code-fixers-other.md](decisions/code-fixers-other.md): Testing, security, unsafe, and file-system fixes
+- [code-fixers-helpers.md](decisions/code-fixers-helpers.md): Shared fixer syntax helpers
+- [reference.md](decisions/reference.md): Reference CLI, core, and web app decisions
 
 ## dotnet/
 

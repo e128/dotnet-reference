@@ -367,7 +367,6 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
             var search = new Search();
             Collect(branch, ValueKind.Principal, sink.Syntax, search);
 
-            // A branch of a conditional is the guard scope, so its own syntax locates the use.
             return search.Tokens.Exists(token => !IsValidated(token, ReadAnchor(token, branch.Syntax)));
         }
 
@@ -502,7 +501,6 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
             if (!_declared.Contains(local))
             {
-                // A local declared outside a lambda or local function lives in the parent body.
                 if (parent is not null && origin is not null)
                 {
                     parent.CollectCaptured(local, kind, origin, search);
@@ -538,7 +536,6 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            // A local function can run before its declaration. A lambda can run after later writes.
             var definitions = capture is LocalFunctionStatementSyntax ? [] : LiveDefinitions(local, capture);
             if (_definitions.TryGetValue(local, out var all))
             {
@@ -567,9 +564,7 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            // An identity is stored by reference, so a claim added after the sink still reaches the request.
             var addedKind = AddedKindFor(kind, isIdentity);
-            // An identity copies a claim collection when it is built, so only an earlier add reaches it.
             var copied = kind is ValueKind.Claims && !isIdentity;
             foreach (var (target, value, syntax, owner) in _added)
             {
@@ -609,15 +604,12 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
             }
 
             var before = all.FindAll(definition => definition.Syntax.SpanStart < anchor.SpanStart
-                // A pattern variable is scoped to its own arm, so it is live wherever its input is read.
                 || definition.Syntax is CasePatternSwitchLabelSyntax or SwitchExpressionArmSyntax or IsPatternExpressionSyntax);
-            // The walker visits a for incrementor after the body, so order by source position.
             before.Sort(static (left, right) => left.Syntax.SpanStart.CompareTo(right.Syntax.SpanStart));
             var start = before.FindLastIndex(definition =>
                 definition.Syntax.SpanStart < anchor.SpanStart && Kills(definition.Syntax, anchor));
             var live = start <= 0 ? before : before.GetRange(start, before.Count - start);
             var killer = start < 0 ? null : before[start].Syntax;
-            // A definition after the anchor in a shared loop reaches the anchor on the next iteration.
             live.AddRange(all.Where(definition => !before.Contains(definition)
                                                   && ReachesByLoop(local, definition.Syntax, anchor, killer, all)));
             return live;
@@ -650,7 +642,6 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
         {
             var loop = anchor.Ancestors().FirstOrDefault(node => IsLoop(node) && node.Span.Contains(definition.Span));
 
-            // A local declared in the loop is unassigned again on each iteration.
             return loop is not null
                    && (killer is null || !loop.Span.Contains(killer.Span))
                    && !local.DeclaringSyntaxReferences.Any(reference => loop.Span.Contains(reference.Span))
@@ -731,8 +722,6 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
                 return true;
             }
 
-            // A lambda runs after its creation, so a parent validation before the lambda covers it.
-            // A local function can run before its declaration, so only a parent guard that scopes it counts.
             return parent is not null && origin is not null
                    && !WrittenBetween(token, origin.SpanStart, sink.SpanStart)
                    && !parent.WrittenBetween(token, origin.SpanStart, int.MaxValue)

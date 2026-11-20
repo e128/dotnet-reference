@@ -78,8 +78,6 @@ internal static class LoopContext
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        // A call inside the lookup can return a different value per iteration, so a
-        // hoist would change behaviour.
         if (node.DescendantNodes().OfType<InvocationExpressionSyntax>().Any())
         {
             return true;
@@ -180,7 +178,6 @@ internal static class LoopContext
                 LoopPart.Condition when countLoopConditions => body,
                 LoopPart.Condition => FindLoopBody(loop, stopAtAnonymousFunctions, countLoopConditions),
 
-                // A node in a loop header runs once per outer iteration, so the outer loop decides.
                 LoopPart.Header => FindLoopBody(loop, stopAtAnonymousFunctions, countLoopConditions),
                 _ => null
             };

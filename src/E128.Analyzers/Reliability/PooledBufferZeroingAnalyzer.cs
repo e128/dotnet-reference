@@ -146,7 +146,6 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(UseAfterReturnRule, use.GetLocation(), bufferSymbol.Name));
     }
 
-    // Scan the statements that follow the Return statement in each enclosing block. Stop at a reassignment.
     private static IdentifierNameSyntax? FindUseAfterReturn(
         InvocationExpressionSyntax returnCall,
         ISymbol bufferSymbol,
@@ -252,8 +251,6 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         System.Threading.CancellationToken cancellationToken)
     {
-        // Only a direct statement of the finally block counts. A ZeroMemory nested in an if, loop or
-        // lambda may not run on every path.
         return finallyClause.Block.Statements
             .OfType<ExpressionStatementSyntax>()
             .Select(static statement => statement.Expression)
@@ -285,8 +282,6 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
             bufferSymbol);
     }
 
-    // Peel buffer.AsSpan() and MemoryMarshal.AsBytes(x). A slice such as AsSpan(0, n) stays wrapped,
-    // so it does not match the whole-array symbol.
     private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
     {
         while (expression is InvocationExpressionSyntax invocation)

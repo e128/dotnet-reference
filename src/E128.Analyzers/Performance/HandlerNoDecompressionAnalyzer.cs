@@ -97,8 +97,6 @@ public sealed class HandlerNoDecompressionAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // A field or property initializer has no block to scan. Treat a non-local target
-        // as configured so the rule never reports a shared handler that a constructor sets.
         if (target is not ILocalSymbol)
         {
             return true;

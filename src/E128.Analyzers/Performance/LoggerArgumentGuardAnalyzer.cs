@@ -78,8 +78,6 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
-    // A guard counts when the call sits in the "then" branch of an `if` whose condition checks
-    // the same logger and level, or when an earlier `if (!guard) return;` exits first.
     private static bool IsInsideEnabledGuard(
         InvocationExpressionSyntax invocation,
         ExpressionSyntax receiver,
@@ -136,8 +134,6 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
                 && !IsWeakened(candidate, node));
     }
 
-    // A guard only proves the level is enabled when it is not negated and not one side of
-    // `||`. `if (verbose || logger.IsEnabled(Information))` still logs when logging is off.
     private static bool IsWeakened(SyntaxNode guard, SyntaxNode condition)
     {
         for (var parent = guard.Parent; parent is not null; parent = parent.Parent)
@@ -162,7 +158,6 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // One level of indirection: a local that holds the check, or a helper method or property that returns it.
     private static IEnumerable<SyntaxNode> GetBackingExpressions(
         ISymbol? symbol,
         System.Threading.CancellationToken cancellationToken)

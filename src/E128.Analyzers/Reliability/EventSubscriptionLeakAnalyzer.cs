@@ -118,7 +118,6 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A subscription to an event on this instance dies with the instance, so nothing leaks.
         if (!eventSymbol.IsStatic && IsOwnInstanceEvent(assignment.Left))
         {
             return;
@@ -139,8 +138,6 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
             or MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax };
     }
 
-    // The storage that holds the publisher in "publisher.Event += handler", or null for a member
-    // name that binds to this instance.
     private static ISymbol? GetReceiver(ExpressionSyntax left, SemanticModel model, CancellationToken token)
     {
         return left is MemberAccessExpressionSyntax access
@@ -173,7 +170,6 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
         var model = context.SemanticModel;
         var token = context.CancellationToken;
 
-        // A removal in another type, such as a nested type, does not clean up this subscriber.
         if (!IsInSubscriber(assignment, subscriber, model, token))
         {
             return;
@@ -207,7 +203,6 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
     {
         foreach (var (eventSymbol, receiver, location) in subscriptions)
         {
-            // A publisher field that the subscriber owns and disposes dies with the subscriber.
             var ownedAndDisposed = receiver is IFieldSymbol { IsStatic: false } publisher
                                    && disposedFields.ContainsKey(publisher);
 
@@ -220,8 +215,6 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // A static event has one handler list for every caller, so any removal of it counts. An instance
-    // event sits on one publisher object, so the removal must name that same receiver.
     private static bool IsRemoved(
         ConcurrentDictionary<Removal, bool> removals,
         IEventSymbol eventSymbol,
@@ -311,7 +304,6 @@ public sealed class EventSubscriptionLeakAnalyzer : DiagnosticAnalyzer
 
             if (identifier.Parent is MemberAccessExpressionSyntax access && access.Name == identifier)
             {
-                // A member on some other receiver, so the read does not reach this instance.
                 continue;
             }
 

@@ -55,9 +55,6 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        // Both scans below are subtree walks whose answer depends only on the declaring lambda or
-        // loop and on the index name. Cache the answer for the lifetime of the compilation so a
-        // body with many element accesses pays for each walk once.
         context.RegisterCompilationStartAction(static compilationContext =>
         {
             var boundCache = new ConcurrentDictionary<(SyntaxNode Declaring, string Index), (bool Found, ExpressionSyntax? Source)>();
@@ -106,8 +103,6 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
             boundSource.ToString()));
     }
 
-    // The collection whose length bounds the index. A lambda parameter bound by
-    // Enumerable.Range(0, X.Count) and a for-loop variable bounded by X.Count are the two shapes.
     private static ExpressionSyntax? FindBoundSource(
         ElementAccessExpressionSyntax elementAccess,
         string indexName,
@@ -183,7 +178,6 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
             .FirstOrDefault();
     }
 
-    // A length comparison against the indexed collection anywhere in the same scope makes the access safe.
     private static bool HasLengthGuard(
         ElementAccessExpressionSyntax elementAccess,
         string indexName,
@@ -196,7 +190,6 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // The scan compares only the final symbol name, so that name is part of the key.
         return cache.GetOrAdd(
             (scope, indexName, indexedSymbol.Name),
             static key => ScanForLengthGuard(key.Scope, key.Index, key.Symbol));
@@ -290,9 +283,6 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
 
     private static bool IsSameText(ExpressionSyntax expression, string symbolName)
     {
-        // Compare the final name segment, so `rows`, `this.rows`, and `state.rows` all match the symbol
-        // named rows. Comparing the printed expression to the symbol name drops a qualifier and lets a
-        // present length guard go unrecognized.
         var name = expression switch
         {
             MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,

@@ -132,7 +132,6 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : E128CodeFixProviderB
             return parenthesized;
         }
 
-        // A lone option needs no parentheses. A remaining OR-chain keeps them.
         return inner is MemberAccessExpressionSyntax
             ? inner.WithTriviaFrom(parenthesized)
             : parenthesized.WithExpression(inner);

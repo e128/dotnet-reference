@@ -12,9 +12,6 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128018";
 
-    // Enumerable owns every ToList() binding in the base library: extensions on IEnumerable<T>
-    // flow through it for IQueryable<T> and ImmutableArray<T> receivers too. Enumerable has a
-    // ToArray() sibling, so the rewrite stays available.
     private static readonly ImmutableArray<string> LinqToListTypes = ["System.Linq.Enumerable"];
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -40,8 +37,6 @@ public sealed class ToListInForeachAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static startContext =>
         {
-            // A type with its own ToList() is not a LINQ method, so the rule has nothing to say about
-            // it. Report only when System.Linq.Enumerable exists in the compilation.
             var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
             foreach (var metadataName in LinqToListTypes)
             {

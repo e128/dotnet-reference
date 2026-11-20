@@ -33,9 +33,6 @@ internal static class UsingDirectives
         var usings = compilationUnit.Usings;
         var insertIndex = FindInsertIndex(usings, namespaceName);
 
-        // A file header, such as a licence comment, is leading trivia of the first node. Move it to
-        // the new directive so the header stays at the top of the file, whether the header sat on
-        // an existing using or on the first member of a file with no usings yet.
         if (insertIndex is 0)
         {
             if (usings.Count > 0)

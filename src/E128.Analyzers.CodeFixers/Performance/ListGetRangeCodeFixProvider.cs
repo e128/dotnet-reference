@@ -142,7 +142,6 @@ public sealed class ListGetRangeCodeFixProvider : E128CodeFixProviderBase
         var startArg = invocation.ArgumentList.Arguments[0].Expression;
         var countArg = invocation.ArgumentList.Arguments[1].Expression;
 
-        // Build: CollectionsMarshal.AsSpan(list).Slice(start, count).ToArray()
         var asSpanCall = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,

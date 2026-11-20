@@ -34,7 +34,6 @@ public sealed class LoggerArgumentGuardCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        // The receiver appears twice in the fixed code, so it must be free of calls.
         if (memberAccess.Expression.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>().Any())
         {
             return Task.CompletedTask;

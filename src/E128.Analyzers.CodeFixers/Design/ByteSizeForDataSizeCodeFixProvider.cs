@@ -26,8 +26,6 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
         var diagnostic = context.Diagnostics[0];
         var token = root.FindToken(diagnostic.Location.SourceSpan.Start);
 
-        // A parameter default is a compile-time constant, and ByteSize.FromBytes is a method call, so
-        // the rewritten parameter gives CS1736. The developer has to pick the unit, so no fix is offered.
         if (token.Parent?.FirstAncestorOrSelf<ParameterSyntax>() is { Default: not null })
         {
             return Task.CompletedTask;
@@ -44,8 +42,6 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
         SyntaxToken token,
         CancellationToken cancellationToken)
     {
-        // The type moved namespaces before. Resolve it in the compilation instead of
-        // hardcoding one namespace, so the fix still compiles after a move.
         var compilation = await document.Project.GetCompilationAsync(cancellationToken).ConfigureAwait(false);
         var (qualifiedTypeName, namespaceName) = ResolveByteSizeTypeName(compilation);
 
@@ -203,8 +199,6 @@ public sealed class ByteSizeForDataSizeCodeFixProvider : E128CodeFixProviderBase
         return root.ReplaceNode(field, newField);
     }
 
-    // Every declarator shares the new type, so every initializer must carry the conversion. A field
-    // or local with more than one declarator would otherwise assign an int to ByteSize.
     private static VariableDeclarationSyntax WrapEveryInitializer(
         VariableDeclarationSyntax declaration,
         string qualifiedTypeName)

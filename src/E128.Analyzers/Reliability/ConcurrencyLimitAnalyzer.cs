@@ -82,7 +82,6 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Zero is a legal initial count for SemaphoreSlim, so only a negative value is a defect.
         if (value >= 0)
         {
             return;
@@ -91,8 +90,6 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, nodeForLocation.GetLocation(), value));
     }
 
-    // Bind the semantic model only for a creation that names SemaphoreSlim. Binding every object
-    // creation in the compilation is the expensive part of this analyzer.
     private static bool NamesSemaphoreSlim(SyntaxNode node)
     {
         return node is not ObjectCreationExpressionSyntax creation
@@ -143,7 +140,6 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
-        // The property appears both bare and behind a receiver, as in options.MaxDegreeOfParallelism.
         var left = assignment.Left switch
         {
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
@@ -172,7 +168,6 @@ public sealed class ConcurrencyLimitAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // -1 means "unlimited" — a valid value for MaxDegreeOfParallelism.
         if (value is -1)
         {
             return;

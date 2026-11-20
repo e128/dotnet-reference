@@ -164,7 +164,6 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
         var child = node;
         foreach (var ancestor in node.Ancestors())
         {
-            // A guard counts only when its condition tests a name used in the length.
             if (IsGuardingAncestor(ancestor, child, lengthNames))
             {
                 return true;

@@ -38,13 +38,11 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
     {
         var literal = (LiteralExpressionSyntax)context.Node;
 
-        // Only interested in empty string literals.
         if (literal.Token.ValueText.Length > 0)
         {
             return;
         }
 
-        // Skip compile-time constant contexts where string.Empty cannot be used.
         if (AttributeArguments.IsInside(literal) || IsConstContext(literal))
         {
             return;
@@ -53,12 +51,6 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, literal.GetLocation()));
     }
 
-    // Returns true if the node is in a context that requires a compile-time constant:
-    //   - const field: private const string K = ""
-    //   - const local: const string c = ""
-    //   - default parameter value: void M(string s = "")
-    //   - switch case label: case "": (also covers a when-guarded pattern label)
-    //   - pattern: s is "", or a switch expression arm
     private static bool IsConstContext(SyntaxNode node)
     {
         foreach (var ancestor in node.Ancestors())
@@ -74,8 +66,6 @@ public sealed class EmptyStringLiteralAnalyzer : DiagnosticAnalyzer
 
     private static bool IsConstAncestor(SyntaxNode ancestor)
     {
-        // goto case "" needs a constant too, so string.Empty would not compile there.
-        // A default parameter value such as void M(string s = "") needs a constant as well.
         return ancestor is CaseSwitchLabelSyntax
                    or CasePatternSwitchLabelSyntax
                    or ConstantPatternSyntax

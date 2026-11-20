@@ -55,19 +55,16 @@ public sealed class MidNameUnderscoreAnalyzer : DiagnosticAnalyzer
     {
         var symbol = context.Symbol;
 
-        // A partial member arrives as two symbol events. Report only the defining part.
         if (PartialMembers.IsImplementationPart(symbol))
         {
             return;
         }
 
-        // Skip compiler-generated symbols (property getter/setter methods like get_Config_timeout)
         if (symbol.IsImplicitlyDeclared)
         {
             return;
         }
 
-        // Skip property accessors — they are reported via the property symbol itself
         if (symbol is IMethodSymbol method && method.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet)
         {
             return;
@@ -78,7 +75,6 @@ public sealed class MidNameUnderscoreAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Skip const fields — const naming is covered by other rules
         if (symbol is IFieldSymbol field && field.IsConst)
         {
             return;
@@ -116,40 +112,32 @@ public sealed class MidNameUnderscoreAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // Exclude double-underscore patterns (operator overloads, compiler-generated)
         if (name.StartsWith("__", StringComparison.Ordinal))
         {
             return false;
         }
 
-        // Exclude operator method names: op_Addition, op_Subtraction, etc.
         if (name.StartsWith("op_", StringComparison.Ordinal))
         {
             return false;
         }
 
-        // Find the position of the first underscore
         var underscoreIndex = name.IndexOf('_');
         if (underscoreIndex < 0)
         {
             return false;
         }
 
-        // Only one underscore at position 0: _foo — leading underscore prefix, OK
         if (underscoreIndex is 0)
         {
             return false;
         }
 
-        // Single-char prefix followed by underscore: s_foo, m_foo, t_foo — Hungarian prefix, OK
         if (underscoreIndex is not 1)
         {
-            // Underscore at index >= 2: mid-name underscore, violation
             return true;
         }
 
-        // But if there's another underscore later, that's still a violation:
-        // s_foo_bar has a mid-name underscore after the prefix
         var nextUnderscore = name.IndexOf('_', underscoreIndex + 1);
         return nextUnderscore > 0;
     }

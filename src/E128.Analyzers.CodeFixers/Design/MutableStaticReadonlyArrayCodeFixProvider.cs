@@ -170,7 +170,6 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
             return document;
         }
 
-        // Get the element type from the array type
         if (declaration.Type is not ArrayTypeSyntax arrayType)
         {
             return document;
@@ -178,12 +177,10 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
 
         var elementTypeSyntax = arrayType.ElementType;
 
-        // Build ImmutableArray<T> type syntax
         var immutableArrayType = SyntaxFactory.GenericName(
             SyntaxFactory.Identifier("ImmutableArray"),
             SyntaxFactory.TypeArgumentList(SyntaxFactory.SeparatedList([elementTypeSyntax])));
 
-        // Transform initializers: convert new T[] { ... } / new[] { ... } to collection expressions
         var newVariables = declaration.Variables.Select(TransformVariable).ToList();
 
         var newDeclaration = declaration
@@ -209,13 +206,11 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
 
         var expression = variable.Initializer.Value;
 
-        // Collection expression ["a", "b"] → works as-is with ImmutableArray<T>
         if (expression is CollectionExpressionSyntax)
         {
             return variable;
         }
 
-        // new T[] { "a", "b" } or new[] { "a", "b" } → unwrap to collection expression
         var unwrapped = UnwrapArrayCreation(expression);
         return unwrapped is not null
             ? variable.WithInitializer(variable.Initializer.WithValue(unwrapped))
@@ -229,7 +224,6 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
     /// </summary>
     private static CollectionExpressionSyntax? UnwrapArrayCreation(ExpressionSyntax expression)
     {
-        // Implicit: new[] { "a", "b" } or Explicit: new T[] { "a", "b" }
         InitializerExpressionSyntax? initializer;
         if (expression is ImplicitArrayCreationExpressionSyntax implicitArray)
         {

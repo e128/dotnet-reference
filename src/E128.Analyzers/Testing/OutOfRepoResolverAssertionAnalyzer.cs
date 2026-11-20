@@ -38,7 +38,6 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         "Guard the test with Assert.Skip, Assert.SkipWhen, or Assert.SkipUnless before the resolver call, " +
         "or set Skip on the fact or theory attribute.");
 
-    // The three xUnit v3 dynamic-skip entry points. Any of them ahead of the resolver call is a guard.
     private static readonly ImmutableHashSet<string> SkipMembers = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "Skip",
@@ -58,8 +57,6 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static compilationContext =>
         {
-            // The analyzer option is constant for a tree. Parse it once per tree instead of
-            // once per test method.
             var allowlistCache = new ConcurrentDictionary<SyntaxTree, ImmutableHashSet<string>>();
 
             compilationContext.RegisterSyntaxNodeAction(
@@ -112,8 +109,6 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         guarded = false;
         var resolverName = string.Empty;
 
-        // DescendantNodes is a pre-order walk, so a node always precedes its own descendants. An invocation
-        // therefore never arrives before a call that encloses it, which is all the ordering this needs.
         foreach (var invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
             if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol called)
@@ -136,7 +131,6 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         return resolverName;
     }
 
-    // The analyzer option is constant for a tree, so one parse serves every test method in it.
     private static ImmutableHashSet<string> GetAllowlist(
         SyntaxNodeAnalysisContext context,
         SyntaxTree tree,
@@ -151,9 +145,6 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    // A bare "Type" entry matches every member of that type, a "Type.Member" entry matches one member.
-    // The two lookups share one set: a bare entry never equals a composed "Type.Member" string, and a
-    // composed entry never equals a bare type name.
     private static bool TryMatchResolver(IMethodSymbol method, ImmutableHashSet<string> allowlist, out string matched)
     {
         matched = string.Empty;
@@ -208,8 +199,6 @@ public sealed class OutOfRepoResolverAssertionAnalyzer : DiagnosticAnalyzer
 
             foreach (var namedArgument in attribute.NamedArguments)
             {
-                // xUnit v3 exposes Skip, SkipType, SkipUnless, and SkipWhen as settable attribute properties.
-                // Every one of them makes the test skip conditionally, so every one is a guard.
                 if (namedArgument.Key is { } name && name.StartsWith("Skip", StringComparison.Ordinal))
                 {
                     return true;

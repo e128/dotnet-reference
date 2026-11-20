@@ -37,8 +37,6 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
             return;
         }
 
-        // An unsupported format string makes the rewrite impossible. Decline here so the user never
-        // sees a fix that leaves the document unchanged.
         var interpolated = BuildFromInvocation(invocation, semanticModel, context.CancellationToken);
         if (interpolated is null)
         {
@@ -219,7 +217,6 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
         return SyntaxFactory.Interpolation(arguments[argIndex]);
     }
 
-    // Escape source syntax in Text. Keep format-string content, including doubled braces, in ValueText.
     private static InterpolatedStringTextSyntax CreateTextContent(string text)
     {
         var escaped = EscapeText(text);

@@ -53,7 +53,6 @@ public sealed class PragmaBalanceCodeFixProvider : E128CodeFixProviderBase
             return document;
         }
 
-        // A bare restore clears every open suppression, so it carries no error code.
         var errorCodes = string.Equals(suppressedId, PragmaBalanceAnalyzer.AllCodesKey, StringComparison.Ordinal)
             ? SyntaxFactory.SeparatedList<ExpressionSyntax>()
             : SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
@@ -61,9 +60,6 @@ public sealed class PragmaBalanceCodeFixProvider : E128CodeFixProviderBase
 
         var restoreDirective = PragmaDirectives.Build(SyntaxKind.RestoreKeyword, errorCodes);
 
-        // Append the restore directive as trailing trivia of the last real token.
-        // Attaching to the last token's trailing list avoids the EndOfFileToken
-        // interaction that can produce an extra blank line at the end of the file.
         var lastToken = compilationUnit.GetLastToken();
         var newTrailing = lastToken.TrailingTrivia.Add(SyntaxFactory.Trivia(restoreDirective));
         var newToken = lastToken.WithTrailingTrivia(newTrailing);

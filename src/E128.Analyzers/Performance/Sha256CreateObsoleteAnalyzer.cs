@@ -39,8 +39,6 @@ public sealed class Sha256CreateObsoleteAnalyzer : DiagnosticAnalyzer
         {
             var sha256Type = startContext.Compilation.GetTypeByMetadataName(Sha256MetadataName);
 
-            // HashData arrived in .NET 5. Without it the suggestion has no remedy that compiles,
-            // so an older target framework must get no report.
             if (sha256Type is null || !HasHashData(sha256Type))
             {
                 return;

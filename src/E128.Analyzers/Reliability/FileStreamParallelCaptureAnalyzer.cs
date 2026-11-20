@@ -66,7 +66,6 @@ public sealed class FileStreamParallelCaptureAnalyzer : DiagnosticAnalyzer
             var parallelType = compilationContext.Compilation.GetTypeByMetadataName(ParallelMetadataName);
             var fileStreamType = compilationContext.Compilation.GetTypeByMetadataName(FileStreamMetadataName);
 
-            // The rule names both types. Without either type the compilation has no report to make.
             if (parallelType is null || fileStreamType is null)
             {
                 return;
@@ -92,22 +91,17 @@ public sealed class FileStreamParallelCaptureAnalyzer : DiagnosticAnalyzer
 
         foreach (var argument in invocation.ArgumentList.Arguments)
         {
-            // Only a direct anonymous function argument runs on a worker. A lambda nested deeper, as
-            // in a collection factory argument, runs outside the parallel body.
             if (argument.Expression is not AnonymousFunctionExpressionSyntax lambda
                 || FindFirstCapturedUse(context, lambda, fileStreamType) is not { } use)
             {
                 continue;
             }
 
-            // One report per parallel invocation, anchored on the first use inside the body.
             context.ReportDiagnostic(Diagnostic.Create(Rule, use.GetLocation(), use.Identifier.ValueText));
             return;
         }
     }
 
-    // The call must bind to the framework Parallel type. The name gate runs first because it costs
-    // less than a symbol lookup, and ForEachAsync never passes it.
     private static bool IsParallelCall(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,
@@ -130,9 +124,6 @@ public sealed class FileStreamParallelCaptureAnalyzer : DiagnosticAnalyzer
             && SymbolEqualityComparer.Default.Equals(method.ContainingType, parallelType);
     }
 
-    // A captured stream is a FileStream local, parameter, or field that the parallel body references by
-    // identifier. The walk enters a nested lambda, because the closure moves the same position. The
-    // walk skips a local function body, because its call site decides when a reference runs.
     private static IdentifierNameSyntax? FindFirstCapturedUse(
         SyntaxNodeAnalysisContext context,
         AnonymousFunctionExpressionSyntax lambda,
@@ -172,9 +163,6 @@ public sealed class FileStreamParallelCaptureAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    // A symbol declared inside the parallel lambda belongs to one worker, so the body does not
-    // capture it. The lambda node covers its parameter list, so a lambda parameter also counts as
-    // inside.
     private static bool IsDeclaredInside(ISymbol symbol, SyntaxNode lambda)
     {
         return symbol.DeclaringSyntaxReferences.Any(reference =>

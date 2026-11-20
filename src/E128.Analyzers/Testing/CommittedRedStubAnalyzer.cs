@@ -41,7 +41,6 @@ public sealed class CommittedRedStubAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        // Two references can declare the same type, so the lookup keeps every match.
         var assertTypes = context.Compilation.GetTypesByMetadataName("Xunit.Assert");
 
         if (assertTypes.IsDefaultOrEmpty)

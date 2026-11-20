@@ -21,8 +21,6 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [StringConcatInLoopAnalyzer.DiagnosticId];
 
-    // Two loops in one method would each pick the same builder name, so a batch merge would emit two
-    // declarations of it. Keep the fix single-diagnostic.
     public override FixAllProvider? GetFixAllProvider()
     {
         return null;
@@ -55,8 +53,6 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
         }
     }
 
-    // The rewrite moves the accumulation into a builder declared before the loop and reads the text
-    // back after it. Every shape that would change behavior declines instead of guessing.
     private static SyntaxNode? TryRewrite(
         SyntaxNode root,
         AssignmentExpressionSyntax assignment,
@@ -117,8 +113,6 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
         return block.WithStatements(SyntaxFactory.List(statements));
     }
 
-    // Every concatenation on the local becomes an append, not only the reported one. A second fix
-    // pass would otherwise declare a second builder for the same variable.
     private static StatementSyntax ReplaceEveryAppend(
         StatementSyntax loop,
         ILocalSymbol local,
@@ -151,8 +145,6 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
                 .WithTriviaFrom(original));
     }
 
-    // A local declared outside the block that holds the loop, a seeded value, or a second use of the
-    // variable inside the loop all make the builder rewrite change behavior.
     private static bool IsUnsafeToRewrite(
         StatementSyntax loop,
         ILocalSymbol local,
@@ -242,7 +234,6 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
                 return (StatementSyntax)ancestor;
             }
 
-            // A lambda can outlive the loop, so a captured builder would be read before the appends run.
             if (ancestor is AnonymousFunctionExpressionSyntax or MemberDeclarationSyntax or LocalFunctionStatementSyntax)
             {
                 return null;
@@ -268,8 +259,6 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
         return null;
     }
 
-    // A name declared later in the method, or inside the loop, still conflicts with a new local in an
-    // enclosing scope, so collect every local and parameter name the member declares.
     private static HashSet<string> CollectNames(SyntaxNode loop)
     {
         var taken = new HashSet<string>(StringComparer.Ordinal);
@@ -283,7 +272,6 @@ public sealed class StringConcatInLoopCodeFixProvider : E128CodeFixProviderBase
 
             foreach (var node in ancestor.DescendantNodes())
             {
-                // A lambda parameter is a ParameterSyntax, so it needs no case of its own.
                 if (node is VariableDeclaratorSyntax declarator)
                 {
                     taken.Add(declarator.Identifier.ValueText);

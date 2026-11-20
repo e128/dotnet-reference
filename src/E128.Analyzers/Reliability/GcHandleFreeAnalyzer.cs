@@ -51,7 +51,6 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol gcHandleType)
     {
-        // The bare form "Alloc(x)" binds through "using static System.Runtime.InteropServices.GCHandle".
         if (context.Node is not InvocationExpressionSyntax invocation
             || !IsAllocName(invocation.Expression))
         {
@@ -98,8 +97,6 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), invocation.ToString()));
     }
 
-    // A lambda or local function body is too small a scope. The handle outlives that body, so the
-    // free can sit anywhere in the outermost member body.
     private static BlockSyntax? FindOutermostMemberBody(SyntaxNode node)
     {
         BlockSyntax? body = null;
@@ -138,9 +135,6 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
         return name is not null && string.Equals(name.Identifier.ValueText, "Alloc", StringComparison.Ordinal);
     }
 
-    // A local declaration such as "var handle = GCHandle.Alloc(x)" or a later assignment such as
-    // "handle = GCHandle.Alloc(x)". A field, property, parameter, or element target is not a local,
-    // so the rule stays silent for it.
     private static bool TryGetAssignedLocal(
         InvocationExpressionSyntax invocation,
         SemanticModel model,
@@ -178,8 +172,6 @@ public sealed class GcHandleFreeAnalyzer : DiagnosticAnalyzer
                && SymbolEqualityComparer.Default.Equals(method.ContainingType, gcHandleType);
     }
 
-    // Any use that lets the handle leave the method body makes the handle unreachable to this
-    // analysis. Reading the handle in place, such as Target or IsAllocated, does not.
     private static bool Escapes(IdentifierNameSyntax identifier)
     {
         var parent = identifier.Parent;

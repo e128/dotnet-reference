@@ -131,7 +131,6 @@ internal static partial class FipsSymbolHelpers
             root = root.Parent;
         }
 
-        // One walk per body collects every written local, so each later reference is a set lookup.
         var written = WrittenLocalsCache.GetValue(root, ComputeWrittenLocals);
 
         return !written.Contains(reference.Local);

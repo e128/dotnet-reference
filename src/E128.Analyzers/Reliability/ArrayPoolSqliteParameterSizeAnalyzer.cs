@@ -37,8 +37,6 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        // The Size-assignment index depends only on the block. Build it once per block and share
-        // it across every candidate in that block.
         context.RegisterCompilationStartAction(static compilationContext =>
         {
             var sizeAssignments =
@@ -178,8 +176,6 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // Resolve the declaration through the symbol. The old code rescanned every statement in
-        // the enclosing block for each candidate.
         foreach (var reference in local.DeclaringSyntaxReferences)
         {
             if (reference.SyntaxTree == model.SyntaxTree
@@ -229,7 +225,6 @@ public sealed class ArrayPoolSqliteParameterSizeAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    // A Size assignment counts when it sits in a statement after the anchor statement.
     private static bool HasLaterSizeAssignment(
         string receiver,
         SyntaxNode anchor,

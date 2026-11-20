@@ -34,16 +34,12 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
 
     private const string ServiceCollectionExtensionsMetadataName = "Microsoft.Extensions.DependencyInjection.OptionsServiceCollectionExtensions";
 
-    // Configure<T>(IConfiguration) lives in Microsoft.Extensions.Options.ConfigurationExtensions, on its
-    // own extension class, apart from AddOptions<T> and Configure<T>(Action<T>).
     private const string ConfigurationExtensionsMetadataName = "Microsoft.Extensions.DependencyInjection.OptionsConfigurationServiceCollectionExtensions";
     private const string ServiceCollectionMetadataName = "Microsoft.Extensions.DependencyInjection.IServiceCollection";
     private const string ConfigurationMetadataName = "Microsoft.Extensions.Configuration.IConfiguration";
     private const string OptionsBuilderMetadataName = "Microsoft.Extensions.Options.OptionsBuilder`1";
     private const string ValidateOptionsMetadataName = "Microsoft.Extensions.Options.IValidateOptions`1";
 
-    // The validation methods live on the options builder and on four extension classes, and the
-    // owning assembly differs by method. Resolve every candidate, so the name alone never decides.
     private static readonly ImmutableArray<string> BuilderExtensionMetadataNames =
     [
         "Microsoft.Extensions.DependencyInjection.OptionsBuilderConfigurationExtensions",
@@ -98,8 +94,6 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        // Without the framework registration type the rule has no symbol to match, so it stays off
-        // rather than falling back to a method name.
         var serviceCollectionExtensions = MetadataTypes.Find(context.Compilation, ServiceCollectionExtensionsMetadataName)
             .AddRange(MetadataTypes.Find(context.Compilation, ConfigurationExtensionsMetadataName));
         if (serviceCollectionExtensions.IsEmpty)
@@ -133,8 +127,6 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
     {
         var outermost = (InvocationExpressionSyntax)context.Node;
 
-        // Walk only the outermost call of a fluent chain, so a validation call that follows the
-        // registration stays inside the chain the rule reads.
         if (outermost.Parent is MemberAccessExpressionSyntax access && ReferenceEquals(access.Expression, outermost))
         {
             return;
@@ -152,7 +144,6 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A validator registered elsewhere for the same options type runs for the bound options.
         if (HasSeparateValidator(
                 registration,
                 registrationMethod.TypeArguments[0],
@@ -197,7 +188,6 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
                 return false;
             }
 
-            // The outermost registration wins, so its bind flag must win too.
             if (kind is ChainCall.Registration && registration is null)
             {
                 registration = invocation;
@@ -212,7 +202,6 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
             current = NextInChain(invocation);
         }
 
-        // A bare AddOptions<T>() carries no configuration source here, so it needs a Bind call.
         return registration is not null
                && registrationMethod is not null
                && registrationMethod.TypeArguments.Length is 1
@@ -477,8 +466,6 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
 
         if (string.Equals(method.Name, "AddOptions", StringComparison.Ordinal))
         {
-            // The parameterless form is the registration that a Bind call follows. The delegate form
-            // configures values in code and is outside this rule.
             return method.Parameters.Length is 0
                 || (method.Parameters.Length is 1
                     && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, serviceCollectionType));
@@ -489,8 +476,6 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // Configure<T>(configuration, ...) binds a configuration source, and the source is not always
-        // the last parameter. Configure<T>(Action<T>) does not bind configuration.
         bindsConfiguration = HasConfigurationParameter(method, configurationType);
 
         return bindsConfiguration;
@@ -530,7 +515,6 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // Validate is an instance method on OptionsBuilder<T>. The other methods are extensions.
         return (optionsBuilderType is not null
                 && SymbolEqualityComparer.Default.Equals(method.ContainingType.OriginalDefinition, optionsBuilderType))
             || MetadataTypes.Contains(builderExtensionTypes, method.ContainingType);

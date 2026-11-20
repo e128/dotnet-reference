@@ -48,10 +48,6 @@ public sealed class NonXmlDocCommentE128Analyzer : DiagnosticAnalyzer
     {
         var leadingTrivia = context.Node.GetLeadingTrivia();
 
-        // A comment covered by an open #pragma warning disable justifies the suppression. The
-        // fix removes the comment, which would drop that reason and trip IDE0079. Only a
-        // disable counts: a restore that ends an earlier pragma block lands in the next
-        // member's leading trivia and must not suppress this rule.
         if (leadingTrivia.Any(static trivia => trivia.GetStructure() is PragmaWarningDirectiveTriviaSyntax pragma
             && pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword)))
         {

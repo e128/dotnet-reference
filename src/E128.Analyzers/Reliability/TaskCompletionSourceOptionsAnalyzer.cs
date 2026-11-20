@@ -119,8 +119,6 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // An Interlocked exchange over a field elects one winning caller, so the completion runs at
-        // most once and the throwing form cannot see a second caller.
         if (IsGuardedByInterlocked(invocation, context.SemanticModel, context.CancellationToken))
         {
             return;
@@ -260,7 +258,6 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
 
         if (optionsIndex is not { } index || index < 0)
         {
-            // No options parameter means the source always runs continuations inline.
             return false;
         }
 
@@ -275,7 +272,6 @@ public sealed class TaskCompletionSourceOptionsAnalyzer : DiagnosticAnalyzer
 
         if (!constant.HasValue || constant.Value is not int options)
         {
-            // A computed value carries no decision, so the rule stays silent.
             return true;
         }
 

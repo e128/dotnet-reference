@@ -70,8 +70,6 @@ public sealed class SearchValuesHoistingAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
-    // The fix moves the call into a static initializer, so every input must be
-    // a constant or static readonly value. A local, parameter or instance member would not compile.
     internal static bool IsHoistable(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
@@ -87,8 +85,6 @@ public sealed class SearchValuesHoistingAnalyzer : DiagnosticAnalyzer
             foreach (var name in argument.Expression.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
             {
                 var symbol = semanticModel.GetSymbolInfo(name, cancellationToken).Symbol;
-                // A member call must be static too. Hoisting an instance call into a static
-                // field initializer does not compile.
                 var isStaticInput = symbol is INamespaceOrTypeSymbol
                     || symbol is IMethodSymbol { IsStatic: true }
                     || symbol is IFieldSymbol { IsStatic: true } field && (field.IsConst || field.IsReadOnly);
@@ -109,7 +105,6 @@ public sealed class SearchValuesHoistingAnalyzer : DiagnosticAnalyzer
         {
             if (ancestor is PropertyDeclarationSyntax property)
             {
-                // A static property initializer runs once, so it caches like a static readonly field.
                 return property.Modifiers.Any(SyntaxKind.StaticKeyword)
                     && property.Initializer is not null
                     && property.Initializer.Span.Contains(invocation.Span);
@@ -117,8 +112,6 @@ public sealed class SearchValuesHoistingAnalyzer : DiagnosticAnalyzer
 
             if (ancestor is FieldDeclarationSyntax field)
             {
-                // A static field initializer runs once, readonly or not. Reassigning it later does
-                // not make the table a per-call build.
                 return field.Modifiers.Any(SyntaxKind.StaticKeyword);
             }
 

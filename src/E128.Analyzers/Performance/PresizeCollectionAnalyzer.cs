@@ -22,8 +22,6 @@ public sealed class PresizeCollectionAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         true);
 
-    // Only types that expose a public (int capacity) constructor belong here. SortedSet
-    // and SortedDictionary have no capacity constructor, so the fix cannot apply to them.
     private static readonly ImmutableArray<(string MetadataName, string FillMethod)> TargetTypes =
     [
         ("System.Collections.Generic.List`1", "Add"),

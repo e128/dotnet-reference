@@ -104,8 +104,6 @@ internal static class RegexLiteralFix
         }
         else
         {
-            // The one-argument overload takes the token text, so it needs the quotes and the
-            // escapes. Without them the rewrite emits an unquoted literal.
             newToken = SyntaxFactory.Literal(
                     SymbolDisplay.FormatLiteral(fixedValueText, quote: true),
                     fixedValueText)

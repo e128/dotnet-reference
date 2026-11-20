@@ -271,8 +271,6 @@ public sealed class TextContentGuardAnalyzer : DiagnosticAnalyzer
     {
         for (var i = 0; i < operands.Count; i++)
         {
-            // Span containment answers the ancestry question in O(1); a subtree walk per
-            // operand made this quadratic in the size of the && chain.
             if (operands[i].Span.Contains(target.Span))
             {
                 return i;

@@ -240,8 +240,6 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
                && IsReadOnlyConsumer(argument, model, cancellationToken);
     }
 
-    // A settable property such as Position is read only when it is read. An assignment or an
-    // increment is a write, and the replacement types reject a write.
     private static bool IsWriteTarget(ExpressionSyntax expression)
     {
         return expression.Parent switch

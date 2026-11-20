@@ -52,8 +52,6 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : E128CodeFixPr
             return document;
         }
 
-        // The generator attaches the import annotation, so the code action adds the using and the
-        // simplifier shortens the name. A hand-built name would need both steps written out.
         var argument = SyntaxFactory.Argument(
             (ExpressionSyntax)editor.Generator.MemberAccessExpression(
                 editor.Generator.TypeExpression(optionType, addImport: true), MemberName));

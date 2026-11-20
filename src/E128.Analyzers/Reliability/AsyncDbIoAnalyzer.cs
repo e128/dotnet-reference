@@ -47,8 +47,6 @@ public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        // Syntactic gate first. An invocation in an async context is out of scope for this rule,
-        // so it must not pay for overload resolution.
         if (AsyncContextSyntaxHelper.IsInsideAsyncContext(invocation))
         {
             return;
@@ -76,10 +74,6 @@ public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer
 
         var asyncSiblingName = method.Name + "Async";
 
-        // Existence check only -- no parameter-shape comparison, same rationale as E128092.
-        // The sibling can live on the receiver type itself or any DbConnection/DbCommand base
-        // (e.g. Microsoft.Data.Sqlite's SqliteCommand overrides ExecuteReader() but inherits
-        // ExecuteReaderAsync from DbCommand without overriding it).
         if (!HasAsyncSibling(receiverType, asyncSiblingName))
         {
             return;

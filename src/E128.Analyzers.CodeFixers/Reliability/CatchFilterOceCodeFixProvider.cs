@@ -48,8 +48,6 @@ public sealed class CatchFilterOceCodeFixProvider : E128CodeFixProviderBase
         var filter = catchClause.Filter!;
         var filterExpression = filter.FilterExpression;
 
-        // The filter is `ex is not FooException` or `ex is not A and not B`.
-        // We need to find the is-pattern and extend the pattern with `and not OperationCanceledException`.
         if (filterExpression is not IsPatternExpressionSyntax isPattern)
         {
             return Task.FromResult(document);

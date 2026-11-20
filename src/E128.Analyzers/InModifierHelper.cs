@@ -8,8 +8,6 @@ namespace E128.Analyzers;
 
 internal static class InModifierHelper
 {
-    // The order the C# language reference gives for declaration modifiers. A token placed out of
-    // order still compiles, so only a reader notices the defect.
     private static readonly SyntaxKind[] ModifierOrder =
     [
         SyntaxKind.PublicKeyword,

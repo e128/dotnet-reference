@@ -49,7 +49,6 @@ public sealed class CatchFilterMessageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Bind by symbol, so a lambda parameter or a local with the same name is not the catch variable.
         var variable = context.SemanticModel.GetDeclaredSymbol(catchClause.Declaration, context.CancellationToken);
         if (variable is null)
         {
@@ -86,7 +85,6 @@ public sealed class CatchFilterMessageAnalyzer : DiagnosticAnalyzer
                 memberLocation = memberAccess.GetLocation();
                 break;
 
-            // A conditional access such as "ex?.Message" holds the receiver on the conditional node.
             case MemberBindingExpressionSyntax binding
                 when binding.Parent is ConditionalAccessExpressionSyntax conditional:
                 name = binding.Name.Identifier.ValueText;

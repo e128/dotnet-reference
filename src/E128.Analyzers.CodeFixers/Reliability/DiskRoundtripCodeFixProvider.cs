@@ -39,8 +39,6 @@ public sealed class DiskRoundtripCodeFixProvider : E128CodeFixProviderBase
         _ = diagnostic.Properties.TryGetValue(DiskRoundtripAnalyzer.PropIsAwaited, out var isAwaitedStr);
         var isAwaited = string.Equals(isAwaitedStr, "true", StringComparison.Ordinal);
 
-        // The read must yield the value the write produced. Only a matching kind, or a text and bytes
-        // pair, converts. Any other pair would put a value of the wrong type at the read site.
         if (!IsConvertible(writeKind, readKind))
         {
             return Task.CompletedTask;
@@ -101,21 +99,18 @@ public sealed class DiskRoundtripCodeFixProvider : E128CodeFixProviderBase
             return sourceExpr;
         }
 
-        // Text write → bytes read: wrap with Encoding.UTF8.GetBytes(...)
         if (string.Equals(writeKind, "Text", StringComparison.Ordinal)
             && string.Equals(readKind, "Bytes", StringComparison.Ordinal))
         {
             return InvokeStatic("Encoding", "UTF8", "GetBytes", sourceExpr);
         }
 
-        // Bytes write → text read: wrap with Encoding.UTF8.GetString(...)
         if (string.Equals(writeKind, "Bytes", StringComparison.Ordinal)
             && string.Equals(readKind, "Text", StringComparison.Ordinal))
         {
             return InvokeStatic("Encoding", "UTF8", "GetString", sourceExpr);
         }
 
-        // Fall back to direct replacement — analyzer already filtered unfixable cases.
         return sourceExpr;
     }
 

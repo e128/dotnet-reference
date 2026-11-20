@@ -75,8 +75,6 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The fix names this member in the generated cleanup call, so the name travels with the
-        // diagnostic instead of a hardcoded guess.
         var properties = ImmutableDictionary<string, string?>.Empty;
         if (GetAssignedMemberName(context, invocation) is { } memberName)
         {
@@ -96,8 +94,6 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
             _ => GetAssignedTargetSymbol(context, invocation)
         };
 
-        // A local variable or a parameter is not a member. The generated Dispose call cannot reach
-        // it, so the fix would not compile.
         return symbol is IFieldSymbol or IPropertySymbol ? symbol.Name : null;
     }
 
@@ -186,7 +182,6 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
 
     private static bool IsCleanupInterface(INamedTypeSymbol iface)
     {
-        // IAsyncLifetime stays name-only so a test project can supply its own stand-in interface.
         return iface.Name switch
         {
             "IDisposable" or "IAsyncDisposable" => Namespaces.Equals(iface.ContainingNamespace, "System"),

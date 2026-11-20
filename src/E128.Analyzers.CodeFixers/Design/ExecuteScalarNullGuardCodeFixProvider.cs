@@ -33,8 +33,6 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : E128CodeFixProviderB
             return Task.CompletedTask;
         }
 
-        // The rewrite declares a local beside the statement that reads it. With no enclosing
-        // statement, such as a field initializer, the declared name has no scope to live in.
         if (node.FirstAncestorOrSelf<StatementSyntax>() is null)
         {
             return Task.CompletedTask;
@@ -174,9 +172,6 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : E128CodeFixProviderB
             return document.WithSyntaxRoot(newRoot);
         }
 
-        // A braceless embedded statement, such as the body of `if (x) return cmd.ExecuteScalar();`, has
-        // no block to hold the declaration. Wrapping it keeps the declaration beside the statement
-        // that reads it. Returning the rewritten tree alone would leave `result` undefined.
         if (updatedStatement.Parent is not BlockSyntax block)
         {
             if (updatedStatement.Parent is null)

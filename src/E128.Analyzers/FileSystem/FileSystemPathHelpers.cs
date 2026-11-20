@@ -18,9 +18,6 @@ internal static class FileSystemPathHelpers
                && IoMethodCatalog.IsPathMethod(methodName.Identifier.ValueText);
     }
 
-    // Extracts the GenericNameSyntax for Option<T> or Argument<T> from either:
-    //   - Unqualified:  Option<string> / Argument<string>
-    //   - Qualified:    System.CommandLine.Option<string> / System.CommandLine.Argument<string>
     internal static GenericNameSyntax? ExtractGenericCliType(TypeSyntax type)
     {
         if (type is GenericNameSyntax direct && IsCliTypeName(direct.Identifier.ValueText))
@@ -62,7 +59,6 @@ internal static class FileSystemPathHelpers
         rawName = string.Empty;
         strippedName = string.Empty;
 
-        // RCS9004: SeparatedSyntaxList<T>.Count is O(1); calling Any() would allocate an enumerator.
         if (argList is null || argList.Arguments.Count is 0)
         {
             return false;
@@ -79,14 +75,11 @@ internal static class FileSystemPathHelpers
         return !string.IsNullOrEmpty(strippedName) && IsPathCliName(strippedName);
     }
 
-    // Returns true if the name (dashes stripped) suggests a file system path.
     internal static bool IsPathCliName(string name)
     {
         return PathNamePatterns.IsPathCliName(name);
     }
 
-    // Returns description and the full suggestion string for the diagnostic message.
-    // typeName is "Option" or "Argument" — the suggestion includes the correct generic wrapper.
     internal static (string Description, string Suggestion) GetCliSuggestion(string strippedName, string typeName)
     {
         return PathNamePatterns.Classify(strippedName) switch

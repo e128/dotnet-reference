@@ -44,8 +44,6 @@ public sealed class AggressiveOptimizationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Resolve the constructor, so `MethodImpl`, `MethodImplAttribute` and a qualified
-        // name all match the same type.
         if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
             is not IMethodSymbol { ContainingType.Name: "MethodImplAttribute" })
         {

@@ -68,7 +68,6 @@ public sealed class DllImportToLibraryImportCodeFixProvider : E128CodeFixProvide
         return document.WithSyntaxRoot(newRoot);
     }
 
-    // LibraryImport has no CharSet, CallingConvention, PreserveSig, ExactSpelling or BestFitMapping.
     private static bool HasOnlyTranslatableArguments(AttributeSyntax attribute)
     {
         return attribute.ArgumentList is null

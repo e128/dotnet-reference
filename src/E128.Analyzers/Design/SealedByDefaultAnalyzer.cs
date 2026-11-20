@@ -40,21 +40,16 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        // Two-pass strategy: per-compilation state is captured inside RegisterCompilationStartAction
-        // so each compilation gets its own fresh sets (correct for incremental builds).
         context.RegisterCompilationStartAction(static startContext =>
         {
             var candidates = new ConcurrentBag<(INamedTypeSymbol Type, Location Location)>();
             var hasSubclassSet = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
             var constraintTypes = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
 
-            // Pass 1: Concurrent — collect candidates and base-type relationships.
             startContext.RegisterSymbolAction(
                 ctx => CollectTypeInfo(ctx, candidates, hasSubclassSet, constraintTypes),
                 SymbolKind.NamedType);
 
-            // A sealed class cannot be a generic constraint (CS0701), so a constraint
-            // keeps its type unsealed even when the compilation declares no derived type.
             startContext.RegisterSymbolAction(
                 ctx => CollectConstraintTypes(((IMethodSymbol)ctx.Symbol).TypeParameters, constraintTypes),
                 SymbolKind.Method);
@@ -65,7 +60,6 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
                     constraintTypes),
                 OperationKind.LocalFunction);
 
-            // Pass 2: Single-threaded — report leaf classes at compilation end.
             startContext.RegisterCompilationEndAction(
                 ctx => ReportLeafClasses(ctx, candidates, hasSubclassSet, constraintTypes));
         });
@@ -81,16 +75,11 @@ public sealed class SealedByDefaultAnalyzer : DiagnosticAnalyzer
 
         CollectConstraintTypes(type.TypeParameters, constraintTypes);
 
-        // Record this type's base as having at least one subclass.
         if (type.BaseType is { SpecialType: not SpecialType.System_Object } baseType)
         {
             _ = hasSubclassSet.TryAdd(baseType.OriginalDefinition, true);
         }
 
-        // Collect candidates that could trigger E128005.
-        // Exclusions: abstract, static, sealed, record (IsRecord covers record class),
-        // struct (TypeKind.Struct), direct Object subclass. A COM class needs no
-        // exclusion because CS0424 forbids a base class on a ComImport type.
         if (type.TypeKind is not TypeKind.Class
             || type.IsAbstract
             || type.IsStatic

@@ -29,7 +29,6 @@ public sealed class StaleReferenceAssembliesCodeFixProvider : E128CodeFixProvide
             return Task.CompletedTask;
         }
 
-        // Get the target version from the diagnostic arguments
         var targetVersion = diagnostic.Properties.GetValueOrDefault(StaleReferenceAssembliesAnalyzer.MinimumVersionOptionKey, "100");
 
         var newName = $"Net{targetVersion}";

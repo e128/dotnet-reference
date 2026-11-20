@@ -49,7 +49,6 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
     internal static readonly ImmutableDictionary<string, string> SyncIoMethodsWithAsyncAlternatives =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            // System.IO.File
             ["ReadAllText"] = "System.IO.File",
             ["ReadAllBytes"] = "System.IO.File",
             ["ReadAllLines"] = "System.IO.File",
@@ -59,13 +58,11 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
             ["AppendAllText"] = "System.IO.File",
             ["AppendAllLines"] = "System.IO.File",
 
-            // System.IO.Stream
             ["Read"] = "System.IO.Stream",
             ["Write"] = "System.IO.Stream",
             ["CopyTo"] = "System.IO.Stream",
             ["Flush"] = "System.IO.Stream",
 
-            // System.Net.Http.HttpClient — sync overload only
             ["Send"] = "System.Net.Http.HttpClient"
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
@@ -119,13 +116,8 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            // Resolve each owning type once per compilation. A symbol compare rejects a user type
-            // that lives in the same namespace and shares the metadata name; the display-string
-            // compare would match it.
             var syncIoOwnerTypes = ResolveSyncIoOwnerTypes(compilationContext.Compilation, availableSyncIoMethods);
 
-            // The await and sync-I/O scans depend only on the enclosing method, not on the
-            // individual FromResult call. Cache the result per method.
             var methodScans =
                 new ConcurrentDictionary<MethodDeclarationSyntax, (bool HasAwait, string? SyncIoCall)>();
 
@@ -227,8 +219,6 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The fix leaves a FromResult inside a lambda or a local function alone, so only a
-        // FromResult in the method body can be reported.
         if (IsInNestedFunction(invocation, containingMethod))
         {
             return;
@@ -351,8 +341,6 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Symbol compare holds the code fix to the same match predicate, so a user type that
-            // shares the metadata name never gets a rewrite.
             if (syncIoOwnerTypes.TryGetValue(expectedContainingType, out var ownerType)
                 && ownerType is not null
                 && SymbolEqualityComparer.Default.Equals(calledMethod.ContainingType, ownerType))

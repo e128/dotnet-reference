@@ -31,9 +31,6 @@ public sealed class PooledBufferZeroingCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        // The zeroing call clears the buffer on every exit path only when it shares the finally
-        // block that holds the Return. A Return with no finally needs a try/finally restructure,
-        // so the fix declines it.
         var returnStatement = invocation.FirstAncestorOrSelf<StatementSyntax>();
         if (returnStatement is null
             || returnStatement.Parent is not BlockSyntax block

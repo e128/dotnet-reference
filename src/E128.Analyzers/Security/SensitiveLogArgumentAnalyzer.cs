@@ -23,7 +23,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
 
     private const string LoggerMessageAttributeName = "Microsoft.Extensions.Logging.LoggerMessageAttribute";
 
-    // A name that holds one of these words anywhere is sensitive.
     private static readonly string[] SensitiveWords =
     [
         "password",
@@ -38,16 +37,12 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
         "cardnumber"
     ];
 
-    // A short word matches only as a whole word. A name such as processNumber holds "ssn" inside
-    // "process" and "Number", so a substring match would report it by mistake.
     private static readonly string[] SensitiveWholeWords =
     [
         "pwd",
         "ssn"
     ];
 
-    // A name with one of these endings, or the word "cancellation", holds metadata or a framework
-    // type, not the sensitive value.
     private static readonly string[] SafeSuffixes =
     [
         "name",
@@ -60,7 +55,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
         "hint"
     ];
 
-    // The logger, the event id, and the level types carry no template value.
     private static readonly string[] FrameworkTypeNames =
     [
         "Microsoft.Extensions.Logging.EventId",
@@ -128,8 +122,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
 
         var value = StripConversions(argument.Value);
 
-        // The params object[] holds the template values. Read each element, whether the call
-        // spells the array out or lets the compiler build it.
         if (parameter.IsParams && value is IArrayCreationOperation { Initializer: { } initializer })
         {
             ReportElements(context, initializer);
@@ -142,8 +134,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A template string is not a value. Only the holes of an interpolated template can
-        // carry one. A LoggerMessage method has no template parameter, so every string is a value.
         if (!isGenerated && parameter.Type.SpecialType is SpecialType.System_String)
         {
             if (syntax is InterpolatedStringExpressionSyntax)
@@ -161,7 +151,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
     {
         foreach (var element in initializer.ElementValues)
         {
-            // The element keeps the syntax the author wrote, so a cast stays visible.
             if (element.Syntax is ExpressionSyntax elementSyntax)
             {
                 Report(context, [elementSyntax], ElementLocation(elementSyntax));
@@ -186,8 +175,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // An element that is a call argument reports at the argument. An element inside an explicit
-    // array initializer reports at the element.
     private static Location ElementLocation(ExpressionSyntax element)
     {
         SyntaxNode current = element;
@@ -243,7 +230,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
                || string.Equals(typeName, "Microsoft.Extensions.Logging.ILogger", StringComparison.Ordinal);
     }
 
-    // The logger, the event id, the level, the exception, and the formatter carry no template value.
     private static bool IsFrameworkParameter(ITypeSymbol type)
     {
         if (type.TypeKind is TypeKind.Delegate)
@@ -253,7 +239,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
 
         for (var current = type; current is not null; current = current.BaseType)
         {
-            // The fully qualified format leaves out the nullable annotation, so Exception? still matches.
             if (string.Equals(
                     current.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                     "global::System.Exception",
@@ -266,7 +251,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
         return FrameworkTypeNames.Contains(type.OriginalDefinition.ToDisplayString(), StringComparer.Ordinal);
     }
 
-    // An interpolated argument hides its values in holes. Read each hole as its own value.
     private static IEnumerable<ExpressionSyntax> ValueExpressions(ExpressionSyntax expression)
     {
         return expression is InterpolatedStringExpressionSyntax interpolated
@@ -274,8 +258,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
             : new[] { expression };
     }
 
-    // Reads the name of the value an expression ends in. A cast, a parenthesis, a null-forgiving
-    // operator, a conditional access, and a ToString or Trim call with no arguments keep the name.
     private static string? LeafName(ExpressionSyntax expression)
     {
         return expression switch
@@ -289,7 +271,6 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    // The expression inside a parenthesis, a cast, a null-forgiving operator or an "as" expression.
     private static ExpressionSyntax? WrappedExpression(ExpressionSyntax expression)
     {
         return expression switch

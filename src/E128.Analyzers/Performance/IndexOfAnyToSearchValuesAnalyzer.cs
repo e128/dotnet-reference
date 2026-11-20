@@ -35,8 +35,6 @@ public sealed class IndexOfAnyToSearchValuesAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static startContext =>
         {
-            // SearchValues<T> arrived in .NET 8. Without it the suggested replacement does not
-            // compile, so an older target framework must get no report.
             if (startContext.Compilation.GetTypeByMetadataName(SearchValuesMetadataName) is null)
             {
                 return;

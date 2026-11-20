@@ -50,7 +50,6 @@ public sealed class DllImportToLibraryImportAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start =>
         {
-            // Without LibraryImportAttribute (before .NET 7) the rule has no remedy.
             if (MetadataTypes.Find(start.Compilation, "System.Runtime.InteropServices.LibraryImportAttribute").IsEmpty)
             {
                 return;

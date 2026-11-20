@@ -18,7 +18,6 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128164";
 
-    // Namespace and schema identifiers are names, not endpoints. They stay silent.
     private static readonly string[] AllowedHostSuffixes =
     [
         "w3.org",
@@ -85,9 +84,6 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, context.Node.GetLocation(), value));
     }
 
-    // A property initializer on an options class, and a const or static readonly field, each declare
-    // one fixed value in one place. The rule asks for exactly that shape, so neither is the endpoint
-    // per environment it exists to catch. A local const stays reported: it hides a value in a code path.
     private static bool IsExemptDeclaration(SyntaxNode node)
     {
         var declaration = node.Ancestors().FirstOrDefault(static ancestor =>
@@ -135,7 +131,6 @@ public sealed class HardcodedUrlAnalyzer : DiagnosticAnalyzer
         var host = uri.Host;
         foreach (var suffix in AllowedHostSuffixes)
         {
-            // Match the host itself or a subdomain. A bare suffix match would allow evilexample.com.
             if (string.Equals(host, suffix, StringComparison.OrdinalIgnoreCase)
                 || host.EndsWith("." + suffix, StringComparison.OrdinalIgnoreCase))
             {

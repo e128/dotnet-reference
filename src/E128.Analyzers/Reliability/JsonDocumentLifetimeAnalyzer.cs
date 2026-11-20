@@ -70,7 +70,6 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Not in a using scope at all — always report.
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
@@ -95,14 +94,12 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
 
     private static bool IsInUsingScope(InvocationExpressionSyntax invocation)
     {
-        // Using declaration form.
         if (invocation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax localDecl } } }
             && localDecl.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
         {
             return true;
         }
 
-        // Using statement form.
         return invocation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Parent: UsingStatementSyntax } } };
     }
 

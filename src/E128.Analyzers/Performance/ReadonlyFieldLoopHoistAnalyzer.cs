@@ -28,8 +28,6 @@ public sealed class ReadonlyFieldLoopHoistAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128235";
 
-    // The suffix search gives up after this many collisions. A method that declares this many
-    // names from one base does not want a hoisted local anyway.
     private const int MaxNameAttempts = 100;
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -67,8 +65,6 @@ public sealed class ReadonlyFieldLoopHoistAnalyzer : DiagnosticAnalyzer
     {
         var loop = (StatementSyntax)context.Node;
 
-        // Only the outermost loop reports. Its fix rewrites every read inside it, including the
-        // reads of nested loops, so a nested loop would name a rewrite the outer loop already owns.
         if (LoopContext.IsWithinAnyLoop(loop))
         {
             return;
@@ -92,8 +88,6 @@ public sealed class ReadonlyFieldLoopHoistAnalyzer : DiagnosticAnalyzer
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        // The fix inserts the local into the parent block. An embedded statement with no block of
-        // its own, and a loop under a switch section, have no place for the declaration.
         if (loop.Parent is not BlockSyntax)
         {
             return null;
@@ -165,15 +159,11 @@ public sealed class ReadonlyFieldLoopHoistAnalyzer : DiagnosticAnalyzer
 
         field = candidate;
 
-        // Only a constructor can assign a readonly field. A mid-loop assignment means the
-        // hoisted copy would hide the new value from the rest of the loop.
         if (IsWriteTarget(identifier))
         {
             return RegionMatch.Excluded;
         }
 
-        // A nameof argument turns the field name into a constant string, so a local copy
-        // would change the produced value.
         if (IsInsideNameOf(identifier))
         {
             return RegionMatch.Excluded;
@@ -348,7 +338,6 @@ public sealed class ReadonlyFieldLoopHoistAnalyzer : DiagnosticAnalyzer
                 ? baseName
                 : baseName + attempt.ToString(CultureInfo.InvariantCulture);
 
-            // A field such as `_if` derives the keyword `if`. The suffixed candidates parse.
             if (SyntaxFacts.GetKeywordKind(candidate) is not SyntaxKind.None)
             {
                 continue;
@@ -450,9 +439,6 @@ public sealed class ReadonlyFieldLoopHoistAnalyzer : DiagnosticAnalyzer
     {
         foreach (var identifier in sibling.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            // Name-based reservation. Every reference to a field with this base carries its
-            // identifier, so an earlier sibling loop always reserves. A same-named other
-            // symbol only costs one suffix.
             if (DeriveBaseName(identifier.Identifier.ValueText) is not { } derived
                 || !string.Equals(derived, baseName, StringComparison.Ordinal))
             {

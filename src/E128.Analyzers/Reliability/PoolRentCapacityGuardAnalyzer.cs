@@ -143,8 +143,6 @@ public sealed class PoolRentCapacityGuardAnalyzer : DiagnosticAnalyzer
 
     private static bool IsLocalAssignedFromMathMin(ILocalSymbol local, SemanticModel model, CancellationToken cancellationToken)
     {
-        // Resolve the declaration through the symbol instead of rescanning the method body.
-        // This is O(1) and cannot match a shadowed name from another scope.
         foreach (var reference in local.DeclaringSyntaxReferences)
         {
             if (reference.SyntaxTree != model.SyntaxTree

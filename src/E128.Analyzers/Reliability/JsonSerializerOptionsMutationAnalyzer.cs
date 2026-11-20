@@ -191,7 +191,6 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
         ImmutableArray<INamedTypeSymbol> serializerTypes,
         SyntaxNodeAnalysisContext context)
     {
-        // A new instance assigned to the same variable starts a fresh, unfrozen options object.
         if (node is AssignmentExpressionSyntax assignment
             && SymbolEqualityComparer.Default.Equals(
                 context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol,
@@ -210,8 +209,6 @@ public sealed class JsonSerializerOptionsMutationAnalyzer : DiagnosticAnalyzer
         return used;
     }
 
-    // A lambda or a local function can run later or never, so a call inside one is not a use
-    // that precedes the write.
     private static bool IsInNestedFunction(SyntaxNode node, SyntaxNode body)
     {
         foreach (var ancestor in node.Ancestors())

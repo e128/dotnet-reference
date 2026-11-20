@@ -135,8 +135,6 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
 
     private static bool IsFrameworkType(ITypeSymbol type)
     {
-        // A name prefix also selects a user assembly named System.Foo. The framework public key
-        // token proves the assembly ships with the framework. An unsigned assembly has none.
         return FrameworkAssemblyIdentity.IsFrameworkAssembly(type.ContainingAssembly);
     }
 }

@@ -97,14 +97,12 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         "TrySignData",
         "SignHash");
 
-    // Legacy signing members that take the hash as a string, an object or a Type.
     private static readonly ImmutableHashSet<string> LegacyHashNameMembers = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "SignData",
         "SignHash",
         "SetHashAlgorithm");
 
-    // Object identifiers for SHA-1, MD5 and RIPEMD-160. FipsSymbolHelpers owns the OID table.
     private static readonly ImmutableHashSet<string> ForbiddenHashOids = FipsSymbolHelpers.ForbiddenHashOids;
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -216,7 +214,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         ReportForbidden(context, syntax, uri);
     }
 
-    // CmsSigner.DigestAlgorithm = new Oid("1.3.14.3.2.26")
     private static void CheckCmsSignerOid(OperationAnalysisContext context, IOperation value, SyntaxNode syntax)
     {
         if (FipsSymbolHelpers.Unwrap(value) is not IObjectCreationOperation oid ||
@@ -251,21 +248,18 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // RSAOAEPKeyExchangeFormatter and its deformatter always use OAEP with SHA-1.
         if (FipsSymbolHelpers.IsCryptographyType(creation.Type, OaepKeyExchangeTypes))
         {
             ReportForbidden(context, syntax, "SHA1 (RSA OAEP padding)");
             return;
         }
 
-        // RSAPKCS1KeyExchangeFormatter and its deformatter always use PKCS#1 v1.5 padding.
         if (FipsSymbolHelpers.IsCryptographyType(creation.Type, Pkcs1KeyExchangeTypes))
         {
             ReportForbidden(context, syntax, Pkcs1Encryption);
             return;
         }
 
-        // new EncryptionMethod("http://www.w3.org/2001/04/xmlenc#tripledes-cbc")
         if (FipsSymbolHelpers.IsType(creation.Type, "EncryptionMethod", XmlDsigNamespace) &&
             FipsSymbolHelpers.TryGetConstant<string>(FipsSymbolHelpers.ArgumentAt(creation.Arguments, 0)?.Value, out var uri) &&
             IsForbiddenAlgorithmName(uri))
@@ -274,7 +268,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // PBKDF2 and PBE hash arguments belong to E128145.
         if (!FipsSymbolHelpers.IsCryptographyType(creation.Type, Pbkdf2Types))
         {
             ReportHashNameArguments(context, creation.Constructor, creation.Arguments, syntax);
@@ -349,14 +342,12 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         var invocation = (IInvocationOperation)context.Operation;
         var method = invocation.TargetMethod;
 
-        // One diagnostic per call: a SHA-1 hash name on the same call would repeat it.
         if (ReportDsaOrOaep(context, invocation) ||
             ReportLegacyHashName(context, invocation))
         {
             return;
         }
 
-        // Verification of an existing signature stays allowed, and PBKDF2 belongs to E128145.
         if (!IsExemptFromHashNameCheck(method))
         {
             ReportHashNameArguments(context, method, invocation.Arguments, invocation.Syntax);
@@ -383,8 +374,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        // RSACryptoServiceProvider.Encrypt(data, fOAEP) and Decrypt: true selects OAEP with SHA-1, false selects
-        // PKCS#1 v1.5, and a flag that is not constant can select either.
         if (!(string.Equals(method.Name, "Encrypt", StringComparison.Ordinal) ||
               string.Equals(method.Name, "Decrypt", StringComparison.Ordinal)) ||
             !FipsSymbolHelpers.IsCryptographyType(method.ContainingType, "RSACryptoServiceProvider") ||
@@ -448,7 +437,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         var method = invocation.TargetMethod;
         var syntax = invocation.Syntax;
 
-        // Static members called on a forbidden type without 'new', such as MD5.Create() and MD5.HashData().
         if (FipsTypeClassifier.OneShotMembers.Contains(method.Name) && InspectType(context, method.ContainingType, syntax))
         {
             return;
@@ -459,7 +447,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // HashAlgorithm.Create() and friends select SHA-1 or HMAC-SHA1 by default.
         if (string.Equals(method.Name, "Create", StringComparison.Ordinal) &&
             method.Parameters.Length is 0 &&
             LegacyDefaultFactoryTypes.Contains(method.ContainingType.Name))
@@ -475,7 +462,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
         ReportNamedFactory(context, invocation);
     }
 
-    // Factories that resolve an algorithm from a name, such as HashAlgorithm.Create("MD5").
     private static void ReportNamedFactory(OperationAnalysisContext context, IInvocationOperation invocation)
     {
         var method = invocation.TargetMethod;
@@ -518,7 +504,6 @@ public sealed class FipsUnapprovedHashAnalyzer : DiagnosticAnalyzer
 
     private static bool TryGetForbiddenHashValue(IOperation? value, out string name)
     {
-        // CryptoConfig.MapNameToOID("SHA1") is the object identifier of the named algorithm.
         if (value is IInvocationOperation { TargetMethod: { IsStatic: true } mapper } map &&
             string.Equals(mapper.Name, "MapNameToOID", StringComparison.Ordinal) &&
             FipsSymbolHelpers.IsCryptographyType(mapper.ContainingType, "CryptoConfig"))

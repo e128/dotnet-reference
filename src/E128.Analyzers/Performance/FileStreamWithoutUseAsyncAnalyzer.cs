@@ -130,8 +130,6 @@ public sealed class FileStreamWithoutUseAsyncAnalyzer : DiagnosticAnalyzer
             context.ContainingSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
     }
 
-    // An omitted useAsync argument leaves the stream in synchronous mode. A non-boolean constant
-    // cannot occur on a bool parameter, so it stays silent rather than guessing.
     private static bool IsSynchronousUseAsyncArgument(
         IObjectCreationOperation creation,
         IParameterSymbol parameter)
@@ -146,8 +144,6 @@ public sealed class FileStreamWithoutUseAsyncAnalyzer : DiagnosticAnalyzer
         return constant.HasValue && constant.Value is bool useAsync && !useAsync;
     }
 
-    // The stream runs asynchronous I/O when the FileOptions value carries the Asynchronous bit.
-    // Any other constant, including FileOptions.None, keeps synchronous I/O.
     private static bool IsSynchronousOptions(
         IObjectCreationOperation creation,
         IParameterSymbol parameter,
@@ -179,8 +175,6 @@ public sealed class FileStreamWithoutUseAsyncAnalyzer : DiagnosticAnalyzer
             parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal));
     }
 
-    // The FileStreamOptions overload also names its parameter options. Matching the type keeps the
-    // rule off a FileStreamOptions instance, which this rule does not read.
     private static IParameterSymbol? FindOptionsParameter(
         IMethodSymbol constructor,
         INamedTypeSymbol fileOptionsType)

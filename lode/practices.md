@@ -1,5 +1,5 @@
 # Practices
-*Updated: 2026-11-18T09:49:53Z*
+*Updated: 2026-11-20T17:15:09Z*
 
 ## Design Principles
 
@@ -29,6 +29,7 @@
 - Primary constructors disabled (`csharp_style_prefer_primary_constructors = false`)
 - Collection expressions preferred (`dotnet_style_prefer_collection_expression = true`), aligned with the E128061 code fix output
 - Collection count rules live in [C# Conventions](dotnet/csharp-conventions.md).
+- Source files carry no `//` or `/* */` comment. `scripts/comment-scan.sh` enforces the ban. Rationale lives in [Decision Records](decisions/summary.md).
 
 ## AI Assistant Preferences
 

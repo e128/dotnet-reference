@@ -73,7 +73,6 @@ public sealed class FipsSha3Analyzer : DiagnosticAnalyzer
         var reference = (IPropertyReferenceOperation)context.Operation;
         var property = reference.Property;
 
-        // RSAEncryptionPadding.OaepSHA3_256 and its siblings.
         if (!property.IsStatic ||
             !property.Name.StartsWith("OaepSHA3_", StringComparison.Ordinal) ||
             !FipsSymbolHelpers.IsCryptographyType(property.ContainingType, "RSAEncryptionPadding"))
@@ -104,7 +103,6 @@ public sealed class FipsSha3Analyzer : DiagnosticAnalyzer
         var method = invocation.TargetMethod;
         var syntax = invocation.Syntax;
 
-        // SHA3_256.HashData(...), Shake256.HashData(...) and similar static members.
         if (method.IsStatic && ReportType(context, method.ContainingType, syntax))
         {
             return;

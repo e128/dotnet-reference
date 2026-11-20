@@ -55,8 +55,6 @@ public sealed class ForeignTestDisableAnalyzer : DiagnosticAnalyzer
         "Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethodAttribute",
     ];
 
-    // Disabled text holds no binding, so part B matches test-attribute names by spelling. A name
-    // match in dead text costs nothing, and no stronger check can exist without a model.
     private static readonly ImmutableArray<string> TestAttributeNames =
     [
         "Fact",
@@ -91,7 +89,6 @@ public sealed class ForeignTestDisableAnalyzer : DiagnosticAnalyzer
         {
             var ignoreTypes = CollectTypes(start.Compilation, IgnoreTypeNames);
 
-            // Part B reads the syntax alone, so it runs for every compilation.
             start.RegisterSyntaxTreeAction(AnalyzeTree);
 
             if (ignoreTypes.IsEmpty)
@@ -115,7 +112,6 @@ public sealed class ForeignTestDisableAnalyzer : DiagnosticAnalyzer
 
         foreach (var metadataName in metadataNames)
         {
-            // MetadataTypes.Find survives an ambiguous reference, so the rule still runs.
             builder.AddRange(MetadataTypes.Find(compilation, metadataName));
         }
 
@@ -183,7 +179,6 @@ public sealed class ForeignTestDisableAnalyzer : DiagnosticAnalyzer
 
     private static bool HasTrackedReason(AttributeSyntax attribute, SyntaxNodeAnalysisContext context)
     {
-        // An [Ignore] with no reason argument reports at the attribute itself.
         if (attribute.ArgumentList?.Arguments.FirstOrDefault(static argument => argument.NameEquals is null) is not { } reason)
         {
             return false;
@@ -191,7 +186,6 @@ public sealed class ForeignTestDisableAnalyzer : DiagnosticAnalyzer
 
         var constant = context.SemanticModel.GetConstantValue(reason.Expression, context.CancellationToken);
 
-        // A non-constant reason stays silent, matching how E128168 reads a non-constant Skip.
         if (!constant.HasValue || constant.Value is not string text)
         {
             return true;
@@ -238,14 +232,12 @@ public sealed class ForeignTestDisableAnalyzer : DiagnosticAnalyzer
 
         if (directive.IsKind(SyntaxKind.IfDirectiveTrivia))
         {
-            // A nested directive inside the disabled region still counts for nesting.
             depth++;
             return true;
         }
 
         if (directive.IsKind(SyntaxKind.ElseDirectiveTrivia) || directive.IsKind(SyntaxKind.ElifDirectiveTrivia))
         {
-            // The #else or #elif branch is active or condition dependent, so it stays silent.
             return depth > 1;
         }
 
@@ -270,8 +262,6 @@ public sealed class ForeignTestDisableAnalyzer : DiagnosticAnalyzer
 
     private static bool IsLiteralFalseCondition(IfDirectiveTriviaSyntax directive)
     {
-        // A symbol condition evaluates false when the symbol is undefined, so only the literal
-        // false disables the branch in every build. A symbol condition stays undecidable.
         return directive.Condition.IsKind(SyntaxKind.FalseLiteralExpression);
     }
 
@@ -279,9 +269,6 @@ public sealed class ForeignTestDisableAnalyzer : DiagnosticAnalyzer
     {
         var text = context.Tree.GetText(context.CancellationToken).ToString(trivia.Span);
 
-        // The disabled text holds class members without their enclosing type, so a bare parse
-        // yields no method declaration. Wrap it in a type to make the members parse, then map
-        // each span back past the wrapper prefix.
         const string wrapperPrefix = "class Wrapper\n{\n";
         var parsed = SyntaxFactory.ParseCompilationUnit(wrapperPrefix + text + "\n}");
 

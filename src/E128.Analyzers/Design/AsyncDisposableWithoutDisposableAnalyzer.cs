@@ -40,13 +40,11 @@ public sealed class AsyncDisposableWithoutDisposableAnalyzer : DiagnosticAnalyze
     {
         var type = (INamedTypeSymbol)context.Symbol;
 
-        // Skip interfaces — they define contracts, not implementations.
         if (type.TypeKind is TypeKind.Interface)
         {
             return;
         }
 
-        // Only check classes and structs.
         if (type.TypeKind is not TypeKind.Class and not TypeKind.Struct)
         {
             return;

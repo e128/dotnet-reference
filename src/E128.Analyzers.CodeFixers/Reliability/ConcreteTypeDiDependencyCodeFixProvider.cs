@@ -42,8 +42,6 @@ public sealed class ConcreteTypeDiDependencyCodeFixProvider : E128CodeFixProvide
             return Task.CompletedTask;
         }
 
-        // The rewrite replaces the whole statement. A fluent chain carries more registrations after
-        // the matched call, so only a bare call can be rewritten.
         if (registrationInfo.Value.Invocation.FirstAncestorOrSelf<ExpressionStatementSyntax>()
                 is not { } statement
             || statement.Expression != registrationInfo.Value.Invocation)

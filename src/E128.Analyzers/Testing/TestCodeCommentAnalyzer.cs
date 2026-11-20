@@ -56,8 +56,6 @@ public sealed class TestCodeCommentAnalyzer : DiagnosticAnalyzer
 
         foreach (var trivia in classDeclaration.DescendantTrivia())
         {
-            // DescendantTrivia includes the declaration's own leading trivia. A license header, or a
-            // doc comment on the type itself, sits outside the type body, so the rule leaves it alone.
             if (trivia.SpanStart < classDeclaration.OpenBraceToken.SpanStart || !IsCommentTrivia(trivia))
             {
                 continue;
@@ -67,10 +65,6 @@ public sealed class TestCodeCommentAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // A structured trivia's narrow Span excludes its own leading trivia — for a doc comment
-    // that leading trivia IS the "///" exterior marker, so Span alone reports a location that
-    // starts after it. FullSpan includes the marker; trimming only the trailing newline
-    // (present on doc comments, absent on plain // comments) yields the visible comment text.
     private static Location TrimmedLocation(SyntaxTrivia trivia, CancellationToken cancellationToken)
     {
         var sourceText = trivia.SyntaxTree!.GetText(cancellationToken);

@@ -42,8 +42,6 @@ public sealed class StringBuilderPoolAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static compilationContext =>
         {
-            // The rule names an API from the Pug package. Without that type the suggestion has no
-            // remedy, so the analyzer must not run at all.
             var poolType = compilationContext.Compilation.GetTypeByMetadataName(StringBuilderPoolMetadataName);
             if (poolType is null)
             {

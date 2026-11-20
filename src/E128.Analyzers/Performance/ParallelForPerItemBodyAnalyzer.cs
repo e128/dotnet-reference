@@ -39,7 +39,6 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
     private const string ActionMetadataName = "System.Action`1";
     private const string ForEachMethodName = "ForEach";
 
-    // The overload shape the fix rewrites: fromInclusive, toExclusive, body.
     private const int ForArgumentCount = 3;
     private const int BodyArgumentIndex = 2;
 
@@ -66,8 +65,6 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        // The fix needs Partitioner.Create and Parallel.ForEach. Gate on the remedy, so a
-        // compilation without it gets no report.
         context.RegisterCompilationStartAction(static compilationContext =>
         {
             var parallelType = compilationContext.Compilation.GetTypeByMetadataName(ParallelMetadataName);
@@ -107,14 +104,11 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
 
         var arguments = invocation.ArgumentList.Arguments;
 
-        // The fix emits positional arguments only, so a call with named arguments stays silent.
         if (arguments.Any(static argument => argument.NameColon is not null))
         {
             return;
         }
 
-        // A user type with its own For, the long overload, the Action<int, ParallelLoopState>
-        // overload, and the For<TLocal> overloads all reach this bind and stay silent.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
                 is not IMethodSymbol method
             || !SymbolEqualityComparer.Default.Equals(method.ContainingType, parallelType)
@@ -138,8 +132,6 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
                && string.Equals(name.Identifier.ValueText, ForMethodName, StringComparison.Ordinal);
     }
 
-    // The fix builds a for loop with the (int, int, Action<int>) shape. Partitioner.Create takes
-    // int ranges, so every other overload stays silent.
     private static bool IsIntBodyOverload(IMethodSymbol method, INamedTypeSymbol actionType)
     {
         var parameters = method.Parameters;
@@ -162,7 +154,6 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
 
     private static bool IsReportableLambda(AnonymousFunctionExpressionSyntax lambda)
     {
-        // The fix rewrites lambda syntax only. A method group and an anonymous method stay silent.
         var parameter = LambdaParameter(lambda);
         if (parameter is null)
         {
@@ -171,15 +162,11 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
 
         var parameterName = parameter.Identifier.ValueText;
 
-        // The fix declares a lambda parameter named "range". A body parameter with that name would
-        // collide with the declared range parameter, so the rewrite would not compile.
         if (string.Equals(parameterName, RangeParameterName, StringComparison.Ordinal))
         {
             return false;
         }
 
-        // The range overload takes a synchronous delegate. An async lambda binds as an async void
-        // delegate, and the fix does not model that shape.
         if (Is(lambda))
         {
             return false;
@@ -201,18 +188,11 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
 
     private static bool IsReportableBody(SyntaxNode body, string parameterName)
     {
-        // The fix declares the parameter as the loop variable. A body that mutates the parameter,
-        // or passes it by reference, would mutate the loop variable instead. The scan crosses
-        // nested lambdas on purpose: a nested lambda that mutates the captured parameter has the
-        // same effect after the rewrite.
         if (MutatesParameter(body, parameterName))
         {
             return false;
         }
 
-        // Any other use of the name "range" in the body, as a reference or a declaration, would
-        // collide with the declared range parameter. The scan is wider than strictly needed, so a
-        // member access such as "state.range" also stays silent.
         if (BodyUsesRangeName(body))
         {
             return false;
@@ -221,14 +201,10 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
         switch (body)
         {
             case BlockSyntax { Statements.Count: > 0 } block:
-                // A body that already runs a loop per item gains nothing from a range partition.
                 return !OwnBodyContainsLoop(block) && !OwnBodyContainsAwait(block);
             case BlockSyntax:
-                // An empty body does no per-item work, so the report has no value.
                 return false;
             case ExpressionSyntax expression:
-                // An expression body becomes one statement of the rewritten for loop, so it must
-                // fit a statement position. A read such as "i => items[i]" does not.
                 return IsStatementExpression(expression);
             default:
                 return false;
@@ -261,7 +237,6 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // True for an assignment to the parameter, or an increment or decrement of it.
     private static bool UpdatesParameter(SyntaxNode node, string parameterName)
     {
         if (node is AssignmentExpressionSyntax assignment
@@ -291,7 +266,6 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // True for an argument that passes the parameter by reference.
     private static bool PassesParameterByReference(SyntaxNode node, string parameterName)
     {
         return node is ArgumentSyntax
@@ -331,8 +305,6 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
         return body.DescendantNodes(StopAtNestedFunction).OfType<AwaitExpressionSyntax>().Any();
     }
 
-    // A loop or an await inside a nested lambda stays nested after the rewrite, so that body walk
-    // stops at the nested boundary. The mutation scan above does not.
     private static bool StopAtNestedFunction(SyntaxNode node)
     {
         return node is not AnonymousFunctionExpressionSyntax and not LocalFunctionStatementSyntax;

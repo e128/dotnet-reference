@@ -44,8 +44,6 @@ internal static class UnionTypes
 
     private static bool IsCompilerUnionInterface(ITypeSymbol interfaceType)
     {
-        // The compiler synthesizes the interface, so no metadata name resolves it. Match the
-        // name and the namespace chain instead, which the checklist allows when no symbol exists.
         if (!string.Equals(interfaceType.Name, "IUnion", StringComparison.Ordinal))
         {
             return false;

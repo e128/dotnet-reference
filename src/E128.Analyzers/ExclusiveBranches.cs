@@ -23,8 +23,6 @@ internal static class ExclusiveBranches
             var firstSection = FindSection(switchStatement, first);
             var secondSection = FindSection(switchStatement, second);
 
-            // Two enumerations in different sections never run in the same switch pass. An empty
-            // section falls through, and it holds no enumeration of its own.
             if (firstSection is not null && secondSection is not null
                 && !ReferenceEquals(firstSection, secondSection))
             {

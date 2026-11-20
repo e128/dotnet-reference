@@ -28,7 +28,6 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        // The fix needs the length the code requested from the pool. Without it, no fix is offered.
         if (node is InvocationExpressionSyntax addWithValue
             && TryGetRequestedLength(node, GetAddWithValueArgument(addWithValue)) is not null)
         {
@@ -88,9 +87,6 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
 
         List<StatementSyntax> replacement = [declaration, sizeStatement];
 
-        // A statement that only performs the call keeps no second copy of it. Any other statement
-        // still reads the parameter, so the call moves into the declaration and the statement uses
-        // the new name.
         if (!isDiscard
             && containingStatement is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax })
         {
@@ -234,8 +230,6 @@ public sealed class ArrayPoolSqliteParameterSizeCodeFixProvider : E128CodeFixPro
             .Where(v => string.Equals(v.Identifier.ValueText, name, StringComparison.Ordinal))
             .ToList();
 
-        // Decline when the name is ambiguous. Two declarators of one name can sit in different scopes,
-        // and a reassigned buffer can hold a different length at the call.
         if (declarators is not { Count: 1 }
             || member is null
             || member.DescendantNodes().OfType<AssignmentExpressionSyntax>().Any(a =>

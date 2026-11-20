@@ -178,9 +178,6 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
                 DangerousValidatorName,
                 StringComparison.Ordinal))
         {
-            // HttpClientHandler.DangerousAcceptAnyServerCertificateValidator is the framework's own
-            // name for the unconditional callback. The name alone is enough, because the property
-            // has no other meaning.
             return true;
         }
 
@@ -195,8 +192,6 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
             };
         }
 
-        // A delegate held by a method, a local, or a field hides the body behind a name. One hop
-        // through the declaration decides the case, and a longer chain stays silent.
         return depth < 1
                && GetSource(unwrapped, model, cancellationToken) is { } source
                && IsUnconditionalTrue(source, model, cancellationToken);
@@ -261,8 +256,6 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        // A block with one return statement is the only block shape the rule can decide. Any extra
-        // statement can reject a certificate, and the rule cannot read its intent.
         return block.Statements.Count is 1
                && block.Statements[0] is ReturnStatementSyntax { Expression: { } returned }
                && IsAlwaysTrue(ExpressionUnwrapper.Parentheses(returned), model, cancellationToken);

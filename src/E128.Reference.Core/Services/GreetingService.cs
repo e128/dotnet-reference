@@ -24,7 +24,6 @@ public sealed class GreetingService(
 
     private async Task<GreetingResult> GreetCoreAsync(GreetingRequest request, CancellationToken cancellationToken)
     {
-        // A null name means "use the default". A present but blank name is an expected failure.
         if (request.Name is not null && string.IsNullOrWhiteSpace(request.Name))
         {
             return new GreetingError("A recipient name cannot be blank.");

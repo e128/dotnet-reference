@@ -24,7 +24,6 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
     private const string ConcurrentNamespace = "System.Collections.Concurrent";
     private const string Title = "Use Parallel.ForEach over a Partitioner range";
 
-    // The overload shape the fix rewrites: fromInclusive, toExclusive, body.
     private const int ForArgumentCount = 3;
     private const int BodyArgumentIndex = 2;
 
@@ -35,8 +34,6 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
     {
         var diagnostic = context.Diagnostics[0];
 
-        // Keep whatever receiver names the type: Parallel, an alias, or the qualified
-        // System.Threading.Tasks.Parallel.
         if (root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true)
                 is not InvocationExpressionSyntax invocation
             || invocation.ArgumentList is null
@@ -58,8 +55,6 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
             return;
         }
 
-        // The rewrite writes the name Partitioner unqualified. Decline when another symbol with
-        // that name is in scope, because the added using would make the call ambiguous.
         if (ForeignPartitionerInScope(semanticModel, invocation))
         {
             return;
@@ -100,7 +95,6 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
             return false;
         }
 
-        // The fix emits positional arguments only, so a named-argument call offers no fix.
         if (candidates.Any(static argument => argument.NameColon is not null))
         {
             return false;
@@ -125,8 +119,6 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
         return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, ConcurrentNamespace));
     }
 
-    // True when a symbol named Partitioner is in scope and the rewrite cannot use it. The real
-    // Partitioner counts as usable, because the rewrite names its own namespace.
     private static bool ForeignPartitionerInScope(SemanticModel semanticModel, InvocationExpressionSyntax invocation)
     {
         foreach (var symbol in semanticModel.LookupSymbols(invocation.SpanStart, name: "Partitioner"))
@@ -164,8 +156,6 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
 
         parameterName = parameter.Identifier.ValueText;
 
-        // The rewrite declares its range parameter with this name, so a body parameter with the
-        // same name would collide.
         if (string.Equals(parameterName, ParallelForPerItemBodyAnalyzer.RangeParameterName, StringComparison.Ordinal))
         {
             return false;
@@ -224,8 +214,6 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
             .ToString();
     }
 
-    // The end-of-line trivia that ended the previous source line. The rewrite keeps the line
-    // endings the file already uses.
     private static string StatementLineBreak(InvocationExpressionSyntax invocation)
     {
         var leading = invocation.GetLeadingTrivia();

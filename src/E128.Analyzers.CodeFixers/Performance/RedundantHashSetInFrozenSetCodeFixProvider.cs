@@ -36,9 +36,6 @@ public sealed class RedundantHashSetInFrozenSetCodeFixProvider : E128CodeFixProv
         }
     }
 
-    // The rewrite passes the constructor argument straight to ToFrozenSet(). A capacity, a comparer,
-    // or a collection initializer carries behavior that the rewrite would drop. A collection
-    // expression has no type of its own, so the rewrite leaves it without a target type.
     private static bool IsRewritable(
         SemanticModel semanticModel,
         InvocationExpressionSyntax toFrozenSetInvocation,

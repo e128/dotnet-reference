@@ -54,7 +54,6 @@ public sealed class StackAllocSafetyCodeFixProvider : E128CodeFixProviderBase
         return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, "System"));
     }
 
-    // In a loop the pointer is not the problem, so a Span would leave the diagnostic in place.
     private static bool IsInsideLoop(SyntaxNode node)
     {
         return node.Ancestors().TakeWhile(static ancestor => ancestor is not MemberDeclarationSyntax)

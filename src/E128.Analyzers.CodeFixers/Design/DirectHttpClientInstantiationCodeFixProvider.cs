@@ -31,15 +31,11 @@ public sealed class DirectHttpClientInstantiationCodeFixProvider : E128CodeFixPr
             return Task.CompletedTask;
         }
 
-        // The replacement is a factory call, so an initializer such as BaseAddress or Timeout would
-        // be dropped without a word. Leave those for the developer.
         if (creation.Initializer is not null)
         {
             return Task.CompletedTask;
         }
 
-        // The fix adds an instance field and a constructor parameter. A static context cannot hold
-        // an instance field, and a struct or record cannot take the generated constructor here.
         if (creation.FirstAncestorOrSelf<ClassDeclarationSyntax>() is null
             || FixSyntax.IsInStaticMember(creation))
         {

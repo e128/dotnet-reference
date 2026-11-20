@@ -147,8 +147,6 @@ internal static class XunitTestHelper
                && IsXunitNamespace(type.ContainingNamespace);
     }
 
-    // An attribute name can be written plain, qualified, or alias-qualified. Read the last segment
-    // of the name so every spelling matches.
     internal static string SimpleName(NameSyntax name)
     {
         return name switch

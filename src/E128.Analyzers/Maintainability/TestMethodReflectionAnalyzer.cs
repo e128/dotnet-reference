@@ -47,8 +47,6 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            // A member access covers the enum member and the reflection call shape. An identifier
-            // covers the type name in a typeof, a cast, or a declaration.
             startContext.RegisterSyntaxNodeAction(
                 nodeContext => AnalyzeMemberAccess(nodeContext, bindingFlagsType, typeType),
                 SyntaxKind.SimpleMemberAccessExpression);
@@ -65,10 +63,6 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
     {
         var memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
-        // Most member accesses sit outside a test method, and this walk allocates nothing.
-        // Resolve symbols only for the members that remain. An aliased receiver such as
-        // `using BF = System.Reflection.BindingFlags; BF.Public` resolves too, so the check
-        // stays text-free.
         if (!IsInsideTestMethod(memberAccess))
         {
             return;
@@ -89,7 +83,6 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A type derived from System.Type, such as TypeBuilder, exposes the same reflection methods.
         var symbol = context.SemanticModel.GetSymbolInfo(memberAccess, context.CancellationToken).Symbol;
         if (symbol is not IMethodSymbol method
             || !TypeSymbols.DerivesFrom(method.ContainingType, typeType))
@@ -110,7 +103,6 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
     {
         var identifier = (IdentifierNameSyntax)context.Node;
 
-        // The member-access action already reports the receiver of an enum member.
         if (identifier.Parent is MemberAccessExpressionSyntax memberAccess
             && memberAccess.Expression == identifier)
         {

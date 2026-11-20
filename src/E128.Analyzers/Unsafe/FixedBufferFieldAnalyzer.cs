@@ -39,7 +39,6 @@ public sealed class FixedBufferFieldAnalyzer : DiagnosticAnalyzer
     {
         var field = (FieldDeclarationSyntax)context.Node;
 
-        // Inline arrays need C# 12 and a runtime that defines InlineArrayAttribute (.NET 8).
         if (MetadataTypes.Find(context.SemanticModel.Compilation, "System.Runtime.CompilerServices.InlineArrayAttribute").IsEmpty
             || context.Node.SyntaxTree.Options is not CSharpParseOptions parseOptions
             || parseOptions.LanguageVersion.MapSpecifiedToEffectiveVersion() < LanguageVersion.CSharp12)
@@ -52,7 +51,6 @@ public sealed class FixedBufferFieldAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A declaration with several buffers is reported once. Only the code fix needs a single declarator.
         var hasBuffer = field.Declaration.Variables.Any(variable =>
             variable.Initializer is null
             && TryGetBufferSize(variable, context.SemanticModel, context.CancellationToken, out _)
@@ -87,7 +85,6 @@ public sealed class FixedBufferFieldAnalyzer : DiagnosticAnalyzer
     {
         size = 0;
 
-        // The symbol carries the evaluated size, so a const or a constant expression works too.
         if (semanticModel.GetDeclaredSymbol(variable, cancellationToken) is not IFieldSymbol { IsFixedSizeBuffer: true, FixedSize: > 0 } field)
         {
             return false;

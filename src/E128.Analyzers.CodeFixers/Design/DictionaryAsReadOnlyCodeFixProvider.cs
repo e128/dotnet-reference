@@ -22,8 +22,6 @@ public sealed class DictionaryAsReadOnlyCodeFixProvider : E128CodeFixProviderBas
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
-        // The diagnostic is reported on the expression being returned (e.g. the identifier
-        // '_dict' or the 'new Dictionary<>()' creation), not the enclosing return statement.
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node is not ExpressionSyntax expression)
         {

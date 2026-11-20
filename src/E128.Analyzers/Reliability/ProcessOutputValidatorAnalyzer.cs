@@ -46,8 +46,6 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
     {
         var method = (MethodDeclarationSyntax)context.Node;
 
-        // One walk collects both the wait calls and the file reads. The name test inside
-        // IsProcessWaitCall rejects almost every invocation before the semantic bind.
         var waitPositions = new List<int>();
         var fileReads = new List<InvocationExpressionSyntax>();
 
@@ -142,12 +140,10 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
             && IsNamed(memberAccess.Name, "Exists")
             && memberAccess.Expression is IdentifierNameSyntax identifier)
         {
-            // outputFile.Exists (FileInfo style)
             result[identifier.Identifier.ValueText] = memberAccess.SpanStart;
         }
         else if (node is InvocationExpressionSyntax invocation && IsFileExistsCall(invocation))
         {
-            // File.Exists(outputFile)
             var root = ExtractPathRoot(invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression);
             if (root is not null)
             {
@@ -189,13 +185,11 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        // outputFile.FullName → "outputFile"
         if (expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax memberIdentifier })
         {
             return memberIdentifier.Identifier.ValueText;
         }
 
-        // bare path variable
         return expression is IdentifierNameSyntax directIdentifier ? directIdentifier.Identifier.ValueText : null;
     }
 }

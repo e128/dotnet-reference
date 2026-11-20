@@ -23,8 +23,6 @@ internal static class ReadOnlyCollectionExposure
             return null;
         }
 
-        // An implicit List<T> to IReadOnlyList<T> conversion wraps the field reference, so the
-        // returned value type alone does not identify the underlying collection.
         while (returnedValue is IConversionOperation { IsImplicit: true } conversion)
         {
             returnedValue = conversion.Operand;
@@ -36,7 +34,6 @@ internal static class ReadOnlyCollectionExposure
             return null;
         }
 
-        // A collection the method just built has no other reference, so there is nothing to protect.
         if (returnedValue is not (IFieldReferenceOperation or IPropertyReferenceOperation))
         {
             return null;

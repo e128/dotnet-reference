@@ -12,7 +12,6 @@ public sealed class RuntimeRegexToGeneratedAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128123";
 
-    // A Regex constructor takes a pattern and, at most, one options argument.
     private const int MaxConstructorArguments = 2;
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -38,7 +37,6 @@ public sealed class RuntimeRegexToGeneratedAnalyzer : DiagnosticAnalyzer
         {
             var regex = MetadataTypes.Find(start.Compilation, "System.Text.RegularExpressions.Regex");
 
-            // Without GeneratedRegexAttribute (before .NET 7) the rule has no remedy.
             if (regex.IsEmpty
                 || MetadataTypes.Find(start.Compilation, "System.Text.RegularExpressions.GeneratedRegexAttribute").IsEmpty)
             {
@@ -53,7 +51,6 @@ public sealed class RuntimeRegexToGeneratedAnalyzer : DiagnosticAnalyzer
     {
         var field = (FieldDeclarationSyntax)context.Node;
 
-        // The fix emits a partial property, which needs C# 13.
         if (context.Node.SyntaxTree.Options is not CSharpParseOptions parseOptions
             || parseOptions.LanguageVersion.MapSpecifiedToEffectiveVersion() < LanguageVersion.CSharp13)
         {

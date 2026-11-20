@@ -35,8 +35,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         "bearer"
     ];
 
-    // A name that ends in one of these words names a lookup key, a header, or a label. The value is
-    // not the credential.
     private static readonly string[] NonCredentialSuffixes =
     [
         "name",
@@ -146,7 +144,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    // Look through parentheses, a coalesce, and the branches of a conditional.
     private static SyntaxNode SkipTransparentParents(SyntaxNode literal)
     {
         var current = literal;
@@ -180,7 +177,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    // An indexer key such as ["Password"] names the credential.
     private static string? ConstantKey(BracketedArgumentListSyntax argumentList)
     {
         return argumentList.Arguments.Count is 1
@@ -190,7 +186,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
             : null;
     }
 
-    // A return statement counts only when it sits in the getter of a property.
     private static string? ReturnPropertyName(ReturnStatementSyntax returnStatement)
     {
         foreach (var ancestor in returnStatement.Ancestors())
@@ -217,8 +212,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
             : null;
     }
 
-    // A header name ("X-Api-Key", "Some-Header") or a config path ("Auth:Password") labels a
-    // setting. It is not the secret. A secret mixes digits and symbols or uses lowercase words.
     private static bool LooksLikeKeyName(string value)
     {
         if (value.StartsWith("X-", StringComparison.OrdinalIgnoreCase) || IsScreamingSnakeCase(value))
@@ -234,7 +227,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         return hasPathSeparator || IsTitleCaseHyphenated(value);
     }
 
-    // Returns false when the value holds a character that a key name never uses.
     private static bool TryFindPathSeparator(string value, out bool hasPathSeparator)
     {
         hasPathSeparator = false;
@@ -254,8 +246,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    // "BRAVE_API_KEY" names the setting a credential is read from. The underscore requirement keeps
-    // a plain uppercase secret, such as "LETMEIN", in scope for the rule.
     private static bool IsScreamingSnakeCase(string value)
     {
         var hasLetter = false;
@@ -314,7 +304,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
     {
         var normalized = name.Replace("_", string.Empty);
 
-        // A cancellation token is not a credential.
         if (normalized.IndexOf("cancellation", StringComparison.OrdinalIgnoreCase) >= 0)
         {
             return false;
@@ -339,8 +328,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // A connection string is a list of key=value pairs separated by semicolons. Read each key
-    // so that a URL query string such as "?host=a&password=b" does not match.
     private static bool HasConnectionStringPassword(string value)
     {
         if (value.IndexOf(';') < 0)
@@ -369,7 +356,6 @@ public sealed class HardcodedSecretAnalyzer : DiagnosticAnalyzer
             }
             else if (IsKey(key, PasswordKeys) && pairValue.Length > 0 && pairValue[0] != '{')
             {
-                // A format placeholder or an empty value is not a hardcoded password.
                 hasPassword = true;
             }
         }

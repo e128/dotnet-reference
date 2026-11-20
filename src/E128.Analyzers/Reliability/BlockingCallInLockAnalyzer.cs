@@ -149,7 +149,6 @@ public sealed class BlockingCallInLockAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // A MemoryStream member completes in memory and holds no lock for I/O.
         return types.MemoryStream is not { } memoryStream
             || !TypeSymbols.DerivesFrom(method.ContainingType, memoryStream);
     }

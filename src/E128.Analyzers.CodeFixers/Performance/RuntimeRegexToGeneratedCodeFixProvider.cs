@@ -36,7 +36,6 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
             return;
         }
 
-        // GeneratedRegex arguments must be constants, and the options must be a plain flag list.
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel is null
             || !IsConvertible(argumentList, semanticModel, context.CancellationToken))
@@ -153,11 +152,9 @@ public sealed class RuntimeRegexToGeneratedCodeFixProvider : E128CodeFixProvider
 
         if (type.Modifiers.Count > 0)
         {
-            // `partial` must sit directly before the type keyword.
             return type.AddModifiers(partialToken);
         }
 
-        // No modifiers: the keyword owns the indentation and doc comments, so move them to `partial`.
         var keyword = type.Keyword;
         return type
             .WithKeyword(keyword.WithLeadingTrivia(SyntaxFactory.TriviaList()))

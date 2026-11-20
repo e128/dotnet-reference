@@ -51,8 +51,6 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
             throw new ArgumentNullException(nameof(context));
         }
 
-        // Key derivation settings are reported in generated code too, because a generated PBKDF2 call is a real
-        // policy defect. The rule therefore analyzes and reports in generated code.
         context.ConfigureGeneratedCodeAnalysis(
             GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
@@ -130,8 +128,6 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
         var iterations = FipsSymbolHelpers.ArgumentNamed(creation.Arguments, "iterations");
         var hash = FipsSymbolHelpers.ArgumentNamed(creation.Arguments, "hashAlgorithm");
 
-        // A subclass constructor picks its own parameters, so only a named iterations or hashAlgorithm argument
-        // is checked. The overload defaults below apply to Rfc2898DeriveBytes itself.
         if (!FipsSymbolHelpers.IsCryptographyType(creation.Type, "Rfc2898DeriveBytes"))
         {
             if (iterations is not null)
@@ -289,7 +285,6 @@ public sealed class FipsPbkdfIterationAnalyzer : DiagnosticAnalyzer
     {
         var operation = FipsSymbolHelpers.Unwrap(value);
 
-        // KeyDerivationPrf.HMACSHA1 is 0, HMACSHA256 is 1 and HMACSHA512 is 2.
         if (operation is IFieldReferenceOperation { Field: { } field } &&
             FipsSymbolHelpers.IsType(field.ContainingType, "KeyDerivationPrf", KeyDerivationNamespace))
         {

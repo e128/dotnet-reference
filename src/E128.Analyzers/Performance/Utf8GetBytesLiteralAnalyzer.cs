@@ -84,7 +84,6 @@ public sealed class Utf8GetBytesLiteralAnalyzer : DiagnosticAnalyzer
                 [new KeyValuePair<string, string?>(UseToArrayKey, useToArray ? "true" : "false")])));
     }
 
-    // Matches Encoding.UTF8.GetBytes("literal") and returns the Encoding.UTF8 access.
     private static MemberAccessExpressionSyntax? GetUtf8LiteralAccess(InvocationExpressionSyntax invocation)
     {
         return invocation.Expression is MemberAccessExpressionSyntax
@@ -122,8 +121,6 @@ public sealed class Utf8GetBytesLiteralAnalyzer : DiagnosticAnalyzer
             && options.LanguageVersion.MapSpecifiedToEffectiveVersion() >= LanguageVersion.CSharp11;
     }
 
-    // A u8 literal is a ReadOnlySpan<byte>, so it converts to that type alone. A Span<byte>
-    // target takes the byte[] shape through the implicit array conversion.
     private static bool TargetsByteSpan(
         InvocationExpressionSyntax invocation,
         SemanticModel model,
@@ -164,7 +161,6 @@ public sealed class Utf8GetBytesLiteralAnalyzer : DiagnosticAnalyzer
             return FindNamedParameter(target, name);
         }
 
-        // A named sibling makes the written position unreliable, so keep the byte[] shape.
         if (argument.Parent is not ArgumentListSyntax list
             || list.Arguments.Any(static sibling => sibling.NameColon is not null))
         {

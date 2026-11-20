@@ -43,7 +43,6 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        // Two references can declare the same type, so the lookup keeps every match.
         var assertTypes = context.Compilation.GetTypesByMetadataName("Xunit.Assert");
 
         if (assertTypes.IsDefaultOrEmpty)
@@ -70,7 +69,6 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
 
         foreach (var catchClause in tryStatement.Catches)
         {
-            // An exception filter narrows the catch, so the catch does not swallow every failure.
             if (catchClause.Filter is null
                 && CatchesAssertionFailure(catchClause, context, types)
                 && !Rethrows(catchClause)
@@ -111,7 +109,6 @@ public sealed class SwallowedAssertionAnalyzer : DiagnosticAnalyzer
         return OwnNodes(catchClause).OfType<InvocationExpressionSyntax>().Any(call => IsAssertCall(call, context, types, "Fail"));
     }
 
-    // A throw or a call inside a nested lambda or local function does not run when the catch runs.
     private static IEnumerable<SyntaxNode> OwnNodes(CatchClauseSyntax catchClause)
     {
         return catchClause.Block.DescendantNodes(static node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax));

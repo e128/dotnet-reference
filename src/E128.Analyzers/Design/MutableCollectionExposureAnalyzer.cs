@@ -31,8 +31,6 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
         "Options"
     ];
 
-    // Mutable type metadata names -> suggested immutable interface display names.
-    // MutableCollectionCatalog owns the list.
     private static readonly ImmutableArray<(string MetadataName, string DisplayTemplate)> MutableTypeEntries =
     [
         .. MutableCollectionCatalog.Entries.Select(
@@ -103,7 +101,6 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
     {
         var method = (IMethodSymbol)context.Symbol;
 
-        // A partial member arrives as two symbol events. Report only the defining part.
         if (PartialMembers.IsImplementationPart(method))
         {
             return;
@@ -125,8 +122,6 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The interface walk below scans every interface member and resolves each implementation.
-        // It runs only for a method that would otherwise report.
         if (InterfaceMembers.ImplementsMember(method))
         {
             return;
@@ -153,7 +148,6 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
     {
         var property = (IPropertySymbol)context.Symbol;
 
-        // A partial member arrives as two symbol events. Report only the defining part.
         if (PartialMembers.IsImplementationPart(property))
         {
             return;
@@ -211,7 +205,6 @@ public sealed class MutableCollectionExposureAnalyzer : DiagnosticAnalyzer
 
     private static bool HasMutableSetAccessor(IPropertySymbol property)
     {
-        // init-only setters are effectively immutable after construction — don't skip those
         return property.SetMethod is not null && !property.SetMethod.IsInitOnly;
     }
 

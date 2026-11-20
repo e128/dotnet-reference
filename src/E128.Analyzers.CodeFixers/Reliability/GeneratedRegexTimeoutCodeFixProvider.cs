@@ -24,8 +24,6 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBa
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        // A positional argument cannot follow a named one, so an attribute that already uses a named
-        // argument cannot take the appended positional pair.
         if (node is not AttributeSyntax attribute || HasNamedArgument(attribute))
         {
             return Task.CompletedTask;
@@ -56,8 +54,6 @@ public sealed class GeneratedRegexTimeoutCodeFixProvider : E128CodeFixProviderBa
                 document.WithSyntaxRoot(newRoot), "System.Threading", cancellationToken)
             .ConfigureAwait(false);
 
-        // The emitted options value needs its namespace when the attribute was written fully
-        // qualified.
         return await UsingDirectives.EnsureAddedAsync(
                 withTimeoutUsing, "System.Text.RegularExpressions", cancellationToken)
             .ConfigureAwait(false);

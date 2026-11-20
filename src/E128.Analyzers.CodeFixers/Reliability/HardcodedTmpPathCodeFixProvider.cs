@@ -44,8 +44,6 @@ public sealed class HardcodedTmpPathCodeFixProvider : E128CodeFixProviderBase
     {
         _ = cancellationToken;
 
-        // A literal that names a subdirectory keeps that part, so the rewrite does not send every
-        // caller to the bare temp root.
         var replacement = suffix is { Length: > 0 }
             ? BuildCombineCall(suffix).WithTriviaFrom(node)
             : SyntaxFactory.InvocationExpression(BuildPathMember("GetTempPath")).WithTriviaFrom(node);
