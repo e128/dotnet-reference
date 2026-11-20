@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-19T15:34:46Z*
+*Updated: 2026-11-20T14:23:21Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -42,6 +42,29 @@ conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net
 | E128070 | pool-rent-capacity-guard               | implemented | n/a   | 2026-05-09 |
 | E128071 | fips-unapproved-hash                   | implemented | n/a   | 2026-05-10 |
 | E128072 | sha256-create-obsolete                 | implemented | n/a   | 2026-05-10 |
+| E128054 | temp-dir-no-cleanup                    | implemented | 5/5   | 2026-04-12 |
+| E128056 | fileinfo-exists-toctou                 | implemented | 4/5   | 2026-04-12 |
+| E128057 | finally-block-swallows-exception       | implemented | 3/5   | 2026-04-12 |
+| E128058 | list-as-readonly-return                | implemented | 3/5   | 2026-04-13 |
+| E128059 | unused-interface-parameter             | implemented | 4/5   | 2026-04-13 |
+| E128063 | mid-name-underscore                    | implemented | 4/5   | 2026-04-15 |
+| E128082 | composite-detection-specificity        | implemented | 3/5   | 2026-05-06 |
+| E128089 | bare-parse-without-tryparse            | implemented | 3/5   | 2026-05-26 |
+| E128092 | async-file-io                          | implemented | 5/5   | 2026-07-22 |
+| E128096 | sync-local-function-call               | implemented | 3/5   | 2026-07-23 |
+| E128098 | chained-string-replace                 | implemented | 4.5/5 | 2026-08-06 |
+| E128099 | untimed-process-exit                   | implemented | 5/5   | 2026-08-06 |
+| E128100 | oce-when-token-filter                  | implemented | 3.5/5 | 2026-08-06 |
+| E128088 | switch-enum-not-exhaustive             | implemented | 3/5   | 2026-08-08 |
+| E128094 | pragma-before-file-scoped-namespace    | implemented | 4/5   | 2026-08-08 |
+| E128097 | comment-in-test-code                   | implemented | 3/5   | 2026-08-08 |
+| E128101 | process-output-not-validated           | implemented | 3/5   | 2026-08-13 |
+| E128103 | unregistered-service-resolve           | implemented | 4/5   | 2026-09-26 |
+| E128104 | constant-operand-assertion             | implemented | 4/5   | 2026-09-26 |
+| E128105 | out-of-repo-resolver-no-skip           | implemented | 3.5/5 | 2026-09-26 |
+| E128106 | parallel-collection-index              | implemented | 3/5   | 2026-09-26 |
+| E128107 | low-value-test-condition               | implemented | n/a   | 2026-10-03 |
+| E128108 | low-value-test-conditions              | implemented | n/a   | 2026-10-03 |
 | E128218 | implicit-state-machine                 | implemented | n/a   | 2026-11-07 |
 | E128219 | memberless-abstract-base-is-closed     | implemented | 4/5   | 2026-11-12 |
 | E128220 | union-switch-discard-arm               | implemented | 4/5   | 2026-11-12 |

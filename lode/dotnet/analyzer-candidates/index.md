@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-19T15:34:47Z*
+*Updated: 2026-11-20T14:23:21Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -48,6 +48,16 @@ the verdict for all seven rules, and the declined project-file shapes live in
 
 No open candidate remains. The dynamic keyword ban ships as E128232. See
 [catalog.md](catalog.md).
+
+One candidate entered on 2026-11-20, from a rename recorded in a consumer
+repository. The naming-conventions-sweep plan renamed `FetchCommands` to
+`FetchOperations` because the plural collided with the real `FetchCommand`
+type in the same namespace. The sweep recorded the shape as captured here and
+never wrote the row.
+
+| Pattern | Source | Score | Status | Notes |
+|---------|--------|-------|--------|-------|
+| Helper or operation type whose name is a plural, suffix, or twin of its sibling | `session repeat` | 4/5 | new | Frequency 1. Coverage gap 1. Expressibility 1. Value 1. No installed rule compares sibling type names. The check is a normalized-name comparison over one namespace, so a plural or a `Helpers` suffix reports once. One occurrence is thin evidence, so the shape waits for a second. |
 
 ## Tier 2 Candidates
 
