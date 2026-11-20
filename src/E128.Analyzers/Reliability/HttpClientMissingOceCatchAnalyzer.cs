@@ -54,8 +54,6 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static startContext =>
         {
-            // The rule names System.Net.Http types. Without them the method names below belong to
-            // some other type, so the rule must not run at all.
             var compilation = startContext.Compilation;
             var httpClientType = compilation.GetTypeByMetadataName(HttpClientMetadataName);
             var exceptionType = compilation.GetTypeByMetadataName(ExceptionMetadataName);
@@ -64,7 +62,6 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            // TaskCanceledException derives from OperationCanceledException, so either catch counts.
             var operationCanceledType = compilation.GetTypeByMetadataName(OperationCanceledExceptionMetadataName);
 
             startContext.RegisterSyntaxNodeAction(
@@ -91,8 +88,6 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // One walk collects the HttpClient calls. Each try block then tests span containment
-        // instead of re-walking its own subtree.
         var httpClientCalls = new List<InvocationExpressionSyntax>();
         foreach (var invocation in method.Body.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
@@ -160,8 +155,6 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // A custom client type can declare GetAsync and PostAsync too. Only an HttpClient receiver
-        // throws the cancellation this rule is about.
         return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
                && TypeSymbols.DerivesFrom(method.ContainingType, httpClientType);
     }
@@ -180,7 +173,6 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
         CatchClauseSyntax catchClause,
         INamedTypeSymbol exceptionType)
     {
-        // A when-filtered catch is intentionally restricted — not considered broad
         if (catchClause.Filter is not null)
         {
             return false;
@@ -191,8 +183,6 @@ public sealed class HttpClientMissingOceCatchAnalyzer : DiagnosticAnalyzer
             return true; // bare catch { } catches everything
         }
 
-        // Only System.Exception itself is broad. A derived type is a narrower catch, and a local
-        // type that merely shares the name is not System.Exception at all.
         return SymbolEqualityComparer.Default.Equals(GetCatchType(context, catchClause), exceptionType);
     }
 

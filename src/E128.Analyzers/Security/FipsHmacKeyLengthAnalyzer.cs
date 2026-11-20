@@ -17,7 +17,6 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
 
     private const string HmacPrefix = "HMAC";
 
-    // Create is excluded: it returns a new HMAC instance rather than hashing the key.
     private static readonly ImmutableHashSet<string> StaticHmacMembers =
         FipsTypeClassifier.OneShotMembers.Remove("Create");
 
@@ -135,7 +134,6 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // IncrementalHash.CreateHMAC(HashAlgorithmName, key), CryptographicOperations.HmacData and similar.
         if (method.Name.IndexOf("HMAC", StringComparison.OrdinalIgnoreCase) < 0 ||
             !FipsSymbolHelpers.IsInCryptographyNamespace(method.ContainingType))
         {
@@ -201,7 +199,6 @@ public sealed class FipsHmacKeyLengthAnalyzer : DiagnosticAnalyzer
             return instanceType;
         }
 
-        // A base-typed local (HMAC h = new HMACSHA256()) takes the concrete type from its initializer.
         if (FipsSymbolHelpers.DerivesFromCryptographyType(instanceType, "HMAC") &&
             FipsSymbolHelpers.Unwrap(FipsSymbolHelpers.ResolveInitializer(property.Instance)) is IObjectCreationOperation created)
         {

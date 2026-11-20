@@ -117,7 +117,6 @@ public sealed class SortInLoopAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(SortRule, invocation.GetLocation(), methodName));
     }
 
-    // List.Sort and Array.Sort sort in place. Every other sort name must come from Enumerable.
     private static bool IsSortOnKnownType(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,

@@ -43,8 +43,6 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        // A fixed buffer is a pointer-like value. Any use of the field may stop compiling, so offer
-        // the fix only for a field that nothing reads or writes.
         var references = await SymbolFinder
             .FindReferencesAsync(symbol, context.Document.Project.Solution, context.CancellationToken)
             .ConfigureAwait(false);
@@ -62,8 +60,6 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
         var bufferStruct = BuildBufferStruct(field, bufferTypeName, size, FixSyntax.LastIndentation(field.GetLeadingTrivia()));
         if (bufferStruct is null)
         {
-            // The generated text did not parse. A stub would drop the attribute and the element
-            // field, so offer no fix at all.
             return;
         }
 
@@ -118,8 +114,6 @@ public sealed class FixedBufferFieldCodeFixProvider : E128CodeFixProviderBase
         return declaration.WithModifiers(modifiers).WithTriviaFrom(field);
     }
 
-    // The buffer struct is nested in the containing type, so a name only has to be unique there.
-    // It takes the accessibility of the field, so a public field never exposes a less visible type.
     private static MemberDeclarationSyntax? BuildBufferStruct(
         FieldDeclarationSyntax field,
         string bufferTypeName,

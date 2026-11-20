@@ -63,8 +63,6 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
 
         var newMethod = method;
 
-        // 1. Replace sync I/O calls with async equivalents wrapped in await. The rewrite reads the
-        // same gated table as the analyzer, so a pair whose async member is absent is left alone.
         var availableSyncIoMethods =
             TaskFromResultSyncIoAnalyzer.FindAvailableSyncIoMethods(semanticModel.Compilation);
         var syncIoOwnerTypes =
@@ -76,10 +74,8 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
             newMethod = ReplaceSyncCallsWithAsyncEquivalents(newMethod, syncIoCalls);
         }
 
-        // 2. Unwrap Task.FromResult / ValueTask.FromResult -> just the inner expression
         newMethod = UnwrapFromResultCalls(newMethod);
 
-        // 3. Add async modifier if not already present
         if (!newMethod.Modifiers.Any(SyntaxKind.AsyncKeyword))
         {
             var asyncToken = SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
@@ -123,8 +119,6 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
                 continue;
             }
 
-            // Compare the bound type against the per-compilation symbol, so a user type that
-            // shares the metadata name is not a match.
             if (syncIoOwnerTypes.TryGetValue(expectedType, out var expectedTypeSymbol)
                 && expectedTypeSymbol is not null
                 && SymbolEqualityComparer.Default.Equals(calledMethod.ContainingType, expectedTypeSymbol))
@@ -165,8 +159,6 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
 
     private static MethodDeclarationSyntax UnwrapFromResultCalls(MethodDeclarationSyntax method)
     {
-        // Unwrap only a call that is the returned value. Any other call may feed a Task-typed
-        // variable or a continuation, and the bare value would not compile there.
         var fromResultCalls = method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Where(invocation => IsFromResultInvocation(invocation)
@@ -201,7 +193,6 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
             return false;
         }
 
-        // Check that the receiver is Task or ValueTask (syntactic check — good enough for code fix)
         return memberAccess.Expression is IdentifierNameSyntax identifier && (string.Equals(identifier.Identifier.ValueText, "Task", StringComparison.Ordinal)
                                                                               || string.Equals(identifier.Identifier.ValueText, "ValueTask", StringComparison.Ordinal));
     }

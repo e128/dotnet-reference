@@ -149,7 +149,6 @@ public sealed class LinearLookupInLoopAnalyzer : DiagnosticAnalyzer
 
         if (IsQueryable(receiverType, queryableType))
         {
-            // A query source costs a database round trip, not an in-memory scan. E128180 owns it.
             return;
         }
 

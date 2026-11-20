@@ -41,8 +41,6 @@ internal static class DiRegistrationFix
             return document;
         }
 
-        // The minimal form qualifies a name only when it is out of scope, and it escapes a keyword
-        // identifier. It also matches the action title, so the preview shows the text that lands.
         var newTypeArgs = SyntaxFactory.TypeArgumentList(
             SyntaxFactory.SeparatedList(
                 [

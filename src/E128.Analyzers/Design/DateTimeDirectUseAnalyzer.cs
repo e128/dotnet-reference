@@ -40,20 +40,16 @@ public sealed class DateTimeDirectUseAnalyzer : DiagnosticAnalyzer
 
         var memberName = memberAccess.Name.Identifier.ValueText;
 
-        // Quick name filter before semantic work.
         if (!IsTargetMemberName(memberName))
         {
             return;
         }
 
-        // Skip if the access is inside a static field initializer — TimeProvider cannot be
-        // injected there and the pattern is intentional (e.g., static readonly baseline fields).
         if (IsInStaticFieldInitializer(memberAccess))
         {
             return;
         }
 
-        // Semantic verification: confirm the containing type is System.DateTime or System.DateTimeOffset.
         var symbolInfo = context.SemanticModel.GetSymbolInfo(memberAccess, context.CancellationToken);
         if (symbolInfo.Symbol is not IPropertySymbol property)
         {
@@ -89,8 +85,6 @@ public sealed class DateTimeDirectUseAnalyzer : DiagnosticAnalyzer
                && Namespaces.Equals(type.ContainingNamespace, "System");
     }
 
-    // Returns true if the node is inside a static field declaration's initializer.
-    // Covers patterns such as: private static readonly DateTime _baseline = DateTime.UtcNow
     private static bool IsInStaticFieldInitializer(SyntaxNode node)
     {
         foreach (var ancestor in node.Ancestors())

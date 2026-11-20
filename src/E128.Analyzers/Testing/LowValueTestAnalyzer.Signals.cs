@@ -9,8 +9,6 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace E128.Analyzers.Testing;
 
-// The assertion echo detectors. Each one reads a test assertion against the production call that
-// produced the value, and reports a test that only restates what the production code already says.
 public sealed partial class LowValueTestAnalyzer
 {
     private static bool ComparesSameExpression(AssertionFact assertion)
@@ -42,8 +40,6 @@ public sealed partial class LowValueTestAnalyzer
         return false;
     }
 
-    // Walk each production body once and collect every literal it returns. The echo detector
-    // queries the set per assertion literal.
     internal static ImmutableHashSet<string> CollectReturnedProductionLiterals(TestFacts facts)
     {
         var literals = ImmutableHashSet.CreateBuilder(StringComparer.Ordinal);
@@ -167,8 +163,6 @@ public sealed partial class LowValueTestAnalyzer
             return false;
         }
 
-        // The test echoes a value that it passed into the constructor. A literal that the constructor
-        // never received asserts something else, so it does not match.
         foreach (var node in nodes)
         {
             if (node is MemberAccessExpressionSyntax member
@@ -240,18 +234,12 @@ public sealed partial class LowValueTestAnalyzer
 
         foreach (var argument in assertion.ArgumentList.Arguments)
         {
-            // The literal that the test echoes sits in its own argument. A literal inside the call
-            // under test is an input, not an expected value, so it does not count. A library accessor
-            // such as IDocument.QuerySelector("img") is not the call under test and does not echo.
             if (IsLiteralOnlyProductionCall(facts, argument.Expression, out var call))
             {
                 calls.Add(call);
                 continue;
             }
 
-            // An argument that invokes production code states a computed value, not an echoed literal.
-            // `Assert.Equal(Hash((object)"x"), Hash("x"))` compares two calls, and the literal is only
-            // the shared input.
             if (ContainsInvocation(facts, argument.Expression))
             {
                 continue;
@@ -271,10 +259,6 @@ public sealed partial class LowValueTestAnalyzer
             return false;
         }
 
-        // An echo repeats an input back as the expected value, so `Assert.Equal("abc", Normalize("abc"))`
-        // has no behavior between the input and the assertion. A literal that differs from every input,
-        // such as `Assert.Equal("user_example.com", SanitizeKey("user@example.com"))`, states a result the
-        // code computed. That is a real assertion, not an echo.
         foreach (var call in calls)
         {
             if (CallCarriesLiteral(call, literals))
@@ -328,8 +312,6 @@ public sealed partial class LowValueTestAnalyzer
 
     private static bool PinsExceptionMessage(TestFacts facts, AssertionFact assertion)
     {
-        // Only an exact-equality pin locks the whole message. A substring check with Assert.Contains
-        // pins a documented hint, which is the contract, so it does not report.
         if (assertion.Invocation.Expression is not MemberAccessExpressionSyntax access
             || !string.Equals(access.Name.Identifier.ValueText, "Equal", StringComparison.Ordinal))
         {

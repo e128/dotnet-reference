@@ -26,8 +26,6 @@ public sealed class ConstantOperandAssertionAnalyzer : DiagnosticAnalyzer
         "An xUnit Assert call whose operands are all literals always passes or always fails. " +
         "Assert a computed value, or a named constant, instead.");
 
-    // A member listed here takes no operand that the code under test can influence. The skip family
-    // reports state, and Fail fails unconditionally, so a literal message on either is not a tautology.
     private static readonly ImmutableHashSet<string> NonOperandMembers = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "Skip",
@@ -69,8 +67,6 @@ public sealed class ConstantOperandAssertionAnalyzer : DiagnosticAnalyzer
 
         for (var i = 0; i < arguments.Length; i++)
         {
-            // A literal, not merely a constant: comparing two distinct named constants is a
-            // deliberate value pin, while a literal-to-literal comparison can never surprise anyone.
             if (arguments[i].Value.Kind is not OperationKind.Literal)
             {
                 return;

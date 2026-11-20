@@ -69,8 +69,6 @@ public sealed class PrimaryConstructorBackingFieldCodeFixProvider : E128CodeFixP
             return document;
         }
 
-        // Two types in one file can declare the same field name. The tracked nodes from the original
-        // tree, not a text search, select this exact declaration and its references.
         foreach (var reference in CollectFieldReferences(root, fieldSymbol, semanticModel, cancellationToken))
         {
             editor.ReplaceNode(

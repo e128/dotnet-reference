@@ -53,7 +53,6 @@ public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBas
                     ApplyFix(context.Document, root, invocation, typeDeclaration, fieldType, fieldName)));
     }
 
-    // Name the field after the method that used the table, for example `_containsDelimiterSearchValues`.
     private static string GetBaseName(SyntaxNode invocation)
     {
         var method = invocation.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
@@ -125,9 +124,6 @@ public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBas
         var firstMember = typeDeclaration.Members[0];
         var indent = FixSyntax.MemberIndentation(firstMember);
 
-        // Keep the existing trivia, so a doc comment on the first member survives. Skip the
-        // line break that ends the open brace line. Set both ends of the gap explicitly, so the
-        // result has one blank line whether the synthesized field keeps elastic trivia or not.
         var leading = firstMember.GetLeadingTrivia();
         var index = 0;
         var lineBreak = "\n";
@@ -141,7 +137,6 @@ public sealed class SearchValuesHoistingCodeFixProvider : E128CodeFixProviderBas
             .WithLeadingTrivia(SyntaxFactory.Whitespace(indent))
             .WithTrailingTrivia(SyntaxFactory.EndOfLine(lineBreak));
 
-        // Keep fields together and separate a field from other member kinds.
         var gap = firstMember is FieldDeclarationSyntax
             ? SyntaxFactory.TriviaList()
             : SyntaxFactory.TriviaList(SyntaxFactory.EndOfLine(lineBreak));

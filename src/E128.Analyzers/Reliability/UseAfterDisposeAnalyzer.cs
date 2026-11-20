@@ -71,8 +71,6 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Only a Dispose statement that sits directly in a block runs on every path through that
-        // block. A braceless if, else, loop, or switch section runs on some paths only.
         if (invocation.Parent is not ExpressionStatementSyntax { Parent: BlockSyntax block })
         {
             return;
@@ -101,16 +99,12 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // A new assignment ends the disposed state. Stop the scan instead of reporting the reads
-            // that follow, because they read a fresh object.
             if (identifier.Parent is AssignmentExpressionSyntax assignment
                 && assignment.Left == identifier)
             {
                 return null;
             }
 
-            // A second Dispose is harmless, so the rule does not report it. Only a member access on the
-            // local reads its state. A nameof, a null test, and a comparison do not.
             if (!IsDisposeReceiver(identifier) && IsMemberAccessReceiver(identifier))
             {
                 return identifier;
@@ -128,8 +122,6 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
         BlockSyntax block,
         CancellationToken cancellationToken)
     {
-        // A nested function body runs at a time the block order does not give. A local function can
-        // run before the Dispose call that its body follows in the source text.
         return identifier.SpanStart >= disposeEnd
                && !IsInsideNestedFunction(identifier, block)
                && SymbolEqualityComparer.Default.Equals(

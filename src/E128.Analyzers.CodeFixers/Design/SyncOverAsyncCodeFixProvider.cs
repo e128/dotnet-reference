@@ -24,8 +24,6 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        // The await must land in an async member. A lambda, local function, or property accessor
-        // cannot take the async modifier from this fix, and an await there does not compile.
         if (!IsInOrdinaryMethod(node))
         {
             return Task.CompletedTask;
@@ -46,13 +44,11 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
             return document;
         }
 
-        // Determine what expression to await and what node to replace.
         if (!TryGetAwaitTarget(diagnosticNode, out var nodeToReplace, out var taskExpression))
         {
             return document;
         }
 
-        // Annotate the await expression so we can find it in the new tree.
         var annotation = new SyntaxAnnotation("AwaitInserted");
         var awaitExpression = SyntaxFactory.AwaitExpression(taskExpression)
             .WithTriviaFrom(nodeToReplace)
@@ -60,13 +56,11 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
 
         var newRoot = root.ReplaceNode(nodeToReplace, awaitExpression);
 
-        // Find the annotated node in the new tree.
         if (newRoot.GetAnnotatedNodes(annotation).FirstOrDefault() is not AwaitExpressionSyntax insertedAwait)
         {
             return document.WithSyntaxRoot(newRoot);
         }
 
-        // Promote the containing method to async.
         newRoot = FixSyntax.PromoteContainingMethod(newRoot, insertedAwait);
         newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Threading.Tasks");
 
@@ -108,7 +102,6 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
         nodeToReplace = diagnosticNode;
         taskExpression = null;
 
-        // Case 1: .Result — diagnostic is on the MemberAccessExpression "task.Result"
         if (diagnosticNode is MemberAccessExpressionSyntax memberAccess
             && string.Equals(memberAccess.Name.Identifier.ValueText, "Result", StringComparison.Ordinal))
         {
@@ -117,12 +110,6 @@ public sealed class SyncOverAsyncCodeFixProvider : E128CodeFixProviderBase
             return true;
         }
 
-        // Case 2: .GetAwaiter() — diagnostic is on the "GetAwaiter" identifier.
-        // The full pattern is: task.GetAwaiter().GetResult()
-        // We need to find the outermost invocation and extract the task expression.
-        // Case 2: .GetAwaiter() — diagnostic is on the "GetAwaiter" identifier.
-        // Walk up: GetAwaiter name -> MemberAccess (task.GetAwaiter) -> Invocation (task.GetAwaiter())
-        //       -> MemberAccess (.GetResult) -> Invocation (.GetResult())
         if (diagnosticNode is not IdentifierNameSyntax getAwaiterName
             || !string.Equals(getAwaiterName.Identifier.ValueText, "GetAwaiter", StringComparison.Ordinal)
             || diagnosticNode.Parent is not MemberAccessExpressionSyntax getAwaiterAccess

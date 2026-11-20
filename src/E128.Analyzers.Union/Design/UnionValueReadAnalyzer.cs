@@ -69,8 +69,6 @@ public sealed class UnionValueReadAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A dictionary or a task carries a Value-shaped member too, so confirm the accessed
-        // member resolves on the union itself before the rule reports.
         var symbol = context.SemanticModel.GetSymbolInfo(memberAccess, context.CancellationToken).Symbol;
         if (symbol is not IPropertySymbol { Name: { } name } member
             || !string.Equals(name, "Value", StringComparison.Ordinal)

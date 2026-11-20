@@ -2,12 +2,18 @@
 
 ## Format and Build
 
-`scripts/check.sh` owns the C# verification gate: shell lint, format check, build, and tests.
+`scripts/check.sh` owns the C# verification gate: shell lint, comment scan, format check, build, and tests.
 Run it after the final C# edit. Do not bypass its format step with `--no-format`.
 If format fails, run `scripts/format.sh --changed`, then rerun the gate.
 Run `scripts/format-invalidate.sh` after format changes. Follow `read-before-edit.md` before further edits.
 
 Before any commit, `scripts/format.sh --check` must pass.
+
+## Source Comments
+
+`scripts/comment-scan.sh` bans `//` and `/* */` comments in `src/`. XML doc comments stay allowed.
+Record a non-obvious constraint in `lode/decisions/` instead of a comment.
+The rule, the rationale, and the add-a-decision steps live in [Decision Records](../../lode/decisions/summary.md).
 
 ## Shell and Documentation
 

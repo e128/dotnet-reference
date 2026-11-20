@@ -29,6 +29,14 @@ else
     EXIT=1
 fi
 
+# Step 1a: Source comment ban
+if "$SCRIPTS/comment-scan.sh" > /dev/null 2>&1; then
+    RESULTS[comment_scan]="ok"
+else
+    RESULTS[comment_scan]="fail"
+    EXIT=1
+fi
+
 # Step 1b: Shipping tests
 if "$SCRIPTS/verify-and-ship-test.sh" > /dev/null 2>&1; then
     RESULTS[shell_tests]="ok"

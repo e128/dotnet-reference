@@ -41,14 +41,12 @@ public sealed class SuppressionAuditCodeFixProvider : E128CodeFixProviderBase
             return Task.FromResult(document);
         }
 
-        // Find the last token in the pragma directive.
         var lastToken = diagnosticNode.GetLastToken();
         if (lastToken == default)
         {
             return Task.FromResult(document);
         }
 
-        // Replace trailing trivia: space, comment, then original EndOfLine.
         var comment = SyntaxFactory.Comment("// Justification: ");
         var newTrailing = SyntaxFactory.TriviaList(SyntaxFactory.Space, comment, SyntaxFactory.LineFeed);
         var newToken = lastToken.WithTrailingTrivia(newTrailing);

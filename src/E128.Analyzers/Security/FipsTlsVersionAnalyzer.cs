@@ -22,10 +22,8 @@ public sealed class FipsTlsVersionAnalyzer : DiagnosticAnalyzer
 
     private const string SystemDefaultSwitch = "Switch.System.Net.DontEnableSystemDefaultTlsVersions";
 
-    // Bits of SslProtocols and SecurityProtocolType below TLS 1.2: Ssl2 (12), Ssl3 (48), Tls (192) and Tls11 (768).
     private const int WeakProtocolBits = 12 | 48 | 192 | 768;
 
-    // Members that enable a protocol below TLS 1.2. Tls12, Tls13, None and SystemDefault are allowed.
     private static readonly ImmutableHashSet<string> ForbiddenMembers = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "Ssl2",
@@ -216,7 +214,6 @@ public sealed class FipsTlsVersionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Resolve by parameter, because named arguments can reorder the call.
         var switchName = FipsSymbolHelpers.ArgumentAt(invocation.Arguments, 0);
         var isEnabled = FipsSymbolHelpers.ArgumentAt(invocation.Arguments, 1);
         if (switchName is null || isEnabled is null)

@@ -109,9 +109,6 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation()));
     }
 
-    // A computed value cannot be proven infinite, so the rule reads the constant value through
-    // the semantic model instead of the source text. The framework's infinite marker is -1 ms.
-    // Any other value, including a short timeout below 100 ms, keeps a finite deadline.
     private static bool IsInfiniteTimeout(
         ExpressionSyntax value,
         SemanticModel model,
@@ -155,7 +152,6 @@ public sealed class HttpClientInfiniteTimeoutAnalyzer : DiagnosticAnalyzer
             || (value is double doubleValue && IsInfiniteDouble(doubleValue));
     }
 
-    // The marker is exactly -1 ms, and the framework converts the argument without rounding.
     private static bool IsInfiniteDouble(double value)
     {
         return Math.Abs(value - InfiniteMilliseconds) < double.Epsilon;

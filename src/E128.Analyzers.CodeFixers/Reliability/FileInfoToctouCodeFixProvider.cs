@@ -38,9 +38,6 @@ public sealed class FileInfoToctouCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        // The catch body returns default, so this rewrite fits a return statement. Any other
-        // statement in a value-returning method would leave the try block, so its local would
-        // lose its scope, and the catch would have nothing to return.
         var isReturn = statement is ReturnStatementSyntax;
 
         if (!isReturn && !enclosing.ReturnsVoid)

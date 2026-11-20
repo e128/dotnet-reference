@@ -85,7 +85,6 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
             return document;
         }
 
-        // Preserve the invocation's leading trivia (indentation) on the replacement.
         var replacementText = receiver.ToFullString() + ".AsSpan()." + methodName + "(" + fieldName + ")";
         var replacement = SyntaxFactory
             .ParseExpression(replacementText)
@@ -95,8 +94,6 @@ public sealed class IndexOfAnyToSearchValuesCodeFixProvider : E128CodeFixProvide
         var typeDeclWithField = FixSyntax.InsertFieldAsFirstMember(typeDeclAfterReplace, fieldDecl);
 
         var newRoot = root.ReplaceNode(typeDecl, typeDeclWithField);
-        // The emitted field is fully qualified, but AsSpan() is an extension method on
-        // System.MemoryExtensions, so the rewrite needs `using System;`.
         return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, "System"));
     }
 

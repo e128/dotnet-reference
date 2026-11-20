@@ -43,8 +43,6 @@ public sealed class SelectManyToListCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        // The rewrite replaces a whole statement. A call nested inside a larger expression cannot
-        // be replaced without dropping the rest of that expression.
         if (FindReplacedStatement(toListInvocation) is null)
         {
             return Task.CompletedTask;
@@ -97,8 +95,6 @@ public sealed class SelectManyToListCodeFixProvider : E128CodeFixProviderBase
         return document.WithSyntaxRoot(UsingDirectives.AddIfMissing(newRoot, "System.Collections.Generic"));
     }
 
-    // Only a declaration whose whole initializer is the ToList call can be replaced. Anything
-    // wider loses the expression around the call.
     private static LocalDeclarationStatementSyntax? FindReplacedStatement(InvocationExpressionSyntax toListInvocation)
     {
         var statement = toListInvocation.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>();

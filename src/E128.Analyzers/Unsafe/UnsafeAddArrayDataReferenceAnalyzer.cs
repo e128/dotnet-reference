@@ -57,7 +57,6 @@ public sealed class UnsafeAddArrayDataReferenceAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Only the generic T[] overload maps to arr[i]. The Array overload returns ref byte and uses byte offsets.
         var reference = (InvocationExpressionSyntax)invocation.ArgumentList.Arguments[0].Expression;
         if (context.SemanticModel.GetSymbolInfo(reference, context.CancellationToken).Symbol is not IMethodSymbol { IsGenericMethod: true } inner
             || !string.Equals(inner.ContainingType.Name, "MemoryMarshal", StringComparison.Ordinal)

@@ -118,8 +118,6 @@ public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        // A closed class hierarchy carries the compiler closed attribute, so the same catch-all
-        // rule applies: a named or null arm keeps CS8509 alive for a missing leaf.
         return UnionTypes.IsUnion(unwrapped) || ClosedHierarchy.IsClosed(named) ? named : null;
     }
 
@@ -148,8 +146,6 @@ public sealed class UnionSwitchDiscardArmAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        // A when-guarded discard or var arm never closes the switch, so it stays a report
-        // target instead of a closing catch-all. Only an unguarded arm closes the switch.
         return hasNullArm ? null : lastCatchAll ?? lastGuardedCatchAll;
     }
 

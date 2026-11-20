@@ -42,7 +42,6 @@ public sealed class EncodingDefaultCodeFixProvider : E128CodeFixProviderBase
             return document;
         }
 
-        // Swap the member name only, so a qualified receiver such as System.Text.Encoding stays.
         var encodingUtf8 = encodingDefaultNode.WithName(
             SyntaxFactory.IdentifierName("UTF8").WithTriviaFrom(encodingDefaultNode.Name));
 

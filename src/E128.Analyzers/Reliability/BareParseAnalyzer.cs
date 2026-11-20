@@ -60,13 +60,11 @@ public sealed class BareParseAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Check if the containing type has a TryParse method
         if (!HasTryParse(containingType))
         {
             return;
         }
 
-        // Check if we're inside a try/catch that catches FormatException or Exception
         if (IsInsideTryCatchForFormatException(invocation, context))
         {
             return;
@@ -79,8 +77,6 @@ public sealed class BareParseAnalyzer : DiagnosticAnalyzer
 
     private static bool HasTryParse(INamedTypeSymbol containingType)
     {
-        // Special case: Enum.Parse<T>() — Enum does have TryParse<T>() too
-        // But we want to flag it as well
         var members = containingType.GetMembers("TryParse");
         if (members.IsEmpty)
         {
@@ -94,7 +90,6 @@ public sealed class BareParseAnalyzer : DiagnosticAnalyzer
                 method.ReturnType.SpecialType is SpecialType.System_Boolean &&
                 method.Parameters.Length >= 1)
             {
-                // Found a static bool TryParse(...) method
                 return true;
             }
         }
@@ -110,8 +105,6 @@ public sealed class BareParseAnalyzer : DiagnosticAnalyzer
 
         for (var current = invocation.Parent; current is not null; child = current, current = current.Parent)
         {
-            // Only the try block is guarded by the catch clauses. A call in the catch block or the
-            // finally block runs outside that guard, so the walk looks for an outer try instead.
             if (current is not TryStatementSyntax tryStatement || !ReferenceEquals(child, tryStatement.Block))
             {
                 continue;

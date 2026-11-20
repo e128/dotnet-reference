@@ -47,7 +47,6 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
     {
         foreach (var (trivia, directive) in PragmaWarningDirectives.Warning(root))
         {
-            // Only check #pragma warning disable, not restore.
             if (!PragmaWarningDirectives.IsDisable(directive))
             {
                 continue;
@@ -62,11 +61,6 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // Returns true if the pragma has a trailing comment on the same line or a comment on the immediately
-    // preceding line. This covers both styles:
-    //   #pragma warning disable CS1234 // reason
-    //   // reason
-    //   #pragma warning disable CS1234
     private static bool HasJustificationComment(SyntaxTrivia pragmaTrivia)
     {
         return HasTrailingComment(pragmaTrivia.GetStructure()) || HasPrecedingComment(pragmaTrivia);
@@ -78,7 +72,6 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia);
     }
 
-    // Check trailing trivia on the directive structure for a comment.
     private static bool HasTrailingComment(SyntaxNode? directive)
     {
         if (directive is null)
@@ -100,7 +93,6 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // Check the preceding trivia for a comment on the line immediately before.
     private static bool HasPrecedingComment(SyntaxTrivia pragmaTrivia)
     {
         var allTrivia = pragmaTrivia.Token.LeadingTrivia;
@@ -115,14 +107,12 @@ public sealed class SuppressionAuditAnalyzer : DiagnosticAnalyzer
                 return true;
             }
 
-            // Stop at a blank line (two consecutive end-of-line trivia).
             if (preceding.IsKind(SyntaxKind.EndOfLineTrivia)
                 && i > 0 && allTrivia[i - 1].IsKind(SyntaxKind.EndOfLineTrivia))
             {
                 return false;
             }
 
-            // Stop at non-whitespace, non-comment trivia.
             if (!preceding.IsKind(SyntaxKind.WhitespaceTrivia)
                 && !preceding.IsKind(SyntaxKind.EndOfLineTrivia))
             {

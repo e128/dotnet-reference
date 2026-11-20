@@ -47,8 +47,6 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static startContext =>
         {
-            // The rule names System.IO types. Without them the members below belong to some other
-            // type, so the rule must not run at all.
             var compilation = startContext.Compilation;
             var fileType = compilation.GetTypeByMetadataName(FileMetadataName);
             var fileSystemInfoType = compilation.GetTypeByMetadataName(FileSystemInfoMetadataName);
@@ -113,8 +111,6 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // File.Exists(path) guards the path value passed in. fileInfo.Exists is a property read
-            // that guards the instance, so the receiver names the guarded thing.
             if (memberAccess.Parent is InvocationExpressionSyntax invocation)
             {
                 if (ResolvesTo(context, invocation, fileType))
@@ -177,8 +173,6 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
             Receiver = receiver;
             Member = member;
 
-            // Compute the hash here instead of in GetHashCode(). A seal-side rule bans a custom
-            // GetHashCode body from reading SymbolEqualityComparer.Default.
             var receiverHash = receiver is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(receiver);
             var memberHash = member is null ? 0 : SymbolEqualityComparer.Default.GetHashCode(member);
             cachedHash = unchecked((receiverHash * HashMultiplier) ^ memberHash);
@@ -208,7 +202,6 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         return value.Name;
     }
 
-    // The guarded value for File.Exists(path) and for File.ReadAllText(path) is the path argument.
     private static GuardedValue? GetGuardedValue(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,
@@ -224,8 +217,6 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
         ExpressionSyntax expression,
         INamedTypeSymbol fileSystemInfoType)
     {
-        // A call names no storage location. Two calls to the same helper bind to one method symbol,
-        // so a call argument cannot identify the guarded value.
         if (expression is InvocationExpressionSyntax)
         {
             return null;
@@ -241,10 +232,6 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
             ? context.SemanticModel.GetSymbolInfo(member.Expression, context.CancellationToken).Symbol
             : null;
 
-        // fileInfo.FullName names the same file as fileInfo, so a member of a FileSystemInfo reduces
-        // to the same guarded value that a read of the receiver itself produces. Any other member
-        // keys on the (receiver, member) pair, so config.Input, config.Output, and the same member
-        // on a sibling instance all stay distinct.
         return symbol is IPropertySymbol property
                && TypeSymbols.DerivesFrom(property.ContainingType, fileSystemInfoType)
                && expression is MemberAccessExpressionSyntax fsMember

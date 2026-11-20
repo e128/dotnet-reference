@@ -42,8 +42,6 @@ public sealed class TestCodeCommentCodeFixProvider : E128CodeFixProviderBase
         var commentTrivia = root.FindTrivia(commentSpan.Start);
         var owningToken = commentTrivia.Token;
 
-        // A comment sits in the leading list when it has its own line, and in the trailing list when
-        // it follows code on the same line.
         var leading = owningToken.LeadingTrivia;
         var index = leading.IndexOf(commentTrivia);
         if (index >= 0)
@@ -60,7 +58,6 @@ public sealed class TestCodeCommentCodeFixProvider : E128CodeFixProviderBase
             return document;
         }
 
-        // The line break after a trailing comment ends the line of code. Keep it.
         var keptTrailing = CopyWithoutComment(trailing, index, removeLineFeed: false);
         return document.WithSyntaxRoot(
             root.ReplaceToken(owningToken, owningToken.WithTrailingTrivia(SyntaxFactory.TriviaList(keptTrailing))));

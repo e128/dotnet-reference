@@ -32,8 +32,6 @@ public sealed class TextContentGuardCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        // The guard has to sit to the left of the match in the same && expression, so the fix
-        // extends the outermost enclosing && chain.
         ExpressionSyntax rootOperand = invocation;
         while (rootOperand.Parent is BinaryExpressionSyntax parent
                && parent.IsKind(SyntaxKind.LogicalAndExpression))
@@ -46,8 +44,6 @@ public sealed class TextContentGuardCodeFixProvider : E128CodeFixProviderBase
             .ToString(CultureInfo.InvariantCulture);
         var guardText = $"{receiverText}.TextContent.Length < {minimumLength}";
 
-        // A negated match takes the guard inside the negation. Without the parentheses the
-        // rewrite would negate the guard alone.
         var needsParentheses = rootOperand.Parent is PrefixUnaryExpressionSyntax;
 
         CodeFixRegistration.Register(context, diagnostic, "Add a TextContent.Length guard", nameof(TextContentGuardCodeFixProvider), ct => AddGuardAsync(context.Document, rootOperand, guardText, needsParentheses, ct));

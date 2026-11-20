@@ -85,8 +85,6 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
         "ExecuteUpdate",
         "ExecuteUpdateAsync");
 
-    // These calls do not run a query. They report only as the source of a foreach that itself runs
-    // inside an outer loop, because that foreach enumerates the query once per outer iteration.
     private static readonly ImmutableHashSet<string> DeferredMethodNames = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "AsEnumerable",
@@ -108,7 +106,6 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        // Without DbSet<T> the code has no Entity Framework Core query source, so the rule stays silent.
         var dbSetDefinitions = MetadataTypes.Find(context.Compilation, DbSetMetadataName);
         var queryableDefinitions = MetadataTypes.Find(context.Compilation, QueryableMetadataName);
 
@@ -152,7 +149,6 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // An unresolved call has no confirmed binding, so an editor buffer mid-edit produces no report.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol)
         {
             return;

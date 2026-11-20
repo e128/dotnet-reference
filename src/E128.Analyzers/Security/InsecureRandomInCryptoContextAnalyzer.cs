@@ -34,8 +34,6 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
     private const string CryptoFileMessage =
         "System.Random is not cryptographically secure and this file uses cryptography APIs; use RandomNumberGenerator for any security-sensitive value";
 
-    // Distinctive fragments matched as case-insensitive substrings, so an all-lowercase compound such as
-    // "authtoken" still matches. Each is long enough that it rarely sits inside an unrelated word.
     private static readonly ImmutableArray<string> SensitiveSubstrings = ImmutableArray.Create(
         "token",
         "nonce",
@@ -45,10 +43,6 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
         "apikey",
         "privatekey");
 
-    // Fragments that collide with ordinary words (salt in basalt, secret in secretary, signature in a design
-    // name, key in monkey, session in possession) match only as whole words in camelCase or snake_case names. A
-    // bare "session" is absent on purpose: sessionCount and sessionTimeout are not secrets, while sessionId and
-    // session_id are.
     private static readonly ImmutableArray<string> SensitiveWords = ImmutableArray.Create(
         "secret",
         "salt",
@@ -71,14 +65,12 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
         "pwd",
         "otp");
 
-    // .NET 8 members that draw random values without a Next prefix.
     private static readonly ImmutableHashSet<string> StoredRandomMembers = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "GetItems",
         "GetHexString",
         "GetString");
 
-    // The namespace trees whose types mark a file as one that uses cryptography.
     private static readonly string[][] CryptographyNamespaces =
     [
         ["System", "Security", "Cryptography"],
@@ -105,8 +97,6 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
             throw new ArgumentNullException(nameof(context));
         }
 
-        // A generated file can create Random for a security-sensitive value, and organization policy covers
-        // that file, so the rule reads and reports generated code.
         context.ConfigureGeneratedCodeAnalysis(
             GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
@@ -325,7 +315,6 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    // True for an ancestor the walk passes through on its way to the destination.
     private static bool IsPassThrough(IOperation current, IOperation child)
     {
         return current switch
@@ -345,7 +334,6 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
             or ICoalesceOperation or IInterpolatedStringOperation or IInterpolatedStringContentOperation;
     }
 
-    // The name a terminal ancestor gives the value, or null when the ancestor ends the walk without one.
     private static string? DestinationNameAt(IOperation current, IOperation child)
     {
         return current switch
@@ -434,7 +422,6 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
                 return cached;
             }
 
-            // A canceled scan throws before it stores a result, so a partial answer is never cached.
             var found = Scan(model, tree, cancellationToken);
             _ = _files.TryAdd(tree, found);
 
@@ -458,8 +445,6 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
-                // A 'var' declaration takes the type of its initializer, so it can name a cryptography type
-                // that the file never spells out.
                 var text = name.Identifier.ValueText;
                 if (!string.Equals(text, "var", StringComparison.Ordinal) && !names.Contains(text))
                 {
@@ -551,7 +536,6 @@ public sealed class InsecureRandomInCryptoContextAnalyzer : DiagnosticAnalyzer
                 _ = names.Add(type.Name.Substring(0, type.Name.Length - "Attribute".Length));
             }
 
-            // A member reached through a value from another file can mark this file without spelling its type.
             foreach (var member in type.GetMembers())
             {
                 _ = names.Add(member.Name);

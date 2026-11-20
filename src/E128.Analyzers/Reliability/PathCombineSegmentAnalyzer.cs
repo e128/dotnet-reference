@@ -71,8 +71,6 @@ public sealed class PathCombineSegmentAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The first argument is the base, and a rooted base discards nothing, so the scan starts at
-        // the second segment.
         for (var index = 1; index < invocation.ArgumentList.Arguments.Count; index++)
         {
             var argument = invocation.ArgumentList.Arguments[index];

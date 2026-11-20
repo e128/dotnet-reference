@@ -60,7 +60,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         var disposableTypes = MetadataTypes.Find(context.Compilation, DisposableTypeName);
         var asyncDisposableTypes = MetadataTypes.Find(context.Compilation, AsyncDisposableTypeName);
 
-        // Without either interface no type in the compilation can be disposable, so the rule stays silent.
         if (disposableTypes.IsEmpty && asyncDisposableTypes.IsEmpty)
         {
             return;
@@ -78,7 +77,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
-        // A local, a parameter, or a property has no field symbol, so only a field reaches the check.
         if (context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol
             is not IFieldSymbol field)
         {
@@ -111,7 +109,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
     {
         if (type is ITypeParameterSymbol typeParameter)
         {
-            // A constraint such as "where T : IDisposable" makes the field disposable.
             return HasDisposableConstraint(typeParameter, disposableTypes, asyncDisposableTypes);
         }
 
@@ -167,7 +164,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         {
             if (current is ForStatementSyntax or CommonForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
             {
-                // A loop source, condition, initializer, or incrementor runs outside the body.
                 if (!IsInLoopHeader(current, node))
                 {
                     return current;
@@ -176,8 +172,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // A lambda or a local function runs on its own schedule, so the enclosing loop does not
-            // make the assignment a per-iteration write.
             if (IsLoopScopeBoundary(current))
             {
                 return null;
@@ -231,8 +225,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // Only a dispose inside the same loop releases the value that the previous iteration stored.
-    // A dispose before the loop releases the first value only.
     private static bool HasEarlierDispose(
         SyntaxNode loop,
         AssignmentExpressionSyntax assignment,
@@ -262,9 +254,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // A dispose later in the same iteration releases the value that the assignment just stored, so
-    // the next iteration overwrites a disposed value. An exit statement before the dispose skips it
-    // on some paths, so the overwrite still leaks on those paths.
     private static bool HasLaterDispose(
         SyntaxNode loop,
         AssignmentExpressionSyntax assignment,
@@ -303,8 +292,6 @@ public sealed class DisposableFieldInLoopAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // A lambda or local function runs on its own schedule, so a dispose inside one does not pair
-    // with an assignment in the enclosing body.
     private static SyntaxNode? FindFunctionScope(SyntaxNode node)
     {
         for (var current = node.Parent; current is not null; current = current.Parent)

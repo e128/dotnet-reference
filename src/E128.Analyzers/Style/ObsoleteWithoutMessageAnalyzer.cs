@@ -81,7 +81,6 @@ public sealed class ObsoleteWithoutMessageAnalyzer : DiagnosticAnalyzer
         {
             var argument = arguments[index];
 
-            // The message is the first positional argument, or the argument named "message" in any order.
             var isMessage = argument.NameEquals is null
                             && (argument.NameColon is { } nameColon
                                 ? string.Equals(nameColon.Name.Identifier.ValueText, "message", StringComparison.Ordinal)
@@ -94,7 +93,6 @@ public sealed class ObsoleteWithoutMessageAnalyzer : DiagnosticAnalyzer
 
             var constant = context.SemanticModel.GetConstantValue(argument.Expression, context.CancellationToken);
 
-            // A null or blank constant names no replacement. A non-constant expression counts as a message.
             return !constant.HasValue || (constant.Value is string text && !string.IsNullOrWhiteSpace(text));
         }
 

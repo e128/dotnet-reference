@@ -64,8 +64,6 @@ public sealed class UntrackedTodoAnalyzer : DiagnosticAnalyzer
 
     private static string? FindMarker(string text)
     {
-        // A marker counts only at the start of a comment line, so prose such as
-        // "this avoids a hack" does not report.
         foreach (var line in text.Split('\n'))
         {
             var body = line.TrimStart(' ', '\t', '\r', '/', '*');

@@ -9,11 +9,8 @@ namespace E128.Analyzers.FileSystem;
 /// </summary>
 internal static class PathNamePatterns
 {
-    // Exclusions are checked first; a match here suppresses all positive patterns.
     private static readonly ImmutableArray<string> Exclusions = ["xpath"];
 
-    // Positive patterns (case-insensitive substring match).
-    // "file" is intentionally absent: filePath fires via "path", but fileName should not fire.
     private static readonly ImmutableArray<string> Patterns = ["path", "dir", "directory"];
 
     internal static bool IsPathName(string name)
@@ -37,8 +34,6 @@ internal static class PathNamePatterns
         return false;
     }
 
-    // A CLI option adds "input", "output", and "file". A parameter named fileName stays silent,
-    // but a --file option is almost always a file path.
     internal static bool IsPathCliName(string name)
     {
         return IsPathName(name)

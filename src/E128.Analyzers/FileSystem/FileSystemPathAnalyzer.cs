@@ -27,9 +27,6 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
     private static readonly ImmutableDictionary<string, string?> AmbiguousProperties =
         ImmutableDictionary<string, string?>.Empty.Add(SuggestedTypeKey, SuggestedAmbiguous);
 
-    // messageFormat placeholders: {0}=paramName, {1}=description, {2}=suggestedType.
-    // For the ambiguous (name-only) case, {2} is "FileInfo' or 'DirectoryInfo" — the surrounding
-    // single-quotes in the format string produce: Consider using 'FileInfo' or 'DirectoryInfo' instead of 'string'.
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Use FileInfo or DirectoryInfo instead of string for file system paths",
@@ -38,7 +35,6 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         true);
 
-    // messageFormat: {0}=optionName (e.g. "--input"), {1}=description, {2}=full suggestion (e.g. "'Option<DirectoryInfo>'").
     private static readonly DiagnosticDescriptor OptionRule = new(
         DiagnosticId,
         "Use Option<FileInfo> or Option<DirectoryInfo> instead of Option<string> for file system path options",
@@ -47,7 +43,6 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         true);
 
-    // messageFormat: {0}=argumentName (e.g. "path"), {1}=description, {2}=full suggestion (e.g. "'Argument<DirectoryInfo>'").
     private static readonly DiagnosticDescriptor ArgumentRule = new(
         DiagnosticId,
         "Use Argument<FileInfo> or Argument<DirectoryInfo> instead of Argument<string> for file system path arguments",
@@ -96,18 +91,12 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Strategy 1: name pattern. It applies only when there is no body to inspect
-        // (interface and abstract methods, empty-body stubs, record primary constructors).
-        // A non-empty body uses Strategy 2, so a display-only method with a path-like
-        // parameter name is not flagged on the name alone.
         if (body is null || body.Statements.Count is 0)
         {
             ReportNamePatternMatches(context, stringParameters);
             return;
         }
 
-        // Strategy 2: scan the body once for both the local-root map and the System.IO call
-        // sites. Every string parameter then reuses that one scan.
         var localRoots = CollectLocalRoots(body);
         var sites = CollectIoSites(context, body);
 
@@ -141,7 +130,6 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
                 return ctor.ParameterList;
 
             case RecordDeclarationSyntax { ParameterList: { } recordParams }:
-                // A primary constructor has no body to inspect, so only the name pattern applies.
                 body = null;
                 return recordParams;
 
@@ -168,9 +156,6 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // Maps each local to the names it is derived from: an identifier initializer copies its
-    // source, and a Path.* call at argument 0 derives from its first argument. A second pass
-    // adds one more hop, so a local built from a derived local also counts.
     private static Dictionary<string, HashSet<string>> CollectLocalRoots(BlockSyntax body)
     {
         var roots = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
@@ -312,7 +297,6 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        // Confirm via semantic model that the call is truly System.IO.
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
         var isSystemIo = symbolInfo.Symbol is IMethodSymbol methodSymbol
                          && Namespaces.Equals(methodSymbol.ContainingType?.ContainingNamespace, "System.IO");
@@ -350,7 +334,6 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        // Confirm via semantic model that the constructor is truly System.IO.
         var symbolInfo = context.SemanticModel.GetSymbolInfo(creation, context.CancellationToken);
         var isSystemIo = symbolInfo.Symbol is IMethodSymbol ctorSymbol
                          && Namespaces.Equals(ctorSymbol.ContainingType?.ContainingNamespace, "System.IO");

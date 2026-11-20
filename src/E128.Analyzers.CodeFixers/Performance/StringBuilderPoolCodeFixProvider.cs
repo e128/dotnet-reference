@@ -43,8 +43,6 @@ public sealed class StringBuilderPoolCodeFixProvider : E128CodeFixProviderBase
         CodeFixRegistration.Register(context, diagnostic, "Replace with StringBuilderPool.Shared.Rent()", nameof(StringBuilderPoolCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
     }
 
-    // Rent() takes no seed. A seed string carries content the rewrite would drop. A capacity hint
-    // only costs a later resize, so it is safe to drop.
     private static bool CanReplaceWithRent(
         SyntaxNode creation,
         SemanticModel semanticModel,

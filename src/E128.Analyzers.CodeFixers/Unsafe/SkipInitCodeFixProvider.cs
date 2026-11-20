@@ -43,7 +43,6 @@ public sealed class SkipInitCodeFixProvider : E128CodeFixProviderBase
     {
         if (argument is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax designation } declaration)
         {
-            // `var x = default;` does not compile (CS0815), so spell out the type argument.
             var typeText = declaration.Type.IsVar && inferredTypeName is not null
                 ? inferredTypeName
                 : declaration.Type.ToString();

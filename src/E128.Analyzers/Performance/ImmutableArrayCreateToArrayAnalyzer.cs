@@ -16,7 +16,6 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
     private const string ImmutableArrayMetadataName = "System.Collections.Immutable.ImmutableArray";
     private const string ImmutableCollectionsMarshalMetadataName = "System.Runtime.InteropServices.ImmutableCollectionsMarshal";
 
-    // BCL types whose ToArray always returns a new array.
     private static readonly ImmutableArray<string> FreshArrayToArrayOwnerMetadataNames =
     [
         "System.Linq.Enumerable",
@@ -78,7 +77,6 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    // Returns the single argument when it is a call to a member named ToArray.
     private static InvocationExpressionSyntax? GetToArrayArgument(InvocationExpressionSyntax invocation)
     {
         if (invocation.ArgumentList.Arguments.Count is not 1
@@ -123,15 +121,12 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Bind once, after the syntax gates. Both gates reject only calls the symbol check also
-        // rejects, so the diagnostic set does not change.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
             || !SymbolEqualityComparer.Default.Equals(method.ContainingType, immutableArrayType))
         {
             return;
         }
 
-        // AsImmutableArray wraps the array without a copy. Only an allowlisted BCL ToArray guarantees a fresh array.
         if (context.SemanticModel.GetSymbolInfo(innerInvocation, context.CancellationToken).Symbol is not IMethodSymbol inner
             || !freshOwners.Contains(inner.ContainingType.OriginalDefinition))
         {

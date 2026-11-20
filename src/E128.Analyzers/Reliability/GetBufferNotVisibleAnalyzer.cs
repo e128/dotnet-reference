@@ -59,8 +59,6 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        // Without the type symbol the rule cannot tell a MemoryStream from a look-alike, so it
-        // stays silent rather than guess.
         var memoryStreamType = context.Compilation.GetTypeByMetadataName(MemoryStreamTypeName);
 
         if (memoryStreamType is null)
@@ -91,8 +89,6 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
         var model = context.SemanticModel;
         var token = context.CancellationToken;
 
-        // The name alone is not enough. A look-alike type with a GetBuffer member must stay silent,
-        // so the symbol has to sit on MemoryStream itself.
         if (model.GetSymbolInfo(invocation, token).Symbol is not IMethodSymbol method
             || !string.Equals(method.Name, GetBufferMethodName, StringComparison.Ordinal)
             || !IsMemoryStream(method.ContainingType, memoryStreamType))
@@ -150,7 +146,6 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
             return assignment.Right as BaseObjectCreationExpressionSyntax;
         }
 
-        // A declaration outside the body, such as a field initializer, is invisible to the scan.
         foreach (var reference in local.DeclaringSyntaxReferences)
         {
             if (reference.GetSyntax(cancellationToken) is VariableDeclaratorSyntax declarator
@@ -227,8 +222,6 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
 
         if (visibleArgument is null)
         {
-            // Only the byte[] constructors default to a hidden buffer. The empty and capacity
-            // constructors expose it, so GetBuffer works on them.
             if (constructor.Parameters.Length > 0
                 && constructor.Parameters[0].Type is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte })
             {
@@ -240,7 +233,6 @@ public sealed class GetBufferNotVisibleAnalyzer : DiagnosticAnalyzer
 
         var constant = model.GetConstantValue(visibleArgument, token);
 
-        // A non-constant argument may be true at run time, so the rule cannot claim the call throws.
         if (!constant.HasValue || constant.Value is not bool isVisible || isVisible)
         {
             return;

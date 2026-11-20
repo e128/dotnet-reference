@@ -39,7 +39,6 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         var diagnostic = context.Diagnostics[0];
         var shared = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 
-        // Random.Shared.Next(...): the diagnostic covers 'Random.Shared'.
         if (FindNextInvocation(shared) is not { } invocation)
         {
             return;
@@ -54,8 +53,6 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
             return;
         }
 
-        // Bind the replacement where it will go, so a source type that shadows RandomNumberGenerator, or a
-        // missing GetInt32 overload, means no fix rather than code that does not compile.
         var replacement = CreateReplacement(invocation, bounds);
         if (!BindsToGetInt32(model, invocation, replacement))
         {
@@ -85,15 +82,12 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
     {
         var changed = root.ReplaceNode(invocation, replacement);
 
-        // Add the using directive only when a plain RandomNumberGenerator reference does not already resolve to it.
         var alreadyImported = changed.DescendantNodes()
             .OfType<UsingDirectiveSyntax>()
             .Any(static directive => directive.Name is { } imported && IsCryptographyNamespace(imported.ToString()));
 
         var newRoot = alreadyImported ? changed : UsingDirectives.AddIfMissing(changed, "System.Security.Cryptography");
 
-        // AddIfMissing leaves the newline that separated the old usings from the first member, which
-        // doubles as a blank line. The fix keeps the file shape the pre-change ImportAdder output had.
         if (newRoot is CompilationUnitSyntax unit &&
             unit.Usings.Count > 0 &&
             unit.Members.FirstOrDefault() is { } firstMember &&
@@ -129,14 +123,11 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
             return false;
         }
 
-        // The emitted replacement uses the plain name, which resolves only after the using directive lands. It
-        // must not bind, at the fix site, to a source type that shadows RandomNumberGenerator.
         if (IsShadowedBySourceType(model, invocation, replacement, expected))
         {
             return false;
         }
 
-        // The API verification needs a binding that ignores the missing using, so it probes the global-qualified form.
         var probe = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
@@ -162,7 +153,6 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
         InvocationExpressionSyntax replacement,
         INamedTypeSymbol expected)
     {
-        // Bind the type name alone. Binding the whole invocation yields the method symbol, never the type.
         var boundPlain = replacement.Expression is MemberAccessExpressionSyntax { Expression: { } typeName }
             ? model.GetSpeculativeSymbolInfo(
                 invocation.SpanStart,
@@ -233,7 +223,6 @@ public sealed class InsecureRandomInCryptoContextCodeFixProvider : E128CodeFixPr
             builder.Add(expression);
         }
 
-        // Next(max) accepts 0 and GetInt32(0) throws, so the range must hold at least one value.
         var isNonEmpty = values.Length switch
         {
             0 => true,

@@ -37,7 +37,6 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         "Tag",
         "Signature");
 
-    // A weak word marks a string as a possible secret only when both operands carry a weak word.
     private static readonly ImmutableHashSet<string> WeakNameWords = ImmutableHashSet.Create(
         StringComparer.OrdinalIgnoreCase,
         "token",
@@ -91,8 +90,6 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
     {
         var binary = (BinaryExpressionSyntax)context.Node;
 
-        // The equality operator on a span compares the address and the length, never the content,
-        // and it takes constant time. Only the string forms leak a matching prefix.
         if (!IsSecretStringComparison(binary.Left, binary.Right, context.SemanticModel, context.CancellationToken))
         {
             return;
@@ -244,8 +241,6 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         var leftWeak = GetWeakWord(left, model, cancellationToken);
         var rightWeak = GetWeakWord(right, model, cancellationToken);
 
-        // Two weak names, such as token and expectedToken, form a secret signal. Two plain hash
-        // names do not, because a content hash compare is not a forgery check.
         return leftWeak is not null
                && rightWeak is not null
                && (!string.Equals(leftWeak, "hash", StringComparison.OrdinalIgnoreCase)
@@ -449,10 +444,6 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Only a declarator in the current syntax tree is inspected. RS1030 forbids
-            // Compilation.GetSemanticModel inside an analyzer, so a cross-tree initializer is a
-            // known false negative: a field initialized in another partial file contributes no
-            // secret signal.
             var declarationModel = declarator.SyntaxTree == model.SyntaxTree
                 ? model
                 : null;
@@ -505,8 +496,6 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // HMAC.ComputeHash is declared on HashAlgorithm, so the declaring type alone misses it.
-        // Read the receiver type and walk its base types to the HMAC type.
         return IsHmacType(method.ContainingType)
                || (invocation.Expression is MemberAccessExpressionSyntax access
                    && (IsHmacType(model.GetTypeInfo(access.Expression, cancellationToken).Type)

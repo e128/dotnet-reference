@@ -6,7 +6,6 @@ namespace E128.Analyzers.FileSystem;
 
 internal static class IoMethodCatalog
 {
-    // Key: (class name, method name) → (first path-argument index, suggested type).
     private static readonly ImmutableDictionary<string, Dictionary<string, (int ArgIndex, SuggestedType Suggestion)>> Methods =
         new Dictionary<string, Dictionary<string, (int ArgIndex, SuggestedType Suggestion)>>(StringComparer.Ordinal)
         {
@@ -46,12 +45,9 @@ internal static class IoMethodCatalog
             }
         }.ToImmutableDictionary(StringComparer.Ordinal);
 
-    // Path methods are one-hop intermediaries: a local assigned from Path.*(param) inherits
-    // path-ness and fires when subsequently passed to File.* or Directory.*.
     private static readonly ImmutableHashSet<string> PathMethodNames =
         ImmutableHashSet.Create(StringComparer.Ordinal, "Combine", "GetDirectoryName", "GetFileName", "GetFullPath");
 
-    // Constructors that accept a path string as their first argument.
     private static readonly ImmutableDictionary<string, SuggestedType> ConstructorTypes =
         new Dictionary<string, SuggestedType>(StringComparer.Ordinal)
         {

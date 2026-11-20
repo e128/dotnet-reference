@@ -72,8 +72,6 @@ public sealed class PfxImportEphemeralKeySetAnalyzer : DiagnosticAnalyzer
         var certificateTypes = MetadataTypes.Find(context.Compilation, CertificateMetadataName);
         var flagTypes = MetadataTypes.Find(context.Compilation, KeyStorageFlagsMetadataName);
 
-        // Without both types the rule has no symbol to match, so it stays off rather than
-        // falling back to a name.
         if (certificateTypes.IsEmpty || flagTypes.IsEmpty)
         {
             return;

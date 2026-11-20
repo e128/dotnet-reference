@@ -28,7 +28,6 @@ public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
     {
         var diagnostic = context.Diagnostics[0];
 
-        // The cleanup call needs the name of the member that holds the temp path.
         if (!diagnostic.Properties.TryGetValue(TempDirCleanupAnalyzer.PropMemberName, out var memberName)
             || memberName is not { Length: > 0 })
         {
@@ -67,8 +66,6 @@ public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
             ? classDecl.BaseList.AddTypes(asyncLifetimeBase)
             : SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(asyncLifetimeBase));
 
-        // A type that already declares one of the members satisfies the interface
-        // through it. A second copy with the same signature is CS0111.
         var newMembers = classDecl.Members;
         if (!HasParameterlessMethod(classDecl, "InitializeAsync"))
         {
@@ -80,8 +77,6 @@ public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
             newMembers = newMembers.Add(BuildDisposeMethod(memberName));
         }
 
-        // A fix must not reformat the members the caller already wrote, so the
-        // annotation stays on the inserted nodes.
         var newClassDecl = classDecl.BaseList is not null ? classDecl.WithBaseList(newBaseList).WithMembers(newMembers) : classDecl
                 .WithIdentifier(classDecl.Identifier.WithTrailingTrivia(SyntaxFactory.Space))
                 .WithBaseList(newBaseList.WithTrailingTrivia(classDecl.Identifier.TrailingTrivia))
@@ -89,7 +84,6 @@ public sealed class TempDirCleanupCodeFixProvider : E128CodeFixProviderBase
 
         var newRoot = root.ReplaceNode(classDecl, newClassDecl);
 
-        // Both types the generated body names need a using. Do not add a using for the interface.
         newRoot = UsingDirectives.AddIfMissing(newRoot, "System.IO");
         newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Threading.Tasks");
 

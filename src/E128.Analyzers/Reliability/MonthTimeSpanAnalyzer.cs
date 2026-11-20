@@ -207,7 +207,6 @@ public sealed class MonthTimeSpanAnalyzer : DiagnosticAnalyzer
         return constant.HasValue && TryGetWholeDays(constant.Value, out days);
     }
 
-    // Accept a whole number in the month range from an int, long, double, or float constant.
     private static bool TryGetWholeDays(object? value, out int days)
     {
         days = 0;

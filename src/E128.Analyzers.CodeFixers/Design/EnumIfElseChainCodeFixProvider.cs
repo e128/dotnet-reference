@@ -114,7 +114,6 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
         return sections;
     }
 
-    // Only an equality chain maps to case labels. A chain of inequalities would invert the logic.
     private static bool IsEqualityChain(IfStatementSyntax ifStatement)
     {
         var current = ifStatement;
@@ -144,8 +143,6 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
             statements.Add(body);
         }
 
-        // A section that already leaves the switch cannot take a break. The break after a return or
-        // throw is unreachable code, which CS0162 reports.
         if (statements.Count is 0 || !LeavesSwitch(statements[statements.Count - 1]))
         {
             statements.Add(SyntaxFactory.BreakStatement());
@@ -169,9 +166,6 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        // The switch expression is the variable side, so it is the operand that is not the enum
-        // constant. Taking the left operand by position puts the constant in the subject of a reversed
-        // comparison, `Color.Red == x`, which makes every case label unreachable.
         if (ifStatement.Condition is not BinaryExpressionSyntax binary)
         {
             return null;
@@ -187,7 +181,6 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        // The label is the enum constant, whichever side of the comparison it sits on.
         if (condition is not BinaryExpressionSyntax binary)
         {
             return null;
@@ -206,8 +199,6 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        // Both operands carry the enum type when a variable is compared against a member, so the type
-        // alone cannot tell them apart. The member is a compile-time constant and the variable is not.
         return model.GetConstantValue(expression, cancellationToken).HasValue
                && model.GetTypeInfo(expression, cancellationToken).Type is { TypeKind: TypeKind.Enum };
     }

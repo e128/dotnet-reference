@@ -33,8 +33,6 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProvi
             return;
         }
 
-        // An unqualified registration through `using static` has no receiver to rewrite, so
-        // offering a fix would register an action that changes nothing.
         if (invocation.Expression is not MemberAccessExpressionSyntax)
         {
             return;
@@ -52,8 +50,6 @@ public sealed class ConcreteOnlyDiRegistrationCodeFixProvider : E128CodeFixProvi
             return;
         }
 
-        // The two-type-argument overload takes no factory. A factory that passes an argument builds
-        // something the container cannot reproduce, so the registration must stay as it is.
         if (!HasNoFactoryOrParameterlessFactory(invocation))
         {
             return;

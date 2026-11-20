@@ -48,7 +48,6 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
 
     private const string ContentLengthName = "ContentLength";
 
-    // A cap overload takes the long cap, optionally followed by a CancellationToken.
     private const int MaxCapOverloadParameterCount = 2;
 
     private static readonly ImmutableHashSet<string> ReadMethodNames = ImmutableHashSet.Create(
@@ -80,7 +79,6 @@ public sealed class HttpBodyReadWithoutSizeBoundAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static startContext =>
         {
-            // The rule names an HttpContent member. Without that type there is no report to make.
             if (startContext.Compilation.GetTypeByMetadataName(HttpContentTypeName) is not { } httpContent)
             {
                 return;

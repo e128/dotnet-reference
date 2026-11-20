@@ -74,7 +74,6 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
 
         var optionsArgument = GetOptionsArgument(invocation, method, parallelOptionsType);
 
-        // "default" or "default(ParallelOptions)" builds an options object with no degree cap.
         if (optionsArgument is null
             || optionsArgument.IsKind(SyntaxKind.DefaultLiteralExpression)
             || optionsArgument is DefaultExpressionSyntax)
@@ -85,7 +84,6 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
 
         if (optionsArgument is not ObjectCreationExpressionSyntax creation)
         {
-            // A variable, parameter, field, property, or factory call. The value is not visible here.
             return;
         }
 

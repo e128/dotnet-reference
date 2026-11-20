@@ -14,9 +14,6 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 internal static class AsyncSiblingCodeFixHelper
 {
-    // PromoteContainingMethod (reused below) only understands MethodDeclarationSyntax.
-    // Local functions/constructors/lambdas are left to the analyzer-only diagnostic --
-    // promoting the wrong enclosing scope there would produce an await outside an async body.
     internal static bool HasFixableEnclosingMethod(SyntaxNode node)
     {
         return node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault() is { } method

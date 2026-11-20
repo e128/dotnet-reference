@@ -56,7 +56,6 @@ public sealed class SyncLocalFunctionCallAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Skip when the call site is already inside an async method/local function.
         if (context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart, context.CancellationToken)
             is IMethodSymbol { IsAsync: true })
         {

@@ -72,7 +72,6 @@ public sealed class StaleReferenceAssembliesAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Semantic check: verify it resolves to the Microsoft.CodeAnalysis.Testing type
         if (!IsReferenceAssembliesNetProperty(memberAccess, context))
         {
             return;
@@ -103,7 +102,6 @@ public sealed class StaleReferenceAssembliesAnalyzer : DiagnosticAnalyzer
         versionName = string.Empty;
         versionNumber = 0;
 
-        // Pattern: ReferenceAssemblies.Net.NetXX
         if (memberAccess.Name is not IdentifierNameSyntax versionIdentifier)
         {
             return false;
@@ -115,14 +113,12 @@ public sealed class StaleReferenceAssembliesAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // Check: the middle part is "Net"
         if (memberAccess.Expression is not MemberAccessExpressionSyntax netAccess ||
             !string.Equals(netAccess.Name.Identifier.ValueText, "Net", StringComparison.Ordinal))
         {
             return false;
         }
 
-        // Check: the leftmost part is "ReferenceAssemblies"
         return netAccess.Expression is IdentifierNameSyntax refAssembliesIdentifier
                && string.Equals(refAssembliesIdentifier.Identifier.ValueText, "ReferenceAssemblies", StringComparison.Ordinal);
     }

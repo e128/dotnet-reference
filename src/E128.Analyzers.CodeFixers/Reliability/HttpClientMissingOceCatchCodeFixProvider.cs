@@ -85,7 +85,6 @@ public sealed class HttpClientMissingOceCatchCodeFixProvider : E128CodeFixProvid
         return document.WithSyntaxRoot(newRoot);
     }
 
-    // The indentation list is empty when the catch keyword starts a line with no leading space.
     private static SyntaxTriviaList BraceLeadingTrivia(SyntaxTriviaList indentation)
     {
         return indentation.Count > 0

@@ -39,8 +39,6 @@ public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
         return Task.CompletedTask;
     }
 
-    // Only the no-argument form is fixable here: it is always an ExpressionStatement (WaitForExit()
-    // returns void), so there is no call-site ambiguity about how the result is consumed.
     private static void RegisterSyncFix(
         CodeFixContext context,
         Diagnostic diagnostic,
@@ -57,10 +55,6 @@ public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
                     context.Document, statement, BuildSyncReplacement(receiverText), ["System"], ct));
     }
 
-    // Only no-arg WaitForExitAsync() and WaitForExitAsync(CancellationToken.None) are fixable:
-    // neither carries a real caller-supplied token, so adding a fresh timeout token doesn't drop
-    // any caller cancellation semantics. A parameter-sourced token is left diagnostic-only —
-    // silently replacing the caller's token would be a behavior regression, not a safe fix.
     private static void RegisterAsyncFix(
         CodeFixContext context,
         Diagnostic diagnostic,
@@ -142,8 +136,6 @@ public sealed class UntimedProcessExitCodeFixProvider : E128CodeFixProviderBase
             .WithTrailingTrivia(oldStatement.GetTrailingTrivia())
             .WithAdditionalAnnotations(Formatter.Annotation);
 
-        // The emitted block names types the original statement did not, so the file needs their
-        // namespaces.
         var newRoot = root.ReplaceNode(oldStatement, replacement);
         foreach (var requiredNamespace in requiredNamespaces)
         {

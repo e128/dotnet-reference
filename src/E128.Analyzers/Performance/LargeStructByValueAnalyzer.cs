@@ -15,17 +15,12 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128217";
 
-    // Above this size a copy costs more than an indirection, so 'in' pays off.
     private const int MaxByValueSize = 24;
 
-    // The size model assumes a 64-bit process, which is the only target the repo supports.
     private const int PointerSize = 8;
 
-    // A nested struct chain deeper than this is treated as too large to measure. The cap
-    // also stops a self-referential struct in broken code from recursing without end.
     private const int MaxDepth = 16;
 
-    // Sizes in bytes of the primitive types and the nullable tag.
     private const int ByteSize = 1;
     private const int ShortSize = 2;
     private const int IntSize = 4;
@@ -221,8 +216,6 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // Returns the size for a pointer, a nullable, a primitive, or an enum. Returns null when the
-    // type is a struct or class that the caller must measure field by field.
     private static int? GetShallowSize(
         ITypeSymbol type,
         INamedTypeSymbol? inlineArray,

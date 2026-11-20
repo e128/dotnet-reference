@@ -101,15 +101,12 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             throw new ArgumentNullException(nameof(context));
         }
 
-        // Cryptographic key creation is reported in generated code too, because a generated key setup is a real
-        // policy defect. The rule therefore analyzes and reports in generated code.
         context.ConfigureGeneratedCodeAnalysis(
             GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(static start =>
         {
-            // .NET Framework's mscorlib defines object. There RSA.Create() returns RSACryptoServiceProvider.
             var isFramework =
                 string.Equals(
                     start.Compilation.GetSpecialType(SpecialType.System_Object).ContainingAssembly?.Name,
@@ -199,7 +196,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         }
         else if ((FipsSymbolHelpers.IsCryptographyType(type, "ECDsa") ||
                   FipsSymbolHelpers.IsCryptographyType(type, "ECDiffieHellman")) &&
-                 // A factory without a curve argument creates the default P-256 key, which is below the policy minimum.
                  !CheckCurveArgument(context, invocation.Arguments, invocation.Syntax))
         {
             Report(context, invocation.Syntax, DefaultCurveMessage(type.Name));
@@ -220,7 +216,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
 
         if (IsRsaCreatedByName(invocation))
         {
-            // The returned object is not an RSA type here, so a later KeySize assignment is not tracked.
             if (!IsDefaultKeyResolved(invocation, allowKeySize: false))
             {
                 Report(context, syntax, NamedDefaultKeySizeMessage);
@@ -254,7 +249,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
 
         var family = GetFamily(instanceType);
 
-        // ECDsa.GenerateKey(ECCurve) and ECDiffieHellman.GenerateKey(ECCurve).
         if (family is Family.EllipticCurve && string.Equals(method.Name, "GenerateKey", StringComparison.Ordinal))
         {
             _ = CheckCurveArgument(context, invocation.Arguments, syntax);
@@ -320,7 +314,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         }
         else if (family is Family.EllipticCurve)
         {
-            // No curve and no key size: the type creates the default P-256 key, which is below the policy minimum.
             Report(context, syntax, DefaultCurveMessage(createdType.Name));
         }
     }
@@ -341,7 +334,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
 
     private static void CheckAssignment(OperationAnalysisContext context, IOperation target, IOperation value, SyntaxNode syntax)
     {
-        // ECParameters.Curve is a field, so a parameters struct can carry a weak curve.
         if (target is IFieldReferenceOperation curveField &&
             string.Equals(curveField.Field.Name, "Curve", StringComparison.Ordinal) &&
             FipsSymbolHelpers.IsCryptographyType(curveField.Field.ContainingType, "ECParameters"))
@@ -415,8 +407,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Assigning KeySize does not reliably resize an RSACryptoServiceProvider key, so only an import, which
-        // reports for itself, replaces its default report. On .NET Framework RSA.Create() returns that type.
         var isCryptoServiceProvider = FipsSymbolHelpers.DerivesFromCryptographyType(creation.Type, "RSACryptoServiceProvider");
         var isFrameworkFactory = isFramework && creation is IInvocationOperation;
         if (IsDefaultKeyResolved(creation, allowKeySize: !isCryptoServiceProvider && !isFrameworkFactory))
@@ -529,7 +519,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
 
         var use = FipsSymbolHelpers.FindFirstLocalUse(creation, out var block);
 
-        // An upcast local (AsymmetricAlgorithm) does not reach the RSA KeySize or import checks, so it stays unresolved.
         return use is not null &&
             GetFamily(use.Type) is Family.Rsa &&
             ((allowKeySize && FipsSymbolHelpers.IsUnconditionalPropertyAssignment(use, "KeySize", block)) ||
@@ -605,7 +594,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         }
         else
         {
-            // The twin key-size path reports an unresolvable value on purpose, so an unreadable curve cannot hide an unapproved curve.
             Report(context, syntax, "Curve name cannot be verified at compile time; use nistP384 or nistP521");
         }
     }
@@ -620,7 +608,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // A curve held in a readonly field or an unreassigned local resolves to its initializer.
         if (operation is IFieldReferenceOperation or ILocalReferenceOperation)
         {
             return depth < FipsSymbolHelpers.MaxResolveDepth &&
@@ -633,7 +620,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             TryGetOidCurve(operation, out curve);
     }
 
-    // ECCurve.NamedCurves.nistP256
     private static bool TryGetNamedCurve(IOperation operation, out string curve)
     {
         curve = string.Empty;
@@ -651,7 +637,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    // ECCurve.CreateFromFriendlyName("nistP256") and ECCurve.CreateFromValue("1.2.840.10045.3.1.7")
     private static bool TryGetFactoryCurve(IOperation operation, out string curve)
     {
         curve = string.Empty;
@@ -671,7 +656,6 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    // ECCurve.CreateFromOid(new Oid("1.2.840.10045.3.1.7"))
     private static bool TryGetOidCurve(IOperation operation, out string curve)
     {
         curve = string.Empty;

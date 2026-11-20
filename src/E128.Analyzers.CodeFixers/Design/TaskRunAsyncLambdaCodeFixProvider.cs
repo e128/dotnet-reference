@@ -32,8 +32,6 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : E128CodeFixProviderBase
 
         var args = invocation.ArgumentList.Arguments;
 
-        // A second argument, such as the cancellation token, would be dropped by the removal and the
-        // work would no longer observe cancellation. Leave those calls to the developer.
         if (args.Count is not 1)
         {
             return Task.CompletedTask;
@@ -41,7 +39,6 @@ public sealed class TaskRunAsyncLambdaCodeFixProvider : E128CodeFixProviderBase
 
         var lambda = args[0].Expression;
 
-        // Only fix expression-body lambdas — block bodies are too structural.
         var innerExpression = GetExpressionBodyFromLambda(lambda);
         if (innerExpression is null)
         {

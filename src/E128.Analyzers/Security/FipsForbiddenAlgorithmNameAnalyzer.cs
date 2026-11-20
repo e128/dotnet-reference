@@ -48,7 +48,6 @@ public sealed class FipsForbiddenAlgorithmNameAnalyzer : DiagnosticAnalyzer
     {
         var creation = (IObjectCreationOperation)context.Operation;
 
-        // E128071 covers the policy's named algorithms. This rule adds the name-only cipher matches.
         InspectType(context, creation.Type, creation.Syntax);
     }
 

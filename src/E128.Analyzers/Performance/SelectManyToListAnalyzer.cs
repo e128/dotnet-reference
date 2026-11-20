@@ -50,7 +50,6 @@ public sealed class SelectManyToListAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    // Returns the SelectMany call when the call has the shape source.SelectMany(x).ToList().
     private static InvocationExpressionSyntax? GetSelectManyInvocation(InvocationExpressionSyntax toListInvocation)
     {
         if (toListInvocation.Expression is not MemberAccessExpressionSyntax toListAccess

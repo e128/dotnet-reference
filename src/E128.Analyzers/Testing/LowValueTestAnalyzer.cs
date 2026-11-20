@@ -44,9 +44,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         "loggers",
         "logging");
 
-    // Both rules are disabled by default. One condition still flags an ordinary unit test that asserts
-    // on an internal member, on an exception message, or on a value the test itself seeded. A project
-    // that wants the report opts in with dotnet_diagnostic.E128107.severity, or the sibling id.
     private static readonly DiagnosticDescriptor SuggestionRule = new(
         SuggestionDiagnosticId,
         "Test matches one low-value test condition",
@@ -69,8 +66,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private const string DuplicateCoverageCondition = "DuplicateCoverage";
 
-    // The condition names travel into the diagnostic message. A report that says only "one low-value
-    // condition" leaves the reader to guess which detector fired, so the name is part of the contract.
     private static readonly ImmutableArray<(string Name, Func<TestFacts, bool> Match)> Detectors =
     [
         (nameof(BareSize), BareSize),
@@ -104,9 +99,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        // DuplicateCoverage needs every test method before it can decide. The collector lives in this
-        // closure, so each compilation gets its own state and the tier decision can count the duplicate
-        // condition beside the pure ones.
         var entries = new ConcurrentBag<MethodEntry>();
 
         context.RegisterSyntaxNodeAction(
@@ -202,16 +194,11 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
             return [];
         }
 
-        // Two tests cover the same ground only when their bodies match token for token. A key built from
-        // the literal-argument call alone collides tests that differ in their setup or in the method under
-        // test. The body signature reads both, so only a copy-paste pair shares a key.
         return [$"{testClass.ToDisplayString()}|{BodySignature(facts.Method)}"];
     }
 
     private static string BodySignature(MethodDeclarationSyntax method)
     {
-        // Tokens carry the code without its trivia, so reindenting or recommenting a body does not change
-        // the signature. The method name and its attributes sit outside the body and do not enter the key.
         var tokens = method.Body is { } body
             ? body.DescendantTokens()
             : method.ExpressionBody?.DescendantTokens() ?? [];
@@ -223,8 +210,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
     {
         foreach (var call in facts.ProductionCalls)
         {
-            // A standard-library call seeds test input, it does not carry the behavior under test. Two
-            // tests that seed the same range but exercise different production paths are not duplicates.
             if (IsAllLiteralArguments(call.Invocation) && IsProductionCodeCall(call.Symbol))
             {
                 return true;
@@ -236,9 +221,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool IsProductionCodeCall(IMethodSymbol method)
     {
-        // A call on an interface is a library or seam accessor, not the concrete code under test. A DOM
-        // read such as IDocument.QuerySelector("img") carries no behavior, so it must not seed a
-        // duplicate key or count as the call an assertion echoes.
         if (method.ContainingType?.TypeKind is TypeKind.Interface)
         {
             return false;
@@ -252,9 +234,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool BareSize(TestFacts facts)
     {
-        // A short test that also calls production observes something real. Only a short test that
-        // exercises nothing but its own literals has no boundary to sit on. A property read is not a
-        // call, so `Assert.Same(Pool.Shared, Pool.Shared)` reaches production without an invocation.
         return !IsNullOnly(facts)
                && facts.Statements == BareSizeStatementCount
                && facts.Assertions.Length is 1
@@ -270,8 +249,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         {
             var symbol = facts.Model.GetSymbolInfo(member, facts.CancellationToken).Symbol;
 
-            // The test class holds fixtures and local helpers. Every other type is the code under test,
-            // and a read of it reaches a boundary even when the read is a property rather than a call.
             if (symbol is { ContainingType: { } owner }
                 && !SymbolEqualityComparer.Default.Equals(owner, testClass)
                 && !TestFacts.IsAssertion(symbol))
@@ -304,8 +281,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // The name mirrors the call only when it carries the method name and almost nothing else. A
-        // name that also states a behavior and a condition describes the test, not the call.
         var mirrors = false;
         var otherTokens = 0;
 
@@ -326,9 +301,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool NoAssertion(TestFacts facts)
     {
-        // A thrown assertion reports through the call itself, so a call named Check counts as an
-        // assertion even though no Assert member appears in the body. Fluent rule libraries use it.
-        // A helper declared in the test class asserts on the caller's behalf, so its body is not read here.
         return !facts.ContainsAwait
                && !facts.HasHelperCall
                && facts.Assertions.Length is 0
@@ -339,9 +311,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool CallsVoidProduction(TestFacts facts)
     {
-        // A void method has no return value to assert on, so the throw is the only observable. A test
-        // that calls a void validator and asserts nothing passes when the validator stays silent, which
-        // is the contract of the happy path, not a missing assertion.
         foreach (var call in facts.ProductionCalls)
         {
             if (call.Symbol.ReturnsVoid)
@@ -395,9 +364,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
         TestFacts facts,
         Func<AssertionFact, bool> match)
     {
-        // One observable assertion gives the test its value. A test that mixes an echo with a real
-        // check is not low value, so every examined assertion must match before the condition reports.
-        // An exception capture only sets up the assertion that follows it, so it does not compete.
         var examined = false;
 
         foreach (var assertion in facts.Assertions)
@@ -448,7 +414,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool IsLoggerName(string name)
     {
-        // A substring test accepts dialog and catalog. Match a whole name token instead.
         foreach (var token in TokenizeName(name))
         {
             if (LoggerTokens.Contains(token)
@@ -469,8 +434,6 @@ public sealed partial class LowValueTestAnalyzer : DiagnosticAnalyzer
 
     private static bool SelfFulfillingExpected(TestFacts facts)
     {
-        // A receiver-only comparison cannot tell `ranks["A"]` from `ranks["B"]`, so it reports a real
-        // relational invariant as circular. The two operands must match expression for expression.
         foreach (var assertion in facts.Assertions)
         {
             if (ComparesSameExpression(assertion))

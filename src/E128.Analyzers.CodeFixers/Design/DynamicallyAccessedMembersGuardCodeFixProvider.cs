@@ -54,12 +54,10 @@ public sealed class DynamicallyAccessedMembersGuardCodeFixProvider : E128CodeFix
 
         if (attributeList.Attributes.Count is 1)
         {
-            // Only one attribute in the list — remove the entire attribute list.
             newRoot = root.RemoveNode(attributeList, SyntaxRemoveOptions.KeepNoTrivia)!;
         }
         else
         {
-            // Multiple attributes in the list — remove just this one.
             var newList = attributeList.RemoveNode(attribute, SyntaxRemoveOptions.KeepNoTrivia);
             newRoot = newList is null ? root : root.ReplaceNode(attributeList, newList);
         }

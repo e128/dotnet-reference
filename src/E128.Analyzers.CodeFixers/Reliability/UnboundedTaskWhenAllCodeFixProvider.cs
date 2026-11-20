@@ -27,7 +27,6 @@ public sealed class UnboundedTaskWhenAllCodeFixProvider : E128CodeFixProviderBas
 
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        // No automated fix — adding SemaphoreSlim requires structural changes beyond a code fix.
         return Task.CompletedTask;
     }
 }

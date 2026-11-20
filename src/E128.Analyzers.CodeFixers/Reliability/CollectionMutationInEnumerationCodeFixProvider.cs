@@ -56,8 +56,6 @@ public sealed class CollectionMutationInEnumerationCodeFixProvider : E128CodeFix
 
         var newRoot = root.ReplaceNode(collection, materialized);
 
-        // List<T> and the other mutable collections declare an instance ToArray(), so the using is
-        // only needed for an enumerable that resolves through Enumerable.ToArray.
         if (!await HasInstanceToArrayAsync(document, collection, cancellationToken).ConfigureAwait(false))
         {
             newRoot = UsingDirectives.AddIfMissing(newRoot, "System.Linq");

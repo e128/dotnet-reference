@@ -83,13 +83,11 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
 
         var symbol = model.GetSymbolInfo(inner, cancellationToken).Symbol;
 
-        // A temporary delegate has no owner, so nothing keeps it alive after the call.
         return inner is ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax or AnonymousFunctionExpressionSyntax
             || symbol is IMethodSymbol
             || (symbol is ILocalSymbol or IParameterSymbol && !IsRooted(inner, model, cancellationToken));
     }
 
-    // A local or parameter is safe when it is stored in a field, property or element, or passed to another call.
     private static bool IsRooted(
         ExpressionSyntax delegateExpression,
         SemanticModel model,
@@ -114,7 +112,6 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // Passing the delegate to another call (GC.KeepAlive, list.Add, a registry) hands it to an owner.
     private static bool IsPassedToOtherCall(
         SyntaxNode node,
         ExpressionSyntax delegateExpression,

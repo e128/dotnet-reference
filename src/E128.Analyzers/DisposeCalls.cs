@@ -20,7 +20,6 @@ internal static class DisposeCalls
             return access.Expression;
         }
 
-        // A conditional call such as field?.Dispose() holds the receiver on the conditional access.
         return invocation.Expression is MemberBindingExpressionSyntax binding
                && invocation.Parent is ConditionalAccessExpressionSyntax conditional
                && IsDisposeName(binding.Name.Identifier.ValueText)

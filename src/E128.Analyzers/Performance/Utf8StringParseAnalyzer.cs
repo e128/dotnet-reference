@@ -91,7 +91,6 @@ public sealed class Utf8StringParseAnalyzer : DiagnosticAnalyzer
             method.Name));
     }
 
-    // Returns the method when the call is a string Parse or TryParse overload.
     private static IMethodSymbol? GetParseMethod(
         InvocationExpressionSyntax invocation,
         SemanticModel model,
@@ -106,7 +105,6 @@ public sealed class Utf8StringParseAnalyzer : DiagnosticAnalyzer
             : null;
     }
 
-    // Returns the Encoding.UTF8.GetString call that feeds the first argument, when its source is bytes.
     private static InvocationExpressionSyntax? GetUtf8GetStringCall(
         InvocationExpressionSyntax invocation,
         IMethodSymbol method,

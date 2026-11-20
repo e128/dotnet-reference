@@ -29,7 +29,6 @@ internal static class DiskIoCatalog
         "Append"
     };
 
-    // The one source for File.* method membership. Every predicate below derives from this map.
     private static readonly Dictionary<string, IoKind> FileMethodKinds = new(StringComparer.Ordinal)
     {
         ["WriteAllText"] = IoKind.Text,
@@ -484,7 +483,6 @@ internal static class DiskIoCatalog
         var writePos = write.ReportNode.SpanStart;
         var readPos = read.ReportNode.SpanStart;
 
-        // First assignment strictly after the write position.
         var index = positions.BinarySearch(writePos);
         index = index >= 0 ? index + 1 : ~index;
 

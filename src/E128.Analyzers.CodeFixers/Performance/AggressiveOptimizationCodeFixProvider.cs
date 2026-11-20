@@ -69,7 +69,6 @@ public sealed class AggressiveOptimizationCodeFixProvider : E128CodeFixProviderB
             root.ReplaceNode(attribute, attribute.WithArgumentList(argumentList)));
     }
 
-    // The first attribute list owns the member's doc comment and indentation, so hand them to the next token.
     private static SyntaxNode RemoveAttributeList(SyntaxNode root, AttributeListSyntax attributeList)
     {
         if (attributeList.Parent is not MemberDeclarationSyntax member || member.AttributeLists[0] != attributeList)
@@ -115,7 +114,6 @@ public sealed class AggressiveOptimizationCodeFixProvider : E128CodeFixProviderB
 
     private static bool IsAggressiveOptimization(ExpressionSyntax expression)
     {
-        // A parenthesized option must match too, or the fix keeps it and changes nothing.
         while (expression is ParenthesizedExpressionSyntax parenthesized)
         {
             expression = parenthesized.Expression;

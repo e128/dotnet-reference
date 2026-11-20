@@ -22,8 +22,6 @@ internal static class CliApp
 
         var service = new GreetingService(new Greeter(), new InMemoryGreetingRepository(), TimeProvider.System);
 
-        // The result union closes the case list. Each case maps to its own exit code, and the
-        // null arm is the empty case the compiler requires.
         rootCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var name = parseResult.GetValue(nameOption);

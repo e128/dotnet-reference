@@ -115,7 +115,6 @@ public sealed class FipsCipherModeAnalyzer : DiagnosticAnalyzer
             mode));
     }
 
-    // CipherMode values: CBC is 1, ECB is 2, OFB is 3, CFB is 4 and CTS is 5.
     private static string? ModeOfValue(long value)
     {
         return value switch

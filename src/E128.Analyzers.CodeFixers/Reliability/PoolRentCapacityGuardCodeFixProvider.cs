@@ -59,7 +59,6 @@ public sealed class PoolRentCapacityGuardCodeFixProvider : E128CodeFixProviderBa
             : DefaultMaxRentCapacity;
     }
 
-    // Digit separators keep a six-figure cap readable in the emitted call.
     private static string FormatCapacity(int capacity)
     {
         return capacity.ToString("N0", CultureInfo.InvariantCulture).Replace(',', '_');

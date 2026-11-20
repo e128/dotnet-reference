@@ -30,8 +30,6 @@ public sealed class AsyncVoidCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
-        // An override or an explicit interface implementation inherits its void return type from the
-        // base member or the interface. Rewriting only this declaration gives CS0508 or CS0738.
         if (method.Modifiers.Any(SyntaxKind.OverrideKeyword) || method.ExplicitInterfaceSpecifier is not null)
         {
             return Task.CompletedTask;

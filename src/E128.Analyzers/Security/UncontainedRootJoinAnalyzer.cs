@@ -34,7 +34,6 @@ public sealed class UncontainedRootJoinAnalyzer : DiagnosticAnalyzer
 
     private const string PathTypeName = "System.IO.Path";
 
-    // One source for the guard family. A call with one of these names consumes a path value.
     private static readonly HashSet<string> GuardMethodNames = new(StringComparer.Ordinal)
     {
         "IsInside",
@@ -42,7 +41,6 @@ public sealed class UncontainedRootJoinAnalyzer : DiagnosticAnalyzer
         "ResolveInside"
     };
 
-    // One source for the numeric hole types. Their text holds digits, a sign, or a decimal point.
     private static readonly HashSet<SpecialType> NumericSpecialTypes =
     [
         SpecialType.System_Byte,
@@ -58,7 +56,6 @@ public sealed class UncontainedRootJoinAnalyzer : DiagnosticAnalyzer
         SpecialType.System_Decimal
     ];
 
-    // One source for the name producers. A leaf from one of these calls holds a file name only.
     private static readonly HashSet<string> NamerMethodNames = new(StringComparer.Ordinal)
     {
         "GetFileName",
@@ -188,9 +185,6 @@ public sealed class UncontainedRootJoinAnalyzer : DiagnosticAnalyzer
     {
         foreach (var content in interpolated.Contents)
         {
-            // The literal parts of the format string carry the traversal. $"../{index}.txt" has
-            // one numeric hole and still climbs, so a separator or a parent reference in the
-            // text ends the numeric-only case.
             if (content is InterpolatedStringTextSyntax text && CarriesPathSyntax(text.TextToken.ValueText))
             {
                 return false;

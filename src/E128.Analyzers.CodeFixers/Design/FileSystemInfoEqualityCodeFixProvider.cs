@@ -32,8 +32,6 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : E128CodeFixProviderB
             return;
         }
 
-        // The rule fires when either operand is a FileSystemInfo, but reading .FullName works only
-        // when both are. The other operand may be object or an unrelated type.
         if (!IsFileSystemInfoOperand(binary.Left, semanticModel, context.CancellationToken)
             || !IsFileSystemInfoOperand(binary.Right, semanticModel, context.CancellationToken))
         {

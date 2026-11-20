@@ -38,13 +38,11 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
     {
         var creation = (ObjectCreationExpressionSyntax)context.Node;
 
-        // Only interested in zero-argument constructors.
         if (creation.ArgumentList is { Arguments.Count: > 0 })
         {
             return;
         }
 
-        // Quick name filter before semantic work.
         var typeName = creation.Type switch
         {
             IdentifierNameSyntax id => id.Identifier.ValueText,
@@ -57,7 +55,6 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Semantic verification: confirm the type resolves to System.Net.Http.HttpClient.
         var typeInfo = context.SemanticModel.GetTypeInfo(creation, context.CancellationToken);
         if (typeInfo.Type is not INamedTypeSymbol namedType)
         {
@@ -80,7 +77,6 @@ public sealed class DirectHttpClientInstantiationAnalyzer : DiagnosticAnalyzer
         }
 
         var ns = type.ContainingNamespace;
-        // Expecting: System.Net.Http
         return Namespaces.Equals(ns, "System.Net.Http");
     }
 }

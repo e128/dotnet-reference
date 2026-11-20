@@ -194,8 +194,6 @@ public sealed class HandRolledProcessCaptureAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        // An object initializer has no receiver. The flag belongs to the start info instance the
-        // initializer builds, and that instance must reach the process.
         return assignment.Parent is InitializerExpressionSyntax { Parent: BaseObjectCreationExpressionSyntax creation }
                && creation.Parent is { } parent
                && IsStartInfoCreation(creation, model, cancellationToken)

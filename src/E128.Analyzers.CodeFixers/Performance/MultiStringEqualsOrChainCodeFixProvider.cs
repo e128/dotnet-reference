@@ -17,7 +17,6 @@ namespace E128.Analyzers.Performance;
 [Shared]
 public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProviderBase
 {
-    // Longest spelling first, so the global-qualified form is not read as a plain member name.
     private static readonly ImmutableArray<string> ComparisonPrefixes =
     [
         "global::System.StringComparison.",
@@ -39,8 +38,6 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
 
     public override FixAllProvider? GetFixAllProvider()
     {
-        // Two chains on the same operand in one type both need the field name, and a batch merge
-        // emits that field twice. The fix stays single-diagnostic.
         return null;
     }
 
@@ -63,7 +60,6 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
             return;
         }
 
-        // Pre-validate so we only register a fix that will actually change code.
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel is null)
         {
@@ -81,8 +77,6 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
             return;
         }
 
-        // The only no-op path is a failed field parse. Validate that too, so a registered fix
-        // always changes code.
         var comparerExpr = GetComparerExpression(pivot.ComparisonKey);
         if (comparerExpr is null)
         {
@@ -153,7 +147,6 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
             }
         }
 
-        // Only fix fully homogeneous chains: all leaves qualify and form one group.
         if (infos.Count < MultiStringEqualsOrChainAnalyzer.MinChainLength
             || infos.Count != operands.Count)
         {
@@ -198,12 +191,10 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
             return null;
         }
 
-        // Preserve the OR-chain's leading trivia (indentation) on the replacement expression.
         var containsExpr = SyntaxFactory
             .ParseExpression($"{fieldName}.Contains({pivot.OperandText})")
             .WithTriviaFrom(orExpr);
 
-        // Replace OR-chain, then insert field as first member with matching indentation.
         var typeDeclAfterReplace = typeDecl.ReplaceNode(orExpr, containsExpr);
         var typeDeclWithField = FixSyntax.InsertFieldAsFirstMember(typeDeclAfterReplace, fieldDecl);
 
@@ -212,7 +203,6 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
         return UsingDirectives.AddIfMissing(newRoot, "System.Collections.Generic");
     }
 
-    // A fallback member writes broken code into the document, so abort the fix when the parse fails.
     private static MemberDeclarationSyntax? ParseFieldDeclaration(
         string fieldName,
         string comparerExpr,
@@ -231,8 +221,6 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
                 sb.Append(", ");
             }
 
-            // The analyzer captures Token.ValueText, which is already unescaped. FormatLiteral puts
-            // the escapes back so a literal with a quote or a backslash stays valid C#.
             sb.Append(SymbolDisplay.FormatLiteral(literals[i], quote: true));
         }
 

@@ -30,6 +30,7 @@ After an agent definition changes, run `scripts/internal/opencode-agents.sh sync
 
 - Route repeated operations through `.claude/rules/deterministic-scripts.md`. Use `scripts/help.sh` to discover scripts.
 - Write tests before implementation. Finish implementation before running tests. A failing RED run is not required.
+- Write no `//` or `/* */` comment in `src/`. Record a non-obvious constraint in `lode/decisions/` instead. `scripts/comment-scan.sh` blocks the rest.
 - Follow `.claude/rules/quality-gates.md` for verification after the final edit.
 - Test observable behavior. Validate user-facing changes in the real interface when applicable.
 - Keep changes focused. Fix the root cause when a friction point repeats.

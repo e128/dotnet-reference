@@ -170,8 +170,6 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // A condition that reads the length guards the branch that holds the long string. A plain
-    // comparison of the length says which branch that is. Any other shape guards both branches.
     private static bool GuardsBranch(
         ExpressionSyntax condition,
         SyntaxNode thenBranch,
@@ -224,7 +222,6 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         var isGreater = comparison.IsKind(SyntaxKind.GreaterThanExpression)
                         || comparison.IsKind(SyntaxKind.GreaterThanOrEqualExpression);
 
-        // length > k and k < length keep the long string in the then branch.
         return lengthOnLeft == isGreater ? Branch.Then : Branch.Else;
     }
 
@@ -235,8 +232,6 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         Else = 2
     }
 
-    // A preceding if with no else that returns or throws when the length is short guards every
-    // statement after it in the block.
     private static bool HasEarlyExitGuard(
         BlockSyntax block,
         InvocationExpressionSyntax invocation,
@@ -293,7 +288,6 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // A guard that proves the receiver holds at least one character.
     private static bool IsNonEmptyGuard(
         InvocationExpressionSyntax invocation,
         ISymbol receiver,
@@ -337,7 +331,6 @@ public sealed class SubstringLengthUnderflowAnalyzer : DiagnosticAnalyzer
                && IsSameReceiver(access.Expression, receiver, model, token);
     }
 
-    // A guard of the form x.IndexOf(...) >= 0, which proves the receiver is non-empty.
     private static bool IsNonNegativeIndexOf(
         BinaryExpressionSyntax comparison,
         ISymbol receiver,

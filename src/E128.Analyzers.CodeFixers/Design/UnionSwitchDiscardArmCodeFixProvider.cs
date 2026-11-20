@@ -13,9 +13,6 @@ namespace E128.Analyzers.Design;
 [Shared]
 public sealed class UnionSwitchDiscardArmCodeFixProvider : E128CodeFixProviderBase
 {
-    // The union analyzer ships in the Roslyn 5.12 assembly, which this Roslyn 5.9
-    // build does not reference. Roslyn matches a fixer to a diagnostic by id, so
-    // the fixer needs no compile-time reference to the analyzer type.
     public override ImmutableArray<string> FixableDiagnosticIds =>
         ["E128220"];
 
@@ -26,9 +23,6 @@ public sealed class UnionSwitchDiscardArmCodeFixProvider : E128CodeFixProviderBa
             || pattern.Parent is SwitchExpressionArmSyntax { WhenClause: not null }
                 or CasePatternSwitchLabelSyntax { WhenClause: not null })
         {
-            // A var arm binds a case value, and a when guard would survive on the null arm,
-            // so replacing it with null would break the arm's expression. The rewrite needs
-            // the developer.
             return Task.CompletedTask;
         }
 

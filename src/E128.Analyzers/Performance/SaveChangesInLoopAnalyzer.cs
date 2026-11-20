@@ -44,8 +44,6 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static startContext =>
         {
-            // Fail closed. A compilation without Entity Framework Core cannot contain the
-            // call this rule describes, and a look-alike type named DbContext is not EF.
             var dbContextType = startContext.Compilation.GetTypeByMetadataName(DbContextMetadataName);
             if (dbContextType is null)
             {
@@ -64,8 +62,6 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        // Syntactic gate first. Most invocations are not SaveChanges, so they must not pay
-        // for loop walking or overload resolution.
         var syntaxName = GetMethodName(invocation);
         if (!IsSaveChangesName(syntaxName))
         {
@@ -89,8 +85,6 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A null-conditional call reports the whole conditional access, so the location covers the
-        // receiver that may be null.
         var location = invocation.Parent is ConditionalAccessExpressionSyntax conditionalAccess
             ? conditionalAccess.GetLocation()
             : invocation.GetLocation();
@@ -140,15 +134,11 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
         ITypeSymbol? receiverType,
         INamedTypeSymbol dbContextType)
     {
-        // The declaring type covers an instance call, including a call made through a
-        // derived DbContext, because the walk climbs the base chain.
         if (DerivesFromDbContext(method.ContainingType, dbContextType))
         {
             return true;
         }
 
-        // A derived receiver still reports when overload resolution binds the call to a
-        // base declaration that the analyzer cannot walk, such as a type parameter bound.
         if (receiverType is INamedTypeSymbol receiver && DerivesFromDbContext(receiver, dbContextType))
         {
             return true;
@@ -159,8 +149,6 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // EF Core also ships extension methods. The containing type carries the EF
-        // namespace or assembly, and the receiver can name an unbound generic EF type.
         return IsEntityFrameworkType(method.ContainingType) || IsEntityFrameworkType(receiverType);
     }
 

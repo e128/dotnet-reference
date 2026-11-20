@@ -71,7 +71,6 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
             : null;
     }
 
-    // Matches `for (...) { if (a[i] != b[i]) { return false; } }` and returns the comparison.
     private static BinaryExpressionSyntax? GetReturnFalseComparison(ForStatementSyntax forStatement)
     {
         if (forStatement.Statement is not BlockSyntax loopBody
@@ -109,8 +108,6 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
             && (SyntaxFactory.AreEquivalent(owner, left) || SyntaxFactory.AreEquivalent(owner, right));
     }
 
-    // SequenceEqual compares lengths first. The loop does not, so the fix is only safe
-    // when the code before the loop already returns false on a length mismatch.
     private static bool HasLengthGuard(BlockSyntax block, int index, ExpressionSyntax left, ExpressionSyntax right)
     {
         if (GetGuardComparison(block, index) is not { } found
@@ -149,7 +146,6 @@ public sealed class SequenceEqualLoopAnalyzer : DiagnosticAnalyzer
         return statement is BlockSyntax { Statements.Count: 1 } block ? block.Statements[0] : statement;
     }
 
-    // Floating-point elements are excluded: != treats NaN as unequal, SequenceEqual does not.
     private static bool HaveSafeElementType(
         ExpressionSyntax left,
         ExpressionSyntax right,

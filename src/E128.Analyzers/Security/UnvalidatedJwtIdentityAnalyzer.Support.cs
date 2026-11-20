@@ -98,7 +98,7 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer
 
         public override void VisitNameOf(INameOfOperation operation)
         {
-            // A nameof expression does not call or expose the function.
+            _ = operation;
         }
 
         private void Record(IMethodSymbol method)

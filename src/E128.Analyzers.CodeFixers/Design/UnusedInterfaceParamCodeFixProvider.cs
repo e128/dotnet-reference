@@ -20,8 +20,6 @@ namespace E128.Analyzers.Design;
 [Shared]
 public sealed class UnusedInterfaceParamCodeFixProvider : E128CodeFixProviderBase
 {
-    // A rename touches the whole solution, so the batch fixer loses one of two edits in the same
-    // document. Apply the renames in sequence instead.
     private static readonly SequentialRenameFixAllProvider s_fixAllProvider =
         new(static (_, symbolName) => symbolName is null || symbolName.StartsWith("_", StringComparison.Ordinal)
                 ? null
@@ -48,8 +46,6 @@ public sealed class UnusedInterfaceParamCodeFixProvider : E128CodeFixProviderBas
         var paramName = param.Identifier.ValueText;
         if (paramName.StartsWith("_", StringComparison.Ordinal))
         {
-            // The fix-all path skips an underscore-prefixed name, so a single fix must skip it too
-            // rather than offer a rename to the same text.
             return Task.CompletedTask;
         }
 

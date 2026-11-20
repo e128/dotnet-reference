@@ -51,8 +51,6 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
     {
         var method = (IMethodSymbol)context.Symbol;
 
-        // Cheap gates first. The interface-implementation walk below is the expensive one, so
-        // only methods that can actually report reach it.
         if (method.Parameters.IsEmpty)
         {
             return;
@@ -69,14 +67,10 @@ public sealed class UnusedInterfaceParamAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // One body walk collects every referenced identifier. Each parameter then costs a
-        // hash lookup instead of a fresh subtree walk.
         var referencedNames = CollectReferencedNames(syntax);
 
         foreach (var param in method.Parameters)
         {
-            // An underscore-prefixed name is the discard convention the code fix would enforce on
-            // itself, so the parameter needs no report and no fix.
             if (IsExemptParameter(param, referencedNames))
             {
                 continue;

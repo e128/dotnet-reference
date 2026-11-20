@@ -20,7 +20,6 @@ namespace E128.Analyzers.Style;
 [Shared]
 public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
 {
-    // Roslyn embeds these keys in IDE1006 diagnostic properties.
     private const string SuggestedNameKey = "SuggestedName"; // pre-computed by Roslyn's naming analyzer
     private const string SymbolNameKey = "SymbolName"; // only present in FakeNamingViolationAnalyzer (tests)
     private const string PrefixKey = "Prefix";
@@ -28,7 +27,6 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
     private const string WordSeparatorKey = "WordSeparator";
     private const string CapitalizationSchemeKey = "CapitalizationScheme";
 
-    // An acronym split looks two characters back: the uppercase run before the lowercase letter.
     private const int AcronymLookback = 2;
 
     private static readonly ImmutableArray<string> s_knownPrefixes = ["s_", "m_", "_", "I", "T"];
@@ -87,26 +85,20 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             solution, symbol, new SymbolRenameOptions(), newName, cancellationToken);
     }
 
-    // Single-arg overload: used by tests (FakeNamingViolationAnalyzer embeds SymbolName in properties).
     internal static string? ComputeCompliantName(Diagnostic diagnostic)
     {
         return ComputeCompliantName(diagnostic, null);
     }
 
-    // Two-arg overload: used by RegisterCodeFixesAsync with the actual resolved symbol name.
-    // When the diagnostic was produced by Roslyn's built-in naming analyzer it embeds
-    // "SuggestedName" (pre-computed) but not "SymbolName", so symbolNameFallback is required.
     internal static string? ComputeCompliantName(Diagnostic diagnostic, string? symbolNameFallback)
     {
         var props = diagnostic.Properties;
 
-        // Roslyn's IDE1006 diagnostic embeds the already-computed compliant name directly.
         if (props.TryGetValue(SuggestedNameKey, out var precomputedName) && !string.IsNullOrEmpty(precomputedName))
         {
             return precomputedName;
         }
 
-        // Fall back to the provided symbol name (production) or read it from properties (tests).
         var symbolName = ResolveSymbolName(props, symbolNameFallback);
         if (symbolName is null)
         {
@@ -145,12 +137,8 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
         string wordSeparator,
         string capitalizationScheme)
     {
-        // Strip any existing prefix so we work with the base identifier.
-        // Common prefixes that may already be present but don't match the required one.
         var baseName = StripExistingAffixes(symbolName, prefix, suffix);
 
-        // Split the base name into words: if the separator appears in the name, use it;
-        // otherwise fall back to camelCase / PascalCase transition splitting.
         var words = !string.IsNullOrEmpty(wordSeparator) && baseName.Contains(wordSeparator, StringComparison.Ordinal)
             ? baseName.Split([wordSeparator], StringSplitOptions.RemoveEmptyEntries)
             : SplitByCaseTransition(baseName);
@@ -166,10 +154,8 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
 
     private static string StripExistingAffixes(string name, string requiredPrefix, string requiredSuffix)
     {
-        // Strip suffix first (so prefix stripping works on the trimmed name).
         var result = StripSuffix(name, requiredSuffix);
 
-        // If the name already starts with the required prefix, strip it before re-applying below.
         if (!string.IsNullOrEmpty(requiredPrefix) && result.StartsWith(requiredPrefix, StringComparison.Ordinal))
         {
             return result.Substring(requiredPrefix.Length);
@@ -190,10 +176,6 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             : name;
     }
 
-    // For single-char letter prefixes, a wrong-case variant followed by an uppercase character
-    // signals the prefix was intended but cased incorrectly (for example, "iFetcher" when the
-    // prefix is "I"). Without the strip, capitalization later produces "IFetcher" and then the
-    // prefix is prepended again to yield "IIFetcher".
     private static bool IsWrongCaseLetterPrefix(string name, string requiredPrefix)
     {
         return !string.IsNullOrEmpty(requiredPrefix)
@@ -205,7 +187,6 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
                && char.IsUpper(name[1]);
     }
 
-    // Strip any common wrong prefix so the result is the bare identifier words.
     private static string StripKnownWrongPrefix(string name, string requiredPrefix)
     {
         foreach (var known in s_knownPrefixes)
@@ -228,9 +209,6 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
         return name;
     }
 
-    // Single-char letter prefixes ("I" for interfaces, "T" for type params) only count as a prefix
-    // when the next character is uppercase. "IndexFilenames" starts with "I", but the "I" is part
-    // of the word and not a naming prefix.
     private static bool IsLetterPrefixInsideWord(string known, string afterKnown)
     {
         return known.Length is 1
@@ -245,7 +223,6 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             return [];
         }
 
-        // Walk the string and split at lower→upper transitions.
         var words = new List<string>((name.Length >> 2) + 1);
         var wordStart = 0;
 
@@ -254,13 +231,11 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
             var prev = name[i - 1];
             var curr = name[i];
 
-            // Split when transitioning from lowercase to uppercase: "myField" → "my|Field"
             if (char.IsLower(prev) && char.IsUpper(curr))
             {
                 words.Add(name.Substring(wordStart, i - wordStart));
                 wordStart = i;
             }
-            // Split when transitioning from multiple uppercase to uppercase+lowercase: "ABCDef" → "ABC|Def"
             else if (i >= AcronymLookback && char.IsUpper(prev) && char.IsLower(curr) && char.IsUpper(name[i - AcronymLookback]))
             {
                 var segment = name.Substring(wordStart, i - 1 - wordStart);

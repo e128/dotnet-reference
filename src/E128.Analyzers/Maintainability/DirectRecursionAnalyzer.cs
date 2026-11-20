@@ -76,8 +76,6 @@ public sealed class DirectRecursionAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // A call through another instance is not direct recursion on this frame, even when the type
-    // matches. An implicit or explicit `this` receiver is.
     private static bool IsSelfReceiver(IInvocationOperation invocation)
     {
         return invocation.TargetMethod.IsStatic
@@ -85,8 +83,6 @@ public sealed class DirectRecursionAnalyzer : DiagnosticAnalyzer
             || invocation.Instance is IInstanceReferenceOperation;
     }
 
-    // A call inside a lambda runs when the lambda runs, not inside the method frame that declares
-    // it. A deferred callback such as "queue.Post(() => Start())" is not direct recursion.
     private static bool IsInsideAnonymousFunction(IOperation operation)
     {
         for (var current = operation.Parent; current is not null; current = current.Parent)

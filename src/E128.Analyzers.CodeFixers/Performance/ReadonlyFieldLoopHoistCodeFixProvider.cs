@@ -38,14 +38,12 @@ public sealed class ReadonlyFieldLoopHoistCodeFixProvider : E128CodeFixProviderB
             return;
         }
 
-        // The analyzer owns the shape check, so the fix repairs exactly what the rule reports.
         var match = ReadonlyFieldLoopHoistAnalyzer.TryMatchHoist(loop, semanticModel, context.CancellationToken);
         if (match is null)
         {
             return;
         }
 
-        // Build the replacement here, so a registered action never discovers a reason to stop.
         var newRoot = TryBuildReplacement(
             root,
             loop,
@@ -85,7 +83,6 @@ public sealed class ReadonlyFieldLoopHoistCodeFixProvider : E128CodeFixProviderB
             return null;
         }
 
-        // One pass over the original tree keeps every rewrite on one tree identity.
         var newLoop = loop.ReplaceNodes(
             targets,
             (original, _) => SyntaxFactory.IdentifierName(localName).WithTriviaFrom(original));
@@ -102,8 +99,6 @@ public sealed class ReadonlyFieldLoopHoistCodeFixProvider : E128CodeFixProviderB
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        // Each identifier node adds exactly one target, so a plain list needs no lookup and no
-        // custom equality for a type that compares by reference.
         var targets = new List<SyntaxNode>();
 
         foreach (var identifier in loop.DescendantNodes().OfType<IdentifierNameSyntax>())
@@ -115,9 +110,6 @@ public sealed class ReadonlyFieldLoopHoistCodeFixProvider : E128CodeFixProviderB
                 continue;
             }
 
-            // Only the name of a member access replaces the whole access, so `this._items` and
-            // `C._items` rewrite as one node. A receiver identifier, as in `_items.Length`,
-            // rewrites itself and keeps the member access intact.
             if (identifier.Parent is MemberAccessExpressionSyntax { Name: { } } access && access.Name == identifier)
             {
                 targets.Add(access);
@@ -137,8 +129,6 @@ public sealed class ReadonlyFieldLoopHoistCodeFixProvider : E128CodeFixProviderB
         StatementSyntax loop,
         SemanticModel semanticModel)
     {
-        // The field type, emitted through the minimal display string, keeps the type arguments
-        // and qualifies the name only when it is out of scope.
         var typeName = SyntaxFactory.ParseTypeName(
             field.Type.ToMinimalDisplayString(semanticModel, loop.SpanStart));
 

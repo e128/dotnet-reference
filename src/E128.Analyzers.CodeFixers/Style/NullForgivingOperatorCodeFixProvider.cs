@@ -50,7 +50,6 @@ public sealed class NullForgivingOperatorCodeFixProvider : E128CodeFixProviderBa
             return document;
         }
 
-        // Replace expr! with expr, preserving the outer trivia.
         var innerExpression = postfix.Operand.WithTriviaFrom(postfix);
         var newRoot = root.ReplaceNode(postfix, innerExpression);
         return document.WithSyntaxRoot(newRoot);

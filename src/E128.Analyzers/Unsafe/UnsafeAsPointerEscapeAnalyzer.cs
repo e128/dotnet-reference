@@ -63,7 +63,6 @@ public sealed class UnsafeAsPointerEscapeAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
-    // The stack never moves, so a pointer to a plain local or by-value parameter is stable.
     private static bool IsStackLocation(
         InvocationExpressionSyntax invocation,
         SemanticModel model,
@@ -75,8 +74,6 @@ public sealed class UnsafeAsPointerEscapeAnalyzer : DiagnosticAnalyzer
                 is ILocalSymbol { RefKind: RefKind.None } or IParameterSymbol { RefKind: RefKind.None };
     }
 
-    // An async member moves its locals and by-value parameters into a state machine, which lives on
-    // the heap and moves during a collection. Only a plain stack frame keeps the address stable.
     private static bool IsInAsyncMember(SyntaxNode node)
     {
         foreach (var ancestor in node.Ancestors())

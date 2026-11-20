@@ -16,7 +16,6 @@ public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128023";
 
-    // The code fix builds the replacement from this value, so the path prefixes live here only.
     internal const string PropRelativeSuffix = "RelativeSuffix";
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -42,8 +41,6 @@ public sealed class HardcodedTmpPathE128Analyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeStringLiteral, SyntaxKind.StringLiteralExpression);
     }
 
-    // Each prefix ends with a path separator. The folder names are built in parts so the
-    // analyzer source holds no literal temp path.
     private static readonly string[] TempPrefixes =
     [
         string.Concat("/", "tmp/"),

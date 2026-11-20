@@ -28,9 +28,6 @@ public sealed class FileSystemPathCodeFixProvider : E128CodeFixProviderBase
 
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        // For parameter diagnostics from use-site analysis, the method body depends on the
-        // parameter being a string. Changing the type would break compilation, so only
-        // offer fixes for ambiguous (name-pattern) diagnostics where the body is empty/absent.
         var isAmbiguous = string.Equals(suggested, FileSystemPathAnalyzer.SuggestedAmbiguous, StringComparison.Ordinal);
         if (node is ParameterSyntax && !isAmbiguous)
         {
@@ -56,8 +53,6 @@ public sealed class FileSystemPathCodeFixProvider : E128CodeFixProviderBase
         SyntaxNode node,
         string typeName)
     {
-        // Parameter case: diagnostic location is on the identifier token → FindNode returns ParameterSyntax.
-        // Option/Argument case: diagnostic location is on the PredefinedTypeSyntax (string keyword).
         if (node is not ParameterSyntax and not PredefinedTypeSyntax)
         {
             return;

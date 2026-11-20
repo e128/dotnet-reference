@@ -77,8 +77,6 @@ public sealed class WhenAnyResultUnobservedAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         INamedTypeSymbol taskType)
     {
-        // The name check drops almost every invocation before the symbol lookup runs. The symbol
-        // decides the match, so a user method that carries the name WhenAny stays silent.
         var name = invocation.Expression switch
         {
             MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
@@ -98,14 +96,11 @@ public sealed class WhenAnyResultUnobservedAnalyzer : DiagnosticAnalyzer
                && SymbolEqualityComparer.Default.Equals(method.ContainingType, taskType);
     }
 
-    // Shape one: the call is the whole expression statement, so the statement discards the result.
     private static bool IsDiscardedStatement(InvocationExpressionSyntax invocation)
     {
         return invocation.Parent is ExpressionStatementSyntax;
     }
 
-    // Shape two: the result goes into a local, and the rest of the enclosing block never reads the
-    // local. A field or a property keeps the result reachable, so only a local is reported.
     private static void AnalyzeLocalAssignment(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
@@ -134,9 +129,6 @@ public sealed class WhenAnyResultUnobservedAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
-    // One block is the whole scope of the analysis. Every read of the local in that block, whatever
-    // its shape, hands the task to something that can observe it. Await, return, yield, an argument,
-    // a field, and a collection each appear as a read, so the rule reports only a local with none.
     private static bool IsLocalRead(
         SyntaxNodeAnalysisContext context,
         LocalDeclarationStatementSyntax declaration,
@@ -144,7 +136,6 @@ public sealed class WhenAnyResultUnobservedAnalyzer : DiagnosticAnalyzer
     {
         var scope = declaration.FirstAncestorOrSelf<BlockSyntax>();
 
-        // A declaration outside a block has no bounded scope to inspect. Stay silent.
         if (scope is null)
         {
             return true;

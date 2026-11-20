@@ -28,8 +28,6 @@ internal static class ProcessLaunchScope
         {
             if (memberAccess.Expression is ThisExpressionSyntax or BaseExpressionSyntax)
             {
-                // 'this.field' must resolve to the field. The 'this' symbol is the containing
-                // type, so every field of the type would otherwise share one root.
                 return model.GetSymbolInfo(memberAccess, cancellationToken).Symbol;
             }
 
@@ -40,8 +38,6 @@ internal static class ProcessLaunchScope
         var symbol = model.GetSymbolInfo(current, cancellationToken).Symbol;
         if (symbol is INamedTypeSymbol or INamespaceSymbol && last is not null)
         {
-            // A type-qualified chain resolves every static member to the type. The member is
-            // the root, so two static fields of one type stay distinct.
             return model.GetSymbolInfo(last, cancellationToken).Symbol;
         }
 

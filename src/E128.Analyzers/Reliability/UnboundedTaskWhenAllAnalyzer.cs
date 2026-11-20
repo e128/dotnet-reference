@@ -207,7 +207,6 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Task.WaitAsync(TimeSpan) is a timeout, not a concurrency gate.
             if (context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol
                 is IMethodSymbol containing
                 && string.Equals(containing.ContainingType.Name, "SemaphoreSlim", StringComparison.Ordinal)
@@ -232,9 +231,6 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // A materializer sits between the fan-out and the WhenAll in
-        // Task.WhenAll(items.Select(...).ToArray()). The fan-out is unchanged, so the rule looks
-        // through the materializer instead of giving up on the shape.
         if (candidate.Expression is MemberAccessExpressionSyntax { Expression: { } receiver }
             && IsMaterializer(candidate))
         {
@@ -258,8 +254,6 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
                    || string.Equals(memberAccess.Name.Identifier.ValueText, "ToList", StringComparison.Ordinal));
     }
 
-    // The fan-out is the same for an async lambda and for a plain lambda that returns a task.
-    // Only the bound return type tells the two apart.
     private static bool ReturnsTask(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax selectInvocation)

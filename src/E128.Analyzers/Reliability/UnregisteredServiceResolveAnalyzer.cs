@@ -63,16 +63,10 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         "registered configuration and the name is likely a typo.",
         customTags: WellKnownDiagnosticTags.CompilationEnd);
 
-    // GetService<T>() is deliberately absent. It returns null on a miss rather than throwing, and a
-    // null probe is a legitimate way to ask whether a service exists, so the rule would be wrong on
-    // both the failure mode and the call site.
     private static readonly ImmutableHashSet<string> ResolveMethodNames = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "GetRequiredService");
 
-    // HttpClient, HybridCache, IServer, and TracerProvider arrive through non-generic extensions such as
-    // AddHttpClient("name") and AddHybridCache(). Those extensions carry no type argument, so the registration
-    // collector cannot observe them and the names must be listed here.
     private static readonly ImmutableHashSet<string> FrameworkProvidedServices = ImmutableHashSet.Create(
         StringComparer.Ordinal,
         "ILogger",
@@ -109,12 +103,8 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        // The collectors live in this closure, so each compilation gets its own state and the
-        // analyzer host can never leak registrations from one compilation into the next.
         var state = new ResolveState(ReadConfiguredServices(context.Options.AnalyzerConfigOptionsProvider));
 
-        // Both types ship in Microsoft.Extensions.Http. Without either one the named-client check cannot
-        // tell a registration from a resolve, so it stays silent rather than guess.
         var httpClientFactoryType = context.Compilation.GetTypeByMetadataName(HttpClientFactoryTypeName);
         var httpClientExtensionsType = context.Compilation.GetTypeByMetadataName(HttpClientExtensionsTypeName);
 
@@ -163,8 +153,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Two types that share a short name across namespaces are distinct services, so the
-        // registration set is keyed on the symbol rather than on the name.
         foreach (var typeArgument in method.TypeArguments)
         {
             if (typeArgument is INamedTypeSymbol { Name.Length: > 0 } registeredType)
@@ -173,9 +161,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        // A registration overload taking Type arguments carries open generics, as in
-        // AddSingleton(typeof(IRepo<>), typeof(Repo<>)). An unbound generic cannot equal a
-        // constructed resolve such as IRepo<Thing>, so this path stays name-keyed.
         foreach (var argument in invocation.ArgumentList.Arguments)
         {
             if (argument.Expression is TypeOfExpressionSyntax typeOf
@@ -263,8 +248,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The name AddHttpClient belongs to several unrelated types. Matching the declaring type keeps a
-        // local helper with the same name from counting as a registration.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
                 is not IMethodSymbol method
             || !IsDeclaredOn(method, extensionsType))
@@ -293,8 +276,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The parameterless CreateClient is an extension method on its own type, so it never matches the
-        // interface member and stays silent. It resolves the default client, which needs no registration.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
                 is not IMethodSymbol method
             || !IsDeclaredOn(method, factoryType))
@@ -302,7 +283,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The empty name is the default client, which AddHttpClient() always supplies.
         if (!TryGetStringArgument(invocation, method, context.SemanticModel, context.CancellationToken, out var name)
             || name.Length is 0)
         {
@@ -328,8 +308,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
     {
         name = string.Empty;
 
-        // The named-client APIs carry exactly one string parameter, the client name. Reading the constant of
-        // the matching argument keeps the check independent of parameter order and reduced receiver removal.
         if (!method.Parameters.Any(static parameter => parameter.Type.SpecialType is SpecialType.System_String))
         {
             return false;
@@ -385,8 +363,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
         var registeredClientNameSet = ImmutableHashSet.CreateRange(StringComparer.Ordinal, registeredClientNames);
 
-        // One diagnostic per name, reported at the first use. A bag enumerates in no fixed order, so the
-        // location is picked by file and span to keep repeated runs identical.
         var unregisteredClientNames = clientResolveCandidates
             .Where(candidate => !registeredClientNameSet.Contains(candidate.Name))
             .GroupBy(static candidate => candidate.Name, StringComparer.Ordinal)
@@ -409,9 +385,6 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         ImmutableHashSet<string> registeredOpenGenerics,
         ImmutableHashSet<string> configuredServices)
     {
-        // The registration set is symbol-keyed. The open-generic, configured, and framework checks
-        // stay name-based: an unbound generic has no constructed symbol, the option arrives as text,
-        // and the allowlist holds plain names.
         return !registered.Contains(serviceType)
                && !registeredOpenGenerics.Contains(serviceType.Name)
                && !configuredServices.Contains(serviceType.Name)

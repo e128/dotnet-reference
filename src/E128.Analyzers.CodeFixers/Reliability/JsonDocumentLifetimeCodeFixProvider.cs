@@ -28,10 +28,6 @@ public sealed class JsonDocumentLifetimeCodeFixProvider : E128CodeFixProviderBas
 
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        // Intentional no-op: restructuring using scope around JsonDocument.Parse()
-        // requires understanding the full data flow of RootElement — where it escapes,
-        // whether .Clone() is appropriate, and how to restructure the method's control
-        // flow. This is too context-dependent for a mechanical fix.
         return Task.CompletedTask;
     }
 }

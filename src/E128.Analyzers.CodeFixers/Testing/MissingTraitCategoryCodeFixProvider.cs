@@ -64,8 +64,6 @@ public sealed class MissingTraitCategoryCodeFixProvider : E128CodeFixProviderBas
         var lastAttrList = method.AttributeLists.Last();
         var leadingTrivia = lastAttrList.GetLeadingTrivia();
 
-        // The leading trivia holds the doc comment as well as the indentation. Copy only the
-        // indentation, or the fix duplicates the comment on the new list.
         var indentation = FixSyntax.TrailingWhitespace(leadingTrivia);
 
         var traitAttrList = SyntaxFactory.AttributeList(

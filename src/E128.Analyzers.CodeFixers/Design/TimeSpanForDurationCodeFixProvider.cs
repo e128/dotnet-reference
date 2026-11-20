@@ -24,16 +24,11 @@ public sealed class TimeSpanForDurationCodeFixProvider : E128CodeFixProviderBase
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        // A parameter default is a compile-time constant. An int literal is not one for TimeSpan, so
-        // changing the type alone gives CS1750, and `default` would change the default from seconds to
-        // zero. The developer has to pick the duration, so no fix is offered.
         if (node.FirstAncestorOrSelf<ParameterSyntax>() is { Default: not null })
         {
             return Task.CompletedTask;
         }
 
-        // A property initializer is a number too. Changing the type alone leaves `= 5000` next to
-        // TimeSpan, which does not compile.
         if (node.FirstAncestorOrSelf<PropertyDeclarationSyntax>() is { Initializer: not null })
         {
             return Task.CompletedTask;

@@ -22,8 +22,6 @@ public sealed class ListAsReadOnlyCodeFixProvider : E128CodeFixProviderBase
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
-        // The diagnostic is reported on the expression being returned (e.g. the identifier
-        // '_items'), not on the enclosing return statement or arrow clause.
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node is not ExpressionSyntax expression)
         {

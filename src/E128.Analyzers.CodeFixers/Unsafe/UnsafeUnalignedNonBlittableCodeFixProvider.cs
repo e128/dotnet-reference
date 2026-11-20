@@ -38,7 +38,6 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : E128CodeFixProv
             return Task.CompletedTask;
         }
 
-        // A comparison is not a valid expression statement, so leave that shape alone.
         if (invocation.Parent is ExpressionStatementSyntax)
         {
             return Task.CompletedTask;
@@ -46,7 +45,6 @@ public sealed class UnsafeUnalignedNonBlittableCodeFixProvider : E128CodeFixProv
 
         var argument = invocation.ArgumentList.Arguments[0];
 
-        // ReadUnaligned takes a byref, so the argument must carry a ref, in, or out keyword.
         if (argument.RefKindKeyword.IsKind(SyntaxKind.None))
         {
             return Task.CompletedTask;

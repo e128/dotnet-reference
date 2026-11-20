@@ -81,14 +81,11 @@ internal static class FipsTypeClassifier
 
     private static TypeVerdict Classify(ITypeSymbol type)
     {
-        // A framework type outside System.Security.Cryptography is never a forbidden algorithm, so skip the
-        // string scans.
         if (IsBclType(type) && !FipsSymbolHelpers.IsInCryptographyNamespaceTree(type))
         {
             return TypeVerdict.Allowed;
         }
 
-        // The type itself, then each base type: a type that derives from a forbidden type inherits the algorithm.
         for (var current = type; current is not null; current = current.BaseType)
         {
             if (FipsSymbolHelpers.IsCryptographyType(current, FipsForbiddenTypes.All))

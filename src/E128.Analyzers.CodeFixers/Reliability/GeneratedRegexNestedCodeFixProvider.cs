@@ -24,7 +24,6 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
             || !RegexLiteralFix.TryGetPattern(attribute, out var pattern)
             || string.Equals(RewriteOuterQuantifier(pattern), pattern, StringComparison.Ordinal))
         {
-            // This shape has no language-preserving one-token rewrite, so no action is offered.
             return Task.CompletedTask;
         }
 
@@ -33,12 +32,6 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
         return Task.CompletedTask;
     }
 
-    // A single-atom body makes the outer quantifier redundant, so the rewrite removes it
-    // and the diagnostic clears. When removing the outer quantifier would lose the empty
-    // match, like '(a+)*', the rewrite keeps it and makes the group non-capturing, so the
-    // language stays. The diagnostic stays in that case. A multi-atom body has no
-    // language-preserving rewrite that clears the diagnostic: '(x){1,}' still carries the
-    // nested quantifier, so no fix is offered.
     internal static string RewriteOuterQuantifier(string pattern)
     {
         if (GeneratedRegexHelpers.FindNestedQuantifierSpan(pattern) is not { } span)
@@ -65,9 +58,6 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
         return MakeGroupNonCapturing(pattern, span);
     }
 
-    // Removing the outer quantifier keeps the language unless the outer quantifier is a
-    // star and the single body atom requires at least one character: '(a*)*' and
-    // '(a+)+' lose nothing, while '(a+)*' loses the empty match.
     private static bool RemovalKeepsLanguage(string pattern, GeneratedRegexHelpers.NestedQuantifierSpan span)
     {
         if (pattern[span.QuantifierIndex] is not '*')
@@ -78,21 +68,16 @@ public sealed class GeneratedRegexNestedCodeFixProvider : E128CodeFixProviderBas
         var innerQuantifierIndex = span.CloseIndex - 1;
         if (pattern[innerQuantifierIndex] is '?')
         {
-            // A lazy marker belongs to the inner atom quantifier.
             innerQuantifierIndex--;
         }
 
         return pattern[innerQuantifierIndex] is not '+';
     }
 
-    // '(a+)*' becomes '(?:a+)*': the language keeps the empty match, and the group no
-    // longer captures per iteration. An already non-capturing group returns unchanged,
-    // so no fix is offered.
     private const int MarkerLength = 2;
 
     private static string MakeGroupNonCapturing(string pattern, GeneratedRegexHelpers.NestedQuantifierSpan span)
     {
-        // '?:' spans two slots after the group open, so the second read steps two characters.
         if (pattern[span.OpenIndex + 1] is '?' && pattern[span.OpenIndex + MarkerLength] is ':')
         {
             return pattern;

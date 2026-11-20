@@ -29,6 +29,15 @@ else
     EXIT=1
 fi
 
+# Step 1a: Source comment ban
+STEPS+=("comment-scan")
+if "$SCRIPTS/comment-scan.sh" > /dev/null 2>&1; then
+    RESULTS+=("ok")
+else
+    RESULTS+=("fail")
+    EXIT=1
+fi
+
 ROOT="$(find_repo_root)"
 base="$(git -C "$ROOT" merge-base origin/main HEAD 2> /dev/null || git -C "$ROOT" rev-parse HEAD)"
 

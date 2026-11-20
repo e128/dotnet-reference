@@ -51,10 +51,8 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzer : DiagnosticAnalyzer
 
         foreach (var metadataName in CheckedAttributes)
         {
-            // Two references can declare the same type, so the lookup keeps every match.
             foreach (var type in context.Compilation.GetTypesByMetadataName(metadataName))
             {
-                // ExcludeFromCodeCoverageAttribute.Justification exists only on .NET 5 and later.
                 if (HasJustificationProperty(type))
                 {
                     checkedTypes.Add(type);
@@ -118,7 +116,6 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzer : DiagnosticAnalyzer
             {
                 var constant = context.SemanticModel.GetConstantValue(argument.Expression, context.CancellationToken);
 
-                // A null or blank constant gives no reason. A non-constant expression counts as a reason.
                 return !constant.HasValue || (constant.Value is string text && !string.IsNullOrWhiteSpace(text));
             }
         }

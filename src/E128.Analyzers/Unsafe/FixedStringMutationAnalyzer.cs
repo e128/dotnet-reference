@@ -64,9 +64,6 @@ public sealed class FixedStringMutationAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // Reading a pinned string is the normal interop pattern. Only a write through the pointer
-    // (assignment, increment, ref or out) breaks string immutability. A copy of the pointer
-    // into another variable is not followed.
     private static bool WritesThroughPointer(
         FixedStatementSyntax fixedStatement,
         VariableDeclaratorSyntax variable,
@@ -96,7 +93,6 @@ public sealed class FixedStringMutationAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    // Walks from the pointer name through parentheses and `p + n` to the `p[i]` or `*p` that reads or writes memory.
     private static ExpressionSyntax? GetDereference(IdentifierNameSyntax name)
     {
         ExpressionSyntax current = name;

@@ -77,8 +77,6 @@ public sealed class NullByRefAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
     }
 
-    // `return ref Unsafe.NullRef<T>();` paired with Unsafe.IsNullRef is the documented "not found" idiom
-    // (see CollectionsMarshal.GetValueRefOrNullRef), so a ref return of NullRef is not a defect.
     private static bool IsReturnedAsSentinel(InvocationExpressionSyntax invocation)
     {
         var reference = invocation.FirstAncestorOrSelf<RefExpressionSyntax>();

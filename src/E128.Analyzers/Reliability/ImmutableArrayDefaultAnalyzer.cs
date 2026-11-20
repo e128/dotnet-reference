@@ -110,9 +110,6 @@ public sealed class ImmutableArrayDefaultAnalyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
-        // Only the target itself counts. A member access that reads the field on the way to a
-        // different member does not assign the field. A deconstruction target is a tuple, so walk
-        // its elements and nested tuples.
         foreach (var target in AssignmentTargets(assignment.Left))
         {
             if (target is not (IdentifierNameSyntax or MemberAccessExpressionSyntax))
@@ -152,7 +149,6 @@ public sealed class ImmutableArrayDefaultAnalyzer : DiagnosticAnalyzer
     {
         var argument = (ArgumentSyntax)context.Node;
 
-        // A ref or out argument lets the callee write the field.
         if (argument.RefKindKeyword.Kind() is not (SyntaxKind.RefKeyword or SyntaxKind.OutKeyword))
         {
             return;

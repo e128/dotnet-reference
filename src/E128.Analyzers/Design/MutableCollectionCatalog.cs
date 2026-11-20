@@ -11,7 +11,6 @@ namespace E128.Analyzers.Design;
 /// </summary>
 internal static class MutableCollectionCatalog
 {
-    // A plain class because netstandard2.0 analysis assemblies have no IsExternalInit for records.
     internal sealed class Entry
     {
         internal Entry(

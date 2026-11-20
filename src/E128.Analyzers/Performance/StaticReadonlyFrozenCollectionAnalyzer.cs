@@ -46,7 +46,6 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static compilationContext =>
         {
-            // Guard: only register if FrozenSet<T> exists in the compilation (.NET 8+)
             var frozenSetType = compilationContext.Compilation.GetTypeByMetadataName(FrozenSetMetadataName);
             if (frozenSetType is null)
             {
@@ -74,9 +73,6 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
     {
         var fieldDeclaration = (FieldDeclarationSyntax)context.Node;
 
-        // One type node declares every variable in the list, so a frozen rewrite cannot cover one
-        // variable alone. The fix rewrites the whole declaration, and the other variables would go.
-        // The field must also have an initializer at the declaration site.
         if (fieldDeclaration.Declaration.Variables.Count is not 1
             || !HasStaticReadonlyModifiers(fieldDeclaration)
             || !HasDeclarationInitializer(fieldDeclaration))
@@ -84,7 +80,6 @@ public sealed class StaticReadonlyFrozenCollectionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Get the field symbol to check its type
         foreach (var variable in fieldDeclaration.Declaration.Variables)
         {
             if (context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken)

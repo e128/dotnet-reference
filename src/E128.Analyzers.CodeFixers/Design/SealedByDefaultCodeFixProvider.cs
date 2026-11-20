@@ -50,7 +50,6 @@ public sealed class SealedByDefaultCodeFixProvider : E128CodeFixProviderBase
 
         if (!classDecl.Modifiers.Any())
         {
-            // No existing modifiers — move leading trivia from 'class' keyword to 'sealed'.
             sealedToken = sealedToken.WithLeadingTrivia(classDecl.Keyword.LeadingTrivia);
             newClassDecl = classDecl
                 .WithModifiers(SyntaxFactory.TokenList(sealedToken))

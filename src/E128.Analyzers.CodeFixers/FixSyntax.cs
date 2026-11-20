@@ -92,8 +92,6 @@ internal static class FixSyntax
         var fieldWithIndent = fieldDecl
             .WithLeadingTrivia(SyntaxFactory.Whitespace(MemberIndentation(firstMember)));
 
-        // Give the existing first member a blank line before it, and keep its own leading trivia so
-        // a doc comment stays with the member.
         var firstMemberWithBlankLine = firstMember.WithLeadingTrivia(
             firstMemberLeadingTrivia.InsertRange(
                 0,

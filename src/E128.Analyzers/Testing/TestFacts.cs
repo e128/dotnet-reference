@@ -52,10 +52,6 @@ internal sealed class TestFacts
             else if (testClass is not null
                      && SymbolEqualityComparer.Default.Equals(called.ContainingType, testClass))
             {
-                // A method declared in the test class is a fixture or a local assertion helper. Its body
-                // is scaffolding, so it seeds no duplicate key and it echoes no production literal. The
-                // call still counts as an observation, because a helper such as AssertRanksPresentVsAbsent
-                // carries the assertions the test method itself would otherwise repeat inline.
                 HasHelperCall = true;
             }
             else

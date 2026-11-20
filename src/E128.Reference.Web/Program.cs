@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// The per-request Information logs cost a console write and a lock per request.
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
 builder.Services.AddSingleton<Greeter>();

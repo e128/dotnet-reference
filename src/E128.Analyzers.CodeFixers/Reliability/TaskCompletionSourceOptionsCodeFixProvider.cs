@@ -33,8 +33,6 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
             return Task.CompletedTask;
         }
 
-        // A named argument moves the options value out of the position the fix expects, so the
-        // provider declines rather than rewrite the wrong argument.
         foreach (var argument in argumentList.Arguments)
         {
             if (argument.NameColon is not null)
@@ -85,8 +83,6 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
         }
         else if (IsContinuationOptionsState(arguments, semanticModel, cancellationToken))
         {
-            // The enum binds to the object state parameter. Replace it, because a second argument would
-            // leave the wrong enum in place as the state.
             newArguments = arguments.Replace(
                 arguments[0],
                 arguments[0].WithExpression(flag.WithTriviaFrom(arguments[0].Expression)));

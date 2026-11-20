@@ -93,8 +93,6 @@ public sealed class StaticNumericIncrementCodeFixProvider : E128CodeFixProviderB
             return;
         }
 
-        // Interlocked returns the new value. In statement position the result is discarded, so the
-        // rewrite keeps the meaning. In value position, such as `var v = counter++;`, it would not.
         if (expression.Parent is not ExpressionStatementSyntax)
         {
             return;
@@ -120,7 +118,6 @@ public sealed class StaticNumericIncrementCodeFixProvider : E128CodeFixProviderB
         IFieldSymbol fieldSymbol,
         ExpressionSyntax mutationSite)
     {
-        // An instance field is unreachable from a static member, so removing static there is worse.
         if (IsContainingTypeStaticClass(fieldSymbol) || FixSyntax.IsInStaticMember(mutationSite))
         {
             return;

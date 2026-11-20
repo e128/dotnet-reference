@@ -46,8 +46,6 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : E128CodeFixProvi
             return;
         }
 
-        // The two-type-argument overload asks the container to construct the type itself. A factory
-        // that passes any argument builds something the container cannot reproduce.
         if (!FixSyntax.IsParameterlessCreation(invocation.ArgumentList.Arguments[0].Expression))
         {
             return;
@@ -59,7 +57,6 @@ public sealed class DisposableSingletonFactoryCodeFixProvider : E128CodeFixProvi
 
         foreach (var iface in nonMarkerInterfaces)
         {
-            // The minimal form keeps the type arguments and matches the text the fix writes.
             var title = $"Register as AddSingleton<{iface.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}, {returnType.ToMinimalDisplayString(semanticModel, invocation.SpanStart)}>()";
             CodeFixRegistration.Register(context, diagnostic, title, $"E128031_{iface.ToDisplayString()}", ct => DiRegistrationFix.RewriteToGenericAsync(context.Document, invocation, returnType, iface, SyntaxFactory.Identifier("AddSingleton"), ct));
         }

@@ -94,7 +94,6 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
     {
         var record = (RecordDeclarationSyntax)context.Node;
 
-        // A record that declares GetHashCode owns its equality, which is the fix this rule asks for.
         if (DeclaresGetHashCode(record, context.SemanticModel, context.CancellationToken))
         {
             return;
@@ -134,8 +133,6 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // A base record that declares GetHashCode owns the equality, so the derived member is silent.
-        // The compiler-generated members are implicit and do not count.
         for (var baseType = type.BaseType; baseType is not null; baseType = baseType.BaseType)
         {
             if (baseType.SpecialType is SpecialType.System_Object or SpecialType.System_ValueType)
@@ -253,15 +250,12 @@ public sealed class RecordMutableCollectionEqualityAnalyzer : DiagnosticAnalyzer
 
     private static bool IsAutoProperty(PropertyDeclarationSyntax property)
     {
-        // A static property never joins equality. An abstract property has no backing field, so it
-        // never joins equality either.
         if (property.Modifiers.Any(SyntaxKind.StaticKeyword)
             || property.Modifiers.Any(SyntaxKind.AbstractKeyword))
         {
             return false;
         }
 
-        // A property with a body is computed. It has no backing field, so equality ignores it.
         if (property.AccessorList is not { } accessorList)
         {
             return false;

@@ -125,7 +125,6 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
             : null;
     }
 
-    // Fill evaluates the value once, so a call or a property read would run fewer times.
     private static bool IsFillCandidate(
         ExpressionSyntax destination,
         ExpressionSyntax bound,
@@ -152,7 +151,6 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
             : new BulkLoopMatch(LoopKind.Fill, destination, value, null, destinationIsSpan, false);
     }
 
-    // Returns whether the source is already a span when the loop is a valid copy.
     private static bool? TryMatchCopy(
         ExpressionSyntax source,
         string variable,
@@ -164,7 +162,6 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
     {
         bool? isSpan = null;
 
-        // CopyTo reads the whole source span, so the loop must iterate the source length.
         if (IsSimpleTarget(source, variable, model, cancellationToken)
             && SyntaxFactory.AreEquivalent(source, bound)
             && TryGetElementType(
@@ -208,8 +205,6 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    // The fix evaluates the target once, so it must be a plain variable. A call, a property
-    // read, or a reference to the loop variable would change meaning.
     private static bool IsSimpleTarget(
         ExpressionSyntax expression,
         string variable,
@@ -276,8 +271,6 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
             .Any(identifier => string.Equals(identifier.Identifier.ValueText, variable, StringComparison.Ordinal));
     }
 
-    // Clear writes default(T). A zero literal is not default(T) for a nullable element, an
-    // object element, or a type that a user-defined conversion would reach.
     private static bool IsClearValue(
         ExpressionSyntax value,
         ITypeSymbol? element,
@@ -309,8 +302,6 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         return constant.HasValue && IsZero(constant.Value);
     }
 
-    // A default literal clears. A null literal clears only a reference or nullable element.
-    // Any other literal is undecided, so the caller keeps checking.
     private static bool? ClassifyLiteral(LiteralExpressionSyntax literal, ITypeSymbol? element)
     {
         if (literal.IsKind(SyntaxKind.DefaultLiteralExpression))

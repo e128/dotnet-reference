@@ -56,7 +56,6 @@ public sealed class AwaitInFinallyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // An await expression, "await using", and "await foreach" all suspend the finally clause.
     private static Location? GetAwaitLocation(SyntaxNode node)
     {
         return node switch

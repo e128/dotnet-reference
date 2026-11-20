@@ -56,7 +56,6 @@ public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Only flag private and internal fields — public fields are covered by API surface concerns
         if (!IsPrivateOrInternal(fieldDeclaration.Modifiers))
         {
             return;
@@ -115,7 +114,6 @@ public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
 
     private static bool IsPrivateOrInternal(SyntaxTokenList modifiers)
     {
-        // Default accessibility for class members with no modifier is private
         const int Private = 1;
         const int Internal = 2;
         const int Public = 4;
@@ -143,7 +141,6 @@ public sealed class MutableStaticReadonlyArrayAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        // No explicit access modifier means private for class members
         return access is 0 || (access & (Private | Internal)) is not 0;
     }
 }

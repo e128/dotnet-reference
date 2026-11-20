@@ -16,7 +16,6 @@ internal static class Blittability
             return false;
         }
 
-        // IsUnmanagedType accepts a struct that holds a bool or decimal, so check the fields too.
         return type.IsUnmanagedType
             && (type.TypeKind is not TypeKind.Struct
                 || type.GetMembers().OfType<IFieldSymbol>().Where(static field => !field.IsStatic).All(static field => IsBlittable(field.Type)));

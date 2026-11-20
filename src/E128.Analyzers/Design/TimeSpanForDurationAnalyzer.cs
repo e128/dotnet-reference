@@ -49,7 +49,6 @@ public sealed class TimeSpanForDurationAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeSymbol(SymbolAnalysisContext context)
     {
-        // A partial member arrives as two symbol events. Report only the defining part.
         if (PartialMembers.IsImplementationPart(context.Symbol))
         {
             return;

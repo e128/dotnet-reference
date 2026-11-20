@@ -67,6 +67,7 @@ Other required tools: see [Shell Authoring](../lode/infrastructure/shell-authori
 | `gh-actions-update.sh` | Check GitHub Actions for outdated versions                    |
 | `lint-yaml.sh`         | Validate YAML syntax                                          |
 | `lint-shell.sh`        | Lint shell scripts with shellcheck                            |
+| `comment-scan.sh`      | Ban non-doc comments in src/ above the baseline count         |
 | `sdk-version.sh`       | Read SDK version from global.json                             |
 | `build-budget.sh`      | Per-session build cycle budget enforcer                       |
 | `format-invalidate.sh` | List .cs files modified by last format run                    |

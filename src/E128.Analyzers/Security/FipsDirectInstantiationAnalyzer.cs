@@ -70,7 +70,6 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // E128071 already blocks these types, so factory advice would contradict it.
         if (FipsSymbolHelpers.IsCryptographyType(type, FipsForbiddenTypes.All) ||
             FipsTypeClassifier.GetVerdict(context.Compilation, type) is not TypeVerdict.Allowed)
         {
@@ -98,8 +97,6 @@ public sealed class FipsDirectInstantiationAnalyzer : DiagnosticAnalyzer
         Report(context, creation, name, SuggestFactory(name, creation) ?? "the abstract base factory's Create()");
     }
 
-    // Rijndael can use a block size that AES does not allow. The name is ambiguous, so outside
-    // System.Security.Cryptography only a symmetric algorithm counts.
     private static void ReportRijndaelOutsideCryptographyNamespace(
         OperationAnalysisContext context,
         IObjectCreationOperation creation,

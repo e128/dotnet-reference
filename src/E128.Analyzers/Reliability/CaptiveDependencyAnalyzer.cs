@@ -156,9 +156,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         CollectDbContextSingleton(invocation, method, typeOfRegistrations, dbContextCandidates, efCore);
 
-        // A factory or an instance argument means the container receives a built object, so the type
-        // arguments alone do not name the object the container holds. A service key is not such an
-        // argument, so a keyed registration stays in scope.
         if (hasFactoryOrInstance)
         {
             return;
@@ -174,9 +171,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         ConcurrentBag<DbContextCandidate> dbContextCandidates,
         EfCoreTypes efCore)
     {
-        // The container builds one context for the application. The type arguments name that context
-        // even when a factory or an instance supplies it, because the container stores the result of
-        // the factory in the singleton slot.
         if (!efCore.IsAvailable)
         {
             return;
@@ -213,15 +207,11 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        // The method name alone does not prove the registration. A user helper can carry the same
-        // name and a contextLifetime parameter.
         if (!efCore.IsEntityFrameworkRegistration(invocation, operation, model, cancellationToken))
         {
             return;
         }
 
-        // AddDbContext registers a context with the scoped lifetime by default. Only an explicit
-        // Singleton argument makes the registration a singleton.
         var contextType = GetDbContextType(operation, efCore);
 
         if (contextType is null || !HasSingletonLifetime(operation, efCore))
@@ -260,9 +250,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static bool HasSingletonLifetime(IInvocationOperation operation, EfCoreTypes efCore)
     {
-        // contextLifetime controls the context itself. optionsLifetime controls the options object and
-        // stays scoped in a normal application. Read only the contextLifetime parameter, so an
-        // explicit singleton options lifetime does not report a scoped context.
         IArgumentOperation? contextLifetime = null;
 
         foreach (var argument in operation.Arguments)
@@ -367,7 +354,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static Lifetime GetLifetime(string methodName)
     {
-        // The rule covers Add, TryAdd, AddKeyed, and TryAddKeyed. AddHostedService registers a singleton.
         if (string.Equals(methodName, "AddHostedService", StringComparison.Ordinal))
         {
             return Lifetime.Singleton;
@@ -429,8 +415,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static TypeOfRegistration? GetTypeOfImplementation(List<TypeOfRegistration> registrations)
     {
-        // The implementationType argument names the object. A lone serviceType argument names it only
-        // when the type is a concrete class, because an interface has no constructor.
         TypeOfRegistration? service = null;
 
         foreach (var registration in registrations)
@@ -471,8 +455,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static void AddTypeArguments(IMethodSymbol method, ConcurrentBag<INamedTypeSymbol> target)
     {
-        // Both type arguments join the set. A caller can depend on the service interface or on the
-        // implementation class, and either dependency captures the same scoped instance.
         foreach (var typeArgument in method.TypeArguments)
         {
             if (typeArgument is INamedTypeSymbol { Name.Length: > 0 } namedType)
@@ -484,8 +466,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static INamedTypeSymbol? GetSingletonImplementation(IMethodSymbol method)
     {
-        // AddSingleton<TService, TImplementation>() names both types. AddSingleton<T>() names the
-        // implementation only when T is a concrete class, because an interface has no constructor.
         return method.TypeArguments.Length switch
         {
             ServiceAndImplementationArity => method.TypeArguments[1] as INamedTypeSymbol,
@@ -497,12 +477,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static Location GetRegistrationLocation(InvocationExpressionSyntax invocation)
     {
-        // The report belongs on the registered type, not on the whole call. The type argument list is
-        // absent for an expression-bodied generic call, so the invocation location is the fallback.
         var genericName = (invocation.Expression as MemberAccessExpressionSyntax)?.Name as GenericNameSyntax;
 
-        // The implementation type is the last type argument. AddSingleton<T>() carries one, and
-        // AddSingleton<TService, TImplementation>() carries two.
         var registeredType = genericName is { TypeArgumentList.Arguments.Count: > 0 }
             ? genericName.TypeArgumentList.Arguments.Last()
             : null;
@@ -679,8 +655,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         internal static EfCoreTypes Resolve(Compilation compilation)
         {
-            // EF Core ships DbContext, and its dependency graph ships ServiceLifetime. Resolve both
-            // once, and turn the rule off when either type is absent.
             var contextType = compilation.GetTypeByMetadataName(DbContextMetadataName);
             var serviceLifetime = compilation.GetTypeByMetadataName(ServiceLifetimeMetadataName);
 

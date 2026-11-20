@@ -39,7 +39,6 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         "AddTransient"
     };
 
-    // The code fix reads this set, so it is shared. An immutable set keeps it read-only.
     internal static readonly ImmutableHashSet<string> MarkerInterfaces =
         ImmutableHashSet.Create(StringComparer.Ordinal, "System.IDisposable", "System.IAsyncDisposable");
 
@@ -124,8 +123,6 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Skip if the containing scope has a forwarding registration or typed HttpClient for this type.
-        // Check BlockSyntax (method body) first, then CompilationUnitSyntax (top-level statements).
         var typeName = typeArg.Name;
         var scope = (SyntaxNode?)invocation.FirstAncestorOrSelf<BlockSyntax>()
                     ?? invocation.SyntaxTree.GetRoot(context.CancellationToken);
@@ -135,9 +132,7 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         }
 
         var lifetime = nameNode.Identifier.Text.Substring(3);
-        // string.Join already returns the single element unchanged, so Count == 1 needs no branch.
         var interfaceNames = string.Join(", ", nonMarkerInterfaces.Select(static i => i.Name));
-        // The suggested call must carry the type arguments so it matches what the code fix writes.
         var suggestedType = nonMarkerInterfaces[0]
             .ToMinimalDisplayString(context.SemanticModel, invocation.SpanStart);
 
@@ -170,8 +165,6 @@ public sealed class ConcreteOnlyDiRegistrationAnalyzer : DiagnosticAnalyzer
         return ScopeContainsGenericCall(scope, "AddHttpClient", concreteTypeName);
     }
 
-    // Matches the call shape directly. The old text search rebuilt the scope text for every
-    // flagged registration, which is quadratic on a large block and allocates the whole scope.
     private static bool ScopeContainsGenericCall(SyntaxNode scope, string methodName, string typeName)
     {
         foreach (var invocation in scope.DescendantNodes().OfType<InvocationExpressionSyntax>())

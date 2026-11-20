@@ -25,8 +25,6 @@ public sealed class ProcessStartInfoArgumentCodeFixProvider : E128CodeFixProvide
             return Task.CompletedTask;
         }
 
-        // A nested collection initializer fits an object initializer only. The statement form
-        // `psi.Arguments = value;` has no equivalent member-initializer rewrite.
         if (assignment.Parent is not InitializerExpressionSyntax)
         {
             return Task.CompletedTask;

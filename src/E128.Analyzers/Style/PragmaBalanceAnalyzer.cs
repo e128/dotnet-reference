@@ -17,7 +17,6 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
     internal const string DiagnosticId = "E128055";
     internal const string DiagnosticIdKey = "SuppressedId";
 
-    // A bare #pragma warning disable has no error code. The key stands for "every warning".
     internal const string AllCodesKey = "*";
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -50,8 +49,6 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
         ReportUnbalanced(context, openSuppressions);
     }
 
-    // Directives apply in document order. A restore clears only a disable that comes before it, so a
-    // file that restores first and disables later leaves the suppression open.
     private static Dictionary<string, Location> CollectOpenSuppressions(SyntaxNode root)
     {
         var open = new Dictionary<string, Location>(StringComparer.Ordinal);
@@ -74,12 +71,10 @@ public sealed class PragmaBalanceAnalyzer : DiagnosticAnalyzer
         {
             if (!isDisable)
             {
-                // A bare #pragma warning restore restores every open suppression.
                 open.Clear();
                 return;
             }
 
-            // A bare disable turns off every warning, so it is unbalanced until a bare restore.
             if (!open.ContainsKey(AllCodesKey))
             {
                 open[AllCodesKey] = pragma.GetLocation();

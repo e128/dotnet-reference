@@ -25,8 +25,6 @@ public sealed class OptionsBindInitCodeFixProvider : E128CodeFixProviderBase
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        // FindNode may return the accessor directly (when the diagnostic span covers the full accessor)
-        // or a child node. Fall back to finding the token when the span targets the 'init' keyword.
         var accessor = node as AccessorDeclarationSyntax
                        ?? root.FindToken(diagnostic.Location.SourceSpan.Start).Parent as AccessorDeclarationSyntax;
 

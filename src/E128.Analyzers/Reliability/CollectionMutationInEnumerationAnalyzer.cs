@@ -173,7 +173,6 @@ public sealed class CollectionMutationInEnumerationAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        // An array element write does not bump a version, so it is legal.
         return assignment.Left is ElementAccessExpressionSyntax elementAccess
                && model.GetTypeInfo(elementAccess.Expression, cancellationToken).Type is not IArrayTypeSymbol
                && IsSameCollection(elementAccess.Expression, loopCollection, collectionSymbol, model, cancellationToken);

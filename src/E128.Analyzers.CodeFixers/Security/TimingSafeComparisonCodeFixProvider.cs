@@ -25,7 +25,6 @@ public sealed class TimingSafeComparisonCodeFixProvider : E128CodeFixProviderBas
 
     private const string FixedTimeEqualsMethodName = "FixedTimeEquals";
 
-    // The static form SequenceEqual(left, right) passes both operands as arguments.
     private const int BinaryArgumentCount = 2;
 
     public override ImmutableArray<string> FixableDiagnosticIds =>

@@ -73,7 +73,6 @@ public sealed class SwitchEnumExhaustivenessAnalyzer : DiagnosticAnalyzer
         ReportIfIncomplete(context, switchStatement.SwitchKeyword, enumType, casedNames);
     }
 
-    // Returns true when the label makes the switch exhaustive (default or catch-all pattern).
     private static bool CollectLabel(
         SyntaxNodeAnalysisContext context,
         SwitchLabelSyntax label,

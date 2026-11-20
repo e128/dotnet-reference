@@ -22,7 +22,5 @@ internal sealed class AssertionFact
 
     internal IMethodSymbol Symbol { get; }
 
-    // Six detectors walk the same argument subtree. Materialize it once per assertion instead of
-    // once per detector.
     internal ImmutableArray<SyntaxNode> Nodes => nodes ??= LowValueTestAnalyzer.CollectAssertionNodes(Invocation);
 }

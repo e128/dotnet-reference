@@ -105,7 +105,6 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
 
         if (receiver is null)
         {
-            // The buffer does not compile, so the rule cannot name the storage to pair.
             return;
         }
 
@@ -335,7 +334,6 @@ public sealed class SemaphoreSlimReleaseAnalyzer : DiagnosticAnalyzer
             or DoStatementSyntax;
     }
 
-    // A lambda or local function runs on its own schedule, so its release may never run here.
     private static bool IsSeparateScope(SyntaxNode node)
     {
         return node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax

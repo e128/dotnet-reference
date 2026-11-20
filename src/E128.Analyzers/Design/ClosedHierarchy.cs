@@ -154,8 +154,6 @@ internal static class ClosedHierarchy
                 continue;
             }
 
-            // A derived type in a second assembly means the hierarchy is open and the closed
-            // modifier would break that derivation.
             var singleAssembly = derivedAssemblies.Length is 1
                                  && AssemblyComparer.Instance.Equals(derivedAssemblies[0], type.ContainingAssembly);
             if (!singleAssembly)

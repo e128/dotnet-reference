@@ -48,7 +48,6 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
     {
         var type = (INamedTypeSymbol)context.Symbol;
 
-        // Only analyze classes — skip structs, interfaces, enums, delegates, record structs.
         if (type.TypeKind is not TypeKind.Class)
         {
             return;
@@ -89,8 +88,6 @@ public sealed class ExcessiveInheritanceAnalyzer : DiagnosticAnalyzer
         return depth;
     }
 
-    // A type is user-defined if it belongs to the current compilation's assembly
-    // (not a reference assembly such as System.Runtime or System.IO).
     private static bool IsUserDefined(INamedTypeSymbol type, Compilation compilation)
     {
         return SymbolEqualityComparer.Default.Equals(type.ContainingAssembly, compilation.Assembly);

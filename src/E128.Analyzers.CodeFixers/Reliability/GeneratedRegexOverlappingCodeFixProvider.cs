@@ -32,9 +32,6 @@ public sealed class GeneratedRegexOverlappingCodeFixProvider : E128CodeFixProvid
         return Task.CompletedTask;
     }
 
-    // Detection mirrors the analyzer scan, so the rewrite targets the element the
-    // diagnostic reports. A required '\s+' collapses to a bare '\s', which keeps the
-    // separator. An optional '\s*' goes away with its whole token.
     internal static string RemoveOverlappingWhitespaceQuantifier(string pattern)
     {
         var inClass = GeneratedRegexHelpers.BuildCharacterClassMask(pattern);

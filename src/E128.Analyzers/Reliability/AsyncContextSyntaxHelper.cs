@@ -36,7 +36,6 @@ internal static class AsyncContextSyntaxHelper
         return false;
     }
 
-    // True when the called name written in the source already ends in Async.
     internal static bool HasAsyncSuffixSyntaxName(InvocationExpressionSyntax invocation)
     {
         var syntaxName = invocation.Expression switch

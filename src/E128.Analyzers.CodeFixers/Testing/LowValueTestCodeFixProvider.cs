@@ -28,8 +28,6 @@ public sealed class LowValueTestCodeFixProvider : E128CodeFixProviderBase
         var diagnostic = context.Diagnostics[0];
         var span = diagnostic.Location.SourceSpan;
 
-        // The fix is scoped to a test method. The rule anchors every diagnostic on the method name, so a
-        // diagnostic on any other node, or on a method with no xUnit attribute, registers no action.
         var method = root.FindNode(span).FirstAncestorOrSelf<MethodDeclarationSyntax>();
 
         if (method is null || XunitTestHelper.GetFactOrTheoryAttribute(method) is null)
@@ -84,9 +82,6 @@ public sealed class LowValueTestCodeFixProvider : E128CodeFixProviderBase
 
     private static TypeDeclarationSyntax WithoutBlankLine(TypeDeclarationSyntax type)
     {
-        // Removing the last member leaves the blank line that separated it from the member above.
-        // Drop that line, and keep the indentation of the closing brace. Keep the trivia untouched
-        // when it holds anything else, such as a comment or a directive.
         var leading = type.CloseBraceToken.LeadingTrivia;
 
         return IsBlankOrIndent(leading)

@@ -107,8 +107,6 @@ public sealed class PragmaBundlingCodeFixProvider : E128CodeFixProviderBase
         return directives;
     }
 
-    // Everything after the last ID stays with the last line of the split: the separator space and
-    // any justification comment. The generated directive supplies its own line break.
     private static SyntaxTriviaList CollectTail(PragmaWarningDirectiveTriviaSyntax pragma)
     {
         var tail = new List<SyntaxTrivia>();

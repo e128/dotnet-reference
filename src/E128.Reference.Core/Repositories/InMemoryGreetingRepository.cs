@@ -33,10 +33,6 @@ public sealed class InMemoryGreetingRepository : IGreetingRepository
 
         lock (_gate)
         {
-            // Recency follows save order. GreetingService stamps CreatedAt at save time,
-            // so save order and timestamp order agree.
-            // The JIT cannot hoist a field read across the indexer call, so bind the
-            // list and its last index once.
             var greetings = _greetings;
             var last = greetings.Count - 1;
             var take = Math.Clamp(count, 0, last + 1);

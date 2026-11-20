@@ -49,7 +49,6 @@ public sealed class EnumIfElseChainAnalyzer : DiagnosticAnalyzer
     {
         var ifStatement = (IfStatementSyntax)context.Node;
 
-        // Only analyze the outermost if — skip else-if children
         if (ifStatement.Parent is ElseClauseSyntax)
         {
             return;
@@ -62,7 +61,6 @@ public sealed class EnumIfElseChainAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Span the diagnostic across the entire if/else-if chain
         var lastElse = GetLastElseIf(ifStatement);
         var span = TextSpan.FromBounds(
             ifStatement.SpanStart,

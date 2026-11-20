@@ -276,7 +276,6 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             IsInternal: true));
     }
 
-    // Matches Interlocked.Exchange or Volatile.Write on a field of the containing instance.
     private static IFieldReferenceOperation? GetWrittenField(
         IInvocationOperation invocation,
         INamedTypeSymbol? interlockedType,
@@ -379,7 +378,6 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Read per type so a project .editorconfig applies, not only a global config.
         var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(tree);
         if (!TryFindStateEvidence(evidence, options, out var cluster, out var coWrite, out var coRead))
         {
@@ -794,8 +792,6 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    // A property with a getter and a setter that only read and write one field
-    // names that field. The field is the canonical member, so the pair counts once.
     private static string? TryGetForwardedFieldName(
         IPropertySymbol property,
         CancellationToken cancellationToken)
@@ -939,7 +935,6 @@ public sealed class ImplicitStateMachineAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    // An accessor body is the storage for a property, not a transition.
     private static bool IsAccessorBody(ISymbol body)
     {
         return body is IMethodSymbol

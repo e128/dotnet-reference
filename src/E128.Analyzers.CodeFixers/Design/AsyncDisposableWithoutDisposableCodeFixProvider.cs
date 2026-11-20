@@ -49,7 +49,6 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : E128CodeFi
             return document;
         }
 
-        // Add IDisposable to the base list.
         var disposableBase = SyntaxFactory.SimpleBaseType(
             SyntaxFactory.ParseTypeName("IDisposable"));
 
@@ -59,8 +58,6 @@ public sealed class AsyncDisposableWithoutDisposableCodeFixProvider : E128CodeFi
 
         var newTypeDecl = typeDecl.WithBaseList(newBaseList.WithTrailingTrivia(SyntaxFactory.LineFeed));
 
-        // A type that already declares Dispose() satisfies IDisposable through that
-        // member. Inserting a second one is CS0111.
         if (!HasParameterlessDispose(typeDecl))
         {
             var disposeMethod = SyntaxFactory.MethodDeclaration(
