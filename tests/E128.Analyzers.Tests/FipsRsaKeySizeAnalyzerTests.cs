@@ -358,4 +358,39 @@ public sealed class FipsRsaKeySizeAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UpcastLocalKeySize_Reports_E128143()
+    {
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   using var rsa = RSA.Create(3072);
+                                   AsymmetricAlgorithm algorithm = rsa;
+                                   {|E128143:algorithm.KeySize = 512|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task NamedFactoryLocalKeySize_Reports_E128143()
+    {
+        return AnalyzerTestRunner.VerifyAsync<FipsRsaKeySizeAnalyzer>("""
+                           using System.Security.Cryptography;
+                           class C
+                           {
+                               void M()
+                               {
+                                   var algorithm = {|E128143:AsymmetricAlgorithm.Create("RSA")|};
+                                   {|E128143:algorithm.KeySize = 512|};
+                               }
+                           }
+                           """);
+    }
 }

@@ -7,6 +7,11 @@
     <!-- repository-setup:end cpm-hardening -->
   </PropertyGroup>
   <ItemGroup>
+    <!-- Reference hygiene gate: fails the build on an unused package or project reference (RT0001-RT0003).
+         A reference ArchUnit loads by name carries TreatAsUsed="true". -->
+    <GlobalPackageReference Include="ReferenceTrimmer" Version="3.5.13" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- Analyzers -->
     <PackageVersion Include="AsyncFixer" Version="2.1.0" />
     <PackageVersion Include="IDisposableAnalyzers" Version="4.0.8" />
@@ -16,7 +21,7 @@
     <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="5.0.1" />
     <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="5.0.1" />
     <PackageVersion Include="SharpSource" Version="1.33.4" />
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.36.0.15337" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.37.0.15768" />
     <!-- Roslyn (analyzer authoring + code style) -->
     <!-- The shipped base build stays on the lowest Roslyn band the package supports.
          The union build and the test harness take the current pin. -->

@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-11-18T09:06:47Z*
+*Updated: 2026-11-21T20:39:50Z*
 
 ## Overview
 
@@ -14,7 +14,7 @@ The test project references every production project under `src/`. Two models ex
 - `ArchitectureBaseline` loads only the Core assembly (`typeof(Greeter).Assembly`). The layer, naming, sealed, and service rules use it.
 - `ProjectReferenceBaseline` loads every production assembly by name. `ProjectBoundaryTests` uses it.
 
-A `ProjectReference` without a loaded assembly is dead weight (`/prune-deps` flags it).
+ArchUnit loads some assemblies by name. A `ProjectReference` for such an assembly carries `TreatAsUsed="true"`, because the compiler sees no type use. The reference stays in the build, so `Assembly.Load` resolves it at runtime.
 
 ## How It Works
 
@@ -103,6 +103,7 @@ Coverage instrumentation injects a tracker type with one full name into each ins
 3. Define rules using `ArchRuleDefinition` fluent API
 4. Tag with `[Trait("Category", "CI")]`
 5. If analyzing additional assemblies, add a `ProjectReference` to the target project **and** load its assembly in `ArchitectureBaseline`
+6. Mark a load-by-name reference with `TreatAsUsed="true"` for the ReferenceTrimmer gate
 
 ## Key Namespaces
 

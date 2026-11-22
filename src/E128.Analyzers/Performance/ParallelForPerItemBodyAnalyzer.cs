@@ -14,10 +14,10 @@ namespace E128.Analyzers.Performance;
 ///     delegate cost.
 /// </summary>
 /// <remarks>
-///     The rule reports only the shapes its code fix repairs. A body that awaits or runs a loop, a
-///     body whose parameter it mutates or passes by reference, and a body that uses the name
-///     <c lang="csharp">range</c> stay silent. The <c lang="csharp">For&lt;TLocal&gt;</c> overloads,
-///     the long overload, and a user type with its own <c lang="csharp">For</c> stay silent as well.
+///     The rule reports only the shapes its code fix repairs, plus an async body. A synchronous
+///     body that awaits, runs a loop, mutates its parameter, or uses the name
+///     <c lang="csharp">range</c> stays silent. The <c lang="csharp">For&lt;TLocal&gt;</c> overloads
+///     and a user type with its own <c lang="csharp">For</c> stay silent as well.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
@@ -37,21 +37,31 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
     private const string ParallelMetadataName = "System.Threading.Tasks.Parallel";
     private const string PartitionerMetadataName = "System.Collections.Concurrent.Partitioner";
     private const string ActionMetadataName = "System.Action`1";
+    private const string ActionWithStateMetadataName = "System.Action`2";
+    private const string ParallelLoopStateMetadataName = "System.Threading.Tasks.ParallelLoopState";
     private const string ForEachMethodName = "ForEach";
+
+    private const string RangeRemedy =
+        "use 'Parallel.ForEach' over 'Partitioner.Create' so one delegate covers a range";
+
+    private const string AsyncRemedy =
+        "an async body binds as async void, so use 'Parallel.ForEachAsync'";
 
     private const int ForArgumentCount = 3;
     private const int BodyArgumentIndex = 2;
 
+    internal const int StateBodyParameterCount = 2;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Parallel.For runs one delegate per item",
-        "'Parallel.For' invokes the body once per index: use 'Parallel.ForEach' over 'Partitioner.Create' so one delegate covers a range",
+        "'Parallel.For' invokes the body once per index: {0}",
         "E128-Performance",
         DiagnosticSeverity.Warning,
         true,
         "Parallel.For schedules one delegate invocation for every index. Parallel.ForEach over a " +
         "range from Partitioner.Create runs one delegate per chunk and removes the per-item " +
-        "delegate cost.");
+        "delegate cost. An async body binds as async void, so ForEachAsync is the remedy.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -70,8 +80,14 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
             var parallelType = compilationContext.Compilation.GetTypeByMetadataName(ParallelMetadataName);
             var partitionerType = compilationContext.Compilation.GetTypeByMetadataName(PartitionerMetadataName);
             var actionType = compilationContext.Compilation.GetTypeByMetadataName(ActionMetadataName);
+            var actionWithStateType = compilationContext.Compilation.GetTypeByMetadataName(ActionWithStateMetadataName);
+            var stateType = compilationContext.Compilation.GetTypeByMetadataName(ParallelLoopStateMetadataName);
 
-            if (parallelType is null || partitionerType is null || actionType is null)
+            if (parallelType is null
+                || partitionerType is null
+                || actionType is null
+                || actionWithStateType is null
+                || stateType is null)
             {
                 return;
             }
@@ -83,7 +99,12 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
             }
 
             compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, parallelType, actionType),
+                nodeContext => AnalyzeInvocation(
+                    nodeContext,
+                    parallelType,
+                    actionType,
+                    actionWithStateType,
+                    stateType),
                 SyntaxKind.InvocationExpression);
         });
     }
@@ -91,7 +112,9 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(
         SyntaxNodeAnalysisContext context,
         INamedTypeSymbol parallelType,
-        INamedTypeSymbol actionType)
+        INamedTypeSymbol actionType,
+        INamedTypeSymbol actionWithStateType,
+        INamedTypeSymbol stateType)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -102,28 +125,81 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var arguments = invocation.ArgumentList.Arguments;
-
-        if (arguments.Any(static argument => argument.NameColon is not null))
-        {
-            return;
-        }
-
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
                 is not IMethodSymbol method
             || !SymbolEqualityComparer.Default.Equals(method.ContainingType, parallelType)
-            || !IsIntBodyOverload(method, actionType))
+            || !TryGetBodyShape(method, actionType, actionWithStateType, stateType, out var hasState))
         {
             return;
         }
 
-        if (arguments[BodyArgumentIndex].Expression is not AnonymousFunctionExpressionSyntax lambda
-            || !IsReportableLambda(lambda))
+        var arguments = invocation.ArgumentList.Arguments;
+        var bodyArgument = FindArgument(arguments, method, BodyArgumentIndex);
+        if (bodyArgument is null)
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+        var kind = ClassifyBody(bodyArgument.Expression, hasState, stateType, context);
+        if (kind is BodyKind.None)
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            invocation.GetLocation(),
+            kind is BodyKind.Async ? AsyncRemedy : RangeRemedy));
+    }
+
+    private enum BodyKind
+    {
+        None = 0,
+        Sync = 1,
+        Async = 2,
+    }
+
+    internal static ArgumentSyntax? FindArgument(
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        IMethodSymbol method,
+        int parameterIndex)
+    {
+        var positional = 0;
+
+        foreach (var argument in arguments)
+        {
+            if (argument.NameColon is { } nameColon)
+            {
+                if (ParameterIndex(method, nameColon.Name.Identifier.ValueText) == parameterIndex)
+                {
+                    return argument;
+                }
+
+                continue;
+            }
+
+            if (positional == parameterIndex)
+            {
+                return argument;
+            }
+
+            positional++;
+        }
+
+        return null;
+    }
+
+    private static int ParameterIndex(IMethodSymbol method, string name)
+    {
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            if (string.Equals(method.Parameters[i].Name, name, StringComparison.Ordinal))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private static bool CallsForMember(InvocationExpressionSyntax invocation)
@@ -132,57 +208,153 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
                && string.Equals(name.Identifier.ValueText, ForMethodName, StringComparison.Ordinal);
     }
 
-    private static bool IsIntBodyOverload(IMethodSymbol method, INamedTypeSymbol actionType)
+    private static bool TryGetBodyShape(
+        IMethodSymbol method,
+        INamedTypeSymbol actionType,
+        INamedTypeSymbol actionWithStateType,
+        INamedTypeSymbol stateType,
+        out bool hasState)
     {
+        hasState = false;
         var parameters = method.Parameters;
         if (parameters.Length is not ForArgumentCount)
         {
             return false;
         }
 
-        if (parameters[0].Type.SpecialType is not SpecialType.System_Int32
-            || parameters[1].Type.SpecialType is not SpecialType.System_Int32)
+        var itemType = parameters[0].Type;
+        if (!IsIntOrLong(itemType)
+            || !SymbolEqualityComparer.Default.Equals(parameters[1].Type, itemType)
+            || parameters[BodyArgumentIndex].Type is not INamedTypeSymbol bodyType)
         {
             return false;
         }
 
-        return parameters[BodyArgumentIndex].Type is INamedTypeSymbol bodyType
-               && bodyType.TypeArguments.Length is 1
-               && bodyType.TypeArguments[0].SpecialType is SpecialType.System_Int32
-               && SymbolEqualityComparer.Default.Equals(bodyType.ConstructedFrom, actionType);
+        if (IsSingleBody(bodyType, actionType, itemType))
+        {
+            return true;
+        }
+
+        if (!IsStateBody(bodyType, actionWithStateType, itemType, stateType))
+        {
+            return false;
+        }
+
+        hasState = true;
+        return true;
     }
 
-    private static bool IsReportableLambda(AnonymousFunctionExpressionSyntax lambda)
+    private static bool IsSingleBody(
+        INamedTypeSymbol bodyType,
+        INamedTypeSymbol actionType,
+        ITypeSymbol itemType)
     {
-        var parameter = LambdaParameter(lambda);
-        if (parameter is null)
+        return SymbolEqualityComparer.Default.Equals(bodyType.ConstructedFrom, actionType)
+               && bodyType.TypeArguments.Length is 1
+               && SymbolEqualityComparer.Default.Equals(bodyType.TypeArguments[0], itemType);
+    }
+
+    private static bool IsStateBody(
+        INamedTypeSymbol bodyType,
+        INamedTypeSymbol actionWithStateType,
+        ITypeSymbol itemType,
+        INamedTypeSymbol stateType)
+    {
+        return SymbolEqualityComparer.Default.Equals(bodyType.ConstructedFrom, actionWithStateType)
+               && bodyType.TypeArguments.Length is StateBodyParameterCount
+               && SymbolEqualityComparer.Default.Equals(bodyType.TypeArguments[0], itemType)
+               && SymbolEqualityComparer.Default.Equals(bodyType.TypeArguments[1], stateType);
+    }
+
+    internal static bool IsIntOrLong(ITypeSymbol type)
+    {
+        return type.SpecialType is SpecialType.System_Int32 or SpecialType.System_Int64;
+    }
+
+    private static BodyKind ClassifyBody(
+        ExpressionSyntax expression,
+        bool hasState,
+        INamedTypeSymbol stateType,
+        SyntaxNodeAnalysisContext context)
+    {
+        if (expression is AnonymousFunctionExpressionSyntax lambda)
+        {
+            if (IsAsyncLambda(lambda))
+            {
+                return BodyKind.Async;
+            }
+
+            return IsReportableLambda(lambda, hasState) ? BodyKind.Sync : BodyKind.None;
+        }
+
+        if (context.SemanticModel.GetSymbolInfo(expression, context.CancellationToken).Symbol
+            is not IMethodSymbol method
+            || !MethodMatchesBody(method, hasState, stateType))
+        {
+            return BodyKind.None;
+        }
+
+        return method.IsAsync && method.ReturnsVoid ? BodyKind.Async : BodyKind.Sync;
+    }
+
+    private static bool MethodMatchesBody(
+        IMethodSymbol method,
+        bool hasState,
+        INamedTypeSymbol stateType)
+    {
+        var expectedParameters = hasState ? StateBodyParameterCount : 1;
+        if (!method.ReturnsVoid
+            || method.Parameters.Length != expectedParameters
+            || !IsIntOrLong(method.Parameters[0].Type))
         {
             return false;
         }
 
-        var parameterName = parameter.Identifier.ValueText;
+        return !hasState
+            || (method.Parameters[1].RefKind is RefKind.None
+                && SymbolEqualityComparer.Default.Equals(method.Parameters[1].Type, stateType));
+    }
 
-        if (string.Equals(parameterName, RangeParameterName, StringComparison.Ordinal))
+    private static bool IsReportableLambda(AnonymousFunctionExpressionSyntax lambda, bool hasState)
+    {
+        var parameters = LambdaParameters(lambda);
+        if (parameters.Count != (hasState ? StateBodyParameterCount : 1))
         {
             return false;
         }
 
-        if (Is(lambda))
+        foreach (var parameter in parameters)
         {
-            return false;
+            if (string.Equals(parameter.Identifier.ValueText, RangeParameterName, StringComparison.Ordinal))
+            {
+                return false;
+            }
         }
 
+        var parameterName = parameters[0].Identifier.ValueText;
         return lambda.Body is { } body && IsReportableBody(body, parameterName);
     }
 
-    private static ParameterSyntax? LambdaParameter(AnonymousFunctionExpressionSyntax lambda)
+    private static SeparatedSyntaxList<ParameterSyntax> LambdaParameters(
+        AnonymousFunctionExpressionSyntax lambda)
     {
         return lambda switch
         {
-            SimpleLambdaExpressionSyntax simple => simple.Parameter,
-            ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1 } parameters }
-                => parameters[0],
-            _ => null,
+            SimpleLambdaExpressionSyntax simple => SyntaxFactory.SingletonSeparatedList(simple.Parameter),
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters,
+            _ => default,
+        };
+    }
+
+    internal static bool IsAsyncLambda(AnonymousFunctionExpressionSyntax lambda)
+    {
+        return lambda switch
+        {
+            ParenthesizedLambdaExpressionSyntax parenthesized =>
+                parenthesized.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
+            SimpleLambdaExpressionSyntax simple => simple.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
+            AnonymousMethodExpressionSyntax anonymous => anonymous.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
+            _ => false,
         };
     }
 
@@ -209,18 +381,6 @@ public sealed class ParallelForPerItemBodyAnalyzer : DiagnosticAnalyzer
             default:
                 return false;
         }
-    }
-
-    private static bool Is(AnonymousFunctionExpressionSyntax lambda)
-    {
-        return lambda switch
-        {
-            ParenthesizedLambdaExpressionSyntax parenthesized =>
-                parenthesized.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            SimpleLambdaExpressionSyntax simple => simple.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            AnonymousMethodExpressionSyntax anonymous => anonymous.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            _ => false,
-        };
     }
 
     private static bool MutatesParameter(SyntaxNode body, string parameterName)

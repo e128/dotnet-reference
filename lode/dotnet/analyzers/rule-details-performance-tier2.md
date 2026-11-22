@@ -1,5 +1,5 @@
 # Performance Rule Details: Tier 2
-*Updated: 2026-11-07T17:31:31Z*
+*Updated: 2026-11-21T21:17:18Z*
 
 Detection shape for performance rules E128211 to E128217. The earlier
 performance rules live in [rule-details-performance.md](rule-details-performance.md).
@@ -43,8 +43,9 @@ object initializer nor a later assignment on the same local sets
 `AutomaticDecompression`. The default is `DecompressionMethods.None`.
 
 A derived handler type stays silent because its constructor may set the property.
-A field or property initializer stays silent, because a constructor can set the
-property later.
+A private field initializer reports when no declaration of the containing type
+sets the property or reassigns the field. A field set in a constructor and a
+non-private field stay silent.
 
 No code fix. The decompression method set is a caller decision. The rule text
 warns that decompression applies to every origin the handler reads.

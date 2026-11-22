@@ -1,5 +1,54 @@
 {
   "schema_version": 1,
-  "files": {},
+  "files": {
+    "tests/Architecture.Tests/Architecture.Tests.csproj": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-21T21:01:34Z",
+      "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    },
+    "tests/E128.Analyzers.Tests/E128064DiskRoundtripCodeFixTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-21T21:01:34Z",
+      "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    },
+    "tests/E128.Analyzers.Tests/FileSystemPathAnalyzerUseSiteTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-21T21:01:34Z",
+      "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    },
+    "tests/E128.Analyzers.Tests/FipsRsaKeySizeAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-21T21:01:34Z",
+      "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    },
+    "tests/E128.Analyzers.Tests/HandlerNoDecompressionAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-21T21:01:34Z",
+      "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    },
+    "tests/E128.Analyzers.Tests/HttpClientCertificateBypassAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-21T21:01:34Z",
+      "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    },
+    "tests/E128.Analyzers.Tests/ParallelForEachAsyncCapAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-21T21:01:34Z",
+      "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    },
+    "tests/E128.Analyzers.Tests/TaskFromResultSyncIoCodeFixTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-21T21:01:34Z",
+      "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    }
+  },
   "tests": {}
 }

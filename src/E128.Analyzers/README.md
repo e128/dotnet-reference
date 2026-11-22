@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.5.2" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.5.3" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -3483,9 +3483,9 @@ return payload["Value"];
 
 ### E128233: Parallel.For runs one delegate per item
 
-Flags a three-argument `Parallel.For(from, to, body)` whose lambda body holds no loop and no await. The runtime invokes one delegate per index. A range partition invokes one delegate per chunk.
+Flags a three-argument `Parallel.For(from, to, body)` over an `int` or `long` range whose synchronous body holds no loop and no await. The runtime invokes one delegate per index. A range partition invokes one delegate per chunk. The body may take the item alone or the item and a `ParallelLoopState`.
 
-The fix rewrites the call to `Parallel.ForEach(Partitioner.Create(from, to), range => ...)` with the original body inside a `for` loop over the range, and adds `using System.Collections.Concurrent;` when absent. The rule stays silent on every shape the fix cannot repair: a body that mutates its parameter, a body that already loops or awaits, the `long` and `For<TLocal>` overloads, named arguments, and a user-defined `For`.
+The fix rewrites the call to `Parallel.ForEach(Partitioner.Create(from, to), range => ...)` with the original body inside a `for` loop over the range, and adds `using System.Collections.Concurrent;` when absent. It handles positional and named arguments, a lambda body, and a method group. An async body binds as async void, so the rule reports it with the `Parallel.ForEachAsync` remedy and offers no fix. The rule stays silent on a body that mutates its item parameter, a body that already loops or uses the name `range`, the `For<TLocal>` overload, and a user-defined `For`.
 
 ```csharp
 // Before (warns)

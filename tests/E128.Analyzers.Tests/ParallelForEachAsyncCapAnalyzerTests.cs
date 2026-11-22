@@ -171,7 +171,7 @@ public sealed class ParallelForEachAsyncCapAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task FactoryCallOptionsArgument_DoesNotFire()
+    public Task FactoryCallOptionsArgument_Fires()
     {
         return VerifyAsync("""
                            using System.Collections.Generic;
@@ -188,7 +188,7 @@ public sealed class ParallelForEachAsyncCapAnalyzerTests
                                Task M()
                                {
                                    var options = ParallelOptionsFactory.Create();
-                                   return Parallel.ForEachAsync(new List<int>(), options, (item, token) => default);
+                                   return {|E128187:Parallel.ForEachAsync(new List<int>(), options, (item, token) => default)|};
                                }
                            }
                            """);
@@ -254,5 +254,60 @@ public sealed class ParallelForEachAsyncCapAnalyzerTests
                 }
             }
             """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LocalOptionsWithoutMaxDegreeOfParallelism_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               Task M()
+                               {
+                                   var options = new ParallelOptions();
+                                   return {|E128187:Parallel.ForEachAsync(new List<int>(), options, (item, token) => default)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FactoryReturningOptionsWithoutMaxDegreeOfParallelism_Fires()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               Task M()
+                               {
+                                   return {|E128187:Parallel.ForEachAsync(new List<int>(), CreateOptions(), (item, token) => default)|};
+                               }
+
+                               static ParallelOptions CreateOptions() => new ParallelOptions();
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LocalOptionsWithMaxDegreeOfParallelism_Silent()
+    {
+        return VerifyAsync("""
+                           using System.Collections.Generic;
+                           using System.Threading.Tasks;
+                           class C
+                           {
+                               Task M()
+                               {
+                                   var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+                                   return Parallel.ForEachAsync(new List<int>(), options, (item, token) => default);
+                               }
+                           }
+                           """);
     }
 }

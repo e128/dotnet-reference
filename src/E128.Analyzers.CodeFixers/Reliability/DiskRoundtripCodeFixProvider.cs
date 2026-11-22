@@ -50,6 +50,11 @@ public sealed class DiskRoundtripCodeFixProvider : E128CodeFixProviderBase
             return Task.CompletedTask;
         }
 
+        if (BuildReplacementExpression(sourceExpr!, writeKind, readKind).IsEquivalentTo(targetNode))
+        {
+            return Task.CompletedTask;
+        }
+
         CodeFixRegistration.Register(context, diagnostic, "Replace disk read with in-memory value", nameof(DiskRoundtripCodeFixProvider), ct => ReplaceReadAsync(context.Document, targetNode, sourceExpr!, writeKind, readKind, ct));
 
         return Task.CompletedTask;
@@ -94,11 +99,6 @@ public sealed class DiskRoundtripCodeFixProvider : E128CodeFixProviderBase
     {
         var sourceExpr = SyntaxFactory.ParseExpression(sourceExpressionText);
 
-        if (writeKind is null || readKind is null || string.Equals(writeKind, readKind, StringComparison.Ordinal))
-        {
-            return sourceExpr;
-        }
-
         if (string.Equals(writeKind, "Text", StringComparison.Ordinal)
             && string.Equals(readKind, "Bytes", StringComparison.Ordinal))
         {
@@ -133,9 +133,12 @@ public sealed class DiskRoundtripCodeFixProvider : E128CodeFixProviderBase
 
     private static bool IsConvertible(string? writeKind, string? readKind)
     {
-        return writeKind is null
-               || readKind is null
-               || string.Equals(writeKind, readKind, StringComparison.Ordinal)
+        if (writeKind is null || readKind is null)
+        {
+            return false;
+        }
+
+        return string.Equals(writeKind, readKind, StringComparison.Ordinal)
                || NeedsSystemTextImport(writeKind, readKind);
     }
 

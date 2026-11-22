@@ -136,4 +136,39 @@ public sealed class HandlerNoDecompressionAnalyzerTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FieldInitializerWithoutConfiguration_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HandlerNoDecompressionAnalyzer>("""
+            using System.Net.Http;
+            class C
+            {
+                private readonly HttpClientHandler _handler = {|E128214:new HttpClientHandler()|};
+
+                HttpClientHandler M() => _handler;
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task FieldAssignedInConstructor_Silent()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HandlerNoDecompressionAnalyzer>("""
+            using System.Net.Http;
+            class C
+            {
+                private readonly HttpClientHandler _handler;
+
+                public C()
+                {
+                    _handler = new HttpClientHandler();
+                }
+
+                HttpClientHandler M() => _handler;
+            }
+            """);
+    }
 }

@@ -1,5 +1,5 @@
 # Analyzer Decisions: Security
-*Updated: 2026-11-20T17:16:51Z*
+*Updated: 2026-11-21T21:17:18Z*
 
 Rationale removed from source comments. Each section names the type that carried it.
 Read this page before you change or delete the matching check.
@@ -8,13 +8,14 @@ Read this page before you change or delete the matching check.
 - The FileSystemPathAnalyzer format string maps {0} to the parameter name, {1} to the description, and {2} to the suggested type. In the name-only case {2} is "FileInfo' or 'DirectoryInfo". As a result, the format string's own single quotes complete the message.
 - Applies the name pattern only when no body exists (interface, abstract method, empty stub, record primary constructor). A non-empty body uses the body scan. As a result, a display-only method with a path-like parameter name stays silent.
 - Scans a method body once and reuses that scan for every string parameter. As a result, the cost stays linear in the number of parameters.
+- Follows the local derivation map to a fixed point. A chain of `Path.*` calls or identifier copies therefore reaches the parameter at any depth.
 - Cannot inspect a primary constructor body. As a result, only the name pattern applies to its parameters.
 
 ## FileSystemPathHelpers
 - Reads SeparatedSyntaxList.Count instead of calling Any() because Count is O(1) and Any() allocates an enumerator (RCS9004).
 
 ## IoMethodCatalog
-- Treats Path.* calls as one-hop intermediaries: a local assigned from Path.*(param) inherits path-ness and fires when later passed to File.* or Directory.*.
+- Treats Path.* calls and identifier copies as derivation edges. A local inherits path-ness through any number of hops and fires when later passed to File.* or Directory.*
 
 ## PathNamePatterns
 - Checks exclusions before positive patterns, and a match in the exclusion list suppresses every positive pattern.
@@ -48,6 +49,8 @@ Read this page before you change or delete the matching check.
 - Inspects ECParameters.Curve through the field because a parameters struct can carry a weak curve.
 - Does not treat a KeySize assignment as a replacement for the default report. This holds because assigning KeySize does not reliably resize an RSACryptoServiceProvider key. Only an import replaces it, and the import reports for itself.
 - Reports an unresolvable key-size value on purpose. As a result, an unreadable curve cannot hide an unapproved curve.
+- Resolves a receiver through its single initializer. An upcast local and a name factory therefore reach the RSA KeySize and import checks.
+- Resolves a name factory by its constant algorithm name. A local that holds `AsymmetricAlgorithm.Create("RSA")` counts as an RSA key.
 
 ## FipsSymbolHelpers.Assignments
 - Walks each body once to collect every written local. As a result, each later reference is a set lookup.
@@ -91,8 +94,13 @@ Read this page before you change or delete the matching check.
 - Excludes a property initializer on an options class and a const or static readonly field. This holds because each declares one fixed value in one place rather than the per-environment endpoint the rule targets. A local const stays reported.
 - Matches the host itself or a subdomain. This holds because a bare suffix match would allow evilexample.com.
 
+## HttpBodyReadWithoutSizeBoundAnalyzer
+- Requires the `HttpContent` type before the rule runs. Without that type there is no report to make, and a name-only match would flag an unrelated member.
+
 ## HttpClientCertificateBypassAnalyzer
 - Accepts DangerousAcceptAnyServerCertificateValidator by name alone because the framework property has no other meaning.
+- Follows a chain of up to five local, field, or method sources. A callback held in a helper local therefore still resolves to its body.
+- Treats a block as unconditional true when every return statement is always true. A block with a false return stays silent.
 
 ## InsecureRandomInCryptoContextAnalyzer
 - Matches a fragment that collides with an ordinary word only as a whole word in camelCase or snake_case. A bare "session" is excluded because sessionCount and sessionTimeout are not secrets, while sessionId and session_id are.

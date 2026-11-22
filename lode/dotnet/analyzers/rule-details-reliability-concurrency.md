@@ -1,5 +1,5 @@
 # Reliability Rule Details: Concurrency
-*Updated: 2026-11-09T23:44:15Z*
+*Updated: 2026-11-21T21:17:18Z*
 
 Behavior notes for the reliability rules that cover async and concurrent code.
 The complete rule table, the severity, and the code-fix status live in
@@ -108,13 +108,15 @@ An I/O-bound body can need a different cap, so the rule asks for an explicit one
 
 The rule resolves `System.Threading.Tasks.Parallel` and `ParallelOptions` once.
 It compares the created options type by symbol, so a `using` alias cannot hide
-it. It reads the initializer syntactically, so it needs no semantic model call.
+it. It binds the options expression to its declaration, so a local, field,
+property, or single-return factory resolves to the creation.
 
 **Exclusions**:
 
 - An initializer that assigns `MaxDegreeOfParallelism`, whatever the value,
   including `-1` and a computed expression.
-- Options held in a variable, a parameter, a field, or a factory call.
+- A parameter or an options value the rule cannot resolve to a creation.
+- A factory with more than one return statement.
 - A user type named `Parallel`.
 - A compilation without `System.Threading.Tasks.Parallel`.
 

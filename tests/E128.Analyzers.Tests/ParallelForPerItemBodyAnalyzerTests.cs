@@ -108,7 +108,7 @@ public sealed class ParallelForPerItemBodyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTheBodyAwaits()
+    public Task Reports_WhenTheBodyAwaits()
     {
         return AnalyzerTestRunner.VerifyAsync<ParallelForPerItemBodyAnalyzer>("""
             using System.Threading.Tasks;
@@ -118,7 +118,7 @@ public sealed class ParallelForPerItemBodyAnalyzerTests
 
                 void M()
                 {
-                    Parallel.For(0, items.Length, async i => { await Task.Delay(10); });
+                    {|E128233:Parallel.For(0, items.Length, async i => { await Task.Delay(10); })|};
                 }
             }
             """);
@@ -169,7 +169,7 @@ public sealed class ParallelForPerItemBodyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTheLongOverloadRuns()
+    public Task Reports_WhenTheLongOverloadRuns()
     {
         return AnalyzerTestRunner.VerifyAsync<ParallelForPerItemBodyAnalyzer>("""
             using System.Threading.Tasks;
@@ -179,7 +179,7 @@ public sealed class ParallelForPerItemBodyAnalyzerTests
 
                 void M()
                 {
-                    Parallel.For(0L, items.LongLength, i => Work(i));
+                    {|E128233:Parallel.For(0L, items.LongLength, i => Work(i))|};
                 }
 
                 void Work(long value)
@@ -191,7 +191,7 @@ public sealed class ParallelForPerItemBodyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTheBodyTakesALoopState()
+    public Task Reports_WhenTheBodyTakesALoopState()
     {
         return AnalyzerTestRunner.VerifyAsync<ParallelForPerItemBodyAnalyzer>("""
             using System.Threading.Tasks;
@@ -202,8 +202,28 @@ public sealed class ParallelForPerItemBodyAnalyzerTests
 
                 void M()
                 {
-                    Parallel.For(0, items.Length, (i, state) => { total += items[i]; });
+                    {|E128233:Parallel.For(0, items.Length, (i, state) => { total += items[i]; })|};
                 }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheBodyIsAsync()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ParallelForPerItemBodyAnalyzer>("""
+            using System.Threading.Tasks;
+            class C
+            {
+                int[] items = new int[] { 1, 2, 3 };
+
+                void M()
+                {
+                    {|E128233:Parallel.For(0, items.Length, async i => { await WorkAsync(items[i]); })|};
+                }
+
+                Task WorkAsync(int value) => Task.CompletedTask;
             }
             """);
     }
@@ -328,7 +348,7 @@ public sealed class ParallelForPerItemBodyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTheCallUsesNamedArguments()
+    public Task Reports_WhenTheCallUsesNamedArguments()
     {
         return AnalyzerTestRunner.VerifyAsync<ParallelForPerItemBodyAnalyzer>("""
             using System.Threading.Tasks;
@@ -339,7 +359,29 @@ public sealed class ParallelForPerItemBodyAnalyzerTests
 
                 void M()
                 {
-                    Parallel.For(fromInclusive: 0, toExclusive: items.Length, body: i => total += items[i]);
+                    {|E128233:Parallel.For(fromInclusive: 0, toExclusive: items.Length, body: i => total += items[i])|};
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheBodyIsAMethodGroup()
+    {
+        return AnalyzerTestRunner.VerifyAsync<ParallelForPerItemBodyAnalyzer>("""
+            using System.Threading.Tasks;
+            class C
+            {
+                int[] items = new int[] { 1, 2, 3 };
+
+                void M()
+                {
+                    {|E128233:Parallel.For(0, items.Length, Work)|};
+                }
+
+                void Work(int value)
+                {
                 }
             }
             """);

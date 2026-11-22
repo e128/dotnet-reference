@@ -1,5 +1,5 @@
 # Roadmap Rule Details: E128232 to E128237
-*Updated: 2026-11-18T14:30:00Z*
+*Updated: 2026-11-22T04:00:12Z*
 
 Detection shape, exclusions, and code fix behavior for the six rules that
 shipped from `plans/roadmap.md`. The rule table and message text live in
@@ -25,16 +25,23 @@ compile-time checking, trimming, and AOT.
 Reports the three-argument `Parallel.For(from, to, body)` whose lambda holds
 no loop and no await. The runtime invokes one delegate per index.
 
-- Overload check: exactly 3 parameters, typed int, int, `Action<int>`, bound
-  to the framework `Parallel` by symbol.
-- Body: one-parameter simple or parenthesized lambda, synchronous, non-empty.
+- Overload check: exactly 3 parameters over an int or long range, with an
+  `Action<T>` or `Action<T, ParallelLoopState>` body, bound to the framework
+  `Parallel` by symbol.
+- Body: a simple or parenthesized lambda with the matching parameter count, or
+  a method group that returns void and takes the matching parameters.
+- An async body reports with the `Parallel.ForEachAsync` remedy and no fix.
 - Expression bodies report only statement expressions, so the fix can place
   the expression in a statement position.
 - Silent when the body mutates the parameter (assignment, increment, ref or
   out pass), because the fix makes it the loop variable.
 - Silent when the body uses the name `range`, when the receiver is a
-  using-static bare `For`, and on named arguments, the `For<TLocal>` and long
-  overloads, and a user `For`.
+  using-static bare `For`, and on the `For<TLocal>` overload and a user `For`.
+- A named argument maps to its parameter, so the call still reports and fixes.
+- The fix for a method group invokes it inside the generated loop, with a loop
+  variable name that does not collide with a symbol in scope.
+- The fix uses the range type for the loop variable and keeps a
+  `ParallelLoopState` parameter on the generated lambda.
 - Code fix: rewrites to `Parallel.ForEach(Partitioner.Create(from, to),
   range => ...)`, keeps the receiver text, and inserts
   `using System.Collections.Concurrent;` when absent. Declines when a foreign

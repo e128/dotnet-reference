@@ -17,6 +17,8 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
     private const string ForEachAsyncMethodName = "ForEachAsync";
     private const string MaxDegreeOfParallelismMemberName = "MaxDegreeOfParallelism";
 
+    private const int MaxResolveDepth = 5;
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Parallel.ForEachAsync without a degree cap",
@@ -74,20 +76,36 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
 
         var optionsArgument = GetOptionsArgument(invocation, method, parallelOptionsType);
 
-        if (optionsArgument is null
-            || optionsArgument.IsKind(SyntaxKind.DefaultLiteralExpression)
-            || optionsArgument is DefaultExpressionSyntax)
+        if (optionsArgument is null)
         {
             Report(context, invocation);
             return;
         }
 
-        if (optionsArgument is not ObjectCreationExpressionSyntax creation)
+        ReportIfUncapped(context, invocation, optionsArgument, parallelOptionsType);
+    }
+
+    private static void ReportIfUncapped(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        ExpressionSyntax optionsArgument,
+        INamedTypeSymbol parallelOptionsType)
+    {
+        var resolved = ResolveOptionsExpression(optionsArgument, context, depth: 0);
+
+        if (resolved is null)
         {
             return;
         }
 
-        if (context.SemanticModel.GetTypeInfo(creation, context.CancellationToken).Type is not { } createdType
+        if (IsDefaultOptions(resolved))
+        {
+            Report(context, invocation);
+            return;
+        }
+
+        if (resolved is not ObjectCreationExpressionSyntax creation
+            || context.SemanticModel.GetTypeInfo(creation, context.CancellationToken).Type is not { } createdType
             || !SymbolEqualityComparer.Default.Equals(createdType, parallelOptionsType))
         {
             return;
@@ -99,6 +117,64 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
         }
 
         Report(context, invocation);
+    }
+
+    private static bool IsDefaultOptions(ExpressionSyntax expression)
+    {
+        return expression.IsKind(SyntaxKind.DefaultLiteralExpression) || expression is DefaultExpressionSyntax;
+    }
+
+    private static ExpressionSyntax? ResolveOptionsExpression(
+        ExpressionSyntax expression,
+        SyntaxNodeAnalysisContext context,
+        int depth)
+    {
+        if (expression is ObjectCreationExpressionSyntax || IsDefaultOptions(expression))
+        {
+            return expression;
+        }
+
+        if (depth >= MaxResolveDepth)
+        {
+            return null;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(expression, context.CancellationToken).Symbol;
+        if (symbol is null || symbol.DeclaringSyntaxReferences.Length is not 1)
+        {
+            return null;
+        }
+
+        var declaration = symbol.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken);
+
+        return declaration switch
+        {
+            VariableDeclaratorSyntax { Initializer.Value: { } initializer } =>
+                ResolveOptionsExpression(initializer, context, depth + 1),
+            PropertyDeclarationSyntax { Initializer.Value: { } initializer } =>
+                ResolveOptionsExpression(initializer, context, depth + 1),
+            MethodDeclarationSyntax method => ResolveMethodReturn(method, context, depth),
+            _ => null
+        };
+    }
+
+    private static ExpressionSyntax? ResolveMethodReturn(
+        MethodDeclarationSyntax method,
+        SyntaxNodeAnalysisContext context,
+        int depth)
+    {
+        if (method.ExpressionBody?.Expression is { } body)
+        {
+            return ResolveOptionsExpression(body, context, depth + 1);
+        }
+
+        if (method.Body is not { Statements.Count: 1 } block
+            || block.Statements[0] is not ReturnStatementSyntax { Expression: { } returned })
+        {
+            return null;
+        }
+
+        return ResolveOptionsExpression(returned, context, depth + 1);
     }
 
     private static IMethodSymbol? GetForEachAsyncMethod(

@@ -165,4 +165,65 @@ public sealed class TaskFromResultSyncIoCodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_LeavesAUserFromResultAlone()
+    {
+        return VerifyFixAsync(
+            """
+            using System.IO;
+            using Task = C.MyTask;
+            class C
+            {
+                public sealed class MyTask
+                {
+                    public static MyTask FromResult(string value) => new();
+
+                    public static implicit operator string(MyTask value) => "converted";
+
+                    public static implicit operator System.Threading.Tasks.Task<string>(MyTask value) =>
+                        System.Threading.Tasks.Task.FromResult("task");
+                }
+
+                System.Threading.Tasks.Task<string> M(string path, bool useUser)
+                {
+                    var text = File.ReadAllText(path);
+                    if (useUser)
+                    {
+                        return Task.FromResult("user");
+                    }
+
+                    return {|E128028:System.Threading.Tasks.Task.FromResult(text)|};
+                }
+            }
+            """,
+            """
+            using System.IO;
+            using Task = C.MyTask;
+            class C
+            {
+                public sealed class MyTask
+                {
+                    public static MyTask FromResult(string value) => new();
+
+                    public static implicit operator string(MyTask value) => "converted";
+
+                    public static implicit operator System.Threading.Tasks.Task<string>(MyTask value) =>
+                        System.Threading.Tasks.Task.FromResult("task");
+                }
+
+                async System.Threading.Tasks.Task<string> M(string path, bool useUser)
+                {
+                    var text = await File.ReadAllTextAsync(path);
+                    if (useUser)
+                    {
+                        return Task.FromResult("user");
+                    }
+
+                    return text;
+                }
+            }
+            """);
+    }
 }

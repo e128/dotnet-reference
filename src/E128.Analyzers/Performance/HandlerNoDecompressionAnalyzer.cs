@@ -97,11 +97,19 @@ public sealed class HandlerNoDecompressionAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (target is not ILocalSymbol)
+        return target switch
         {
-            return true;
-        }
+            IFieldSymbol field => IsFieldConfigured(field, creation, context),
+            ILocalSymbol local => IsLocalConfiguredAfterCreation(local, creation, context),
+            _ => true
+        };
+    }
 
+    private static bool IsLocalConfiguredAfterCreation(
+        ILocalSymbol local,
+        BaseObjectCreationExpressionSyntax creation,
+        SyntaxNodeAnalysisContext context)
+    {
         if (creation.Ancestors().OfType<BlockSyntax>().FirstOrDefault() is not { } block)
         {
             return false;
@@ -123,7 +131,7 @@ public sealed class HandlerNoDecompressionAnalyzer : DiagnosticAnalyzer
                 var receiver = context.SemanticModel
                     .GetSymbolInfo(access.Expression, context.CancellationToken)
                     .Symbol;
-                if (SymbolEqualityComparer.Default.Equals(receiver, target))
+                if (SymbolEqualityComparer.Default.Equals(receiver, local))
                 {
                     return true;
                 }
@@ -131,6 +139,87 @@ public sealed class HandlerNoDecompressionAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool IsFieldConfigured(
+        IFieldSymbol field,
+        BaseObjectCreationExpressionSyntax creation,
+        SyntaxNodeAnalysisContext context)
+    {
+        if (field.DeclaredAccessibility is not Accessibility.Private
+            || field.DeclaringSyntaxReferences.Length is not 1)
+        {
+            return true;
+        }
+
+        if (creation.FirstAncestorOrSelf<VariableDeclaratorSyntax>() is not { } declarator
+            || !ReferenceEquals(field.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken), declarator))
+        {
+            return true;
+        }
+
+        return field.ContainingType is { } containingType
+               && TypeAssignsFieldOrDecompression(containingType, field, context);
+    }
+
+    private static bool TypeAssignsFieldOrDecompression(
+        INamedTypeSymbol containingType,
+        IFieldSymbol field,
+        SyntaxNodeAnalysisContext context)
+    {
+        foreach (var reference in containingType.DeclaringSyntaxReferences)
+        {
+            if (DeclarationAssignsFieldOrDecompression(
+                    reference.GetSyntax(context.CancellationToken),
+                    field,
+                    context))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool DeclarationAssignsFieldOrDecompression(
+        SyntaxNode declaration,
+        IFieldSymbol field,
+        SyntaxNodeAnalysisContext context)
+    {
+        foreach (var node in declaration.DescendantNodes())
+        {
+            if (node is AssignmentExpressionSyntax assignment
+                && (IsFieldReceiver(assignment.Left, field, context)
+                    || IsDecompressionAssignment(assignment.Left, field, context)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsFieldReceiver(
+        ExpressionSyntax left,
+        IFieldSymbol field,
+        SyntaxNodeAnalysisContext context)
+    {
+        return left is IdentifierNameSyntax or MemberAccessExpressionSyntax
+               && SymbolEqualityComparer.Default.Equals(
+                   context.SemanticModel.GetSymbolInfo(left, context.CancellationToken).Symbol,
+                   field);
+    }
+
+    private static bool IsDecompressionAssignment(
+        ExpressionSyntax left,
+        IFieldSymbol field,
+        SyntaxNodeAnalysisContext context)
+    {
+        return left is MemberAccessExpressionSyntax access
+               && string.Equals(access.Name.Identifier.ValueText, PropertyName, StringComparison.Ordinal)
+               && SymbolEqualityComparer.Default.Equals(
+                   context.SemanticModel.GetSymbolInfo(access.Expression, context.CancellationToken).Symbol,
+                   field);
     }
 
     private static bool TryGetTarget(

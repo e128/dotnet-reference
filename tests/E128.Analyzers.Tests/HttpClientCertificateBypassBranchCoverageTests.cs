@@ -46,7 +46,7 @@ public sealed class HttpClientCertificateBypassBranchCoverageTests
                     {|E128156:options.RemoteCertificateValidationCallback = FieldCallback|};
                     {|E128156:options.RemoteCertificateValidationCallback = AcceptAll|};
                     {|E128156:options.RemoteCertificateValidationCallback = AcceptWithBlock|};
-                    options.RemoteCertificateValidationCallback = second;
+                    {|E128156:options.RemoteCertificateValidationCallback = second|};
                     options.RemoteCertificateValidationCallback = Inspect;
 
                     bool LocalFunction(object sender, X509Certificate? cert, X509Chain? chain, SslPolicyErrors errors) => true;
@@ -64,7 +64,7 @@ public sealed class HttpClientCertificateBypassBranchCoverageTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTheCallbackIsMissingUnknownOrNotDecidable()
+    public Task Silent_ForUnknownCallbacks_AndReportsAMultiStatementTrueBlock()
     {
         return VerifyAsync("""
             using System;
@@ -92,7 +92,7 @@ public sealed class HttpClientCertificateBypassBranchCoverageTests
 
                         return false;
                     };
-                    options.RemoteCertificateValidationCallback = (_, _, _, errors) => { var x = 1; return true; };
+                    {|E128156:options.RemoteCertificateValidationCallback = (_, _, _, errors) => { var x = 1; return true; }|};
                     options.RemoteCertificateValidationCallback = (_, _, _, errors) => errors == SslPolicyErrors.None;
                     options.RemoteCertificateValidationCallback = (_, _, _, errors) => errors == SslPolicyErrors.None && true;
                     options.RemoteCertificateValidationCallback = flag ? parameter : parameter;
