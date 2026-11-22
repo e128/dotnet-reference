@@ -15,6 +15,8 @@ namespace E128.Analyzers.Performance;
 [Shared]
 public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int TwoArgumentReplaceCount = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ChainedStringReplaceAnalyzer.DiagnosticId];
 
@@ -26,38 +28,89 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
             return Task.CompletedTask;
         }
 
-        if (!TryGetCollapseShape(whileStatement, out var receiverName, out var collapseChar))
-        {
-            return Task.CompletedTask;
-        }
+        var shape = GetShape(
+            whileStatement,
+            out var receiverName,
+            out var searchLiteral,
+            out var replacementLiteral);
 
-        CodeFixRegistration.Register(context, diagnostic, "Collapse repeated-character loop into a single pass", nameof(ChainedStringReplaceCodeFixProvider), ct => RewriteAsSinglePassAsync(context.Document, whileStatement, receiverName, collapseChar, ct));
+        if (shape is CollapseShape.DoubledCharacter)
+        {
+            CodeFixRegistration.Register(
+                context,
+                diagnostic,
+                "Collapse repeated-character loop into a single pass",
+                nameof(ChainedStringReplaceCodeFixProvider),
+                ct => RewriteAsSinglePassAsync(
+                    context.Document,
+                    whileStatement,
+                    receiverName,
+                    replacementLiteral[0],
+                    ct));
+        }
+        else if (shape is CollapseShape.SinglePassReplace)
+        {
+            CodeFixRegistration.Register(
+                context,
+                diagnostic,
+                "Replace once instead of looping",
+                nameof(ChainedStringReplaceCodeFixProvider),
+                ct => RewriteAsSingleReplaceAsync(
+                    context.Document,
+                    whileStatement,
+                    receiverName,
+                    searchLiteral,
+                    replacementLiteral,
+                    ct));
+        }
 
         return Task.CompletedTask;
     }
 
-    private static bool TryGetCollapseShape(WhileStatementSyntax whileStatement, out string receiverName, out char collapseChar)
+    private static CollapseShape GetShape(
+        WhileStatementSyntax whileStatement,
+        out string receiverName,
+        out string searchLiteral,
+        out string replacementLiteral)
     {
         receiverName = string.Empty;
-        collapseChar = default;
+        searchLiteral = string.Empty;
+        replacementLiteral = string.Empty;
 
-        if (!TryGetContainsCondition(whileStatement.Condition, out var conditionReceiver, out var searchLiteral)
+        if (!TryGetContainsCondition(whileStatement.Condition, out var conditionReceiver, out var conditionSearch)
             || !TryGetReplaceLiterals(
-                whileStatement.Statement, conditionReceiver, out var replaceSearchLiteral, out var replacementLiteral))
+                whileStatement.Statement,
+                conditionReceiver,
+                out var replaceSearchLiteral,
+                out var replaceLiteral,
+                out var replaceArgumentCount))
         {
-            return false;
+            return CollapseShape.None;
         }
 
-        if (!string.Equals(searchLiteral, replaceSearchLiteral, StringComparison.Ordinal)
-            || replacementLiteral.Length is not 1
-            || !string.Equals(searchLiteral, replacementLiteral + replacementLiteral, StringComparison.Ordinal))
+        if (!string.Equals(conditionSearch, replaceSearchLiteral, StringComparison.Ordinal))
         {
-            return false;
+            return CollapseShape.None;
         }
 
         receiverName = conditionReceiver;
-        collapseChar = replacementLiteral[0];
-        return true;
+        searchLiteral = conditionSearch;
+        replacementLiteral = replaceLiteral;
+
+        if (replaceLiteral.Length is 1
+            && string.Equals(conditionSearch, replaceLiteral + replaceLiteral, StringComparison.Ordinal))
+        {
+            return CollapseShape.DoubledCharacter;
+        }
+
+        if (replaceArgumentCount is TwoArgumentReplaceCount
+            && conditionSearch.Length is 1
+            && replaceLiteral.IndexOf(conditionSearch, StringComparison.Ordinal) < 0)
+        {
+            return CollapseShape.SinglePassReplace;
+        }
+
+        return CollapseShape.None;
     }
 
     private static bool TryGetContainsCondition(
@@ -90,10 +143,12 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
         StatementSyntax body,
         string receiver,
         out string searchLiteral,
-        out string replacementLiteral)
+        out string replacementLiteral,
+        out int argumentCount)
     {
         searchLiteral = string.Empty;
         replacementLiteral = string.Empty;
+        argumentCount = 0;
 
         if (FindReplaceAssignment(body) is not { } assignment
             || assignment.Left is not IdentifierNameSyntax assignmentTarget
@@ -116,6 +171,7 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
 
         searchLiteral = search;
         replacementLiteral = replacement;
+        argumentCount = replaceArgs.Count;
         return true;
     }
 
@@ -130,6 +186,13 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
         }
 
         return null;
+    }
+
+    private enum CollapseShape
+    {
+        None = 0,
+        DoubledCharacter = 1,
+        SinglePassReplace = 2,
     }
 
     private static string BuildCollapseBlock(string receiverName, string charLiteral)
@@ -162,6 +225,34 @@ public sealed class ChainedStringReplaceCodeFixProvider : E128CodeFixProviderBas
         ];
 
         return string.Join("\n", lines);
+    }
+
+    private static async Task<Document> RewriteAsSingleReplaceAsync(
+        Document document,
+        WhileStatementSyntax whileStatement,
+        string receiverName,
+        string searchLiteral,
+        string replacementLiteral,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+        {
+            return document;
+        }
+
+        var search = SymbolDisplay.FormatLiteral(searchLiteral, quote: true);
+        var replacement = SymbolDisplay.FormatLiteral(replacementLiteral, quote: true);
+        var text = receiverName + " = " + receiverName
+            + ".Replace(" + search + ", " + replacement + ");";
+
+        var statement = SyntaxFactory.ParseStatement(text)
+            .WithLeadingTrivia(whileStatement.GetLeadingTrivia())
+            .WithTrailingTrivia(whileStatement.GetTrailingTrivia())
+            .WithAdditionalAnnotations(Formatter.Annotation);
+
+        var newRoot = root.ReplaceNode(whileStatement, statement);
+        return document.WithSyntaxRoot(newRoot);
     }
 
     private static async Task<Document> RewriteAsSinglePassAsync(

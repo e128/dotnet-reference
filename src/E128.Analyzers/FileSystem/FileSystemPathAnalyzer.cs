@@ -174,18 +174,27 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        foreach (var (local, source) in pathCalls)
+        bool changed;
+        do
         {
-            if (!roots.TryGetValue(source, out var sourceRoots))
+            changed = false;
+            foreach (var (local, source) in pathCalls)
             {
-                continue;
-            }
+                if (!roots.TryGetValue(source, out var sourceRoots))
+                {
+                    continue;
+                }
 
-            foreach (var root in sourceRoots)
-            {
-                AddRoot(roots, local, root);
+                foreach (var root in sourceRoots)
+                {
+                    if (AddRoot(roots, local, root))
+                    {
+                        changed = true;
+                    }
+                }
             }
         }
+        while (changed);
 
         return roots;
     }
@@ -200,19 +209,19 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
 
         if (rhs is IdentifierNameSyntax id)
         {
-            AddRoot(roots, localName, id.Identifier.ValueText);
+            _ = AddRoot(roots, localName, id.Identifier.ValueText);
         }
         else if (rhs is InvocationExpressionSyntax init
                  && FileSystemPathHelpers.IsPathMethodCall(init)
                  && init.ArgumentList.Arguments.Count > 0
                  && init.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax source)
         {
-            AddRoot(roots, localName, source.Identifier.ValueText);
+            _ = AddRoot(roots, localName, source.Identifier.ValueText);
             pathCalls.Add((localName, source.Identifier.ValueText));
         }
     }
 
-    private static void AddRoot(Dictionary<string, HashSet<string>> roots, string local, string root)
+    private static bool AddRoot(Dictionary<string, HashSet<string>> roots, string local, string root)
     {
         if (!roots.TryGetValue(local, out var set))
         {
@@ -220,7 +229,7 @@ public sealed class FileSystemPathAnalyzer : DiagnosticAnalyzer
             roots[local] = set;
         }
 
-        set.Add(root);
+        return set.Add(root);
     }
 
     private static List<(string ArgName, SuggestedType Suggestion)> CollectIoSites(

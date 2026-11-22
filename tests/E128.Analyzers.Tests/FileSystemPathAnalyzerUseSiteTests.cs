@@ -127,4 +127,23 @@ public sealed class FileSystemPathAnalyzerUseSiteTests
 
         return VerifyAsync(code, expected);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task UseSite_PathCombineChain_FiresAtAnyDepth()
+    {
+        return VerifyAsync("""
+                           using System.IO;
+                           class C
+                           {
+                               void M(string {|E128001:p|})
+                               {
+                                   var first = Path.Combine(p, "a");
+                                   var second = Path.Combine(first, "b");
+                                   var third = Path.Combine(second, "c");
+                                   Directory.GetFiles(third);
+                               }
+                           }
+                           """);
+    }
 }

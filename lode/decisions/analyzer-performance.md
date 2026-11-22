@@ -1,5 +1,5 @@
 # Analyzer Decisions: Performance
-*Updated: 2026-11-20T17:16:51Z*
+*Updated: 2026-11-22T04:00:12Z*
 
 Rationale removed from source comments. Each section names the type that carried it.
 Read this page before you change or delete the matching check.
@@ -66,12 +66,20 @@ Read this page before you change or delete the matching check.
 - Includes the final symbol name in the guard cache key because the scan compares only that name.
 - Compares the final name segment. As a result, rows, this.rows, and state.rows all match. Comparing the printed expression to the symbol name would drop a qualifier and miss a present length guard.
 
+## HandlerNoDecompressionAnalyzer
+- Reports a private field initializer that sets no decompression when no declaration of the containing type sets the property or reassigns the field.
+- Stays silent for a field set in a constructor and for a non-private field, because another site can configure the handler.
+
 ## ParallelForEachAsyncCapAnalyzer
 - Treats default and default(ParallelOptions) as an options object with no degree cap. As a result, the call reports.
+- Follows a local, field, or property initializer and a single-return factory call to the options creation. A parameter or an unresolvable value stays silent.
 
 ## ParallelForPerItemBodyAnalyzer
 - Gates the rule on the presence of Partitioner.Create and Parallel.ForEach because the fix needs both. A compilation without the remedy gets no report.
-- Rewrites only to the (int, int, Action<int>) shape because Partitioner.Create takes int ranges. Every other overload stays silent.
+- Supports the int and long range overloads and the `Action<T, ParallelLoopState>` body. The `For<TLocal>` overload stays silent.
+- Maps a named argument to its parameter, so a call with names still reports and fixes.
+- Reports a method group whose parameters match the body delegate and that returns void. The fix invokes it inside the generated loop.
+- Reports an async lambda or async void method group with the `Parallel.ForEachAsync` remedy. It offers no fix for that shape.
 - Requires the body to avoid the name range because the fix declares a lambda parameter with that name. A body parameter with the same name would collide and the rewrite would not compile.
 - Rejects a body that mutates the item parameter or passes it by reference. This holds because the fix reuses that parameter as the loop variable. Such a mutation would write the loop counter.
 - Treats any other use of the name range, including a member access such as state.range, as a collision. The scan is wider than strictly needed so the emitted lambda cannot conflict.

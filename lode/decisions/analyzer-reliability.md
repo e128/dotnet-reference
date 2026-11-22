@@ -1,5 +1,5 @@
 # Analyzer Decisions: Reliability
-*Updated: 2026-11-20T17:16:51Z*
+*Updated: 2026-11-21T21:17:18Z*
 
 Rationale removed from source comments. Each section names the type that carried it.
 Read this page before you change or delete the matching check.
@@ -33,6 +33,7 @@ Read this page before you change or delete the matching check.
 
 ## BareParseAnalyzer
 - Catch clauses guard only the try block. A call in a catch or finally block runs outside that guard. As a result, the ancestor walk continues to an outer try statement.
+- Flags `Enum.Parse<T>` even though `Enum` declares `TryParse<T>`. The bare call still throws on invalid input, so it reports like any other parse call.
 
 ## BlockingCallInLockAnalyzer
 - A MemoryStream member completes in memory and holds no lock while it runs. BlockingCallInLockAnalyzer therefore exempts MemoryStream-derived types from the blocking-call rule.

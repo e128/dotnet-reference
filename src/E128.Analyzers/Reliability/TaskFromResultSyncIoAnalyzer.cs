@@ -251,6 +251,17 @@ public sealed class TaskFromResultSyncIoAnalyzer : DiagnosticAnalyzer
             wrapperName));
     }
 
+    internal static bool IsFromResultInvocation(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var compilation = semanticModel.Compilation;
+        var taskType = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+        var valueTaskType = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+        return IsFromResultCall(invocation, semanticModel, taskType, valueTaskType, cancellationToken, out _);
+    }
+
     private static bool IsFromResultCall(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,

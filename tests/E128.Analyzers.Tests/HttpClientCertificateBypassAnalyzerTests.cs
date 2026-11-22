@@ -308,4 +308,77 @@ public sealed class HttpClientCertificateBypassAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task LocalChainReturningTrue_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
+                           using System;
+                           using System.Net.Http;
+                           using System.Net.Security;
+                           using System.Security.Cryptography.X509Certificates;
+                           class C
+                           {
+                               HttpClient M()
+                               {
+                                   Func<HttpRequestMessage, X509Certificate2, X509Chain, SslPolicyErrors, bool> first = (_, _, _, _) => true;
+                                   var second = first;
+                                   var third = second;
+                                   var handler = new HttpClientHandler();
+                                   {|E128156:handler.ServerCertificateCustomValidationCallback = third|};
+                                   return new HttpClient(handler);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MultiStatementBlockReturningTrue_Fires()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
+                           using System.Net.Http;
+                           class C
+                           {
+                               HttpClient M()
+                               {
+                                   var handler = new HttpClientHandler();
+                                   {|E128156:handler.ServerCertificateCustomValidationCallback = (_, _, _, _) =>
+                                   {
+                                       _ = 1;
+                                       return true;
+                                   }|};
+                                   return new HttpClient(handler);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task MultiStatementBlockWithAFalseReturn_DoesNotFire()
+    {
+        return AnalyzerTestRunner.VerifyAsync<HttpClientCertificateBypassAnalyzer>("""
+                           using System.Net.Http;
+                           using System.Net.Security;
+                           class C
+                           {
+                               HttpClient M()
+                               {
+                                   var handler = new HttpClientHandler();
+                                   handler.ServerCertificateCustomValidationCallback = (_, _, _, errors) =>
+                                   {
+                                       if (errors != SslPolicyErrors.None)
+                                       {
+                                           return false;
+                                       }
+
+                                       return true;
+                                   };
+                                   return new HttpClient(handler);
+                               }
+                           }
+                           """);
+    }
 }

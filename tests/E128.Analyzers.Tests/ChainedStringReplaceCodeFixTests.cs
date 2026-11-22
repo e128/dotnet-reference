@@ -156,4 +156,52 @@ public sealed class ChainedStringReplaceCodeFixTests
             }
             """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task SingleCharacterLoop_FixedToSingleReplace()
+    {
+        return VerifyFixAsync(
+            """
+            using System;
+            class C
+            {
+                void M(string value)
+                {
+                    {|E128098:while (value.Contains("x", StringComparison.Ordinal))
+                    {
+                        value = value.Replace("x", "y");
+                    }|}
+                }
+            }
+            """,
+            """
+            using System;
+            class C
+            {
+                void M(string value)
+                {
+                    value = value.Replace("x", "y");
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task ReplacementContainsTheSearchCharacter_NoFixOffered()
+    {
+        return VerifyNoFixAsync("""
+                                 class C
+                                 {
+                                     void M(string value)
+                                     {
+                                         {|E128098:while (value.Contains("x"))
+                                         {
+                                             value = value.Replace("x", "xy");
+                                         }|}
+                                     }
+                                 }
+                                 """);
+    }
 }

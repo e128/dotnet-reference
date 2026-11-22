@@ -1,5 +1,5 @@
 # .NET 11 Project Structure
-*Updated: 2026-11-18T16:45:38Z*
+*Updated: 2026-11-21T20:39:46Z*
 
 ## Solution Format
 
@@ -12,7 +12,7 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 ```
 ├── Directory.Build.props      # Shared MSBuild PROPERTIES (TFM, analyzers, code analysis)
 ├── Directory.Build.targets    # Conditional TARGETS (runtime async, test project config, analyzer reference)
-├── Directory.Packages.props   # Central Package Management version pins
+├── Directory.Packages.props   # Central Package Management pins and global package references
 ├── global.json                # SDK version + MTP test runner
 ├── nuget.config               # Package sources, trusted signers, source mapping
 ├── .editorconfig              # Code style (formatting, naming, IDE rules)
@@ -47,6 +47,8 @@ Key properties:
 - `CentralPackageVersionOverrideEnabled=false`, prevents per-project overrides
 
 `Directory.Packages.props` owns the two `CentralPackage*` properties inside a setup-owned block. The block opens with a `repository-setup:begin cpm-hardening` comment that carries a SHA-256 hash. Never edit the block by hand. `Directory.Build.props` sets no CPM property.
+
+`Directory.Packages.props` also declares the ReferenceTrimmer `GlobalPackageReference`, so every project runs the reference hygiene gate. See [Dependency Policy](../dependency-policy.md#pruning-unused-dependencies).
 
 ## Directory.Build.props vs .targets
 

@@ -1,5 +1,5 @@
 # Code Fixer Decisions: Reliability
-*Updated: 2026-11-20T17:16:51Z*
+*Updated: 2026-11-21T21:17:18Z*
 
 Rationale removed from source comments. Each section names the type that carried it.
 Read this page before you change or delete the matching check.
@@ -22,6 +22,8 @@ Read this page before you change or delete the matching check.
 
 ## DiskRoundtripCodeFixProvider
 - Converts only a matching kind, or a text and bytes pair. Any other pair would put a value of the wrong type at the read site.
+- Declines an unknown kind pair instead of falling back to a direct replacement.
+- Declines a replacement equal to the read expression, so the fix never offers a no-op.
 
 ## DisposableSingletonFactoryCodeFixProvider
 - Keeps a two-type-argument registration that passes a factory argument. A factory that builds from an argument produces something the container cannot reproduce.
@@ -50,6 +52,11 @@ Read this page before you change or delete the matching check.
 ## ImmutableArrayDefaultCodeFixProvider
 - Skips a struct instance field. Older language versions do not allow an initializer on a struct instance field.
 
+## No-op reliability fix providers
+- `ConstructorNewDiRegisteredCodeFixProvider`, `JsonDocumentLifetimeCodeFixProvider`, and `UnboundedTaskWhenAllCodeFixProvider` register no action on purpose.
+- Each remedy changes control flow or a method signature, so no mechanical rewrite is safe.
+- The registration keeps the diagnostic ID available for suppression.
+
 ## OptionsBindInitCodeFixProvider
 - Falls back to the token parent when FindNode returns a child. FindNode returns the accessor directly only when the diagnostic span covers the whole accessor.
 
@@ -65,7 +72,9 @@ Read this page before you change or delete the matching check.
 
 ## TaskFromResultSyncIoCodeFixProvider
 - Compares the bound type against the per-compilation symbol. A user type that shares the metadata name is then not a match.
+- Binds the wrapper semantically, so a user `Task.FromResult` is left alone.
 - Unwraps only a call that is the returned value. Any other call may feed a Task-typed variable or a continuation, where the bare value does not compile.
+- Builds an intermediate document after the unwrap, because a rewritten tree needs its own semantic model for the sync-call scan.
 
 ## TaskWhenAllCancellationPropagationCodeFixProvider
 - Appends the token only to an overload that ends with a CancellationToken. The Playwright calls accept only an options object. As a result, they get no fix.

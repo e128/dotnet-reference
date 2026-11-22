@@ -1,5 +1,5 @@
 # Code Fixer Decisions: Performance
-*Updated: 2026-11-20T17:16:51Z*
+*Updated: 2026-11-22T04:00:12Z*
 
 Rationale removed from source comments. Each section names the type that carried it.
 Read this page before you change or delete the matching check.
@@ -9,6 +9,8 @@ Read this page before you change or delete the matching check.
 
 ## ChainedStringReplaceCodeFixProvider
 - Formats the collapse character with SymbolDisplay.FormatLiteral. The character is a runtime value, and FormatLiteral restores the quotes and escapes that a character literal needs.
+- Collapses a single-character search whose replacement does not contain that character into one `Replace` call. No new occurrence can form, so the loop would run once.
+- Declines a replacement that contains the search character, because the loop would not terminate.
 
 ## DllImportToLibraryImportCodeFixProvider
 - Rewrites only attributes whose arguments all translate. LibraryImport has no CharSet, CallingConvention, PreserveSig, ExactSpelling, or BestFitMapping argument.

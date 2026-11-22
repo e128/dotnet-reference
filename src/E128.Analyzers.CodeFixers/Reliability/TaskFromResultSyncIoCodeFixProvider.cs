@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
@@ -61,30 +60,58 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
             return document;
         }
 
-        var newMethod = method;
+        var unwrapped = UnwrapFromResultCalls(method, semanticModel, cancellationToken);
+        var intermediateDocument = document.WithSyntaxRoot(root.ReplaceNode(method, unwrapped));
+        var intermediateModel = await intermediateDocument.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (intermediateModel is null)
+        {
+            return document;
+        }
+
+        var intermediateRoot = await intermediateModel.SyntaxTree
+            .GetRootAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var newMethod = intermediateRoot.DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .First(candidate => candidate.SpanStart == method.SpanStart);
 
         var availableSyncIoMethods =
-            TaskFromResultSyncIoAnalyzer.FindAvailableSyncIoMethods(semanticModel.Compilation);
+            TaskFromResultSyncIoAnalyzer.FindAvailableSyncIoMethods(intermediateModel.Compilation);
         var syncIoOwnerTypes =
-            TaskFromResultSyncIoAnalyzer.ResolveSyncIoOwnerTypes(semanticModel.Compilation, availableSyncIoMethods);
+            TaskFromResultSyncIoAnalyzer.ResolveSyncIoOwnerTypes(intermediateModel.Compilation, availableSyncIoMethods);
         var syncIoCalls = FindAllSyncIoCalls(
-            newMethod, semanticModel, availableSyncIoMethods, syncIoOwnerTypes, cancellationToken);
+            newMethod, intermediateModel, availableSyncIoMethods, syncIoOwnerTypes, cancellationToken);
         if (syncIoCalls.Count > 0)
         {
             newMethod = ReplaceSyncCallsWithAsyncEquivalents(newMethod, syncIoCalls);
         }
 
-        newMethod = UnwrapFromResultCalls(newMethod);
+        newMethod = AddAsyncModifier(newMethod);
 
-        if (!newMethod.Modifiers.Any(SyntaxKind.AsyncKeyword))
+        var newRoot = intermediateRoot.ReplaceNode(
+            intermediateRoot.DescendantNodes()
+                .OfType<MethodDeclarationSyntax>()
+                .First(candidate => candidate.SpanStart == method.SpanStart),
+            newMethod);
+
+        return intermediateDocument.WithSyntaxRoot(newRoot);
+    }
+
+    private static MethodDeclarationSyntax AddAsyncModifier(MethodDeclarationSyntax method)
+    {
+        if (method.Modifiers.Any(SyntaxKind.AsyncKeyword))
         {
-            var asyncToken = SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
-                .WithTrailingTrivia(SyntaxFactory.Space);
-            newMethod = newMethod.WithModifiers(newMethod.Modifiers.Add(asyncToken));
+            return method;
         }
 
-        var newRoot = root.ReplaceNode(method, newMethod);
-        return document.WithSyntaxRoot(newRoot);
+        var leadingTrivia = method.GetLeadingTrivia();
+        var asyncToken = SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+            .WithTrailingTrivia(SyntaxFactory.Space);
+
+        return method
+            .WithLeadingTrivia(default(SyntaxTriviaList))
+            .WithModifiers(method.Modifiers.Add(asyncToken))
+            .WithLeadingTrivia(leadingTrivia);
     }
 
     private static List<InvocationExpressionSyntax> FindAllSyncIoCalls(
@@ -157,11 +184,14 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
         });
     }
 
-    private static MethodDeclarationSyntax UnwrapFromResultCalls(MethodDeclarationSyntax method)
+    private static MethodDeclarationSyntax UnwrapFromResultCalls(
+        MethodDeclarationSyntax method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
         var fromResultCalls = method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Where(invocation => IsFromResultInvocation(invocation)
+            .Where(invocation => TaskFromResultSyncIoAnalyzer.IsFromResultInvocation(invocation, semanticModel, cancellationToken)
                                  && IsReturnedValue(invocation)
                                  && !TaskFromResultSyncIoAnalyzer.IsInNestedFunction(invocation, method))
             .ToList();
@@ -179,21 +209,5 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
     private static bool IsReturnedValue(InvocationExpressionSyntax invocation)
     {
         return invocation.Parent is ReturnStatementSyntax or ArrowExpressionClauseSyntax;
-    }
-
-    private static bool IsFromResultInvocation(InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return false;
-        }
-
-        if (!string.Equals(memberAccess.Name.Identifier.ValueText, "FromResult", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        return memberAccess.Expression is IdentifierNameSyntax identifier && (string.Equals(identifier.Identifier.ValueText, "Task", StringComparison.Ordinal)
-                                                                              || string.Equals(identifier.Identifier.ValueText, "ValueTask", StringComparison.Ordinal));
     }
 }

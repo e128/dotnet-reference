@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -37,6 +38,8 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
     private const string SslStreamCallbackParameterName = "userCertificateValidationCallback";
 
     private const string DangerousValidatorName = "DangerousAcceptAnyServerCertificateValidator";
+
+    private const int MaxSourceDepth = 5;
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -192,9 +195,9 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
             };
         }
 
-        return depth < 1
+        return depth < MaxSourceDepth
                && GetSource(unwrapped, model, cancellationToken) is { } source
-               && IsUnconditionalTrue(source, model, cancellationToken);
+               && IsUnconditionalTrue(source, model, depth + 1, cancellationToken);
     }
 
     /// <summary>
@@ -240,13 +243,14 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
     private static bool IsUnconditionalTrue(
         CSharpSyntaxNode source,
         SemanticModel model,
+        int depth,
         CancellationToken cancellationToken)
     {
         return source switch
         {
             BlockSyntax block => BlockReturnsTrue(block, model, cancellationToken),
             ExpressionSyntax expression => AcceptsEveryCertificate(
-                expression, model, depth: 1, cancellationToken: cancellationToken),
+                expression, model, depth, cancellationToken),
             _ => false
         };
     }
@@ -256,9 +260,26 @@ public sealed class HttpClientCertificateBypassAnalyzer : DiagnosticAnalyzer
         SemanticModel model,
         CancellationToken cancellationToken)
     {
-        return block.Statements.Count is 1
-               && block.Statements[0] is ReturnStatementSyntax { Expression: { } returned }
-               && IsAlwaysTrue(ExpressionUnwrapper.Parentheses(returned), model, cancellationToken);
+        var returns = block.DescendantNodes(static node =>
+                node is not AnonymousFunctionExpressionSyntax and not LocalFunctionStatementSyntax)
+            .OfType<ReturnStatementSyntax>()
+            .ToList();
+
+        if (returns.Count is 0)
+        {
+            return false;
+        }
+
+        foreach (var returned in returns)
+        {
+            if (returned.Expression is not { } expression
+                || !IsAlwaysTrue(ExpressionUnwrapper.Parentheses(expression), model, cancellationToken))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

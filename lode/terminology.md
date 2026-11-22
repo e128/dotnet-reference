@@ -1,7 +1,8 @@
 # Terminology
-*Updated: 2026-11-19T20:37:01Z*
+*Updated: 2026-11-21T20:39:46Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
+- **ReferenceTrimmer**: Analyzer and MSBuild task that reports a removable `Reference`, `ProjectReference`, or `PackageReference`. The build runs it through a `GlobalPackageReference` in `Directory.Packages.props`.
 - **MTP**: Microsoft Testing Platform. The modern test execution platform used by xUnit v3, replacing the legacy vstest runner.
 - **Cobertura**: An XML code coverage report format. The MTP coverage extension emits one Cobertura file per test module. See `lode/dotnet/code-coverage.md`.
 - **Lode**: Structured AI-owned markdown repository for persistent project knowledge. Lives in `lode/`.

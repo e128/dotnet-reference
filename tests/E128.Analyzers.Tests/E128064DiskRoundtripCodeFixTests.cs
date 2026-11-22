@@ -139,4 +139,22 @@ public sealed class E128064DiskRoundtripCodeFixTests
                                  """;
         return VerifyFixAsync(source, fixedCode);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Fix_OffersNoAction_WhenTheSourceExpressionIsTheRead()
+    {
+        const string source = """
+                              using System.IO;
+                              class C
+                              {
+                                  string M(string path)
+                                  {
+                                      File.WriteAllText(path, File.ReadAllText(path));
+                                      return {|E128064:File.ReadAllText(path)|};
+                                  }
+                              }
+                              """;
+        return CodeFixTestRunner.NoFixAsync<DiskRoundtripAnalyzer, DiskRoundtripCodeFixProvider>(source);
+    }
 }

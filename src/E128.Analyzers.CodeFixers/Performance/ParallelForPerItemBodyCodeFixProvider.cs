@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Linq;
+using System.Globalization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -41,8 +42,7 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
             || !string.Equals(
                 name.Identifier.ValueText,
                 ParallelForPerItemBodyAnalyzer.ForMethodName,
-                StringComparison.Ordinal)
-            || !TryMatchBody(invocation.ArgumentList.Arguments, out var arguments, out var parameterName, out var bodyStatements))
+                StringComparison.Ordinal))
         {
             return;
         }
@@ -50,7 +50,17 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
         var semanticModel = await context.Document
             .GetSemanticModelAsync(context.CancellationToken)
             .ConfigureAwait(false);
-        if (semanticModel is null)
+        if (semanticModel is null
+            || semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method)
+        {
+            return;
+        }
+
+        if (TryMatchBody(
+                invocation.ArgumentList.Arguments,
+                method,
+                semanticModel,
+                context.CancellationToken) is not { } parts)
         {
             return;
         }
@@ -63,10 +73,9 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
         var replacementText = BuildReplacementText(
             invocation,
             memberAccess.Expression.ToString(),
-            arguments[0].Expression.ToString(),
-            arguments[1].Expression.ToString(),
-            parameterName,
-            bodyStatements);
+            parts.From.Expression.ToString(),
+            parts.To.Expression.ToString(),
+            parts);
 
         var replacement = SyntaxFactory.ParseExpression(replacementText)
             .WithTriviaFrom(invocation)
@@ -80,33 +89,130 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
             _ => Task.FromResult(Apply(context.Document, root, invocation, replacement)));
     }
 
-    private static bool TryMatchBody(
+    private static LoopParts? TryMatchBody(
         SeparatedSyntaxList<ArgumentSyntax> candidates,
-        out SeparatedSyntaxList<ArgumentSyntax> arguments,
-        out string parameterName,
-        out ImmutableArray<string> bodyStatements)
+        IMethodSymbol method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
-        arguments = candidates;
-        parameterName = string.Empty;
-        bodyStatements = [];
-
         if (candidates.Count is not ForArgumentCount)
         {
-            return false;
+            return null;
         }
 
-        if (candidates.Any(static argument => argument.NameColon is not null))
+        var fromArgument = ParallelForPerItemBodyAnalyzer.FindArgument(candidates, method, 0);
+        var toArgument = ParallelForPerItemBodyAnalyzer.FindArgument(candidates, method, 1);
+        var bodyArgument = ParallelForPerItemBodyAnalyzer.FindArgument(candidates, method, BodyArgumentIndex);
+
+        if (fromArgument is null || toArgument is null || bodyArgument is null)
+        {
+            return null;
+        }
+
+        var hasState = method.Parameters[BodyArgumentIndex].Type is INamedTypeSymbol bodyType
+                       && bodyType.TypeArguments.Length == ParallelForPerItemBodyAnalyzer.StateBodyParameterCount;
+        var itemTypeName = method.Parameters[0].Type.SpecialType is SpecialType.System_Int64 ? "long" : "int";
+
+        return bodyArgument.Expression is AnonymousFunctionExpressionSyntax lambda
+            ? MatchLambdaBody(lambda, fromArgument, toArgument, itemTypeName, hasState)
+            : MatchMethodGroupBody(
+                bodyArgument.Expression,
+                semanticModel,
+                fromArgument,
+                toArgument,
+                itemTypeName,
+                hasState,
+                cancellationToken);
+    }
+
+    private static LoopParts? MatchLambdaBody(
+        AnonymousFunctionExpressionSyntax lambda,
+        ArgumentSyntax from,
+        ArgumentSyntax to,
+        string itemTypeName,
+        bool hasState)
+    {
+        if (ParallelForPerItemBodyAnalyzer.IsAsyncLambda(lambda))
+        {
+            return null;
+        }
+
+        return TryGetLoopParts(lambda, hasState, out var parameterName, out var stateName, out var statements)
+            ? new LoopParts(from, to, itemTypeName, parameterName, stateName, statements)
+            : null;
+    }
+
+    private static LoopParts? MatchMethodGroupBody(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        ArgumentSyntax from,
+        ArgumentSyntax to,
+        string itemTypeName,
+        bool hasState,
+        CancellationToken cancellationToken)
+    {
+        return TryGetMethodGroupParts(
+                expression,
+                semanticModel,
+                hasState,
+                cancellationToken,
+                out var parameterName,
+                out var stateName,
+                out var statements)
+            ? new LoopParts(from, to, itemTypeName, parameterName, stateName, statements)
+            : null;
+    }
+
+    private static bool TryGetMethodGroupParts(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        bool hasState,
+        CancellationToken cancellationToken,
+        out string parameterName,
+        out string? stateParameterName,
+        out ImmutableArray<string> bodyStatements)
+    {
+        parameterName = string.Empty;
+        stateParameterName = null;
+        bodyStatements = [];
+
+        if (semanticModel.GetSymbolInfo(expression, cancellationToken).Symbol is not IMethodSymbol method
+            || method.IsAsync
+            || method.Parameters.Length != (hasState ? ParallelForPerItemBodyAnalyzer.StateBodyParameterCount : 1))
         {
             return false;
         }
 
-        if (candidates[BodyArgumentIndex].Expression is not AnonymousFunctionExpressionSyntax lambda
-            || !TryGetLoopParts(lambda, out parameterName, out bodyStatements))
-        {
-            return false;
-        }
+        parameterName = UniqueLoopVariableName(semanticModel, expression.SpanStart, method.Parameters[0].Name);
+        stateParameterName = hasState
+            ? UniqueLoopVariableName(semanticModel, expression.SpanStart, "state")
+            : null;
 
+        var arguments = stateParameterName is null
+            ? parameterName
+            : parameterName + ", " + stateParameterName;
+        bodyStatements = [expression.ToFullString().Trim() + "(" + arguments + ");"];
         return true;
+    }
+
+    private static string UniqueLoopVariableName(SemanticModel semanticModel, int position, string baseName)
+    {
+        if (!string.Equals(baseName, ParallelForPerItemBodyAnalyzer.RangeParameterName, StringComparison.Ordinal)
+            && semanticModel.LookupSymbols(position, name: baseName).Length is 0)
+        {
+            return baseName;
+        }
+
+        var index = 1;
+        string candidate;
+        do
+        {
+            candidate = baseName + index.ToString(CultureInfo.InvariantCulture);
+            index++;
+        }
+        while (semanticModel.LookupSymbols(position, name: candidate).Length > 0);
+
+        return candidate;
     }
 
     private static Document Apply(
@@ -135,31 +241,40 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
 
     private static bool TryGetLoopParts(
         AnonymousFunctionExpressionSyntax lambda,
+        bool hasState,
         out string parameterName,
+        out string? stateParameterName,
         out ImmutableArray<string> bodyStatements)
     {
         parameterName = string.Empty;
+        stateParameterName = null;
         bodyStatements = [];
 
-        var parameter = lambda switch
+        var parameters = lambda switch
         {
-            SimpleLambdaExpressionSyntax simple => simple.Parameter,
-            ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: { Count: 1 } parameters }
-                => parameters[0],
-            _ => null,
+            SimpleLambdaExpressionSyntax simple => SyntaxFactory.SingletonSeparatedList(simple.Parameter),
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters,
+            _ => default,
         };
 
-        if (parameter is null)
+        if (parameters.Count != (hasState ? ParallelForPerItemBodyAnalyzer.StateBodyParameterCount : 1))
         {
             return false;
         }
 
-        parameterName = parameter.Identifier.ValueText;
-
-        if (string.Equals(parameterName, ParallelForPerItemBodyAnalyzer.RangeParameterName, StringComparison.Ordinal))
+        foreach (var parameter in parameters)
         {
-            return false;
+            if (string.Equals(
+                    parameter.Identifier.ValueText,
+                    ParallelForPerItemBodyAnalyzer.RangeParameterName,
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
         }
+
+        parameterName = parameters[0].Identifier.ValueText;
+        stateParameterName = hasState ? parameters[1].Identifier.ValueText : null;
 
         switch (lambda.Body)
         {
@@ -185,25 +300,28 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
         string receiverText,
         string fromText,
         string toText,
-        string parameterName,
-        ImmutableArray<string> bodyStatements)
+        LoopParts parts)
     {
         var lineBreak = StatementLineBreak(invocation);
         var indent = FixSyntax.LastIndentation(invocation.GetLeadingTrivia());
         const string range = ParallelForPerItemBodyAnalyzer.RangeParameterName;
 
+        var lambdaHeader = parts.StateParameterName is { } state
+            ? "(" + range + ", " + state + ") =>"
+            : range + " =>";
+
         var builder = new StringBuilder()
             .Append(receiverText)
             .Append(".ForEach(Partitioner.Create(").Append(fromText).Append(", ").Append(toText)
-            .Append("), ").Append(range).Append(" =>").Append(lineBreak)
+            .Append("), ").Append(lambdaHeader).Append(lineBreak)
             .Append(indent).Append('{').Append(lineBreak)
-            .Append(indent).Append("    for (int ").Append(parameterName)
-            .Append(" = ").Append(range).Append(".Item1; ").Append(parameterName)
-            .Append(" < ").Append(range).Append(".Item2; ").Append(parameterName).Append("++)")
+            .Append(indent).Append("    for (").Append(parts.ItemTypeName).Append(' ').Append(parts.ParameterName)
+            .Append(" = ").Append(range).Append(".Item1; ").Append(parts.ParameterName)
+            .Append(" < ").Append(range).Append(".Item2; ").Append(parts.ParameterName).Append("++)")
             .Append(lineBreak)
             .Append(indent).Append("    {").Append(lineBreak);
 
-        foreach (var statement in bodyStatements)
+        foreach (var statement in parts.Statements)
         {
             builder.Append(indent).Append("        ").Append(statement).Append(lineBreak);
         }
@@ -212,6 +330,37 @@ public sealed class ParallelForPerItemBodyCodeFixProvider : E128CodeFixProviderB
             .Append(indent).Append("    }").Append(lineBreak)
             .Append(indent).Append("});")
             .ToString();
+    }
+
+    private sealed class LoopParts
+    {
+        public LoopParts(
+            ArgumentSyntax from,
+            ArgumentSyntax to,
+            string itemTypeName,
+            string parameterName,
+            string? stateParameterName,
+            ImmutableArray<string> statements)
+        {
+            From = from;
+            To = to;
+            ItemTypeName = itemTypeName;
+            ParameterName = parameterName;
+            StateParameterName = stateParameterName;
+            Statements = statements;
+        }
+
+        public ArgumentSyntax From { get; }
+
+        public ArgumentSyntax To { get; }
+
+        public string ItemTypeName { get; }
+
+        public string ParameterName { get; }
+
+        public string? StateParameterName { get; }
+
+        public ImmutableArray<string> Statements { get; }
     }
 
     private static string StatementLineBreak(InvocationExpressionSyntax invocation)

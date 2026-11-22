@@ -125,6 +125,35 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
         });
     }
 
+    private static Family ResolveFamily(IOperation? instance, out ITypeSymbol? instanceType)
+    {
+        instanceType = instance?.Type;
+        var family = GetFamily(instanceType);
+        if (family is not Family.None)
+        {
+            return family;
+        }
+
+        var initializer = FipsSymbolHelpers.ResolveInitializer(instance);
+        if (initializer is null)
+        {
+            return Family.None;
+        }
+
+        if (initializer is IInvocationOperation invocation && IsRsaCreatedByName(invocation))
+        {
+            return Family.Rsa;
+        }
+
+        if (initializer.Type is { } resolvedType)
+        {
+            instanceType = resolvedType;
+            return GetFamily(resolvedType);
+        }
+
+        return Family.None;
+    }
+
     private static Family GetFamily(ITypeSymbol? type)
     {
         var isRsa = FipsSymbolHelpers.DerivesFromCryptographyType(type, "RSA");
@@ -242,12 +271,16 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (invocation.Instance?.Type is not { } instanceType)
+        if (invocation.Instance is null)
         {
             return;
         }
 
-        var family = GetFamily(instanceType);
+        var family = ResolveFamily(invocation.Instance, out var instanceType);
+        if (instanceType is null)
+        {
+            return;
+        }
 
         if (family is Family.EllipticCurve && string.Equals(method.Name, "GenerateKey", StringComparison.Ordinal))
         {
@@ -349,13 +382,13 @@ public sealed class FipsRsaKeySizeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (property.Instance?.Type is not { } instanceType)
+        if (property.Instance is null)
         {
             return;
         }
 
-        var family = GetFamily(instanceType);
-        if (family is Family.None)
+        var family = ResolveFamily(property.Instance, out var instanceType);
+        if (family is Family.None || instanceType is null)
         {
             return;
         }

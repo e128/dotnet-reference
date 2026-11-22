@@ -1,5 +1,5 @@
 # Code Fixer Decisions: Design
-*Updated: 2026-11-20T17:16:51Z*
+*Updated: 2026-11-22T04:00:12Z*
 
 Rationale removed from source comments. Each section names the type that carried it.
 Read this page before you change or delete the matching check.
@@ -54,6 +54,8 @@ Read this page before you change or delete the matching check.
 
 ## TaskRunAsyncLambdaCodeFixProvider
 - Rewrites only a single-argument Task.Run call. A second argument such as a cancellation token would be dropped, and the work would stop observing cancellation.
+- Inlines a block body only when the call is the awaited expression of a statement. A block that returns or yields stays untouched, because inlining would change the control flow.
+- Declines a block-local name that resolves in the enclosing scope. The inlined block would collide with that symbol.
 
 ## TimeSpanForDurationCodeFixProvider
 - Offers no fix for a parameter default. An int literal is not a TimeSpan constant. As a result, the rewrite gives CS1750, and `default` would change the default from seconds to zero.

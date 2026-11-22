@@ -42,21 +42,77 @@ public sealed class TaskRunAsyncLambdaE128CodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task CodeFix_NoFixOffered_ForBlockBody()
+    public Task CodeFix_InlinesAwaitedBlockBody()
     {
-        // Block-body lambdas are not auto-fixable; diagnostic still fires but no code fix.
-        // FixedCode == TestCode verifies no fix was applied.
+        return VerifyFixAsync(
+            """
+            using System.Threading.Tasks;
+            class C
+            {
+                async Task M()
+                {
+                    await {|E128036:Task.Run(async () =>
+                    {
+                        await Task.Delay(1);
+                        await Task.Delay(2);
+                    })|};
+                }
+            }
+            """,
+            """
+            using System.Threading.Tasks;
+            class C
+            {
+                async Task M()
+                {
+                    {
+                        await Task.Delay(1);
+                        await Task.Delay(2);
+                    }
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_NoFixOffered_WhenTheBlockReturns()
+    {
+        return VerifyNoFixAsync("""
+                                using System.Threading.Tasks;
+                                class C
+                                {
+                                    async Task M(bool flag)
+                                    {
+                                        await {|E128036:Task.Run(async () =>
+                                        {
+                                            if (flag)
+                                            {
+                                                return;
+                                            }
+
+                                            await Task.Delay(1);
+                                        })|};
+                                    }
+                                }
+                                """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task CodeFix_NoFixOffered_WhenTheTaskIsNotAwaitedInPlace()
+    {
         return VerifyNoFixAsync("""
                                 using System.Threading.Tasks;
                                 class C
                                 {
                                     async Task M()
                                     {
-                                        await {|E128036:Task.Run(async () =>
+                                        var task = {|E128036:Task.Run(async () =>
                                         {
                                             await Task.Delay(1);
-                                            await Task.Delay(2);
                                         })|};
+                                        await task;
                                     }
                                 }
                                 """);
