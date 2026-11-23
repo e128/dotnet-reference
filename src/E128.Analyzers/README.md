@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.5.3" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.5.4" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -1167,7 +1167,7 @@ Flags two `List<T>` shapes.
 
 Flags `list.GetRange(start, count)`. `GetRange` allocates an intermediate `List<T>`. Use `CollectionsMarshal.AsSpan(list).Slice(start, count).ToArray()` to copy directly from the internal array without the intermediate allocation. The rule fires only when flow analysis proves the receiver non-null, because `AsSpan(null)` returns an empty span where `GetRange` throws. A bad range throws `ArgumentOutOfRangeException` from `Slice`.
 
-Flags `for (int i = 0; i < list.Count; i++)` when the body only reads `list[i]`. The indexer repeats the bounds check on every element. The rule stays silent when the loop calls any other member on the list, writes through the indexer, or uses the loop variable for another purpose. The loop-variable rewrite enumerates `CollectionsMarshal.AsSpan(list)`, so the rule suppresses a loop that mutates the list.
+Flags `for (int i = 0; i < list.Count; i++)` when the body only reads `list[i]`. The indexer repeats the bounds check on every element. The rule stays silent when the loop calls any other member on the list, writes through the indexer, or uses the loop variable for another purpose. The loop-variable rewrite enumerates `CollectionsMarshal.AsSpan(list)`, which keeps the old buffer after a resize. The rule therefore stays silent when the body can run other code that may resize the list: a direct mutation, an `await` or `yield`, a delegate call, a call into source code or to an overridable member, or a property accessor with a body. A body that calls only non-overridable framework members and reads auto-properties still reports.
 
 ```csharp
 // Before (warns)

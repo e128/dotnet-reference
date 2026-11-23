@@ -1,5 +1,5 @@
 # Dependency Policy
-*Updated: 2026-11-21T20:39:46Z*
+*Updated: 2026-11-23T15:56:34Z*
 
 ## Selection Criteria
 
@@ -38,7 +38,7 @@ The script snapshots `Directory.Packages.props`, then runs `dotnet restore` with
 
 `/prune-deps` audits the solution for dead dependencies: orphaned `PackageVersion` entries (transitive-pin aware), unused `PackageReference` (code-usage based), and unused `ProjectReference`. It reports findings, then removes approved entries and runs one verification build. Analyzers (in `Directory.Build.props`), test SDK/runner packages, and runtime-only/DI-glue packages never surface as `using` directives. They are not unused just because no `using` references them. `/solution-audit` surfaces the same three categories as part of its broader read-only health sweep.
 
-The ReferenceTrimmer `GlobalPackageReference` in `Directory.Packages.props` enforces reference hygiene at build time. The build fails on a removable `Reference`, `ProjectReference`, or `PackageReference` (RT0001 to RT0003). A reference the compiler does not use but the runtime needs carries `TreatAsUsed="true"`. `tests/Architecture.Tests` uses that metadata for the assemblies ArchUnit loads by name. ReferenceTrimmer caches its declared reference list under `artifacts/obj/`. A change to only the suppression metadata leaves that cache stale. Delete the `_ReferenceTrimmer_*` files for the project after such a change.
+The ReferenceTrimmer `GlobalPackageReference` in `Directory.Packages.props` enforces reference hygiene at build time. The build fails on a removable `Reference`, `ProjectReference`, or `PackageReference` (RT0001 to RT0003). `Directory.Build.props` sets `ReferenceTrimmerUseSymbolAnalysis=true`, so the analyzer tracks referenced symbols instead of `GetUsedAssemblyReferences`. Symbol mode needs no XML documentation output. The repository keeps `GenerateDocumentationFile=true`, so `cref` uses still count. A reference the compiler does not use but the runtime needs carries `TreatAsUsed="true"`. `tests/Architecture.Tests` uses that metadata for the assemblies ArchUnit loads by name. ReferenceTrimmer caches its declared reference list under `artifacts/obj/`. A change to only the suppression metadata leaves that cache stale. Delete the `_ReferenceTrimmer_*` files for the project after such a change.
 
 ## Automated Updates
 

@@ -48,6 +48,10 @@ After an agent definition changes, run `scripts/internal/opencode-agents.sh sync
 - Prefer immutability, then memory, then CPU, then parallelism.
 - Follow `.claude/rules/security.md` for configurable security values and pooled buffers.
 - Follow `.claude/rules/quality-gates.md` for suppressions, nullable diagnostics, and format requirements.
+- Keep ReferenceTrimmer installed and enabled, with experimental symbol analysis. Preserve XML documentation settings. With documentation generation off, symbol mode misses references used only in `cref` attributes. Inspect runtime, reflection, plugin, build, and test use before removing a reported reference. Remove only high-confidence project-local unconditional items. Ask before shared, imported, conditional, central-pin, or published package-contract changes. Verify affected builds, tests, and documented runtime checks, and restore exact removals that break them.
+- For a proven runtime dependency, you can add a narrow item-level ReferenceTrimmer exception: package `TreatAsUsed="true"`, project `NoWarn="RT0002"`, or assembly `NoWarn="RT0001"`. Preserve existing metadata, record evidence and authorization, and ask about uncertain cases. Add no blanket suppression. Preserve test source and expectations during reference cleanup.
+- Keep SDK analyzer policy and every Meziantou `Usage`, `Performance`, and `Security` rule enabled as errors, including disabled-by-default rules. ConfigureAwait rules (CA2007, MA0004, xUnit1030, RCS1090, S3216, VSTHRD111, and equivalents) are the exception: they stay at `none` in `.globalconfig`. Never enable one, and never change source to satisfy one. After an authorized Meziantou version change, refresh the version-matched rule inventory and verify effective per-ID settings. Preserve other analyzer policies and ask before changing explicit overrides or adding suppressions outside the preauthorized ReferenceTrimmer runtime exceptions.
+- Fix production analyzer findings first with behavior-preserving corrections. Exclude tests and generated code from bulk fixes. Leave existing tests unchanged unless a compile or analyzer error requires a minimal correction. Record why. Preserve assertions, expected values, cases, fixtures, and coverage. Ask before changing public contracts or observable behavior. Verify the build and actual test execution.
 
 ## Git and Scope
 
@@ -58,7 +62,10 @@ After an agent definition changes, run `scripts/internal/opencode-agents.sh sync
 - Do not name Claude Code or Anthropic in a commit message or PR body. Add no attribution trailer. `scripts/internal/commit.sh` rejects the phrase.
 - Squash only unpushed commits. Preserve pushed history and ship one clean commit per PR.
 - Include these results under Tests and Tooling in each PR description. Use `scripts/test.sh` and report the revision and test scope.
+  - **Analyzers:** For analyzer, configuration, reference cleanup, or analyzer-fix changes, report the relevant package versions and policies. Include reference dispositions, runtime evidence, conflicts, authorized exceptions, fixes, necessary test edits, and build and test results.
   - **Architecture tests:** Report passed and total counts. Describe changes to production projects, `ProjectReference` edges, baselines, rules, and exclusions, with the reason for each. Compare the evaluated graph with the captured baseline when project or reference files change, because frozen tests alone do not discover every graph change.
+  - **Pipeline images:** Identify each pipeline's validation result, changed hosted-image labels, required compatibility fixes, and pre-build cleanup paths. Prefer compatible `ubuntu-26.04`, fall back to `ubuntu-24.04`, and do not retain `ubuntu-22.04`. Separate local validation from hosted run results and unresolved template dependencies.
+  - These requirements add no hosted gate and do not authorize pull request creation or baseline replacement.
   - When a check did not run, write "not run" and the reason. Never present stale evidence as current.
 - Run `scripts/status.sh` before staging. Treat concurrent staged, added, or removed files as existing work.
 - Preserve unrelated work. Take no destructive, production, or external action beyond the authorization given.

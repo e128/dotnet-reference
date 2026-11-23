@@ -48,7 +48,512 @@
       "verified_baseline": false,
       "registered_at": "2026-11-21T21:01:34Z",
       "registered_commit": "69e7576441fde6a123a11c81a3a27363e14b01a0"
+    },
+    "tests/Architecture.Tests/ProjectReferenceGraphTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:36:43Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/ChainedStringReplaceCodeFixTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:36:43Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/HttpClientCertificateBypassBranchCoverageTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:36:43Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/ParallelForPerItemBodyAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:36:43Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:36:43Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/TaskRunAsyncLambdaE128CodeFixTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:36:43Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/Architecture.Tests/ProjectInventoryTests.cs": {
+      "origin": "human-written",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:37:58Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/Architecture.Tests/ProjectBoundaryTests.cs": {
+      "origin": "human-written",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:37:58Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/.globalconfig": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:49:47Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:49:47Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T15:49:47Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/ListIndexerLoopMatcherTests.cs": {
+      "origin": "human-written",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T16:08:54Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs": {
+      "origin": "human-written",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T16:08:54Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeCodeFixTests.cs": {
+      "origin": "human-written",
+      "verified_baseline": false,
+      "registered_at": "2026-11-23T16:08:54Z",
+      "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
     }
   },
-  "tests": {}
+  "tests": {
+    "tests/Architecture.Tests/ProjectReferenceGraphTests.cs::Architecture.Tests.ProjectReferenceGraphTests.EveryProductionProject_IsInTheFrozenGraphOrExcluded": {
+      "test_file": "tests/Architecture.Tests/ProjectReferenceGraphTests.cs",
+      "test_name": "Architecture.Tests.ProjectReferenceGraphTests.EveryProductionProject_IsInTheFrozenGraphOrExcluded",
+      "method_name": "EveryProductionProject_IsInTheFrozenGraphOrExcluded",
+      "class_name": "Architecture.Tests.ProjectReferenceGraphTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectReferenceGraphTests.cs::Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Analyzers.CodeFixers\")": {
+      "test_file": "tests/Architecture.Tests/ProjectReferenceGraphTests.cs",
+      "test_name": "Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Analyzers.CodeFixers\")",
+      "method_name": "ProjectFileReferences_MatchTheFrozenGraph",
+      "class_name": "Architecture.Tests.ProjectReferenceGraphTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectReferenceGraphTests.cs::Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Analyzers\")": {
+      "test_file": "tests/Architecture.Tests/ProjectReferenceGraphTests.cs",
+      "test_name": "Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Analyzers\")",
+      "method_name": "ProjectFileReferences_MatchTheFrozenGraph",
+      "class_name": "Architecture.Tests.ProjectReferenceGraphTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectReferenceGraphTests.cs::Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Reference.Cli\")": {
+      "test_file": "tests/Architecture.Tests/ProjectReferenceGraphTests.cs",
+      "test_name": "Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Reference.Cli\")",
+      "method_name": "ProjectFileReferences_MatchTheFrozenGraph",
+      "class_name": "Architecture.Tests.ProjectReferenceGraphTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectReferenceGraphTests.cs::Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Reference.Web\")": {
+      "test_file": "tests/Architecture.Tests/ProjectReferenceGraphTests.cs",
+      "test_name": "Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Reference.Web\")",
+      "method_name": "ProjectFileReferences_MatchTheFrozenGraph",
+      "class_name": "Architecture.Tests.ProjectReferenceGraphTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectReferenceGraphTests.cs::Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Analyzers.Union\")": {
+      "test_file": "tests/Architecture.Tests/ProjectReferenceGraphTests.cs",
+      "test_name": "Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Analyzers.Union\")",
+      "method_name": "ProjectFileReferences_MatchTheFrozenGraph",
+      "class_name": "Architecture.Tests.ProjectReferenceGraphTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectReferenceGraphTests.cs::Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Reference.Core\")": {
+      "test_file": "tests/Architecture.Tests/ProjectReferenceGraphTests.cs",
+      "test_name": "Architecture.Tests.ProjectReferenceGraphTests.ProjectFileReferences_MatchTheFrozenGraph(project: \"E128.Reference.Core\")",
+      "method_name": "ProjectFileReferences_MatchTheFrozenGraph",
+      "class_name": "Architecture.Tests.ProjectReferenceGraphTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectInventoryTests.cs::Architecture.Tests.ProjectInventoryTests.BoundaryRules_CoverEveryExpectedSubject": {
+      "test_file": "tests/Architecture.Tests/ProjectInventoryTests.cs",
+      "test_name": "Architecture.Tests.ProjectInventoryTests.BoundaryRules_CoverEveryExpectedSubject",
+      "method_name": "BoundaryRules_CoverEveryExpectedSubject",
+      "class_name": "Architecture.Tests.ProjectInventoryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectInventoryTests.cs::Architecture.Tests.ProjectInventoryTests.ExpectedAssemblies_LoadAndContainTypes": {
+      "test_file": "tests/Architecture.Tests/ProjectInventoryTests.cs",
+      "test_name": "Architecture.Tests.ProjectInventoryTests.ExpectedAssemblies_LoadAndContainTypes",
+      "method_name": "ExpectedAssemblies_LoadAndContainTypes",
+      "class_name": "Architecture.Tests.ProjectInventoryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectInventoryTests.cs::Architecture.Tests.ProjectInventoryTests.Baseline_LoadsExactlyTheExpectedAssemblies": {
+      "test_file": "tests/Architecture.Tests/ProjectInventoryTests.cs",
+      "test_name": "Architecture.Tests.ProjectInventoryTests.Baseline_LoadsExactlyTheExpectedAssemblies",
+      "method_name": "Baseline_LoadsExactlyTheExpectedAssemblies",
+      "class_name": "Architecture.Tests.ProjectInventoryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectBoundaryTests.cs::Architecture.Tests.ProjectBoundaryTests.E128_Analyzers_CodeFixers_ShouldNotDependOn_UnreferencedProjects": {
+      "test_file": "tests/Architecture.Tests/ProjectBoundaryTests.cs",
+      "test_name": "Architecture.Tests.ProjectBoundaryTests.E128_Analyzers_CodeFixers_ShouldNotDependOn_UnreferencedProjects",
+      "method_name": "E128_Analyzers_CodeFixers_ShouldNotDependOn_UnreferencedProjects",
+      "class_name": "Architecture.Tests.ProjectBoundaryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectBoundaryTests.cs::Architecture.Tests.ProjectBoundaryTests.E128_Analyzers_ShouldNotDependOn_UnreferencedProjects": {
+      "test_file": "tests/Architecture.Tests/ProjectBoundaryTests.cs",
+      "test_name": "Architecture.Tests.ProjectBoundaryTests.E128_Analyzers_ShouldNotDependOn_UnreferencedProjects",
+      "method_name": "E128_Analyzers_ShouldNotDependOn_UnreferencedProjects",
+      "class_name": "Architecture.Tests.ProjectBoundaryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectBoundaryTests.cs::Architecture.Tests.ProjectBoundaryTests.E128_Reference_Cli_ShouldNotDependOn_UnreferencedProjects": {
+      "test_file": "tests/Architecture.Tests/ProjectBoundaryTests.cs",
+      "test_name": "Architecture.Tests.ProjectBoundaryTests.E128_Reference_Cli_ShouldNotDependOn_UnreferencedProjects",
+      "method_name": "E128_Reference_Cli_ShouldNotDependOn_UnreferencedProjects",
+      "class_name": "Architecture.Tests.ProjectBoundaryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectBoundaryTests.cs::Architecture.Tests.ProjectBoundaryTests.E128_Reference_Web_ShouldNotDependOn_UnreferencedProjects": {
+      "test_file": "tests/Architecture.Tests/ProjectBoundaryTests.cs",
+      "test_name": "Architecture.Tests.ProjectBoundaryTests.E128_Reference_Web_ShouldNotDependOn_UnreferencedProjects",
+      "method_name": "E128_Reference_Web_ShouldNotDependOn_UnreferencedProjects",
+      "class_name": "Architecture.Tests.ProjectBoundaryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectBoundaryTests.cs::Architecture.Tests.ProjectBoundaryTests.E128_Analyzers_Union_ShouldNotDependOn_UnreferencedProjects": {
+      "test_file": "tests/Architecture.Tests/ProjectBoundaryTests.cs",
+      "test_name": "Architecture.Tests.ProjectBoundaryTests.E128_Analyzers_Union_ShouldNotDependOn_UnreferencedProjects",
+      "method_name": "E128_Analyzers_Union_ShouldNotDependOn_UnreferencedProjects",
+      "class_name": "Architecture.Tests.ProjectBoundaryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/Architecture.Tests/ProjectBoundaryTests.cs::Architecture.Tests.ProjectBoundaryTests.E128_Reference_Core_ShouldNotDependOn_UnreferencedProjects": {
+      "test_file": "tests/Architecture.Tests/ProjectBoundaryTests.cs",
+      "test_name": "Architecture.Tests.ProjectBoundaryTests.E128_Reference_Core_ShouldNotDependOn_UnreferencedProjects",
+      "method_name": "E128_Reference_Core_ShouldNotDependOn_UnreferencedProjects",
+      "class_name": "Architecture.Tests.ProjectBoundaryTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:37:58Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs::E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.IndexerLoop_BodyGrowsTheListThroughAHelper_StaysSilent": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.IndexerLoop_BodyGrowsTheListThroughAHelper_StaysSilent",
+      "method_name": "IndexerLoop_BodyGrowsTheListThroughAHelper_StaysSilent",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests",
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "first_green_commit": null,
+      "first_green_at": null
+    },
+    "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs::E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests.Fix_LambdaParameterNamedRange_OffersNoAction": {
+      "test_file": "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests.Fix_LambdaParameterNamedRange_OffersNoAction",
+      "method_name": "Fix_LambdaParameterNamedRange_OffersNoAction",
+      "class_name": "E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "first_green_commit": null,
+      "first_green_at": null
+    },
+    "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs::E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests.Fix_MethodGroupParameterNamedRange_RenamesTheLoopVariable": {
+      "test_file": "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests.Fix_MethodGroupParameterNamedRange_RenamesTheLoopVariable",
+      "method_name": "Fix_MethodGroupParameterNamedRange_RenamesTheLoopVariable",
+      "class_name": "E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:49:48Z"
+    },
+    "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs::E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests.Fix_MethodGroupParameterNameInScope_AppendsAnIndex": {
+      "test_file": "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests.Fix_MethodGroupParameterNameInScope_AppendsAnIndex",
+      "method_name": "Fix_MethodGroupParameterNameInScope_AppendsAnIndex",
+      "class_name": "E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:49:48Z"
+    },
+    "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs::E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests.Fix_ForeignPartitionerInScope_OffersNoAction": {
+      "test_file": "tests/E128.Analyzers.Tests/ParallelForPerItemBodyCodeFixBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests.Fix_ForeignPartitionerInScope_OffersNoAction",
+      "method_name": "Fix_ForeignPartitionerInScope_OffersNoAction",
+      "class_name": "E128.Analyzers.Tests.ParallelForPerItemBodyCodeFixBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T15:49:48Z"
+    },
+    "tests/E128.Analyzers.Tests/ListIndexerLoopMatcherTests.cs::E128.Analyzers.Tests.ListIndexerLoopMatcherTests.Matches_WhenTheLoopOnlyReadsTheIndexer": {
+      "test_file": "tests/E128.Analyzers.Tests/ListIndexerLoopMatcherTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListIndexerLoopMatcherTests.Matches_WhenTheLoopOnlyReadsTheIndexer",
+      "method_name": "Matches_WhenTheLoopOnlyReadsTheIndexer",
+      "class_name": "E128.Analyzers.Tests.ListIndexerLoopMatcherTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenTheLoopVariableHasAnotherUse": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenTheLoopVariableHasAnotherUse",
+      "method_name": "Silent_WhenTheLoopVariableHasAnotherUse",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenResultStaysList": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenResultStaysList",
+      "method_name": "Silent_WhenResultStaysList",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenNullableContextIsDisabled": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenNullableContextIsDisabled",
+      "method_name": "Silent_WhenNullableContextIsDisabled",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenCalledOnNonList": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenCalledOnNonList",
+      "method_name": "Silent_WhenCalledOnNonList",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Reports_WhenAnIndexerLoopReadsAList": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Reports_WhenAnIndexerLoopReadsAList",
+      "method_name": "Reports_WhenAnIndexerLoopReadsAList",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenTheLoopMutatesTheList": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenTheLoopMutatesTheList",
+      "method_name": "Silent_WhenTheLoopMutatesTheList",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenReceiverMaybeNull": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenReceiverMaybeNull",
+      "method_name": "Silent_WhenReceiverMaybeNull",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Reports_WhenCalledOnList": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Reports_WhenCalledOnList",
+      "method_name": "Reports_WhenCalledOnList",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenTheLoopVariableIndexesAnotherCollection": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenTheLoopVariableIndexesAnotherCollection",
+      "method_name": "Silent_WhenTheLoopVariableIndexesAnotherCollection",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs::E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenTheLoopWritesThroughTheIndexer": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests.Silent_WhenTheLoopWritesThroughTheIndexer",
+      "method_name": "Silent_WhenTheLoopWritesThroughTheIndexer",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeAnalyzerTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeCodeFixTests.cs::E128.Analyzers.Tests.ListGetRangeCodeFixTests.CodeFix_IndexerLoop_KeepsExistingInteropUsing": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeCodeFixTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeCodeFixTests.CodeFix_IndexerLoop_KeepsExistingInteropUsing",
+      "method_name": "CodeFix_IndexerLoop_KeepsExistingInteropUsing",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeCodeFixTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeCodeFixTests.cs::E128.Analyzers.Tests.ListGetRangeCodeFixTests.CodeFix_ReplacesTheIndexerLoopWithAsSpan": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeCodeFixTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeCodeFixTests.CodeFix_ReplacesTheIndexerLoopWithAsSpan",
+      "method_name": "CodeFix_ReplacesTheIndexerLoopWithAsSpan",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeCodeFixTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeCodeFixTests.cs::E128.Analyzers.Tests.ListGetRangeCodeFixTests.CodeFix_ReplacesGetRangeWithAsSpanSlice": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeCodeFixTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeCodeFixTests.CodeFix_ReplacesGetRangeWithAsSpanSlice",
+      "method_name": "CodeFix_ReplacesGetRangeWithAsSpanSlice",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeCodeFixTests",
+      "origin": "human-written",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs::E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Reports_WhenTheBodyOnlyUsesFrameworkMembersAndAutoProperties": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Reports_WhenTheBodyOnlyUsesFrameworkMembersAndAutoProperties",
+      "method_name": "Reports_WhenTheBodyOnlyUsesFrameworkMembersAndAutoProperties",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs::E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyCallsAnOverridableMemberOnAnElement": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyCallsAnOverridableMemberOnAnElement",
+      "method_name": "Silent_WhenTheBodyCallsAnOverridableMemberOnAnElement",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs::E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyCallsALocalFunction": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyCallsALocalFunction",
+      "method_name": "Silent_WhenTheBodyCallsALocalFunction",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs::E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyCallsADelegate": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyCallsADelegate",
+      "method_name": "Silent_WhenTheBodyCallsADelegate",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs::E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyGrowsTheListThroughAHelper": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyGrowsTheListThroughAHelper",
+      "method_name": "Silent_WhenTheBodyGrowsTheListThroughAHelper",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs::E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyReadsAPropertyWithAnAccessorBody": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyReadsAPropertyWithAnAccessorBody",
+      "method_name": "Silent_WhenTheBodyReadsAPropertyWithAnAccessorBody",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs::E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyAwaits": {
+      "test_file": "tests/E128.Analyzers.Tests/ListGetRangeIndirectMutationTests.cs",
+      "test_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests.Silent_WhenTheBodyAwaits",
+      "method_name": "Silent_WhenTheBodyAwaits",
+      "class_name": "E128.Analyzers.Tests.ListGetRangeIndirectMutationTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
+      "first_green_at": "2026-11-23T16:08:54Z"
+    }
+  }
 }

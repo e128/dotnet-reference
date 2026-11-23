@@ -23,7 +23,7 @@
 
   <!-- NuGet Packaging -->
   <PropertyGroup>
-    <Version>3.5.3</Version>
+    <Version>3.5.4</Version>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>

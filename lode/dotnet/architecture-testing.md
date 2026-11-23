@@ -1,5 +1,5 @@
 # Architecture Testing
-*Updated: 2026-11-21T20:39:50Z*
+*Updated: 2026-11-23T15:56:34Z*
 
 ## Overview
 
@@ -78,11 +78,21 @@ Each production assembly has one rule. The rule forbids a dependency on a produc
 ```mermaid
 graph LR
     CodeFixers[E128.Analyzers.CodeFixers] --> Analyzers[E128.Analyzers]
+    Union[E128.Analyzers.Union] --> Analyzers
     Cli[E128.Reference.Cli] --> Core[E128.Reference.Core]
     Web[E128.Reference.Web] --> Core
 ```
 
-The allowed graph is a literal baseline. The tests never compute it from the current graph. A type dependency on an assembly outside the baseline closure fails a rule until a reviewer updates the baseline. A new `ProjectReference` without a type dependency does not fail a rule. Compare the evaluated graph with the baseline when a project or reference file changes.
+The allowed graph is a literal baseline. The tests never compute it from the current graph. A type dependency on an assembly outside the baseline closure fails a rule until a reviewer updates the baseline. A new `ProjectReference` without a type dependency does not fail a boundary rule. `ProjectReferenceGraphTests` catches that case. Compare the evaluated graph with the baseline when a project or reference file changes.
+
+### Project Reference Graph (`ProjectReferenceGraphTests`)
+
+These tests hold a frozen map of the direct production `ProjectReference` edges of each production project, keyed by assembly name.
+
+- The edge test reads each project file under `src/` and compares the `ProjectReference` file stems with the map. It splits each `Include` on both `\` and `/`, so it also runs on Linux.
+- The discovery test compares the `.csproj` stems under `src/` with the map keys plus an exclusion list.
+
+Both tests read files without MSBuild evaluation. A conditional `ProjectReference`, or an untracked `.csproj` under `src/`, fails them until a reviewer updates the map. The analyzer references that `Directory.Build.targets` injects are not in a project file, so the map omits them.
 
 ### Project Inventory (`ProjectInventoryTests`)
 
@@ -92,7 +102,7 @@ These tests keep the boundary baseline complete. They hold two frozen literal li
 - Each expected assembly loads and contains types.
 - `ProjectBoundaryTests` has one rule for each expected subject.
 
-The inventory checks snapshot consistency. It does not discover a new project. A new production project needs a reviewer to update the inventory, the baseline, and the rules together.
+The inventory checks snapshot consistency. The discovery test in `ProjectReferenceGraphTests` finds a new project. A new production project needs a reviewer to update the inventory, the baseline, the graph map, and the rules together.
 
 Coverage instrumentation injects a tracker type with one full name into each instrumented assembly. ArchUnitNET merges that type across assemblies, so the rules exclude the `Microsoft.CodeCoverage.Instrumentation.Static.Tracker` namespace. Without the exclusion, `scripts/coverage.sh` fails the boundary rules.
 

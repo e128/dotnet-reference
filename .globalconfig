@@ -22,12 +22,15 @@ dotnet_analyzer_diagnostic.category-xUnit.severity = error
 
 dotnet_diagnostic.CS0246.severity = error
 
-# CA2007: Scope to DLL projects only: library code must use ConfigureAwait(false); app code must not.
-# Microsoft docs explicitly endorse suppressing CA2007 for application projects.
-# MA0004, RCS1090, S3216 and VSTHRD111 do not support project-type scoping (see Not Enabled),
-# so CA2007 remains the enforcement source here.
-dotnet_diagnostic.CA2007.severity = error
-dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
+# ConfigureAwait rules: always off, by maintainer policy. The bulk error key above reaches
+# every rule that is enabled by default, so each ConfigureAwait rule needs its own none entry.
+# Never enable one, and never change source to satisfy one.
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.MA0004.severity = none
+dotnet_diagnostic.RCS1090.severity = none
+dotnet_diagnostic.S3216.severity = none
+dotnet_diagnostic.VSTHRD111.severity = none
+dotnet_diagnostic.xUnit1030.severity = none
 
 # ── Enabled Off-by-Default Rules ──────────────
 # Each list below names every DiagnosticDescriptor with IsEnabledByDefault == false in the
@@ -301,10 +304,6 @@ dotnet_diagnostic.s881.severity = error
 # or the rule needs a file or option the repo does not have. Dislike of a rule never qualifies.
 
 # --- Opposite polarity of an enforced rule ---
-dotnet_diagnostic.ma0004.severity = none         # Use ConfigureAwait(false): opposite of "app code must not"; CA2007 is scoped to DLLs
-dotnet_diagnostic.rcs1090.severity = none        # Add/remove ConfigureAwait(false): same conflict as MA0004
-dotnet_diagnostic.s3216.severity = none          # ConfigureAwait(false) should be used: same conflict as MA0004
-dotnet_diagnostic.vsthrd111.severity = none      # Use ConfigureAwait(bool): same conflict as MA0004
 dotnet_diagnostic.ma0174.severity = none         # Record should use explicit 'class' keyword: opposite of MA0175
 dotnet_diagnostic.ma0177.severity = none         # Single-line XML summary: opposite of MA0211
 dotnet_diagnostic.ma0214.severity = none         # Use 'await' instead of returning the task: opposite of MA0215 and RCS1174
@@ -381,7 +380,7 @@ dotnet_diagnostic.s4040.severity = none          # Prefer uppercasing to invaria
 dotnet_diagnostic.rcs1014.severity = none        # Use explicitly typed array: contradicts RCS1124, IDE0305, and IDE0300 on array collection expressions, maintainer turned it off
 dotnet_diagnostic.rcs1050.severity = none        # Add parentheses when creating new object: opposite of S3235, maintainer turned it off
 dotnet_diagnostic.ma0136.severity = none         # Raw string contains an implicit end of line: repo rule requires raw string test snippets, maintainer turned it off
-dotnet_diagnostic.rcs1238.severity = none        # Avoid nested ternary operators: same check as S3358, maintainer turned it off
+dotnet_diagnostic.rcs1238.severity = none       # Avoid nested ternary operators: same check as S3358, maintainer turned it off
 dotnet_diagnostic.ma0071.severity = none         # Avoid using redundant else: same check as RCS1211, maintainer turned it off
 
 # --- Destructive code fix ---
