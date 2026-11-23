@@ -38,7 +38,7 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         true,
         "CollectionsMarshal.AsSpan returns a span over the internal array with no copy. " +
-        "The rule stays silent when the loop mutates the list, because the span reads stale memory after a mutation.");
+        "The rule stays silent when the loop mutates the list or can run other code that may resize it, because the span reads stale memory after a resize.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule, LoopRule];
 
@@ -206,7 +206,86 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        return true;
+        return !BodyMayRunOtherCode(loop.Statement, model, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Reports whether the loop body can hand control to code that may resize the list through
+    ///     another reference: an await, a yield, a call into source code or an overridable member,
+    ///     a delegate call, or a source property accessor with a body. A span over the list keeps
+    ///     the old buffer after such a resize. A user-defined operator or conversion that resizes
+    ///     the list is outside this check.
+    /// </summary>
+    private static bool BodyMayRunOtherCode(
+        StatementSyntax body,
+        SemanticModel model,
+        CancellationToken cancellationToken)
+    {
+        foreach (var node in body.DescendantNodesAndSelf())
+        {
+            if (NodeMayRunOtherCode(node, model, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool NodeMayRunOtherCode(SyntaxNode node, SemanticModel model, CancellationToken cancellationToken)
+    {
+        return node switch
+        {
+            AwaitExpressionSyntax or YieldStatementSyntax => true,
+            InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax or IdentifierNameSyntax
+                or ElementAccessExpressionSyntax =>
+                RunsOtherCode(model.GetSymbolInfo(node, cancellationToken).Symbol, cancellationToken),
+            _ => false
+        };
+    }
+
+    private static bool RunsOtherCode(ISymbol? symbol, CancellationToken cancellationToken)
+    {
+        return symbol switch
+        {
+            IMethodSymbol method => method.MethodKind is MethodKind.DelegateInvoke
+                                    || HasSourceBody(method, cancellationToken)
+                                    || IsOverridable(method),
+            IPropertySymbol property => HasSourceBody(property.GetMethod, cancellationToken)
+                                        || HasSourceBody(property.SetMethod, cancellationToken)
+                                        || IsOverridable(property.GetMethod)
+                                        || IsOverridable(property.SetMethod),
+            _ => false
+        };
+    }
+
+    private static bool HasSourceBody(IMethodSymbol? method, CancellationToken cancellationToken)
+    {
+        if (method is null)
+        {
+            return false;
+        }
+
+        foreach (var reference in method.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax(cancellationToken) is not AccessorDeclarationSyntax { Body: null, ExpressionBody: null })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsOverridable(IMethodSymbol? method)
+    {
+        return method is not null
+               && !method.IsSealed
+               && !method.ContainingType.IsSealed
+               && (method.IsVirtual
+                   || method.IsAbstract
+                   || method.IsOverride
+                   || method.ContainingType.TypeKind is TypeKind.Interface);
     }
 
     private static bool TryAddElementRead(
@@ -266,8 +345,8 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
     private static MemberAccessExpressionSyntax? GetRangeAccess(InvocationExpressionSyntax invocation)
     {
         return invocation.Expression is MemberAccessExpressionSyntax memberAccess
-            && string.Equals(memberAccess.Name.Identifier.Text, "GetRange", StringComparison.Ordinal)
-            && invocation.ArgumentList.Arguments.Count is GetRangeArgumentCount
+               && string.Equals(memberAccess.Name.Identifier.Text, "GetRange", StringComparison.Ordinal)
+               && invocation.ArgumentList.Arguments.Count is GetRangeArgumentCount
             ? memberAccess
             : null;
     }
@@ -275,7 +354,7 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
     private static bool IsListMethod(IMethodSymbol methodSymbol, INamedTypeSymbol listType)
     {
         return methodSymbol.ContainingType is INamedTypeSymbol { IsGenericType: true } containingType
-            && TypeSymbols.MatchesOriginalDefinition(containingType, listType);
+               && TypeSymbols.MatchesOriginalDefinition(containingType, listType);
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol listType)

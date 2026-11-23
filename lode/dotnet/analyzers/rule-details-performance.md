@@ -1,5 +1,5 @@
 # Performance Rule Details
-*Updated: 2026-11-17T23:58:14Z*
+*Updated: 2026-11-23T16:09:29Z*
 
 Behavior notes for the performance rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The

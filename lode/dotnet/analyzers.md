@@ -1,5 +1,5 @@
 # .NET 11 Roslyn Analyzers
-*Updated: 2026-11-18T16:45:38Z*
+*Updated: 2026-11-23T15:56:34Z*
 
 ## Strategy: Deny by Default
 
@@ -139,9 +139,7 @@ Rules relaxed in test projects (via `tests/.globalconfig` at `global_level=101`)
 
 | Rule     | Reason                                                              |
 | -------- | ------------------------------------------------------------------- |
-| CA2007   | Conflicts with xUnit1030, which forbids `ConfigureAwait(false)`     |
-| MA0004   | Same conflict with xUnit1030                                        |
-| VSTHRD111 | Same conflict with xUnit1030                                       |
+| CA2007, MA0004, VSTHRD111, xUnit1030 | `ConfigureAwait` rules stay off everywhere. The root `.globalconfig` owns the policy. |
 | CA1707   | Test names use the `Method_Condition_Result` form                   |
 | S100     | Same naming form                                                    |
 | RCS1046  | Same naming form: test names carry no `Async` suffix               |
@@ -153,16 +151,20 @@ Rules relaxed in test projects (via `tests/.globalconfig` at `global_level=101`)
 
 The same file sets `e128_minimum_framework_version = 100`. The `E128.Analyzers.Tests` project also keeps `RS1036`, `RS1038`, `RS1041`, `RS2007`, `RS2008` and `S2699` in `NoWarn`, with a reason beside each in the csproj. `tests/E128.Analyzers.Tests/.globalconfig` sets `none` for E128107 and E128108 at `global_level = 102`.
 
-## ConfigureAwait Scoping (CA2007)
+## ConfigureAwait Rules
 
-Library code must use `ConfigureAwait(false)`. CA2007 enforces this in DLL projects only.
+Every `ConfigureAwait` rule stays off by maintainer policy. No rule requires or forbids `ConfigureAwait`. The bulk `dotnet_analyzer_diagnostic.severity = error` key reaches every rule that is enabled by default. Each `ConfigureAwait` rule therefore needs its own `none` entry in the root `.globalconfig`:
 
 ```
-dotnet_diagnostic.CA2007.severity = error
-dotnet_code_quality.CA2007.output_kind = DynamicallyLinkedLibrary
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.MA0004.severity = none
+dotnet_diagnostic.RCS1090.severity = none
+dotnet_diagnostic.S3216.severity = none
+dotnet_diagnostic.VSTHRD111.severity = none
+dotnet_diagnostic.xUnit1030.severity = none
 ```
 
-MA0004, RCS1090, S3216 and VSTHRD111 report the same `ConfigureAwait` fact but have no project-type scoping. They stay at `none` in the root `.globalconfig`. CA2007 stays the enforcement source for library code.
+Never enable one of these rules. Never change source to satisfy one. Add a `none` entry for any equivalent rule that a new analyzer package brings.
 
 ## Roslynator Required Options
 
@@ -174,7 +176,7 @@ Every rule runs at `error` except the rules below. Each one conflicts with anoth
 
 | Rule                  | State        | Reason                                                       |
 | --------------------- | ------------ | ------------------------------------------------------------ |
-| MA0004, RCS1090, S3216, VSTHRD111 | `none` | `ConfigureAwait` polarity. CA2007 scopes it to libraries. |
+| CA2007, MA0004, RCS1090, S3216, VSTHRD111, xUnit1030 | `none` | Maintainer policy. See ConfigureAwait Rules. |
 | MA0174                | `none`       | Opposite of MA0175                                           |
 | MA0177                | `none`       | Opposite of MA0211                                           |
 | MA0214                | `none`       | Opposite of MA0215 and RCS1174                               |

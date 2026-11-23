@@ -41,8 +41,10 @@
     <PropertyGroup>
         <AnalysisLevel>latest-all</AnalysisLevel>
         <AnalysisMode>All</AnalysisMode>
+        <!-- Explicit, not redundant: it also enables the .NET analyzers for the netstandard2.0 analyzer projects. -->
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <ReferenceTrimmerUseSymbolAnalysis>true</ReferenceTrimmerUseSymbolAnalysis>
     </PropertyGroup>
 
     <!-- Roslyn Analyzers (alphabetical) -->

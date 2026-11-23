@@ -8,12 +8,12 @@ global_level = 101
 # Every rule is an error in tests, with the exceptions below. Each exception exists because
 # enabling the rule contradicts a framework requirement or a written repo convention.
 
-# CA2007, MA0004, VSTHRD111: ConfigureAwait in tests
-# xUnit1030 forbids ConfigureAwait(false) in test methods, so these three rules contradict it.
-# Test projects compile as ConsoleApplication but are tooling, not production app code.
+# ConfigureAwait rules (CA2007, MA0004, VSTHRD111, xUnit1030 and the rest) stay off.
+# The root .globalconfig owns that policy.
 dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.MA0004.severity = none
 dotnet_diagnostic.VSTHRD111.severity = none
+dotnet_diagnostic.xUnit1030.severity = none
 
 # CA1707, S100, RCS1046: Test names use Method_Condition_Result, not Async suffixes
 dotnet_diagnostic.CA1707.severity = none

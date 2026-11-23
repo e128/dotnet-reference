@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-20T14:23:21Z*
+*Updated: 2026-11-23T16:25:34Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -178,3 +178,9 @@ Nushell or Markdown capture stays in the consumer repository ledger.
 > **Why**: S109 wants each literal behind a named constant, S2339 forbids a public `const` member, and neither accepts the answer of the other. The workaround is a private const per value behind a public static property, which doubles the type for no behavior. Either S109 should skip a member whose declaration is the name, or S2339 should allow a const on a table type.
 > **Source**: `session friction 2026-11-14T18:20:00Z`, occurrence 1 of 3
 
+### Captured: When a control is replaced with a different type, delete or retarget every style selector that named the old type (1/3): score pending
+> **Key**: `when-a-control-is-replaced-with-a-different-type-delete-or-re`
+> **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: When a control is replaced with a different type, delete or retarget every style selector that named the old type
+> **Why**: A selector on the removed type matches nothing after the swap, so its layout fix stops applying silently and no build error reports it
+> **Source**: `correction 2026-11-23T16:25:33Z`, occurrence 1 of 3
