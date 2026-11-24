@@ -1,5 +1,5 @@
 # Implicit State Machine Rule
-*Updated: 2026-11-12T01:47:01Z*
+*Updated: 2026-11-24T12:57:59Z*
 
 E128218 flags a class or a mutable struct that uses several mutable `bool`
 members as one state. The members change together, so their valid combinations
@@ -7,7 +7,8 @@ are constrained in scattered code. The rule reports a cluster, not a defect. A
 review decides the remedy.
 
 The implementation lives in `src/E128.Analyzers/Design/ImplicitStateMachineAnalyzer.cs`.
-The tests live in `tests/E128.Analyzers.Tests/ImplicitStateMachineAnalyzerTests.cs`.
+The tests live in the `ImplicitStateMachineAnalyzer*Tests*.cs` files under
+`tests/E128.Analyzers.Tests/`.
 The design detail lives in
 [implicit-state-machine-rule-design.md](implicit-state-machine-rule-design.md).
 
@@ -81,8 +82,9 @@ public void Pause(Machine machine)
 }
 ```
 
-The owning type must have at least one transition in its own body. The gate
-keeps a configuration object out of the report.
+The owning type must have at least one recorded write in its own body. This gate
+includes constructor and property accessor writes. It keeps a configuration
+object out of the report.
 
 ### Co-read
 
@@ -124,7 +126,8 @@ enclosing method.
 ## Report Shape
 
 - Location: the type identifier.
-- Additional locations: the first mixed co-write and the first co-read.
+- Additional location: the first mixed co-write. When no co-write exists, the
+  first co-read.
 - Message: "`{0}` uses {1} boolean flags as one state: {2}. Use one enum and one
   transition method."
 

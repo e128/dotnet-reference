@@ -1,10 +1,10 @@
 # Harness Maintenance
-*Updated: 2026-11-18T09:51:08Z*
+*Updated: 2026-11-24T12:57:16Z*
 
 ## Instruction Loads
 
 `AGENTS.md` owns portable session policy and task-reference pointers.
-`CLAUDE.md` imports it with `@AGENTS.md` and adds only Claude Code mechanics.
+`CLAUDE.md` imports it with `@AGENTS.md`. It adds Claude Code mechanics and the TDD regression tracking commands.
 Claude Code loads the unscoped markdown files under `.claude/rules/` at startup.
 opencode loads that directory through the `instructions` glob in `opencode.json`.
 
@@ -25,7 +25,7 @@ See [Claude Code Memory](https://code.claude.com/docs/en/memory) for import and 
 Each requirement has one owner. Entry points link to the owner instead of copying its detailed contract.
 
 - `AGENTS.md`: session startup, task pointers, test execution order, supported targets, design questions, and git workflow.
-- `CLAUDE.md`: `AskUserQuestion`, project configuration placement, and Claude hook locations.
+- `CLAUDE.md`: `AskUserQuestion`, project configuration placement, Claude hook locations, and TDD regression tracking commands.
 - `deterministic-scripts.md`: command-to-script routing and flags.
 - `keyword-shortcuts.md`: phrase triggers.
 - `auto-approvals.md`: action approval and harness permission precedence.
@@ -53,6 +53,8 @@ The `AGENTS.md` task pointers select these references:
 - `lode/dotnet/analyzer-candidates/index.md` and `catalog.md`: open and settled analyzer candidates.
 - `lode/infrastructure/shell-authoring.md`: tool prerequisites and shell-authoring verification.
 - `lode/infrastructure/shipping.md`: shipping-script branch guards, verification order, and unpushed-commit handling.
+- `lode/infrastructure/tdd-regression-tracking.md`: TDD regression tracking and failure attribution.
+- `lode/infrastructure/claude-code-maintenance.md`: instruction and harness changes.
 
 The setup guidance has no separate file or import.
 Its design questions and implicit-state-machine rule live in `AGENTS.md`.

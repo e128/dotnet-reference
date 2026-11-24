@@ -43,6 +43,15 @@
       "matchUpdateTypes": ["patch", "minor"],
       "groupName": "non-major",
       "automerge": true
+    },
+    {
+      "description": "The base analyzer and fixer builds hold the lowest Roslyn band. Bump the 5.9.0 pins by hand with the package layout.",
+      "matchPackageNames": [
+        "Microsoft.CodeAnalysis.CSharp",
+        "Microsoft.CodeAnalysis.CSharp.Workspaces"
+      ],
+      "matchCurrentVersion": "5.9.0",
+      "enabled": false
     }
   ]
 }

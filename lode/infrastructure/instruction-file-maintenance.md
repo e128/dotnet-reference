@@ -1,5 +1,5 @@
 # Instruction File Maintenance
-*Updated: 2026-11-18T09:51:08Z*
+*Updated: 2026-11-24T12:57:16Z*
 
 `AGENTS.md` and `CLAUDE.md` are a memory of failures. A line earns a place only
 when a model failed once and the line stops the repeat. This file owns the

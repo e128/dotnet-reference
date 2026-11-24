@@ -1,9 +1,9 @@
 # Podman
-*Updated: 2026-11-01T20:54:56Z*
+*Updated: 2026-11-24T12:57:23Z*
 
 ## Why Podman
 
-Podman is daemonless and rootless by default. It runs no long-running root process and needs no Docker Desktop license. CLI is near drop-in compatible with docker (`podman build/run/rm/rmi` match the docker syntax). The `podman generate kube` and `podman play kube` commands give a closer round-trip to Kubernetes manifests than docker-compose. This suits this repo, because `compose.yaml` already runs the container with K8s-style hardening (`read_only`, `cap_drop: ALL`, rootless).
+Podman is daemonless and rootless by default. It runs no long-running root process and needs no Docker Desktop license. CLI is near drop-in compatible with docker (`podman build/run/rm/rmi` match the docker syntax). The `podman generate kube` and `podman play kube` commands give a closer round-trip to Kubernetes manifests than docker-compose. This suits this repo, because `compose.yaml` already runs the container with K8s-style hardening (`read_only`, `cap_drop: ALL`, `no-new-privileges`). The image runs as a non-root user.
 
 ## This Project
 
@@ -21,15 +21,25 @@ Hardcoded port `58080` could conflict in parallel CI. The tests carry `[Trait("C
 
 The `Dockerfile` at the repo root has three stages on Resolute images. Podman looks for `Containerfile` first and falls back to `Dockerfile`, so no rename is needed.
 
-1. **restore**: `sdk:10.0-resolute`, copies build infra + csproj files, runs `dotnet restore`
-2. **build**: copies source, runs `dotnet publish --configuration Release`
-3. **runtime**: `aspnet:10.0-resolute`, installs `curl` (for the healthcheck), non-root user
+1. **restore**: the `sdk` image with the `resolute` tag, copies build infra + the Core and Web csproj files, runs `dotnet restore`
+2. **build**: copies `src/`, runs `dotnet publish --configuration Release` for `E128.Reference.Web`
+3. **runtime**: the `aspnet` image with the `resolute` tag, installs `curl` (for the healthcheck), non-root user
+
+The .NET major version sits in the `FROM` tags of the `Dockerfile`.
 
 The image has no FIPS 140-2 setup. The stock Ubuntu Resolute `openssl` apt package ships no FIPS provider module on arm64 or amd64. Ubuntu certifies its FIPS OpenSSL module only behind an Ubuntu Pro subscription (`pro attach` and `pro enable fips-updates`).
 
 ## `.dockerignore`
 
-Excludes build output, Git metadata, IDE files, `.claude/`, docs (`lode/`, `plans/`, `prompts/`, `*.md` except `README.md`), test and benchmark projects, `src/E128.Analyzers/`, scripts, CI config, secrets, and OS artifacts. `src/E128.Reference.Core/`, `src/E128.Reference.Web/`, and `src/E128.Reference.Cli/` all reach the build context, since `.dockerignore` does not exclude the Cli project. The Dockerfile publishes only `E128.Reference.Web`. Podman checks `.containerignore` first, then falls back to `.dockerignore`. This repo has no `.containerignore`.
+The file excludes these paths:
+
+- build output, Git metadata, and IDE files
+- `.claude/`, scripts, and CI config
+- docs (`lode/`, `plans/`, `prompts/`, and `*.md` except `README.md`)
+- test and benchmark projects, and `src/E128.Analyzers/`
+- secrets and OS artifacts
+
+Every other `src/` project reaches the build context, since `.dockerignore` names only `src/E128.Analyzers/`. That covers Core, Web, Cli, CodeFixers, and Union. The Dockerfile publishes only `E128.Reference.Web`. Podman checks `.containerignore` first, then falls back to `.dockerignore`. This repo has no `.containerignore`.
 
 ## macOS Setup
 
@@ -44,6 +54,10 @@ Podman needs a Linux VM on macOS. Docker Desktop bundles one transparently. Run 
 | Testcontainers NuGet package    | High       | Dynamic ports, DB deps, auto-cleanup   |
 
 This project uses both shell script and xUnit approaches. Testcontainers supports podman via `DOCKER_HOST`/`CONTAINERS_MACHINE_PROVIDER` env vars when the project adds infrastructure dependencies such as databases or queues.
+
+## Related Files
+
+- [testing.md](../dotnet/testing.md): test categories and the xUnit v3 conventions that the smoke tests follow
 
 ## Sources
 

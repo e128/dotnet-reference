@@ -1,5 +1,5 @@
 # Shipping
-*Updated: 2026-11-18T09:50:29Z*
+*Updated: 2026-11-24T12:56:58Z*
 
 `scripts/verify-and-ship.sh` ships the current feature branch as one squashed commit. It formats, bumps the version, runs the canonical check, squashes, scans, commits, and pushes. The script runs only when an operator asks for it, because it commits and pushes. The `/yeet` skill does not call it.
 

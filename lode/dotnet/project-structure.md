@@ -1,5 +1,5 @@
 # .NET 11 Project Structure
-*Updated: 2026-11-21T20:39:46Z*
+*Updated: 2026-11-24T12:56:39Z*
 
 ## Solution Format
 
@@ -18,9 +18,9 @@ Migration: `dotnet sln migrate` converts `.sln` to `.slnx`.
 ├── .editorconfig              # Code style (formatting, naming, IDE rules)
 ├── .globalconfig              # Analyzer diagnostic severities
 ├── src/
-│   ├── E128.Analyzers/        # Solution-local Roslyn analyzer, Roslyn 5.9 band (own .editorconfig)
-│   ├── E128.Analyzers.CodeFixers/  # Code fix providers, Roslyn 5.9 band (own .editorconfig)
-│   ├── E128.Analyzers.Union/  # Union rules E128220 and E128221, Roslyn 5.12 band
+│   ├── E128.Analyzers/        # Solution-local Roslyn analyzer, base Roslyn band (own .editorconfig)
+│   ├── E128.Analyzers.CodeFixers/  # Code fix providers, base Roslyn band (own .editorconfig)
+│   ├── E128.Analyzers.Union/  # Union rules E128220 and E128221, newest Roslyn band
 │   ├── E128.Reference.Cli/    # CLI application
 │   ├── E128.Reference.Core/   # Core library
 │   └── E128.Reference.Web/    # Web application

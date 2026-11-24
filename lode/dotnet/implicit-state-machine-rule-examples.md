@@ -1,5 +1,5 @@
 # Implicit State Machine Rule Examples
-*Updated: 2026-11-11T03:39:00Z*
+*Updated: 2026-11-24T12:57:59Z*
 
 These examples show the E128218 evidence rules. The design detail lives in
 [implicit-state-machine-rule-design.md](implicit-state-machine-rule-design.md).
@@ -75,6 +75,7 @@ sealed class Player
 
     public void Start() { IsRunning = true; IsStopped = false; }
     public void Pause() { IsRunning = false; IsPaused = true; }
+    public void Stop() { IsPaused = false; IsStopped = true; }
 }
 ```
 

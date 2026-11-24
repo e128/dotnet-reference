@@ -1,5 +1,5 @@
 # Code Coverage
-*Updated: 2026-11-18T09:50:29Z*
+*Updated: 2026-11-24T13:20:33Z*
 
 Coverage collects in process through the Microsoft.Testing.Platform extension.
 The CI gate requires 80 percent line coverage in total and in every measured
@@ -45,10 +45,8 @@ run. A stale module report therefore cannot satisfy the gate.
 The extension writes one GUID-named Cobertura file per test module. Consumers
 read the whole `test-results` directory, then merge classes across reports.
 
-CI builds Release to validate that configuration. That validation build runs
-with `ReadyToRun=false`, because it discards the precompiled images. CI then
-builds Debug and runs the coverage pass in Debug. This avoids the ReadyToRun
-images that stall the analyzer test host under instrumentation.
+CI builds Release to validate that configuration. CI then builds Debug and
+runs the coverage pass in Debug with the in-process coverage extension.
 
 ## Instrumentation Contracts
 
@@ -73,12 +71,14 @@ Measured assemblies:
 
 - `E128.Analyzers`
 - `E128.Analyzers.CodeFixers`
+- `E128.Analyzers.Union`
 - `E128.Reference.Core`
 - `E128.Reference.Cli`
 - `E128.Reference.Web`
 
 `scripts/coverage-areas.sh` treats a measured assembly that is absent from the
-reports as a gate failure.
+reports as a gate failure. Its `EXPECTED_MODULES` list names every measured
+assembly, so each one counts toward the totals and the assembly floor.
 
 The script parses Cobertura with `tr` and `awk`. It splits each report on the
 `<` character so one element sits on each line, then reads the attributes it
@@ -119,7 +119,8 @@ See the [CRAP Reference](../../.claude/skills/tech-debt-audit/references/crap-fo
 ## Feature Areas
 
 `coverage-areas.json` maps an assembly name or a namespace prefix to a feature
-area. A longer matching key wins. Areas:
+area. A longer matching key wins. The `E128.Analyzers` key also covers the Union
+classes, because their names start with `E128.Analyzers.`. Areas:
 
 | Area | Match |
 |------|-------|
@@ -133,19 +134,11 @@ Classes that match no key land in the Unmapped bucket.
 
 ## Baseline
 
-Measured 2026-11-17 over five module reports. Classes merge across reports, and
-each line keeps its highest hit count. Total: 36204 of 38213 lines, 94.74
-percent.
-
-| Assembly | Lines | Line |
-|----------|-------|------|
-| E128.Analyzers | 28748/29925 | 96.07% |
-| E128.Analyzers.CodeFixers | 7344/8166 | 89.93% |
-| E128.Reference.Cli | 22/24 | 91.67% |
-| E128.Reference.Core | 57/57 | 100.0% |
-| E128.Reference.Web | 33/41 | 80.49% |
-
-The Reference Web assembly sits closest to the floor.
+Run `bash scripts/coverage-areas.sh` for the current figures. The script merges
+classes across reports, and each line keeps its highest hit count. As of
+2026-11-24, total line coverage sat near 94 percent, and every measured
+assembly sat above the floor. The Reference Web assembly sat closest to the
+floor, at about 80.5 percent.
 
 ## Local Setup
 

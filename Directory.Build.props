@@ -132,15 +132,14 @@
     <!-- Configuration: Release                         -->
     <!--                                                -->
     <!-- Reference assemblies improve incremental build -->
-    <!-- times when API surface is unchanged. R2R and   -->
-    <!-- tiered compilation reduce startup latency.     -->
+    <!-- times when API surface is unchanged. Tiered    -->
+    <!-- compilation reduces startup latency.           -->
     <!-- ============================================== -->
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <Optimize>true</Optimize>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
         <TieredCompilation>true</TieredCompilation>
         <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
-        <ReadyToRun>true</ReadyToRun>
         <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
 

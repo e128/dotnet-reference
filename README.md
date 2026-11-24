@@ -267,7 +267,7 @@ podman compose down
 
 Two jobs run in parallel:
 
-1. **Format + Build + Test**: format check (`dotnet format --verify-no-changes`), a Release build with ReadyToRun disabled, a Debug build that feeds coverage, CI-category tests with coverage, and an 80% line and assembly coverage gate
+1. **Format + Build + Test**: format check (`dotnet format --verify-no-changes`), a Release build, a Debug build that feeds coverage, CI-category tests with coverage, and an 80% line and assembly coverage gate
 2. **Lint + Scan**: `scripts/lint-shell.sh` runs shellcheck over every tracked shell script. The job then checks that the opencode agent mirror is current, verifies every guardrail hook referenced by the plugin exists, and runs a gitleaks scan over the full git history
 
 **NuGet publishing** (`.github/workflows/publish.yml`) starts on a push to `main` that changes `src/E128.Analyzers/` or `src/E128.Analyzers.CodeFixers/`. The workflow uses OIDC trusted publishing, so it needs no API key. It skips the push when the version already exists on nuget.org.

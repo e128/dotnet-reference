@@ -18,7 +18,8 @@ for Roslyn. Most runtime tips do not apply there. See
 `Directory.Build.props` owns the build-level tuning. Do not copy a value from
 it into a project file. It sets these:
 
-- `ReadyToRun` and tiered compilation in Release, to reduce startup latency.
+- Tiered compilation in Release, to reduce startup latency. Release publishes no
+  ReadyToRun images: the SDK reads only `PublishReadyToRun`, which no project sets.
 - `InvariantGlobalization` true in Release, so the app does not load ICU.
 - `IlcFoldIdenticalMethodBodies` true, to fold identical method bodies.
 - `OptimizationPreference` Size, `TrimMode` link, and
