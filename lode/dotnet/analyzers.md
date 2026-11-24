@@ -1,11 +1,11 @@
 # .NET 11 Roslyn Analyzers
-*Updated: 2026-11-24T12:57:20Z*
+*Updated: 2026-11-24T16:25:37Z*
 
 ## Strategy: Deny by Default
 
 All analyzer diagnostics default to `error` via `.globalconfig` (`dotnet_analyzer_diagnostic.severity = error`). A rule stays below `error` only for a recorded reason. See § Rules Not Enabled.
 
-A bulk key reaches only a rule that is enabled by default. `.globalconfig` therefore names every default-off rule of every installed package with its own `error` line. The CA rules need no line because `AnalysisMode = All` enables them.
+A bulk key reaches only a rule that is enabled by default. `.globalconfig` therefore names every default-off rule of every installed package with its own `error` line. The CA rules need no line because `AnalysisMode = All` enables them. CA1707 is the exception: it carries an explicit `error` line, because `AnalysisMode = All` gives it `warning` severity only.
 
 ## Configuration Split
 
@@ -150,6 +150,8 @@ Rules relaxed in test projects (via `tests/.globalconfig` at `global_level=101`)
 | E128227  | Tests read a fixed response from an in-process app or a loopback container |
 
 The same file sets `e128_minimum_framework_version = 100`. The `E128.Analyzers.Tests` project also keeps `RS1036`, `RS1038`, `RS1041`, `RS2007`, `RS2008` and `S2699` in `NoWarn`, with a reason beside each in the csproj. `tests/E128.Analyzers.Tests/.globalconfig` sets `none` for E128107 and E128108 at `global_level = 102`.
+
+CA1707 stays at `error` in every project outside these test directories. E128063 (mid-name underscore) needs no override, because it skips a test compilation through `XunitTestHelper.IsTestCompilation`. The shipped package carries no analyzer configuration file, so the repository severity policy never reaches a consumer.
 
 ## ConfigureAwait Rules
 

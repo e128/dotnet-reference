@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Immutable;
+using E128.Analyzers.Testing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace E128.Analyzers.Style;
 
 /// <summary>
-///     E128063: Flags private static members with a mid-name underscore — e.g.,
+///     E128063: Flags private static members with a mid-name underscore, for example
 ///     <c lang="csharp">Nots_supportedExtensions</c>, <c lang="csharp">Creates_enrichmentJsonOptions</c>, <c lang="csharp">Spectres_terminal</c>.
 ///     These patterns are artifacts of IDE1006 batch-rename operations that mangle identifiers
 ///     by inserting an underscore at the word boundary instead of adjusting capitalization.
@@ -17,6 +18,7 @@ namespace E128.Analyzers.Style;
 ///             <item>Hungarian prefix: <c lang="csharp">s_foo</c>, <c lang="csharp">m_foo</c>, <c lang="csharp">t_foo</c></item>
 ///             <item>Double-underscore operators: <c lang="csharp">op_Addition</c>, <c lang="csharp">__foo</c></item>
 ///             <item>Const fields (SC0219 / IDE0051 already cover const naming)</item>
+///             <item>A test compilation, because test names and test helpers use underscores by convention</item>
 ///         </list>
 ///     </para>
 /// </summary>
@@ -48,7 +50,15 @@ public sealed class MidNameUnderscoreAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.Field, SymbolKind.Method, SymbolKind.Property);
+        context.RegisterCompilationStartAction(static startContext =>
+        {
+            if (XunitTestHelper.IsTestCompilation(startContext.Compilation, startContext.CancellationToken))
+            {
+                return;
+            }
+
+            startContext.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.Field, SymbolKind.Method, SymbolKind.Property);
+        });
     }
 
     private static void AnalyzeSymbol(SymbolAnalysisContext context)

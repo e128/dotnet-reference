@@ -313,7 +313,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128043 | Do not use the null-forgiving operator                                                  | Yes      |
 | E128047 | `#pragma warning disable` without justification comment                                 | Yes      |
 | E128055 | Unbalanced `#pragma warning disable` without matching restore                           | Yes      |
-| E128063 | Mid-name underscore in private static member (IDE1006 rename artifact) (default: Error) | Yes      |
+| E128063 | Mid-name underscore in private static member (IDE1006 rename artifact) (default: Error, silent in test code) | Yes      |
 | E128065 | `#pragma warning disable` with multiple IDs — use one pragma per ID                     | Yes      |
 | E128094 | `#pragma warning disable` before file-scoped namespace (default: Error)                 | Yes      |
 
@@ -814,7 +814,7 @@ public class TestFixture : IDisposable
 
 ### E128063 &mdash; Mid-name underscore in private static member
 
-Flags private/internal static members whose name contains an underscore at index &ge; 2 (e.g., `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors.
+Flags private/internal static members whose name contains an underscore at index &ge; 2 (e.g., `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors. The rule is silent in a test compilation, where test names and static test helpers use underscores by convention.
 
 ```csharp
 // Before (warns)

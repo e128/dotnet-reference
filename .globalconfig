@@ -22,6 +22,13 @@ dotnet_analyzer_diagnostic.category-xUnit.severity = error
 
 dotnet_diagnostic.CS0246.severity = error
 
+# ── Explicit CA Severities ─────────────────────
+# AnalysisMode = All sets CA1707 to warning, and TreatWarningsAsErrors promotes that warning
+# to an error. Set the severity here instead, so CA1707 stays an error on its own.
+# tests/.globalconfig disables CA1707 for unit test projects, because their names use the
+# Method_Condition_Result form. Every other project fails the build on an underscore.
+dotnet_diagnostic.CA1707.severity = error
+
 # ConfigureAwait rules: always off, by maintainer policy. The bulk error key above reaches
 # every rule that is enabled by default, so each ConfigureAwait rule needs its own none entry.
 # Never enable one, and never change source to satisfy one.
@@ -36,6 +43,7 @@ dotnet_diagnostic.xUnit1030.severity = none
 # Each list below names every DiagnosticDescriptor with IsEnabledByDefault == false in the
 # pinned package version. Regenerate the lists after a package bump.
 # CA rules need no line here: AnalysisMode = All in Directory.Build.props enables them.
+# CA1707 carries its own line in the "Explicit CA Severities" section above.
 
 # --- E128 ---
 dotnet_diagnostic.E128218.severity = error       # Implicit state machine heuristic (cluster report)
