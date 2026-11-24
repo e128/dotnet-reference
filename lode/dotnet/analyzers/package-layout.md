@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-19T15:27:35Z*
+*Updated: 2026-11-24T15:59:26Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
@@ -118,6 +118,18 @@ blocks a host it cannot read.
 The version in the targets file must equal the base
 `Microsoft.CodeAnalysis.CSharp` pin in `Directory.Packages.props`. A Roslyn
 bump changes both.
+
+## Roslyn Band Check
+
+`scripts/analyzer-package-test.sh` compares the base pin, the fixer pin, the
+lowest package folder, and the guard version. The check fails when a pin
+points above the folder that holds the built assembly.
+
+The base build packs into `roslyn5.9`, so its `Microsoft.CodeAnalysis.CSharp`
+pin must stay on 5.9. The fixer build packs there too, so its Workspaces pin
+must match. A drifted pin ships a 5.12 assembly into the 5.9 folder, and a .NET
+SDK 10.0 host rejects it with CS9057. A Renovate bump caused that failure in
+versions 3.5.0 through 3.5.4.
 
 ## Transitive Pinning Guidance
 

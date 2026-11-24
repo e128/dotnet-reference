@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.5.4" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.5.5" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -32,6 +32,10 @@ other rule runs on both hosts.
 
 The rules read syntax and symbols, so they work on any C# project. A rule stays
 silent where the target framework cannot express what it looks for.
+
+Versions 3.5.0 through 3.5.4 shipped a base build that referenced Roslyn 5.12,
+so a .NET SDK 10.0 host rejects them with CS9057. Use 3.5.5 or later on SDK
+10.0, or stay on 3.4.2 until you upgrade.
 
 ## Transitive Pinning Guidance
 

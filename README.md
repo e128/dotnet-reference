@@ -48,6 +48,70 @@ Run the Release build of the solution at the repository root. Report the package
 
 `e128_max_complexity` sets the algorithm level. `linear` is the strictest tier and reports linearithmic or worse code. Other tiers: linearithmic, quadratic, cubic, exponential.
 
+### Express Mode Prompt
+
+This prompt installs the package, fixes every finding, and removes the package in one run.
+Paste it into a coding agent in the repository you want to clean.
+The source fixes stay. The analyzer and its configuration do not.
+
+```text
+Install the latest stable E128.Analyzers package, fix every finding, then remove the package. Run this prompt once.
+
+Step 1: install the analyzer.
+Add the latest stable E128.Analyzers package to this repository. Resolve the version from nuget.org only, and write the exact version number. Never use a floating version.
+
+Add one `<PackageReference Include="E128.Analyzers" PrivateAssets="all" />` to the root `Directory.Build.props`, inside an existing analyzer `ItemGroup` when one exists, in alphabetical position. Create the file if it is missing. Leave every other analyzer where it is.
+
+If this repository uses Central Package Management, add one `PackageVersion` entry to `Directory.Packages.props`. Never duplicate a version entry. Otherwise set `Version` on the reference.
+
+If `nuget.config` defines more than one package source, add a `packageSourceMapping` entry that maps `E128.*` to nuget.org.
+
+In the root `.editorconfig`, under `[*.cs]`, set these categories to `error` and set `e128_max_complexity = linear`:
+
+dotnet_analyzer_diagnostic.category-E128-Design.severity = error
+dotnet_analyzer_diagnostic.category-E128-Maintainability.severity = error
+dotnet_analyzer_diagnostic.category-E128-Performance.severity = error
+dotnet_analyzer_diagnostic.category-E128-Reliability.severity = error
+dotnet_analyzer_diagnostic.category-E128-Security.severity = error
+dotnet_analyzer_diagnostic.category-E128-Style.severity = error
+dotnet_analyzer_diagnostic.category-E128-Testing.severity = error
+dotnet_analyzer_diagnostic.category-E128-Unsafe.severity = error
+e128_max_complexity = linear
+
+Create the file with `root = true` when it does not exist. Preserve the existing settings and every non-E128 analyzer severity.
+
+Step 2: fix every finding.
+Build the Release configuration of the solution at the repository root.
+Fix every E128 diagnostic. Apply the offered code fix when one exists. Otherwise write the smallest behavior-preserving change.
+Read the rule description before you decide the fix. A rule can encode a correctness constraint, so a guard or a rename is better than a suppression.
+Add a suppression only when no correct fix exists. Keep the scope narrow, such as one statement, one member, or one project. Record the rule ID and the reason in the final report.
+Do not fix a finding by disabling the rule, downgrading its severity, or excluding the file.
+
+Step 3: prove the tests pass.
+Run the full test suite and the repository's own quality gate.
+Do not delete, skip, or disable a test.
+Do not change an assertion or an expected value to match new output.
+Change a test only when a production fix needs a mechanical edit, such as a rename, a signature change, or a moved type. Report every test edit.
+Fix the production code until the suite passes. Do not lower a quality gate to make it pass.
+Report the test count with the result. A zero test count is not a pass.
+
+Step 4: remove the analyzer.
+Remove the analyzer only after the suite passes.
+Delete the `PackageReference`, the `PackageVersion` entry, and the `packageSourceMapping` entry that you added.
+Delete the E128 category lines and the `e128_max_complexity` key that you added.
+Delete every suppression that you added for an E128 rule.
+Delete each file that you created only for the analyzer. Restore the original content of each file that you changed only for the analyzer.
+Leave the source fixes in place.
+Build and run the full test suite again without the analyzer. Both must pass.
+
+Step 5: audit the lode.
+If the repository contains a `lode/` directory, read `lode/lode-map.md` and the files that cover the build, the analyzer configuration, and the code you changed.
+Update every claim that this run made stale. Bump the timestamp on each file that you verify.
+Follow the repository's own Lode method.
+
+Report the package version, the project count, each rule with its findings, each fix by rule, each suppression with its reason, the test results before and after removal, and the lode files that you changed.
+```
+
 - Analyzers: [`src/E128.Analyzers/`](src/E128.Analyzers/). The [README](src/E128.Analyzers/README.md) lists every rule.
 - Code fixes: [`src/E128.Analyzers.CodeFixers/`](src/E128.Analyzers.CodeFixers/)
 - Union rules: [`src/E128.Analyzers.Union/`](src/E128.Analyzers.Union/), the E128220 and E128221 rules at Roslyn 5.12
