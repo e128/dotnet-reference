@@ -66,7 +66,7 @@ Three files share the work. [analyzers.md](../../lode/dotnet/analyzers.md) has t
 | `tests/.globalconfig`                      | test relaxations, `global_level` 101         | test projects      |
 | `tests/E128.Analyzers.Tests/.globalconfig` | analyzer test relaxations, level 102         | one test project   |
 
-The blanket rule: `.globalconfig` sets `dotnet_analyzer_diagnostic.severity = error`, so every override is explicit.
+The blanket rule: `.globalconfig` sets `dotnet_analyzer_diagnostic.severity = error`, so every override is explicit. CA1707 carries its own `error` entry, because `AnalysisMode = All` gives it warning severity only. Unit test projects disable CA1707, because their names use the `Method_Condition_Result` form. The E128063 rename rule is silent in a test compilation, so static test helpers keep the same naming freedom.
 
 ### Tuning E128.Analyzers as a Consumer
 

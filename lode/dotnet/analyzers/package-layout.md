@@ -1,5 +1,5 @@
 # Analyzer Package Layout
-*Updated: 2026-11-24T15:59:26Z*
+*Updated: 2026-11-24T16:25:37Z*
 
 How the analyzer assembly is built, packed, and loaded. See
 [Analyzers](../analyzers.md) for the rule strategy.
@@ -197,6 +197,9 @@ copy that the compiler host loads.
 
 - A `dotnet pack` listing shows the analyzer DLL, the code fixer DLL, the README,
   and the `lib/netstandard2.0/_._` placeholder.
+- The package ships no `.globalconfig`, `.editorconfig`, or `Directory.Build.props`.
+  A repository severity rule must never reach a consumer, because the consumer
+  configures its own rules. The pack items in the csproj are the source of truth.
 - `SuppressDependenciesWhenPacking` keeps the nuspec free of a dependency list.
 
 ## Related

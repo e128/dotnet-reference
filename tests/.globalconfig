@@ -15,7 +15,9 @@ dotnet_diagnostic.MA0004.severity = none
 dotnet_diagnostic.VSTHRD111.severity = none
 dotnet_diagnostic.xUnit1030.severity = none
 
-# CA1707, S100, RCS1046: Test names use Method_Condition_Result, not Async suffixes
+# CA1707, S100, RCS1046: Underscores are allowed in unit test projects, because test names
+# use the Method_Condition_Result form and carry no Async suffix. The root .globalconfig
+# keeps CA1707 at error for every other project.
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.S100.severity = none
 dotnet_diagnostic.RCS1046.severity = none

@@ -48,6 +48,19 @@ verify_roslyn_band() {
 verify_roslyn_band E128.Analyzers Microsoft.CodeAnalysis.CSharp
 verify_roslyn_band E128.Analyzers.CodeFixers Microsoft.CodeAnalysis.CSharp.Workspaces
 
+# No repository analyzer configuration may reach the package. A packed
+# .globalconfig or .editorconfig would impose this repository's severities on
+# every consumer, including the CA1707 test exemption.
+PACKED_CONFIG=$(dotnet msbuild "$ROOT/src/E128.Analyzers/E128.Analyzers.csproj" -nologo \
+    "${DOTNET_SAFEGUARDS[@]}" -getItem:None 2>/dev/null |
+    jq -r '.Items.None[]? | select(.Pack == "true") | .PackagePath // ""' |
+    rg -i 'globalconfig|editorconfig|Directory\.Build\.' || true)
+[[ -z "$PACKED_CONFIG" ]] || {
+    err "E128.Analyzers packs analyzer configuration: $PACKED_CONFIG"
+    exit 1
+}
+ok "E128.Analyzers packs no analyzer configuration"
+
 mkdir -p "$ROOT/.claude/tmp"
 FIXTURE="$(mktemp -d "$ROOT/.claude/tmp/analyzer-package-test.XXXXXX")"
 trap 'rm -rf "${FIXTURE:?}"' EXIT

@@ -1,5 +1,5 @@
 # Rule Detail Notes
-*Updated: 2026-11-16T15:19:01Z*
+*Updated: 2026-11-24T16:25:37Z*
 
 Behavior notes for individual E128 rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. This
@@ -24,7 +24,7 @@ Flags `ReferenceAssemblies.Net.Net80` / `Net90` in test code when the configured
 
 ### E128063: Mid-name underscore in private static member
 
-Severity: **Error**. Flags private/internal static members whose name contains an underscore at index ≥ 2 (for example `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors. Code fix uses `SequentialRenameFixAllProvider` (not `BatchFixer`) and removes the mid-name underscore by PascalCasing each segment.
+Severity: **Error**. Flags private/internal static members whose name contains an underscore at index ≥ 2 (for example `Nots_supportedExtensions`, `Creates_enrichmentJsonOptions`, `Spectres_terminal`). These are artifacts of IDE1006 batch-rename operations that mangle identifiers by inserting underscores at word boundaries instead of adjusting capitalization. Excludes: leading underscore (`_foo`), Hungarian prefix (`s_foo`, `m_foo`, `t_foo`), const fields, `op_` operator methods, `__` double-underscore patterns, and compiler-generated property accessors. The rule is silent in a test compilation, detected by `XunitTestHelper.IsTestCompilation`, because test names and static test helpers use underscores by convention. Code fix uses `SequentialRenameFixAllProvider` (not `BatchFixer`) and removes the mid-name underscore by PascalCasing each segment.
 
 ### E128064: Disk write-then-read round-trip
 
@@ -44,8 +44,6 @@ Flags file-I/O sequences that write to a path and then immediately read the same
 - Stream-writer variables track the constructor call and the `.Write*(...)` calls through to disposal. A multi-write disposal still reports but attaches no `SourceExpression`, so the code fix is skipped rather than writing a wrong rewrite. Examples are `BinaryWriter`, a `FileStream` with several `.Write` calls, and `AppendAllText`.
 
 **Code fix**: replaces the read expression, or the whole `await ...` for an async read, with the captured in-memory source expression. A same-kind match uses the source directly. A text to bytes match wraps in `Encoding.UTF8.GetBytes(...)`. A bytes to text match wraps in `Encoding.UTF8.GetString(...)`. The fix adds `using System.Text;`. `BatchFixer` is sufficient, because each fix is a local expression replacement.
-
-**Test-project exemption**: `tests/.globalconfig` sets `dotnet_diagnostic.E128064.severity = none`. Fixtures for file-I/O analyzers (E128028, E128056, E128057) legitimately round-trip through disk to exercise the analyzer under test.
 
 ### E128070: Pool Rent() capacity guard
 
