@@ -11,6 +11,43 @@ fi
 [[ $# -eq 0 ]] || { err "Unknown argument: $1"; exit 1; }
 
 ROOT="$(find_repo_root)"
+
+# The base analyzer and fixer builds pack into the lowest Roslyn folder. A pin
+# that drifts above that band ships an assembly into a folder its host loads,
+# and the host rejects it with CS9057. The pin, the folder label, and the
+# compiler-host guard must name the same band.
+package_version() {
+    local project="$1" package="$2"
+    dotnet msbuild "$ROOT/src/$project/$project.csproj" -nologo "${DOTNET_SAFEGUARDS[@]}" \
+        -getItem:PackageVersion | jq -er --arg package "$package" \
+        '.Items.PackageVersion[] | select(.Identity == $package) | .Version'
+}
+
+LOWEST_BAND=$(rg -o 'analyzers/dotnet/roslyn([0-9]+\.[0-9]+)/cs' -r '$1' \
+    "$ROOT/src/E128.Analyzers/E128.Analyzers.csproj" | sort -V | head -1)
+GUARD_BAND=$(rg 'VersionLessThan' "$ROOT/src/E128.Analyzers/build/E128.Analyzers.targets" |
+    rg -o "'[0-9]+\.[0-9]+'" | tr -d "'")
+[[ -n "$LOWEST_BAND" && "$GUARD_BAND" == "$LOWEST_BAND" ]] || {
+    err "The package folder band is '$LOWEST_BAND' and the host guard band is '$GUARD_BAND'. They must match."
+    exit 1
+}
+
+verify_roslyn_band() {
+    local project="$1" package="$2" pin
+    pin=$(package_version "$project" "$package") || {
+        err "No $package version resolved for $project"
+        exit 1
+    }
+    if [[ "${pin%.*}" != "$LOWEST_BAND" ]]; then
+        err "$project packs $package $pin into roslyn$LOWEST_BAND. A host on that band fails with CS9057."
+        exit 1
+    fi
+    ok "$project pins $package $pin in roslyn$LOWEST_BAND"
+}
+
+verify_roslyn_band E128.Analyzers Microsoft.CodeAnalysis.CSharp
+verify_roslyn_band E128.Analyzers.CodeFixers Microsoft.CodeAnalysis.CSharp.Workspaces
+
 mkdir -p "$ROOT/.claude/tmp"
 FIXTURE="$(mktemp -d "$ROOT/.claude/tmp/analyzer-package-test.XXXXXX")"
 trap 'rm -rf "${FIXTURE:?}"' EXIT
