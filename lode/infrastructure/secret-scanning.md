@@ -1,5 +1,5 @@
 # Secret Scanning
-*Updated: 2026-11-12T00:54:46Z*
+*Updated: 2026-11-24T12:56:58Z*
 
 The repository scans for secrets with gitleaks in two places: locally before each commit, and in CI over the full git history. Both use the default gitleaks ruleset plus the allowlist in `.gitleaks.toml`.
 

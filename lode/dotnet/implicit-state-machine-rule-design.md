@@ -1,5 +1,5 @@
 # Implicit State Machine Rule Design
-*Updated: 2026-11-12T01:47:01Z*
+*Updated: 2026-11-24T12:57:59Z*
 
 This file details the E128218 rule in
 [implicit-state-machine-rule.md](implicit-state-machine-rule.md).
@@ -59,7 +59,8 @@ member to `false` and does not report.
 A condition reads two or more cluster members, and at least one of them is
 negated. The rule requires a cluster one member larger than the configured
 minimum, because a read alone is weak evidence. A positive-positive read is
-usually independent switches.
+usually independent switches. The rule uses a co-read only when no co-write
+exists.
 
 ```csharp
 if (_isRunning && !_isPaused)
@@ -73,9 +74,8 @@ Negation covers `!`, `== false`, `!= true`, `is false`, and `is not true`.
 ### Cross-type write
 
 A body in another type can write a candidate through a setter. That write joins
-the evidence of the owning type, and it keeps the writer as its body key. The
-owning type must have at least one transition in its own body. The gate keeps a
-configuration object out of the report.
+the evidence of the owning type, and it keeps the writer as its body key. The owning type must have at least one recorded write in its own body. This gate
+includes constructor and property accessor writes.
 
 A write inside a property accessor is storage, not a transition. The rule skips
 it, so a forwarding pair is counted at its use sites.
@@ -122,7 +122,8 @@ The examples live in
 
 ## Test Coverage
 
-The test file covers these cases:
+The `ImplicitStateMachineAnalyzerTests` class covers these cases. It spans two
+partial files, and the branch coverage test files add narrower cases:
 
 | Case | Expected |
 | --- | --- |

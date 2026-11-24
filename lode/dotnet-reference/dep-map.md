@@ -1,5 +1,5 @@
 # dotnet-reference Dependency Map
-*Updated: 2026-11-18T16:45:38Z*
+*Updated: 2026-11-24T13:20:33Z*
 
 > Scope: `dotnet-reference` | Scan root: repo root
 > Single-repo scan: all sub-projects share one `Directory.Build.props` and `Directory.Packages.props`.
@@ -40,7 +40,7 @@ None. This repo has no client packages referencing external services.
 
 ### Infrastructure
 
-None detected. No appsettings.json, connection strings, or infra config files present.
+None detected. The repo has no appsettings.json and no connection strings. `Dockerfile` and `compose.yaml` define the container runtime for `E128.Reference.Web`.
 
 ### Runtime Images
 
@@ -52,9 +52,8 @@ None detected. No appsettings.json, connection strings, or infra config files pr
 > Tags are pinned to a minor version (`:11.0-resolute`), not a digest. They drift with
 > patch releases but do not track `:latest`. No unpinned tags.
 
-Release builds set `ReadyToRun` true, so the container carries precompiled
-images and gains a CPU floor. On Linux, .NET 11 compiles ReadyToRun against the
-`x86-64-v3` target. A host below that target cannot run the image.
+The container carries no ReadyToRun images. The `Dockerfile` publish passes no
+runtime identifier and no project sets `PublishReadyToRun`.
 
 ---
 
@@ -113,7 +112,7 @@ graph TB
 ### E128.Reference.Cli
 
 **Role:** Console executable using `System.CommandLine`. References `E128.Reference.Core`.
-Constructs `Greeter` directly, because one stateless service needs no container.
+Constructs `GreetingService`, `Greeter`, and `InMemoryGreetingRepository` directly, because the console app needs no container.
 
 #### Key Packages
 

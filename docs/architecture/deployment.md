@@ -57,7 +57,7 @@ flowchart LR
   co["checkout, SHA pinned"] --> sdk["setup-dotnet 11.0.x"]
   sdk --> cache["cache ~/.nuget/packages"]
   cache --> fmt["format verify"]
-  fmt --> rel["build Release<br/>ReadyToRun off"]
+  fmt --> rel["build Release"]
   rel --> dbg["build Debug"]
   dbg --> tst["test Category=CI<br/>with cobertura coverage"]
   tst --> gate["coverage gate"]

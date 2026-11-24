@@ -54,17 +54,14 @@ jobs:
         run: dotnet format E128.Reference.slnx --verify-no-changes
 
       # Release and Debug compile different paths: Release clears
-      # EnablePreviewFeatures while Debug sets it. Validate Release, but skip
-      # ReadyToRun, whose precompiled images are discarded by this run anyway.
+      # EnablePreviewFeatures while Debug sets it. Validate Release here.
       - name: Build (Release)
         run: >
           dotnet build E128.Reference.slnx
           --configuration Release
-          -p:ReadyToRun=false
           -clp:ErrorsOnly
 
-      # Coverage collects in Debug. The in-process coverage extension avoids
-      # the ReadyToRun images that stall the analyzer test host.
+      # Coverage collects in Debug with the in-process coverage extension.
       - name: Build (Debug, coverage)
         run: dotnet build E128.Reference.slnx --configuration Debug -clp:ErrorsOnly
 

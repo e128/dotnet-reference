@@ -1,5 +1,5 @@
 # opencode v2 Guardrail Parity
-*Updated: 2026-11-19T14:56:50Z*
+*Updated: 2026-11-24T12:57:16Z*
 
 Claude Code enforces guardrails through hook scripts under `.claude/hooks/`.
 opencode v2 has no hook file. Its plugin API carries the same interception.
@@ -16,8 +16,8 @@ that these guardrails protect lives in `.claude/rules/deterministic-scripts.md`.
 opencode discovers the directory automatically.
 
 The plugin exports a plain object with `id` and `setup`. It needs no import
-from `@opencode/plugin`, so the repo carries no plugin package manifest and no
-`node_modules`.
+from `@opencode/plugin`, so the repo tracks no plugin package manifest and no
+`node_modules`. `.opencode/.gitignore` ignores the local runtime install files.
 
 ## Single Source of Truth
 
@@ -25,7 +25,7 @@ The plugin never restates a guardrail rule. It builds the Claude Code hook JSON
 payload and runs the existing script:
 
 ```ts
-spawnSync("bash", [join(root, ".claude/hooks", name)], {
+spawnSync("bash", [join(root, ".claude", "hooks", name)], {
   input: JSON.stringify({ tool_name: "Bash", tool_input: { command } }),
   encoding: "utf8",
   cwd: root,
@@ -64,9 +64,10 @@ request.
 
 | Hook                        | Reason                                                                              |
 | --------------------------- | ----------------------------------------------------------------------------------- |
-| `validate-agent-frontmatter` | It never blocks, only warns. Running `git diff --cached` on every shell call costs more than the warning returns |
+| `validate-agent-frontmatter` | It never blocks, only warns. Spawning it on every shell call costs more than the warning returns |
 | `user-prompt-submit`         | The script reads raw prompt text and JSON from the same stdin, so its context hint never fires |
 | `stop-failure`               | opencode v2 has no stop failure event                                              |
+| `stop-violations`            | It never blocks, only warns at the end of a turn. The plugin does not wire it      |
 
 ## Permission Hook Contract
 
@@ -101,8 +102,8 @@ Claude Code evaluates deny, then ask, then allow. opencode evaluates the array
 in order and the last match wins. A `git push --force` command matches the deny
 rule on both harnesses. The deny rule wins on both.
 
-The base posture differs by design. Claude Code denies an unlisted Bash command
-by default. opencode allows every action by default. Closing that gap on
+The base posture differs by design. Claude Code asks before it runs an unlisted
+Bash command. opencode allows every action by default. Closing that gap on
 opencode means enumerating every shell pattern, which costs more than it
 returns.
 

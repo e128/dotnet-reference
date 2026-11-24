@@ -1,5 +1,5 @@
 # .NET 11 Testing
-*Updated: 2026-11-19T20:37:01Z*
+*Updated: 2026-11-24T12:56:39Z*
 
 ## Microsoft Testing Platform (MTP)
 
@@ -105,15 +105,15 @@ Use `[Trait("Category", "...")]` to organize tests:
 
 ## Test Project Structure
 
-Five test projects, all sharing `<IsTestProject>true</IsTestProject>` (inherits MTP config from `Directory.Build.targets`):
+The test projects all share `<IsTestProject>true</IsTestProject>` (inherits MTP config from `Directory.Build.targets`):
 
-| Project                     | Purpose                                 | Notable Packages (beyond `xunit.v3.mtp-v2`)                                                       |
-| --------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `E128.Reference.Tests`      | Web integration tests                   | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Extensions.Diagnostics.Testing`                    |
-| `E128.Reference.Core.Tests` | Core library unit tests                 | `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`                 |
-| `E128.Reference.Cli.Tests`  | CLI unit tests                          | `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`                 |
-| `Architecture.Tests`        | ArchUnitNET structure and inventory     | `TngTech.ArchUnitNET.xUnitV3`                                                                     |
-| `E128.Analyzers.Tests`      | Roslyn analyzer + code fix verification | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing` |
+| Project                     | Purpose                                 | Notable Packages (beyond `xunit.v3.mtp-v2`)                                                                            |
+| --------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `E128.Reference.Tests`      | Web integration tests                   | `Microsoft.AspNetCore.Mvc.Testing`, `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`  |
+| `E128.Reference.Core.Tests` | Core library unit tests                 | `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`                                      |
+| `E128.Reference.Cli.Tests`  | CLI unit tests                          | `Microsoft.Testing.Extensions.HangDump`, `Microsoft.Testing.Extensions.TrxReport`                                      |
+| `Architecture.Tests`        | ArchUnitNET structure and inventory     | `TngTech.ArchUnitNET.xUnitV3`, `Microsoft.Testing.Extensions.TrxReport`                                                |
+| `E128.Analyzers.Tests`      | Roslyn analyzer + code fix verification | `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, `Microsoft.CodeAnalysis.CSharp.CodeFix.Testing`                      |
 
 Minimal `.csproj` template (all versions from CPM):
 
@@ -131,7 +131,7 @@ Minimal `.csproj` template (all versions from CPM):
 </Project>
 ```
 
-`Microsoft.Testing.Extensions.HangDump` and `Microsoft.Testing.Extensions.TrxReport` are added to projects that need hang diagnostics and TRX CI reporting. Every test project receives `Microsoft.Testing.Extensions.CodeCoverage` from `tests/Directory.Build.targets`. See [Code Coverage](code-coverage.md).
+Every test project except `Architecture.Tests` adds `Microsoft.Testing.Extensions.HangDump` for hang diagnostics. Every test project adds `Microsoft.Testing.Extensions.TrxReport` for TRX reporting. Every test project receives `Microsoft.Testing.Extensions.CodeCoverage` from `tests/Directory.Build.targets`. See [Code Coverage](code-coverage.md).
 
 ## Test Authoring
 

@@ -1,5 +1,5 @@
 # Terminology
-*Updated: 2026-11-21T20:39:46Z*
+*Updated: 2026-11-24T12:57:16Z*
 
 - **CPM**: Central Package Management. NuGet feature where all package versions are declared in `Directory.Packages.props` rather than per-project.
 - **ReferenceTrimmer**: Analyzer and MSBuild task that reports a removable `Reference`, `ProjectReference`, or `PackageReference`. The build runs it through a `GlobalPackageReference` in `Directory.Packages.props`.

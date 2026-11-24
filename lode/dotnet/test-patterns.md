@@ -1,10 +1,10 @@
 # Test Family Patterns
-*Updated: 2026-11-01T20:55:33Z*
+*Updated: 2026-11-24T12:56:39Z*
 
 Standard test patterns for this codebase. Tests avoid mocking frameworks, collaborators
-are either real lightweight implementations (e.g. `InMemoryGreetingRepository`) or small
-hand-written test doubles (e.g. a fixed `TimeProvider`). Every test method carries
-`[Trait("Category", "CI")]`.
+are either real lightweight implementations (for example `InMemoryGreetingRepository`) or small
+hand-written test doubles (for example a fixed `TimeProvider`). Every test method carries a
+`Category` trait. A CI test carries `[Trait("Category", "CI")]`. A Podman smoke test carries `Podman`.
 
 ## Pattern A: Stateless Classes (Extractors, Utilities, Algorithms)
 
@@ -102,8 +102,8 @@ public sealed class {Feature}Tests(WebApplicationFactory<Program> factory)
 
 ## Fake Service Conventions
 
-- Hand-written fakes only (no NSubstitute, Moq, etc.)
-- Create in test file if used once; separate `Fake{Interface}.cs` if shared
+- Hand-written fakes only (no NSubstitute or Moq)
+- Create the fake in the test file if one test class uses it. Use a separate `Fake{Interface}.cs` if several share it.
 - Fakes implement only what the test needs
 
 ## Test Naming
@@ -117,7 +117,7 @@ The condition segment is optional. A test with no condition uses
 
 ## Critical Rules
 
-- All test methods: `[Trait("Category", "CI")]`
+- All test methods: a `Category` trait, `CI` unless the test needs Podman or manual setup
 - No "Arrange", "Act", "Assert" comments
 - No `ConfigureAwait` in test code
 - Inject a fixed `TimeProvider` (nested test double) for time-dependent code

@@ -1,16 +1,15 @@
 # Build Performance
+*Updated: 2026-11-24T12:57:59Z*
 
-*Updated: 2026-11-07T18:08:42Z*
-
-Analyzer execution dominates a local build. A warm full rebuild of
-`E128.Reference.slnx` takes about 14 seconds with analyzers and about 3 seconds
-with `-p:RunAnalyzers=false`, measured 2026-11-07. The ratio stays near 78 percent
-because the compiler runs every analyzer package on every project.
+Analyzer execution dominates a local build. As of 2026-11-07, a warm full rebuild
+of `E128.Reference.slnx` took about 14 seconds with analyzers and about 3 seconds
+with `-p:RunAnalyzers=false`. The compiler runs every analyzer package on every
+project. Measure again before you rely on these figures.
 
 ## Where the Time Goes
 
 `-p:ReportAnalyzer=true -v:d` prints a per-analyzer table for one compilation.
-Three entries dominate `E128.Analyzers` and `E128.Analyzers.CodeFixers`:
+Three entries dominated `E128.Analyzers` and `E128.Analyzers.CodeFixers` as of 2026-11-07:
 
 | Analyzer | Cost on the analyzer projects |
 | --- | --- |

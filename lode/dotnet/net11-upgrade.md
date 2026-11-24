@@ -1,5 +1,5 @@
 # .NET 11 Upgrade Practices
-*Updated: 2026-11-18T16:45:38Z*
+*Updated: 2026-11-24T12:57:59Z*
 
 Rules this repository follows on the `net11.0` band. Each rule came from a probe
 on the GA SDK. See [project-structure.md](project-structure.md)
@@ -18,8 +18,8 @@ call that binary by absolute path.
 
 ## One Framework For This Repository
 
-Every project targets `net11.0`, and the repository builds and tests on that one
-band. The analyzer test project is not multi-targeted.
+`Directory.Build.props` defaults projects to `net11.0`. The analyzer assemblies
+override it to `netstandard2.0`. The analyzer test project is not multi-targeted.
 
 Two rules follow:
 
@@ -101,8 +101,9 @@ type: `case _` parses `_` as a case-type identifier and fails with `CS0103`,
 and `case var _:` is the catch-all that compiles.
 
 `SS019` demands a `default` label on every switch, which a union switch must
-not have. The files that switch over a union take a scoped `SS019` row in
-`.editorconfig`, in the same block that relaxes the four declaration rules.
+not have. Each file that switches over a union takes its own scoped `SS019`
+section in `.editorconfig`. A separate section relaxes the four declaration rules
+for the union declaration file.
 
 ## Closed Hierarchies
 
