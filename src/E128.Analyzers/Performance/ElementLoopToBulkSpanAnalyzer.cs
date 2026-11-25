@@ -223,24 +223,7 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         out ITypeSymbol? element,
         out bool isSpan)
     {
-        element = null;
-        isSpan = false;
-
-        switch (type)
-        {
-            case IArrayTypeSymbol { Rank: 1 } array:
-                element = array.ElementType;
-                return true;
-
-            case INamedTypeSymbol named
-                when TypeSymbols.MatchesOriginalDefinition(named, spanType):
-                element = named.TypeArguments[0];
-                isSpan = true;
-                return true;
-
-            default:
-                return false;
-        }
+        return SpanElementType.TryGet(type, spanType, out element, out isSpan);
     }
 
     private static bool IsRepeatableValue(

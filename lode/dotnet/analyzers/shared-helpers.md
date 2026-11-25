@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-19T13:56:28Z*
+*Updated: 2026-11-25T22:37:43Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -37,6 +37,8 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `InvocationNames.GetSimpleName` | Returns the called name for `Type.Method(...)` and for a bare `Method(...)`. |
 | `PartialMembers.IsImplementationPart` | True when a symbol is the implementing source symbol of a partial method, partial property, or a parameter of one. A member-level symbol rule calls it first and skips the event, so one logical member reports once. |
 | `IndexedForLoop.TryMatch` | Matches `for (var i = 0; i < source.Length; i++)` and returns the variable, bound owner, and body. |
+| `SpanElementType.TryGet` | Reads the element type of a one-dimensional array, a `Span<T>`, or a `ReadOnlySpan<T>`. Returns whether the value is a span. The two-argument call matches one span type only. |
+| `ReflectionTargets.TryGet` | Resolves the type a reflection lookup runs against: `typeof(T)`, `value.GetType()`, or a local initialized from either. A parameter stays unresolved. |
 | `XunitTestHelper.IsAssertType` | True for `Xunit.Assert`. The test-quality rules share it. |
 | `Unsafe.OwnerInvocation.TryMatch` | Binds a named call and confirms its containing type is one of the owner types. |
 | `Namespaces.Equals` | True when the namespace chain equals a dotted name, ending at the global namespace. |

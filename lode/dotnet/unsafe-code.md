@@ -1,5 +1,5 @@
 # Unsafe Code Policy
-*Updated: 2026-11-25T17:55:56Z*
+*Updated: 2026-11-25T22:37:43Z*
 
 Production code in this repository contains no unsafe code. No project sets
 `AllowUnsafeBlocks`, so a new `unsafe` block or a pointer type fails the build.
@@ -26,6 +26,7 @@ repository and on any project that references the package.
 | Do not create a null managed reference                    | E128127          |
 | Keep a delegate alive while native code holds it          | E128128          |
 | Do not bulk-copy a type that holds references             | E128129          |
+| Never write a static readonly field through reflection    | E128254          |
 | Bound `stackalloc` and keep it out of a loop              | E128109          |
 | Zero a pooled buffer before `Return`, then never reuse it | E128110, E128111 |
 | Prefer `LibraryImport` over `DllImport`                   | E128117          |
@@ -35,13 +36,34 @@ repository and on any project that references the package.
 The rule set and the severity live in `src/E128.Analyzers/README.md`. See
 [analyzers.md](analyzers.md) for the deny-by-default strategy.
 
+## Reflection Write To A Static Readonly Field
+
+E128254 reports a `FieldInfo.SetValue` or `SetValueDirect` call that writes a
+static readonly field of a type outside the framework. The field resolves from a
+`GetField` call on `typeof(T)` or `value.GetType()` with a constant name, or from
+a local with one such initializer. A `Type` local resolves through its
+declaration, and a null-conditional call is read the same way.
+
+The rule reads the `BindingFlags` argument. A flag set must fold to a constant.
+A literal flag set and a `const BindingFlags` field therefore work. A flag set
+held in a runtime local stays silent, because the rule cannot prove which field
+the call returns. A framework type stays silent, because E128137 owns the
+nonpublic BCL lookup.
+
+A `FieldInfo` local counts only when its one assignment runs before the write.
+
+No code fix. Removing `readonly` changes the constant-fold contract, and the
+runtime inlines the field into every reader.
+
 ## Gaps
 
 The document lists areas that no E128 rule covers.
 
 - `MemoryPool<T>` and `IMemoryOwner<T>`. E128110 and E128111 watch
-  `ArrayPool<T>` only. The pooled buffer rule in `.claude/rules/security.md`
-  still applies by hand.
+  `ArrayPool<T>` only, so no rule requires a zero before an owner returns its
+  buffer. E128162 covers a direct use after an explicit `Dispose()`. A retained
+  slice used after the owner is disposed stays open. The pooled buffer rule in
+  `.claude/rules/security.md` still applies by hand.
 - A struct with padding that moves through a byte-wise API. No rule compares
   the field offsets with the byte span.
 - A block move of two plain `void*` values. E128129 cannot see the type behind

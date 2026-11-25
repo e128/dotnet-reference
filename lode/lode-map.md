@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-25T17:11:41Z*
+*Updated: 2026-11-25T22:13:23Z*
 
 ## Generated Docs
 
@@ -67,7 +67,7 @@
 - [external-sweep.md](dotnet/analyzer-candidates/external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 - [performance-sweep.md](dotnet/analyzer-candidates/performance-sweep.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
 - [async-sweep.md](dotnet/analyzer-candidates/async-sweep.md): Closed async fire-and-forget sweep, every shape already owned
-- [unsafe-sweep.md](dotnet/analyzer-candidates/unsafe-sweep.md): 2026-11-25 unsafe best-practices read, with five open shapes and a defect list for the shipped unsafe rules
+- [unsafe-sweep.md](dotnet/analyzer-candidates/unsafe-sweep.md): 2026-11-25 unsafe best-practices read, with two open shapes and a defect list for the shipped unsafe rules
 
 ### dotnet/analyzers/
 

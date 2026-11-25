@@ -1,3 +1,12 @@
+## Release 3.7.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128254 | E128-Unsafe | Warning | A reflection write sets a static readonly field of a non-framework type. The runtime inlines the field, so the new value reaches no inlined read.
+E128255 | E128-Performance | Warning | An element-wise loop over a float or double span reimplements TensorPrimitives.Add or TensorPrimitives.Multiply.
+
 ## Release 3.6.1
 
 ## Release 3.6.0

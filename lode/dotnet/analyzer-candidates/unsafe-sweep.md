@@ -1,5 +1,5 @@
 # Unsafe Best-Practices Sweep
-*Updated: 2026-11-25T17:55:52Z*
+*Updated: 2026-11-25T22:13:23Z*
 
 This sweep reads the .NET unsafe-code best-practices document
 (`learn.microsoft.com/dotnet/standard/unsafe-code/best-practices`) against the
@@ -148,17 +148,20 @@ of two `void*` values stays out of reach.
 
 Two shapes remain open.
 
-| Pattern                                                   | Score | Status |
-| --------------------------------------------------------- | ----- | ------ |
-| `MemoryPool<T>` or `IMemoryOwner<T>` is used after dispose | 4/5   | new    |
-| A padded struct is copied byte-wise through a marshal API  | 3/5   | new    |
+| Pattern                                                           | Score | Status |
+| ----------------------------------------------------------------- | ----- | ------ |
+| A retained `Memory<T>` slice is used after its owner is disposed  | 3/5   | new    |
+| A padded struct is copied byte-wise through a marshal API          | 3/5   | new    |
 
 The `Unsafe.As` reference shape shipped inside E128112. The `fixed` pointer
 escape shape shipped inside E128125. The write barrier shape shipped inside
 E128129. Their rows left the register.
 
-The `MemoryPool<T>` row closes the documented gap. The padded struct row is a
-Tier 2 shape that waits for a real defect.
+E128162 owns the direct use-after-dispose form of a memory owner, and IDISP016
+also fires. The retained-slice form stays open, because no rule links
+`owner.Memory` to a later read. The padded struct row is a Tier 2 shape that
+waits for a real defect. The reflection write to a static readonly field shipped
+as E128254. See [catalog.md](catalog.md).
 
 ## Declined
 
