@@ -1,3 +1,5 @@
+## Release 3.6.1
+
 ## Release 3.6.0
 
 ### New Rules

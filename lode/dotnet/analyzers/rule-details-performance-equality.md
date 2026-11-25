@@ -1,5 +1,5 @@
 # Performance Rule: Struct Key Equality
-*Updated: 2026-11-25T17:04:34Z*
+*Updated: 2026-11-25T19:07:36Z*
 
 This file covers E128253, the struct-key equality rule. It reports a
 `Dictionary<TKey, TValue>`, `HashSet<T>`, or
@@ -27,12 +27,13 @@ action. It resolves five types once:
 - `System.Collections.Generic.IEqualityComparer`1`
 
 The created type must match one of the three collection original definitions.
-The key is `TypeArguments[0]`. The rule reports only when all four hold:
+The key is `TypeArguments[0]`. The rule reports only when all five hold:
 
 1. The key kind is `TypeKind.Struct`.
-2. The key declares source syntax, so the maintainer can change it.
-3. The key implements no `IEquatable<key>` interface.
-4. No constructor argument implements `IEqualityComparer<key>`.
+2. The key is not a value tuple.
+3. The key declares source syntax, so the maintainer can change it.
+4. The key implements no `IEquatable<key>` interface.
+5. No constructor argument implements `IEqualityComparer<key>`.
 
 A missing comparer type in the compilation turns the rule off, so an old target
 framework gets no report.
@@ -41,6 +42,11 @@ framework gets no report.
 
 - A key from metadata, such as `Guid`.
 - An enum key, because the runtime compares it through the underlying value.
+- A value tuple key. The tuple kind test runs before the interface test. A named
+  tuple such as `(string A, string B)` fails the `IEquatable<key>` match, because
+  `SymbolEqualityComparer.Default` treats the named tuple and its unnamed
+  underlying tuple as different. The tuple still implements
+  `IEquatable<ValueTuple<...>>`, so no key boxes.
 - A record struct, because the compiler generates `IEquatable<T>`.
 - A class or type parameter key.
 - A creation with an explicit `IEqualityComparer<T>` argument. The rule cannot
@@ -57,6 +63,11 @@ site needs it.
 
 The rule carries no code fix. The remedy adds `IEquatable<T>` to the key type,
 which changes the type rather than the call site.
+
+A tuple key that holds a struct without `IEquatable` stays outside the rule,
+because the tuple type itself implements `IEquatable`. The element still boxes
+inside the tuple equality test. That shape needs its own rule if a consumer
+site shows the cost.
 
 ## Tests
 

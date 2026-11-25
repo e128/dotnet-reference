@@ -2,10 +2,14 @@
 
 Roslyn analyzers and code fixes that enforce opinionated .NET conventions at compile time. Catch design, reliability, performance, and style issues before they reach code review.
 
+## Purpose
+
+A main purpose of this project is to reduce coding LLM slop. A model without guardrails fires a slop cannon. These rules turn that cannon into a slop rifle, so each generated change stays small and targeted.
+
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.6.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.6.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -3830,7 +3834,7 @@ Flags a `Dictionary<TKey, TValue>`, `HashSet<T>`, or `ConcurrentDictionary<TKey,
 
 `EqualityComparer<T>.Default` falls back to an object comparer for such a key. Each hash and equality test then boxes the key. Add `IEquatable<T>` to the struct, or pass a comparer that avoids boxing.
 
-The report stays silent when the key comes from metadata, implements `IEquatable<T>`, or the creation passes an `IEqualityComparer<T>` argument. It also stays silent for an enum key, because the runtime compares an enum through its underlying value without boxing. A collection expression that fills a set reaches no object creation, so that form is outside the rule. The rule carries no code fix, because the remedy adds a member to the key type.
+The report stays silent when the key comes from metadata, implements `IEquatable<T>`, or the creation passes an `IEqualityComparer<T>` argument. It also stays silent for an enum key, because the runtime compares an enum through its underlying value without boxing. A value tuple key also stays silent, because a tuple type implements `IEquatable` of its underlying tuple type. A collection expression that fills a set reaches no object creation, so that form is outside the rule. The rule carries no code fix, because the remedy adds a member to the key type.
 
 ```csharp
 struct Point

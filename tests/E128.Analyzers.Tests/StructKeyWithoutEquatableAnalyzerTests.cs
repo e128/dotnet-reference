@@ -217,6 +217,45 @@ public sealed class StructKeyWithoutEquatableAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Silent_WhenKeyIsANamedValueTuple()
+    {
+        return AnalyzerTestRunner.VerifyAsync<StructKeyWithoutEquatableAnalyzer>("""
+                           using System.Collections.Generic;
+
+                           class C
+                           {
+                               void M()
+                               {
+                                   var map = new Dictionary<(string A, string B), int>();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenHashSetKeyIsAValueTuple()
+    {
+        return AnalyzerTestRunner.VerifyAsync<StructKeyWithoutEquatableAnalyzer>("""
+                           using System.Collections.Generic;
+
+                           enum Source
+                           {
+                               One
+                           }
+
+                           class C
+                           {
+                               void M()
+                               {
+                                   var set = new HashSet<(Source, string)>();
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenKeyIsAClass()
     {
         return AnalyzerTestRunner.VerifyAsync<StructKeyWithoutEquatableAnalyzer>("""
