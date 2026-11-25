@@ -15,7 +15,7 @@ public sealed class UnsafeAsPointerEscapeAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Pin the object explicitly with fixed",
-        "Unsafe.AsPointer takes no pin. The object can move while the pointer is live. Use a fixed block.",
+        "Unsafe.AsPointer takes no pin. The target can move, or the pointer can outlive it. Use a fixed block.",
         "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
@@ -54,13 +54,55 @@ public sealed class UnsafeAsPointerEscapeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (IsInsideFixedStatement(invocation)
-            || IsStackLocation(invocation, context.SemanticModel, context.CancellationToken))
+        if (IsInsideFixedStatement(invocation))
+        {
+            return;
+        }
+
+        if (IsStackLocation(invocation, context.SemanticModel, context.CancellationToken)
+            && !Escapes(invocation, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+    }
+
+    private static bool Escapes(
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        foreach (var ancestor in invocation.Ancestors())
+        {
+            if (ancestor is ReturnStatementSyntax or ArrowExpressionClauseSyntax)
+            {
+                return true;
+            }
+
+            if (ancestor is AssignmentExpressionSyntax assignment
+                && assignment.Right.Span.Contains(invocation.Span)
+                && IsFieldOrElement(assignment.Left, model, cancellationToken))
+            {
+                return true;
+            }
+
+            if (ancestor is MemberDeclarationSyntax or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsFieldOrElement(
+        ExpressionSyntax target,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        return target is ElementAccessExpressionSyntax
+            || model.GetSymbolInfo(target, cancellationToken).Symbol is IFieldSymbol or IPropertySymbol;
     }
 
     private static bool IsStackLocation(

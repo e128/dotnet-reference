@@ -1,14 +1,14 @@
 # ASP.NET Core Performance
-*Updated: 2026-11-11T03:14:54Z*
+*Updated: 2026-11-25T17:21:02Z*
 
 Rules and measurements for the `E128.Reference.Web` entry point. The general
 method lives in [performance.md](performance.md).
 
 ## Request Path
 
-- `WebApplication.CreateBuilder` loads more than the app needs.
-  `CreateSlimBuilder` reduces the set. Measure the startup and the request
-  path before a switch.
+- `Program.cs` uses `WebApplication.CreateSlimBuilder`. It omits HTTPS, HTTP/3,
+  IIS integration, and hosting startup assemblies. Do not switch back to
+  `CreateBuilder` without a measured need.
 - Keep the middleware count small.
 - Keep the host log level above Information. `Program.cs` sets the minimum
   level to Warning. See [Request Logging](#request-logging).
@@ -23,11 +23,19 @@ response. Never place its output in HTML or a script block. A custom encoder
 also disables the source-generated serialization fast path. Benchmark the
 pair before a switch, because the two gains can cancel.
 
-Both `CreateSlimBuilder` and the source-generated JSON metadata were measured
-on this app. Neither moved `GET /` or `GET /greetings` beyond the run-to-run
-noise of about 2 percent. Cold start moved by 4 percent, which is inside the
-same noise. The app keeps the generated context for AOT readiness and does not
-claim a latency win. `CreateSlimBuilder` is not in use.
+`Program.cs` uses `CreateSlimBuilder`. Two interleaved batches of eight cold
+starts each tested both builds. With `CreateBuilder`, the median start was
+98.3 ms and 75.1 ms. With `CreateSlimBuilder`, it was 86.8 ms and 64.9 ms. The
+change saves about 10 to 12 ms per start.
+
+The request path stayed inside the noise. `GET /` measured 4,696 and 4,803
+requests per second. `GET /greetings` measured 4,791 and 4,819. The runs used
+macOS arm64 on 2026-11-25. A Release build measured the time to the listening
+socket, and the runs interleaved the two builds.
+
+`CreateSlimBuilder` omits HTTPS, HTTP/3, IIS integration, and hosting startup
+assemblies. This app uses none of them. Revisit the choice before the app adds
+one. The source-generated JSON metadata stays for AOT readiness.
 
 ## Response Compression
 

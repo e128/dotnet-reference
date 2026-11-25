@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-20T17:15:09Z*
+*Updated: 2026-11-25T17:11:41Z*
 
 ## Generated Docs
 
@@ -67,6 +67,7 @@
 - [external-sweep.md](dotnet/analyzer-candidates/external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 - [performance-sweep.md](dotnet/analyzer-candidates/performance-sweep.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
 - [async-sweep.md](dotnet/analyzer-candidates/async-sweep.md): Closed async fire-and-forget sweep, every shape already owned
+- [unsafe-sweep.md](dotnet/analyzer-candidates/unsafe-sweep.md): 2026-11-25 unsafe best-practices read, with five open shapes and a defect list for the shipped unsafe rules
 
 ### dotnet/analyzers/
 
@@ -88,6 +89,7 @@
 - [rule-details.md](dotnet/analyzers/rule-details.md): Per-rule detection shape, exclusions, and code-fix behavior for the E128 rules
 - [rule-details-performance.md](dotnet/analyzers/rule-details-performance.md): Detection shape for performance rules E128203 to E128210
 - [rule-details-performance-tier2.md](dotnet/analyzers/rule-details-performance-tier2.md): Detection shape for performance rules E128211 to E128217
+- [rule-details-performance-equality.md](dotnet/analyzers/rule-details-performance-equality.md): Detection shape for the struct-key equality rule E128253
 - [rule-details-performance-aspnet.md](dotnet/analyzers/rule-details-performance-aspnet.md): Detection shape for ASP.NET Core performance rules E128229 to E128231
 - [rule-details-reliability.md](dotnet/analyzers/rule-details-reliability.md): Detection shape for the reliability rules
 - [rule-details-reliability-concurrency.md](dotnet/analyzers/rule-details-reliability-concurrency.md): Detection shape for the async and concurrent reliability rules

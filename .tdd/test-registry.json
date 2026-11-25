@@ -132,6 +132,72 @@
       "verified_baseline": false,
       "registered_at": "2026-11-23T16:08:54Z",
       "registered_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:02:44Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:02:44Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/FunctionPointerDelegateLifetimeAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/MemoryMarshalNonBlittableAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/NonPublicBclReflectionAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/StackAllocSafetyAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/UnsafeAsPointerEscapeAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/UnsafeAsToBitCastAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/UnsafeAsToBitCastCodeFixTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/UnsafeCopyReferenceTypeAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
+    },
+    "tests/E128.Analyzers.Tests/UnsafeUnalignedNonBlittableAnalyzerTests.cs": {
+      "origin": "llm-generated",
+      "verified_baseline": false,
+      "registered_at": "2026-11-25T17:55:53Z",
+      "registered_commit": "eae05004ffc2f7a6b02046958d70585788ad1af1"
     }
   },
   "tests": {

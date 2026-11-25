@@ -5,7 +5,7 @@ Roslyn analyzers and code fixes that enforce opinionated .NET conventions at com
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.5.5" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.6.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -267,6 +267,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128235 | Readonly field re-read inside a loop                                                                             | Yes      |
 | E128247 | A readonly field copies its mutable struct on every call                                                        | No       |
 | E128249 | `Array.Resize` or `Concat` regrows an array inside a loop                                                       | No       |
+| E128253 | Struct dictionary or set key without `IEquatable<T>`                                                            | No       |
 
 ### Security
 
@@ -345,7 +346,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 
 | Rule    | Title                                                                                                | Code Fix |
 | ------- | ---------------------------------------------------------------------------------------------------- | -------- |
-| E128112 | Use `Unsafe.BitCast` instead of `Unsafe.As`                                                          | Yes      |
+| E128112 | Do not reinterpret one type as another with `Unsafe.As`                                               | Yes      |
 | E128113 | Use the unaligned `Unsafe` read and write methods                                                    | Yes      |
 | E128114 | Index the array instead of bypassing its bounds check                                                | Yes      |
 | E128115 | Do not reinterpret between `bool` and `int`                                                          | Yes      |
@@ -356,7 +357,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128126 | Do not write to a string through a fixed pointer                                                     | No       |
 | E128127 | Do not create a null managed reference                                                               | No       |
 | E128128 | Keep the delegate alive while native code holds its function pointer                                 | No       |
-| E128129 | Do not bulk-copy a type that holds references                                                        | No       |
+| E128129 | Do not move a type that holds references through `Unsafe`                                            | No       |
 | E128136 | Do not pair a pointer parameter with a separate length parameter                                     | No       |
 | E128137 | Do not bind to a non-public BCL member through reflection                                            | No       |
 | E128138 | Do not build dynamic methods with raw IL                                                             | No       |
@@ -1318,10 +1319,12 @@ async Task Insert(SqliteConnection connection, FileInsertData data)
 
 ### E128109 &mdash; stackalloc safety
 
-Flags `stackalloc` inside a loop, with a constant size above 1024 bytes, or with a length that has
-no guard, or that is assigned to a pointer instead of `Span<T>`.
-Stack space is not reclaimed until the method returns. A conditional expression or an `if` statement counts as
-a guard only when its condition tests a name used in the length. `Math.Min` also counts as a guard.
+Flags `stackalloc` inside a loop, with a size above 1024 bytes, or with a length that has no guard,
+or that is assigned to a pointer instead of `Span<T>`.
+Stack space is not reclaimed until the method returns.
+A conditional expression or an `if` statement counts as a guard only when its condition caps the whole length
+expression at 1024 bytes or less. `Math.Min` counts only when one argument is a constant at or under the cap.
+The size of an enum, a pointer, `nint`, `nuint`, and a struct made of known fields counts at its real width.
 The code fix assigns the buffer to `Span<T>` when the pointer is only indexed.
 
 ```csharp
@@ -1389,13 +1392,15 @@ The conditions:
 The code fix deletes the test method, so an unattended `dotnet format` run must not remove a test
 without review.
 
-### E128112: Use Unsafe.BitCast instead of Unsafe.As
+### E128112: Do not reinterpret one type as another with Unsafe.As
 
-Flags `Unsafe.As<TFrom, TTo>(ref value)` when both types are fixed-size value types of the same size.
+Flags `Unsafe.As<TFrom, TTo>(ref value)` in two cases. The first is a source or target that is a reference type,
+or a type parameter that is not `unmanaged`. The second is two fixed-size value types of the same size.
 `Unsafe.BitCast` checks the size and rejects a reference type.
-The rule stays silent when the result is used as a reference (assigned to, passed by `ref`, or bound to a `ref` local).
+The rule stays silent for two value types of different sizes when the result is used as a reference
+(assigned to, passed by `ref`, or bound to a `ref` local).
 The rule also stays silent when the target has no `Unsafe.BitCast` (before .NET 8).
-The code fix rewrites the call to `Unsafe.BitCast<TFrom, TTo>(value)`.
+The code fix rewrites the call to `Unsafe.BitCast<TFrom, TTo>(value)` only when both types are unmanaged.
 
 ```csharp
 // Before (warns)
@@ -1498,7 +1503,9 @@ The code fix hoists the call into a private static readonly field named after th
 ### E128125: Pin the object explicitly with fixed
 
 Flags `Unsafe.AsPointer(ref value)` outside a `fixed` statement.
-The rule stays silent for a plain local or a by-value parameter, because the stack does not move.
+The rule stays silent for a plain local or a by-value parameter only when the pointer does not escape.
+A pointer escapes when the method returns it, or when an assignment stores it into a field, a property,
+or an element.
 The call takes no pin, so the GC can move a heap object while the pointer is live.
 No code fix. Use a `fixed` block around the pointer.
 
@@ -1520,14 +1527,19 @@ No code fix. Use a null object, an empty span, or a nullable value instead.
 ### E128128: Keep the delegate alive while native code holds its function pointer
 
 Flags `Marshal.GetFunctionPointerForDelegate` when the delegate is a temporary (`new`, a lambda, or a method group),
-or when it is a local or a parameter that nothing stores in a field, property or element, or passes to another call such as `GC.KeepAlive` or `list.Add`.
+or when it is a local or a parameter that nothing stores in a field, property or element, and nothing passes
+to `GC.KeepAlive`, `GCHandle.Alloc`, or a collection method such as `Add`, `TryAdd`, `Push`, `Enqueue`, or `Insert`.
+A plain call that does not root the delegate no longer counts.
 The call does not root the delegate, so the GC can collect it while native code holds the pointer.
 No code fix. Keep the delegate in a field or a `GCHandle` for the lifetime of the pointer.
 
-### E128129: Do not bulk-copy a type that holds references
+### E128129: Do not move a type that holds references through Unsafe
 
-Flags `Unsafe.Copy` where the copied type holds a reference.
-The copy bypasses the write barrier, so a copied reference can miss a GC update.
+Flags `Unsafe.Copy`, `Unsafe.Write`, and `Unsafe.WriteUnaligned` where the moved type holds a reference.
+It also flags `Unsafe.CopyBlock`, `CopyBlockUnaligned`, `InitBlock`, and `InitBlockUnaligned` when an argument
+is a pointer to a type that holds a reference.
+The move bypasses the write barrier, so a reference can miss a GC update.
+A `void*` argument and an unmanaged type are silent.
 No code fix. The right replacement depends on whether the caller needs a deep or a shallow copy.
 
 ### E128131: Parse UTF-8 bytes without a decoded string
@@ -1580,7 +1592,9 @@ No code fix. Replace the pair with a single `Span<T>` or `ReadOnlySpan<T>` param
 
 ### E128137: Do not bind to a non-public BCL member through reflection
 
-Flags `Type.GetMethod`, `GetField`, `GetProperty`, `GetEvent`, `GetMember`, `GetConstructor`, or `GetNestedType` when a `BindingFlags` argument names a non-public member and the receiver is `typeof(X)`. A private BCL member can change or disappear between runtime versions.
+Flags `Type.GetMethod`, `GetField`, `GetProperty`, `GetEvent`, `GetMember`, `GetConstructor`, or `GetNestedType` when a `BindingFlags` argument names a non-public member and the receiver is `typeof(X)` or `value.GetType()`.
+The target is the static type of `value`. A `Type` variable carries no target type, so the rule stays silent.
+A private BCL member can change or disappear between runtime versions.
 
 No code fix. Use the public API, or a package that owns the access.
 
@@ -3808,6 +3822,29 @@ while (!cancellationToken.IsCancellationRequested)
 {
     Work();
 }
+```
+
+### E128253: Struct dictionary or set key without `IEquatable<T>`
+
+Flags a `Dictionary<TKey, TValue>`, `HashSet<T>`, or `ConcurrentDictionary<TKey, TValue>` created with the default equality comparer where the key is a source struct that does not implement `IEquatable<T>`.
+
+`EqualityComparer<T>.Default` falls back to an object comparer for such a key. Each hash and equality test then boxes the key. Add `IEquatable<T>` to the struct, or pass a comparer that avoids boxing.
+
+The report stays silent when the key comes from metadata, implements `IEquatable<T>`, or the creation passes an `IEqualityComparer<T>` argument. It also stays silent for an enum key, because the runtime compares an enum through its underlying value without boxing. A collection expression that fills a set reaches no object creation, so that form is outside the rule. The rule carries no code fix, because the remedy adds a member to the key type.
+
+```csharp
+struct Point
+{
+    public int X;
+    public int Y;
+}
+
+// Before (warns)
+var points = new Dictionary<Point, string>();
+
+// After
+readonly record struct Point(int X, int Y);
+var points = new Dictionary<Point, string>();
 ```
 
 ## Requirements

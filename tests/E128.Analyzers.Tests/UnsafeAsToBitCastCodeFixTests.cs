@@ -13,6 +13,23 @@ public sealed class UnsafeAsToBitCastCodeFixTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task NoFix_WhenTheTargetIsAReferenceType()
+    {
+        return CodeFixTestRunner.NoFixAsync<UnsafeAsToBitCastAnalyzer, UnsafeAsToBitCastCodeFixProvider>("""
+                           using System.Runtime.CompilerServices;
+                           class C
+                           {
+                               void M()
+                               {
+                                   int value = 1;
+                                   object result = {|E128112:Unsafe.As<int, object>(ref value)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Fix_ReplacesAsWithBitCast()
     {
         return VerifyFixAsync(

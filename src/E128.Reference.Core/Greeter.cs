@@ -12,6 +12,8 @@ public sealed class Greeter
     /// </summary>
     public static string DefaultGreetingName => "World";
 
+    private readonly string _defaultGreeting;
+
     public Greeter()
         : this(DefaultGreetingName)
     {
@@ -21,17 +23,18 @@ public sealed class Greeter
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(defaultName);
         DefaultName = defaultName;
+        _defaultGreeting = $"Hello, {defaultName}!";
     }
 
     internal string DefaultName { get; }
 
     public string Greet()
     {
-        return Greet(null);
+        return _defaultGreeting;
     }
 
     public string Greet(string? name)
     {
-        return $"Hello, {name ?? DefaultName}!";
+        return name is null ? _defaultGreeting : $"Hello, {name}!";
     }
 }

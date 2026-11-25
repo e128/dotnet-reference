@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -12,10 +13,12 @@ namespace E128.Analyzers.Unsafe;
 [Shared]
 public sealed class UnsafeAsToBitCastCodeFixProvider : E128CodeFixProviderBase
 {
+    private const int ExpectedTypeArgumentCount = 2;
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [UnsafeAsToBitCastAnalyzer.DiagnosticId];
 
-    protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
+    protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan);
@@ -26,15 +29,22 @@ public sealed class UnsafeAsToBitCastCodeFixProvider : E128CodeFixProviderBase
             } invocation
             || invocation.ArgumentList.Arguments.Count is not 1)
         {
-            return Task.CompletedTask;
+            return;
+        }
+
+        var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (model is null
+            || model.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method
+            || method.TypeArguments.Length is not ExpectedTypeArgumentCount
+            || method.TypeArguments.Any(static type => type.IsReferenceType || !type.IsUnmanagedType))
+        {
+            return;
         }
 
         var argument = invocation.ArgumentList.Arguments[0];
         var typeArguments = generic.TypeArgumentList;
 
         CodeFixRegistration.Register(context, diagnostic, "Use Unsafe.BitCast", nameof(UnsafeAsToBitCastCodeFixProvider), _ => Task.FromResult(ApplyFix(context.Document, root, invocation, memberAccess, argument, typeArguments)));
-
-        return Task.CompletedTask;
     }
 
     private static Document ApplyFix(

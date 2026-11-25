@@ -1,5 +1,5 @@
 # .NET Performance
-*Updated: 2026-11-15T17:35:31Z*
+*Updated: 2026-11-25T14:46:23Z*
 
 Performance guidance for the app projects. The source is the BlazingFastDotnet
 notes (`github.com/EgorBo/BlazingFastDotnet`). The notes warn that some advice
@@ -186,6 +186,22 @@ False sharing happens when two hot fields share a cache line. Pad the hot slot
 to the line size. An x64 or Neoverse arm64 line is 64 bytes. An Apple M-series
 line is 128 bytes. Padding costs a field and a suppression, so add it only
 after a measurement.
+
+## Greeting Path
+
+`Greeter` builds the greeting for its default name once, in the constructor.
+`Greet()` returns the stored string, so a call allocates nothing. `Greet(name)`
+still builds one string for a supplied name.
+
+`CoreBenchmarks.GreetDefault` measured 8.42 ns and 48 bytes per call before the
+change, and 0.25 ns and 0 bytes after it. The in-process `GET /` benchmark fell
+from 13.92 us to 11.18 us. Both runs used macOS arm64 on 2026-11-25. See
+[benchmarks.md](benchmarks.md) for the harness.
+
+A constant `Uri` hoisted out of the POST path showed no measurable win at
+endpoint scale. Treat an allocation below the noise band as no win. That
+decision is recorded in
+[skipped-decisions.md](analyzer-candidates/skipped-decisions.md).
 
 ## See Also
 

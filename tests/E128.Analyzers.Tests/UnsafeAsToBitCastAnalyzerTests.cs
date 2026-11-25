@@ -42,7 +42,7 @@ public sealed class UnsafeAsToBitCastAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public Task Silent_WhenTargetIsAReferenceType()
+    public Task Reports_WhenTargetIsAReferenceType()
     {
         return AnalyzerTestRunner.VerifyAsync<UnsafeAsToBitCastAnalyzer>("""
                            using System.Runtime.CompilerServices;
@@ -51,7 +51,24 @@ public sealed class UnsafeAsToBitCastAnalyzerTests
                                void M()
                                {
                                    int value = 1;
-                                   object result = Unsafe.As<int, object>(ref value);
+                                   object result = {|E128112:Unsafe.As<int, object>(ref value)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenSourceIsAReferenceType()
+    {
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAsToBitCastAnalyzer>("""
+                           using System.Runtime.CompilerServices;
+                           class C
+                           {
+                               void M()
+                               {
+                                   object value = new();
+                                   int result = {|E128112:Unsafe.As<object, int>(ref value)|};
                                }
                            }
                            """);

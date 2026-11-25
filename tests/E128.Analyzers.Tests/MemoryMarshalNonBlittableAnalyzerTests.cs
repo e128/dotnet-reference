@@ -59,6 +59,28 @@ public sealed class MemoryMarshalNonBlittableAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Silent_WhenTheTypeIsNint()
+    {
+        return AnalyzerTestRunner.VerifyAsync<MemoryMarshalNonBlittableAnalyzer>("""
+                           using System;
+                           using System.Runtime.InteropServices;
+                           class C
+                           {
+                               nint M(ReadOnlySpan<byte> span)
+                               {
+                                   return MemoryMarshal.Read<nint>(span);
+                               }
+
+                               nuint N(ReadOnlySpan<byte> span)
+                               {
+                                   return MemoryMarshal.Read<nuint>(span);
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_WhenAStructHoldsABool()
     {
         return AnalyzerTestRunner.VerifyAsync<MemoryMarshalNonBlittableAnalyzer>("""

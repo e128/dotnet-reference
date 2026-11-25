@@ -12,10 +12,21 @@ public sealed class UnsafeCopyReferenceTypeAnalyzer : DiagnosticAnalyzer
 {
     internal const string DiagnosticId = "E128129";
 
+    private static readonly ImmutableArray<string> MemberNames =
+    [
+        "Copy",
+        "Write",
+        "WriteUnaligned",
+        "CopyBlock",
+        "CopyBlockUnaligned",
+        "InitBlock",
+        "InitBlockUnaligned",
+    ];
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "Do not bulk-copy a type that holds references",
-        "Unsafe.Copy bypasses the write barrier. A copied reference can miss a GC update. Use a managed assignment.",
+        "Do not move a type that holds references through Unsafe",
+        "Unsafe.{0} bypasses the write barrier. A moved reference can miss a GC update. Use a managed assignment.",
         "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
@@ -49,13 +60,72 @@ public sealed class UnsafeCopyReferenceTypeAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (!OwnerInvocation.TryMatch(context, unsafeType, "Copy", out var method)
-            || method.TypeArguments.Length is not 1
-            || method.TypeArguments[0].IsUnmanagedType)
+        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess
+            || !MemberNames.Contains(memberAccess.Identifier.ValueText, StringComparer.Ordinal))
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+        if (!OwnerInvocation.TryMatch(context, unsafeType, memberAccess.Identifier.ValueText, out var method))
+        {
+            return;
+        }
+
+        if (!MovesAReference(context, invocation, method, memberAccess.Identifier.ValueText))
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), method.Name));
+    }
+
+    private static bool MovesAReference(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        string name)
+    {
+        return IsTypedMove(name)
+            ? HasReferenceTypeArgument(method)
+            : HasReferencePointer(context, invocation);
+    }
+
+    private static bool IsTypedMove(string name)
+    {
+        return string.Equals(name, "Copy", StringComparison.Ordinal)
+               || string.Equals(name, "Write", StringComparison.Ordinal)
+               || string.Equals(name, "WriteUnaligned", StringComparison.Ordinal);
+    }
+
+    private static bool HasReferenceTypeArgument(IMethodSymbol method)
+    {
+        return method.TypeArguments.Length is 1 && HoldsReferences(method.TypeArguments[0]);
+    }
+
+    private static bool HasReferencePointer(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation)
+    {
+        foreach (var argument in invocation.ArgumentList.Arguments)
+        {
+            if (IsReferencePointer(argument.Expression, context))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsReferencePointer(ExpressionSyntax expression, SyntaxNodeAnalysisContext context)
+    {
+        return context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type
+            is IPointerTypeSymbol { PointedAtType: { SpecialType: not SpecialType.System_Void } target }
+            && HoldsReferences(target);
+    }
+
+    private static bool HoldsReferences(ITypeSymbol type)
+    {
+        return !type.IsUnmanagedType;
     }
 }
