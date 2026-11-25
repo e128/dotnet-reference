@@ -620,6 +620,206 @@
       "verified_baseline": true,
       "first_green_commit": "9eca341c492d7863abd0d582bc4471cbf8c574dc",
       "first_green_at": "2026-11-23T16:08:54Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenOnlyCapacityIsPassed": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenOnlyCapacityIsPassed",
+      "method_name": "Reports_WhenOnlyCapacityIsPassed",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsATypeParameter": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsATypeParameter",
+      "method_name": "Silent_WhenKeyIsATypeParameter",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyComesFromMetadata": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyComesFromMetadata",
+      "method_name": "Silent_WhenKeyComesFromMetadata",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyImplementsEquatable": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyImplementsEquatable",
+      "method_name": "Silent_WhenKeyImplementsEquatable",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsAClass": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsAClass",
+      "method_name": "Silent_WhenKeyIsAClass",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenCreationIsTargetTyped": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenCreationIsTargetTyped",
+      "method_name": "Reports_WhenCreationIsTargetTyped",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenConcurrentDictionaryKeyStructLacksEquatable": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenConcurrentDictionaryKeyStructLacksEquatable",
+      "method_name": "Reports_WhenConcurrentDictionaryKeyStructLacksEquatable",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsARecordStruct": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsARecordStruct",
+      "method_name": "Silent_WhenKeyIsARecordStruct",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenHashSetKeyIsAValueTuple": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenHashSetKeyIsAValueTuple",
+      "method_name": "Silent_WhenHashSetKeyIsAValueTuple",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenHashSetKeyStructLacksEquatable": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenHashSetKeyStructLacksEquatable",
+      "method_name": "Reports_WhenHashSetKeyStructLacksEquatable",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenCreationPassesACustomComparer": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenCreationPassesACustomComparer",
+      "method_name": "Silent_WhenCreationPassesACustomComparer",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenDictionaryKeyStructLacksEquatable": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenDictionaryKeyStructLacksEquatable",
+      "method_name": "Reports_WhenDictionaryKeyStructLacksEquatable",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenCopyingAnotherDictionary": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Reports_WhenCopyingAnotherDictionary",
+      "method_name": "Reports_WhenCopyingAnotherDictionary",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsANamedValueTuple": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsANamedValueTuple",
+      "method_name": "Silent_WhenKeyIsANamedValueTuple",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:06:28Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsAnEnum": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableAnalyzerTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests.Silent_WhenKeyIsAnEnum",
+      "method_name": "Silent_WhenKeyIsAnEnum",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableAnalyzerTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:01:23Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Reports_WhenKeyImplementsEquatableOfAnotherType": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Reports_WhenKeyImplementsEquatableOfAnotherType",
+      "method_name": "Reports_WhenKeyImplementsEquatableOfAnotherType",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:06:28Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Silent_WhenComparerArgumentIsTypedAsTheInterface": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Silent_WhenComparerArgumentIsTypedAsTheInterface",
+      "method_name": "Silent_WhenComparerArgumentIsTypedAsTheInterface",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:06:28Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Silent_WhenGenericKeyImplementsEquatable": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Silent_WhenGenericKeyImplementsEquatable",
+      "method_name": "Silent_WhenGenericKeyImplementsEquatable",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:06:28Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Reports_OncePerCreation": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Reports_OncePerCreation",
+      "method_name": "Reports_OncePerCreation",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:06:28Z"
+    },
+    "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs::E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Silent_WhenKeyIsAnUnresolvedType": {
+      "test_file": "tests/E128.Analyzers.Tests/StructKeyWithoutEquatableBranchCoverageTests.cs",
+      "test_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests.Silent_WhenKeyIsAnUnresolvedType",
+      "method_name": "Silent_WhenKeyIsAnUnresolvedType",
+      "class_name": "E128.Analyzers.Tests.StructKeyWithoutEquatableBranchCoverageTests",
+      "origin": "llm-generated",
+      "verified_baseline": true,
+      "first_green_commit": "e8b652e069a54cccb20a80bfa9cb1ee7438b6569",
+      "first_green_at": "2026-11-25T19:06:28Z"
     }
   }
 }

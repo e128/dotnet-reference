@@ -1,5 +1,5 @@
 # Roslyn Analyzer Release Tracking
-*Updated: 2026-11-19T14:37:16Z*
+*Updated: 2026-11-25T19:15:40Z*
 
 ## Overview
 
@@ -177,6 +177,8 @@ that is missing from either file blocks the ship, even on a docs-only change set
 | 3.4.1   | (none)        | `LoopContext.HasConstantBound` accepts a compile-time constant bound, so the five loop-cost rules stay silent on a bound such as `const int MaxHops = 5`. Accuracy fix, no rule set change. |
 | 3.4.2   | (none)        | E128220 and E128221 move to the E128.Analyzers.Union assembly at Roslyn 5.12. The base assemblies build against Roslyn 5.9. The package ships `roslyn5.9` and `roslyn5.12` folders, and E128PKG0001 rejects a host compiler below Roslyn 5.9. No rule set change. |
 | 3.5.0   | E128238-252   | Fifteen rules from the Tier 2 register. The set adds correctness, security, and performance checks. It covers array comparison, stream reads, lock blocking, CORS, antiforgery, list spans, division guards, enum casts, flags, loops, and base64. |
+| 3.6.0   | E128253       | Struct dictionary or set key without `IEquatable<T>`. Performance, Warning. |
+| 3.6.1   | (none)        | E128253 accuracy fix: a value tuple key stays silent, because the tuple type implements `IEquatable` of its underlying tuple type. No rule set change. |
 
 ## Sources
 

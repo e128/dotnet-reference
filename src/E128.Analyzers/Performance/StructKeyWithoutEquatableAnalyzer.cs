@@ -16,8 +16,8 @@ namespace E128.Analyzers.Performance;
 /// <remarks>
 ///     <c lang="csharp">EqualityComparer&lt;T&gt;.Default</c> falls back to an object comparer for
 ///     such a key, so every hash and equality test boxes the key. The report stays silent when the
-///     key comes from metadata, implements <c lang="csharp">IEquatable&lt;T&gt;</c>, or the creation
-///     passes an <c lang="csharp">IEqualityComparer&lt;T&gt;</c> argument. A collection expression
+///     key comes from metadata, implements <c lang="csharp">IEquatable&lt;T&gt;</c>, is a value tuple,
+///     or the creation passes an <c lang="csharp">IEqualityComparer&lt;T&gt;</c> argument. A collection expression
 ///     that fills a set reaches no object creation, so that form is outside the rule. The rule
 ///     carries no fix, because the remedy adds a member to the key type.
 /// </remarks>
@@ -106,10 +106,7 @@ public sealed class StructKeyWithoutEquatableAnalyzer : DiagnosticAnalyzer
 
         var key = created.TypeArguments[0];
 
-        if (key.TypeKind is not TypeKind.Struct
-            || key.DeclaringSyntaxReferences.IsEmpty
-            || ImplementsEquatable(key, equatable)
-            || HasComparerArgument(creation, key, equalityComparer))
+        if (!IsReportableKey(creation, key, equatable, equalityComparer))
         {
             return;
         }
@@ -118,6 +115,19 @@ public sealed class StructKeyWithoutEquatableAnalyzer : DiagnosticAnalyzer
             Rule,
             creation.Syntax.GetLocation(),
             key.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
+    }
+
+    private static bool IsReportableKey(
+        IObjectCreationOperation creation,
+        ITypeSymbol key,
+        INamedTypeSymbol equatable,
+        INamedTypeSymbol equalityComparer)
+    {
+        return key.TypeKind is TypeKind.Struct
+            && key is not INamedTypeSymbol { IsTupleType: true }
+            && !key.DeclaringSyntaxReferences.IsEmpty
+            && !ImplementsEquatable(key, equatable)
+            && !HasComparerArgument(creation, key, equalityComparer);
     }
 
     private static bool ImplementsEquatable(ITypeSymbol key, INamedTypeSymbol equatable)
