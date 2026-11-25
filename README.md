@@ -384,6 +384,11 @@ The external agents (`build-validator`, `sme-researcher`, `tdd-loop-optimizer`) 
 
 Issues and pull requests are welcome. For a large change, open an issue first to discuss the approach.
 
+## Acknowledgements
+
+The performance rule set and its measurement method take inspiration from
+[BlazingFastDotnet](https://github.com/EgorBo/BlazingFastDotnet).
+
 ## License
 
 [MIT](./LICENSE)

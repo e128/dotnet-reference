@@ -155,6 +155,136 @@ public sealed class StackAllocSafetyAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenTheGuardChecksPositivityOnly()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               void M(int length)
+                               {
+                                   if (length > 0)
+                                   {
+                                       Span<byte> buffer = {|E128109:stackalloc byte[length]|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheGuardAllowsMoreThanTheCap()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               void M(int length)
+                               {
+                                   if (length <= 10_000)
+                                   {
+                                       Span<byte> buffer = {|E128109:stackalloc byte[length]|};
+                                   }
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenMathMinAllowsMoreThanTheCap()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               void M(int length)
+                               {
+                                   Span<byte> buffer = {|E128109:stackalloc byte[Math.Min(length, 100_000)]|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenAStructElementExceedsTheCap()
+    {
+        return VerifyAsync("""
+                           using System;
+                           struct Wide
+                           {
+                               public long A, B, C, D, E, F, G, H;
+                           }
+                           class C
+                           {
+                               void M()
+                               {
+                                   Span<Wide> buffer = {|E128109:stackalloc Wide[100]|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenASmallStructElementFits()
+    {
+        return VerifyAsync("""
+                           using System;
+                           struct Narrow
+                           {
+                               public long A;
+                           }
+                           class C
+                           {
+                               void M()
+                               {
+                                   Span<Narrow> buffer = stackalloc Narrow[100];
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenAnEnumElementExceedsTheCap()
+    {
+        return VerifyAsync("""
+                           using System;
+                           enum Wide : long
+                           {
+                               A
+                           }
+                           class C
+                           {
+                               void M()
+                               {
+                                   Span<Wide> buffer = {|E128109:stackalloc Wide[300]|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenANativeIntElementExceedsTheCap()
+    {
+        return VerifyAsync("""
+                           using System;
+                           class C
+                           {
+                               void M()
+                               {
+                                   Span<nint> buffer = {|E128109:stackalloc nint[300]|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Reports_WhenAssignedToPointer()
     {
         return VerifyAsync(

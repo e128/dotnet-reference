@@ -1,3 +1,11 @@
+## Release 3.6.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128253 | E128-Performance | Warning | A struct used as a dictionary or set key without IEquatable&lt;T&gt; boxes the key on each lookup.
+
 ## Release 3.5.6
 
 ## Release 3.5.3

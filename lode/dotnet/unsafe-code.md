@@ -1,5 +1,5 @@
 # Unsafe Code Policy
-*Updated: 2026-11-24T12:57:59Z*
+*Updated: 2026-11-25T17:55:56Z*
 
 Production code in this repository contains no unsafe code. No project sets
 `AllowUnsafeBlocks`, so a new `unsafe` block or a pointer type fails the build.
@@ -42,9 +42,22 @@ The document lists areas that no E128 rule covers.
 - `MemoryPool<T>` and `IMemoryOwner<T>`. E128110 and E128111 watch
   `ArrayPool<T>` only. The pooled buffer rule in `.claude/rules/security.md`
   still applies by hand.
+- A struct with padding that moves through a byte-wise API. No rule compares
+  the field offsets with the byte span.
+- A block move of two plain `void*` values. E128129 cannot see the type behind
+  a `void*`.
 - An assumed zero terminator. No rule flags this.
 - Cross-thread access to a local variable. No rule flags this.
 - Fuzz testing. The repository has no fuzz harness.
+
+## Shipped Rule Corrections
+
+The 2026-11-25 unsafe read found eight defects in shipped rules. One defect
+crashed the analyzer process on `nint`. All eight shipped with tests on the
+same day. The list and the changes live in
+[unsafe-sweep.md](analyzer-candidates/unsafe-sweep.md).
+
+The coverage map matches the shipped behavior for items 1, 2, 5, and 6.
 
 ## Invariants For New Code
 

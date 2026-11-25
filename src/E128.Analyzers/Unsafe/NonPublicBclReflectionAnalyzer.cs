@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -89,8 +90,7 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax { Expression: TypeOfExpressionSyntax typeOf }
-            || context.SemanticModel.GetTypeInfo(typeOf.Type, context.CancellationToken).Type is not { } target
+        if (!TryGetTargetType(invocation, context.SemanticModel, context.CancellationToken, out var target)
             || !IsFrameworkType(target))
         {
             return;
@@ -100,6 +100,38 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
             Rule,
             invocation.GetLocation(),
             target.ToDisplayString()));
+    }
+
+    private static bool TryGetTargetType(
+        InvocationExpressionSyntax invocation,
+        SemanticModel model,
+        System.Threading.CancellationToken cancellationToken,
+        [NotNullWhen(true)] out ITypeSymbol? target)
+    {
+        target = null;
+
+        if (invocation.Expression is not MemberAccessExpressionSyntax member)
+        {
+            return false;
+        }
+
+        switch (member.Expression)
+        {
+            case TypeOfExpressionSyntax typeOf:
+                target = model.GetTypeInfo(typeOf.Type, cancellationToken).Type;
+                break;
+            case InvocationExpressionSyntax
+            {
+                Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "GetType", Expression: var receiver },
+                ArgumentList.Arguments.Count: 0,
+            }:
+                target = model.GetTypeInfo(receiver, cancellationToken).Type;
+                break;
+            default:
+                return false;
+        }
+
+        return target is not null;
     }
 
     private static bool IsMemberLookup(string name)

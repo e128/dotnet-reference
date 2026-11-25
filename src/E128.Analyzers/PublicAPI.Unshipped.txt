@@ -267,3 +267,5 @@ E128.Analyzers.Testing.UnconditionalTestDelayAnalyzer
 E128.Analyzers.Testing.UnconditionalTestDelayAnalyzer.UnconditionalTestDelayAnalyzer() -> void
 E128.Analyzers.Testing.ForeignTestDisableAnalyzer
 E128.Analyzers.Testing.ForeignTestDisableAnalyzer.ForeignTestDisableAnalyzer() -> void
+E128.Analyzers.Performance.StructKeyWithoutEquatableAnalyzer
+E128.Analyzers.Performance.StructKeyWithoutEquatableAnalyzer.StructKeyWithoutEquatableAnalyzer() -> void

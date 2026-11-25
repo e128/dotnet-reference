@@ -1,6 +1,6 @@
 # Analyzer Candidates: Skipped Decisions
 confidence: high
-*Updated: 2026-11-19T15:34:48Z*
+*Updated: 2026-11-25T14:46:23Z*
 
 The settled side of the open register. A skipped row keeps `/analyzer` from reporting the same idea twice. Each decision names the reason and the installed rule or the site count that settled it. The open side lives in [index.md](index.md), and the shipped rules live in [catalog.md](catalog.md).
 
@@ -208,3 +208,21 @@ URI builder, a `ReadOnlySpan<char>` data-URI payload, and two data-URI round-tri
 tests. The sound shape is the one the rule flagged.
 
 **Source**: `session friction 2026-11-19`, consumer build against 3.5.0.
+
+## Constant `Uri` Allocated Per Call
+
+**Pattern**: a constant relative `Uri`, such as
+`Results.Created(new Uri("/greetings", UriKind.Relative), greeting)`, created
+on every request.
+
+**Why skipped**: the allocation is about 40 bytes against a 16.9 KB endpoint
+request in the benchmark. Hoisting the `Uri` into a static readonly field
+produced no measurable win. The two runs overlap: 20.61 us before and 23.82 us
+after on the same in-process harness. The new type did not earn its place, so
+the inline form stays.
+
+**Evidence**: `WebEndpointBenchmarks.PostGreetingAsync` in this repository,
+measured 2026-11-25 on macOS arm64. The `GET /` path showed a real win from a
+cached greeting instead. See [performance.md](../performance.md).
+
+**Source**: BlazingFastDotnet performance pass, 2026-11-25.

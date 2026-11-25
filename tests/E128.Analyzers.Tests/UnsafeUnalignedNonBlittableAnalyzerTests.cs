@@ -92,4 +92,25 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzerTests
                            }
                            """, options: Options);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Silent_WhenTheTypeIsNint()
+    {
+        return AnalyzerTestRunner.VerifyAsync<UnsafeUnalignedNonBlittableAnalyzer>("""
+                           using System.Runtime.CompilerServices;
+                           unsafe class C
+                           {
+                               nint M(ref byte source)
+                               {
+                                   return Unsafe.ReadUnaligned<nint>(ref source);
+                               }
+
+                               void N(ref byte destination, nuint value)
+                               {
+                                   Unsafe.WriteUnaligned<nuint>(ref destination, value);
+                               }
+                           }
+                           """, options: Options);
+    }
 }

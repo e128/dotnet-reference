@@ -102,7 +102,7 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
 
         foreach (var node in scope.DescendantNodes())
         {
-            if (IsPassedToOtherCall(node, delegateExpression, symbol, model, cancellationToken)
+            if (KeepsAlive(node, delegateExpression, symbol, model, cancellationToken)
                 || IsStoredInOwner(node, symbol, model, cancellationToken))
             {
                 return true;
@@ -112,16 +112,36 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsPassedToOtherCall(
+    private static bool KeepsAlive(
         SyntaxNode node,
         ExpressionSyntax delegateExpression,
         ISymbol symbol,
         SemanticModel model,
         System.Threading.CancellationToken cancellationToken)
     {
-        return node is InvocationExpressionSyntax call
-            && call != delegateExpression.FirstAncestorOrSelf<InvocationExpressionSyntax>()
-            && call.ArgumentList.Arguments.Any(argument => Refers(argument.Expression, symbol, model, cancellationToken));
+        if (node is not InvocationExpressionSyntax call
+            || call == delegateExpression.FirstAncestorOrSelf<InvocationExpressionSyntax>()
+            || !call.ArgumentList.Arguments.Any(argument => Refers(argument.Expression, symbol, model, cancellationToken)))
+        {
+            return false;
+        }
+
+        return model.GetSymbolInfo(call, cancellationToken).Symbol is IMethodSymbol method
+               && IsRootingMethod(method);
+    }
+
+    private static bool IsRootingMethod(IMethodSymbol method)
+    {
+        return method.Name switch
+        {
+            "KeepAlive" => string.Equals(method.ContainingType.ToDisplayString(), "System.GC", StringComparison.Ordinal),
+            "Alloc" => string.Equals(
+                method.ContainingType.ToDisplayString(),
+                "System.Runtime.InteropServices.GCHandle",
+                StringComparison.Ordinal),
+            "Add" or "TryAdd" or "Push" or "Enqueue" or "Insert" or "AddOrUpdate" => true,
+            _ => false,
+        };
     }
 
     private static bool IsStoredInOwner(

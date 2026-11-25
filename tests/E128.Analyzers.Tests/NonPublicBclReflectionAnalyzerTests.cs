@@ -124,6 +124,23 @@ public sealed class NonPublicBclReflectionAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenTheTypeComesFromGetType()
+    {
+        return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>("""
+                           using System;
+                           using System.Reflection;
+                           class C
+                           {
+                               object M()
+                               {
+                                   return {|E128137:"".GetType().GetMethod("Empty", BindingFlags.NonPublic | BindingFlags.Static)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenTheReceiverIsNotATypeOfExpression()
     {
         return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>("""

@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-20T14:23:21Z*
+*Updated: 2026-11-25T17:04:34Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -20,6 +20,10 @@ The slopwatch read on 2026-11-18 ships E128232, E128236, and E128237. See
 [slopwatch-sweep.md](slopwatch-sweep.md).
 The five roadmap shapes ship as E128233 to E128237. See
 [rule-details-roadmap.md](../analyzers/rule-details-roadmap.md).
+
+The BlazingFastDotnet performance pass on 2026-11-25 shipped the struct-key
+equality shape as E128253. Detection shape:
+[rule-details-performance-equality.md](../analyzers/rule-details-performance-equality.md).
 
 The implicit state machine rule ships as E128218. See
 [implicit-state-machine-rule.md](../implicit-state-machine-rule.md).
@@ -99,6 +103,7 @@ conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net
 | E128249 | array-growth-in-loop                   | implemented | n/a   | 2026-11-19 |
 | E128250 | dead-private-field-store               | implemented | n/a   | 2026-11-19 |
 | E128251 | loop-with-no-exit-path                 | implemented | n/a   | 2026-11-19 |
+| E128253 | struct-key-without-equatable           | implemented | 3/5   | 2026-11-25 |
 
 ## Rules From Guidance Documents
 

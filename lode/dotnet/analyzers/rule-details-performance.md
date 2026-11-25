@@ -1,5 +1,5 @@
 # Performance Rule Details
-*Updated: 2026-11-23T16:09:29Z*
+*Updated: 2026-11-25T17:08:24Z*
 
 Behavior notes for the performance rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -223,6 +223,8 @@ ASP.NET Core rules E128229 to E128231 live in
 [rule-details-performance-aspnet.md](rule-details-performance-aspnet.md).
 Tier 2 rules E128211 to E128217 live in
 [rule-details-performance-tier2.md](rule-details-performance-tier2.md).
+The struct-key equality rule E128253 lives in
+[rule-details-performance-equality.md](rule-details-performance-equality.md).
 
 ## Related
 

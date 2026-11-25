@@ -35,8 +35,8 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "Use Unsafe.BitCast instead of Unsafe.As",
-        "Unsafe.As reinterprets one value type as another. Use Unsafe.BitCast, which checks the size and rejects a reference type.",
+        "Do not reinterpret one type as another with Unsafe.As",
+        "Unsafe.As reinterprets one type as another with no size check. Use Unsafe.BitCast for two unmanaged types, and a cast or a copy for a reference type.",
         "E128-Unsafe",
         DiagnosticSeverity.Warning,
         true);
@@ -78,15 +78,29 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!TryGetFixedSize(method.TypeArguments[0], out var sourceSize)
-            || !TryGetFixedSize(method.TypeArguments[1], out var targetSize)
-            || sourceSize != targetSize
-            || RefUsage.IsUsedAsReference(invocation))
+        if (!ReinterpretsAReference(method.TypeArguments[0], method.TypeArguments[1])
+            && !IsSameSizeReinterpretation(invocation, method))
         {
             return;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+    }
+
+    private static bool ReinterpretsAReference(ITypeSymbol source, ITypeSymbol target)
+    {
+        return source.IsReferenceType
+               || target.IsReferenceType
+               || !source.IsUnmanagedType
+               || !target.IsUnmanagedType;
+    }
+
+    private static bool IsSameSizeReinterpretation(InvocationExpressionSyntax invocation, IMethodSymbol method)
+    {
+        return TryGetFixedSize(method.TypeArguments[0], out var sourceSize)
+               && TryGetFixedSize(method.TypeArguments[1], out var targetSize)
+               && sourceSize == targetSize
+               && !RefUsage.IsUsedAsReference(invocation);
     }
 
     /// <summary>

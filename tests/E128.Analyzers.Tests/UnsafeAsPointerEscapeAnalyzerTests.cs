@@ -69,6 +69,42 @@ public sealed class UnsafeAsPointerEscapeAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenThePointerIsReturnedFromTheMethod()
+    {
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAsPointerEscapeAnalyzer>("""
+                           using System.Runtime.CompilerServices;
+                           unsafe class C
+                           {
+                               void* M()
+                               {
+                                   int local = 1;
+                                   return {|E128125:Unsafe.AsPointer(ref local)|};
+                               }
+                           }
+                           """, options: Options);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenThePointerIsStoredInAField()
+    {
+        return AnalyzerTestRunner.VerifyAsync<UnsafeAsPointerEscapeAnalyzer>("""
+                           using System.Runtime.CompilerServices;
+                           unsafe class C
+                           {
+                               private void* _pointer;
+
+                               void M()
+                               {
+                                   int local = 1;
+                                   _pointer = {|E128125:Unsafe.AsPointer(ref local)|};
+                               }
+                           }
+                           """, options: Options);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenThePointerTargetsAStackLocal()
     {
         return AnalyzerTestRunner.VerifyAsync<UnsafeAsPointerEscapeAnalyzer>("""

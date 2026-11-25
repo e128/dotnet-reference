@@ -109,6 +109,25 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzerTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public Task Reports_WhenTheOtherCallDoesNotKeepTheDelegateAlive()
+    {
+        return AnalyzerTestRunner.VerifyAsync<FunctionPointerDelegateLifetimeAnalyzer>("""
+                           using System;
+                           using System.Runtime.InteropServices;
+                           class C
+                           {
+                               void M()
+                               {
+                                   Action callback = () => { };
+                                   Console.WriteLine(callback);
+                                   IntPtr pointer = {|E128128:Marshal.GetFunctionPointerForDelegate(callback)|};
+                               }
+                           }
+                           """);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public Task Silent_WhenTheLocalIsAddedToACollection()
     {
         return AnalyzerTestRunner.VerifyAsync<FunctionPointerDelegateLifetimeAnalyzer>("""

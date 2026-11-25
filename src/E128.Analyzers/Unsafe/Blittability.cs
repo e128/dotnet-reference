@@ -16,6 +16,11 @@ internal static class Blittability
             return false;
         }
 
+        if (type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr)
+        {
+            return true;
+        }
+
         return type.IsUnmanagedType
             && (type.TypeKind is not TypeKind.Struct
                 || type.GetMembers().OfType<IFieldSymbol>().Where(static field => !field.IsStatic).All(static field => IsBlittable(field.Type)));
