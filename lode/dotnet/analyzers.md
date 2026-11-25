@@ -1,5 +1,5 @@
 # .NET 11 Roslyn Analyzers
-*Updated: 2026-11-24T16:25:37Z*
+*Updated: 2026-11-25T11:31:18Z*
 
 ## Strategy: Deny by Default
 
@@ -78,6 +78,8 @@ explicit exception.
 ## Key Meziantou Rules Enabled as Error
 
 The root `.globalconfig` sets every Meziantou rule to `error`, including each rule that is off by default. The `.globalconfig` carries no setup-owned Meziantou block. Put an override for a test or benchmark project in a `global_level = 101` file.
+
+After a Meziantou version change, refresh the rule inventory from the restored package. Compare `configuration/all-errors.editorconfig` between the old and new versions. That file lists the rules the version ships. The bulk key does not reach a default-off rule, so give every new default-off rule an explicit `error` line. Then run the full build and test. See § Strategy: Deny by Default.
 
 The table below is aligned with Meziantou's [comparison table](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/comparison-with-other-analyzers.md):
 
