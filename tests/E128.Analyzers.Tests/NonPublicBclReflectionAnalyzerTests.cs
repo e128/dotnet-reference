@@ -155,4 +155,22 @@ public sealed class NonPublicBclReflectionAnalyzerTests
                            }
                            """);
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public Task Reports_WhenTheReceiverIsATypeLocal()
+    {
+        return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>("""
+                           using System;
+                           using System.Reflection;
+                           class C
+                           {
+                               object M()
+                               {
+                                   Type type = typeof(string);
+                                   return {|E128137:type.GetMethod("Empty", BindingFlags.NonPublic | BindingFlags.Static)|};
+                               }
+                           }
+                           """);
+    }
 }

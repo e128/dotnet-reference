@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-25T19:07:36Z*
+*Updated: 2026-11-25T22:13:23Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -32,7 +32,8 @@ performance rules. Every shape it lists that already has an owner stays out of
 this table. The declined shapes sit in
 [skipped-decisions.md](skipped-decisions.md).
 
-No open candidate remains from the 2026-11-17 guidance read.
+The element-wise `Add` and `Multiply` shapes from the 2026-11-17 guidance read
+ship as E128255. See [catalog.md](catalog.md).
 `ByteSizeType.Is` matches the type by simple name, so a namespace move does not
 break the E128080 exemption.
 
@@ -59,22 +60,23 @@ The BlazingFastDotnet performance pass on 2026-11-25 shipped its one candidate
 as E128253. See [catalog.md](catalog.md) and the detection shape in
 [rule-details-performance-equality.md](../analyzers/rule-details-performance-equality.md).
 
-The unsafe best-practices read on 2026-11-25 added five shapes. Three shipped
-inside E128112, E128125, and E128129 on the same day, so two rows remain open.
-The defect list and the shipped fixes live in [unsafe-sweep.md](unsafe-sweep.md).
+The unsafe best-practices read on 2026-11-25 scored six shapes. Three shipped
+inside E128112, E128125, and E128129 on the same day. The static readonly write
+ships as E128254, so two rows remain open. The defect list and the shipped fixes
+live in [unsafe-sweep.md](unsafe-sweep.md).
 
 The second BlazingFastDotnet performance pass on 2026-11-25 added three shapes.
-Each waits for a consumer occurrence, because the guidance document is the only
-source.
+Two duplicated an installed rule and left the register. A per-call
+`new JsonSerializerOptions()` is CA1869, and an `object` lock target is MA0158.
+The `IHttpContextAccessor` row waits for a consumer occurrence, because no
+installed rule and no consumer site names the shape.
 
 | Pattern | Source | Score | Status | Notes |
 |---------|--------|-------|--------|-------|
-| Helper or operation type whose name is a plural, suffix, or twin of its sibling | `session repeat` | 4/5 | new | Frequency 1. Coverage gap 1. Expressibility 1. Value 1. No installed rule compares sibling type names. The check is a normalized-name comparison over one namespace, so a plural or a `Helpers` suffix reports once. One occurrence is thin evidence, so the shape waits for a second. |
-| `MemoryPool<T>` or `IMemoryOwner<T>` is used after dispose | `unsafe doc` | 4/5 | new | Frequency 1, gap 1, expressibility 1, value 1. E128110 and E128111 watch `ArrayPool<T>` only. |
-| A padded struct is copied byte-wise through a marshal API | `unsafe doc` | 3/5 | new | Frequency 1, gap 1, expressibility 0, value 1. Field offsets are not visible to a syntax rule. |
-| `new JsonSerializerOptions()` on each call | `BlazingFastDotnet` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. E128196 owns mutation after first use, not creation. Each instance rebuilds the metadata cache. Report a creation that is not stored in a static or readonly field. |
-| An `object` field or local used as a `lock` target | `BlazingFastDotnet` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. `System.Threading.Lock` emits `EnterScope` for the same statement. Gate the rule on the type. Skip a `lock` on `this`, a type, or a string. |
-| `IHttpContextAccessor` injected into a service | `BlazingFastDotnet` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. Passing `HttpContext` as a parameter avoids a per-request `AsyncLocal`. Allow the type in middleware, filters, and startup code. |
+| Helper or operation type whose name is a plural, suffix, or twin of its sibling | `session repeat` | 4/5 | new | Frequency 1. Coverage gap 1. Expressibility 1. Value 1. CA1711 and CA1717 do not cover the shape. The names alone cannot separate an operation type from a collection type, so a report needs a stronger link. One occurrence is thin evidence, so the shape waits for a second. |
+| A retained `Memory<T>` slice is used after its owner is disposed | `unsafe doc` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. E128162 and IDISP016 own a direct use of the disposed owner. The retained slice needs an alias link from `owner.Memory` to the later read. |
+| A padded struct is copied byte-wise through a marshal API | `unsafe doc` | 3/5 | new | Frequency 1, gap 1, expressibility 0, value 1. Roslyn exposes no field offset or size API. A rule must compute the padding from the field list, the pack value, and the layout kind. No code fix: a pack or field-order change alters the interop layout. |
+| `IHttpContextAccessor` injected into a service | `BlazingFastDotnet` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. No installed rule covers it. The shape is correct in middleware, filters, Blazor components, and background workers, where no `HttpContext` parameter exists. The rule needs that allowlist, or the false positive rate stays high. |
 
 ## Tier 2 Candidates
 
@@ -123,7 +125,7 @@ declined on 2026-11-13 alongside the earlier decisions.
 - [net11-conversion-sweep.md](net11-conversion-sweep.md): open .NET 11 conversion shapes
 - [slopwatch-sweep.md](slopwatch-sweep.md): 2026-11-18 slopwatch read, with one open and two Tier 2 shapes
 - [async-sweep.md](async-sweep.md): closed async fire-and-forget sweep
-- [unsafe-sweep.md](unsafe-sweep.md): 2026-11-25 unsafe best-practices read, with five scored shapes and a defect list
+- [unsafe-sweep.md](unsafe-sweep.md): 2026-11-25 unsafe best-practices read, with two open shapes and a defect list
 - [external-sweep.md](external-sweep.md): closed 2026-11-05 external rule-set sweep
 - [performance-sweep.md](performance-sweep.md): closed twenty-practice performance sweep
 

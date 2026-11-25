@@ -393,15 +393,14 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
         SumContext sumContext,
         System.Threading.CancellationToken cancellationToken)
     {
-        return model.GetTypeInfo(expression, cancellationToken).Type switch
-        {
-            IArrayTypeSymbol array => array.ElementType,
-            INamedTypeSymbol { TypeArguments.Length: 1 } named
-                when TypeSymbols.MatchesOriginalDefinition(named, sumContext.ReadOnlySpan)
-                    || TypeSymbols.MatchesOriginalDefinition(named, sumContext.Span) =>
-                named.TypeArguments[0],
-            _ => null
-        };
+        return SpanElementType.TryGet(
+            model.GetTypeInfo(expression, cancellationToken).Type,
+            sumContext.Span,
+            sumContext.ReadOnlySpan,
+            out var element,
+            out _)
+            ? element
+            : null;
     }
 
     private static bool HasReduction(INamedTypeSymbol tensors, INamedTypeSymbol spanType, string name)

@@ -1,5 +1,5 @@
 # Performance Rule Details
-*Updated: 2026-11-25T17:08:24Z*
+*Updated: 2026-11-25T22:37:43Z*
 
 Behavior notes for the performance rules. The complete rule table, the
 severity, and the code-fix status live in `src/E128.Analyzers/README.md`. The
@@ -218,6 +218,22 @@ E128084 also reports `for (int i = 0; i < list.Count; i++)` when the body only
 reads `list[i]`. The rule suppresses a loop that mutates the list, writes
 through the indexer, or uses the loop variable for another purpose. The fix
 enumerates `CollectionsMarshal.AsSpan(list)`.
+
+### E128255: Element-wise span loop
+
+E128255 reports `for (var i = 0; i < a.Length; i++) { destination[i] = a[i] + b[i]; }`
+when all three values are a `float` or `double` array, `Span<T>`, or
+`ReadOnlySpan<T>`.
+
+The bound must be the length of one of the two sources. The fix passes that
+source first. `TensorPrimitives` requires equal source lengths and a destination
+at least as long as the first source. A bound on the destination stays silent.
+
+The rule reuses `IndexedForLoop.TryMatch` and the shared `SpanElementType`
+helper. It keeps the element-type gate of E128135, so it reports only when the
+compilation declares a matching three-parameter `Add` or `Multiply` member.
+
+An offset, a second body statement, or an unsupported destination type stays silent.
 
 ASP.NET Core rules E128229 to E128231 live in
 [rule-details-performance-aspnet.md](rule-details-performance-aspnet.md).

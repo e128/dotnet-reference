@@ -56,6 +56,34 @@ internal static class TestStubs
                 {
                     return 0d;
                 }
+
+                public static void Add(
+                    ReadOnlySpan<float> x,
+                    ReadOnlySpan<float> y,
+                    Span<float> destination)
+                {
+                }
+
+                public static void Add(
+                    ReadOnlySpan<double> x,
+                    ReadOnlySpan<double> y,
+                    Span<double> destination)
+                {
+                }
+
+                public static void Multiply(
+                    ReadOnlySpan<float> x,
+                    ReadOnlySpan<float> y,
+                    Span<float> destination)
+                {
+                }
+
+                public static void Multiply(
+                    ReadOnlySpan<double> x,
+                    ReadOnlySpan<double> y,
+                    Span<double> destination)
+                {
+                }
             }
         }
         """;

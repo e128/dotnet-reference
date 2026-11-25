@@ -9,7 +9,7 @@ A main purpose of this project is to reduce coding LLM slop. A model without gua
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.6.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.7.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -272,6 +272,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128247 | A readonly field copies its mutable struct on every call                                                        | No       |
 | E128249 | `Array.Resize` or `Concat` regrows an array inside a loop                                                       | No       |
 | E128253 | Struct dictionary or set key without `IEquatable<T>`                                                            | No       |
+| E128255 | Use `TensorPrimitives.Add`/`Multiply` instead of an element-wise loop                                            | Yes      |
 
 ### Security
 
@@ -367,6 +368,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128138 | Do not build dynamic methods with raw IL                                                             | No       |
 | E128139 | Do not move a non-blittable type through an unaligned access                                         | Yes      |
 | E128200 | Do not declare a function pointer type                                                               | No       |
+| E128254 | Do not write a static readonly field through reflection                                              | No       |
 
 ## What each rule catches
 
@@ -3850,6 +3852,28 @@ var points = new Dictionary<Point, string>();
 readonly record struct Point(int X, int Y);
 var points = new Dictionary<Point, string>();
 ```
+
+### E128254: Do not write a static readonly field through reflection
+
+Flags a `FieldInfo.SetValue` or `SetValueDirect` call whose field is a static readonly field of a type outside the framework.
+
+The field resolves through several forms. The receiver is a `GetField` call on `typeof(T)`, on `value.GetType()`, or on a `Type` local that resolves to either. The receiver is also a `FieldInfo` local initialized or assigned once from that call, and the assignment must run before the write. A null-conditional call is read the same way. A `FieldInfo` that arrives from a parameter stays silent.
+
+The rule reads the `BindingFlags` argument. A flag set must fold to a constant. A literal flag set and a `const BindingFlags` field must name `Static`, and they must name `Public` for a public field or `NonPublic` for a nonpublic field. A flag set held in a runtime local stays silent. A `GetField` call with no flag argument searches public fields only.
+
+The runtime inlines a static readonly field into every reader. A reflective write can reach a non-inlined reader and miss each inlined one.
+
+No code fix. Make the field a mutable static, or pass the value to each reader.
+
+### E128255: Use `TensorPrimitives.Add`/`Multiply` instead of an element-wise loop
+
+Flags an indexed `for` loop whose body writes `destination[i] = a[i] + b[i]` or `destination[i] = a[i] * b[i]`, where all three values are a `float` or `double` array, `Span<T>`, or `ReadOnlySpan<T>`.
+
+The loop bound must be the length of one of the two sources. `TensorPrimitives` requires the two sources to have equal length and reads the first source for its length, so the fix passes the bound owner first and assumes equal-length sources. The destination must be at least as long as the first source. A bound on the destination stays silent, because the rule cannot prove that the destination is at least as long as both sources.
+
+The rule stays silent when the body holds a second statement, when an index carries an offset, when an operand is not an element access, and when the element type is not `float` or `double`. It also stays silent when the compilation has no `System.Numerics.Tensors` assembly that declares the matching three-parameter member.
+
+The fix replaces the loop with `TensorPrimitives.Add(a, b, destination);` and adds the `System.Numerics.Tensors` using directive.
 
 ## Requirements
 

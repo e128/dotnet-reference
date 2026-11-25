@@ -110,28 +110,8 @@ public sealed class NonPublicBclReflectionAnalyzer : DiagnosticAnalyzer
     {
         target = null;
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax member)
-        {
-            return false;
-        }
-
-        switch (member.Expression)
-        {
-            case TypeOfExpressionSyntax typeOf:
-                target = model.GetTypeInfo(typeOf.Type, cancellationToken).Type;
-                break;
-            case InvocationExpressionSyntax
-            {
-                Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "GetType", Expression: var receiver },
-                ArgumentList.Arguments.Count: 0,
-            }:
-                target = model.GetTypeInfo(receiver, cancellationToken).Type;
-                break;
-            default:
-                return false;
-        }
-
-        return target is not null;
+        return invocation.Expression is MemberAccessExpressionSyntax member
+               && ReflectionTargets.TryGet(member.Expression, model, cancellationToken, out target);
     }
 
     private static bool IsMemberLookup(string name)

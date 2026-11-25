@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-25T17:04:34Z*
+*Updated: 2026-11-25T22:13:23Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -31,10 +31,6 @@ The union and closed-hierarchy family ships as E128219 to E128221, from the
 net11-upgrade plan. Detection shape: [rule-details-union.md](../analyzers/rule-details-union.md).
 The hand-rolled process capture shape ships as E128223, the first rule from the
 conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net11-conversion-sweep.md).
-
-- `mutable-static-readonly-array` shipped as E128061.
-- `test-reference-assemblies-tfm-mismatch` shipped as E128062.
-- `readonly-struct-property-no-init` shipped as E128074.
 
 ## Catalog
 
@@ -104,6 +100,8 @@ conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net
 | E128250 | dead-private-field-store               | implemented | n/a   | 2026-11-19 |
 | E128251 | loop-with-no-exit-path                 | implemented | n/a   | 2026-11-19 |
 | E128253 | struct-key-without-equatable           | implemented | 3/5   | 2026-11-25 |
+| E128254 | static-readonly-reflection-write       | implemented | 3/5   | 2026-11-25 |
+| E128255 | elementwise-span-loop                  | implemented | n/a   | 2026-11-25 |
 
 ## Rules From Guidance Documents
 

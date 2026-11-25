@@ -1,5 +1,5 @@
 # Guidance Document Reads
-*Updated: 2026-11-18T00:04:03Z*
+*Updated: 2026-11-25T22:13:23Z*
 
 Two published guidance documents seeded a large part of the rule set. Source A
 is the performance skill guide in `EgorBo/BlazingFastDotnet`. Source B is the
@@ -92,8 +92,8 @@ Four shapes have an installed owner. See
 Two extensions belong to shipped rules, not to new IDs. E128135 covers a sum
 loop and a min or max loop with a neutral initial value. E128084 covers
 `List.GetRange` and an indexer loop over a list.
-The `Add` and `Multiply` loop shapes remain open. Neither maps to a one-span
-reduction, so each needs its own detection shape.
+The `Add` and `Multiply` loop shapes ship as E128255. Neither maps to a one-span
+reduction, so the rule reads the indexed `for` shape and writes to a second span.
 
 ## Related
 
