@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,18 +9,17 @@ public sealed class E128055PragmaBalanceCodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        var test = new CSharpCodeFixTest<PragmaBalanceAnalyzer, PragmaBalanceCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
-            // Suppress the framework's suppression-check for the same reason as the analyzer
-            // tests — E128055 fires on unbalanced pragmas, and the framework adds an
-            // unbalanced #pragma warning disable E128055 during its suppression phase.
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck
-        };
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        // Suppress the framework's suppression-check for the same reason as the analyzer
+        // tests — E128055 fires on unbalanced pragmas, and the framework adds an
+        // unbalanced #pragma warning disable E128055 during its suppression phase.
+        return CodeFixTestRunner.RunAsync<PragmaBalanceAnalyzer, PragmaBalanceCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions
+            {
+                FixAllIterations = 1,
+                TestBehaviors = TestBehaviors.SkipSuppressionCheck
+            });
     }
 
     [Fact]

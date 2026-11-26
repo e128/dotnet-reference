@@ -53,7 +53,7 @@ public sealed class FinallyBlockCleanupAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (IsProtectedByTryCatch(invocation, finallyClause))
+            if (ExceptionScope.IsInsideTryWithCatch(invocation, finallyClause))
             {
                 continue;
             }
@@ -93,21 +93,5 @@ public sealed class FinallyBlockCleanupAnalyzer : DiagnosticAnalyzer
 
         callName = $"{receiverName}.{methodName}";
         return true;
-    }
-
-    private static bool IsProtectedByTryCatch(SyntaxNode node, FinallyClauseSyntax boundary)
-    {
-        var current = node.Parent;
-        while (current is not null && current != boundary)
-        {
-            if (current is TryStatementSyntax tryStatement && tryStatement.Catches.Any())
-            {
-                return true;
-            }
-
-            current = current.Parent;
-        }
-
-        return false;
     }
 }

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -18,13 +17,10 @@ public sealed class ParallelForEachAsyncCapAnalyzerTests
         string code,
         params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<ParallelForEachAsyncCapAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = references
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<ParallelForEachAsyncCapAnalyzer>(
+            code,
+            expected,
+            new AnalyzerTestOptions { References = references });
     }
 
     [Fact]

@@ -1,5 +1,5 @@
 # Build Performance
-*Updated: 2026-11-24T12:57:59Z*
+*Updated: 2026-11-26T12:36:14Z*
 
 Analyzer execution dominates a local build. As of 2026-11-07, a warm full rebuild
 of `E128.Reference.slnx` took about 14 seconds with analyzers and about 3 seconds
@@ -19,6 +19,22 @@ Three entries dominated `E128.Analyzers` and `E128.Analyzers.CodeFixers` as of 2
 
 The report sums concurrent work, so the total exceeds the wall-clock build. Use
 it to find an outlier, never as a budget.
+
+## Machine Load
+
+Measure on an idle machine. A loaded machine inflates every analyzer time, and the inflation is not uniform.
+Check `uptime` before you time a build. A load average above the core count makes the result useless.
+In one investigation, a rebuild took about 6 seconds at load 19 and about 26 seconds at load 44.
+A concurrent IDE backend, a leftover build, or another agent session adds this cost.
+Stop the competing work before you compare two builds.
+
+The third-party analyzers dominate a consumer project. SonarAnalyzer.CSharp and the SDK .NET analyzers
+take most of the analyzer time. The E128 rules take a small share, and no single E128 rule is an outlier.
+Read the per-rule rows before you blame an E128 change.
+
+A `Rebuild` of a leaf project rebuilds its whole dependency chain. In pugworks, a rebuild of the
+GuidGenerator executable also rebuilds Pug.Core, Pug.Rendering, and Pug.Rendering.XenoAtom.
+Measure an incremental build for the inner edit loop.
 
 ## The Fast Path
 

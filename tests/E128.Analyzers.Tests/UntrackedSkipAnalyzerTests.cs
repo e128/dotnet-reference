@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -50,9 +49,8 @@ public sealed class UntrackedSkipAnalyzerTests
     [Trait("Category", "CI")]
     public Task InvalidPattern_FallsBackToDefault()
     {
-        var test = new CSharpAnalyzerTest<UntrackedSkipAnalyzer, DefaultVerifier>
-        {
-            TestCode = """
+        return AnalyzerTestRunner.VerifyAsync<UntrackedSkipAnalyzer>(
+            """
                        using Xunit;
                        public class T
                        {
@@ -63,12 +61,11 @@ public sealed class UntrackedSkipAnalyzerTests
                            public void B() { }
                        }
                        """,
-            ReferenceAssemblies = Net100WithXunit
-        };
-        test.TestState.AnalyzerConfigFiles.Add(
-            ("/.editorconfig", "is_global = true\ne128_tracked_ref_pattern = ([unclosed"));
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+            options: new AnalyzerTestOptions
+            {
+                References = Net100WithXunit,
+                AnalyzerConfig = ("/.editorconfig", "is_global = true\ne128_tracked_ref_pattern = ([unclosed")
+            });
     }
 
     [Fact]

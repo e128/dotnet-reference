@@ -208,7 +208,7 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
                     Condition: PrefixUnaryExpressionSyntax { Operand: var operand } negation,
                 } earlier
                 && negation.IsKind(SyntaxKind.LogicalNotExpression)
-                && Unparenthesize(operand) is InvocationExpressionSyntax guard
+                && ExpressionUnwrapper.Parentheses(operand) is InvocationExpressionSyntax guard
                 && IsGuardCall(guard, receiver, level)
                 && (earlier.Statement is ReturnStatementSyntax
                     || earlier.Statement is BlockSyntax { Statements: { Count: 1 } returnStatements }
@@ -219,16 +219,6 @@ public sealed class LoggerArgumentGuardAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static ExpressionSyntax Unparenthesize(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
     }
 
     private static bool IsGuardCall(InvocationExpressionSyntax candidate, ExpressionSyntax receiver, string level)

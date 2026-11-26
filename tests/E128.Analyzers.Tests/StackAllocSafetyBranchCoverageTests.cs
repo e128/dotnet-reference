@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -17,15 +16,10 @@ public sealed class StackAllocSafetyBranchCoverageTests
 
     private static Task VerifyNoFixAsync(string code)
     {
-        var test = new CSharpCodeFixTest<StackAllocSafetyAnalyzer, StackAllocSafetyCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = code,
-            FixedCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<StackAllocSafetyAnalyzer, StackAllocSafetyCodeFixProvider>(
+            code,
+            code,
+            options: new CodeFixTestOptions { AllowUnsafe = true });
     }
 
     [Theory]

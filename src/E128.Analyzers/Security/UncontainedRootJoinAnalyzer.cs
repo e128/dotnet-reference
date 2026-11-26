@@ -146,7 +146,7 @@ public sealed class UncontainedRootJoinAnalyzer : DiagnosticAnalyzer
 
     private static bool IsRootFullName(ExpressionSyntax expression)
     {
-        var value = UnwrapParentheses(expression);
+        var value = ExpressionUnwrapper.Parentheses(expression);
 
         return value is MemberAccessExpressionSyntax { Name: { } name }
                && string.Equals(name.Identifier.ValueText, FullNamePropertyName, StringComparison.Ordinal);
@@ -171,7 +171,7 @@ public sealed class UncontainedRootJoinAnalyzer : DiagnosticAnalyzer
 
     private static bool IsNamerInvocation(ExpressionSyntax leaf)
     {
-        var value = UnwrapParentheses(leaf);
+        var value = ExpressionUnwrapper.Parentheses(leaf);
 
         return value is InvocationExpressionSyntax invocation
                && GetInvokedName(invocation) is { } name
@@ -388,31 +388,19 @@ public sealed class UncontainedRootJoinAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
     {
-        var value = UnwrapParentheses(expression);
+        var value = ExpressionUnwrapper.Parentheses(expression);
 
         while (true)
         {
             switch (value)
             {
                 case BaseObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 1 } creation:
-                    value = UnwrapParentheses(creation.ArgumentList.Arguments[0].Expression);
+                    value = ExpressionUnwrapper.Parentheses(creation.ArgumentList.Arguments[0].Expression);
                     continue;
 
                 default:
                     return value;
             }
         }
-    }
-
-    private static ExpressionSyntax UnwrapParentheses(ExpressionSyntax expression)
-    {
-        var value = expression;
-
-        while (value is ParenthesizedExpressionSyntax parenthesized)
-        {
-            value = parenthesized.Expression;
-        }
-
-        return value;
     }
 }

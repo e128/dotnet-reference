@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -23,15 +21,10 @@ public sealed class ByteSizeForDataSizeE128CodeFixTests
     private static Task VerifyFixAsync(string source, string fixedCode, string? byteSizeStub = null)
     {
         var stub = byteSizeStub ?? ByteSizeStub;
-        var test = new CSharpCodeFixTest<ByteSizeForDataSizeAnalyzer, ByteSizeForDataSizeCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.Sources.Add(stub);
-        test.FixedState.Sources.Add(stub);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<ByteSizeForDataSizeAnalyzer, ByteSizeForDataSizeCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { Sources = [stub] });
     }
 
     [Fact]

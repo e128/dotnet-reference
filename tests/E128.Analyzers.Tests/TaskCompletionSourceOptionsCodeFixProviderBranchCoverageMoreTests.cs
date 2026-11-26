@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -39,19 +38,10 @@ public sealed class TaskCompletionSourceOptionsCodeFixProviderBranchCoverageMore
             }
             """;
 
-        var test = new CSharpCodeFixTest<
-            TaskCompletionSourceOptionsAnalyzer,
-            TaskCompletionSourceOptionsCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = Code,
-            FixedCode = Unchanged,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("E128159", DiagnosticSeverity.Warning).WithLocation(0));
-        test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult("E128159", DiagnosticSeverity.Warning).WithLocation(8, 9));
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<TaskCompletionSourceOptionsAnalyzer, TaskCompletionSourceOptionsCodeFixProvider>(
+            Code,
+            Unchanged,
+            expected: [new DiagnosticResult("E128159", DiagnosticSeverity.Warning).WithLocation(0)],
+            options: new CodeFixTestOptions { FixedExpected = [new DiagnosticResult("E128159", DiagnosticSeverity.Warning).WithLocation(8, 9)] });
     }
 }

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,16 +9,13 @@ public sealed class PragmaFileScopedNamespaceCodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<PragmaFileScopedNamespaceAnalyzer, PragmaFileScopedNamespaceCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            // Suppress the framework's suppression-check for the same reason as the analyzer
-            // tests — E128094 fires on a pragma above the namespace, and the framework adds
-            // its own pragma during the suppression phase, which is also above the namespace.
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck
-        }.RunAsync(TestContext.Current.CancellationToken);
+        // Suppress the framework's suppression-check for the same reason as the analyzer
+        // tests — E128094 fires on a pragma above the namespace, and the framework adds
+        // its own pragma during the suppression phase, which is also above the namespace.
+        return CodeFixTestRunner.RunAsync<PragmaFileScopedNamespaceAnalyzer, PragmaFileScopedNamespaceCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { TestBehaviors = TestBehaviors.SkipSuppressionCheck });
     }
 
     [Fact]

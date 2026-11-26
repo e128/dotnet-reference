@@ -54,20 +54,21 @@ public sealed class UnsafeAsToBitCastAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start =>
         {
-            var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
-            if (unsafeType.IsEmpty || unsafeType.All(static type => type.GetMembers("BitCast").IsEmpty))
-            {
-                return;
-            }
-
-            start.RegisterSyntaxNodeAction(
-                node => Analyze(node, unsafeType),
+            _ = MetadataTypes.TryRegisterForTypes(
+                start,
+                MetadataTypes.Unsafe,
+                Analyze,
                 SyntaxKind.InvocationExpression);
         });
     }
 
     private static void Analyze(SyntaxNodeAnalysisContext context, ImmutableArray<INamedTypeSymbol> unsafeType)
     {
+        if (unsafeType.All(static type => type.GetMembers("BitCast").IsEmpty))
+        {
+            return;
+        }
+
         var invocation = (InvocationExpressionSyntax)context.Node;
 
         if (!OwnerInvocation.TryMatch(context, unsafeType, "As", out var method)

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -11,29 +10,6 @@ namespace E128.Analyzers.Tests;
 /// </summary>
 public sealed class UnvalidatedJwtIdentityRealPackageTests
 {
-    private const string Stubs = """
-                                 namespace Microsoft.AspNetCore.Http
-                                 {
-                                     public abstract class HttpContext
-                                     {
-                                         public abstract System.Security.Claims.ClaimsPrincipal User { get; set; }
-                                     }
-                                 }
-                                 namespace Microsoft.AspNetCore.Authentication
-                                 {
-                                     public class AuthenticationTicket
-                                     {
-                                         public AuthenticationTicket(System.Security.Claims.ClaimsPrincipal principal, string authenticationScheme) { }
-                                     }
-                                 }
-                                 """;
-
-    private static readonly ReferenceAssemblies Net100WithJwt = ReferenceAssemblies.Net.Net100
-        .AddPackages([
-            new PackageIdentity("System.IdentityModel.Tokens.Jwt", "8.23.0"),
-            new PackageIdentity("Microsoft.IdentityModel.JsonWebTokens", "8.23.0")
-        ]);
-
     private static Task VerifyAsync(string body)
     {
         return AnalyzerTestRunner.VerifyAsync<UnvalidatedJwtIdentityAnalyzer>(
@@ -56,8 +32,8 @@ public sealed class UnvalidatedJwtIdentityRealPackageTests
               """,
             options: new AnalyzerTestOptions
             {
-                References = Net100WithJwt,
-                Sources = [Stubs]
+                References = TestReferences.Net100WithJwt,
+                Sources = [TestStubs.UnvalidatedJwtHttpContext + "\n" + TestStubs.UnvalidatedJwtAuthenticationTicket]
             });
     }
 

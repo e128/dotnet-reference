@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-25T22:37:43Z*
+*Updated: 2026-11-26T15:13:04Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -15,6 +15,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `MetadataTypes.Find` | Returns every type with the metadata name. Survives an ambiguous reference. |
 | `MetadataTypes.Contains` | True when a symbol is one of the resolved types. |
 | `MetadataTypes.RegisterForType` | Registers one syntax action per type that carries the metadata name. An ambiguous name registers every match, so the rule still runs. A bound symbol matches one type, so a report cannot duplicate. |
+| `MetadataTypes.TryRegisterForTypes` | Resolves the names at compilation start and registers one syntax action with the merged types. Returns false and registers nothing when any name fails to resolve, so a rule that needs several types skips them together. One overload takes a single name, the other a name array. Discard the return with `_ =` when the rule has no further bail work. |
 | `OptionReader.ReadInt` | Reads one bounded integer config option. A missing, malformed, or below-minimum value yields the fallback. |
 | `TypeSymbols.UnwrapNullable` | Returns `T` for a `Nullable<T>` argument. |
 | `TypeSymbols.DerivesFrom` | Walks the base chain. A null base type matches nothing. |
@@ -35,6 +36,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `Blittability.IsBlittable` | True when a type copies as a raw bit pattern. A struct that holds a bool or decimal returns false. |
 | `TrackerReference` | Reads `e128_tracked_ref_pattern` and matches a work-item reference. A regex timeout counts as no match, so the rule still reports. |
 | `InvocationNames.GetSimpleName` | Returns the called name for `Type.Method(...)` and for a bare `Method(...)`. |
+| `InvocationNames.GetName` | Returns the called method name text. A generic invocation such as `Method<int>(...)` returns null. |
 | `PartialMembers.IsImplementationPart` | True when a symbol is the implementing source symbol of a partial method, partial property, or a parameter of one. A member-level symbol rule calls it first and skips the event, so one logical member reports once. |
 | `IndexedForLoop.TryMatch` | Matches `for (var i = 0; i < source.Length; i++)` and returns the variable, bound owner, and body. |
 | `SpanElementType.TryGet` | Reads the element type of a one-dimensional array, a `Span<T>`, or a `ReadOnlySpan<T>`. Returns whether the value is a span. The two-argument call matches one span type only. |
@@ -55,6 +57,8 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `LoopContext.HasConstantBound` | True when the nearest `for` loop has a compile-time constant bound. |
 | `LoopContext.ReferencesLoopVariable` | True when the node reads a value that changes per iteration. |
 | `LoopContext.ContainsWaitCall` | True when the loop body waits between iterations. |
+| `ExceptionScope.IsInsideTryWithCatch` | True when a node sits inside the try block of a try statement whose catch list is not empty. The walk stops before the boundary node. |
+| `LocalTargets.FromCreation` | Resolves the local symbol assigned by an object creation, through either its variable declarator or a simple-assignment parent. |
 | `FileReadMethods.Contains` | True when a `System.IO.File` member reads a file. The TOCTOU and process-output rules share the set. |
 | `EnclosingBody`, `StatementExits`, `ExclusiveBranches`, `DisposeCalls`, `LoopCount`, `InModifierHelper` | Body, control-flow, disposal, count, and modifier queries. |
 
@@ -63,6 +67,10 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | Helper | Contract |
 | --- | --- |
 | `E128CodeFixProviderBase` | Owns the batch fix-all provider and the root fetch. Override `RegisterFixesAsync` for the normal shape. |
+| `E128CodeFixProviderBase.RegisterNodeFix` | Resolves `Diagnostics[0]`, finds the node, type-tests it, and registers through `CodeFixRegistration`. A site with guards between the type test and the register keeps its own preamble. |
+| `E128NoOpCodeFixProvider` | Base for an intentional no-op fixer: no fix-all provider and an empty register. |
+| `FixSyntax.GetRootAndSemanticModelAsync` | Returns the root and semantic model, or null when the root is null. |
+| `FixSyntax.AnchorLeadingTrivia` | Returns the leading whitespace of the anchor node, with a four-space fallback. |
 | `CodeFixRegistration.Register` | Registers an action with its mandatory equivalence key. One overload takes a changed document, the other a changed solution. |
 | `UsingDirectives.AddIfMissing` | Adds a top-level using in sorted position, or returns the root unchanged. |
 | `UsingDirectives.EnsureAddedAsync` | Async form. Fetches the root and applies `AddIfMissing`. |

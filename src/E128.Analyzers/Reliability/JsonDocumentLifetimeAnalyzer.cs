@@ -75,12 +75,7 @@ public sealed class JsonDocumentLifetimeAnalyzer : DiagnosticAnalyzer
 
     private static bool IsJsonDocumentParse(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
-        var methodName = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
+        var methodName = InvocationNames.GetName(invocation);
 
         if (!string.Equals(methodName, "Parse", StringComparison.Ordinal))
         {

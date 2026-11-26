@@ -18,15 +18,12 @@ public sealed class EncodingDefaultCodeFixProvider : E128CodeFixProviderBase
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Replace Encoding.Default with Encoding.UTF8", nameof(EncodingDefaultCodeFixProvider), ct => ApplyFixAsync(context.Document, memberAccess, ct));
+        RegisterNodeFix<MemberAccessExpressionSyntax>(
+            context,
+            root,
+            "Replace Encoding.Default with Encoding.UTF8",
+            nameof(EncodingDefaultCodeFixProvider),
+            (memberAccess, ct) => ApplyFixAsync(context.Document, memberAccess, ct));
 
         return Task.CompletedTask;
     }

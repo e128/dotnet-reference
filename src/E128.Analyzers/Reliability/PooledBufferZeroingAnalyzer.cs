@@ -60,16 +60,12 @@ public sealed class PooledBufferZeroingAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static compilationContext =>
         {
-            var poolType = compilationContext.Compilation.GetTypeByMetadataName(ArrayPoolMetadataName);
-            if (poolType is null)
-            {
-                return;
-            }
-
             var cryptoType = compilationContext.Compilation.GetTypeByMetadataName(CryptographicOperationsMetadataName);
 
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, poolType, cryptoType),
+            _ = MetadataTypes.TryRegisterForTypes(
+                compilationContext,
+                ArrayPoolMetadataName,
+                (nodeContext, poolTypes) => AnalyzeInvocation(nodeContext, poolTypes[0], cryptoType),
                 SyntaxKind.InvocationExpression);
         });
     }

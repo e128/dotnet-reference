@@ -21,14 +21,12 @@ public sealed class ListAsReadOnlyCodeFixProvider : E128CodeFixProviderBase
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-        if (node is not ExpressionSyntax expression)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Return .AsReadOnly()", nameof(ListAsReadOnlyCodeFixProvider), ct => ReadOnlyCollectionFix.AppendAsReadOnlyAsync(context.Document, expression, ct));
+        RegisterNodeFix<ExpressionSyntax>(
+            context,
+            root,
+            "Return .AsReadOnly()",
+            nameof(ListAsReadOnlyCodeFixProvider),
+            (expression, ct) => ReadOnlyCollectionFix.AppendAsReadOnlyAsync(context.Document, expression, ct));
 
         return Task.CompletedTask;
     }

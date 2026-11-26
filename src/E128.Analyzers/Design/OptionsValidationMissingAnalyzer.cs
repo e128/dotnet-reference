@@ -436,12 +436,7 @@ public sealed class OptionsValidationMissingAnalyzer : DiagnosticAnalyzer
         ExpressionSyntax? current = outermost;
         while (current is InvocationExpressionSyntax invocation)
         {
-            var name = invocation.Expression switch
-            {
-                MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
-                IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-                _ => null
-            };
+            var name = InvocationNames.GetName(invocation);
 
             if (name is not null && RegistrationMethodNames.Contains(name))
             {

@@ -36,23 +36,11 @@ public sealed class HttpClientResponseHeadersReadAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static compilationContext =>
-        {
-            var httpClientType = compilationContext.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClient");
-            if (httpClientType is null)
-            {
-                return;
-            }
-
-            var completionOptionType = compilationContext.Compilation.GetTypeByMetadataName("System.Net.Http.HttpCompletionOption");
-            if (completionOptionType is null)
-            {
-                return;
-            }
-
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, httpClientType, completionOptionType),
-                SyntaxKind.InvocationExpression);
-        });
+            _ = MetadataTypes.TryRegisterForTypes(
+                compilationContext,
+                ["System.Net.Http.HttpClient", "System.Net.Http.HttpCompletionOption"],
+                static (nodeContext, types) => AnalyzeInvocation(nodeContext, types[0], types[1]),
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(

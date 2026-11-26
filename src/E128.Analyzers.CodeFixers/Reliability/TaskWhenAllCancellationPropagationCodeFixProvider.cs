@@ -36,15 +36,12 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : E128Code
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not InvocationExpressionSyntax invocation)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Add CancellationToken to HttpClient/Playwright calls", nameof(TaskWhenAllCancellationPropagationCodeFixProvider), ct => AddCancellationTokenAsync(context.Document, invocation, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Add CancellationToken to HttpClient/Playwright calls",
+            nameof(TaskWhenAllCancellationPropagationCodeFixProvider),
+            (invocation, ct) => AddCancellationTokenAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }
@@ -54,17 +51,14 @@ public sealed class TaskWhenAllCancellationPropagationCodeFixProvider : E128Code
         InvocationExpressionSyntax whenAllInvocation,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
 
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return document;
-        }
+        var root = rootAndModel.Value.Root;
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         var ctParamName = FindEnclosingCtParameterName(whenAllInvocation, semanticModel, cancellationToken);
         if (ctParamName is null)

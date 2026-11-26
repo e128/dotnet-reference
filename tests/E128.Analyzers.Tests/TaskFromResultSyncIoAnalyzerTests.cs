@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -12,12 +11,9 @@ public sealed class TaskFromResultSyncIoAnalyzerTests
 {
     private static Task VerifyWithReferencesAsync(ReferenceAssemblies referenceAssemblies, string code)
     {
-        var test = new CSharpAnalyzerTest<TaskFromResultSyncIoAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = referenceAssemblies
-        };
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<TaskFromResultSyncIoAnalyzer>(
+            code,
+            options: new AnalyzerTestOptions { References = referenceAssemblies });
     }
 
     [Fact]

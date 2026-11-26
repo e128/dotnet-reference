@@ -25,11 +25,13 @@ public sealed class SequenceEqualLoopCodeFixProvider : E128CodeFixProviderBase
             return;
         }
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(context.Document, context.CancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return;
         }
+
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         var operands = SequenceEqualLoopAnalyzer.TryGetOperands(forStatement, semanticModel, context.CancellationToken);
         if (operands is null)

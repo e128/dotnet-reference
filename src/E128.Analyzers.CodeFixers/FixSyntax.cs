@@ -132,6 +132,38 @@ internal static class FixSyntax
     }
 
     /// <summary>
+    ///     Copies only the line break and the indentation of the anchor line. Copying the whole
+    ///     leading list would repeat a comment that sits above the anchor on the inserted line.
+    /// </summary>
+    internal static SyntaxTriviaList AnchorLeadingTrivia(SyntaxNode anchor)
+    {
+        var indent = SyntaxFactory.Whitespace(TrailingWhitespace(anchor.GetLeadingTrivia()).ToString());
+        var previous = anchor.GetFirstToken().GetPreviousToken();
+
+        return !previous.IsKind(SyntaxKind.None) && !previous.TrailingTrivia.Any(SyntaxKind.EndOfLineTrivia)
+            ? [SyntaxFactory.LineFeed, indent]
+            : [indent];
+    }
+
+    /// <summary>
+    ///     Returns the syntax root and the semantic model of the document, or null when either is
+    ///     unavailable.
+    /// </summary>
+    internal static async Task<(SyntaxNode Root, SemanticModel SemanticModel)?> GetRootAndSemanticModelAsync(
+        Document document,
+        CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+        {
+            return null;
+        }
+
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        return semanticModel is null ? null : (root, semanticModel);
+    }
+
+    /// <summary>
     ///     Wraps an expression in parentheses unless it is already a primary expression,
     ///     so appending an indexer or member access keeps the original meaning.
     /// </summary>

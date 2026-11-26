@@ -1,42 +1,12 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
+using static E128.Analyzers.Tests.ComplexityCeilingTestHarness;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ComplexityCeilingCodeFixBranchCoverageTests
 {
-    private static DiagnosticResult Warning(int line, int column)
-    {
-        return new DiagnosticResult("E128152", DiagnosticSeverity.Warning).WithLocation(line, column);
-    }
-
-    private static Task VerifyMembershipAsync(string source, string fixedCode, params DiagnosticResult[] expected)
-    {
-        return CodeFixTestRunner.RunAsync<ComplexityCeilingAnalyzer, ComplexityCeilingMembershipScanCodeFixProvider>(
-            source,
-            fixedCode,
-            expected: expected,
-            options: new CodeFixTestOptions { FixAllIterations = 1 });
-    }
-
-    private static Task VerifyNoMembershipAsync(string source, params DiagnosticResult[] expected)
-    {
-        return CodeFixTestRunner.NoFixAsync<ComplexityCeilingAnalyzer, ComplexityCeilingMembershipScanCodeFixProvider>(
-            source,
-            expected: expected);
-    }
-
-    private static Task VerifySuppressionAsync(string source, string fixedCode, params DiagnosticResult[] expected)
-    {
-        return CodeFixTestRunner.RunAsync<ComplexityCeilingAnalyzer, ComplexityCeilingSuppressionCodeFixProvider>(
-            source,
-            fixedCode,
-            expected: expected);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Membership_UsesTheOuterSideWhenItIsOnTheRight()

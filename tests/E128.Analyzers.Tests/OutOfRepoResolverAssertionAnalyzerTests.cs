@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -21,25 +20,21 @@ public sealed class OutOfRepoResolverAssertionAnalyzerTests
 
     private static Task VerifySilentlyAsync(string code)
     {
-        var test = new CSharpAnalyzerTest<OutOfRepoResolverAssertionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithXunit
-        };
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<OutOfRepoResolverAssertionAnalyzer>(
+            code,
+            options: new AnalyzerTestOptions { References = Net100WithXunit });
     }
 
     private static Task VerifyWithResolversAsync(string resolvers, string code, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<OutOfRepoResolverAssertionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithXunit
-        };
-        test.TestState.AnalyzerConfigFiles.Add(
-            ("/.editorconfig", "is_global = true\ne128_out_of_repo_resolvers = " + resolvers));
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<OutOfRepoResolverAssertionAnalyzer>(
+            code,
+            expected,
+            new AnalyzerTestOptions
+            {
+                References = Net100WithXunit,
+                AnalyzerConfig = ("/.editorconfig", "is_global = true\ne128_out_of_repo_resolvers = " + resolvers)
+            });
     }
 
     [Fact]

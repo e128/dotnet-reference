@@ -104,7 +104,7 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         var model = context.SemanticModel;
         var cancellationToken = context.CancellationToken;
 
-        var reported = GetInvokedName(invocation) switch
+        var reported = InvocationNames.GetName(invocation) switch
         {
             "SequenceEqual" => IsSecretSequenceEqual(invocation, model, cancellationToken),
             "Equals" => IsSecretStringEquals(invocation, model, cancellationToken),
@@ -117,16 +117,6 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), invocation.ToString()));
-    }
-
-    private static string? GetInvokedName(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
     }
 
     private static bool IsSecretSequenceEqual(

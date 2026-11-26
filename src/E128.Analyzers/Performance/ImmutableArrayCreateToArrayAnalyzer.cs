@@ -50,18 +50,6 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static compilationContext =>
         {
-            var marshalType = compilationContext.Compilation.GetTypeByMetadataName(ImmutableCollectionsMarshalMetadataName);
-            if (marshalType is null)
-            {
-                return;
-            }
-
-            var immutableArrayType = compilationContext.Compilation.GetTypeByMetadataName(ImmutableArrayMetadataName);
-            if (immutableArrayType is null)
-            {
-                return;
-            }
-
             var freshOwners = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
             foreach (var metadataName in FreshArrayToArrayOwnerMetadataNames)
             {
@@ -71,8 +59,10 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, immutableArrayType, freshOwners),
+            _ = MetadataTypes.TryRegisterForTypes(
+                compilationContext,
+                [ImmutableArrayMetadataName, ImmutableCollectionsMarshalMetadataName],
+                (nodeContext, types) => AnalyzeInvocation(nodeContext, types[0], freshOwners),
                 SyntaxKind.InvocationExpression);
         });
     }
@@ -93,12 +83,7 @@ public sealed class ImmutableArrayCreateToArrayAnalyzer : DiagnosticAnalyzer
 
     private static bool IsCreateCall(InvocationExpressionSyntax invocation)
     {
-        var methodName = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
+        var methodName = InvocationNames.GetName(invocation);
 
         return string.Equals(methodName, "Create", StringComparison.Ordinal)
                || string.Equals(methodName, "CreateRange", StringComparison.Ordinal);

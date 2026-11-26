@@ -87,7 +87,7 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (IsInsideTryCatch(invocation, method))
+            if (ExceptionScope.IsInsideTryWithCatch(invocation, method))
             {
                 continue;
             }
@@ -243,21 +243,5 @@ public sealed class FileInfoToctouAnalyzer : DiagnosticAnalyzer
     {
         return context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol is IMethodSymbol method
                && SymbolEqualityComparer.Default.Equals(method.ContainingType, target);
-    }
-
-    private static bool IsInsideTryCatch(SyntaxNode node, SyntaxNode boundary)
-    {
-        var current = node.Parent;
-        while (current is not null && current != boundary)
-        {
-            if (current is TryStatementSyntax tryStatement && tryStatement.Catches.Any())
-            {
-                return true;
-            }
-
-            current = current.Parent;
-        }
-
-        return false;
     }
 }

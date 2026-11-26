@@ -41,24 +41,12 @@ public sealed class StringBuilderPoolAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(static compilationContext =>
-        {
-            var poolType = compilationContext.Compilation.GetTypeByMetadataName(StringBuilderPoolMetadataName);
-            if (poolType is null)
-            {
-                return;
-            }
-
-            var stringBuilderType = compilationContext.Compilation.GetTypeByMetadataName(StringBuilderMetadataName);
-            if (stringBuilderType is null)
-            {
-                return;
-            }
-
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeObjectCreation(nodeContext, stringBuilderType),
+            _ = MetadataTypes.TryRegisterForTypes(
+                compilationContext,
+                [StringBuilderPoolMetadataName, StringBuilderMetadataName],
+                static (nodeContext, types) => AnalyzeObjectCreation(nodeContext, types[1]),
                 SyntaxKind.ObjectCreationExpression,
-                SyntaxKind.ImplicitObjectCreationExpression);
-        });
+                SyntaxKind.ImplicitObjectCreationExpression));
     }
 
     private static void AnalyzeObjectCreation(

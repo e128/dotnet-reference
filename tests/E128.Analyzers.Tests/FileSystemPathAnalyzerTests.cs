@@ -13,14 +13,10 @@ public sealed class FileSystemPathAnalyzerTests
 
     private static Task VerifyWithRecordsAsync(string code, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<FileSystemPathAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<FileSystemPathAnalyzer>(
+            code,
+            expected,
+            options: Options);
     }
 
     [Fact]

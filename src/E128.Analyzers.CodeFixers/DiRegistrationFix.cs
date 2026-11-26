@@ -24,22 +24,20 @@ internal static class DiRegistrationFix
         SyntaxToken? methodName,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
+
+        var root = rootAndModel.Value.Root;
 
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
             return document;
         }
 
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return document;
-        }
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         var newTypeArgs = SyntaxFactory.TypeArgumentList(
             SyntaxFactory.SeparatedList(

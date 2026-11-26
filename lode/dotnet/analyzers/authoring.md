@@ -1,5 +1,5 @@
 # Analyzer Authoring
-*Updated: 2026-11-16T14:10:41Z*
+*Updated: 2026-11-26T14:59:08Z*
 
 Rules for a new or changed rule in `src/E128.Analyzers`. Read
 [new-analyzer-checklist.md](new-analyzer-checklist.md) before you write the
@@ -47,6 +47,15 @@ unmaintained.
 Most rules pass `GeneratedCodeAnalysisFlags.None`. The policy and the opt-in
 cases live in the
 [checklist](new-analyzer-checklist.md#generated-code).
+
+## Initialize Prologue
+
+Every analyzer repeats the same prologue: the null guard,
+`ConfigureGeneratedCodeAnalysis`, and `EnableConcurrentExecution`. A 2026-11-26
+deduplication pass tried to extract the prologue into one shared helper. The
+build failed: RS1025 and RS1026 require those two calls inline in the
+`Initialize` body, and they do not see through a helper method. Do not extract
+the prologue. Copy it, as every shipped rule does.
 
 ## Partial Declarations
 

@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Composition;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 
@@ -15,18 +14,8 @@ namespace E128.Analyzers.Reliability;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConstructorNewDiRegisteredCodeFixProvider))]
 [Shared]
-public sealed class ConstructorNewDiRegisteredCodeFixProvider : E128CodeFixProviderBase
+public sealed class ConstructorNewDiRegisteredCodeFixProvider : E128NoOpCodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds =>
         [ConstructorNewDiRegisteredAnalyzer.DiagnosticId];
-
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return null;
-    }
-
-    public override Task RegisterCodeFixesAsync(CodeFixContext context)
-    {
-        return Task.CompletedTask;
-    }
 }

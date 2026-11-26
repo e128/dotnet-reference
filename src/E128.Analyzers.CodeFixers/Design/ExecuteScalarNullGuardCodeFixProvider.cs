@@ -48,19 +48,16 @@ public sealed class ExecuteScalarNullGuardCodeFixProvider : E128CodeFixProviderB
         SyntaxNode diagnosticNode,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null || diagnosticNode is not InvocationExpressionSyntax convertInvocation)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null || diagnosticNode is not InvocationExpressionSyntax convertInvocation)
         {
             return document;
         }
+
+        var root = rootAndModel.Value.Root;
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         if (!TryExtractParts(convertInvocation, out var innerExpr, out var convertMethodName))
-        {
-            return document;
-        }
-
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
         {
             return document;
         }

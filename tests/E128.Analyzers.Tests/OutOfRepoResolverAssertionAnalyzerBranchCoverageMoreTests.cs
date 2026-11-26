@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -23,20 +22,14 @@ public sealed class OutOfRepoResolverAssertionAnalyzerBranchCoverageMoreTests
 
     private static Task VerifyAsync(string code, bool lenient = false)
     {
-        var test = new CSharpAnalyzerTest<OutOfRepoResolverAssertionAnalyzer, DefaultVerifier>
-        {
-            TestCode = code + "\n" + Resolver,
-            ReferenceAssemblies = Net100WithXunit
-        };
-        test.TestState.AnalyzerConfigFiles.Add(
-            ("/.editorconfig", "is_global = true\ne128_out_of_repo_resolvers = CssPathResolver.Resolve"));
-
-        if (lenient)
-        {
-            test.CompilerDiagnostics = CompilerDiagnostics.None;
-        }
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<OutOfRepoResolverAssertionAnalyzer>(
+            code + "\n" + Resolver,
+            options: new AnalyzerTestOptions
+            {
+                References = Net100WithXunit,
+                AnalyzerConfig = ("/.editorconfig", "is_global = true\ne128_out_of_repo_resolvers = CssPathResolver.Resolve"),
+                CompilerDiagnostics = lenient ? CompilerDiagnostics.None : null
+            });
     }
 
     [Fact]

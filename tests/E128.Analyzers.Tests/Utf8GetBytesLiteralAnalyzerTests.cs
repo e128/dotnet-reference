@@ -1,8 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -16,20 +14,9 @@ public sealed class Utf8GetBytesLiteralAnalyzerTests
 
     private static Task VerifyAsync(string code, LanguageVersion languageVersion)
     {
-        var test = new CSharpAnalyzerTest<Utf8GetBytesLiteralAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        };
-
-        test.SolutionTransforms.Add((solution, projectId) =>
-        {
-            return solution.GetProject(projectId)?.ParseOptions is CSharpParseOptions parseOptions
-                ? solution.WithProjectParseOptions(projectId, parseOptions.WithLanguageVersion(languageVersion))
-                : solution;
-        });
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<Utf8GetBytesLiteralAnalyzer>(
+            code,
+            options: new AnalyzerTestOptions { LanguageVersion = languageVersion });
     }
 
     [Fact]

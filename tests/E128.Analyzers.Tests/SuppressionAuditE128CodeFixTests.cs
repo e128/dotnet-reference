@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -11,17 +10,13 @@ public sealed class SuppressionAuditE128CodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode, params DiagnosticResult[] expected)
     {
-        var test = new CSharpCodeFixTest<SuppressionAuditAnalyzer, SuppressionAuditCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+        return CodeFixTestRunner.RunAsync<SuppressionAuditAnalyzer, SuppressionAuditCodeFixProvider>(
+            source,
+            fixedCode,
+            expected: expected,
             // The analyzer flags #pragma warning disable directives, so the framework's
             // automatic suppression-via-pragma check creates a circular diagnostic.
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+            options: new CodeFixTestOptions { TestBehaviors = TestBehaviors.SkipSuppressionCheck });
     }
 
     [Fact]

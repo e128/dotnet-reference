@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.FileSystem;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -14,26 +13,16 @@ public sealed class FileSystemPathCodeFixTests
         string? equivalenceKey = null,
         int? codeActionIndex = null)
     {
-        var test = new CSharpCodeFixTest<FileSystemPathAnalyzer, FileSystemPathCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor,
-            NumberOfFixAllIterations = 1
-        };
-
-        if (equivalenceKey is not null)
-        {
-            test.CodeActionEquivalenceKey = equivalenceKey;
-        }
-
-        if (codeActionIndex is not null)
-        {
-            test.CodeActionIndex = codeActionIndex.Value;
-        }
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<FileSystemPathAnalyzer, FileSystemPathCodeFixProvider>(
+            source,
+            fixedCode,
+            markupOptions: MarkupOptions.UseFirstDescriptor,
+            options: new CodeFixTestOptions
+            {
+                FixAllIterations = 1,
+                CodeActionEquivalenceKey = equivalenceKey,
+                CodeActionIndex = codeActionIndex
+            });
     }
 
     [Fact]

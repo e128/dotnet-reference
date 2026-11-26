@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -16,11 +14,7 @@ public sealed class ManualSpanElementwiseAnalyzerTests
 
     private static Task VerifyWithoutStubAsync(string code)
     {
-        return new CSharpAnalyzerTest<ManualSpanElementwiseAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<ManualSpanElementwiseAnalyzer>(code);
     }
 
     [Fact]

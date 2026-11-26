@@ -7,41 +7,9 @@ namespace E128.Analyzers.Tests;
 
 public sealed class EfQueryInLoopAnalyzerTests
 {
-    // The test project carries no EF Core package. Each snippet declares the surface under test as a stub
-    // in the Microsoft.EntityFrameworkCore namespace: a DbSet<T> that implements IQueryable<T> and the
-    // ToListAsync extension. Both compile, so the semantic model resolves the receiver and the method.
-    // The using directives sit here because a using clause must precede every namespace in the file.
-    private const string EfStub = """
-                                  using System;
-                                  using System.Collections;
-                                  using System.Collections.Generic;
-                                  using System.Linq;
-                                  using System.Threading.Tasks;
-                                  using Microsoft.EntityFrameworkCore;
-
-                                  namespace Microsoft.EntityFrameworkCore
-                                  {
-                                      public abstract class DbSet<T> : IQueryable<T>
-                                      {
-                                          public Type ElementType => typeof(T);
-                                          public System.Linq.Expressions.Expression Expression => throw new NotImplementedException();
-                                          public IQueryProvider Provider => throw new NotImplementedException();
-                                          public IEnumerator<T> GetEnumerator() => throw new NotImplementedException();
-                                          IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-                                      }
-
-                                      public static class EntityFrameworkQueryableExtensions
-                                      {
-                                          public static Task<List<T>> ToListAsync<T>(this IQueryable<T> source)
-                                              => throw new NotImplementedException();
-                                      }
-                                  }
-
-                                  """;
-
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
-        return AnalyzerTestRunner.VerifyAsync<EfQueryInLoopAnalyzer>(EfStub + code, expected);
+        return AnalyzerTestRunner.VerifyAsync<EfQueryInLoopAnalyzer>(TestStubs.EfQueryInLoopStub + code, expected);
     }
 
     [Fact]

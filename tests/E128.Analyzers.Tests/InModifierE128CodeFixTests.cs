@@ -1,8 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -11,32 +9,17 @@ public sealed class InModifierE128CodeFixTests
 {
     private static Task VerifyCancellationTokenFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<InCancellationTokenE128Analyzer, InModifierCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<InCancellationTokenE128Analyzer, InModifierCodeFixProvider>(source, fixedCode);
     }
 
     private static Task VerifyMutableStructFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<InMutableStructE128Analyzer, InModifierCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<InMutableStructE128Analyzer, InModifierCodeFixProvider>(source, fixedCode);
     }
 
     private static Task VerifyRefStructFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<InRefStructE128Analyzer, InModifierCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<InRefStructE128Analyzer, InModifierCodeFixProvider>(source, fixedCode);
     }
 
     [Fact]

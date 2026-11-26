@@ -43,23 +43,11 @@ public sealed class ParallelForEachAsyncCapAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(static compilationContext =>
-        {
-            var parallelType = compilationContext.Compilation.GetTypeByMetadataName(ParallelMetadataName);
-            if (parallelType is null)
-            {
-                return;
-            }
-
-            var parallelOptionsType = compilationContext.Compilation.GetTypeByMetadataName(ParallelOptionsMetadataName);
-            if (parallelOptionsType is null)
-            {
-                return;
-            }
-
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, parallelType, parallelOptionsType),
-                SyntaxKind.InvocationExpression);
-        });
+            _ = MetadataTypes.TryRegisterForTypes(
+                compilationContext,
+                [ParallelMetadataName, ParallelOptionsMetadataName],
+                static (nodeContext, types) => AnalyzeInvocation(nodeContext, types[0], types[1]),
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(

@@ -37,17 +37,11 @@ public sealed class SelectManyToListAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(static compilationContext =>
-        {
-            var enumerableType = compilationContext.Compilation.GetTypeByMetadataName(EnumerableMetadataName);
-            if (enumerableType is null)
-            {
-                return;
-            }
-
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, enumerableType),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                compilationContext,
+                EnumerableMetadataName,
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static InvocationExpressionSyntax? GetSelectManyInvocation(InvocationExpressionSyntax toListInvocation)

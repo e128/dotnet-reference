@@ -61,6 +61,36 @@ internal static class CodeFixTestRunner
             test.NumberOfFixAllIterations = iterations;
         }
 
+        if (options.FixAllInDocumentIterations is { } inDocumentIterations)
+        {
+            test.NumberOfFixAllInDocumentIterations = inDocumentIterations;
+        }
+
+        if (options.CompilerDiagnostics is { } compilerDiagnostics)
+        {
+            test.CompilerDiagnostics = compilerDiagnostics;
+        }
+
+        if (options.TestBehaviors is not TestBehaviors.None)
+        {
+            test.TestBehaviors = options.TestBehaviors;
+        }
+
+        if (options.CodeActionEquivalenceKey is { } equivalenceKey)
+        {
+            test.CodeActionEquivalenceKey = equivalenceKey;
+        }
+
+        if (options.CodeActionIndex is { } actionIndex)
+        {
+            test.CodeActionIndex = actionIndex;
+        }
+
+        if (options.AllowUnsafe is true)
+        {
+            test.SolutionTransforms.Add(AllowUnsafe);
+        }
+
         if (options.FixedExpected is not null)
         {
             test.FixedState.ExpectedDiagnostics.AddRange(options.FixedExpected);

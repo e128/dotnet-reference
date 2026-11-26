@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,15 +9,12 @@ public sealed class SealedByDefaultCodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<SealedByDefaultAnalyzer, SealedByDefaultCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
-            // CompilationEnd diagnostics are non-local by design.
-            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck
-        }.RunAsync(TestContext.Current.CancellationToken);
+        // CompilationEnd diagnostics are non-local by design.
+        return CodeFixTestRunner.RunAsync<SealedByDefaultAnalyzer, SealedByDefaultCodeFixProvider>(
+            source,
+            fixedCode,
+            behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     [Fact]

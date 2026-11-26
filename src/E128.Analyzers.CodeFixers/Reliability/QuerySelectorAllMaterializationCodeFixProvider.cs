@@ -18,15 +18,12 @@ public sealed class QuerySelectorAllMaterializationCodeFixProvider : E128CodeFix
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not InvocationExpressionSyntax invocation)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Add .ToList() to materialize QuerySelectorAll result", nameof(QuerySelectorAllMaterializationCodeFixProvider), ct => ApplyFixAsync(context.Document, invocation, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Add .ToList() to materialize QuerySelectorAll result",
+            nameof(QuerySelectorAllMaterializationCodeFixProvider),
+            (invocation, ct) => ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

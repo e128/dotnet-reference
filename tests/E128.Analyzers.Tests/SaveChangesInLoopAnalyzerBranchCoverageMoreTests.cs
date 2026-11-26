@@ -8,20 +8,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SaveChangesInLoopAnalyzerBranchCoverageMoreTests
 {
-    private const string EfStub = """
-        namespace Microsoft.EntityFrameworkCore
-        {
-            public class DbContext
-            {
-                public virtual int SaveChanges() => 0;
-            }
-        }
-        """;
-
     private static Task VerifyAsync(string code, bool lenient = false)
     {
         return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(
-            code + "\n" + EfStub,
+            code + "\n" + TestStubs.SaveChangesInLoopEfStub,
             options: lenient ? new AnalyzerTestOptions { CompilerDiagnostics = CompilerDiagnostics.None } : null);
     }
 
@@ -191,7 +181,7 @@ public sealed class SaveChangesInLoopAnalyzerBranchCoverageMoreTests
                         }
                     }
                 }
-                """ + "\n" + EfStub,
+                """ + "\n" + TestStubs.SaveChangesInLoopEfStub,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
         test.SolutionTransforms.Add(static (solution, projectId) =>

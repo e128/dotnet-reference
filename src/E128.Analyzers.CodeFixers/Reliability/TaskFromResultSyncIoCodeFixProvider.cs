@@ -24,15 +24,12 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not InvocationExpressionSyntax invocation)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Convert to async/await", nameof(TaskFromResultSyncIoCodeFixProvider), ct => ConvertToAsyncAsync(context.Document, invocation, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Convert to async/await",
+            nameof(TaskFromResultSyncIoCodeFixProvider),
+            (invocation, ct) => ConvertToAsyncAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }
@@ -42,17 +39,14 @@ public sealed class TaskFromResultSyncIoCodeFixProvider : E128CodeFixProviderBas
         InvocationExpressionSyntax fromResultInvocation,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
 
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return document;
-        }
+        var root = rootAndModel.Value.Root;
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         var method = fromResultInvocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
         if (method is null)

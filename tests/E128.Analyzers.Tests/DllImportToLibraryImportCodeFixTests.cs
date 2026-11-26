@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -12,19 +11,10 @@ public sealed class DllImportToLibraryImportCodeFixTests
     {
         // The fixed code needs the LibraryImport source generator, which the test
         // harness does not run. Compiler diagnostics are therefore not validated.
-        var test = new CSharpCodeFixTest<
-            DllImportToLibraryImportAnalyzer,
-            DllImportToLibraryImportCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            CompilerDiagnostics = CompilerDiagnostics.None,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<DllImportToLibraryImportAnalyzer, DllImportToLibraryImportCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { CompilerDiagnostics = CompilerDiagnostics.None });
     }
 
     [Fact]

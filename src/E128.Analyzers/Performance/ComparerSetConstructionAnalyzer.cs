@@ -75,7 +75,7 @@ public sealed class ComparerSetConstructionAnalyzer : DiagnosticAnalyzer
             || creation.ArgumentList is not { Arguments.Count: 1 } argumentList
             || !IsComparerHashSet(creation, model, cancellationToken)
             || !HasEqualityComparerArgument(argumentList.Arguments[0], model, cancellationToken)
-            || GetTargetLocal(creation, model, cancellationToken) is not { } local
+            || LocalTargets.FromCreation(creation, model, cancellationToken) is not { } local
             || BlockScope.GetScope(creation) is not { } scope)
         {
             return;
@@ -110,22 +110,6 @@ public sealed class ComparerSetConstructionAnalyzer : DiagnosticAnalyzer
                        implemented.OriginalDefinition.ToDisplayString(),
                        EqualityComparerTypeName + "<T>",
                        StringComparison.Ordinal));
-    }
-
-    private static ILocalSymbol? GetTargetLocal(
-        BaseObjectCreationExpressionSyntax creation,
-        SemanticModel model,
-        CancellationToken cancellationToken)
-    {
-        return creation.Parent switch
-        {
-            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } =>
-                model.GetDeclaredSymbol(declarator, cancellationToken) as ILocalSymbol,
-            AssignmentExpressionSyntax assignment when assignment.Right == creation
-                                                       && assignment.Left is IdentifierNameSyntax =>
-                model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol as ILocalSymbol,
-            _ => null
-        };
     }
 
     /// <summary>

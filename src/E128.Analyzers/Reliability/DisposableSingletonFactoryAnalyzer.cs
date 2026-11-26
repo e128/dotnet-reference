@@ -48,7 +48,7 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        var methodName = GetInvokedName(invocation);
+        var methodName = InvocationNames.GetName(invocation);
 
         if (!string.Equals(methodName, "AddSingleton", StringComparison.Ordinal))
         {
@@ -87,16 +87,6 @@ public sealed class DisposableSingletonFactoryAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Diagnostic.Create(Rule, arg.GetLocation(), returnType.Name));
-    }
-
-    private static string? GetInvokedName(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax m => m.Name.Identifier.Text,
-            IdentifierNameSyntax i => i.Identifier.Text,
-            _ => null
-        };
     }
 
     private static ExpressionSyntax? GetLambdaBody(ExpressionSyntax lambda)

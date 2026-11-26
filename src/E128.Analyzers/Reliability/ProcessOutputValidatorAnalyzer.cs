@@ -97,23 +97,13 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
 
     private static bool IsProcessWaitCall(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
-        var methodName = GetInvocationName(invocation);
+        var methodName = InvocationNames.GetName(invocation);
 
         return (string.Equals(methodName, "WaitForExit", StringComparison.Ordinal)
                 || string.Equals(methodName, "WaitForExitAsync", StringComparison.Ordinal))
                && context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
                && string.Equals(method.Name, methodName, StringComparison.Ordinal)
                && IsSystemDiagnosticsProcess(method.ContainingType);
-    }
-
-    private static string? GetInvocationName(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
     }
 
     private static bool IsSystemDiagnosticsProcess(INamedTypeSymbol? type)

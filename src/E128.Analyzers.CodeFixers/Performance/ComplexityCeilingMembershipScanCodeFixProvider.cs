@@ -168,22 +168,8 @@ public sealed class ComplexityCeilingMembershipScanCodeFixProvider : E128CodeFix
         return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
                     .WithVariables(SyntaxFactory.SingletonSeparatedList(declarator)))
-            .WithLeadingTrivia(IndentationTrivia(anchor))
+            .WithLeadingTrivia(FixSyntax.AnchorLeadingTrivia(anchor))
             .WithTrailingTrivia(SyntaxFactory.LineFeed);
-    }
-
-    /// <summary>
-    ///     Copies only the line break and the indentation of the anchor line. Copying the whole
-    ///     leading list would repeat a comment that sits above the anchor on the inserted line.
-    /// </summary>
-    private static SyntaxTriviaList IndentationTrivia(SyntaxNode anchor)
-    {
-        var indent = SyntaxFactory.Whitespace(FixSyntax.TrailingWhitespace(anchor.GetLeadingTrivia()).ToString());
-        var previous = anchor.GetFirstToken().GetPreviousToken();
-
-        return !previous.IsKind(SyntaxKind.None) && !previous.TrailingTrivia.Any(SyntaxKind.EndOfLineTrivia)
-            ? [SyntaxFactory.LineFeed, indent]
-            : [indent];
     }
 
     private static InvocationExpressionSyntax ContainsCall(string setName, ExpressionSyntax value)

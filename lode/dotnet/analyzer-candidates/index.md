@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-25T22:13:23Z*
+*Updated: 2026-11-26T14:48:46Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -77,6 +77,8 @@ installed rule and no consumer site names the shape.
 | A retained `Memory<T>` slice is used after its owner is disposed | `unsafe doc` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. E128162 and IDISP016 own a direct use of the disposed owner. The retained slice needs an alias link from `owner.Memory` to the later read. |
 | A padded struct is copied byte-wise through a marshal API | `unsafe doc` | 3/5 | new | Frequency 1, gap 1, expressibility 0, value 1. Roslyn exposes no field offset or size API. A rule must compute the padding from the field list, the pack value, and the layout kind. No code fix: a pack or field-order change alters the interop layout. |
 | `IHttpContextAccessor` injected into a service | `BlazingFastDotnet` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. No installed rule covers it. The shape is correct in middleware, filters, Blazor components, and background workers, where no `HttpContext` parameter exists. The rule needs that allowlist, or the false positive rate stays high. |
+| Sonar S6585 rejects a custom `DateTime` format literal that renders a culture-invariant ISO-8601 stamp | `session friction` | 2/5 | new | Frequency 1, gap 0, expressibility 1, value 0. S6585 already owns the shape, and the `s` standard specifier plus a literal `Z` produces the same text, so the workaround beats a suppression. Decide whether to keep the workaround or tune S6585. Seen in build-time-hotspots on 2026-11-26. |
+| A whole-compilation duplicate code detector analyzer with an extract shared code fixer | `session idea` | 2/5 | new | Frequency 0, gap 1, expressibility 0, value 1. Roslyn shows an analyzer one declaration at a time. Duplicate detection needs a whole-compilation fragment registry. The fix needs a cross type extract method refactor. The 2026-11-26 duplication audit in plans/TECH_DEBT_AUDIT.md found the repeated shapes here are mostly conventional boilerplate, so the rule would be noisy. The alternative shape is an offline dup scan script in scripts/. |
 
 ## Tier 2 Candidates
 

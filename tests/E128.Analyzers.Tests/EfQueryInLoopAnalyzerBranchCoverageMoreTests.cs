@@ -7,24 +7,7 @@ namespace E128.Analyzers.Tests;
 public sealed class EfQueryInLoopAnalyzerBranchCoverageMoreTests
 {
     // The test project carries no EF Core package. Each snippet declares the query surface as a stub.
-    private const string EfStub = """
-        using System;
-        using System.Collections;
-        using System.Collections.Generic;
-        using System.Linq;
-        using Microsoft.EntityFrameworkCore;
-
-        namespace Microsoft.EntityFrameworkCore
-        {
-            public abstract class DbSet<T> : IQueryable<T>
-            {
-                public Type ElementType => typeof(T);
-                public System.Linq.Expressions.Expression Expression => throw new NotImplementedException();
-                public IQueryProvider Provider => throw new NotImplementedException();
-                public IEnumerator<T> GetEnumerator() => throw new NotImplementedException();
-                IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-            }
-        }
+    private const string EfStub = TestStubs.EfQueryInLoopStub + """
 
         class Item
         {

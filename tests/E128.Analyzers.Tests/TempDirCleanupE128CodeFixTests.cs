@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,15 +9,11 @@ public sealed class TempDirCleanupE128CodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        var test = new CSharpCodeFixTest<TempDirCleanupAnalyzer, TempDirCleanupCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
-            NumberOfFixAllIterations = 1
-        };
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<TempDirCleanupAnalyzer, TempDirCleanupCodeFixProvider>(
+            source,
+            fixedCode,
+            behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     [Fact]
@@ -136,16 +131,11 @@ public sealed class TempDirCleanupE128CodeFixTests
                               """;
 
         // A local is not a member, so the generated Dispose call could not reach it.
-        var test = new CSharpCodeFixTest<TempDirCleanupAnalyzer, TempDirCleanupCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
-            NumberOfFixAllInDocumentIterations = 0
-        };
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<TempDirCleanupAnalyzer, TempDirCleanupCodeFixProvider>(
+            source,
+            source,
+            behaviors: CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
+            options: new CodeFixTestOptions { FixAllInDocumentIterations = 0 });
     }
 
     [Fact]

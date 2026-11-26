@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -13,16 +12,10 @@ public sealed class RuntimeRegexToGeneratedCodeFixTests
         // The fixed code needs the GeneratedRegex source generator, which the test
         // harness does not run. Compiler diagnostics are off, so every test compares
         // the exact fixed text, including modifier order and trivia.
-        return new CSharpCodeFixTest<
-            RuntimeRegexToGeneratedAnalyzer,
-            RuntimeRegexToGeneratedCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            CompilerDiagnostics = CompilerDiagnostics.None,
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<RuntimeRegexToGeneratedAnalyzer, RuntimeRegexToGeneratedCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { CompilerDiagnostics = CompilerDiagnostics.None });
     }
 
     [Fact]

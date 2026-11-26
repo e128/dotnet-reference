@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -11,15 +10,11 @@ public sealed class GuidNewGuidTempPathE128CodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode, DiagnosticResult expected)
     {
-        var test = new CSharpCodeFixTest<GuidNewGuidTempPathE128Analyzer, GuidNewGuidTempPathCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        };
-        test.ExpectedDiagnostics.Add(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<GuidNewGuidTempPathE128Analyzer, GuidNewGuidTempPathCodeFixProvider>(
+            source,
+            fixedCode,
+            expected: [expected],
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     [Fact]

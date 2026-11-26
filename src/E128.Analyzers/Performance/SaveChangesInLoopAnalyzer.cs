@@ -43,17 +43,11 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterCompilationStartAction(static startContext =>
-        {
-            var dbContextType = startContext.Compilation.GetTypeByMetadataName(DbContextMetadataName);
-            if (dbContextType is null)
-            {
-                return;
-            }
-
-            startContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, dbContextType),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                startContext,
+                DbContextMetadataName,
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(

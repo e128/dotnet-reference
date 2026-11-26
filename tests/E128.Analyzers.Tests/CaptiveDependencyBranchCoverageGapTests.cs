@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,28 +7,13 @@ namespace E128.Analyzers.Tests;
 
 public sealed class CaptiveDependencyBranchCoverageGapTests
 {
-    private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
-        .AddPackages([
-            new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.14")
-        ]);
-
-    private static readonly ReferenceAssemblies Net100WithEfCore = ReferenceAssemblies.Net.Net100
-        .AddPackages([
-            new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.14"),
-            new PackageIdentity("Microsoft.EntityFrameworkCore", "10.0.14")
-        ]);
-
     private static Task VerifyAsync(ReferenceAssemblies references, string code)
     {
         // Two descriptors share the E128154 id, so markup names the first one.
-        var test = new CSharpAnalyzerTest<CaptiveDependencyAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = references,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor
-        };
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<CaptiveDependencyAnalyzer>(
+            code,
+            expected: null,
+            options: new AnalyzerTestOptions { References = references, MarkupOptions = MarkupOptions.UseFirstDescriptor });
     }
 
     [Fact]
@@ -54,7 +38,7 @@ public sealed class CaptiveDependencyBranchCoverageGapTests
     [Trait("Category", "CI")]
     public Task Silent_ForSingletonTypeArgumentsThatAreNotNamedTypes()
     {
-        return VerifyAsync(Net100WithEfCore, """
+        return VerifyAsync(TestReferences.Net100WithEfCore, """
             using Microsoft.Extensions.DependencyInjection;
             class Repository { }
             class Startup
@@ -72,7 +56,7 @@ public sealed class CaptiveDependencyBranchCoverageGapTests
     [Trait("Category", "CI")]
     public Task Silent_ForAContextHelperWhoseTypeofArgumentIsNotAContext()
     {
-        return VerifyAsync(Net100WithEfCore, """
+        return VerifyAsync(TestReferences.Net100WithEfCore, """
             using System;
             using Microsoft.EntityFrameworkCore;
             using Microsoft.Extensions.DependencyInjection;
@@ -99,7 +83,7 @@ public sealed class CaptiveDependencyBranchCoverageGapTests
     [Trait("Category", "CI")]
     public Task Silent_ForAContextHelperWhoseTypeArgumentsAreNotContexts()
     {
-        return VerifyAsync(Net100WithEfCore, """
+        return VerifyAsync(TestReferences.Net100WithEfCore, """
             using Microsoft.EntityFrameworkCore;
             using Microsoft.Extensions.DependencyInjection;
             class StoreContext : DbContext { }
@@ -124,7 +108,7 @@ public sealed class CaptiveDependencyBranchCoverageGapTests
     [Trait("Category", "CI")]
     public Task Reports_OnTheServiceTypeWhenTheContextIsTheImplementation()
     {
-        return VerifyAsync(Net100WithEfCore, """
+        return VerifyAsync(TestReferences.Net100WithEfCore, """
             using Microsoft.EntityFrameworkCore;
             using Microsoft.Extensions.DependencyInjection;
             interface IStoreContext { }
@@ -143,7 +127,7 @@ public sealed class CaptiveDependencyBranchCoverageGapTests
     [Trait("Category", "CI")]
     public Task Reports_OnTheCallWhenTheContextTypeIsInferred()
     {
-        return VerifyAsync(Net100WithEfCore, """
+        return VerifyAsync(TestReferences.Net100WithEfCore, """
             using Microsoft.EntityFrameworkCore;
             using Microsoft.Extensions.DependencyInjection;
             class StoreContext : DbContext { }
@@ -168,7 +152,7 @@ public sealed class CaptiveDependencyBranchCoverageGapTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheContextLifetimeIsAConvertedConstant()
     {
-        return VerifyAsync(Net100WithEfCore, """
+        return VerifyAsync(TestReferences.Net100WithEfCore, """
             using Microsoft.EntityFrameworkCore;
             using Microsoft.Extensions.DependencyInjection;
             class StoreContext : DbContext { }
@@ -186,7 +170,7 @@ public sealed class CaptiveDependencyBranchCoverageGapTests
     [Trait("Category", "CI")]
     public Task Reports_OnTheCallWhenTheSingletonTypeComesFromAServiceKey()
     {
-        return VerifyAsync(Net100WithDi, """
+        return VerifyAsync(TestReferences.Net100WithDependencyInjection, """
             using Microsoft.Extensions.DependencyInjection;
             class Repository { }
             class Worker
@@ -214,7 +198,7 @@ public sealed class CaptiveDependencyBranchCoverageGapTests
     [Trait("Category", "CI")]
     public Task Silent_ForSingletonHelpersWithoutOneOrTwoTypeArguments()
     {
-        return VerifyAsync(Net100WithDi, """
+        return VerifyAsync(TestReferences.Net100WithDependencyInjection, """
             using Microsoft.Extensions.DependencyInjection;
             class Repository { }
             class Worker { public Worker(Repository repository) { } }

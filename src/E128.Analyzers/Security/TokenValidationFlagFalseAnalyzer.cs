@@ -107,11 +107,6 @@ public sealed class TokenValidationFlagFalseAnalyzer : DiagnosticAnalyzer
 
     private static bool IsFalseLiteral(ExpressionSyntax expression)
     {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression.IsKind(SyntaxKind.FalseLiteralExpression);
+        return ExpressionUnwrapper.Parentheses(expression).IsKind(SyntaxKind.FalseLiteralExpression);
     }
 }

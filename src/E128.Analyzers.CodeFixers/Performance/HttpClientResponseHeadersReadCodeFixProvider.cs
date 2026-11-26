@@ -25,15 +25,12 @@ public sealed class HttpClientResponseHeadersReadCodeFixProvider : E128CodeFixPr
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not InvocationExpressionSyntax invocation)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Add HttpCompletionOption.ResponseHeadersRead", nameof(HttpClientResponseHeadersReadCodeFixProvider), ct => InsertResponseHeadersReadAsync(context.Document, invocation, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Add HttpCompletionOption.ResponseHeadersRead",
+            nameof(HttpClientResponseHeadersReadCodeFixProvider),
+            (invocation, ct) => InsertResponseHeadersReadAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

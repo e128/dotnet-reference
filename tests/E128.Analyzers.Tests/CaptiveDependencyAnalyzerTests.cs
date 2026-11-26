@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,39 +7,23 @@ namespace E128.Analyzers.Tests;
 
 public sealed class CaptiveDependencyAnalyzerTests
 {
-    private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
-        .AddPackages([
-            new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.14"),
-            new PackageIdentity("Microsoft.Extensions.Hosting.Abstractions", "10.0.14")
-        ]);
-
-    private static readonly ReferenceAssemblies Net100WithEfCore = ReferenceAssemblies.Net.Net100
-        .AddPackages([
-            new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.14"),
-            new PackageIdentity("Microsoft.EntityFrameworkCore", "10.0.14")
-        ]);
-
     private static Task VerifyAsync(string code, params DiagnosticResult[] expected)
     {
-        return VerifyAsync(Net100WithDi, code, expected);
+        return VerifyAsync(TestReferences.Net100WithDependencyInjectionAndHosting, code, expected);
     }
 
     private static Task VerifyAsync(ReferenceAssemblies references, string code, params DiagnosticResult[] expected)
     {
         // Two descriptors share the E128154 id, so markup needs a rule for which one it names.
-        var test = new CSharpAnalyzerTest<CaptiveDependencyAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = references,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<CaptiveDependencyAnalyzer>(
+            code,
+            expected,
+            new AnalyzerTestOptions { References = references, MarkupOptions = MarkupOptions.UseFirstDescriptor });
     }
 
     private static Task VerifyEfCoreAsync(string code, params DiagnosticResult[] expected)
     {
-        return VerifyAsync(Net100WithEfCore, code, expected);
+        return VerifyAsync(TestReferences.Net100WithEfCore, code, expected);
     }
 
     [Fact]

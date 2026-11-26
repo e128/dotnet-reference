@@ -7,32 +7,10 @@ namespace E128.Analyzers.Tests;
 
 public sealed class AsyncDbIoBranchCoverageTests
 {
-    private const string Prefix = """
-                                  using System;
-                                  using System.Data;
-                                  using System.Data.Common;
-                                  using System.Threading.Tasks;
-
-                                  sealed class FakeConnection : DbConnection
-                                  {
-                                      public override string ConnectionString { get; set; } = string.Empty;
-                                      public override string Database => string.Empty;
-                                      public override string DataSource => string.Empty;
-                                      public override string ServerVersion => string.Empty;
-                                      public override ConnectionState State => ConnectionState.Closed;
-                                      public override void ChangeDatabase(string databaseName) { }
-                                      public override void Close() { }
-                                      public override void Open() { }
-                                      public void Ping() { }
-                                      protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
-                                      protected override DbCommand CreateDbCommand() => throw new NotSupportedException();
-                                  }
-                                  """;
-
     private static Task VerifyAsync(string code)
     {
         return AnalyzerTestRunner.VerifyAsync<AsyncDbIoAnalyzer>(
-            Prefix + "\n" + code,
+            TestStubs.AsyncDbIoFakeConnectionWithTaskUsing + "\n" + code,
             options: new AnalyzerTestOptions { MarkupOptions = MarkupOptions.UseFirstDescriptor });
     }
 
