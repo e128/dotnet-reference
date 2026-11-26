@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -323,9 +321,8 @@ public sealed partial class ImplicitStateMachineAnalyzerTests
     [Trait("Category", "CI")]
     public Task TwoFlagsCoWritten_ProjectEditorConfig_Fires()
     {
-        var test = new CSharpAnalyzerTest<ImplicitStateMachineAnalyzer, DefaultVerifier>
-        {
-            TestCode = """
+        return AnalyzerTestRunner.VerifyAsync<ImplicitStateMachineAnalyzer>(
+            """
                        sealed class {|E128218:Pair|}
                        {
                            private bool _a;
@@ -344,12 +341,7 @@ public sealed partial class ImplicitStateMachineAnalyzerTests
                            }
                        }
                        """,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-
-        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", "[*.cs]\ne128_min_state_flags = 2"));
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+            options: new AnalyzerTestOptions { AnalyzerConfig = ("/.editorconfig", "[*.cs]\ne128_min_state_flags = 2") });
     }
 
     [Fact]

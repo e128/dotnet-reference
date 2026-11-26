@@ -87,14 +87,10 @@ public sealed class PfxImportEphemeralKeySetAnalyzer : DiagnosticAnalyzer
             SyntaxKind.ObjectCreationExpression,
             SyntaxKind.ImplicitObjectCreationExpression);
 
-        var loaderTypes = MetadataTypes.Find(context.Compilation, LoaderMetadataName);
-        if (loaderTypes.IsEmpty)
-        {
-            return;
-        }
-
-        context.RegisterSyntaxNodeAction(
-            nodeContext => AnalyzeInvocation(nodeContext, loaderTypes, flagTypes, ephemeralKeySet),
+        _ = MetadataTypes.TryRegisterForTypes(
+            context,
+            LoaderMetadataName,
+            (nodeContext, loaderTypes) => AnalyzeInvocation(nodeContext, loaderTypes, flagTypes, ephemeralKeySet),
             SyntaxKind.InvocationExpression);
     }
 

@@ -26,7 +26,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProviderBranchCoverageGapTest
     [Trait("Category", "CI")]
     public Task NoFix_WhenAnOperandOfTheChainIsNotAStringTest()
     {
-        return VerifyNoFixAsync(
+        return CodeFixTestRunner.NoFixAsync<MultiStringEqualsOrChainAnalyzer, MultiStringEqualsOrChainCodeFixProvider>(
             """
             class C
             {
@@ -40,7 +40,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProviderBranchCoverageGapTest
     [Trait("Category", "CI")]
     public Task NoFix_WhenAnOperandTestsAnotherValue()
     {
-        return VerifyNoFixAsync(
+        return CodeFixTestRunner.NoFixAsync<MultiStringEqualsOrChainAnalyzer, MultiStringEqualsOrChainCodeFixProvider>(
             """
             class C
             {
@@ -54,7 +54,7 @@ public sealed class MultiStringEqualsOrChainCodeFixProviderBranchCoverageGapTest
     [Trait("Category", "CI")]
     public Task NoFix_WhenAnOperandUsesAnotherComparison()
     {
-        return VerifyNoFixAsync(
+        return CodeFixTestRunner.NoFixAsync<MultiStringEqualsOrChainAnalyzer, MultiStringEqualsOrChainCodeFixProvider>(
             """
             using System;
             class C

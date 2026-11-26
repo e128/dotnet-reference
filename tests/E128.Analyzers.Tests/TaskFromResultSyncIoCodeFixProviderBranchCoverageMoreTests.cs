@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,14 +9,14 @@ public sealed class TaskFromResultSyncIoCodeFixProviderBranchCoverageMoreTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<TaskFromResultSyncIoAnalyzer, TaskFromResultSyncIoCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            CompilerDiagnostics = CompilerDiagnostics.None,
-            NumberOfFixAllIterations = 1
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<TaskFromResultSyncIoAnalyzer, TaskFromResultSyncIoCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions
+            {
+                CompilerDiagnostics = CompilerDiagnostics.None,
+                FixAllIterations = 1
+            });
     }
 
     [Fact]

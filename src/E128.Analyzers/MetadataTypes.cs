@@ -43,4 +43,46 @@ internal static class MetadataTypes
                 syntaxKinds);
         }
     }
+
+    /// <summary>
+    ///     Registers one syntax action with every type whose metadata name resolves, and returns
+    ///     true. Returns false and registers nothing when the name has no match, so the caller
+    ///     bails as one decision.
+    /// </summary>
+    internal static bool TryRegisterForTypes(
+        CompilationStartAnalysisContext context,
+        string metadataName,
+        Action<SyntaxNodeAnalysisContext, ImmutableArray<INamedTypeSymbol>> action,
+        params SyntaxKind[] syntaxKinds)
+    {
+        return TryRegisterForTypes(context, [metadataName], action, syntaxKinds);
+    }
+
+    /// <summary>
+    ///     Registers one syntax action with all types whose metadata names resolve, and returns
+    ///     true. Returns false and registers nothing when any name has no match, so a rule that
+    ///     needs several types skips them together.
+    /// </summary>
+    internal static bool TryRegisterForTypes(
+        CompilationStartAnalysisContext context,
+        string[] metadataNames,
+        Action<SyntaxNodeAnalysisContext, ImmutableArray<INamedTypeSymbol>> action,
+        params SyntaxKind[] syntaxKinds)
+    {
+        var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+        foreach (var metadataName in metadataNames)
+        {
+            var types = Find(context.Compilation, metadataName);
+            if (types.IsEmpty)
+            {
+                return false;
+            }
+
+            builder.AddRange(types);
+        }
+
+        var resolved = builder.ToImmutable();
+        context.RegisterSyntaxNodeAction(nodeContext => action(nodeContext, resolved), syntaxKinds);
+        return true;
+    }
 }

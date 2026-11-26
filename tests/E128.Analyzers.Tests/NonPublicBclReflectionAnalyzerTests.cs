@@ -45,9 +45,8 @@ public sealed class NonPublicBclReflectionAnalyzerTests
     [Trait("Category", "CI")]
     public Task Reports_WhenTheTypeComesFromNetStandard()
     {
-        return new CSharpAnalyzerTest<NonPublicBclReflectionAnalyzer, DefaultVerifier>
-        {
-            TestCode = """
+        return AnalyzerTestRunner.VerifyAsync<NonPublicBclReflectionAnalyzer>(
+            """
                        using System.Reflection;
                        class C
                        {
@@ -57,8 +56,7 @@ public sealed class NonPublicBclReflectionAnalyzerTests
                            }
                        }
                        """,
-            ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20
-        }.RunAsync(TestContext.Current.CancellationToken);
+            options: new AnalyzerTestOptions { References = ReferenceAssemblies.NetStandard.NetStandard20 });
     }
 
     [Fact]

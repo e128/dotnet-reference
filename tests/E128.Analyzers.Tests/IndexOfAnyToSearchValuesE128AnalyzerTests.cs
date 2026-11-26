@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -18,13 +17,10 @@ public sealed class IndexOfAnyToSearchValuesE128AnalyzerTests
         ReferenceAssemblies referenceAssemblies,
         params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<IndexOfAnyToSearchValuesAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = referenceAssemblies
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<IndexOfAnyToSearchValuesAnalyzer>(
+            code,
+            expected,
+            new AnalyzerTestOptions { References = referenceAssemblies });
     }
 
     [Fact]

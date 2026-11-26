@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -63,9 +61,8 @@ public sealed class Sha256CreateObsoleteCodeFixTests
     [Trait("Category", "CI")]
     public Task NoFix_WhenNotChainedWithComputeHash()
     {
-        return new CSharpCodeFixTest<Sha256CreateObsoleteAnalyzer, Sha256CreateObsoleteCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = """
+        return CodeFixTestRunner.RunAsync<Sha256CreateObsoleteAnalyzer, Sha256CreateObsoleteCodeFixProvider>(
+            """
                        using System.Security.Cryptography;
                        class C
                        {
@@ -75,7 +72,7 @@ public sealed class Sha256CreateObsoleteCodeFixTests
                            }
                        }
                        """,
-            FixedCode = """
+            """
                         using System.Security.Cryptography;
                         class C
                         {
@@ -85,7 +82,6 @@ public sealed class Sha256CreateObsoleteCodeFixTests
                             }
                         }
                         """,
-            NumberOfFixAllInDocumentIterations = 0
-        }.RunAsync(TestContext.Current.CancellationToken);
+            options: new CodeFixTestOptions { FixAllInDocumentIterations = 0 });
     }
 }

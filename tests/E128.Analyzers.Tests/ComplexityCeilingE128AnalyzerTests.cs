@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
+using static E128.Analyzers.Tests.ComplexityCeilingTestHarness;
 
 namespace E128.Analyzers.Tests;
 
@@ -285,19 +285,6 @@ public sealed class ComplexityCeilingE128AnalyzerTests
                                                   }
                                               }
                                               """;
-
-    private static Task VerifyWithCeilingAsync(string ceiling, string code, params DiagnosticResult[] expected)
-    {
-        var test = new CSharpAnalyzerTest<ComplexityCeilingAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.AnalyzerConfigFiles.Add(
-            ("/.globalconfig", "is_global = true\ne128_max_complexity = " + ceiling));
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
-    }
 
     [Fact]
     [Trait("Category", "CI")]

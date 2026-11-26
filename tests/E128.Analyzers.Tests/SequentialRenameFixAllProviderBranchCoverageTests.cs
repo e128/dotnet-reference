@@ -3,8 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
@@ -132,9 +130,8 @@ public sealed class SequentialRenameFixAllProviderBranchCoverageTests
     [Trait("Category", "CI")]
     public Task FixAll_RenamesEveryViolationInOneDocument()
     {
-        return new CSharpCodeFixTest<FakeNamingViolationAnalyzer, NamingStyleCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = """
+        return CodeFixTestRunner.RunAsync<FakeNamingViolationAnalyzer, NamingStyleCodeFixProvider>(
+            """
                 class C
                 {
                     private int {|IDE1006:first|} = 0;
@@ -144,7 +141,7 @@ public sealed class SequentialRenameFixAllProviderBranchCoverageTests
                     public int Sum() => first + second + third;
                 }
                 """,
-            FixedCode = """
+            """
                 class C
                 {
                     private int _first = 0;
@@ -154,8 +151,6 @@ public sealed class SequentialRenameFixAllProviderBranchCoverageTests
                     public int Sum() => _first + _second + _third;
                 }
                 """,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync(TestContext.Current.CancellationToken);
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 }

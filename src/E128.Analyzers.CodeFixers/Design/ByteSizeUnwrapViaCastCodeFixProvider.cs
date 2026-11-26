@@ -29,11 +29,13 @@ public sealed class ByteSizeUnwrapViaCastCodeFixProvider : E128CodeFixProviderBa
             return;
         }
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(context.Document, context.CancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return;
         }
+
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         if (IsNarrowingCast(semanticModel, castExpression, memberAccess, context.CancellationToken))
         {

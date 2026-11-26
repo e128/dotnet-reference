@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -10,13 +8,10 @@ public sealed class MultiStringEqualsOrChainCodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode, int fixAllIterations = 1)
     {
-        return new CSharpCodeFixTest<MultiStringEqualsOrChainAnalyzer, MultiStringEqualsOrChainCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = fixAllIterations
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<MultiStringEqualsOrChainAnalyzer, MultiStringEqualsOrChainCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { FixAllIterations = fixAllIterations });
     }
 
     [Fact]

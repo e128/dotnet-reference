@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,14 +9,11 @@ public sealed class AsyncFileIoCodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<AsyncFileIoAnalyzer, AsyncFileIoCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor,
-            NumberOfFixAllIterations = 1
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<AsyncFileIoAnalyzer, AsyncFileIoCodeFixProvider>(
+            source,
+            fixedCode,
+            markupOptions: MarkupOptions.UseFirstDescriptor,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     /// <summary>

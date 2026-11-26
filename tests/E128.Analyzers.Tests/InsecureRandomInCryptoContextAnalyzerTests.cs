@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Security;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -15,14 +14,7 @@ public sealed class InsecureRandomInCryptoContextAnalyzerTests
 
     private static Task VerifyAsync(string[] sources, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<InsecureRandomInCryptoContextAnalyzer, DefaultVerifier> { ReferenceAssemblies = ReferenceAssemblies.Net.Net100 };
-        foreach (var source in sources)
-        {
-            test.TestState.Sources.Add(source);
-        }
-
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<InsecureRandomInCryptoContextAnalyzer>(sources, expected);
     }
 
     [Fact]

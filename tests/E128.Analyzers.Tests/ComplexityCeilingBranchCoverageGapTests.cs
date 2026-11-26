@@ -1,18 +1,12 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
+using static E128.Analyzers.Tests.ComplexityCeilingTestHarness;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ComplexityCeilingBranchCoverageGapTests
 {
-    private static DiagnosticResult Warning(int line, int column)
-    {
-        return new DiagnosticResult("E128152", DiagnosticSeverity.Warning).WithLocation(line, column);
-    }
-
     [Fact]
     [Trait("Category", "CI")]
     public Task Loop_Flagged_WhenTheInnerForHasNoCondition()

@@ -281,7 +281,7 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
     {
         count = 0;
 
-        if (Unwrap(condition) is not BinaryExpressionSyntax binary)
+        if (ExpressionUnwrapper.Parentheses(condition) is not BinaryExpressionSyntax binary)
         {
             return false;
         }
@@ -352,7 +352,10 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
         count = 0;
 
         if (!TryReadBound(binary, model, cancellationToken, out var capped, out var limit, out var inclusive)
-            || !string.Equals(Unwrap(capped).ToString(), Unwrap(size).ToString(), StringComparison.Ordinal))
+            || !string.Equals(
+                ExpressionUnwrapper.Parentheses(capped).ToString(),
+                ExpressionUnwrapper.Parentheses(size).ToString(),
+                StringComparison.Ordinal))
         {
             return false;
         }
@@ -411,16 +414,6 @@ public sealed class StackAllocSafetyAnalyzer : DiagnosticAnalyzer
         count = limit;
         inclusive = kind is SyntaxKind.GreaterThanOrEqualExpression;
         return kind is SyntaxKind.GreaterThanExpression or SyntaxKind.GreaterThanOrEqualExpression;
-    }
-
-    private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
     }
 
     private static bool TryGetSize(ITypeSymbol type, out int size)

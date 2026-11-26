@@ -38,12 +38,7 @@ internal static class AsyncContextSyntaxHelper
 
     internal static bool HasAsyncSuffixSyntaxName(InvocationExpressionSyntax invocation)
     {
-        var syntaxName = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
+        var syntaxName = InvocationNames.GetName(invocation);
 
         return syntaxName is not null && syntaxName.EndsWith("Async", StringComparison.Ordinal);
     }

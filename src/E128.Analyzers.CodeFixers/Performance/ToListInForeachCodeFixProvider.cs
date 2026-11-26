@@ -18,15 +18,12 @@ public sealed class ToListInForeachCodeFixProvider : E128CodeFixProviderBase
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not InvocationExpressionSyntax)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Replace .ToList() with .ToArray()", nameof(ToListInForeachCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Replace .ToList() with .ToArray()",
+            nameof(ToListInForeachCodeFixProvider),
+            (invocation, ct) => ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

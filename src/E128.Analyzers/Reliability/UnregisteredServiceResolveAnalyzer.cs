@@ -140,7 +140,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         ConcurrentBag<string> registeredOpenGenerics)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        var methodName = GetInvokedMethodName(invocation);
+        var methodName = InvocationNames.GetName(invocation);
 
         if (methodName is null || !IsRegistrationMethod(methodName))
         {
@@ -177,7 +177,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
         ConcurrentBag<(Location Location, INamedTypeSymbol ServiceType)> resolveCandidates)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        var methodName = GetInvokedMethodName(invocation);
+        var methodName = InvocationNames.GetName(invocation);
 
         if (methodName is null || !ResolveMethodNames.Contains(methodName))
         {
@@ -243,7 +243,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (GetInvokedMethodName(invocation) is not "AddHttpClient")
+        if (InvocationNames.GetName(invocation) is not "AddHttpClient")
         {
             return;
         }
@@ -271,7 +271,7 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (GetInvokedMethodName(invocation) is not "CreateClient")
+        if (InvocationNames.GetName(invocation) is not "CreateClient")
         {
             return;
         }
@@ -415,18 +415,8 @@ public sealed class UnregisteredServiceResolveAnalyzer : DiagnosticAnalyzer
 
         return enclosing is not null
                && enclosing.Parent is ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax invocation }
-               && GetInvokedMethodName(invocation) is { } methodName
+               && InvocationNames.GetName(invocation) is { } methodName
                && IsRegistrationMethod(methodName);
-    }
-
-    private static string? GetInvokedMethodName(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text,
-            IdentifierNameSyntax identifier => identifier.Identifier.Text,
-            _ => null
-        };
     }
 
     private static bool IsRegistrationMethod(string methodName)

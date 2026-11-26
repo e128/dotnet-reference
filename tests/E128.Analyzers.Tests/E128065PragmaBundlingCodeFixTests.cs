@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,15 +9,14 @@ public sealed class E128065PragmaBundlingCodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        var test = new CSharpCodeFixTest<PragmaBundlingAnalyzer, PragmaBundlingCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck
-        };
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<PragmaBundlingAnalyzer, PragmaBundlingCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions
+            {
+                FixAllIterations = 1,
+                TestBehaviors = TestBehaviors.SkipSuppressionCheck
+            });
     }
 
     [Fact]

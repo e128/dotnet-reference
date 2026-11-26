@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -120,13 +118,10 @@ public sealed class NamingStyleCodeFixTests
                                  }
                                  """;
 
-        return new CSharpCodeFixTest<FakeNamingViolationAnalyzer, NamingStyleCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<FakeNamingViolationAnalyzer, NamingStyleCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     [Fact]
@@ -147,13 +142,10 @@ public sealed class NamingStyleCodeFixTests
                                  }
                                  """;
 
-        return new CSharpCodeFixTest<FakeNamingViolationAnalyzer, NamingStyleCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<FakeNamingViolationAnalyzer, NamingStyleCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     [Fact]
@@ -178,12 +170,9 @@ public sealed class NamingStyleCodeFixTests
                                  }
                                  """;
 
-        return new CSharpCodeFixTest<FakeNamingViolationAnalyzer, NamingStyleCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<FakeNamingViolationAnalyzer, NamingStyleCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 }

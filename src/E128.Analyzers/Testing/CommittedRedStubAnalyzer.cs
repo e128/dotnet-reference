@@ -41,14 +41,11 @@ public sealed class CommittedRedStubAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        var assertTypes = context.Compilation.GetTypesByMetadataName("Xunit.Assert");
-
-        if (assertTypes.IsDefaultOrEmpty)
-        {
-            return;
-        }
-
-        context.RegisterSyntaxNodeAction(ctx => AnalyzeMethod(ctx, assertTypes), SyntaxKind.MethodDeclaration);
+        _ = MetadataTypes.TryRegisterForTypes(
+            context,
+            "Xunit.Assert",
+            AnalyzeMethod,
+            SyntaxKind.MethodDeclaration);
     }
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ImmutableArray<INamedTypeSymbol> assertTypes)

@@ -98,17 +98,14 @@ public sealed class MultiStringEqualsOrChainCodeFixProvider : E128CodeFixProvide
         TypeDeclarationSyntax typeDecl,
         CancellationToken cancellationToken)
     {
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
 
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
+        var root = rootAndModel.Value.Root;
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         if (!TryExtractChainInfo(semanticModel, orExpr, cancellationToken,
                 out var pivot, out var literals))

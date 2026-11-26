@@ -153,12 +153,7 @@ public sealed class ParallelCollectionIndexAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var methodName = candidate.Expression switch
-            {
-                MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-                IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-                _ => null
-            };
+            var methodName = InvocationNames.GetName(candidate);
 
             if (string.Equals(methodName, "Range", StringComparison.Ordinal))
             {

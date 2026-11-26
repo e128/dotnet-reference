@@ -77,12 +77,7 @@ public sealed class WhenAnyResultUnobservedAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         INamedTypeSymbol taskType)
     {
-        var name = invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
+        var name = InvocationNames.GetName(invocation);
 
         if (!string.Equals(name, "WhenAny", StringComparison.Ordinal))
         {

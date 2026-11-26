@@ -55,7 +55,7 @@ public sealed class PollingLoopNoTokenAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol cancellationToken)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        if (!string.Equals(GetInvokedName(invocation), "Delay", StringComparison.Ordinal))
+        if (!string.Equals(InvocationNames.GetName(invocation), "Delay", StringComparison.Ordinal))
         {
             return;
         }
@@ -126,15 +126,5 @@ public sealed class PollingLoopNoTokenAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static string? GetInvokedName(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
-            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-            _ => null
-        };
     }
 }

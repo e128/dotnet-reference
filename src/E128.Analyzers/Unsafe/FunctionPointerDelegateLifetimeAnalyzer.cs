@@ -34,14 +34,10 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start =>
         {
-            var marshal = MetadataTypes.Find(start.Compilation, "System.Runtime.InteropServices.Marshal");
-            if (marshal.IsEmpty)
-            {
-                return;
-            }
-
-            start.RegisterSyntaxNodeAction(
-                node => Analyze(node, marshal),
+            _ = MetadataTypes.TryRegisterForTypes(
+                start,
+                "System.Runtime.InteropServices.Marshal",
+                Analyze,
                 SyntaxKind.InvocationExpression);
         });
     }

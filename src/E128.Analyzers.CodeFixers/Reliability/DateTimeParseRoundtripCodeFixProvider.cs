@@ -18,15 +18,12 @@ public sealed class DateTimeParseRoundtripCodeFixProvider : E128CodeFixProviderB
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not InvocationExpressionSyntax)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Add DateTimeStyles.RoundtripKind", nameof(DateTimeParseRoundtripCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Add DateTimeStyles.RoundtripKind",
+            nameof(DateTimeParseRoundtripCodeFixProvider),
+            (invocation, ct) => ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

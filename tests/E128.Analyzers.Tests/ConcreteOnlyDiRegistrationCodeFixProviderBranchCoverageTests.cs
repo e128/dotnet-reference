@@ -1,28 +1,24 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
 
 public sealed class ConcreteOnlyDiRegistrationCodeFixProviderBranchCoverageTests
 {
-    private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
-        .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
-
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
         return CodeFixTestRunner.RunAsync<ConcreteOnlyDiRegistrationAnalyzer, ConcreteOnlyDiRegistrationCodeFixProvider>(
             source,
             fixedCode,
-            references: Net100WithDi);
+            references: TestReferences.Net100WithDependencyInjection);
     }
 
     private static Task VerifyNoFixAsync(string source)
     {
         return CodeFixTestRunner.NoFixAsync<ConcreteOnlyDiRegistrationAnalyzer, ConcreteOnlyDiRegistrationCodeFixProvider>(
             source,
-            references: Net100WithDi);
+            references: TestReferences.Net100WithDependencyInjection);
     }
 
     [Fact]

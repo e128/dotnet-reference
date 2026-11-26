@@ -21,15 +21,12 @@ public sealed class NullForgivingOperatorCodeFixProvider : E128CodeFixProviderBa
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not PostfixUnaryExpressionSyntax)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Remove null-forgiving operator", nameof(NullForgivingOperatorCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
+        RegisterNodeFix<PostfixUnaryExpressionSyntax>(
+            context,
+            root,
+            "Remove null-forgiving operator",
+            nameof(NullForgivingOperatorCodeFixProvider),
+            (postfixUnary, ct) => ApplyFixAsync(context.Document, postfixUnary, ct));
 
         return Task.CompletedTask;
     }

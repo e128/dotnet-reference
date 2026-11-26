@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -9,24 +8,14 @@ namespace E128.Analyzers.Tests;
 public sealed class UnregisteredServiceResolveAnalyzerTests
 {
 
-    private static AnalyzerTestOptions Options => new() { References = Net100WithDiAndHttp, MarkupOptions = MarkupOptions.UseFirstDescriptor };
-
-    private static readonly ReferenceAssemblies Net100WithDiAndHttp = ReferenceAssemblies.Net.Net100
-        .AddPackages([
-                         new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6"),
-                         new PackageIdentity("Microsoft.Extensions.Http", "10.0.6")
-                     ]);
+    private static AnalyzerTestOptions Options => new() { References = TestReferences.Net100WithDependencyInjectionAndHttp, MarkupOptions = MarkupOptions.UseFirstDescriptor };
 
     private static Task VerifyWithoutHttpAsync(string code, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<UnregisteredServiceResolveAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor
-        };
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>(
+            code,
+            expected,
+            new AnalyzerTestOptions { MarkupOptions = MarkupOptions.UseFirstDescriptor });
     }
 
     private static Task VerifyWithRegisteredServicesAsync(
@@ -34,16 +23,15 @@ public sealed class UnregisteredServiceResolveAnalyzerTests
         string code,
         params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<UnregisteredServiceResolveAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithDiAndHttp,
-            MarkupOptions = MarkupOptions.UseFirstDescriptor
-        };
-        test.TestState.AnalyzerConfigFiles.Add(
-            ("/.editorconfig", "is_global = true\ne128_registered_services = " + registeredServices));
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<UnregisteredServiceResolveAnalyzer>(
+            code,
+            expected,
+            new AnalyzerTestOptions
+            {
+                References = TestReferences.Net100WithDependencyInjectionAndHttp,
+                MarkupOptions = MarkupOptions.UseFirstDescriptor,
+                AnalyzerConfig = ("/.editorconfig", "is_global = true\ne128_registered_services = " + registeredServices)
+            });
     }
 
     #region Fires

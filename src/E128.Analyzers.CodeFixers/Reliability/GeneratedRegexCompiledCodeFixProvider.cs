@@ -19,37 +19,30 @@ public sealed class GeneratedRegexCompiledCodeFixProvider : E128CodeFixProviderB
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not AttributeSyntax)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Remove redundant RegexOptions.Compiled", nameof(GeneratedRegexCompiledCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
+        RegisterNodeFix<AttributeSyntax>(
+            context,
+            root,
+            "Remove redundant RegexOptions.Compiled",
+            nameof(GeneratedRegexCompiledCodeFixProvider),
+            (attribute, ct) => ApplyFixAsync(context.Document, attribute, ct));
 
         return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyFixAsync(
         Document document,
-        SyntaxNode attributeNode,
+        AttributeSyntax attribute,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
 
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
-        {
-            return document;
-        }
+        var root = rootAndModel.Value.Root;
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
-        var attribute = (AttributeSyntax)attributeNode;
         if (attribute.ArgumentList is null)
         {
             return document;

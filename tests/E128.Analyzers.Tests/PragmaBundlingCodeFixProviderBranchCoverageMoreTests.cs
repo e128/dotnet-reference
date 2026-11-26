@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -8,18 +7,16 @@ namespace E128.Analyzers.Tests;
 
 public sealed class PragmaBundlingCodeFixProviderBranchCoverageMoreTests
 {
-    private static CSharpCodeFixTest<PragmaBundlingAnalyzer, PragmaBundlingCodeFixProvider, DefaultVerifier> CreateTest(
-        string source,
-        string fixedCode)
+    private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        return new CSharpCodeFixTest<PragmaBundlingAnalyzer, PragmaBundlingCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1,
-            TestBehaviors = TestBehaviors.SkipSuppressionCheck,
-        };
+        return CodeFixTestRunner.RunAsync<PragmaBundlingAnalyzer, PragmaBundlingCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions
+            {
+                FixAllIterations = 1,
+                TestBehaviors = TestBehaviors.SkipSuppressionCheck,
+            });
     }
 
     [Fact]
@@ -39,6 +36,6 @@ public sealed class PragmaBundlingCodeFixProviderBranchCoverageMoreTests
                                  class Foo { }
                                  """;
 
-        return CreateTest(source, fixedCode).RunAsync(TestContext.Current.CancellationToken);
+        return VerifyFixAsync(source, fixedCode);
     }
 }

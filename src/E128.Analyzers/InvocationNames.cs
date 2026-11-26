@@ -17,4 +17,18 @@ internal static class InvocationNames
             _ => null,
         };
     }
+
+    /// <summary>
+    ///     Returns the called method name for both `Type.Method(...)` and a bare `Method(...)`.
+    ///     A generic invocation such as `Method&lt;int&gt;(...)` returns null.
+    /// </summary>
+    internal static string? GetName(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null,
+        };
+    }
 }

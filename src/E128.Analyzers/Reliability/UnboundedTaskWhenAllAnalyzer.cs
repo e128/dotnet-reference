@@ -40,17 +40,11 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static compilationContext =>
-        {
-            var taskType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
-            if (taskType is null)
-            {
-                return;
-            }
-
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, taskType),
-                SyntaxKind.InvocationExpression);
-        });
+            MetadataTypes.RegisterForType(
+                compilationContext,
+                "System.Threading.Tasks.Task",
+                AnalyzeInvocation,
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol taskType)

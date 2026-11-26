@@ -22,18 +22,17 @@ public sealed class StaleReferenceAssembliesCodeFixProvider : E128CodeFixProvide
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-        if (node is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return Task.CompletedTask;
-        }
-
-        var targetVersion = diagnostic.Properties.GetValueOrDefault(StaleReferenceAssembliesAnalyzer.MinimumVersionOptionKey, "100");
+        var targetVersion = context.Diagnostics[0]
+            .Properties.GetValueOrDefault(StaleReferenceAssembliesAnalyzer.MinimumVersionOptionKey, "100");
 
         var newName = $"Net{targetVersion}";
 
-        CodeFixRegistration.Register(context, diagnostic, $"Replace with ReferenceAssemblies.Net.{newName}", StaleReferenceAssembliesAnalyzer.DiagnosticId, ct => ReplaceVersionAsync(context.Document, root, memberAccess, newName, ct));
+        RegisterNodeFix<MemberAccessExpressionSyntax>(
+            context,
+            root,
+            $"Replace with ReferenceAssemblies.Net.{newName}",
+            StaleReferenceAssembliesAnalyzer.DiagnosticId,
+            (memberAccess, ct) => ReplaceVersionAsync(context.Document, root, memberAccess, newName, ct));
 
         return Task.CompletedTask;
     }

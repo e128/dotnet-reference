@@ -18,15 +18,12 @@ public sealed class EmptyStringLiteralCodeFixProvider : E128CodeFixProviderBase
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not LiteralExpressionSyntax)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Replace \"\" with string.Empty", nameof(EmptyStringLiteralCodeFixProvider), ct => ApplyFixAsync(context.Document, node, ct));
+        RegisterNodeFix<LiteralExpressionSyntax>(
+            context,
+            root,
+            "Replace \"\" with string.Empty",
+            nameof(EmptyStringLiteralCodeFixProvider),
+            (emptyLiteral, ct) => ApplyFixAsync(context.Document, emptyLiteral, ct));
 
         return Task.CompletedTask;
     }

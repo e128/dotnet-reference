@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -12,19 +11,10 @@ public sealed class DllImportToLibraryImportAnalyzerBranchCoverageMoreTests
 
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        var test = new CSharpCodeFixTest<
-            DllImportToLibraryImportAnalyzer,
-            DllImportToLibraryImportCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            CompilerDiagnostics = CompilerDiagnostics.None,
-        };
-        test.SolutionTransforms.Add(CodeFixTestRunner.AllowUnsafe);
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<DllImportToLibraryImportAnalyzer, DllImportToLibraryImportCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { CompilerDiagnostics = CompilerDiagnostics.None });
     }
 
     [Fact]

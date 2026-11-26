@@ -39,17 +39,11 @@ public sealed class ElementLoopToBulkSpanAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start =>
-        {
-            var spanType = start.Compilation.GetTypeByMetadataName("System.Span`1");
-            if (spanType is null)
-            {
-                return;
-            }
-
-            start.RegisterSyntaxNodeAction(
-                node => Analyze(node, spanType),
-                SyntaxKind.ForStatement);
-        });
+            MetadataTypes.RegisterForType(
+                start,
+                "System.Span`1",
+                Analyze,
+                SyntaxKind.ForStatement));
     }
 
     private static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol spanType)

@@ -44,14 +44,10 @@ public sealed class UnsafeCopyReferenceTypeAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start =>
         {
-            var unsafeType = MetadataTypes.Find(start.Compilation, MetadataTypes.Unsafe);
-            if (unsafeType.IsEmpty)
-            {
-                return;
-            }
-
-            start.RegisterSyntaxNodeAction(
-                node => Analyze(node, unsafeType),
+            _ = MetadataTypes.TryRegisterForTypes(
+                start,
+                MetadataTypes.Unsafe,
+                Analyze,
                 SyntaxKind.InvocationExpression);
         });
     }

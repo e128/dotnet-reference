@@ -6,23 +6,9 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SaveChangesInLoopBranchCoverageTests
 {
-    private const string EfStub = """
-        namespace Microsoft.EntityFrameworkCore
-        {
-            public class DbContext
-            {
-                public virtual int SaveChanges() => 0;
-            }
-
-            public class DbSet<T>
-            {
-            }
-        }
-        """;
-
     private static Task VerifyAsync(string code)
     {
-        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code + "\n" + EfStub);
+        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code + "\n" + TestStubs.SaveChangesInLoopEfStub);
     }
 
     [Fact]

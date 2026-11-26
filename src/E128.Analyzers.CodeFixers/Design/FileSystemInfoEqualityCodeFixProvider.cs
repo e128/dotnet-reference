@@ -26,11 +26,13 @@ public sealed class FileSystemInfoEqualityCodeFixProvider : E128CodeFixProviderB
             return;
         }
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(context.Document, context.CancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return;
         }
+
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         if (!IsFileSystemInfoOperand(binary.Left, semanticModel, context.CancellationToken)
             || !IsFileSystemInfoOperand(binary.Right, semanticModel, context.CancellationToken))

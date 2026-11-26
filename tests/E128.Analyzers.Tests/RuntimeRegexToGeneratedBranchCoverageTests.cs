@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -12,16 +11,10 @@ public sealed class RuntimeRegexToGeneratedBranchCoverageTests
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
         // The fixed code needs the GeneratedRegex source generator, which the test harness does not run.
-        return new CSharpCodeFixTest<
-            RuntimeRegexToGeneratedAnalyzer,
-            RuntimeRegexToGeneratedCodeFixProvider,
-            DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            CompilerDiagnostics = CompilerDiagnostics.None,
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<RuntimeRegexToGeneratedAnalyzer, RuntimeRegexToGeneratedCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { CompilerDiagnostics = CompilerDiagnostics.None });
     }
 
     private static Task VerifyNoFixAsync(string source)

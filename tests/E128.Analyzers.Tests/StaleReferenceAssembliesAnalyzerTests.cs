@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Threading.Tasks;
 using E128.Analyzers.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -10,22 +9,18 @@ namespace E128.Analyzers.Tests;
 public sealed class StaleReferenceAssembliesAnalyzerTests
 {
 
-    private static AnalyzerTestOptions Options => new() { References = Net100WithTesting };
-
-    private static readonly ReferenceAssemblies Net100WithTesting = ReferenceAssemblies.Net.Net100
-        .AddPackages([new PackageIdentity("Microsoft.CodeAnalysis.CSharp.Analyzer.Testing", "1.1.3")]);
+    private static AnalyzerTestOptions Options => new() { References = TestReferences.Net100WithAnalyzerTesting };
 
     private static Task VerifyWithMinimumVersionAsync(int minimumVersion, string code, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<StaleReferenceAssembliesAnalyzer, DefaultVerifier>
-        {
-            TestCode = code,
-            ReferenceAssemblies = Net100WithTesting
-        };
-        test.TestState.AnalyzerConfigFiles.Add(
-            ("/.globalconfig", $"is_global = true\ne128_minimum_framework_version = {minimumVersion.ToString(CultureInfo.InvariantCulture)}"));
-        test.ExpectedDiagnostics.AddRange(expected);
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<StaleReferenceAssembliesAnalyzer>(
+            code,
+            expected,
+            new AnalyzerTestOptions
+            {
+                References = TestReferences.Net100WithAnalyzerTesting,
+                AnalyzerConfig = ("/.globalconfig", $"is_global = true\ne128_minimum_framework_version = {minimumVersion.ToString(CultureInfo.InvariantCulture)}")
+            });
     }
 
     #region Does not fire

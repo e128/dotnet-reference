@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -117,14 +115,9 @@ public sealed class GeneratedRegexTimeoutE128CodeFixTests
                                 """;
 
         // A positional argument cannot follow a named one, so the appended pair would not compile.
-        var test = new CSharpCodeFixTest<GeneratedRegexAnalyzer, GeneratedRegexTimeoutCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllInDocumentIterations = 0
-        };
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<GeneratedRegexAnalyzer, GeneratedRegexTimeoutCodeFixProvider>(
+            source,
+            source,
+            options: new CodeFixTestOptions { FixAllInDocumentIterations = 0 });
     }
 }

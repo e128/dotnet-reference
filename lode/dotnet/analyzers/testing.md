@@ -1,6 +1,6 @@
 # Analyzer Testing
 
-*Updated: 2026-11-18T16:45:38Z*
+*Updated: 2026-11-26T15:24:23Z*
 
 How a test drives an analyzer and a code fix. The harness types live in
 `Microsoft.CodeAnalysis.CSharp.Testing`. The repo wrapper lives in
@@ -131,10 +131,18 @@ confirm the test count in the run output.
   its place only when it injects setup the call cannot express: a stub preamble,
   a reference set, a language version, or an options value tied to a parameter.
   A helper that only renames the call is deleted.
-- No test file builds `CSharpAnalyzerTest` itself.
+- No test file builds `CSharpAnalyzerTest` itself. The recorded exceptions need
+  setup the options do not cover: extra projects with their own reference
+  assemblies, an `OutputKind` change, analyzer config files on a fixer test, and
+  an empty metadata reference for the fail-closed path.
 - Route a code fix test through `CodeFixTestRunner.RunAsync` for a fix and
-  `CodeFixTestRunner.NoFixAsync` for a decline.
-- The shared stub types live in `tests/E128.Analyzers.Tests/TestStubs.cs`.
+  `CodeFixTestRunner.NoFixAsync` for a decline. `CodeFixTestOptions` carries the
+  compiler-diagnostics, test-behavior, equivalence-key, action-index,
+  unsafe-compilation, and fix-all-iteration settings.
+- The shared stub types live in `tests/E128.Analyzers.Tests/TestStubs.cs`. The
+  shared `ReferenceAssemblies` sets live in `tests/E128.Analyzers.Tests/TestReferences.cs`.
+  A test takes its reference set from `TestReferences` instead of declaring a
+  package list inline, so one version pin covers every consumer.
 - `ReferenceAssemblies` default to the version in `tests/.globalconfig` through
   `e128_minimum_framework_version`.
 - `SupportedDiagnosticsCoverageTests` sweeps every analyzer type by reflection

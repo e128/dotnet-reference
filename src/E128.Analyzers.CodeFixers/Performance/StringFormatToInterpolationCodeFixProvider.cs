@@ -31,11 +31,13 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
             return;
         }
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(context.Document, context.CancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return;
         }
+
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         var interpolated = BuildFromInvocation(invocation, semanticModel, context.CancellationToken);
         if (interpolated is null)

@@ -32,11 +32,13 @@ public sealed class ReadonlyFieldLoopHoistCodeFixProvider : E128CodeFixProviderB
             return;
         }
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(context.Document, context.CancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return;
         }
+
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         var match = ReadonlyFieldLoopHoistAnalyzer.TryMatchHoist(loop, semanticModel, context.CancellationToken);
         if (match is null)
@@ -138,7 +140,7 @@ public sealed class ReadonlyFieldLoopHoistCodeFixProvider : E128CodeFixProviderB
         return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(typeName)
                     .WithVariables(SyntaxFactory.SingletonSeparatedList(declarator)))
-            .WithLeadingTrivia(IndentationTrivia(loop))
+            .WithLeadingTrivia(FixSyntax.AnchorLeadingTrivia(loop))
             .WithTrailingTrivia(SyntaxFactory.LineFeed)
             .WithAdditionalAnnotations(Formatter.Annotation);
     }
@@ -164,19 +166,5 @@ public sealed class ReadonlyFieldLoopHoistCodeFixProvider : E128CodeFixProviderB
         }
 
         return block.WithStatements(SyntaxFactory.List(statements));
-    }
-
-    /// <summary>
-    ///     Copies only the line break and the indentation of the anchor line. Copying the whole
-    ///     leading list would repeat a comment that sits above the anchor on the inserted line.
-    /// </summary>
-    private static SyntaxTriviaList IndentationTrivia(SyntaxNode anchor)
-    {
-        var indent = SyntaxFactory.Whitespace(FixSyntax.TrailingWhitespace(anchor.GetLeadingTrivia()).ToString());
-        var previous = anchor.GetFirstToken().GetPreviousToken();
-
-        return !previous.IsKind(SyntaxKind.None) && !previous.TrailingTrivia.Any(SyntaxKind.EndOfLineTrivia)
-            ? [SyntaxFactory.LineFeed, indent]
-            : [indent];
     }
 }

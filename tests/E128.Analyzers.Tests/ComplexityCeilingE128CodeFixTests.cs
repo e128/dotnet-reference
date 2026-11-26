@@ -1,10 +1,8 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
+using static E128.Analyzers.Tests.ComplexityCeilingTestHarness;
 
 namespace E128.Analyzers.Tests;
 
@@ -116,35 +114,6 @@ public sealed class ComplexityCeilingE128CodeFixTests
             """,
             Warning(7, 13),
             Warning(9, 17));
-    }
-
-    private static Task VerifySuppressionAsync(string source, string fixedCode, DiagnosticResult expected)
-    {
-        return CodeFixTestRunner.RunAsync<ComplexityCeilingAnalyzer, ComplexityCeilingSuppressionCodeFixProvider>(
-            source,
-            fixedCode,
-            expected: [expected]);
-    }
-
-    private static Task VerifyMembershipAsync(string source, string fixedCode, params DiagnosticResult[] expected)
-    {
-        return CodeFixTestRunner.RunAsync<ComplexityCeilingAnalyzer, ComplexityCeilingMembershipScanCodeFixProvider>(
-            source,
-            fixedCode,
-            expected: expected,
-            options: new CodeFixTestOptions { FixAllIterations = 1 });
-    }
-
-    private static Task VerifyNoMembershipAsync(string source, params DiagnosticResult[] expected)
-    {
-        return CodeFixTestRunner.NoFixAsync<ComplexityCeilingAnalyzer, ComplexityCeilingMembershipScanCodeFixProvider>(
-            source,
-            expected: expected);
-    }
-
-    private static DiagnosticResult Warning(int line, int column)
-    {
-        return new DiagnosticResult("E128152", DiagnosticSeverity.Warning).WithLocation(line, column);
     }
 
     [Fact]
@@ -418,29 +387,24 @@ public sealed class ComplexityCeilingE128CodeFixTests
     [Trait("Category", "CI")]
     public Task ComplexityCeilingSuppressionCodeFix_EmitsReason_E128047Accepts()
     {
-        var test = new CSharpAnalyzerTest<SuppressionAuditAnalyzer, DefaultVerifier>
-        {
-            TestCode = $$"""
-                         class C
-                         {
-                             void M(string[] items)
-                             {
-                                 {{ComplexityCeilingSuppressionCodeFixProvider.DisableDirective}}
-                                 foreach (var a in items)
-                                 {
-                                     foreach (var b in items)
-                                     {
-                                         _ = a.Length + b.Length;
-                                     }
-                                 }
-                                 {{ComplexityCeilingSuppressionCodeFixProvider.RestoreDirective}}
-                             }
-                         }
-                         """,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return AnalyzerTestRunner.VerifyAsync<SuppressionAuditAnalyzer>(
+            $$"""
+            class C
+            {
+                void M(string[] items)
+                {
+                    {{ComplexityCeilingSuppressionCodeFixProvider.DisableDirective}}
+                    foreach (var a in items)
+                    {
+                        foreach (var b in items)
+                        {
+                            _ = a.Length + b.Length;
+                        }
+                    }
+                    {{ComplexityCeilingSuppressionCodeFixProvider.RestoreDirective}}
+                }
+            }
+            """);
     }
 
     [Fact]

@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -94,12 +92,9 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixTests
                               }
                               """;
 
-        return new CSharpCodeFixTest<StaticReadonlyFrozenCollectionAnalyzer, StaticReadonlyFrozenCollectionCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllInDocumentIterations = 0
-        }.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<StaticReadonlyFrozenCollectionAnalyzer, StaticReadonlyFrozenCollectionCodeFixProvider>(
+            source,
+            source,
+            options: new CodeFixTestOptions { FixAllInDocumentIterations = 0 });
     }
 }

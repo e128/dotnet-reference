@@ -19,15 +19,12 @@ public sealed class OrderByFirstCodeFixProvider : E128CodeFixProviderBase
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not InvocationExpressionSyntax outerInvocation)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Replace with MinBy/MaxBy", nameof(OrderByFirstCodeFixProvider), ct => ApplyFixAsync(context.Document, outerInvocation, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Replace with MinBy/MaxBy",
+            nameof(OrderByFirstCodeFixProvider),
+            (outerInvocation, ct) => ApplyFixAsync(context.Document, outerInvocation, ct));
 
         return Task.CompletedTask;
     }

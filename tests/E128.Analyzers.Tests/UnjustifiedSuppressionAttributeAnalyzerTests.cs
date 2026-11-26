@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Style;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
@@ -96,9 +95,8 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
     [Trait("Category", "CI")]
     public Task ExcludeFromCodeCoverageWithoutJustificationProperty_Silent()
     {
-        return new CSharpAnalyzerTest<UnjustifiedSuppressionAttributeAnalyzer, DefaultVerifier>
-        {
-            TestCode = """
+        return AnalyzerTestRunner.VerifyAsync<UnjustifiedSuppressionAttributeAnalyzer>(
+            """
                        namespace System.Diagnostics.CodeAnalysis
                        {
                            public sealed class ExcludeFromCodeCoverageAttribute : System.Attribute { }
@@ -112,8 +110,7 @@ public sealed class UnjustifiedSuppressionAttributeAnalyzerTests
                            class C { }
                        }
                        """,
-            ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20
-        }.RunAsync(TestContext.Current.CancellationToken);
+            options: new AnalyzerTestOptions { References = ReferenceAssemblies.NetStandard.NetStandard20 });
     }
 
     [Fact]

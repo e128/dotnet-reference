@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Design;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -10,15 +8,10 @@ public sealed class E128060DictionaryAsReadOnlyCodeFixTests
 {
     private static Task VerifyFixAsync(string source, string fixedCode)
     {
-        var test = new CSharpCodeFixTest<DictionaryAsReadOnlyAnalyzer, DictionaryAsReadOnlyCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            // Dictionary<K,V>.AsReadOnly() requires .NET 9+
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-            NumberOfFixAllIterations = 1
-        };
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<DictionaryAsReadOnlyAnalyzer, DictionaryAsReadOnlyCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { FixAllIterations = 1 });
     }
 
     [Fact]

@@ -7,37 +7,16 @@ namespace E128.Analyzers.Tests;
 
 public sealed class SaveChangesInLoopAnalyzerTests
 {
-    private const string EfStub = """
-                                  namespace Microsoft.EntityFrameworkCore
-                                  {
-                                      public class DbContext
-                                      {
-                                          public virtual int SaveChanges() => 0;
-
-                                          public virtual System.Threading.Tasks.Task<int> SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default)
-                                              => System.Threading.Tasks.Task.FromResult(0);
-                                      }
-                                  }
-                                  """;
-
-    private const string EfExtensionStub = """
-                                           namespace Microsoft.EntityFrameworkCore
-                                           {
-                                               public static class EntityFrameworkQueryableExtensions
-                                               {
-                                                   public static int SaveChanges<T>(this System.Collections.Generic.IEnumerable<T> source) => 0;
-                                               }
-                                           }
-                                           """;
-
     private static Task VerifyWithEfAsync(string code, params DiagnosticResult[] expected)
     {
-        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code + "\n" + EfStub, expected);
+        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code + "\n" + TestStubs.SaveChangesInLoopEfStub, expected);
     }
 
     private static Task VerifyWithEfExtensionAsync(string code, params DiagnosticResult[] expected)
     {
-        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(code + "\n" + EfStub + "\n" + EfExtensionStub, expected);
+        return AnalyzerTestRunner.VerifyAsync<SaveChangesInLoopAnalyzer>(
+            code + "\n" + TestStubs.SaveChangesInLoopEfStub + "\n" + TestStubs.SaveChangesInLoopEfExtensionStub,
+            expected);
     }
 
     [Fact]

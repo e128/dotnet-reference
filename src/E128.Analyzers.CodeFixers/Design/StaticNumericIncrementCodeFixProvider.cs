@@ -35,11 +35,13 @@ public sealed class StaticNumericIncrementCodeFixProvider : E128CodeFixProviderB
             return;
         }
 
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(context.Document, context.CancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return;
         }
+
+        var semanticModel = rootAndModel.Value.SemanticModel;
 
         var symbolInfo = semanticModel.GetSymbolInfo(fieldOperand, context.CancellationToken);
         if (symbolInfo.Symbol is not IFieldSymbol fieldSymbol)

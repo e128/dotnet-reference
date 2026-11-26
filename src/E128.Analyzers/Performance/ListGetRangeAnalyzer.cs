@@ -54,24 +54,16 @@ public sealed class ListGetRangeAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static compilationContext =>
         {
-            var marshalType = compilationContext.Compilation.GetTypeByMetadataName(CollectionsMarshalMetadataName);
-            if (marshalType is null)
-            {
-                return;
-            }
-
-            var listType = compilationContext.Compilation.GetTypeByMetadataName(ListMetadataName);
-            if (listType is null)
-            {
-                return;
-            }
-
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeInvocation(nodeContext, listType),
+            _ = MetadataTypes.TryRegisterForTypes(
+                compilationContext,
+                [CollectionsMarshalMetadataName, ListMetadataName],
+                static (nodeContext, types) => AnalyzeInvocation(nodeContext, types[1]),
                 SyntaxKind.InvocationExpression);
 
-            compilationContext.RegisterSyntaxNodeAction(
-                nodeContext => AnalyzeLoop(nodeContext, listType),
+            _ = MetadataTypes.TryRegisterForTypes(
+                compilationContext,
+                [CollectionsMarshalMetadataName, ListMetadataName],
+                static (nodeContext, types) => AnalyzeLoop(nodeContext, types[1]),
                 SyntaxKind.ForStatement);
         });
     }

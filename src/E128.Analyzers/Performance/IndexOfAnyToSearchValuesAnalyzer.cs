@@ -34,14 +34,11 @@ public sealed class IndexOfAnyToSearchValuesAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static startContext =>
-        {
-            if (startContext.Compilation.GetTypeByMetadataName(SearchValuesMetadataName) is null)
-            {
-                return;
-            }
-
-            startContext.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
-        });
+            _ = MetadataTypes.TryRegisterForTypes(
+                startContext,
+                SearchValuesMetadataName,
+                static (nodeContext, _) => AnalyzeInvocation(nodeContext),
+                SyntaxKind.InvocationExpression));
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)

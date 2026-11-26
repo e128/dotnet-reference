@@ -127,7 +127,7 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (GetTargetLocal(creation, model, cancellationToken) is not { } local
+        if (LocalTargets.FromCreation(creation, model, cancellationToken) is not { } local
             || BlockScope.GetScope(creation) is not { } scope
             || !IsReadOnlyThroughout(scope, local, model, cancellationToken))
         {
@@ -174,22 +174,6 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
         return model.GetTypeInfo(argument, cancellationToken).Type is IArrayTypeSymbol
         {
             ElementType.SpecialType: SpecialType.System_Byte
-        };
-    }
-
-    private static ILocalSymbol? GetTargetLocal(
-        BaseObjectCreationExpressionSyntax creation,
-        SemanticModel model,
-        CancellationToken cancellationToken)
-    {
-        return creation.Parent switch
-        {
-            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } =>
-                model.GetDeclaredSymbol(declarator, cancellationToken) as ILocalSymbol,
-            AssignmentExpressionSyntax assignment when assignment.Right == creation
-                                                       && assignment.Left is IdentifierNameSyntax =>
-                model.GetSymbolInfo(assignment.Left, cancellationToken).Symbol as ILocalSymbol,
-            _ => null
         };
     }
 

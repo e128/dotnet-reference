@@ -33,14 +33,10 @@ public sealed class MemoryMarshalNonBlittableAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start =>
         {
-            var memoryMarshal = MetadataTypes.Find(start.Compilation, "System.Runtime.InteropServices.MemoryMarshal");
-            if (memoryMarshal.IsEmpty)
-            {
-                return;
-            }
-
-            start.RegisterSyntaxNodeAction(
-                node => Analyze(node, memoryMarshal),
+            _ = MetadataTypes.TryRegisterForTypes(
+                start,
+                "System.Runtime.InteropServices.MemoryMarshal",
+                Analyze,
                 SyntaxKind.InvocationExpression);
         });
     }
