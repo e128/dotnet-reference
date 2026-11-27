@@ -21,8 +21,8 @@ public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
-        "Options class bound via .Bind() has init-only property",
-        "Property '{0}' on Bind()-target '{1}' uses 'init' — the config binder requires 'set'",
+        "Options type bound from configuration has init-only property",
+        "Property '{0}' on bind-target '{1}' uses 'init' — the config binder requires 'set'",
         "E128-Reliability",
         DiagnosticSeverity.Warning,
         true,
@@ -65,23 +65,21 @@ public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (!IsBindCall(invocation))
+        if (!IsBindCall(invocation) || ReceiverOf(invocation) is not { } receiver)
         {
             return;
         }
 
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetTypeInfo(receiver, context.CancellationToken).Type
+            is not INamedTypeSymbol receiverType)
         {
             return;
         }
 
-        if (!IsOptionsBuilderBind(methodSymbol, optionsBuilderType))
-        {
-            return;
-        }
-
-        var targetType = GetBoundOptionsType(methodSymbol);
-        if (targetType is null)
+        if (!SymbolEqualityComparer.Default.Equals(receiverType.OriginalDefinition, optionsBuilderType)
+            || !receiverType.IsGenericType
+            || receiverType.TypeArguments.Length is not 1
+            || receiverType.TypeArguments[0] is not INamedTypeSymbol targetType)
         {
             return;
         }
@@ -93,24 +91,27 @@ public sealed class OptionsBindInitAnalyzer : DiagnosticAnalyzer
     {
         return invocation.Expression switch
         {
-            MemberAccessExpressionSyntax memberAccess => string.Equals(memberAccess.Name.Identifier.Text, "Bind", StringComparison.Ordinal),
+            MemberAccessExpressionSyntax memberAccess => IsBindName(memberAccess.Name.Identifier.ValueText),
+            MemberBindingExpressionSyntax binding => IsBindName(binding.Name.Identifier.ValueText),
             _ => false
         };
     }
 
-    private static bool IsOptionsBuilderBind(IMethodSymbol method, INamedTypeSymbol optionsBuilderType)
+    private static bool IsBindName(string name)
     {
-        var containingType = method.ContainingType?.OriginalDefinition;
-        return containingType is not null
-               && SymbolEqualityComparer.Default.Equals(containingType, optionsBuilderType);
+        return string.Equals(name, "Bind", StringComparison.Ordinal)
+               || string.Equals(name, "BindConfiguration", StringComparison.Ordinal);
     }
 
-    private static INamedTypeSymbol? GetBoundOptionsType(IMethodSymbol method)
+    private static ExpressionSyntax? ReceiverOf(InvocationExpressionSyntax invocation)
     {
-        var containingType = method.ContainingType;
-        return containingType is not { IsGenericType: true, TypeArguments.Length: 1 }
-            ? null
-            : containingType.TypeArguments[0] as INamedTypeSymbol;
+        return invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Expression,
+            MemberBindingExpressionSyntax when invocation.Parent is ConditionalAccessExpressionSyntax conditional
+                => conditional.Expression,
+            _ => null
+        };
     }
 
     private static void ReportInitProperties(SyntaxNodeAnalysisContext context, INamedTypeSymbol type)

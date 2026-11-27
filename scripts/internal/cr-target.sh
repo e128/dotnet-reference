@@ -458,9 +458,13 @@ fi
 
 # The emitted diff has to carry the content of every listed file. git diff shows
 # no content for an untracked file, so each listed untracked file gets a
-# --no-index diff appended to the command the consumer runs.
+# --no-index diff appended to the command the consumer runs. A branch deletion is
+# absent from git ls-files and absent from disk, so keep only paths that exist.
 if [[ -n "$FILES" ]]; then
-    UNTRACKED="$(comm -13 <(git ls-files 2>/dev/null | sort -u) <(printf '%s\n' "$FILES" | sort -u))"
+    UNTRACKED="$(comm -13 <(git ls-files 2>/dev/null | sort -u) <(printf '%s\n' "$FILES" | sort -u) | while IFS= read -r uf; do
+        [[ -n "$uf" && -e "$uf" ]] || continue
+        printf '%s\n' "$uf"
+    done)"
     while IFS= read -r uf; do
         [[ -n "$uf" ]] || continue
         DIFF_COMMAND+="; git diff --no-index -- /dev/null $(printf '%q' "$uf")"

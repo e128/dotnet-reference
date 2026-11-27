@@ -269,3 +269,31 @@ E128.Analyzers.Testing.ForeignTestDisableAnalyzer
 E128.Analyzers.Testing.ForeignTestDisableAnalyzer.ForeignTestDisableAnalyzer() -> void
 E128.Analyzers.Performance.StructKeyWithoutEquatableAnalyzer
 E128.Analyzers.Performance.StructKeyWithoutEquatableAnalyzer.StructKeyWithoutEquatableAnalyzer() -> void
+E128.Analyzers.Design.OptionsPropertyAccessibilityAnalyzer
+E128.Analyzers.Design.OptionsPropertyAccessibilityAnalyzer.OptionsPropertyAccessibilityAnalyzer() -> void
+E128.Analyzers.Security.LogPathLeakAnalyzer
+E128.Analyzers.Security.LogPathLeakAnalyzer.LogPathLeakAnalyzer() -> void
+E128.Analyzers.Security.LogPathLeakCodeFixProvider
+E128.Analyzers.Security.LogPathLeakCodeFixProvider.LogPathLeakCodeFixProvider() -> void
+E128.Analyzers.Reliability.ServiceLookupWithoutKeyAnalyzer
+E128.Analyzers.Reliability.ServiceLookupWithoutKeyAnalyzer.ServiceLookupWithoutKeyAnalyzer() -> void
+E128.Analyzers.Design.PluralTwinTypeNameAnalyzer
+E128.Analyzers.Design.PluralTwinTypeNameAnalyzer.PluralTwinTypeNameAnalyzer() -> void
+E128.Analyzers.Reliability.RetainedMemoryAfterDisposeAnalyzer
+E128.Analyzers.Reliability.RetainedMemoryAfterDisposeAnalyzer.RetainedMemoryAfterDisposeAnalyzer() -> void
+E128.Analyzers.Unsafe.PaddedStructMarshalCopyAnalyzer
+E128.Analyzers.Unsafe.PaddedStructMarshalCopyAnalyzer.PaddedStructMarshalCopyAnalyzer() -> void
+E128.Analyzers.Design.HttpContextAccessorInServiceAnalyzer
+E128.Analyzers.Design.HttpContextAccessorInServiceAnalyzer.HttpContextAccessorInServiceAnalyzer() -> void
+E128.Analyzers.Security.PathContainmentPrefixAnalyzer
+E128.Analyzers.Security.PathContainmentPrefixAnalyzer.PathContainmentPrefixAnalyzer() -> void
+E128.Analyzers.Security.PathContainmentPrefixCodeFixProvider
+E128.Analyzers.Security.PathContainmentPrefixCodeFixProvider.PathContainmentPrefixCodeFixProvider() -> void
+E128.Analyzers.Security.DynamicRegexPatternAnalyzer
+E128.Analyzers.Security.DynamicRegexPatternAnalyzer.DynamicRegexPatternAnalyzer() -> void
+E128.Analyzers.Security.CertificateChainBypassAnalyzer
+E128.Analyzers.Security.CertificateChainBypassAnalyzer.CertificateChainBypassAnalyzer() -> void
+E128.Analyzers.Security.DecompressionWithoutBoundAnalyzer
+E128.Analyzers.Security.DecompressionWithoutBoundAnalyzer.DecompressionWithoutBoundAnalyzer() -> void
+E128.Analyzers.Security.WeakSymmetricKeySourceAnalyzer
+E128.Analyzers.Security.WeakSymmetricKeySourceAnalyzer.WeakSymmetricKeySourceAnalyzer() -> void

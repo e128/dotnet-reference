@@ -9,7 +9,7 @@ A main purpose of this project is to reduce coding LLM slop. A model without gua
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.7.1" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.8.0" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.
@@ -120,6 +120,9 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128221 | Union Value read or case cast outside a pattern match                                                | No       |
 | E128225 | Abstract base with members is a closed hierarchy                                                     | Yes      |
 | E128232 | The `dynamic` keyword defeats compile-time type checking                                             | No       |
+| E128257 | Bound options property is not public                                                 | No       |
+| E128259 | Type name is the plural of a sibling type (default: Info)                              | No       |
+| E128262 | IHttpContextAccessor injected into a plain service (default: Info)                   | No       |
 
 ### Reliability
 
@@ -127,8 +130,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | ------- | ------------------------------------------------------------------------------------- | -------- |
 | E128011 | `[GeneratedRegex]` missing `matchTimeoutMilliseconds`                                 | Yes      |
 | E128012 | `RegexOptions.Compiled` is redundant in `[GeneratedRegex]`                            | Yes      |
-| E128013 | `[GeneratedRegex]` pattern has overlapping quantifiers                                | Yes      |
-| E128014 | `[GeneratedRegex]` pattern has nested quantifiers                                     | Yes      |
+| E128013 | `[GeneratedRegex]` pattern has repeated wildcards                                     | Yes      |
+| E128014 | `[GeneratedRegex]` pattern has a repeated group that can split across iterations      | Yes      |
 | E128016 | `DateTime.Parse`/`ParseExact` missing `DateTimeStyles` parameter                      | Yes      |
 | E128020 | Do not use `in` modifier with mutable structs                                         | Yes      |
 | E128023 | Avoid hardcoded `/tmp` path                                                           | Yes      |
@@ -204,6 +207,8 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128248 | Loop counter is a `float` or `double`                                                 | No       |
 | E128250 | Private field assignment overwritten before a read                                    | No       |
 | E128251 | Loop has no exit path                                                                 | No       |
+| E128258 | Service lookup throws a generic exception with no key                                  | No       |
+| E128260 | Retained memory is read after its owner is disposed                                   | No       |
 
 ### Performance
 
@@ -307,6 +312,13 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128228 | Token validation flag set to constant false                                    | No       |
 | E128241 | CORS policy allows any origin with credentials                                 | No       |
 | E128242 | Antiforgery missing on a state-changing action                                 | Yes      |
+| E128256 | Local filesystem path passed to a logger call                                  | Yes      |
+| E128263 | Containment test compares a root with no directory separator                   | Yes      |
+| E128264 | `[GeneratedRegex]` repeated group has overlapping alternatives                 | No       |
+| E128265 | Non-constant regex pattern with no timeout                                     | No       |
+| E128266 | Certificate chain result ignored or policy weakened                            | No       |
+| E128267 | Decompression loop has no output bound                                         | No       |
+| E128268 | Symmetric key set from a text encoding                                         | No       |
 
 ### Style
 
@@ -369,6 +381,7 @@ All rules default to **Warning** severity unless noted. Every rule includes a co
 | E128139 | Do not move a non-blittable type through an unaligned access                                         | Yes      |
 | E128200 | Do not declare a function pointer type                                                               | No       |
 | E128254 | Do not write a static readonly field through reflection                                              | No       |
+| E128261 | Byte-wise access of a padded struct                                                                  | No       |
 
 ## What each rule catches
 
@@ -672,7 +685,7 @@ Flags `AddScoped<ConcreteType>()` / `AddTransient<ConcreteType>()` / `AddSinglet
 
 ### E128033 &mdash; Options class with init-only properties
 
-Flags options classes bound via `.Bind()` that have `init`-only properties. The configuration binder uses reflection to set properties after construction &mdash; `init` setters are not assignable post-construction, causing silent binding failures.
+Flags options classes bound via `Bind(...)` or `BindConfiguration(...)` that have `init`-only properties. The analyzer resolves the `OptionsBuilder<T>` receiver type, so the extension-method form and the conditional-access form both report. The configuration binder uses reflection to set properties after construction &mdash; `init` setters are not assignable post-construction, causing silent binding failures.
 
 ### E128034 &mdash; Constructor newing a DI-registered type
 
@@ -3874,6 +3887,70 @@ The loop bound must be the length of one of the two sources. `TensorPrimitives` 
 The rule stays silent when the body holds a second statement, when an index carries an offset, when an operand is not an element access, and when the element type is not `float` or `double`. It also stays silent when the compilation has no `System.Numerics.Tensors` assembly that declares the matching three-parameter member.
 
 The fix replaces the loop with `TensorPrimitives.Add(a, b, destination);` and adds the `System.Numerics.Tensors` using directive.
+
+### E128256 &mdash; Local filesystem path passed to a logger call
+
+Flags `FileInfo.FullName`, `DirectoryInfo.FullName`, or `Path.GetFullPath(...)` passed to an `ILogger` call or a `[LoggerMessage]` argument. A log entry outlives the request, so a full path leaks the local directory layout.
+
+The rule also flags a `FileSystemInfo.ToString()` argument and a local staged from a path, when the local is the argument itself. It stays silent on an exception message, on a file name, on `nameof`, and on a transformed local such as `Path.GetFileName(local)`. It does not follow a `LoggerMessage.Define` delegate.
+
+The fix replaces `.FullName` with `.Name`. The `Path.GetFullPath` form offers no fix, because the replacement depends on the value.
+
+### E128257 &mdash; Bound options property is not public
+
+Flags a property that is not public on a type bound by `AddOptions<T>().Bind(...)`, `AddOptions<T>().BindConfiguration(...)`, or `services.Configure<T>(...)`. The binder and `ValidateDataAnnotations()` read public instance properties only, so a non-public property keeps its default value and ignores the configuration key. No code fix, because making a private property public changes the API.
+
+### E128258 &mdash; Service lookup throws a generic exception with no key
+
+Flags `Enumerable.First` and `Enumerable.Single` whose receiver is `GetServices<T>()`. The failure reads `Sequence contains no matching element` and names no key. The rule suggests `FirstOrDefault` or `SingleOrDefault` plus an exception that names the missing service. No code fix, because the message needs the key.
+
+### E128259 &mdash; Type name is the plural of a sibling type
+
+Flags a type whose name is the plural of a sibling type in the same namespace, when the type is not a collection. An operation type named `FetchCommands` beside `FetchCommand` reads as a collection of the sibling. Default severity is **Info**. No code fix, because a rename spans the solution.
+
+### E128260 &mdash; Retained memory is read after its owner is disposed
+
+Flags a `Memory<T>` local assigned from `owner.Memory` or `owner.Memory.Slice(...)` inside a `using` statement, then read after the statement ends. The owner returns its buffer on dispose, so the retained slice can read memory that another caller has reused. No code fix.
+
+The rule reads the `using` form and a local declared before the statement. It stays silent when the read sits inside the using scope and when the owner is not an `IMemoryOwner<T>` or `MemoryManager<T>`.
+
+### E128261 &mdash; Byte-wise access of a padded struct
+
+Flags `MemoryMarshal.AsBytes`, `MemoryMarshal.Cast`, `Unsafe.As`, `Unsafe.Copy`, `Buffer.BlockCopy`, and `Marshal.StructureToPtr` when the source struct carries explicit-layout padding. The rule computes the padding from the `[FieldOffset]` values and the declared `Size`. No code fix, because the layout change belongs to the author.
+
+The rule reads `LayoutKind.Explicit` only. It does not read the `Pack` value. A sequential layout, a nested struct field, and a pointer or `bool` field stay silent.
+
+### E128262 &mdash; IHttpContextAccessor injected into a plain service
+
+Flags an `IHttpContextAccessor` constructor parameter on a type that is not a middleware, an MVC filter, a Blazor component, or an `IHostedService`. The accessor hides a dependency on the ambient request and returns null outside a request. Default severity is **Info**. No code fix.
+
+### E128263 &mdash; Containment test compares a root with no directory separator
+
+Flags `string.StartsWith` where the receiver is a resolved path and the root argument carries no trailing directory separator. A resolved receiver is a `Path.GetFullPath(...)` call, a `FileSystemInfo.FullName`, or a local initialized from either. Without the separator, a sibling whose name extends the root passes the test: `/var/app/uploads_evil` matches `/var/app/uploads`.
+
+The rule stays silent when the argument or an earlier assignment appends `Path.DirectorySeparatorChar` or `Path.AltDirectorySeparatorChar`, when the argument is a constant that ends with a separator, and when the receiver is not a resolved path.
+
+The fix wraps the root with `Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar` and adds `using System.IO;`. The fix is absent when the target framework has no `Path.TrimEndingDirectorySeparator`.
+
+### E128264 &mdash; Overlapping alternatives in a repeated group
+
+Flags a `[GeneratedRegex]` pattern whose quantified group has a top-level alternation where two branches can match the same first text, such as `^(a|ab)+$`. The engine then tries every split of the shared prefix. An atomic group `(?>a|ab)+` stays silent, because it already prevents the split. No code fix: the safe branch order depends on the language the pattern accepts.
+
+### E128265 &mdash; Non-constant regex pattern with no timeout
+
+Flags a `Regex` constructor or a static `Regex.Match`, `IsMatch`, `Replace`, or `Split` call when the pattern is not a constant, the call passes no `TimeSpan`, and the options carry no `NonBacktracking`. A constant pattern is owned by E128123 and MA0110, which force `[GeneratedRegex]`. No code fix, because the caller chooses between escaping, validation, and a timeout.
+
+### E128266 &mdash; Certificate chain result ignored or policy weakened
+
+Flags a bare `X509Chain.Build(...)` statement, a `VerificationFlags` value that sets `AllowUnknownCertificateAuthority`, `IgnoreNotTimeValid`, `IgnoreWrongUsage`, or `IgnoreCtlNotTimeValid`, and a `RevocationMode.NoCheck` assignment. A `Build` result that feeds a branch or a return stays silent. No code fix.
+
+### E128267 &mdash; Decompression loop has no output bound
+
+Flags a read loop over `GZipStream`, `DeflateStream`, or `BrotliStream` that writes into a `MemoryStream` with no comparison against a length or a named cap. A loop that checks `memory.Length` or a `max`/`limit`/`cap`/`bound` value stays silent. The rule reads a `MemoryStream` destination only; a `ZipArchiveEntry` stream and a file destination stay silent. No code fix.
+
+### E128268 &mdash; Symmetric key set from a text encoding
+
+Flags a `SymmetricAlgorithm.Key` assignment whose value comes from `Encoding.UTF8.GetBytes(...)` or another encoding property. A text encoding carries the low entropy and the structure of the source text, with no salt and no work factor. A key from `RandomNumberGenerator`, `Rfc2898DeriveBytes`, or `HKDF` stays silent. No code fix.
 
 ## Requirements
 

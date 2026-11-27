@@ -1,5 +1,5 @@
 # Analyzer Candidates: Settled Catalog
-*Updated: 2026-11-25T22:13:23Z*
+*Updated: 2026-11-27T16:16:52Z*
 
 This file holds the settled side of the register: which rule shipped, which idea
 was checked and rejected, and which sweep closed. Every rule ships from
@@ -24,6 +24,20 @@ The five roadmap shapes ship as E128233 to E128237. See
 The BlazingFastDotnet performance pass on 2026-11-25 shipped the struct-key
 equality shape as E128253. Detection shape:
 [rule-details-performance-equality.md](../analyzers/rule-details-performance-equality.md).
+
+The analyzer-security-batch-2 plan on 2026-11-27 shipped five security rules:
+E128264 to E128268. It also widened E128013 and E128014.
+
+The analyzer-candidates-batch plan on 2026-11-27 shipped eight rules:
+E128256 to E128263. That batch closed every open row from the pugworks review
+read, the unsafe best-practices read, the second BlazingFastDotnet pass, and
+the naming read. All eight sit in `AnalyzerReleases.Unshipped.md` until the
+next package release.
+
+The vulnerability checklist sweep on 2026-11-27 checked two security
+checklists against the installed rule sets. It found three shapes with no
+owner. The path containment shape shipped as E128263, so two rows remain. See
+[vulnerability-sweep-2026-11-27.md](vulnerability-sweep-2026-11-27.md).
 
 The implicit state machine rule ships as E128218. See
 [implicit-state-machine-rule.md](../implicit-state-machine-rule.md).
@@ -102,123 +116,25 @@ conversion plan. Open .NET 11 conversion shapes: [net11-conversion-sweep.md](net
 | E128253 | struct-key-without-equatable           | implemented | 3/5   | 2026-11-25 |
 | E128254 | static-readonly-reflection-write       | implemented | 3/5   | 2026-11-25 |
 | E128255 | elementwise-span-loop                  | implemented | n/a   | 2026-11-25 |
+| E128256 | log-argument-carries-local-path        | implemented | 4/5   | 2026-11-27 |
+| E128257 | bound-options-property-not-public      | implemented | 4/5   | 2026-11-27 |
+| E128258 | service-lookup-throws-generic-exception | implemented | 3/5  | 2026-11-27 |
+| E128259 | plural-twin-type-name                  | implemented | 4/5   | 2026-11-27 |
+| E128260 | retained-memory-read-after-dispose     | implemented | 3/5   | 2026-11-27 |
+| E128261 | padded-struct-marshal-copy             | implemented | 3/5   | 2026-11-27 |
+| E128262 | http-context-accessor-in-service       | implemented | 3/5   | 2026-11-27 |
+| E128263 | path-containment-prefix                | implemented | 4/5   | 2026-11-27 |
+| E128264 | overlapping-alternation                | implemented | 3/5   | 2026-11-27 |
+| E128265 | dynamic-regex-pattern                  | implemented | 3/5   | 2026-11-27 |
+| E128266 | certificate-chain-bypass               | implemented | 3/5   | 2026-11-27 |
+| E128267 | decompression-without-bound            | implemented | 3/5   | 2026-11-27 |
+| E128268 | weak-symmetric-key-source              | implemented | 3/5   | 2026-11-27 |
 
-## Rules From Guidance Documents
+## ID Maps And Owned Shapes
 
-Two published guidance documents seeded the rules below. Most rules carry a code
-fix provider. The rules E128125 to E128129 and E128136 to E128138 carry a
-diagnostic only.
-
-- Source A: the .NET performance skill guide in `EgorBo/BlazingFastDotnet`.
-- Source B: the runtime unsafe-code guidance page in `dotnet/docs`.
-
-This table records the rule IDs so a later session can check for ID reuse. The
-rule description and the fix shape live in `src/E128.Analyzers/README.md`.
-
-| ID range        | Domain      | Code fix        | Category directory |
-| --------------- | ----------- | --------------- | ------------------ |
-| E128112-E128115 | Unsafe code | every rule      | `Unsafe/`          |
-| E128116-E128117 | Performance | every rule      | `Performance/`     |
-| E128118-E128120 | Unsafe code | every rule      | `Unsafe/`          |
-| E128121-E128124 | Performance | every rule      | `Performance/`     |
-| E128125-E128129 | Unsafe code | no rule         | `Unsafe/`          |
-| E128131-E128135 | Performance | E128135 partial | `Performance/`     |
-| E128136-E128138 | Unsafe code | no rule         | `Unsafe/`          |
-| E128139         | Unsafe code | `bool` read     | `Unsafe/`          |
-| E128140-E128141 | Performance | every rule      | `Performance/`     |
-
-The unused and retired IDs follow `AnalyzerReleases.Shipped.md` and
-`AnalyzerReleases.Unshipped.md` in `src/E128.Analyzers`. Take the next free ID
-from those manifests, never from a row in this file.
-
-## FIPS Cryptography Rules
-
-Rules E128071, E128075, and E128142 to E128151 implement the FIPS policy set.
-See `src/E128.Analyzers/README.md` for each rule description. Shared symbol and
-constant helpers live in `FipsSymbolHelpers.cs`.
-
-| ID range        | Domain   | Code fix | Category directory |
-| --------------- | -------- | -------- | ------------------ |
-| E128142-E128151 | Security | no rule  | `Security/`        |
-
-These rules have no code fix. The remediation depends on intent that the syntax
-tree does not carry.
-
-- E128125: the pin scope is a caller decision.
-- E128126: the replacement depends on how the new string is built.
-- E128127: safe code has no null byref equivalent.
-- E128128: the caller places the anchor field.
-- E128129: the replacement depends on whether the caller needs a deep or a shallow copy.
-
-Each read of the two guidance documents, the rows that stay a document, and the
-unshipped idea that waits on a real defect live in
-[guidance-reads.md](guidance-reads.md).
-
-## Proof-Test Sweep Candidates
-
-The research page "Deterministic Static Code Analysis Rules: Proof-Test"
-grades the sufficiency claim for static analysis. It carries no rule list. Its
-20 methodology names and its source list seeded this sweep. The methodology
-profile pages sit behind Cloudflare Access, so their content was not read.
-
-The other sources are the .NET code-analysis rule index, the CERT C and CERT
-Java standards, the CWE Top 25, the NASA Power of Ten, and the Clang Static
-Analyzer check list.
-
-Every candidate is decidable from one compilation or one method body. Each was
-checked against the installed rule sets: CA and IDE, Meziantou 3.0.318,
-Roslynator 5.0.1, Sonar 10.35, SharpSource, and AsyncFixer. The CA security
-rules run because `AnalysisLevel=latest-all` sets `All` mode.
-
-Nine rules from this sweep ship: E128154 to E128157 and E128159 to E128163.
-The rule table in `src/E128.Analyzers/README.md` carries their behavior and
-code-fix status.
-
-E128158 stays unused. The C# compiler reports CS8425 when an async iterator
-takes a token and carries no `[EnumeratorCancellation]` attribute, so a second
-rule would repeat a build failure.
-
-CA5359 reads the `ServicePointManager` callback only. The `HttpClientHandler`
-path stays open, so E128156 covers it.
-
-The Tier 2 shapes that wait for a real defect in review move with the open
-register. See [index.md](index.md).
-
-## Checked And Rejected
-
-These shapes already have an owner. A second rule would report the same line.
-The last two rows come from the slopwatch read, which checked the pragma and
-empty-catch shapes against the installed rule sets.
-
-| Rule                                                        | Already covered by                                  |
-| ----------------------------------------------------------- | --------------------------------------------------- |
-| `[SuppressMessage]` without a justification                 | E128173                                             |
-| Empty or comment-only `catch` block                         | S2486, and E128172 for a swallowed assertion        |
-| `#pragma warning disable` with no justification or restore  | E128047, E128055, E128065, E128094                  |
-| Shift count out of range                                    | S2183                                               |
-| Method length                                               | MA0051                                              |
-| Ignored `Try*` return value                                 | MA0060, with `enable_tryparse_pattern`              |
-| Throw from `finally`                                        | MA0072                                              |
-| NaN comparison                                              | CA2242                                              |
-| `goto`                                                      | S907                                                |
-| Hardcoded credential literal                                | S2068, gitleaks                                     |
-| Cookie `Secure` and `HttpOnly` flags                        | S2092, S3330                                        |
-| Insecure serializers                                        | CA2300, CA2301, CA2328                              |
-| SQL, path, command, and open redirect injection             | CA3001, CA3003, CA3006, CA3007                      |
-| `ServicePointManager` certificate bypass                    | CA5359                                              |
-| Culture-sensitive string compare                            | CA1307, CA1310                                      |
-| Multiple enumeration                                        | CA1851                                              |
-| `ContainsKey` then indexer                                  | CA1853, CA1854                                      |
-| `GetOrAdd` with an eager value                              | MA0242                                              |
-| `UseShellExecute` with a redirect                           | MA0163                                              |
-| Reference type as a dictionary key                          | MA0066                                              |
-| `Path.GetTempFileName`                                      | S5445                                               |
-| Regex call without a timeout                                | S6444                                               |
-| `Select(async ...)` result never awaited                    | MA0134, VSTHRD110                                  |
-| Consecutive `Path.Combine` calls                            | CA1877                                              |
-| `JsonDocument.RootElement` escape                           | CA2026                                              |
-| Object disposed twice                                       | CA2202 retired, and Dispose is idempotent by contract |
-| Assertion density, dead code, comment density               | Metric or judgment checks. IDE0051, IDE0052, and CS0162 cover the code shapes |
+The guidance-document ID ranges, the FIPS set, the proof-test sweep, and the
+rejected-shape table outgrew this file. They live in
+[catalog-id-maps.md](catalog-id-maps.md).
 
 ## AI-Assisted Technical Debt Candidates
 

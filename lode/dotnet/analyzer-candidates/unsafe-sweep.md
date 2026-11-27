@@ -1,5 +1,5 @@
 # Unsafe Best-Practices Sweep
-*Updated: 2026-11-25T22:13:23Z*
+*Updated: 2026-11-27T15:24:20Z*
 
 This sweep reads the .NET unsafe-code best-practices document
 (`learn.microsoft.com/dotnet/standard/unsafe-code/best-practices`) against the
@@ -146,22 +146,22 @@ of two `void*` values stays out of reach.
 
 ## Candidates
 
-Two shapes remain open.
+Both shapes shipped in the 2026-11-27 batch.
 
-| Pattern                                                           | Score | Status |
-| ----------------------------------------------------------------- | ----- | ------ |
-| A retained `Memory<T>` slice is used after its owner is disposed  | 3/5   | new    |
-| A padded struct is copied byte-wise through a marshal API          | 3/5   | new    |
+| Pattern                                                           | Score | Rule    |
+| ----------------------------------------------------------------- | ----- | ------- |
+| A retained `Memory<T>` slice is used after its owner is disposed  | 3/5   | E128260 |
+| A padded struct is copied byte-wise through a marshal API          | 3/5   | E128261 |
 
 The `Unsafe.As` reference shape shipped inside E128112. The `fixed` pointer
 escape shape shipped inside E128125. The write barrier shape shipped inside
 E128129. Their rows left the register.
 
 E128162 owns the direct use-after-dispose form of a memory owner, and IDISP016
-also fires. The retained-slice form stays open, because no rule links
-`owner.Memory` to a later read. The padded struct row is a Tier 2 shape that
-waits for a real defect. The reflection write to a static readonly field shipped
-as E128254. See [catalog.md](catalog.md).
+also fires. E128260 covers the retained-slice form that links `owner.Memory` to
+a later read. E128261 covers the explicit-layout padded struct. The reflection
+write to a static readonly field shipped as E128254. See [catalog.md](catalog.md)
+and [rule-details-candidates-batch.md](../analyzers/rule-details-candidates-batch.md).
 
 ## Declined
 
