@@ -1,6 +1,6 @@
 # Analyzer Candidates: Skipped Decisions
 confidence: high
-*Updated: 2026-11-25T14:46:23Z*
+*Updated: 2026-11-27T15:27:11Z*
 
 The settled side of the open register. A skipped row keeps `/analyzer` from reporting the same idea twice. Each decision names the reason and the installed rule or the site count that settled it. The open side lives in [index.md](index.md), and the shipped rules live in [catalog.md](catalog.md).
 
@@ -188,6 +188,12 @@ This exception rules out a blanket error for every packable project with pinning
 [NuGet CPM](https://learn.microsoft.com/nuget/consume-packages/central-package-management#transitive-pinning-and-pack),
 [NuGet Audit](https://learn.microsoft.com/nuget/concepts/auditing-packages#configuring-nuget-audit),
 and [NuGet Pack](https://learn.microsoft.com/nuget/reference/msbuild-targets#pack-scenarios).
+
+## Vulnerability Checklist Declines
+
+The 2026-11-27 vulnerability sweep declined four shapes. The reasons and the
+evidence live in
+[vulnerability-sweep-2026-11-27.md](vulnerability-sweep-2026-11-27.md).
 
 ## Base64 Span Conversion (E128252)
 

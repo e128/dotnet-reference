@@ -148,14 +148,14 @@ internal static class GeneratedRegexHelpers
         return new NestedQuantifierSpan(openIndex, closeIndex, afterClose, quantifierLength, HasSingleAtomBody(pattern, openIndex, closeIndex));
     }
 
-    private static bool IsAtomicGroup(string pattern, int openIndex)
+    internal static bool IsAtomicGroup(string pattern, int openIndex)
     {
         return openIndex + EscapeSequenceLength < pattern.Length
                && pattern[openIndex + 1] is '?'
                && pattern[openIndex + EscapeSequenceLength] is '>';
     }
 
-    private static int UnboundedQuantifierLength(string pattern, int index)
+    internal static int UnboundedQuantifierLength(string pattern, int index)
     {
         if (index >= pattern.Length)
         {
@@ -224,7 +224,7 @@ internal static class GeneratedRegexHelpers
         return atomEnd == closeIndex;
     }
 
-    private static int GroupBodyStart(string pattern, int openIndex)
+    internal static int GroupBodyStart(string pattern, int openIndex)
     {
         var bodyIndex = openIndex + 1;
         if (bodyIndex >= pattern.Length)
@@ -324,7 +324,7 @@ internal static class GeneratedRegexHelpers
         return false;
     }
 
-    private static bool TryReadFirstAtomSpan(
+    internal static bool TryReadFirstAtomSpan(
         string pattern,
         int bodyStart,
         int limit,
@@ -454,7 +454,7 @@ internal static class GeneratedRegexHelpers
         return true;
     }
 
-    private static bool AtomsCanMatchSameText(string pattern, int firstStart, int firstEnd, int lastStart, int lastEnd)
+    internal static bool AtomsCanMatchSameText(string pattern, int firstStart, int firstEnd, int lastStart, int lastEnd)
     {
         if (IsWildcardDot(pattern, firstStart, firstEnd) || IsWildcardDot(pattern, lastStart, lastEnd))
         {
@@ -682,7 +682,7 @@ internal static class GeneratedRegexHelpers
         return end - start is 1 && pattern[start] is '.';
     }
 
-    private static bool IsAsciiDigit(char c)
+    internal static bool IsAsciiDigit(char c)
     {
         return c is >= '0' and <= '9';
     }
@@ -716,7 +716,7 @@ internal static class GeneratedRegexHelpers
     }
 
 
-    private static bool GroupContainsInnerQuantifier(string pattern, int openIndex, int closeIndex, bool[] inClass)
+    internal static bool GroupContainsInnerQuantifier(string pattern, int openIndex, int closeIndex, bool[] inClass)
     {
         var skipNext = false;
         var depth = 0;
@@ -757,7 +757,7 @@ internal static class GeneratedRegexHelpers
         return false;
     }
 
-    private static int FindMatchingCloseParenForward(string pattern, int openIndex, bool[] inClass)
+    internal static int FindMatchingCloseParenForward(string pattern, int openIndex, bool[] inClass)
     {
         var depth = 0;
         var skipNext = false;

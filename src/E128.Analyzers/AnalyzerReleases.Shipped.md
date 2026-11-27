@@ -1,3 +1,31 @@
+## Release 3.8.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+E128256 | E128-Security | Warning | A logger call passes a local filesystem path.
+E128257 | E128-Design | Warning | A property on a configuration-bound options type is not public.
+E128258 | E128-Reliability | Warning | A service lookup throws a generic exception with no key.
+E128259 | E128-Design | Info | A type name is the plural of a sibling type.
+E128260 | E128-Reliability | Warning | Retained memory is read after its owner is disposed.
+E128261 | E128-Unsafe | Warning | Byte-wise access of a padded struct.
+E128262 | E128-Design | Info | IHttpContextAccessor injected into a plain service.
+E128263 | E128-Security | Warning | A containment test compares a root with no directory separator.
+E128264 | E128-Security | Warning | Overlapping alternatives in a repeated [GeneratedRegex] group.
+E128265 | E128-Security | Warning | Non-constant regex pattern with no timeout.
+E128266 | E128-Security | Warning | Certificate chain result ignored or policy weakened.
+E128267 | E128-Security | Warning | Decompression loop with no output bound.
+E128268 | E128-Security | Warning | Symmetric key set from a text encoding.
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------
+E128033 | E128-Reliability | Warning | E128-Reliability | Warning | Resolves the Bind receiver type and accepts BindConfiguration.
+E128013 | E128-Reliability | Warning | E128-Reliability | Warning | Counts three or more unbounded wildcards.
+E128014 | E128-Reliability | Warning | E128-Reliability | Warning | Reports a repeated group whose last atom is optional.
+
 ## Release 3.7.1
 
 ## Release 3.7.0

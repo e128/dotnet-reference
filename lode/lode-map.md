@@ -1,5 +1,5 @@
 # Lode Map
-*Updated: 2026-11-25T22:13:23Z*
+*Updated: 2026-11-27T16:16:52Z*
 
 ## Generated Docs
 
@@ -59,15 +59,19 @@
 ### dotnet/analyzer-candidates/
 
 - [index.md](dotnet/analyzer-candidates/index.md): Open register for every analyzer candidate, with schema, scores, and the capture ledger
-- [catalog.md](dotnet/analyzer-candidates/catalog.md): Settled rules, rejected ideas, and the ID map
-- [skipped-decisions.md](dotnet/analyzer-candidates/skipped-decisions.md): Every declined shape with its reason and site count
+- [catalog.md](dotnet/analyzer-candidates/catalog.md): Settled rules and the shipped release table
+- [catalog-id-maps.md](dotnet/analyzer-candidates/catalog-id-maps.md): ID ranges and rejected-shape table that the catalog outgrew
+- [skipped-decisions.md](dotnet/analyzer-candidates/skipped-decisions.md): Current declined shapes with reason and evidence
 - [guidance-reads.md](dotnet/analyzer-candidates/guidance-reads.md): Each read of the two guidance documents, the document-only rows, and the unshipped idea
 - [net11-conversion-sweep.md](dotnet/analyzer-candidates/net11-conversion-sweep.md): Open .NET 11 conversion shapes with call-site evidence
 - [slopwatch-sweep.md](dotnet/analyzer-candidates/slopwatch-sweep.md): 2026-11-18 slopwatch read, with one open and two Tier 2 shapes
 - [external-sweep.md](dotnet/analyzer-candidates/external-sweep.md): Closed 2026-11-05 external rule-set sweep, which leaves no candidate open
 - [performance-sweep.md](dotnet/analyzer-candidates/performance-sweep.md): Closed twenty-practice performance sweep that shipped E128203 to E128217, with probe evidence
 - [async-sweep.md](dotnet/analyzer-candidates/async-sweep.md): Closed async fire-and-forget sweep, every shape already owned
-- [unsafe-sweep.md](dotnet/analyzer-candidates/unsafe-sweep.md): 2026-11-25 unsafe best-practices read, with two open shapes and a defect list for the shipped unsafe rules
+- [unsafe-sweep.md](dotnet/analyzer-candidates/unsafe-sweep.md): 2026-11-25 unsafe best-practices read, whose two shapes ship as E128260 and E128261
+- [pugworks-review-sweep.md](dotnet/analyzer-candidates/pugworks-review-sweep.md): 2026-11-27 pugworks read, whose three shapes ship as E128256 to E128258, plus the E128033 fix
+- [vulnerability-sweep-2026-11-27.md](dotnet/analyzer-candidates/vulnerability-sweep-2026-11-27.md): 2026-11-27 security checklist read, with three new rows and an owned-shape map
+- [redos-sweep-2026-11-27.md](dotnet/analyzer-candidates/redos-sweep-2026-11-27.md): 2026-11-27 ReDoS read, whose five rules ship as E128264 to E128268 and whose two widenings ship in E128013 and E128014
 
 ### dotnet/analyzers/
 
@@ -98,6 +102,7 @@
 - [rule-details-union.md](dotnet/analyzers/rule-details-union.md): Detection shape for the union rule family E128219 to E128221
 - [rule-details-conversion.md](dotnet/analyzers/rule-details-conversion.md): Detection shape for the .NET 11 conversion rules E128223 to E128226
 - [rule-details-roadmap.md](dotnet/analyzers/rule-details-roadmap.md): Detection shape for the roadmap rules E128232 to E128237
+- [rule-details-candidates-batch.md](dotnet/analyzers/rule-details-candidates-batch.md): Detection shape for the 2026-11-27 batch E128256 to E128263 and the E128033 fix
 
 ## dotnet-reference/
 

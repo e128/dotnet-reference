@@ -16,6 +16,7 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
     internal const string CompiledDiagnosticId = "E128012";
     internal const string OverlappingQuantifierDiagnosticId = "E128013";
     internal const string NestedQuantifierDiagnosticId = "E128014";
+    internal const string OverlappingAlternationDiagnosticId = "E128264";
     internal const string MatchTimeoutParameterName = "matchTimeoutMilliseconds";
 
     private static readonly DiagnosticDescriptor TimeoutRule = new(
@@ -36,22 +37,30 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor OverlappingQuantifierRule = new(
         OverlappingQuantifierDiagnosticId,
-        "[GeneratedRegex] pattern has overlapping quantifiers that risk quadratic backtracking",
-        "[GeneratedRegex] pattern contains '\\s*' or '\\s+' adjacent to a quantifier with overlapping character set (e.g., '.*', '.+') — this causes quadratic backtracking",
+        "[GeneratedRegex] pattern has repeated wildcards that risk polynomial backtracking",
+        "[GeneratedRegex] pattern contains three or more unbounded wildcards, or '\\s*' adjacent to a wildcard — this causes polynomial backtracking",
         "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 
     private static readonly DiagnosticDescriptor NestedQuantifierRule = new(
         NestedQuantifierDiagnosticId,
-        "[GeneratedRegex] pattern has nested quantifiers that cause exponential backtracking",
-        "[GeneratedRegex] pattern contains a quantified group with an inner quantifier (e.g., '(.+)+', '(\\w+)+', '(a*)*') — this causes exponential backtracking",
+        "[GeneratedRegex] pattern has a repeated group that can split across iterations",
+        "[GeneratedRegex] pattern contains a quantified group whose boundary can move between iterations (e.g., '(.+)+', '(\\w+[-.]?)+') — this causes exponential backtracking",
         "E128-Reliability",
         DiagnosticSeverity.Warning,
         true);
 
+    private static readonly DiagnosticDescriptor OverlappingAlternationRule = new(
+        OverlappingAlternationDiagnosticId,
+        "[GeneratedRegex] pattern has overlapping alternatives in a repeated group",
+        "[GeneratedRegex] pattern has a repeated group whose alternatives can match the same text (e.g., '(a|ab)+') — this causes exponential backtracking",
+        "E128-Security",
+        DiagnosticSeverity.Warning,
+        true);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        [TimeoutRule, CompiledRule, OverlappingQuantifierRule, NestedQuantifierRule];
+        [TimeoutRule, CompiledRule, OverlappingQuantifierRule, NestedQuantifierRule, OverlappingAlternationRule];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -125,12 +134,19 @@ public sealed class GeneratedRegexAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (GeneratedRegexHelpers.HasOverlappingQuantifiers(patternLiteral))
+        if (GeneratedRegexHelpers.HasOverlappingQuantifiers(patternLiteral)
+            || GeneratedRegexBacktrackingHelpers.HasThreeUnboundedDots(patternLiteral))
         {
             context.ReportDiagnostic(Diagnostic.Create(OverlappingQuantifierRule, attribute.GetLocation()));
         }
 
-        if (!GeneratedRegexHelpers.HasNestedQuantifier(patternLiteral))
+        if (GeneratedRegexBacktrackingHelpers.HasOverlappingAlternation(patternLiteral))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(OverlappingAlternationRule, attribute.GetLocation()));
+        }
+
+        if (!GeneratedRegexHelpers.HasNestedQuantifier(patternLiteral)
+            && !GeneratedRegexBacktrackingHelpers.HasOptionalLastAtomInRepeatedGroup(patternLiteral))
         {
             return;
         }

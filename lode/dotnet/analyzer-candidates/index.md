@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-26T14:48:46Z*
+*Updated: 2026-11-27T16:21:50Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -47,8 +47,7 @@ shapes, and all three ship as E128232, E128236, and E128237. The rule source,
 the verdict for all seven rules, and the declined project-file shapes live in
 [slopwatch-sweep.md](slopwatch-sweep.md).
 
-No open candidate remains. The dynamic keyword ban ships as E128232. See
-[catalog.md](catalog.md).
+The dynamic keyword ban ships as E128232. See [catalog.md](catalog.md).
 
 The first candidate entered on 2026-11-20, from a rename recorded in a consumer
 repository. The naming-conventions-sweep plan renamed `FetchCommands` to
@@ -60,42 +59,59 @@ The BlazingFastDotnet performance pass on 2026-11-25 shipped its one candidate
 as E128253. See [catalog.md](catalog.md) and the detection shape in
 [rule-details-performance-equality.md](../analyzers/rule-details-performance-equality.md).
 
-The unsafe best-practices read on 2026-11-25 scored six shapes. Three shipped
-inside E128112, E128125, and E128129 on the same day. The static readonly write
-ships as E128254, so two rows remain open. The defect list and the shipped fixes
+The unsafe best-practices read on 2026-11-25 scored six shapes. Every one
+shipped: three inside E128112, E128125, and E128129 on the same day, then
+E128254 for the static readonly write, and E128260 and E128261 for the retained
+memory read and the padded struct copy. The defect list and the shipped fixes
 live in [unsafe-sweep.md](unsafe-sweep.md).
 
 The second BlazingFastDotnet performance pass on 2026-11-25 added three shapes.
 Two duplicated an installed rule and left the register. A per-call
 `new JsonSerializerOptions()` is CA1869, and an `object` lock target is MA0158.
-The `IHttpContextAccessor` row waits for a consumer occurrence, because no
-installed rule and no consumer site names the shape.
+The `IHttpContextAccessor` rule shipped as E128262.
+
+The pugworks review read on 2026-11-27 scored three shapes. All three shipped:
+E128256, E128257, and E128258. The same read found a detection gap in E128033,
+which the batch closed. See
+[pugworks-review-sweep.md](pugworks-review-sweep.md).
+
+The analyzer-candidates-batch plan on 2026-11-27 shipped every remaining row
+from the four reads above, plus the plural twin name shape as E128259. The open
+table below holds only the shapes that still wait.
+
+The vulnerability checklist sweep on 2026-11-27 mapped two security checklists
+to the installed rule sets. It added three rows. The path containment prefix
+shape shipped as E128263, so two rows remain. See
+[vulnerability-sweep-2026-11-27.md](vulnerability-sweep-2026-11-27.md).
+
+The ReDoS sweep on 2026-11-27 mapped a regex denial-of-service checklist to the
+installed rules. A constant pattern reaches E128013, E128014, and E128011
+through the E128123 funnel, so only a non-constant pattern escapes. The sweep
+added four pattern rows, one detection gap in E128014, and the three security
+shapes the earlier checklist left open. The security batch shipped them as
+E128264 to E128268 and widened E128013 and E128014. See
+[redos-sweep-2026-11-27.md](redos-sweep-2026-11-27.md).
 
 | Pattern | Source | Score | Status | Notes |
 |---------|--------|-------|--------|-------|
-| Helper or operation type whose name is a plural, suffix, or twin of its sibling | `session repeat` | 4/5 | new | Frequency 1. Coverage gap 1. Expressibility 1. Value 1. CA1711 and CA1717 do not cover the shape. The names alone cannot separate an operation type from a collection type, so a report needs a stronger link. One occurrence is thin evidence, so the shape waits for a second. |
-| A retained `Memory<T>` slice is used after its owner is disposed | `unsafe doc` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. E128162 and IDISP016 own a direct use of the disposed owner. The retained slice needs an alias link from `owner.Memory` to the later read. |
-| A padded struct is copied byte-wise through a marshal API | `unsafe doc` | 3/5 | new | Frequency 1, gap 1, expressibility 0, value 1. Roslyn exposes no field offset or size API. A rule must compute the padding from the field list, the pack value, and the layout kind. No code fix: a pack or field-order change alters the interop layout. |
-| `IHttpContextAccessor` injected into a service | `BlazingFastDotnet` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. No installed rule covers it. The shape is correct in middleware, filters, Blazor components, and background workers, where no `HttpContext` parameter exists. The rule needs that allowlist, or the false positive rate stays high. |
 | Sonar S6585 rejects a custom `DateTime` format literal that renders a culture-invariant ISO-8601 stamp | `session friction` | 2/5 | new | Frequency 1, gap 0, expressibility 1, value 0. S6585 already owns the shape, and the `s` standard specifier plus a literal `Z` produces the same text, so the workaround beats a suppression. Decide whether to keep the workaround or tune S6585. Seen in build-time-hotspots on 2026-11-26. |
 | A whole-compilation duplicate code detector analyzer with an extract shared code fixer | `session idea` | 2/5 | new | Frequency 0, gap 1, expressibility 0, value 1. Roslyn shows an analyzer one declaration at a time. Duplicate detection needs a whole-compilation fragment registry. The fix needs a cross type extract method refactor. The 2026-11-26 duplication audit in plans/TECH_DEBT_AUDIT.md found the repeated shapes here are mostly conventional boilerplate, so the rule would be noisy. The alternative shape is an offline dup scan script in scripts/. |
+| A `bool` guard predicate returns `true` from its `catch` block | `vuln checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. The method name carries the guard contract, so the rule reads `Is`, `Has`, `Can`, `Allow`, `Validate`, and their siblings. No code fix, because the safe answer depends on the caller. |
+| Type activated from a run-time name or bytes | `vuln checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. Waits for a defect site. |
+| An alternation inside a quantified group whose branches share a first character | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. `^(a\|ab)+$` splits 2^n ways. Extends E128014 with the shipped `HasTopLevelAlternation` and `AtomsCanMatchSameText` helpers. |
+| A repeated group whose last atom is optional | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. `(\w+[-.]?)+` moves the iteration boundary. E128014 misses it because its first and last atoms do not overlap, so the fix belongs in that rule. |
+| Three or more unbounded `.*` segments in one pattern | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. Widens E128013 from one wildcard adjacency to a wildcard count. |
+| A non-constant regex pattern with no timeout and no `NonBacktracking` | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. MA0009 reads the constructor only and MA0110 needs a constant. `ContentFilter` passes a timeout, so the rule stays silent there. |
+| A certificate chain whose `Build` result is ignored or whose policy drops a check | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. E128156 owns the callback path only. |
+| A decompression loop with no cumulative output bound | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. E128227 bounds an HTTP body only. No site in the tree today. |
+| A symmetric key set from a text encoding instead of a key derivation function | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. The FIPS family covers key length and algorithm, never key derivation. |
+| E128045 flags a single-file tool whose whole output is a JSON document | `session friction` | 2/5 | new | Frequency 1, gap 0, expressibility 1, value 0. A tool has no container and no terminal writer, and `ITerminalWriter` would drag `src/Pug.Rendering` into a process that prints one JSON body. The ask is a narrow exemption for a machine-readable tool, not a new rule. Seen in the file-based-apps probe on 2026-11-27. |
 
 ## Tier 2 Candidates
 
-This section tracked the shapes that cleared the score bar and waited for a real
-defect in review. No Tier 2 candidate remains.
-The `AsReadOnly()` getter shape left this table on 2026-11-14, because E128058
-and E128060 require that shape. See [skipped-decisions.md](skipped-decisions.md).
-The token-validation flag shape left this table on 2026-11-17, because the
-maintainer chose prevention over the real-defect bar. The five roadmap shapes
-left the same way on 2026-11-18, and ship as E128233 to E128237. Four Tier 2
-shapes left on 2026-11-19, because the maintainer chose prevention again. They
-ship as E128238 to E128241. Five more Tier 2 shapes left the same day, and ship
-as E128242 to E128246. Four more Tier 2 shapes left the same day, and ship as
-E128247 to E128250. The last two Tier 2 shapes left the same day, and ship as
-E128251 and E128252. E128252 left the set on the same day, because the span API
-never avoids a base64 allocation. See [skipped-decisions.md](skipped-decisions.md)
-for that removal and [catalog.md](catalog.md) for the shipped rules.
+A Tier 2 shape clears the score bar and waits for a real defect in review. The
+register table marks such a row with the `candidate` status. No row holds that
+status today.
 
 ## Skipped Decisions
 
@@ -121,13 +137,17 @@ declined on 2026-11-13 alongside the earlier decisions.
 
 ## Related
 
-- [catalog.md](catalog.md): settled rules, rejected ideas, and the ID map
+- [catalog.md](catalog.md): settled rules and the shipped release table
+- [redos-sweep-2026-11-27.md](redos-sweep-2026-11-27.md): 2026-11-27 ReDoS read, whose five rules ship as E128264 to E128268
 - [skipped-decisions.md](skipped-decisions.md): every declined shape and its reason
 - [guidance-reads.md](guidance-reads.md): each read of the two guidance documents
 - [net11-conversion-sweep.md](net11-conversion-sweep.md): open .NET 11 conversion shapes
 - [slopwatch-sweep.md](slopwatch-sweep.md): 2026-11-18 slopwatch read, with one open and two Tier 2 shapes
 - [async-sweep.md](async-sweep.md): closed async fire-and-forget sweep
 - [unsafe-sweep.md](unsafe-sweep.md): 2026-11-25 unsafe best-practices read, with two open shapes and a defect list
+- [pugworks-review-sweep.md](pugworks-review-sweep.md): 2026-11-27 pugworks read, with three new shapes and an E128033 defect
+- [vulnerability-sweep-2026-11-27.md](vulnerability-sweep-2026-11-27.md): 2026-11-27 security checklist read, with three new rows and the owned-shape map
+- [redos-sweep-2026-11-27.md](redos-sweep-2026-11-27.md): 2026-11-27 ReDoS read, with four pattern rows, one E128014 detection gap, and the open security shapes
 - [external-sweep.md](external-sweep.md): closed 2026-11-05 external rule-set sweep
 - [performance-sweep.md](performance-sweep.md): closed twenty-practice performance sweep
 
@@ -206,3 +226,17 @@ Nushell or Markdown capture stays in the consumer repository ledger.
 > **Pattern**: When a control is replaced with a different type, delete or retarget every style selector that named the old type
 > **Why**: A selector on the removed type matches nothing after the swap, so its layout fix stops applying silently and no build error reports it
 > **Source**: `correction 2026-11-23T16:25:33Z`, occurrence 1 of 3
+
+### Captured: Scope a resource cap to the pipeline that needs it; a user-invoked path that shares the reader must not inherit the indexing cap (1/3): score pending
+> **Key**: `scope-a-resource-cap-to-the-pipeline-that-needs-it-a-user-inv`
+> **Class**: `design`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: Scope a resource cap to the pipeline that needs it; a user-invoked path that shares the reader must not inherit the indexing cap
+> **Why**: A 600-page PDF converted to an empty file reported as Converted because ReadDocumentAsync reused the indexing read. Give the shared reader an explicit scope (extraction vs conversion) instead of one behavior for every caller.
+> **Source**: `correction 2026-11-27T03:59:56Z`, occurrence 1 of 3
+
+### Captured: A regex that scans untrusted input must bound backtracking: no nested quantifier, exclusive alternation branches, and a timeout or NonBacktracking (1/3): score pending
+> **Key**: `a-regex-that-scans-untrusted-input-must-bound-backtracking-no`
+> **Class**: `correctness`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: A regex that scans untrusted input must bound backtracking: no nested quantifier, exclusive alternation branches, and a timeout or NonBacktracking
+> **Why**: A nested or ambiguous quantifier explores exponential splits on crafted input, so one request burns a worker thread. Rewrite the pattern, add an atomic group, or pass RegexOptions.NonBacktracking.
+> **Source**: `correction 2026-11-27T15:49:31Z`, occurrence 1 of 3
