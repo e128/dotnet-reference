@@ -197,15 +197,9 @@ public sealed class EfQueryInLoopAnalyzer : DiagnosticAnalyzer
 
     private static bool IsDbSet(ITypeSymbol type, ImmutableArray<INamedTypeSymbol> definitions)
     {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (MetadataTypes.Contains(definitions, current.OriginalDefinition))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(
+            type,
+            current => MetadataTypes.Contains(definitions, current.OriginalDefinition));
     }
 
     private static bool IsQueryable(ITypeSymbol type, KnownTypes known)

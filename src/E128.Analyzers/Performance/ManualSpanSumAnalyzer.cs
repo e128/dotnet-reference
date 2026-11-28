@@ -365,26 +365,13 @@ public sealed class ManualSpanSumAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (IsWriteTarget(identifier))
+            if (SyntaxWriteChecks.IsWriteTarget(identifier))
             {
                 return true;
             }
         }
 
         return false;
-    }
-
-    private static bool IsWriteTarget(IdentifierNameSyntax identifier)
-    {
-        return identifier.Parent switch
-        {
-            AssignmentExpressionSyntax assignment => assignment.Left == identifier,
-            PrefixUnaryExpressionSyntax prefix => prefix.Operand == identifier,
-            PostfixUnaryExpressionSyntax postfix => postfix.Operand == identifier,
-            ArgumentSyntax argument => argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
-                                       || argument.RefKindKeyword.IsKind(SyntaxKind.OutKeyword),
-            _ => false
-        };
     }
 
     internal static ITypeSymbol? GetElementType(

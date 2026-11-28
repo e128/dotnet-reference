@@ -1,8 +1,6 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Performance;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -11,15 +9,9 @@ public sealed class MultiStringEqualsOrChainCodeFixProviderBranchCoverageGapTest
 {
     private static Task VerifyNoFixAsync(string source, OutputKind outputKind = OutputKind.DynamicallyLinkedLibrary)
     {
-        var test = new CSharpCodeFixTest<MultiStringEqualsOrChainAnalyzer, MultiStringEqualsOrChainCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = source,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.OutputKind = outputKind;
-
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.NoFixAsync<MultiStringEqualsOrChainAnalyzer, MultiStringEqualsOrChainCodeFixProvider>(
+            source,
+            options: new CodeFixTestOptions { OutputKind = outputKind });
     }
 
     [Fact]

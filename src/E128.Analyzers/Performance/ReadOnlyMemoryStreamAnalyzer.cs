@@ -209,7 +209,7 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
     {
         if (reference.Parent is MemberAccessExpressionSyntax access && access.Expression == reference)
         {
-            if (IsWriteTarget(access))
+            if (SyntaxWriteChecks.IsWriteTarget(access))
             {
                 return false;
             }
@@ -222,18 +222,6 @@ public sealed class ReadOnlyMemoryStreamAnalyzer : DiagnosticAnalyzer
 
         return reference.Parent is ArgumentSyntax argument
                && IsReadOnlyConsumer(argument, model, cancellationToken);
-    }
-
-    private static bool IsWriteTarget(ExpressionSyntax expression)
-    {
-        return expression.Parent switch
-        {
-            AssignmentExpressionSyntax assignment => assignment.Left == expression,
-            PrefixUnaryExpressionSyntax prefix => prefix.Operand == expression,
-            PostfixUnaryExpressionSyntax postfix => postfix.Operand == expression,
-            ArgumentSyntax argument => !argument.RefKindKeyword.IsKind(SyntaxKind.None),
-            _ => false
-        };
     }
 
     private static bool IsReadOnlyConsumer(

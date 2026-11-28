@@ -23,14 +23,6 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
 
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
-        if (node is not InvocationExpressionSyntax invocation)
-        {
-            return;
-        }
-
         var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(context.Document, context.CancellationToken).ConfigureAwait(false);
         if (rootAndModel is null)
         {
@@ -38,14 +30,20 @@ public sealed class StringFormatToInterpolationCodeFixProvider : E128CodeFixProv
         }
 
         var semanticModel = rootAndModel.Value.SemanticModel;
+        var diagnostic = context.Diagnostics[0];
 
-        var interpolated = BuildFromInvocation(invocation, semanticModel, context.CancellationToken);
-        if (interpolated is null)
+        if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
+            || BuildFromInvocation(invocation, semanticModel, context.CancellationToken) is not { } interpolated)
         {
             return;
         }
 
-        CodeFixRegistration.Register(context, diagnostic, "Convert to string interpolation", nameof(StringFormatToInterpolationCodeFixProvider), ct => ApplyFixAsync(context.Document, invocation, interpolated, ct));
+        CodeFixRegistration.Register(
+            context,
+            diagnostic,
+            "Convert to string interpolation",
+            nameof(StringFormatToInterpolationCodeFixProvider),
+            ct => ApplyFixAsync(context.Document, invocation, interpolated, ct));
     }
 
     private static async Task<Document> ApplyFixAsync(

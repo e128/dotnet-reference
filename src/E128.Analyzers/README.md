@@ -9,7 +9,7 @@ A main purpose of this project is to reduce coding LLM slop. A model without gua
 ## Installation
 
 ```xml
-<PackageReference Include="E128.Analyzers" Version="3.8.0" PrivateAssets="all" />
+<PackageReference Include="E128.Analyzers" Version="3.8.1" PrivateAssets="all" />
 ```
 
 > `PrivateAssets="all"` keeps the analyzers out of your consumers' dependency graph.

@@ -123,23 +123,10 @@ public sealed class UseAfterDisposeAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken)
     {
         return identifier.SpanStart >= disposeEnd
-               && !IsInsideNestedFunction(identifier, block)
+               && !SyntaxBoundary.IsInsideNestedFunction(identifier, block)
                && SymbolEqualityComparer.Default.Equals(
                    model.GetSymbolInfo(identifier, cancellationToken).Symbol,
                    local);
-    }
-
-    private static bool IsInsideNestedFunction(SyntaxNode node, BlockSyntax block)
-    {
-        for (var current = node.Parent; current is not null && current != block; current = current.Parent)
-        {
-            if (current is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static bool IsMemberAccessReceiver(IdentifierNameSyntax identifier)

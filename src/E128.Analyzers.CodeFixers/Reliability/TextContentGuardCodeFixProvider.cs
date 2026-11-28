@@ -25,6 +25,7 @@ public sealed class TextContentGuardCodeFixProvider : E128CodeFixProviderBase
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
+
         if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
             || invocation.Expression is not MemberAccessExpressionSyntax matchAccess
             || matchAccess.Expression is not MemberAccessExpressionSyntax textContentAccess)
@@ -46,7 +47,12 @@ public sealed class TextContentGuardCodeFixProvider : E128CodeFixProviderBase
 
         var needsParentheses = rootOperand.Parent is PrefixUnaryExpressionSyntax;
 
-        CodeFixRegistration.Register(context, diagnostic, "Add a TextContent.Length guard", nameof(TextContentGuardCodeFixProvider), ct => AddGuardAsync(context.Document, rootOperand, guardText, needsParentheses, ct));
+        CodeFixRegistration.Register(
+            context,
+            diagnostic,
+            "Add a TextContent.Length guard",
+            nameof(TextContentGuardCodeFixProvider),
+            ct => AddGuardAsync(context.Document, rootOperand, guardText, needsParentheses, ct));
 
         return Task.CompletedTask;
     }

@@ -19,18 +19,13 @@ public sealed class Sha256CreateObsoleteCodeFixProvider : E128CodeFixProviderBas
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax createInvocation)
-        {
-            return Task.CompletedTask;
-        }
-
-        if (!IsChainedWithComputeHash(createInvocation, out _))
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Use SHA256.HashData()", nameof(Sha256CreateObsoleteCodeFixProvider), ct => RewriteToHashDataAsync(context.Document, createInvocation, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Use SHA256.HashData()",
+            nameof(Sha256CreateObsoleteCodeFixProvider),
+            static createInvocation => IsChainedWithComputeHash(createInvocation, out _),
+            (createInvocation, ct) => RewriteToHashDataAsync(context.Document, createInvocation, ct));
 
         return Task.CompletedTask;
     }

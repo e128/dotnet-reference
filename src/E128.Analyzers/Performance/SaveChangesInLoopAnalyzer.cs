@@ -148,15 +148,9 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
 
     private static bool DerivesFromDbContext(INamedTypeSymbol? type, INamedTypeSymbol dbContextType)
     {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, dbContextType))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(
+            type,
+            current => SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, dbContextType));
     }
 
     private static bool IsEntityFrameworkType(ITypeSymbol? type)

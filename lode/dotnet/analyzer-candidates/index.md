@@ -1,5 +1,5 @@
 # Analyzer Candidates: Open Register
-*Updated: 2026-11-27T16:21:50Z*
+*Updated: 2026-11-28T15:10:20Z*
 
 One register for every open analyzer candidate, whichever repository noticed it.
 A candidate enters at status `new`, carries a four-dimension score, and leaves
@@ -105,6 +105,8 @@ E128264 to E128268 and widened E128013 and E128014. See
 | A certificate chain whose `Build` result is ignored or whose policy drops a check | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. E128156 owns the callback path only. |
 | A decompression loop with no cumulative output bound | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. E128227 bounds an HTTP body only. No site in the tree today. |
 | A symmetric key set from a text encoding instead of a key derivation function | `redos checklist` | 3/5 | new | Frequency 0, gap 1, expressibility 1, value 1. The FIPS family covers key length and algorithm, never key derivation. |
+| E128014 reads an escaped `\(` as a group opener, so an atomic group does not exempt a markdown-link pattern | `session friction` | 2/5 | new | Frequency 1, gap 0, expressibility 1, value 0. The scan runs on raw characters, so `\(` opens a pseudo group whose close is the repeat group trailing paren, and a `{0,n}` before it reports. `(?>\[[^\]]+\]\([^)]+\)[^\[\n]{0,20})+` has no movable boundary and still reports. The fix honors escapes and atomic groups on that path. Seen in plans/analyzer-adoption Phase 3 on 2026-11-28. |
+| E128263 misses a separator appended with `+=` or a conditional, and reports the correct root | `session friction` | 2/5 | new | Frequency 1, gap 0, expressibility 1, value 0. `LastAssignment` accepts only a simple assignment, and `IsSafeValue` accepts only `x + Path.DirectorySeparatorChar`, a separator-terminated interpolated string, or a separator-terminated constant. `root += sep` inside an if guard and `cond ? root : root + sep` are both correct roots and both report. Seen twice in plans/analyzer-adoption Phase 3 on 2026-11-28, in `ValidateDomainPath` and `TryLoadExternalImageAsync`. |
 | E128045 flags a single-file tool whose whole output is a JSON document | `session friction` | 2/5 | new | Frequency 1, gap 0, expressibility 1, value 0. A tool has no container and no terminal writer, and `ITerminalWriter` would drag `src/Pug.Rendering` into a process that prints one JSON body. The ask is a narrow exemption for a machine-readable tool, not a new rule. Seen in the file-based-apps probe on 2026-11-27. |
 
 ## Tier 2 Candidates
@@ -240,3 +242,10 @@ Nushell or Markdown capture stays in the consumer repository ledger.
 > **Pattern**: A regex that scans untrusted input must bound backtracking: no nested quantifier, exclusive alternation branches, and a timeout or NonBacktracking
 > **Why**: A nested or ambiguous quantifier explores exponential splits on crafted input, so one request burns a worker thread. Rewrite the pattern, add an atomic group, or pass RegexOptions.NonBacktracking.
 > **Source**: `correction 2026-11-27T15:49:31Z`, occurrence 1 of 3
+
+### Captured: Private helpers declare the concrete collection type (List<T>, string[]) instead of IReadOnlyList<T> when one concrete type flows through them (1/3): score pending
+> **Key**: `private-helpers-declare-the-concrete-collection-type-list-t-s`
+> **Class**: `style`, **Lang**: `cs`, **File**: `(none)`
+> **Pattern**: Private helpers declare the concrete collection type (List<T>, string[]) instead of IReadOnlyList<T> when one concrete type flows through them
+> **Why**: CA1859 is error-level and fires on an interface-typed return or parameter that only ever sees one concrete type. Record and public surfaces keep IReadOnlyList; private plumbing takes the concrete type so the build stays clean.
+> **Source**: `correction 2026-11-28T02:11:38Z`, occurrence 1 of 3

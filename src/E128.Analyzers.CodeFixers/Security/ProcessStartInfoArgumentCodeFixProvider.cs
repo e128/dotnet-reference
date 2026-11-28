@@ -20,12 +20,9 @@ public sealed class ProcessStartInfoArgumentCodeFixProvider : E128CodeFixProvide
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
-        if (root.FindNode(diagnostic.Location.SourceSpan) is not AssignmentExpressionSyntax assignment)
-        {
-            return Task.CompletedTask;
-        }
 
-        if (assignment.Parent is not InitializerExpressionSyntax)
+        if (root.FindNode(diagnostic.Location.SourceSpan) is not AssignmentExpressionSyntax assignment
+            || assignment.Parent is not InitializerExpressionSyntax)
         {
             return Task.CompletedTask;
         }
@@ -36,7 +33,12 @@ public sealed class ProcessStartInfoArgumentCodeFixProvider : E128CodeFixProvide
             return Task.CompletedTask;
         }
 
-        CodeFixRegistration.Register(context, diagnostic, "Use ArgumentList instead of Arguments", nameof(ProcessStartInfoArgumentCodeFixProvider), ct => ReplaceWithArgumentListAsync(context.Document, assignment, tokens, ct));
+        CodeFixRegistration.Register(
+            context,
+            diagnostic,
+            "Use ArgumentList instead of Arguments",
+            nameof(ProcessStartInfoArgumentCodeFixProvider),
+            ct => ReplaceWithArgumentListAsync(context.Document, assignment, tokens, ct));
 
         return Task.CompletedTask;
     }

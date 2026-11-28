@@ -16,15 +16,14 @@ public sealed class AsyncDbIoCodeFixProvider : E128CodeFixProviderBase
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
-            || invocation.Expression is not MemberAccessExpressionSyntax
-            || !AsyncSiblingCodeFixHelper.HasFixableEnclosingMethod(invocation))
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Await the async overload", nameof(AsyncDbIoCodeFixProvider), ct => AsyncSiblingCodeFixHelper.ApplyFixAsync(context.Document, invocation, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Await the async overload",
+            nameof(AsyncDbIoCodeFixProvider),
+            static invocation => invocation.Expression is MemberAccessExpressionSyntax
+                                 && AsyncSiblingCodeFixHelper.HasFixableEnclosingMethod(invocation),
+            (invocation, ct) => AsyncSiblingCodeFixHelper.ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

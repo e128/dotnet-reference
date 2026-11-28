@@ -162,11 +162,7 @@ public sealed class LargeStructByValueAnalyzer : DiagnosticAnalyzer
         foreach (var attribute in type.GetAttributes())
         {
             if (attribute.AttributeClass is { } attributeClass
-                && string.Equals(attributeClass.Name, "StructLayoutAttribute", StringComparison.Ordinal)
-                && string.Equals(
-                    attributeClass.ContainingNamespace?.ToDisplayString(),
-                    "System.Runtime.InteropServices",
-                    StringComparison.Ordinal)
+                && TypeSymbols.IsNamed(attributeClass, "StructLayoutAttribute", "System.Runtime.InteropServices")
                 && attribute.ConstructorArguments.Length is 1
                 && attribute.ConstructorArguments[0].Value is int layoutKind
                 && layoutKind == (int)LayoutKind.Explicit)

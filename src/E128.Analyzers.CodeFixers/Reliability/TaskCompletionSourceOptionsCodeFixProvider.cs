@@ -51,15 +51,13 @@ public sealed class TaskCompletionSourceOptionsCodeFixProvider : E128CodeFixProv
         BaseObjectCreationExpressionSyntax creation,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-
-        if (root is null
-            || semanticModel is null
-            || creation.ArgumentList is not { } argumentList)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null || creation.ArgumentList is not { } argumentList)
         {
             return document;
         }
+
+        var (root, semanticModel) = rootAndModel.Value;
 
         var optionsIndex = TaskCompletionSourceOptionsAnalyzer.GetOptionsParameterIndex(
             creation,

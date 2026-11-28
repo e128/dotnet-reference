@@ -58,25 +58,8 @@ public sealed class HttpRequestInLoopAnalyzer : DiagnosticAnalyzer
         }
 
         var methodName = access.Name.Identifier.ValueText;
-        if (!RequestMethods.Contains(methodName))
-        {
-            return;
-        }
-
-        var body = LoopContext.FindEnclosingLoopBody(invocation);
-        if (body is null
-            || LoopContext.HasConstantBound(invocation, context.SemanticModel, context.CancellationToken))
-        {
-            return;
-        }
-
-        var receiverType = context.SemanticModel.GetTypeInfo(access.Expression, context.CancellationToken).Type;
-        if (!TypeSymbols.DerivesFrom(receiverType, httpClient))
-        {
-            return;
-        }
-
-        if (LoopContext.ContainsWaitCall(body, context.SemanticModel, context.CancellationToken))
+        if (!RequestMethods.Contains(methodName)
+            || !LoopContext.IsUnboundedLoopCall(context, invocation, access, httpClient))
         {
             return;
         }

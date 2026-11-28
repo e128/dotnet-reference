@@ -513,23 +513,21 @@ public sealed class DiskRoundtripAnalyzer : DiagnosticAnalyzer
 
         var typeInfo = context.SemanticModel.GetTypeInfo(id, context.CancellationToken);
         var symbol = typeInfo.Type;
-        return symbol is not null
-               && string.Equals(symbol.Name, "FileInfo", StringComparison.Ordinal)
-               && string.Equals(symbol.ContainingNamespace?.ToDisplayString(), "System.IO", StringComparison.Ordinal);
+        return TypeSymbols.IsNamed(symbol, "FileInfo", "System.IO");
     }
 
     private static bool ConfirmSystemIoInvocation(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol;
         return symbol is IMethodSymbol method
-               && string.Equals(method.ContainingType?.ContainingNamespace?.ToDisplayString(), "System.IO", StringComparison.Ordinal);
+               && Namespaces.Equals(method.ContainingType?.ContainingNamespace, "System.IO");
     }
 
     private static bool ConfirmSystemIoCtor(SyntaxNodeAnalysisContext context, ObjectCreationExpressionSyntax creation)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(creation, context.CancellationToken).Symbol;
         return symbol is IMethodSymbol method
-               && string.Equals(method.ContainingType?.ContainingNamespace?.ToDisplayString(), "System.IO", StringComparison.Ordinal);
+               && Namespaces.Equals(method.ContainingType?.ContainingNamespace, "System.IO");
     }
 
     private static void Correlate(

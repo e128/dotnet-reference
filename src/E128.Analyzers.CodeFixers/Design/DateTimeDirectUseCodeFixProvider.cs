@@ -20,20 +20,19 @@ public sealed class DateTimeDirectUseCodeFixProvider : E128CodeFixProviderBase
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not MemberAccessExpressionSyntax memberAccess)
+        if (root.FindNode(diagnostic.Location.SourceSpan) is not MemberAccessExpressionSyntax memberAccess
+            || GetReplacement(memberAccess) is not { } replacement)
         {
             return Task.CompletedTask;
         }
 
-        var replacement = GetReplacement(memberAccess);
-        if (replacement is null)
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Replace with TimeProvider.System", nameof(DateTimeDirectUseCodeFixProvider), ct => ApplyFixAsync(context.Document, memberAccess, replacement, ct));
+        CodeFixRegistration.Register(
+            context,
+            diagnostic,
+            "Replace with TimeProvider.System",
+            nameof(DateTimeDirectUseCodeFixProvider),
+            ct => ApplyFixAsync(context.Document, memberAccess, replacement, ct));
 
         return Task.CompletedTask;
     }

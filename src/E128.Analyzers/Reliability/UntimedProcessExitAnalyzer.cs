@@ -90,9 +90,7 @@ public sealed class UntimedProcessExitAnalyzer : DiagnosticAnalyzer
 
     private static bool IsProcessType(ITypeSymbol? type)
     {
-        return type is not null
-               && string.Equals(type.Name, "Process", StringComparison.Ordinal)
-               && string.Equals(type.ContainingNamespace?.ToDisplayString(), "System.Diagnostics", StringComparison.Ordinal);
+        return TypeSymbols.IsNamed(type, "Process", "System.Diagnostics");
     }
 
     private static bool IsInMethodCancellationTokenSourceToken(SyntaxNodeAnalysisContext context, ExpressionSyntax tokenArgument)

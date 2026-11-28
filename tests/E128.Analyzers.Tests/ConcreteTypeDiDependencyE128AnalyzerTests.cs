@@ -10,8 +10,7 @@ public sealed class ConcreteTypeDiDependencyE128AnalyzerTests
 
     private static AnalyzerTestOptions Options => new() { References = Net100WithDi };
 
-    private static readonly ReferenceAssemblies Net100WithDi = ReferenceAssemblies.Net.Net100
-        .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
+    private static readonly ReferenceAssemblies Net100WithDi = TestReferences.Net100WithDependencyInjection;
 
     #region Fires
 

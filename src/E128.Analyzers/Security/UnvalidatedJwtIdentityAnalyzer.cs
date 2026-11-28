@@ -78,15 +78,7 @@ public sealed partial class UnvalidatedJwtIdentityAnalyzer : DiagnosticAnalyzer
 
     private static bool Is(ImmutableArray<INamedTypeSymbol> types, ITypeSymbol? type)
     {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (MetadataTypes.Contains(types, current))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(type, current => MetadataTypes.Contains(types, current));
     }
 
     private sealed partial class BodyAnalysis(KnownTypes types, HashSet<IMethodSymbol> localFunctions, BodyAnalysis? parent = null, SyntaxNode? origin = null) : OperationWalker

@@ -91,6 +91,17 @@ internal static class CodeFixTestRunner
             test.SolutionTransforms.Add(AllowUnsafe);
         }
 
+        if (options.AnalyzerConfig is { } config)
+        {
+            test.TestState.AnalyzerConfigFiles.Add((config.Name, config.Content));
+            test.FixedState.AnalyzerConfigFiles.Add((config.Name, config.Content));
+        }
+
+        if (options.OutputKind is { } outputKind)
+        {
+            test.TestState.OutputKind = outputKind;
+        }
+
         if (options.FixedExpected is not null)
         {
             test.FixedState.ExpectedDiagnostics.AddRange(options.FixedExpected);
@@ -172,6 +183,39 @@ internal static class CodeFixTestRunner
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TFixer : CodeFixProvider, new()
     {
+        return NoFixCoreAsync<TAnalyzer, TFixer>(source, references, behaviors, null, expected);
+    }
+
+    /// <summary>
+    ///     The form of <see cref="NoFixAsync{TAnalyzer, TFixer}(string, ReferenceAssemblies?, CodeFixTestBehaviors, DiagnosticResult[])" />
+    ///     that applies non-default test options.
+    /// </summary>
+    /// <typeparam name="TAnalyzer">The analyzer under test.</typeparam>
+    /// <typeparam name="TFixer">The fixer that must keep the code unchanged.</typeparam>
+    internal static Task NoFixAsync<TAnalyzer, TFixer>(
+        string source,
+        CodeFixTestOptions options,
+        params DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TFixer : CodeFixProvider, new()
+    {
+        return NoFixCoreAsync<TAnalyzer, TFixer>(
+            source,
+            null,
+            CodeFixTestBehaviors.None,
+            options,
+            expected);
+    }
+
+    private static Task NoFixCoreAsync<TAnalyzer, TFixer>(
+        string source,
+        ReferenceAssemblies? references,
+        CodeFixTestBehaviors behaviors,
+        CodeFixTestOptions? options,
+        DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TFixer : CodeFixProvider, new()
+    {
         var test = new CSharpCodeFixTest<TAnalyzer, TFixer, DefaultVerifier>
         {
             TestCode = source,
@@ -184,6 +228,7 @@ internal static class CodeFixTestRunner
             test.CodeFixTestBehaviors = behaviors;
         }
 
+        ApplyOptions(test, options ?? new CodeFixTestOptions());
         test.ExpectedDiagnostics.AddRange(expected);
         return test.RunAsync(Xunit.TestContext.Current.CancellationToken);
     }

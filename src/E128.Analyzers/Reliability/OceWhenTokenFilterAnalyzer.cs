@@ -75,8 +75,6 @@ public sealed class OceWhenTokenFilterAnalyzer : DiagnosticAnalyzer
     private static bool IsCancellationTokenTyped(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
         var type = context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type;
-        return type is not null
-               && string.Equals(type.Name, "CancellationToken", StringComparison.Ordinal)
-               && string.Equals(type.ContainingNamespace?.ToDisplayString(), "System.Threading", StringComparison.Ordinal);
+        return TypeSymbols.IsNamed(type, "CancellationToken", "System.Threading");
     }
 }

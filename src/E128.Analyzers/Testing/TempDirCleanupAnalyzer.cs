@@ -113,9 +113,7 @@ public sealed class TempDirCleanupAnalyzer : DiagnosticAnalyzer
 
         return symbolInfo.Symbol is IMethodSymbol method
                && string.Equals(method.Name, "GetTempPath", StringComparison.Ordinal)
-               && method.ContainingType is { } containingType
-               && string.Equals(containingType.Name, "Path", StringComparison.Ordinal)
-               && string.Equals(containingType.ContainingNamespace?.ToDisplayString(), "System.IO", StringComparison.Ordinal);
+               && TypeSymbols.IsNamed(method.ContainingType, "Path", "System.IO");
     }
 
     private static bool IsInInitializerOrConstructor(SyntaxNode node)

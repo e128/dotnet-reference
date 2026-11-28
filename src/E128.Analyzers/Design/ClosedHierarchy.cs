@@ -57,11 +57,7 @@ internal static class ClosedHierarchy
         }
 
         return type.GetAttributes().Any(static attribute =>
-            string.Equals(attribute.AttributeClass?.Name, ClosedAttributeName, StringComparison.Ordinal)
-            && string.Equals(
-                attribute.AttributeClass?.ContainingNamespace?.ToDisplayString(),
-                ClosedAttributeNamespace,
-                StringComparison.Ordinal));
+            TypeSymbols.IsNamed(attribute.AttributeClass, ClosedAttributeName, ClosedAttributeNamespace));
     }
 
     private static void CollectCandidates(

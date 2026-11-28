@@ -250,15 +250,10 @@ public sealed class DecompressionWithoutBoundAnalyzer : DiagnosticAnalyzer
 
     private static bool IsDerived(ITypeSymbol type, INamedTypeSymbol baseType)
     {
-        for (var current = type.BaseType; current is not null; current = current.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, baseType))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(
+            type,
+            current => SymbolEqualityComparer.Default.Equals(current, baseType),
+            includeSelf: false);
     }
 
     private static ImmutableArray<INamedTypeSymbol> ResolveDecompression(Compilation compilation)

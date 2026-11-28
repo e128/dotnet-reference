@@ -269,96 +269,69 @@ public sealed class NamingStyleCodeFixProvider : E128CodeFixProviderBase
 
     private static string ApplyPascalCase(string[] words, string separator)
     {
-        var builder = new StringBuilder();
-        for (var i = 0; i < words.Length; i++)
-        {
-            if (i > 0 && !string.IsNullOrEmpty(separator))
-            {
-                builder.Append(separator);
-            }
-
-            AppendCapitalized(builder, words[i]);
-        }
-
-        return builder.ToString();
+        return JoinWords(words, separator, static (builder, word, _) => AppendCapitalized(builder, word));
     }
 
     private static string ApplyCamelCase(string[] words, string separator)
     {
-        var builder = new StringBuilder();
-        for (var i = 0; i < words.Length; i++)
+        return JoinWords(words, separator, static (builder, word, index) =>
         {
-            if (i > 0 && !string.IsNullOrEmpty(separator))
+            if (index is 0)
             {
-                builder.Append(separator);
-            }
-
-            if (i is 0)
-            {
-                AppendLowered(builder, words[i]);
+                AppendLowered(builder, word);
             }
             else
             {
-                AppendCapitalized(builder, words[i]);
+                AppendCapitalized(builder, word);
             }
-        }
-
-        return builder.ToString();
+        });
     }
 
     private static string ApplyAllUpper(string[] words, string separator)
     {
-        var builder = new StringBuilder();
-        for (var i = 0; i < words.Length; i++)
-        {
-            if (i > 0 && !string.IsNullOrEmpty(separator))
-            {
-                builder.Append(separator);
-            }
-
-            builder.Append(words[i].ToUpperInvariant());
-        }
-
-        return builder.ToString();
+        return JoinWords(words, separator, static (builder, word, _) => builder.Append(word.ToUpperInvariant()));
     }
 
     private static string ApplyAllLower(string[] words, string separator)
     {
-        var builder = new StringBuilder();
-        for (var i = 0; i < words.Length; i++)
+        return JoinWords(words, separator, static (builder, word, _) =>
         {
-            if (i > 0 && !string.IsNullOrEmpty(separator))
-            {
-                builder.Append(separator);
-            }
-
-            foreach (var c in words[i])
+            foreach (var c in word)
             {
                 builder.Append(LowerInvariant(c));
             }
-        }
-
-        return builder.ToString();
+        });
     }
 
     private static string ApplyFirstUpper(string[] words, string separator)
     {
-        var builder = new StringBuilder();
-        for (var i = 0; i < words.Length; i++)
+        return JoinWords(words, separator, static (builder, word, index) =>
         {
-            if (i > 0 && !string.IsNullOrEmpty(separator))
+            if (index is 0)
+            {
+                AppendCapitalized(builder, word);
+            }
+            else
+            {
+                builder.Append(word);
+            }
+        });
+    }
+
+    private static string JoinWords(
+        string[] words,
+        string separator,
+        Action<StringBuilder, string, int> append)
+    {
+        var builder = new StringBuilder();
+        for (var index = 0; index < words.Length; index++)
+        {
+            if (index > 0 && !string.IsNullOrEmpty(separator))
             {
                 builder.Append(separator);
             }
 
-            if (i is 0)
-            {
-                AppendCapitalized(builder, words[i]);
-            }
-            else
-            {
-                builder.Append(words[i]);
-            }
+            append(builder, words[index], index);
         }
 
         return builder.ToString();

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using E128.Analyzers.Testing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -143,21 +144,6 @@ public sealed class TestMethodReflectionAnalyzer : DiagnosticAnalyzer
 
     private static bool HasTestAttribute(MethodDeclarationSyntax methodDecl)
     {
-        foreach (var attributeList in methodDecl.AttributeLists)
-        {
-            foreach (var attribute in attributeList.Attributes)
-            {
-                var attrName = attribute.Name.ToString();
-                if (string.Equals(attrName, "Fact", StringComparison.Ordinal)
-                    || string.Equals(attrName, "Theory", StringComparison.Ordinal)
-                    || string.Equals(attrName, "Xunit.Fact", StringComparison.Ordinal)
-                    || string.Equals(attrName, "Xunit.Theory", StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return XunitTestHelper.GetFactOrTheoryAttribute(methodDecl) is not null;
     }
 }

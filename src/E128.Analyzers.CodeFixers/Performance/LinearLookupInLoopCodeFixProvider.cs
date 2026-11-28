@@ -21,27 +21,26 @@ public sealed class LinearLookupInLoopCodeFixProvider : E128CodeFixProviderBase
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
         var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-        if (node is not InvocationExpressionSyntax invocation)
-        {
-            return Task.CompletedTask;
-        }
-
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
+            || invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
             return Task.CompletedTask;
         }
 
         var methodName = memberAccess.Name.Identifier.ValueText;
-
         if (!string.Equals(methodName, "Contains", StringComparison.Ordinal)
             && !string.Equals(methodName, "Any", StringComparison.Ordinal))
         {
             return Task.CompletedTask;
         }
 
-        CodeFixRegistration.Register(context, diagnostic, "Convert to HashSet<T> for O(1) lookup", nameof(LinearLookupInLoopCodeFixProvider), ct => ApplyToHashSetFixAsync(context.Document, invocation, memberAccess, ct));
+        CodeFixRegistration.Register(
+            context,
+            diagnostic,
+            "Convert to HashSet<T> for O(1) lookup",
+            nameof(LinearLookupInLoopCodeFixProvider),
+            ct => ApplyToHashSetFixAsync(context.Document, invocation, memberAccess, ct));
 
         return Task.CompletedTask;
     }

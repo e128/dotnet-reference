@@ -45,12 +45,12 @@ public sealed class NullByRefAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess)
+        var name = InvocationNames.GetName(invocation);
+        if (name is null)
         {
             return;
         }
 
-        var name = memberAccess.Identifier.ValueText;
         var isNullRef = string.Equals(name, "NullRef", StringComparison.Ordinal);
         var isNullAsRef = string.Equals(name, "AsRef", StringComparison.Ordinal) && HasNullPointer(invocation);
 

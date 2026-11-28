@@ -74,27 +74,10 @@ public sealed class DeadFieldStoreAnalyzer : DiagnosticAnalyzer
     {
         foreach (var block in body.DescendantNodesAndSelf()
                      .OfType<BlockSyntax>()
-                     .Where(block => !IsInsideDeferredBody(block, body)))
+                     .Where(block => !SyntaxBoundary.IsInsideNestedFunction(block, body)))
         {
             AnalyzeBlock(block, containingType, context);
         }
-    }
-
-    /// <summary>
-    ///     True for a block inside a lambda or a local function. That body runs later, so this
-    ///     statement list says nothing about its order.
-    /// </summary>
-    private static bool IsInsideDeferredBody(BlockSyntax block, BlockSyntax methodBody)
-    {
-        for (var ancestor = block.Parent; ancestor is not null && ancestor != methodBody; ancestor = ancestor.Parent)
-        {
-            if (ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static void AnalyzeBlock(

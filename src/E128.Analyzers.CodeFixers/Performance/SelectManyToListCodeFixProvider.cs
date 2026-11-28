@@ -61,17 +61,13 @@ public sealed class SelectManyToListCodeFixProvider : E128CodeFixProviderBase
         ExpressionSyntax lambdaBody,
         CancellationToken cancellationToken)
     {
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
 
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
+        var (root, semanticModel) = rootAndModel.Value;
 
         var typeInfo = semanticModel.GetTypeInfo(toListInvocation, cancellationToken);
         if (typeInfo.Type is not INamedTypeSymbol listType || !listType.IsGenericType)

@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 using E128.Analyzers.Reliability;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace E128.Analyzers.Tests;
@@ -15,15 +13,10 @@ public sealed class E128070PoolRentCapacityGuardCodeFixTests
 
     private static Task VerifyFixWithCapacityAsync(string capacity, string source, string fixedCode)
     {
-        var test = new CSharpCodeFixTest<PoolRentCapacityGuardAnalyzer, PoolRentCapacityGuardCodeFixProvider, DefaultVerifier>
-        {
-            TestCode = source,
-            FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net100
-        };
-        test.TestState.AnalyzerConfigFiles.Add(
-            ("/.editorconfig", "is_global = true\ne128_pool_rent_max_capacity = " + capacity));
-        return test.RunAsync(TestContext.Current.CancellationToken);
+        return CodeFixTestRunner.RunAsync<PoolRentCapacityGuardAnalyzer, PoolRentCapacityGuardCodeFixProvider>(
+            source,
+            fixedCode,
+            options: new CodeFixTestOptions { AnalyzerConfig = ("/.editorconfig", "is_global = true\ne128_pool_rent_max_capacity = " + capacity) });
     }
 
     [Fact]

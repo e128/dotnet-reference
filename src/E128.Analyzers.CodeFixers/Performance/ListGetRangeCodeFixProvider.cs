@@ -74,13 +74,16 @@ public sealed class ListGetRangeCodeFixProvider : E128CodeFixProviderBase
         TextSpan span,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var model = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        var listType = model?.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
+        {
+            return document;
+        }
 
-        if (root is null
-            || model is null
-            || listType is null
+        var (root, model) = rootAndModel.Value;
+        var listType = model.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
+
+        if (listType is null
             || root.FindNode(span, getInnermostNodeForTie: true) is not ForStatementSyntax loop
             || !ListGetRangeAnalyzer.TryMatchIndexerLoop(
                 loop,

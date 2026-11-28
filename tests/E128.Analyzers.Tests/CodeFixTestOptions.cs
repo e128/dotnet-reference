@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -30,4 +31,8 @@ internal sealed record CodeFixTestOptions
     internal int? CodeActionIndex { get; init; }
 
     internal bool? AllowUnsafe { get; init; }
+
+    internal (string Name, string Content)? AnalyzerConfig { get; init; }
+
+    internal OutputKind? OutputKind { get; init; }
 }

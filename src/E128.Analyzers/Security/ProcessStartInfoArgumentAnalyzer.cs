@@ -135,8 +135,7 @@ public sealed class ProcessStartInfoArgumentAnalyzer : DiagnosticAnalyzer
 
     private static bool IsProcessStartInfoType(ITypeSymbol type)
     {
-        return string.Equals(type.Name, "ProcessStartInfo", StringComparison.Ordinal)
-               && string.Equals(type.ContainingNamespace?.ToDisplayString(), "System.Diagnostics", StringComparison.Ordinal);
+        return TypeSymbols.IsNamed(type, "ProcessStartInfo", "System.Diagnostics");
     }
 
     private static AssignmentExpressionSyntax? FindMemberAssignment(BaseObjectCreationExpressionSyntax creation, string memberName)

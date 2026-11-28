@@ -1,6 +1,7 @@
 # Tech Debt Audit: Duplicates
 
 *Generated: 2026-11-26*
+*Status updated: 2026-11-28*
 
 Focused run: `duplicates` mode over the full repo. Method: four parallel scans
 with normalized sliding-window duplicate detection (8 and 15 line windows) over
@@ -30,6 +31,43 @@ and `tests/`, with every hit confirmed by reading the sites. Findings cite
 - A whole-compilation duplicate-code detector analyzer stays a poor fit for the
   E128 rule model. The flagged shapes here are mostly conventional boilerplate,
   which would make the rule noisy. An offline scan script is the alternative.
+
+## Status
+
+The 2026-11-27 and 2026-11-28 passes closed every finding except F017 and the
+residual F002 and F008 sites below.
+
+Closed: F001 (retracted), F003, F004, F005, F006, F007, F009, F010, F011,
+F012, F013, F014, F015, F016, F018, F019, F020 to F024, F025, F026.
+
+Current evidence:
+
+- `InvocationNames.GetSimpleName` is deleted. Every call uses `GetName`.
+- No test file pins `Microsoft.Extensions.*` at 10.0.6.
+- `TypeSymbols.IsNamed`, `WalkBaseTypes`, and `FindBaseType` own the name,
+  namespace, and base-chain checks.
+- `SyntaxWriteChecks`, `SyntaxBoundary`, `AsyncSiblingRules`, and
+  `LoopContext.IsUnboundedLoopCall` own the write, boundary, async-sibling,
+  and loop-cost checks.
+- `CodeFixTestOptions.AnalyzerConfig` and `.OutputKind` remove the last two
+  hand-rolled code fix tests.
+- `E128CodeFixProviderBase.RegisterNodeFix` takes an optional `canFix`
+  predicate. Nineteen fixers share the hook.
+- `FixSyntax.GetRootAndSemanticModelAsync` has twenty call sites.
+
+F002 stays open in a narrower form. About fifty-five fixers call
+`FirstAncestorOrSelf`, iterate `context.Diagnostics`, register several actions,
+or compute a value that the fix needs. A predicate hook cannot express those
+without a second node resolution or a value-returning hook. Leave them.
+
+F008 stays open where only the root or only the model is required, or where the
+model is optional. The helper returns null when either part is missing, so
+those sites keep separate fetches.
+
+F017 stays open. `SearchValuesHoistingCodeFixProvider` inserts a field after the
+last static field to keep initializer order. `FixSyntax` offers only
+first-member insertion. Folding them together needs a placement mode that also
+preserves the different blank-line rule.
 
 ## Findings Table
 
@@ -114,14 +152,12 @@ and `tests/`, with every hit confirmed by reading the sites. Findings cite
 
 ## Open Questions for the Maintainer
 
-- F006: should the DI package pin move to 10.0.14, or does a test depend on the
-  10.0.6 behavior on purpose?
-- F001: drop the defensive `ArgumentNullException` in the prologue, or keep it
-  inside the shared helper?
-- F012: is the member drift between the three UnvalidatedJwtIdentity stub
-  copies intentional per test, or an accident of copy-paste?
-- F005: should the migration of ~73 test files be one plan or a rolling cleanup
-  rule for new files only?
+- F006 resolved: the DI pin is 10.0.14 through `TestReferences`. The suite
+  passes on that pin, so no test depends on 10.0.6.
+- F001 resolved: the prologue stays inline. RS1025 and RS1026 require it.
+- F012 resolved: the JWT stubs live in `TestStubs.UnvalidatedJwtStubs`.
+- F005 resolved: the runners cover the test tail, and the two remaining escape
+  hatches now use typed test options.
 - The duplicate-code detector analyzer idea scored 2/5 in the candidate
-  register. Confirm the offline `dup-scan` script shape instead, or close the
+  register. Confirm the offline `dup-scan` script shape, or close the
   candidate as skipped.

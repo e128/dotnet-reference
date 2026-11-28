@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace E128.Analyzers.Reliability;
@@ -45,42 +44,13 @@ public sealed class AsyncFileIoAnalyzer : DiagnosticAnalyzer
 
     private static void Analyze(SyntaxNodeAnalysisContext context)
     {
-        var invocation = (InvocationExpressionSyntax)context.Node;
-
-        if (AsyncContextSyntaxHelper.IsInsideAsyncContext(invocation))
-        {
-            return;
-        }
-
-        if (AsyncContextSyntaxHelper.HasAsyncSuffixSyntaxName(invocation))
-        {
-            return;
-        }
-
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method)
-        {
-            return;
-        }
-
-        if (method.ContainingType is not { } containingType
-            || !string.Equals(containingType.Name, "File", StringComparison.Ordinal)
-            || !string.Equals(containingType.ContainingNamespace?.ToDisplayString(), "System.IO", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (method.Name.EndsWith("Async", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        var asyncSiblingName = method.Name + "Async";
-
-        if (!containingType.GetMembers(asyncSiblingName).OfType<IMethodSymbol>().Any())
-        {
-            return;
-        }
-
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), method.Name, asyncSiblingName));
+        AsyncSiblingRules.Analyze(
+            context,
+            Rule,
+            static method => method.ContainingType is { } containingType
+                             && TypeSymbols.IsNamed(containingType, "File", "System.IO")
+                ? containingType
+                : null,
+            static (type, name) => type.GetMembers(name).OfType<IMethodSymbol>().Any());
     }
 }

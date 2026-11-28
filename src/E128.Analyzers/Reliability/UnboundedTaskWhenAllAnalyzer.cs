@@ -203,11 +203,7 @@ public sealed class UnboundedTaskWhenAllAnalyzer : DiagnosticAnalyzer
 
             if (context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol
                 is IMethodSymbol containing
-                && string.Equals(containing.ContainingType.Name, "SemaphoreSlim", StringComparison.Ordinal)
-                && string.Equals(
-                    containing.ContainingType.ContainingNamespace?.ToDisplayString(),
-                    "System.Threading",
-                    StringComparison.Ordinal))
+                && TypeSymbols.IsNamed(containing.ContainingType, "SemaphoreSlim", "System.Threading"))
             {
                 return true;
             }
