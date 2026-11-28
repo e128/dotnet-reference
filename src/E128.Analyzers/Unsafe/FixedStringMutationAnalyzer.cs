@@ -84,7 +84,7 @@ public sealed class FixedStringMutationAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (GetDereference(name) is { } dereference && IsWriteTarget(dereference))
+            if (GetDereference(name) is { } dereference && SyntaxWriteChecks.IsWriteTarget(dereference))
             {
                 return true;
             }
@@ -113,24 +113,4 @@ public sealed class FixedStringMutationAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static bool IsWriteTarget(ExpressionSyntax access)
-    {
-        var current = access;
-        while (current.Parent is ParenthesizedExpressionSyntax parenthesized)
-        {
-            current = parenthesized;
-        }
-
-        return current.Parent switch
-        {
-            AssignmentExpressionSyntax assignment => assignment.Left == current,
-            PrefixUnaryExpressionSyntax prefix => prefix.IsKind(SyntaxKind.PreIncrementExpression)
-                || prefix.IsKind(SyntaxKind.PreDecrementExpression),
-            PostfixUnaryExpressionSyntax postfix => postfix.IsKind(SyntaxKind.PostIncrementExpression)
-                || postfix.IsKind(SyntaxKind.PostDecrementExpression),
-            ArgumentSyntax argument => argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
-                || argument.RefKindKeyword.IsKind(SyntaxKind.OutKeyword),
-            _ => false,
-        };
-    }
 }

@@ -108,8 +108,7 @@ public sealed class ProcessOutputValidatorAnalyzer : DiagnosticAnalyzer
 
     private static bool IsSystemDiagnosticsProcess(INamedTypeSymbol? type)
     {
-        return string.Equals(type?.Name, "Process", StringComparison.Ordinal)
-               && string.Equals(type?.ContainingNamespace?.ToDisplayString(), "System.Diagnostics", StringComparison.Ordinal);
+        return TypeSymbols.IsNamed(type, "Process", "System.Diagnostics");
     }
 
     private static Dictionary<string, int> CollectExistsCheckPositions(MethodDeclarationSyntax method)

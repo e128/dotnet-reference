@@ -54,9 +54,7 @@ internal static partial class FipsSymbolHelpers
     /// </summary>
     internal static bool IsType(ITypeSymbol? type, string name, string dottedNamespace)
     {
-        return type is INamedTypeSymbol { ContainingType: null } named &&
-        string.Equals(named.Name, name, StringComparison.Ordinal) &&
-        Namespaces.Equals(named.ContainingNamespace, dottedNamespace);
+        return TypeSymbols.IsNamed(type, name, dottedNamespace);
     }
 
     internal static bool IsCryptographyType(ITypeSymbol? type, string name)
@@ -122,15 +120,7 @@ internal static partial class FipsSymbolHelpers
     /// </summary>
     internal static ITypeSymbol? FindBaseType(ITypeSymbol? type, string name, string dottedNamespace)
     {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (IsType(current, name, dottedNamespace))
-            {
-                return current;
-            }
-        }
-
-        return null;
+        return TypeSymbols.FindBaseType(type, current => IsType(current, name, dottedNamespace));
     }
 
     /// <summary>

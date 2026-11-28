@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace E128.Analyzers.Reliability;
@@ -45,68 +44,27 @@ public sealed class AsyncDbIoAnalyzer : DiagnosticAnalyzer
 
     private static void Analyze(SyntaxNodeAnalysisContext context)
     {
-        var invocation = (InvocationExpressionSyntax)context.Node;
-
-        if (AsyncContextSyntaxHelper.IsInsideAsyncContext(invocation))
-        {
-            return;
-        }
-
-        if (AsyncContextSyntaxHelper.HasAsyncSuffixSyntaxName(invocation))
-        {
-            return;
-        }
-
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method)
-        {
-            return;
-        }
-
-        if (method.Name.EndsWith("Async", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (method.ReceiverType is not { } receiverType || !IsDbConnectionOrCommand(receiverType))
-        {
-            return;
-        }
-
-        var asyncSiblingName = method.Name + "Async";
-
-        if (!HasAsyncSibling(receiverType, asyncSiblingName))
-        {
-            return;
-        }
-
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), method.Name, asyncSiblingName));
+        AsyncSiblingRules.Analyze(
+            context,
+            Rule,
+            static method => method.ReceiverType is { } receiverType && IsDbConnectionOrCommand(receiverType)
+                ? receiverType
+                : null,
+            HasAsyncSibling);
     }
 
     private static bool IsDbConnectionOrCommand(ITypeSymbol type)
     {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if ((string.Equals(current.Name, "DbConnection", StringComparison.Ordinal)
-                 || string.Equals(current.Name, "DbCommand", StringComparison.Ordinal))
-                && string.Equals(current.ContainingNamespace?.ToDisplayString(), "System.Data.Common", StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(
+            type,
+            static current => TypeSymbols.IsNamed(current, "DbConnection", "System.Data.Common")
+                              || TypeSymbols.IsNamed(current, "DbCommand", "System.Data.Common"));
     }
 
     private static bool HasAsyncSibling(ITypeSymbol type, string asyncSiblingName)
     {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (current.GetMembers(asyncSiblingName).OfType<IMethodSymbol>().Any())
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(
+            type,
+            current => current.GetMembers(asyncSiblingName).OfType<IMethodSymbol>().Any());
     }
 }

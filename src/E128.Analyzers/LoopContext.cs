@@ -5,6 +5,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace E128.Analyzers;
@@ -128,6 +129,29 @@ internal static class LoopContext
     ///     Returns the nearest enclosing loop statement, or null when the node is not
     ///     inside a loop body.
     /// </summary>
+    /// <summary>
+    ///     Returns true when a member call runs once per loop iteration with no constant bound and
+    ///     no wait between iterations, and the receiver derives from <paramref name="targetType" />.
+    /// </summary>
+    internal static bool IsUnboundedLoopCall(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation,
+        MemberAccessExpressionSyntax access,
+        ITypeSymbol? targetType)
+    {
+        var body = FindEnclosingLoopBody(invocation);
+        if (body is null
+            || HasConstantBound(invocation, context.SemanticModel, context.CancellationToken))
+        {
+            return false;
+        }
+
+        var receiverType = context.SemanticModel.GetTypeInfo(access.Expression, context.CancellationToken).Type;
+
+        return TypeSymbols.DerivesFrom(receiverType, targetType)
+               && !ContainsWaitCall(body, context.SemanticModel, context.CancellationToken);
+    }
+
     internal static StatementSyntax? FindEnclosingLoop(SyntaxNode node)
     {
         return FindLoopBody(node, stopAtAnonymousFunctions: true, countLoopConditions: false)?.Parent as StatementSyntax;

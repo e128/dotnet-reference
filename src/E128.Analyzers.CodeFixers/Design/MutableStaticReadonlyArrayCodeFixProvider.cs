@@ -163,12 +163,13 @@ public sealed class MutableStaticReadonlyArrayCodeFixProvider : E128CodeFixProvi
         VariableDeclarationSyntax declaration,
         CancellationToken cancellationToken)
     {
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null || root is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
+
+        var (root, _) = rootAndModel.Value;
 
         if (declaration.Type is not ArrayTypeSyntax arrayType)
         {

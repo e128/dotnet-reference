@@ -46,9 +46,8 @@ public sealed class FunctionPointerDelegateLifetimeAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess
-            || !string.Equals(
-                memberAccess.Identifier.ValueText,
+        if (!string.Equals(
+                InvocationNames.GetName(invocation),
                 "GetFunctionPointerForDelegate",
                 StringComparison.Ordinal)
             || invocation.ArgumentList.Arguments.Count is not 1)

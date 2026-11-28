@@ -696,15 +696,9 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         internal bool DerivesFromDbContext(INamedTypeSymbol type)
         {
-            for (var current = (INamedTypeSymbol?)type; current is not null; current = current.BaseType)
-            {
-                if (SymbolEqualityComparer.Default.Equals(current, dbContext))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return TypeSymbols.WalkBaseTypes(
+                type,
+                current => SymbolEqualityComparer.Default.Equals(current, dbContext));
         }
 
         private static object? ReadSingletonValue(INamedTypeSymbol? serviceLifetime)

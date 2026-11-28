@@ -59,7 +59,14 @@ public abstract class E128CodeFixProviderBase : CodeFixProvider
         Func<TNode, CancellationToken, Task<Document>> createChangedDocument)
         where TNode : SyntaxNode
     {
-        RegisterNodeFix(context, root, title, equivalenceKey, createChangedDocument, getInnermostNodeForTie: false);
+        RegisterNodeFix(
+            context,
+            root,
+            title,
+            equivalenceKey,
+            static _ => true,
+            createChangedDocument,
+            getInnermostNodeForTie: false);
     }
 
     /// <summary>
@@ -78,15 +85,73 @@ public abstract class E128CodeFixProviderBase : CodeFixProvider
         bool getInnermostNodeForTie)
         where TNode : SyntaxNode
     {
+        RegisterNodeFix(
+            context,
+            root,
+            title,
+            equivalenceKey,
+            static _ => true,
+            createChangedDocument,
+            getInnermostNodeForTie);
+    }
+
+    /// <summary>
+    ///     Registers one document-changing action when the typed node also passes
+    ///     <paramref name="canFix"/>. A node that fails the predicate registers nothing, so a
+    ///     decline stays invisible to the user.
+    /// </summary>
+    /// <typeparam name="TNode">The syntax node type the diagnostic node must have.</typeparam>
+    /// <exception cref="ArgumentNullException">The caller passed a null root.</exception>
+    protected static void RegisterNodeFix<TNode>(
+        CodeFixContext context,
+        SyntaxNode root,
+        string title,
+        string equivalenceKey,
+        Func<TNode, bool> canFix,
+        Func<TNode, CancellationToken, Task<Document>> createChangedDocument)
+        where TNode : SyntaxNode
+    {
+        RegisterNodeFix(
+            context,
+            root,
+            title,
+            equivalenceKey,
+            canFix,
+            createChangedDocument,
+            getInnermostNodeForTie: false);
+    }
+
+    /// <summary>
+    ///     The form of <see cref="RegisterNodeFix{TNode}(CodeFixContext, SyntaxNode, string, string,
+    ///     Func{TNode, bool}, Func{TNode, CancellationToken, Task{Document}})"/> that resolves a span
+    ///     tie to the innermost node.
+    /// </summary>
+    /// <typeparam name="TNode">The syntax node type the diagnostic node must have.</typeparam>
+    /// <exception cref="ArgumentNullException">The caller passed a null root.</exception>
+    protected static void RegisterNodeFix<TNode>(
+        CodeFixContext context,
+        SyntaxNode root,
+        string title,
+        string equivalenceKey,
+        Func<TNode, bool> canFix,
+        Func<TNode, CancellationToken, Task<Document>> createChangedDocument,
+        bool getInnermostNodeForTie)
+        where TNode : SyntaxNode
+    {
         if (root is null)
         {
             throw new ArgumentNullException(nameof(root));
         }
 
+        if (canFix is null)
+        {
+            throw new ArgumentNullException(nameof(canFix));
+        }
+
         var diagnostic = context.Diagnostics[0];
         var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie);
 
-        if (node is not TNode typed)
+        if (node is not TNode typed || !canFix(typed))
         {
             return;
         }

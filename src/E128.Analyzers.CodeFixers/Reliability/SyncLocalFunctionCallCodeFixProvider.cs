@@ -20,14 +20,13 @@ public sealed class SyncLocalFunctionCallCodeFixProvider : E128CodeFixProviderBa
 
     protected override Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        if (root.FindNode(diagnostic.Location.SourceSpan) is not InvocationExpressionSyntax invocation
-            || !AsyncSiblingCodeFixHelper.HasFixableEnclosingMethod(invocation))
-        {
-            return Task.CompletedTask;
-        }
-
-        CodeFixRegistration.Register(context, diagnostic, "Replace synchronous call with await", nameof(SyncLocalFunctionCallCodeFixProvider), ct => ApplyFixAsync(context.Document, invocation, ct));
+        RegisterNodeFix<InvocationExpressionSyntax>(
+            context,
+            root,
+            "Replace synchronous call with await",
+            nameof(SyncLocalFunctionCallCodeFixProvider),
+            AsyncSiblingCodeFixHelper.HasFixableEnclosingMethod,
+            (invocation, ct) => ApplyFixAsync(context.Document, invocation, ct));
 
         return Task.CompletedTask;
     }

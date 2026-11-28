@@ -56,18 +56,19 @@ public sealed class UnsafeCopyReferenceTypeAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess
-            || !MemberNames.Contains(memberAccess.Identifier.ValueText, StringComparer.Ordinal))
+        var name = InvocationNames.GetName(invocation);
+        if (name is null
+            || !MemberNames.Contains(name, StringComparer.Ordinal))
         {
             return;
         }
 
-        if (!OwnerInvocation.TryMatch(context, unsafeType, memberAccess.Identifier.ValueText, out var method))
+        if (!OwnerInvocation.TryMatch(context, unsafeType, name, out var method))
         {
             return;
         }
 
-        if (!MovesAReference(context, invocation, method, memberAccess.Identifier.ValueText))
+        if (!MovesAReference(context, invocation, method, name))
         {
             return;
         }

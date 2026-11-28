@@ -41,17 +41,13 @@ public sealed class EnumIfElseChainCodeFixProvider : E128CodeFixProviderBase
         IfStatementSyntax ifStatement,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
 
-        var model = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (model is null)
-        {
-            return document;
-        }
+        var (root, model) = rootAndModel.Value;
 
         var switchExpression = ExtractSwitchExpression(ifStatement, model, cancellationToken);
         if (switchExpression is null)

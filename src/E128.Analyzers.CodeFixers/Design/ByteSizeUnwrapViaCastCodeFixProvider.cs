@@ -17,18 +17,6 @@ public sealed class ByteSizeUnwrapViaCastCodeFixProvider : E128CodeFixProviderBa
 
     protected override async Task RegisterFixesAsync(CodeFixContext context, SyntaxNode root)
     {
-        var diagnostic = context.Diagnostics[0];
-        if (root.FindNode(diagnostic.Location.SourceSpan) is not CastExpressionSyntax castExpression)
-        {
-            return;
-        }
-
-        var inner = ExpressionUnwrapper.Parentheses(castExpression.Expression);
-        if (inner is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-
         var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(context.Document, context.CancellationToken).ConfigureAwait(false);
         if (rootAndModel is null)
         {
@@ -36,13 +24,21 @@ public sealed class ByteSizeUnwrapViaCastCodeFixProvider : E128CodeFixProviderBa
         }
 
         var semanticModel = rootAndModel.Value.SemanticModel;
+        var diagnostic = context.Diagnostics[0];
 
-        if (IsNarrowingCast(semanticModel, castExpression, memberAccess, context.CancellationToken))
+        if (root.FindNode(diagnostic.Location.SourceSpan) is not CastExpressionSyntax castExpression
+            || ExpressionUnwrapper.Parentheses(castExpression.Expression) is not MemberAccessExpressionSyntax memberAccess
+            || IsNarrowingCast(semanticModel, castExpression, memberAccess, context.CancellationToken))
         {
             return;
         }
 
-        CodeFixRegistration.Register(context, diagnostic, "Remove ByteSize cast", nameof(ByteSizeUnwrapViaCastCodeFixProvider), ct => RemoveCastAsync(context.Document, castExpression, memberAccess, ct));
+        CodeFixRegistration.Register(
+            context,
+            diagnostic,
+            "Remove ByteSize cast",
+            nameof(ByteSizeUnwrapViaCastCodeFixProvider),
+            ct => RemoveCastAsync(context.Document, castExpression, memberAccess, ct));
     }
 
     private static bool IsNarrowingCast(

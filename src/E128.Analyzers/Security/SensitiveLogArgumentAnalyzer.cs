@@ -237,18 +237,13 @@ public sealed class SensitiveLogArgumentAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (string.Equals(
-                    current.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    "global::System.Exception",
-                    StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return FrameworkTypeNames.Contains(type.OriginalDefinition.ToDisplayString(), StringComparer.Ordinal);
+        return TypeSymbols.WalkBaseTypes(
+                   type,
+                   static current => string.Equals(
+                       current.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                       "global::System.Exception",
+                       StringComparison.Ordinal))
+               || FrameworkTypeNames.Contains(type.OriginalDefinition.ToDisplayString(), StringComparer.Ordinal);
     }
 
     private static IEnumerable<ExpressionSyntax> ValueExpressions(ExpressionSyntax expression)

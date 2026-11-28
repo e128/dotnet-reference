@@ -323,14 +323,9 @@ public sealed class RetainedMemoryAfterDisposeAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        for (var current = type.BaseType; current is not null; current = current.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, definition))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(
+            type,
+            current => SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, definition),
+            includeSelf: false);
     }
 }

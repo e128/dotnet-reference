@@ -26,8 +26,8 @@ internal static class OwnerInvocation
         method = null;
 
         if (context.Node is not InvocationExpressionSyntax invocation
-            || InvocationNames.GetSimpleName(invocation) is not { } name
-            || !string.Equals(name.Identifier.ValueText, methodName, StringComparison.Ordinal))
+            || InvocationNames.GetName(invocation) is not { } name
+            || !string.Equals(name, methodName, StringComparison.Ordinal))
         {
             return false;
         }

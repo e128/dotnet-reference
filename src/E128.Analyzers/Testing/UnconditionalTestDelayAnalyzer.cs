@@ -103,7 +103,7 @@ public sealed class UnconditionalTestDelayAnalyzer : DiagnosticAnalyzer
         DelayTypes types,
         SyntaxNodeAnalysisContext context)
     {
-        var calledName = InvocationNames.GetSimpleName(invocation)?.Identifier.ValueText;
+        var calledName = InvocationNames.GetName(invocation);
 
         if (calledName is null || !IsDelayName(calledName))
         {

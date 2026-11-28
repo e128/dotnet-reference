@@ -45,12 +45,12 @@ public sealed class MemoryMarshalNonBlittableAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess)
+        var name = InvocationNames.GetName(invocation);
+        if (name is null)
         {
             return;
         }
 
-        var name = memberAccess.Identifier.ValueText;
         if (!string.Equals(name, "Read", StringComparison.Ordinal)
             && !string.Equals(name, "Cast", StringComparison.Ordinal))
         {

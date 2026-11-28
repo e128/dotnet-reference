@@ -191,7 +191,7 @@ public sealed class MiddlewareNextDelegateAnalyzer : DiagnosticAnalyzer
 
             if (IsNamed(identifier, contextName))
             {
-                if (IsWriteTarget(identifier))
+                if (SyntaxWriteChecks.IsWriteTarget(identifier))
                 {
                     return false;
                 }
@@ -216,21 +216,6 @@ public sealed class MiddlewareNextDelegateAnalyzer : DiagnosticAnalyzer
         }
 
         return calls > 0;
-    }
-
-    internal static bool IsWriteTarget(IdentifierNameSyntax identifier)
-    {
-        return identifier.Parent switch
-        {
-            AssignmentExpressionSyntax assignment => assignment.Left == identifier,
-            PrefixUnaryExpressionSyntax prefix => prefix.Operand == identifier
-                                                   && (prefix.IsKind(SyntaxKind.PreIncrementExpression)
-                                                       || prefix.IsKind(SyntaxKind.PreDecrementExpression)),
-            PostfixUnaryExpressionSyntax postfix => postfix.Operand == identifier,
-            ArgumentSyntax argument => argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
-                                       || argument.RefKindKeyword.IsKind(SyntaxKind.OutKeyword),
-            _ => false
-        };
     }
 
     private static bool IsNamed(IdentifierNameSyntax identifier, string name)

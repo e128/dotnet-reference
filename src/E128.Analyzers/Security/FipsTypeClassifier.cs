@@ -86,12 +86,11 @@ internal static class FipsTypeClassifier
             return TypeVerdict.Allowed;
         }
 
-        for (var current = type; current is not null; current = current.BaseType)
+        if (TypeSymbols.FindBaseType(
+                type,
+                static current => FipsSymbolHelpers.IsCryptographyType(current, FipsForbiddenTypes.All)) is not null)
         {
-            if (FipsSymbolHelpers.IsCryptographyType(current, FipsForbiddenTypes.All))
-            {
-                return TypeVerdict.ForbiddenType;
-            }
+            return TypeVerdict.ForbiddenType;
         }
 
         foreach (var fragment in ForbiddenNameFragments)
@@ -136,16 +135,11 @@ internal static class FipsTypeClassifier
 
     private static bool HasCipherBaseType(ITypeSymbol type)
     {
-        for (var baseType = type.BaseType; baseType is not null; baseType = baseType.BaseType)
-        {
-            if (baseType.Name.IndexOf("Cipher", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                FipsSymbolHelpers.IsCryptographyType(baseType, "SymmetricAlgorithm"))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(
+            type,
+            static baseType => baseType.Name.IndexOf("Cipher", StringComparison.OrdinalIgnoreCase) >= 0
+                               || FipsSymbolHelpers.IsCryptographyType(baseType, "SymmetricAlgorithm"),
+            includeSelf: false);
     }
 
     private static bool HasCipherInterface(ITypeSymbol type)

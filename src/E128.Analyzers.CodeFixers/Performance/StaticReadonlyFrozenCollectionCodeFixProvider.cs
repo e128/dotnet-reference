@@ -48,12 +48,13 @@ public sealed class StaticReadonlyFrozenCollectionCodeFixProvider : E128CodeFixP
         VariableDeclarationSyntax declaration,
         CancellationToken cancellationToken)
     {
-        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel is null || root is null)
+        var rootAndModel = await FixSyntax.GetRootAndSemanticModelAsync(document, cancellationToken).ConfigureAwait(false);
+        if (rootAndModel is null)
         {
             return document;
         }
+
+        var (root, semanticModel) = rootAndModel.Value;
 
         var variable = declaration.Variables.FirstOrDefault();
         if (declaration.Variables.Count is not 1 || variable?.Initializer?.Value is null)

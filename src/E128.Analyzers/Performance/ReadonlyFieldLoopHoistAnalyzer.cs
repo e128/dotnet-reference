@@ -159,7 +159,7 @@ public sealed class ReadonlyFieldLoopHoistAnalyzer : DiagnosticAnalyzer
 
         field = candidate;
 
-        if (IsWriteTarget(identifier))
+        if (SyntaxWriteChecks.IsAssignmentTarget(identifier))
         {
             return RegionMatch.Excluded;
         }
@@ -263,16 +263,6 @@ public sealed class ReadonlyFieldLoopHoistAnalyzer : DiagnosticAnalyzer
     ///     True for an assignment target, directly or through a
     ///     <c lang="csharp">this._items = value</c> receiver.
     /// </summary>
-    private static bool IsWriteTarget(IdentifierNameSyntax identifier)
-    {
-        return identifier.Parent switch
-        {
-            AssignmentExpressionSyntax assignment => assignment.Left == identifier,
-            MemberAccessExpressionSyntax { Parent: AssignmentExpressionSyntax assignment } access => assignment.Left == access,
-            _ => false
-        };
-    }
-
     /// <summary>
     ///     True when the reference sits inside a <c lang="csharp">nameof</c> argument. The
     ///     call carries no symbol of its own, so the name is the only available match.

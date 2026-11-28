@@ -7,8 +7,7 @@ namespace E128.Analyzers.Tests;
 
 public sealed class DirectHttpClientInstantiationCodeFixProviderBranchCoverageMoreTests
 {
-    private static readonly ReferenceAssemblies Net100WithHttp = ReferenceAssemblies.Net.Net100
-        .AddPackages([new PackageIdentity("Microsoft.Extensions.Http", "10.0.6")]);
+    private static readonly ReferenceAssemblies Net100WithHttp = TestReferences.Net100WithDependencyInjectionAndHttp;
 
     [Fact]
     [Trait("Category", "CI")]

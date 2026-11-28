@@ -118,7 +118,7 @@ public sealed class ConcurrentDictionaryDoubleLookupAnalyzer : DiagnosticAnalyze
     {
         foreach (var elementAccess in body.DescendantNodes().OfType<ElementAccessExpressionSyntax>())
         {
-            if (elementAccess.ArgumentList.Arguments.Count is not 1 || IsWriteTarget(elementAccess))
+            if (elementAccess.ArgumentList.Arguments.Count is not 1 || SyntaxWriteChecks.IsWriteTarget(elementAccess))
             {
                 continue;
             }
@@ -140,29 +140,6 @@ public sealed class ConcurrentDictionaryDoubleLookupAnalyzer : DiagnosticAnalyze
         }
 
         return false;
-    }
-
-    private static bool IsWriteTarget(ElementAccessExpressionSyntax elementAccess)
-    {
-        var parent = elementAccess.Parent;
-        while (parent is ParenthesizedExpressionSyntax parenthesized)
-        {
-            parent = parenthesized.Parent;
-        }
-
-        return parent switch
-        {
-            AssignmentExpressionSyntax assignment => ReferenceEquals(assignment.Left, elementAccess),
-            PrefixUnaryExpressionSyntax
-            {
-                RawKind: (int)SyntaxKind.PreIncrementExpression or (int)SyntaxKind.PreDecrementExpression
-            } => true,
-            PostfixUnaryExpressionSyntax
-            {
-                RawKind: (int)SyntaxKind.PostIncrementExpression or (int)SyntaxKind.PostDecrementExpression
-            } => true,
-            _ => false
-        };
     }
 
     private static bool KeysMatch(

@@ -207,15 +207,8 @@ internal static class LoopCount
 
     private static bool HasIntProperty(ITypeSymbol type, string propertyName)
     {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (HasAccessibleIntProperty(current, propertyName))
-            {
-                return true;
-            }
-        }
-
-        return type.AllInterfaces.Any(candidate => HasAccessibleIntProperty(candidate, propertyName));
+        return TypeSymbols.WalkBaseTypes(type, current => HasAccessibleIntProperty(current, propertyName))
+               || type.AllInterfaces.Any(candidate => HasAccessibleIntProperty(candidate, propertyName));
     }
 
     private static bool HasAccessibleIntProperty(ITypeSymbol type, string propertyName)

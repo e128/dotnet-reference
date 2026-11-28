@@ -50,12 +50,12 @@ public sealed class UnsafeUnalignedNonBlittableAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (InvocationNames.GetSimpleName(invocation) is not { } memberAccess)
+        var name = InvocationNames.GetName(invocation);
+        if (name is null)
         {
             return;
         }
 
-        var name = memberAccess.Identifier.ValueText;
         if (!string.Equals(name, "ReadUnaligned", StringComparison.Ordinal)
             && !string.Equals(name, "WriteUnaligned", StringComparison.Ordinal))
         {

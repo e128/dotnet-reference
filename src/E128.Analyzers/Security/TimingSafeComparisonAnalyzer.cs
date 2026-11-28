@@ -496,15 +496,9 @@ public sealed class TimingSafeComparisonAnalyzer : DiagnosticAnalyzer
 
     private static bool IsHmacType(ITypeSymbol? type)
     {
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            if (current.Name.StartsWith("HMAC", StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return TypeSymbols.WalkBaseTypes(
+            type,
+            static current => current.Name.StartsWith("HMAC", StringComparison.Ordinal));
     }
 
     /// <summary>

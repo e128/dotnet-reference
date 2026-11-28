@@ -7,8 +7,7 @@ namespace E128.Analyzers.Tests;
 
 public sealed class ConcreteTypeDiDependencyCodeFixBranchCoverageTests
 {
-    private static readonly ReferenceAssemblies References = ReferenceAssemblies.Net.Net100
-        .AddPackages([new PackageIdentity("Microsoft.Extensions.DependencyInjection", "10.0.6")]);
+    private static readonly ReferenceAssemblies References = TestReferences.Net100WithDependencyInjection;
 
     [Theory]
     [Trait("Category", "CI")]

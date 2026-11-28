@@ -1,6 +1,6 @@
 # Shared Analyzer Helpers
 
-*Updated: 2026-11-26T15:13:04Z*
+*Updated: 2026-11-28T15:27:39Z*
 
 `src/E128.Analyzers` and `src/E128.Analyzers.CodeFixers` keep one class per
 shared concern. A new rule or fix calls an existing helper before it writes a
@@ -21,6 +21,13 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `TypeSymbols.DerivesFrom` | Walks the base chain. A null base type matches nothing. |
 | `TypeSymbols.Matches` | True when a type equals a target. A null target matches nothing. |
 | `TypeSymbols.MatchesOriginalDefinition` | True when the original definition of a type equals a target definition. |
+| `TypeSymbols.IsNamed` | True when a type has the given simple name and namespace. A nested type matches only when `requireTopLevel` is false. |
+| `TypeSymbols.WalkBaseTypes` | Walks the type and its base chain against a predicate. `includeSelf: false` starts at the direct base type. |
+| `TypeSymbols.FindBaseType` | Returns the first type in the base chain that matches the predicate, or null. |
+| `SyntaxWriteChecks.IsWriteTarget` | True when an expression is assigned, incremented, decremented, or passed by `ref` or `out`. Parentheses are ignored. |
+| `SyntaxWriteChecks.IsAssignmentTarget` | True when an expression is only the left side of an assignment. |
+| `SyntaxBoundary.IsInsideNestedFunction` | True when a node sits inside a lambda or local function before the walk reaches the boundary. |
+| `AsyncSiblingRules.Analyze` | Shared detection for a blocking call that has an async sibling on the same receiver. The caller supplies the receiver resolver and the sibling lookup. |
 | `EnumConstants` | Enum constant normalization, the power-of-two test, and the `[Flags]` test. E128245 and E128246 share it. |
 | `InterfaceMembers.Implements` | True when a method implements an interface member, including an explicit implementation. An interface or delegate method returns false. |
 | `InterfaceMembers.ImplementsMember` | True when the containing type maps some interface member to the method. |
@@ -35,8 +42,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `TaskTypes.IsTaskOrValueTask` | True for `Task` and `ValueTask`, including their generic forms. |
 | `Blittability.IsBlittable` | True when a type copies as a raw bit pattern. A struct that holds a bool or decimal returns false. |
 | `TrackerReference` | Reads `e128_tracked_ref_pattern` and matches a work-item reference. A regex timeout counts as no match, so the rule still reports. |
-| `InvocationNames.GetSimpleName` | Returns the called name for `Type.Method(...)` and for a bare `Method(...)`. |
-| `InvocationNames.GetName` | Returns the called method name text. A generic invocation such as `Method<int>(...)` returns null. |
+| `InvocationNames.GetName` | Returns the called method name text for `Type.Method(...)` and a bare `Method(...)`. A generic invocation such as `Method<int>(...)` returns the simple name. |
 | `PartialMembers.IsImplementationPart` | True when a symbol is the implementing source symbol of a partial method, partial property, or a parameter of one. A member-level symbol rule calls it first and skips the event, so one logical member reports once. |
 | `IndexedForLoop.TryMatch` | Matches `for (var i = 0; i < source.Length; i++)` and returns the variable, bound owner, and body. |
 | `SpanElementType.TryGet` | Reads the element type of a one-dimensional array, a `Span<T>`, or a `ReadOnlySpan<T>`. Returns whether the value is a span. The two-argument call matches one span type only. |
@@ -57,6 +63,8 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | `LoopContext.HasConstantBound` | True when the nearest `for` loop has a compile-time constant bound. |
 | `LoopContext.ReferencesLoopVariable` | True when the node reads a value that changes per iteration. |
 | `LoopContext.ContainsWaitCall` | True when the loop body waits between iterations. |
+| `LoopContext.IsUnboundedLoopCall` | True when a member call runs once per iteration with no constant bound and no wait, on the target receiver type. |
+| `FipsSymbolHelpers.IsType` | Delegates to `TypeSymbols.IsNamed`. The FIPS rules keep the name for readability. |
 | `ExceptionScope.IsInsideTryWithCatch` | True when a node sits inside the try block of a try statement whose catch list is not empty. The walk stops before the boundary node. |
 | `LocalTargets.FromCreation` | Resolves the local symbol assigned by an object creation, through either its variable declarator or a simple-assignment parent. |
 | `FileReadMethods.Contains` | True when a `System.IO.File` member reads a file. The TOCTOU and process-output rules share the set. |
@@ -67,7 +75,7 @@ assembly reaches the analyzer internals through `InternalsVisibleTo`.
 | Helper | Contract |
 | --- | --- |
 | `E128CodeFixProviderBase` | Owns the batch fix-all provider and the root fetch. Override `RegisterFixesAsync` for the normal shape. |
-| `E128CodeFixProviderBase.RegisterNodeFix` | Resolves `Diagnostics[0]`, finds the node, type-tests it, and registers through `CodeFixRegistration`. A site with guards between the type test and the register keeps its own preamble. |
+| `E128CodeFixProviderBase.RegisterNodeFix` | Resolves `Diagnostics[0]`, finds the node, type-tests it, and registers through `CodeFixRegistration`. An optional `canFix` predicate declines before registration, so no-op actions never appear. A guard that must compute a value for the fix keeps its own preamble. |
 | `E128NoOpCodeFixProvider` | Base for an intentional no-op fixer: no fix-all provider and an empty register. |
 | `FixSyntax.GetRootAndSemanticModelAsync` | Returns the root and semantic model, or null when the root is null. |
 | `FixSyntax.AnchorLeadingTrivia` | Returns the leading whitespace of the anchor node, with a four-space fallback. |
